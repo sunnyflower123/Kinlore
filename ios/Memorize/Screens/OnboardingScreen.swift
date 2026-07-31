@@ -7,6 +7,7 @@ import SwiftUI
 /// drops out.
 struct OnboardingScreen: View {
     @Environment(Session.self) private var session
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// When opened from an invite link, the code arrives pre-filled.
     var prefilledCode: String?
@@ -18,54 +19,35 @@ struct OnboardingScreen: View {
 
     private enum Route: Hashable { case create, join }
 
+    /// Shortened at accessibility sizes so the two buttons stay above the fold.
+    /// In full it ran to eight lines and pushed both of them off the screen —
+    /// and a first screen whose only two actions have to be found by scrolling
+    /// is a first screen this user does not get past. The first sentence is the
+    /// promise; the second is how it is kept, and the buttons say that anyway.
+    private var intro: String {
+        typeSize.isAccessibilitySize
+            ? "Kerätkää talteen se mitä isovanhemmat muistavat."
+            : "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme."
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 28) {
-                Spacer()
-
-                Image(systemName: "photo.stack")
-                    .font(.system(size: 72))
-                    .foregroundStyle(.tint)
-
-                VStack(spacing: 14) {
-                    Text("Perheen muistot")
-                        .font(.largeTitle.weight(.bold))
-                        .multilineTextAlignment(.center)
-
-                    Text("Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme.")
-                        .elderBody()
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+            // Scrolling, and every label allowed to wrap.
+            //
+            // At the largest text size this screen failed worse than any other,
+            // and it is the first one a new user ever sees: the title truncated
+            // to "Perheen m…", the primary button to "Aloita perh…", and "Liity
+            // kutsulinkillä" was off the bottom of the screen entirely. A
+            // grandmother holding an invite link could not find the way in —
+            // which is the one flow the whole no-login design exists for.
+            GeometryReader { proxy in
+                ScrollView {
+                    content
+                        .padding(Elder.screenPadding)
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
                 }
-
-                Spacer()
-
-                VStack(spacing: 14) {
-                    Button {
-                        route = .create
-                    } label: {
-                        Text("Aloita perheen arkisto")
-                            .font(.body.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .elderTapTarget()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-
-                    Button {
-                        route = .join
-                    } label: {
-                        Text("Liity kutsulinkillä")
-                            .font(.body.weight(.medium))
-                            .frame(maxWidth: .infinity)
-                            .elderTapTarget()
-                    }
-                    .controlSize(.large)
-                }
-
-                Spacer()
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .padding(Elder.screenPadding)
             .navigationDestination(item: $route) { destination in
                 switch destination {
                 case .create:
@@ -79,6 +61,66 @@ struct OnboardingScreen: View {
             guard let prefilledCode, code.isEmpty else { return }
             code = prefilledCode
             route = .join
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 28) {
+            Spacer(minLength: 0)
+
+            // The mark is decoration. At accessibility sizes it competes with
+            // the two buttons for the same screen, and the buttons win.
+            if !typeSize.isAccessibilitySize {
+                Image(systemName: "photo.stack")
+                    .font(.system(size: 72))
+                    .foregroundStyle(.tint)
+            }
+
+            VStack(spacing: 14) {
+                Text("Perheen muistot")
+                    .font(.largeTitle.weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(intro)
+                    .elderBody()
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 14) {
+                Button {
+                    route = .create
+                } label: {
+                    // fixedSize so the label wraps instead of truncating. A
+                    // button whose text ends in an ellipsis does not say what
+                    // it does, and this one is the whole point of the screen.
+                    Text("Aloita perheen arkisto")
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button {
+                    route = .join
+                } label: {
+                    Text("Liity kutsulinkillä")
+                        .font(.body.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .controlSize(.large)
+            }
+
+            Spacer(minLength: 0)
         }
     }
 }
