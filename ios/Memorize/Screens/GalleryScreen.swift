@@ -134,6 +134,7 @@ private struct SectionHeading: View {
 
 private struct PhotoTile: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
     let subject: Subject
 
     @State private var thumbnail: UIImage?
@@ -167,7 +168,12 @@ private struct PhotoTile: View {
             .padding(8)
         }
         .task {
-            guard thumbnail == nil, let filename = subject.imageFilename else { return }
+            guard thumbnail == nil else { return }
+            // Toisen perheenjäsenen lisäämä kuva on aluksi vain avain: se
+            // noudetaan vasta kun ruutu tarvitsee sen.
+            guard let filename = await MediaLoader.imageFilename(
+                for: subject, store: store, session: session
+            ) else { return }
             thumbnail = await Task.detached(priority: .userInitiated) {
                 MediaStore.loadThumbnail(named: filename)
             }.value

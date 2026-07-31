@@ -140,6 +140,7 @@ private struct PersonRow: View {
 /// sijaan.
 struct SubjectDetailScreen: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
     let subject: Subject
 
     @State private var image: UIImage?
@@ -204,7 +205,10 @@ struct SubjectDetailScreen: View {
         .navigationTitle(subject.displayTitle)
         .navigationBarTitleDisplayMode(.large)
         .task {
-            guard image == nil, let filename = subject.imageFilename else { return }
+            guard image == nil else { return }
+            guard let filename = await MediaLoader.imageFilename(
+                for: subject, store: store, session: session
+            ) else { return }
             image = await Task.detached(priority: .userInitiated) {
                 MediaStore.loadImage(named: filename)
             }.value

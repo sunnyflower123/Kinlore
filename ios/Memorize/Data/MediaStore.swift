@@ -34,6 +34,23 @@ enum MediaStore {
         }
     }
 
+    static func exists(_ filename: String) -> Bool {
+        FileManager.default.fileExists(atPath: url(for: filename).path)
+    }
+
+    /// Tallentaa tavut sellaisenaan. Käytetään R2:sta ladatulle medialle ja
+    /// äänelle: ääntä ei saa koodata uudelleen, koska alkuperäinen nauhoitus on
+    /// lopputuotetta eikä välivaihe.
+    static func saveRaw(_ data: Data, extension ext: String) -> String? {
+        let filename = "media-\(UUID().uuidString).\(ext)"
+        do {
+            try data.write(to: url(for: filename), options: .atomic)
+            return filename
+        } catch {
+            return nil
+        }
+    }
+
     static func loadImage(named filename: String) -> UIImage? {
         UIImage(contentsOfFile: url(for: filename).path)
     }

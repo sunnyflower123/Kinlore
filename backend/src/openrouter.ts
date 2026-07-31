@@ -8,6 +8,22 @@ import type { Env } from './worker'
 
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
+/// Upstream-virhe joka tietää kannattaako yrittää uudelleen.
+///
+/// Ero on olennainen: krediittien loppuminen (402) tai väärä avain (401) ei
+/// korjaannu odottamalla, ja kolme yritystä vain hidastaa epäonnistumista
+/// kolminkertaiseksi. Ruuhka (429) ja palvelinvirheet sen sijaan korjaantuvat.
+export class UpstreamError extends Error {
+	readonly status: number
+	readonly retryable: boolean
+
+	constructor(status: number, retryable?: boolean) {
+		super(`OpenRouter HTTP ${status}`)
+		this.status = status
+		this.retryable = retryable ?? (status === 429 || status >= 500)
+	}
+}
+
 export type Message = {
 	role: 'system' | 'user'
 	content: string | ContentPart[]
@@ -29,7 +45,7 @@ type CallOptions = {
 
 export async function complete(env: Env, messages: Message[], opts: CallOptions): Promise<string> {
 	const key = env.OPENROUTER_API_KEY
-	if (!key) throw new Error('OPENROUTER_API_KEY puuttuu')
+	if (!key) throw new UpstreamError(401, false)
 
 	const body: Record<string, unknown> = {
 		model: opts.model,
@@ -69,7 +85,7 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 		// joka toistaa käyttäjän kertoman muiston. Kutsuja saa vain statuksen.
 		const text = await res.text().catch(() => '')
 		console.error(`[openrouter] ${opts.model} HTTP ${res.status}: ${text.slice(0, 300)}`)
-		throw new Error(`OpenRouter HTTP ${res.status}`)
+		throw new UpstreamError(res.status)
 	}
 
 	const data = (await res.json()) as {
@@ -77,7 +93,7 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	}
 	const choice = data.choices?.[0]
 	const content = choice?.message?.content
-	if (!content?.trim()) throw new Error('OpenRouter palautti tyhjän vastauksen')
+	if (!content?.trim()) throw new UpstreamError(502, true)
 
 	// Osittainen vastaus on tunnistettavasti rikki, joten se hylätään heti sen
 	// sijaan että sitä yritettäisiin jäsentää. "error" tarkoittaa että tarjoaja
@@ -87,7 +103,7 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	const reason = choice?.finish_reason
 	if (reason && reason !== 'stop') {
 		console.warn(`[openrouter] ${opts.model} finish_reason=${reason} — vastaus hylätään`)
-		throw new Error(`OpenRouter keskeytti: ${reason}`)
+		throw new UpstreamError(503, true)
 	}
 
 	return content

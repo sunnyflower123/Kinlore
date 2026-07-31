@@ -43,6 +43,11 @@ final class SyncEngine {
         let client = SyncClient(baseURL: base, token: session.identity.token)
 
         do {
+            // 0. Lataa media ENNEN työntöä, jotta rivit kulkevat avaimineen.
+            //    Muuten toinen laite näkisi muiston mutta ei kuvaa johon se
+            //    liittyy, ja korjaus tulisi vasta seuraavalla kierroksella.
+            await uploadPendingMedia(base: base)
+
             // 1. Työnnä oma työ.
             let payload = store.pendingPayload()
             if store.hasPendingChanges {
@@ -68,6 +73,30 @@ final class SyncEngine {
             // Ei näytetä käyttäjälle. Muistot ovat tallessa paikallisesti, ja
             // jono purkautuu itsestään — verkkovirhe ei ole hänen ongelmansa.
             state = .waitingForNetwork
+        }
+    }
+
+    /// Lataa odottavat kuvat ja äänet. Yksi epäonnistunut tiedosto ei estä
+    /// muita: kuva voi olla rikki, mutta muiston pitää silti päästä perille.
+    private func uploadPendingMedia(base: URL) async {
+        let media = MediaClient(baseURL: base, token: session.identity.token)
+
+        for subject in store.subjectsAwaitingUpload() {
+            guard let filename = subject.imageFilename,
+                  let data = try? Data(contentsOf: MediaStore.url(for: filename))
+            else { continue }
+            if let key = try? await media.upload(data: data, kind: .photo) {
+                store.setR2Key(subjectID: subject.id, key: key)
+            }
+        }
+
+        for memory in store.memoriesAwaitingUpload() {
+            guard let filename = memory.audioFilename,
+                  let data = try? Data(contentsOf: MediaStore.url(for: filename))
+            else { continue }
+            if let key = try? await media.upload(data: data, kind: .audio) {
+                store.setAudioR2Key(memoryID: memory.id, key: key)
+            }
         }
     }
 }

@@ -17,7 +17,8 @@ Rehellinen inventaario, ei toivelista:
 | Identiteetti, perhe, kutsulinkit | **Valmis ja testattu** |
 | Synkronointi (`/sync` veto ja työntö) | **Valmis ja testattu** |
 | `relation`, `usage_counter`, `report`, `block` | **Skeemassa, ei käytössä** |
-| Media R2:een, RevenueCat, kiintiöt | Ei aloitettu |
+| Media R2:een (`/media`) | **Valmis ja testattu** |
+| RevenueCat, kiintiöt, moderointi | Ei aloitettu |
 
 Kriittinen polku on nyt auki: perhe ja synkronointi toimivat, joten media,
 kiintiöt ja moderointi voidaan rakentaa niiden päälle. Jäljellä oleva työ on
@@ -214,6 +215,16 @@ Kuvat ja äänet menevät R2:een, metatieto D1:een.
 POST /media          → lataa tiedosto, palauttaa r2_key
 GET  /media/:key     → lataa (tarkistaa perheen jäsenyyden)
 ```
+
+Paikallinen tiedostonimi ja R2-avain ovat **eri kenttiä** (`imageFilename` ja
+`r2Key`). Sama kuva on eri laitteilla eri tiedostonimellä mutta samalla
+avaimella, joten yksi kenttä ei riittäisi.
+
+Lataus tapahtuu **ennen työntöä**, jotta rivit kulkevat avaimineen. Muuten
+toinen laite näkisi muiston mutta ei kuvaa johon se liittyy.
+
+Nouto on **tarvepohjainen**: perheellä voi olla satoja kuvia, eikä niitä haeta
+käynnistyksessä. Ruudukko noutaa vain sen mitä näkyy.
 
 **MVP:ssä tiedosto kulkee Workerin läpi.** Kuvat ovat noin 300 kt (pienennetty
 2048 pikseliin) ja 90 sekunnin ääni noin 200 kt, joten se on täysin riittävää.

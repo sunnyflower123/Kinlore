@@ -268,6 +268,47 @@ final class MemoryStore {
         save()
     }
 
+    // MARK: - Media
+
+    /// Kohteet joilla on paikallinen kuva mutta ei vielä R2-avainta.
+    func subjectsAwaitingUpload() -> [Subject] {
+        subjects.filter { $0.imageFilename != nil && $0.r2Key == nil }
+    }
+
+    /// Muistot joiden ääni on vielä vain paikallisesti. Alkuperäinen ääni
+    /// ladataan aina, myös ilmaisella tasolla — se on tuotteen ydin.
+    func memoriesAwaitingUpload() -> [Memory] {
+        memories.filter { $0.audioFilename != nil && $0.audioR2Key == nil }
+    }
+
+    func setR2Key(subjectID: String, key: String) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].r2Key = key
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
+    func setAudioR2Key(memoryID: String, key: String) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
+        memories[index].audioR2Key = key
+        dirtyMemories.insert(memoryID)
+        save()
+    }
+
+    /// Ladatun median paikallinen välimuisti. Ei merkitä jonoon: tiedostonimi
+    /// on laitekohtainen eikä kuulu palvelimelle.
+    func setLocalImage(subjectID: String, filename: String) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].imageFilename = filename
+        save()
+    }
+
+    func setLocalAudio(memoryID: String, filename: String) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
+        memories[index].audioFilename = filename
+        save()
+    }
+
     // MARK: - Levy
 
     struct Snapshot: Codable {

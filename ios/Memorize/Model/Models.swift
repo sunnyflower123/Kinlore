@@ -64,8 +64,13 @@ struct Subject: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var kind: SubjectKind
     var title: String
-    /// Paikallinen tiedostonimi. Korvautuu R2-avaimella kun backend tulee.
+    /// Paikallinen välimuistitiedosto. Nil vastaanottavalla laitteella kunnes
+    /// kuva on ladattu.
     var imageFilename: String?
+    /// R2-avain. Nil kunnes kuva on työnnetty palvelimelle. Nämä ovat eri
+    /// asioita: sama kuva on eri laitteilla eri tiedostonimellä mutta samalla
+    /// avaimella.
+    var r2Key: String?
     var dateHint: DateHint?
     /// AI:n ehdottama kohde syntyy vahvistamattomana. Vahvistamaton ei näy
     /// sukupuussa faktana — väärä sukulaisuussuhde on pahempi kuin puuttuva.
@@ -105,6 +110,8 @@ struct Memory: Identifiable, Codable, Hashable {
     /// Alkuperäinen ääni. Isoäidin ääni on itsessään perintö, ei välivaihe
     /// kohti tekstiä, ja se on soitettavissa muistokortista.
     var audioFilename: String?
+    /// R2-avain äänelle. Ks. `Subject.r2Key`.
+    var audioR2Key: String?
     var audioDuration: TimeInterval?
     var source: MemorySource
     var createdAt: Date = .now

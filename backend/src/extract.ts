@@ -4,7 +4,7 @@
 /// kokonaislukuina eivätkä unix-aikaleimoina, koska kielimallit käsittelevät
 /// vuosia luotettavasti ja aikaleimoja eivät lainkaan.
 
-import { complete, type Message } from './openrouter'
+import { complete, UpstreamError, type Message } from './openrouter'
 import type { Env } from './worker'
 
 export const EXTRACTION_SCHEMA = {
@@ -196,6 +196,12 @@ export async function extract(
 			return parsed
 		} catch (err) {
 			lastError = err
+			// Krediitit loppu tai avain väärin: uudelleenyritys ei korjaa
+			// mitään, se vain kolminkertaistaa odotusajan ennen virhettä.
+			if (err instanceof UpstreamError && !err.retryable) {
+				console.error(`[extract] ei uudelleenyritettävä (HTTP ${err.status}) — lopetetaan`)
+				break
+			}
 			if (index < models.length - 1) {
 				console.warn(`[extract] yritys ${index + 1} (${model}) epäonnistui, jatketaan`)
 			}

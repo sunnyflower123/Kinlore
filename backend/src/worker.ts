@@ -6,6 +6,7 @@
 
 import { authenticate } from './auth'
 import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
+import { download, upload } from './media'
 import { extract } from './extract'
 import { pull, push } from './sync'
 import { transcribe } from './transcribe'
@@ -137,6 +138,25 @@ export default {
 				return json(await push(env, session, body))
 			} catch (err) {
 				return failure(err, 'sync-push')
+			}
+		}
+
+		if (url.pathname === '/media' && request.method === 'POST') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const kind = url.searchParams.get('kind') ?? 'photo'
+			try {
+				return await upload(env, session, kind, await request.arrayBuffer())
+			} catch (err) {
+				return failure(err, 'media-upload')
+			}
+		}
+
+		if (url.pathname.startsWith('/media/') && request.method === 'GET') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			try {
+				return await download(env, session, decodeURIComponent(url.pathname.slice('/media/'.length)))
+			} catch (err) {
+				return failure(err, 'media-download')
 			}
 		}
 
