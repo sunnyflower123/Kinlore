@@ -92,6 +92,10 @@ enum MemorySource: String, Codable {
 struct Memory: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var subjectID: String
+    /// Palvelimen tuntema kirjoittaja. Paikallisesti luodussa muistossa nil,
+    /// koska palvelin asettaa sen istunnosta — asiakas ei saa väittää muistoa
+    /// jonkun toisen kertomaksi.
+    var authorID: String?
     var authorName: String
     /// Siivottu, luettava teksti.
     var body: String

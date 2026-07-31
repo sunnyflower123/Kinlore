@@ -14,13 +14,19 @@ Rehellinen inventaario, ei toivelista:
 | Sanelu, kirjoitus, jäsennys, nimien korjaus | **Valmis ja testattu** |
 | Kuvien tuonti, galleria, henkilökortit | **Valmis** |
 | `subject`, `memory`, `mention`, `prompt_question` | Käytössä |
-| `family`, `member`, `relation`, `usage_counter`, `report`, `block` | **Skeemassa, ei käytössä** |
-| Worker-reitit | Kaksi: `/transcribe`, `/extract` |
-| Tallennus | Paikallinen JSON, yksi laite |
+| Identiteetti, perhe, kutsulinkit | **Valmis ja testattu** |
+| Synkronointi (`/sync` veto ja työntö) | **Valmis ja testattu** |
+| `relation`, `usage_counter`, `report`, `block` | **Skeemassa, ei käytössä** |
+| Media R2:een, RevenueCat, kiintiöt | Ei aloitettu |
 
-Eli: **koko jaettu perhe puuttuu.** Sovellus on tällä hetkellä yhden ihmisen
-muistikirja, ei perheen arkisto. Loput työstä on käytännössä tämän yhden asian
-rakentamista, ja kaikki muu roikkuu siinä kiinni.
+Kriittinen polku on nyt auki: perhe ja synkronointi toimivat, joten media,
+kiintiöt ja moderointi voidaan rakentaa niiden päälle. Jäljellä oleva työ on
+rinnakkaista ja leikattavissa.
+
+**Todennetut säännöt.** Vahvistus on yksisuuntainen, sulautus tarttuva, vain
+kirjoittaja muokkaa omaansa, ja toinen perhe ei näe eikä voi kirjoittaa. Lähtevä
+jono säilyy levyllä sovelluksen sulkemisen yli, eikä paikallisesti muuttunut rivi
+huku etäversion alle.
 
 ## 2. Viisi päätöstä jotka ratkaisevat loput
 

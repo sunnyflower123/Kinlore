@@ -6,6 +6,9 @@ struct MemorizeApp: App {
     /// toteutuksella jakson C lopussa — näkymät eivät tiedä eroa.
     @State private var store = MemoryStore()
     @State private var session = Session()
+    @State private var sync: SyncEngine?
+
+    @Environment(\.scenePhase) private var scenePhase
 
     /// Kutsulinkistä poimittu koodi, jos sovellus avattiin sellaisesta.
     @State private var invitedCode: String?
@@ -15,6 +18,17 @@ struct MemorizeApp: App {
             content
                 .environment(store)
                 .environment(session)
+                .task {
+                    // Moottori tarvitsee molemmat, joten se syntyy vasta täällä.
+                    if sync == nil { sync = SyncEngine(store: store, session: session) }
+                    await sync?.sync()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    // Etualalle palatessa: perhe on voinut kertoa muistoja sillä
+                    // välin, ja oma jono voi olla purkamatta.
+                    guard phase == .active else { return }
+                    Task { await sync?.sync() }
+                }
                 .onOpenURL { url in
                     guard let code = Self.inviteCode(from: url) else { return }
                     invitedCode = code

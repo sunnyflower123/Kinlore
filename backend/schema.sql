@@ -84,6 +84,8 @@ CREATE TABLE subject (
   created_by    TEXT REFERENCES member(id),
   created_at    INTEGER NOT NULL,
   deleted_at    INTEGER,
+  -- Palvelimen myöntämä järjestysluku. Asiakas pyytää kaiken tätä suuremman.
+  seq           INTEGER NOT NULL DEFAULT 0,
 
   -- Sulautus ei poista vaan ohjaa. Kun kertoja korjaa väärin kuullun nimen
   -- ("Aune" → "Aino") ja kohde on jo olemassa, tämä rivi jää paikalleen
@@ -95,6 +97,7 @@ CREATE TABLE subject (
 
 CREATE INDEX idx_subject_family_kind ON subject(family_id, kind);
 CREATE INDEX idx_subject_date        ON subject(family_id, date_start);
+CREATE INDEX idx_subject_seq         ON subject(family_id, seq);
 
 -- ---------------------------------------------------------------- muisto
 
@@ -114,11 +117,13 @@ CREATE TABLE memory (
 
   source        TEXT NOT NULL,        -- 'typed' | 'voice'
   created_at    INTEGER NOT NULL,
-  deleted_at    INTEGER
+  deleted_at    INTEGER,
+  seq           INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_memory_subject ON memory(subject_id, created_at);
 CREATE INDEX idx_memory_author  ON memory(author_id, created_at);
+CREATE INDEX idx_memory_seq     ON memory(family_id, seq);
 
 -- Muistossa mainitut kohteet. Tämä kudos on se mitä AI "yhdistelee":
 -- sama henkilö esiintyy kymmenessä muistossa eri kuvien alla.
@@ -144,11 +149,14 @@ CREATE TABLE relation (
   confirmed     INTEGER NOT NULL DEFAULT 0,
   confidence    REAL,
   created_at    INTEGER NOT NULL,
+  deleted_at    INTEGER,
+  seq           INTEGER NOT NULL DEFAULT 0,
   UNIQUE (from_subject, to_subject, kind)
 );
 
 CREATE INDEX idx_relation_from ON relation(from_subject);
 CREATE INDEX idx_relation_to   ON relation(to_subject);
+CREATE INDEX idx_relation_seq  ON relation(family_id, seq);
 
 -- ---------------------------------------------------------------- kysymykset
 
@@ -163,10 +171,13 @@ CREATE TABLE prompt_question (
   text          TEXT NOT NULL,
   status        TEXT NOT NULL DEFAULT 'open',  -- 'open'|'answered'|'dismissed'
   answered_memory_id TEXT REFERENCES memory(id),
-  created_at    INTEGER NOT NULL
+  created_at    INTEGER NOT NULL,
+  deleted_at    INTEGER,
+  seq           INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX idx_question_open ON prompt_question(family_id, status);
+CREATE INDEX idx_question_seq  ON prompt_question(family_id, seq);
 
 -- ---------------------------------------------------------------- kiintiöt
 

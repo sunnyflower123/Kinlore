@@ -7,6 +7,7 @@
 import { authenticate } from './auth'
 import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
 import { extract } from './extract'
+import { pull, push } from './sync'
 import { transcribe } from './transcribe'
 
 export interface Env {
@@ -116,6 +117,27 @@ export default {
 		if (url.pathname === '/family/invite' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			return json(await createInvite(env, session))
+		}
+
+		if (url.pathname === '/sync' && request.method === 'GET') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const since = Number(url.searchParams.get('since') ?? '0')
+			try {
+				return json(await pull(env, session, Number.isFinite(since) ? since : 0))
+			} catch (err) {
+				return failure(err, 'sync-pull')
+			}
+		}
+
+		if (url.pathname === '/sync' && request.method === 'POST') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const body = await readJSON<Parameters<typeof push>[2]>(request)
+			if (!body) return json({ error: 'invalid_json' }, 400)
+			try {
+				return json(await push(env, session, body))
+			} catch (err) {
+				return failure(err, 'sync-push')
+			}
 		}
 
 		if (url.pathname === '/family/invite' && request.method === 'DELETE') {

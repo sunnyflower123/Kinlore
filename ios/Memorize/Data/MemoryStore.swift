@@ -14,8 +14,19 @@ final class MemoryStore {
     private(set) var memories: [Memory] = []
     private(set) var questions: [FollowUpQuestion] = []
 
-    /// Kirjoittajan nimi. Korvautuu perheen jäsentiedolla kun kutsulinkit tulevat.
+    /// Kirjoittajan nimi. Perheessä tämä tulee jäsentiedoista.
     var authorName = "Minä"
+
+    /// Viimeisin palvelimelta saatu järjestysluku. Seuraava veto pyytää kaiken
+    /// tätä suuremman.
+    private(set) var syncSeq = 0
+
+    /// Lähtevä jono: paikallisesti muuttuneet rivit joita ei ole vielä työnnetty.
+    /// Erillinen joukko eikä mallin kenttä, jotta mallit pysyvät puhtaina ja
+    /// vastaavat sitä mitä palvelimelle lähetetään.
+    private(set) var dirtySubjects: Set<String> = []
+    private(set) var dirtyMemories: Set<String> = []
+    private(set) var dirtyQuestions: Set<String> = []
 
     private let fileURL: URL
 
@@ -74,22 +85,26 @@ final class MemoryStore {
         }
         let subject = Subject(kind: kind, title: name, confirmed: confirmed)
         subjects.append(subject)
+        dirtySubjects.insert(subject.id)
         save()
         return subject
     }
 
     func add(_ subject: Subject) {
         subjects.append(subject)
+        dirtySubjects.insert(subject.id)
         save()
     }
 
     func add(_ memory: Memory) {
         memories.append(memory)
+        dirtyMemories.insert(memory.id)
         save()
     }
 
     func add(questions newQuestions: [FollowUpQuestion]) {
         questions.append(contentsOf: newQuestions)
+        dirtyQuestions.formUnion(newQuestions.map(\.id))
         save()
     }
 
@@ -106,6 +121,7 @@ final class MemoryStore {
         if let dateHint, subjects[index].dateHint == nil {
             subjects[index].dateHint = dateHint
         }
+        dirtySubjects.insert(subjectID)
         save()
     }
 
@@ -141,9 +157,13 @@ final class MemoryStore {
             // osoittamaan tyhjään. Hautakivi osoitteella ratkaisee sen ja tekee
             // sulautuksesta myös peruttavan. Ks. docs/ARKKITEHTUURI.md §2.5.
             subjects[index].mergedInto = existing.id
+            dirtyMemories.formUnion(
+                memories.filter { $0.subjectID == existing.id }.map(\.id)
+            )
         } else {
             subjects[index].title = trimmed
         }
+        dirtySubjects.insert(subjectID)
         save()
     }
 
@@ -152,12 +172,14 @@ final class MemoryStore {
     func updateBody(memoryID: String, body: String) {
         guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
         memories[index].body = body
+        dirtyMemories.insert(memoryID)
         save()
     }
 
     func confirm(subjectID: String) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].confirmed = true
+        dirtySubjects.insert(subjectID)
         save()
     }
 
@@ -169,15 +191,93 @@ final class MemoryStore {
     func markAnswered(questionID: String) {
         guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
         questions[index].answered = true
+        dirtyQuestions.insert(questionID)
+        save()
+    }
+
+    // MARK: - Synkronointi
+    //
+    // Mutaatiot ovat täällä eivätkä laajennuksessa, koska ne koskevat samoja
+    // private(set)-kenttiä kuin muukin kirjoitus. Siirtomuodot ovat
+    // MemoryStore+Sync.swift:ssä: ne ovat sopimus palvelimen kanssa.
+
+    /// Työnnettävät rivit. Tyhjä hyötykuorma tarkoittaa ettei ole mitään
+    /// lähetettävää.
+    func pendingPayload() -> SyncPayload {
+        SyncPayload(
+            subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
+            memories: memories.filter { dirtyMemories.contains($0.id) }.map(\.dto),
+            questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto)
+        )
+    }
+
+    var hasPendingChanges: Bool {
+        !dirtySubjects.isEmpty || !dirtyMemories.isEmpty || !dirtyQuestions.isEmpty
+    }
+
+    /// Kuittaa työnnetyt rivit. Vain juuri lähetetyt: jos käyttäjä ehti kirjoittaa
+    /// pyynnön aikana, uusi muutos jää jonoon eikä katoa.
+    func clearPending(_ payload: SyncPayload) {
+        dirtySubjects.subtract(payload.subjects.map(\.id))
+        dirtyMemories.subtract(payload.memories.map(\.id))
+        dirtyQuestions.subtract(payload.questions.map(\.id))
+        save()
+    }
+
+    /// Soveltaa palvelimelta saadut rivit.
+    ///
+    /// Paikallisesti muuttunut rivi ohitetaan: se on vielä jonossa, ja etäversio
+    /// ylikirjoittaisi juuri kerrotun muiston. Se päätyy palvelimelle
+    /// seuraavalla työnnöllä ja voittaa silloin suuremmalla järjestysluvulla.
+    func applyRemote(_ reply: SyncPullReply) {
+        for dto in reply.subjects {
+            guard !dirtySubjects.contains(dto.id), let incoming = Subject(dto: dto) else { continue }
+            if let index = subjects.firstIndex(where: { $0.id == dto.id }) {
+                subjects[index] = incoming
+            } else {
+                subjects.append(incoming)
+            }
+        }
+
+        for dto in reply.memories {
+            guard !dirtyMemories.contains(dto.id) else { continue }
+            let incoming = Memory(dto: dto)
+            if let index = memories.firstIndex(where: { $0.id == dto.id }) {
+                memories[index] = incoming
+            } else {
+                memories.append(incoming)
+            }
+        }
+
+        for dto in reply.questions {
+            guard !dirtyQuestions.contains(dto.id) else { continue }
+            let incoming = FollowUpQuestion(dto: dto)
+            if let index = questions.firstIndex(where: { $0.id == dto.id }) {
+                questions[index] = incoming
+            } else {
+                questions.append(incoming)
+            }
+        }
+
+        advance(seq: reply.seq)
+    }
+
+    func advance(seq: Int) {
+        guard seq > syncSeq else { return }
+        syncSeq = seq
         save()
     }
 
     // MARK: - Levy
 
-    private struct Snapshot: Codable {
+    struct Snapshot: Codable {
         var subjects: [Subject]
         var memories: [Memory]
         var questions: [FollowUpQuestion]
+        var syncSeq: Int = 0
+        var dirtySubjects: Set<String> = []
+        var dirtyMemories: Set<String> = []
+        var dirtyQuestions: Set<String> = []
     }
 
     private func load() {
@@ -187,10 +287,24 @@ final class MemoryStore {
         subjects = snapshot.subjects
         memories = snapshot.memories
         questions = snapshot.questions
+        syncSeq = snapshot.syncSeq
+        // Lähtevä jono säilyy levyllä: offline tehty muisto ei saa jäädä
+        // työntämättä vain siksi että sovellus suljettiin välissä.
+        dirtySubjects = snapshot.dirtySubjects
+        dirtyMemories = snapshot.dirtyMemories
+        dirtyQuestions = snapshot.dirtyQuestions
     }
 
-    private func save() {
-        let snapshot = Snapshot(subjects: subjects, memories: memories, questions: questions)
+    func save() {
+        let snapshot = Snapshot(
+            subjects: subjects,
+            memories: memories,
+            questions: questions,
+            syncSeq: syncSeq,
+            dirtySubjects: dirtySubjects,
+            dirtyMemories: dirtyMemories,
+            dirtyQuestions: dirtyQuestions
+        )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: fileURL, options: .atomic)
     }
