@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Medaljonki ja ääni">
   <title>Medaljonki ja ääni</title>
-  <rect width="512" height="512" fill="#2E1D16"/>
-  <g transform="translate(256 256) scale(0.9) translate(-256 -256)">
-    <path d="M233.4 133.6 A32 32 0 1 1 278.6 133.6" fill="none" stroke="#FBF1E2" stroke-width="20" stroke-linecap="round"/>
-    <circle cx="256" cy="283" r="146" fill="none" stroke="#FBF1E2" stroke-width="28"/>
+  <rect width="512" height="512" fill="#FBF1E2"/>
+  <g transform="translate(256 256) scale(0.88) translate(-256 -255.5)">
+    <circle cx="256" cy="94" r="34" fill="none" stroke="#241A14" stroke-width="22"/>
+    <circle cx="256" cy="294" r="168" fill="#241A14"/>
     <g fill="#FBF1E2">
-      <rect x="197" y="251" width="26" height="64" rx="13"/>
-      <rect x="289" y="243" width="26" height="80" rx="13"/>
+      <rect x="166" y="246" width="48" height="96" rx="24"/>
+      <rect x="298" y="229" width="48" height="130" rx="24"/>
     </g>
-    <rect x="243" y="223" width="26" height="120" rx="13" fill="#E8A33C"/>
+    <rect x="232" y="200" width="48" height="188" rx="24" fill="#E8A33C"/>
   </g>
 </svg>

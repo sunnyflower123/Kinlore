@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Puhuva kuva">
   <title>Puhuva kuva</title>
-  <rect width="512" height="512" fill="#2E1D16"/>
+  <rect width="512" height="512" fill="#FBF1E2"/>
   <g transform="translate(256 256) scale(0.82) translate(-256 -270)">
-    <path d="M120 88 H392 A56 56 0 0 1 448 144 V328 A56 56 0 0 1 392 384 H200 L128 452 L148 384 H120 A56 56 0 0 1 64 328 V144 A56 56 0 0 1 120 88 Z" fill="#FBF1E2"/>
-    <g fill="#2E1D16">
+    <path d="M120 88 H392 A56 56 0 0 1 448 144 V328 A56 56 0 0 1 392 384 H200 L128 452 L148 384 H120 A56 56 0 0 1 64 328 V144 A56 56 0 0 1 120 88 Z" fill="#241A14"/>
+    <g fill="#FBF1E2">
       <rect x="130" y="206" width="28" height="60" rx="14"/>
       <rect x="186" y="170" width="28" height="132" rx="14"/>
-      <rect x="242" y="146" width="28" height="180" rx="14"/>
       <rect x="298" y="182" width="28" height="108" rx="14"/>
       <rect x="354" y="202" width="28" height="68" rx="14"/>
     </g>
+    <rect x="242" y="146" width="28" height="180" rx="14" fill="#E8A33C"/>
   </g>
 </svg>

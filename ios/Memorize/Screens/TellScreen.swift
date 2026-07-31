@@ -7,6 +7,8 @@ struct TellScreen: View {
     /// Kun ruutu avataan kuvasta tai henkilöstä, muisto kiinnittyy siihen.
     /// Nil = vapaa sanelu, jolloin kohde päätellään puheesta.
     var target: Subject?
+    /// Kun ruutu avataan avoimesta kysymyksestä, se kuitataan tallennuksessa.
+    var question: FollowUpQuestion?
 
     @State private var model: TellViewModel?
 
@@ -27,7 +29,8 @@ struct TellScreen: View {
                 store: store,
                 transcription: AppServices.transcription(),
                 extraction: AppServices.extraction(),
-                target: target
+                target: target,
+                question: question
             )
             #if DEBUG
             // Kuvausapu: `-screen kirjoita` avaa suoraan kirjoitusnäkymän.
@@ -76,7 +79,17 @@ struct TellScreen: View {
 // MARK: - Lepotila
 
 private struct IdleView: View {
+    @Environment(MemoryStore.self) private var store
     let model: TellViewModel
+
+    @State private var answering: FollowUpQuestion?
+
+    /// Avoimet kysymykset näkyvät vain vapaassa sanelussa. Kuvasta tai
+    /// henkilöstä kerrottaessa ruudulla on jo aihe, eikä siihen pidä tarjota
+    /// kilpailevaa.
+    private var openQuestions: [FollowUpQuestion] {
+        model.target == nil ? store.openQuestions(limit: 2) : []
+    }
 
     private var title: String {
         guard let target = model.target else { return "Kerro mitä muistat" }
@@ -108,6 +121,34 @@ private struct IdleView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
+            // Avoin kysymys on syy palata sovellukseen. Se on myös helpompi
+            // aloitus kuin tyhjä nappi: iäkkään on vaikea kertoa "jotain",
+            // mutta helppo vastata kysymykseen.
+            if !openQuestions.isEmpty {
+                VStack(spacing: 10) {
+                    Text("Tai vastaa aiempaan kysymykseen")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(openQuestions) { question in
+                        Button { answering = question } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "questionmark.circle.fill")
+                                    .foregroundStyle(.tint)
+                                Text(question.text)
+                                    .elderBody()
+                                    .multilineTextAlignment(.leading)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(14)
+                            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 4)
+            }
+
             // Puhuminen on ensisijainen tapa, mutta ei ainoa: kuvia lisäävä
             // lapsenlapsi kirjoittaa usein mieluummin, eikä bussissa tai
             // sairaalahuoneessa voi sanella.
@@ -122,6 +163,19 @@ private struct IdleView: View {
             Spacer()
         }
         .padding(Elder.screenPadding)
+        .sheet(item: $answering) { question in
+            NavigationStack {
+                TellScreen(
+                    target: question.subjectID.flatMap { store.subject(id: $0) },
+                    question: question
+                )
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Sulje") { answering = nil }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -318,7 +372,7 @@ private struct ResultView: View {
                 header
 
                 if let body = model.result?.body {
-                    MemoryCard(text: body, duration: model.savedAudioDuration)
+                    MemoryCard(text: body, memory: model.savedMemory)
                 }
 
                 if !model.proposals.isEmpty {
@@ -480,22 +534,17 @@ private struct UpsellCard: View {
 private struct MemoryCard: View {
     let text: String
     /// Nil kun muisto kirjoitettiin — silloin ei ole ääntä kuunneltavaksi.
-    let duration: TimeInterval?
+    let memory: Memory?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(text)
                 .elderBody()
 
-            if let duration {
-                // Alkuperäinen ääni on soitettavissa muiston vierestä: se ei ole
-                // välivaihe kohti tekstiä vaan osa lopputuotetta.
-                Label(
-                    "Kuuntele omalla äänellä · \(Int(duration)) s",
-                    systemImage: "play.circle.fill"
-                )
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.tint)
+            // Alkuperäinen ääni on soitettavissa heti muiston vierestä: se ei
+            // ole välivaihe kohti tekstiä vaan osa lopputuotetta.
+            if let memory, memory.audioFilename != nil || memory.audioR2Key != nil {
+                MemoryPlaybackButton(memory: memory)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

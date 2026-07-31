@@ -48,10 +48,22 @@ struct QuestionDTO: Codable {
     var seq: Int?
 }
 
+struct RelationDTO: Codable {
+    var id: String
+    var from_subject: String
+    var to_subject: String
+    var kind: String
+    var confirmed: Int
+    var created_at: Double
+    var deleted_at: Double?
+    var seq: Int?
+}
+
 struct SyncPayload: Codable {
     var subjects: [SubjectDTO] = []
     var memories: [MemoryDTO] = []
     var questions: [QuestionDTO] = []
+    var relations: [RelationDTO] = []
 }
 
 struct SyncPullReply: Codable {
@@ -60,6 +72,8 @@ struct SyncPullReply: Codable {
     var subjects: [SubjectDTO]
     var memories: [MemoryDTO]
     var questions: [QuestionDTO]
+    /// Vanhempi palvelin ei lähetä tätä, joten oletus pitää olla.
+    var relations: [RelationDTO] = []
 }
 
 // MARK: - Muunnokset
@@ -143,6 +157,33 @@ extension Memory {
             source: MemorySource(rawValue: dto.source) ?? .typed,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             mentionedSubjectIDs: dto.mentions ?? []
+        )
+    }
+}
+
+extension Relation {
+    var dto: RelationDTO {
+        RelationDTO(
+            id: id,
+            from_subject: fromSubjectID,
+            to_subject: toSubjectID,
+            kind: kind.rawValue,
+            confirmed: confirmed ? 1 : 0,
+            created_at: createdAt.timeIntervalSince1970,
+            deleted_at: nil,
+            seq: nil
+        )
+    }
+
+    init?(dto: RelationDTO) {
+        guard let kind = RelationKind(rawValue: dto.kind) else { return nil }
+        self.init(
+            id: dto.id,
+            fromSubjectID: dto.from_subject,
+            toSubjectID: dto.to_subject,
+            kind: kind,
+            confirmed: dto.confirmed == 1,
+            createdAt: Date(timeIntervalSince1970: dto.created_at)
         )
     }
 }

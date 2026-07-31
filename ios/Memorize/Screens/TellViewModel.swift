@@ -40,6 +40,13 @@ final class TellViewModel {
     private(set) var savedAudioDuration: TimeInterval?
     private(set) var savedMemoryID: String?
 
+    /// Tallennettu muisto sellaisenaan. Tulosruutu tarvitsee sen äänen
+    /// toistoon, ei pelkkää kestoa.
+    var savedMemory: Memory? {
+        guard let savedMemoryID else { return nil }
+        return store.memories.first { $0.id == savedMemoryID }
+    }
+
     /// Kertojan kirjoittamat nimet, avaimena kohteen tunniste.
     /// Puheentunnistus erehtyy erisnimissä noin joka kolmannessa, ja tämä on
     /// ainoa hetki jolloin virhe on korjattavissa — kertoja muistaa vielä mitä
@@ -67,17 +74,23 @@ final class TellViewModel {
     /// Kun muisto kerrotaan tietystä kuvasta tai henkilöstä, se kiinnittyy
     /// siihen. Vapaassa sanelussa tämä on nil ja kohde päätellään puheesta.
     let target: Subject?
+    /// Kysymys johon ollaan vastaamassa. Merkitään vastatuksi vasta kun muisto
+    /// on oikeasti tallennettu — avoin kysymys on syy palata sovellukseen, eikä
+    /// sitä saa kuitata pelkästä napautuksesta.
+    let question: FollowUpQuestion?
 
     init(
         store: MemoryStore,
         transcription: TranscriptionService,
         extraction: ExtractionService,
-        target: Subject? = nil
+        target: Subject? = nil,
+        question: FollowUpQuestion? = nil
     ) {
         self.store = store
         self.transcription = transcription
         self.extraction = extraction
         self.target = target
+        self.question = question
     }
 
     // MARK: - Nauhoitus
@@ -180,6 +193,14 @@ final class TellViewModel {
         store.add(memory)
         savedAudioDuration = duration
         savedMemoryID = memory.id
+        markQuestionAnswered()
+    }
+
+    /// Kysymys kuitataan vasta tallennuksen jälkeen. Myös ilman purkua
+    /// tallennettu ääni vastaa kysymykseen — teksti tulee myöhemmin.
+    private func markQuestionAnswered() {
+        guard let question else { return }
+        store.markAnswered(questionID: question.id)
     }
 
     private func save(
@@ -239,6 +260,7 @@ final class TellViewModel {
         }
         store.add(questions: questions)
         newQuestions = questions
+        markQuestionAnswered()
     }
 
     /// Etsii tai luo kohteen johon muisto kuuluu.

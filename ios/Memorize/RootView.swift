@@ -177,6 +177,11 @@ struct SubjectDetailScreen: View {
                 .listRowBackground(Color.clear)
             }
 
+            // Suku vain henkilöille: kuvalla ja tapahtumalla ei ole sukulaisia.
+            if subject.kind == .person {
+                RelationsSection(subject: subject)
+            }
+
             let memories = store.memories(for: subject.id)
             if memories.isEmpty {
                 Section {
@@ -255,17 +260,16 @@ private struct MemoryRow: View {
                     .elderBody()
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Text(memory.authorName)
                     .font(.caption.weight(.medium))
-                if memory.source == .voice, let duration = memory.audioDuration {
-                    // Alkuperäinen ääni on osa lopputuotetta, ei välivaihe.
-                    Label("\(Int(duration)) s", systemImage: "play.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.tint)
+                    .foregroundStyle(.secondary)
+
+                // Alkuperäinen ääni on osa lopputuotetta, ei välivaihe.
+                if memory.audioFilename != nil || memory.audioR2Key != nil {
+                    MemoryPlaybackButton(memory: memory)
                 }
             }
-            .foregroundStyle(.secondary)
         }
         .padding(.vertical, 6)
     }

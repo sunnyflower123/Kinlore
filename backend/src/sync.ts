@@ -53,10 +53,22 @@ export type QuestionRow = {
 	seq: number
 }
 
+export type RelationRow = {
+	id: string
+	from_subject: string
+	to_subject: string
+	kind: string
+	confirmed: number
+	created_at: number
+	deleted_at: number | null
+	seq: number
+}
+
 type PushPayload = {
 	subjects?: Partial<SubjectRow>[]
 	memories?: Partial<MemoryRow>[]
 	questions?: Partial<QuestionRow>[]
+	relations?: Partial<RelationRow>[]
 }
 
 const now = () => Math.floor(Date.now() / 1000)
@@ -131,7 +143,19 @@ export async function pull(env: Env, session: Session, since: number) {
 		for (const memory of memoryRows) memory.mentions = byMemory.get(memory.id) ?? []
 	}
 
-	const rows = [...(subjects.results ?? []), ...memoryRows, ...(questions.results ?? [])]
+	const relations = await env.DB.prepare(
+		`SELECT id, from_subject, to_subject, kind, confirmed, created_at, deleted_at, seq
+		 FROM relation WHERE family_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
+	)
+		.bind(family, since, MAX_ROWS)
+		.all<RelationRow>()
+
+	const rows = [
+		...(subjects.results ?? []),
+		...memoryRows,
+		...(questions.results ?? []),
+		...(relations.results ?? []),
+	]
 	const highest = rows.reduce((max, row) => Math.max(max, row.seq), since)
 
 	return {
@@ -140,10 +164,12 @@ export async function pull(env: Env, session: Session, since: number) {
 		more:
 			(subjects.results?.length ?? 0) === MAX_ROWS ||
 			memoryRows.length === MAX_ROWS ||
-			(questions.results?.length ?? 0) === MAX_ROWS,
+			(questions.results?.length ?? 0) === MAX_ROWS ||
+			(relations.results?.length ?? 0) === MAX_ROWS,
 		subjects: subjects.results ?? [],
 		memories: memoryRows,
 		questions: questions.results ?? [],
+		relations: relations.results ?? [],
 	}
 }
 
@@ -260,6 +286,34 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				question.status ?? 'open',
 				question.created_at ?? timestamp,
 				question.deleted_at ?? null,
+				seq,
+			),
+		)
+	}
+
+	for (const relation of (payload.relations ?? []).slice(0, MAX_ROWS)) {
+		if (!relation.id || !relation.from_subject || !relation.to_subject || !relation.kind) continue
+		statements.push(
+			env.DB.prepare(
+				`INSERT INTO relation (id, family_id, from_subject, to_subject, kind,
+				                       confirmed, created_at, deleted_at, seq)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 ON CONFLICT(id) DO UPDATE SET
+				   -- Vahvistus on yksisuuntainen myös suhteille: vanha laite ei
+				   -- saa palauttaa vahvistettua sukulaisuutta arvaukseksi.
+				   confirmed = MAX(relation.confirmed, excluded.confirmed),
+				   deleted_at = COALESCE(excluded.deleted_at, relation.deleted_at),
+				   seq = excluded.seq
+				 WHERE relation.family_id = excluded.family_id`,
+			).bind(
+				relation.id,
+				family,
+				relation.from_subject,
+				relation.to_subject,
+				relation.kind,
+				relation.confirmed ?? 0,
+				relation.created_at ?? timestamp,
+				relation.deleted_at ?? null,
 				seq,
 			),
 		)

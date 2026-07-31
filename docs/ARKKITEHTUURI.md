@@ -16,11 +16,12 @@ Rehellinen inventaario, ei toivelista:
 | `subject`, `memory`, `mention`, `prompt_question` | Käytössä |
 | Identiteetti, perhe, kutsulinkit | **Valmis ja testattu** |
 | Synkronointi (`/sync` veto ja työntö) | **Valmis ja testattu** |
-| `relation`, `usage_counter`, `report`, `block` | **Skeemassa, ei käytössä** |
 | Media R2:een (`/media`) | **Valmis ja testattu** |
 | Kiintiöt (`/usage`, rajat palvelimella) | **Valmis ja testattu** |
 | RevenueCat, jaettu perhe-entitlement | **Valmis ja testattu** |
-| Moderointi (`report`, `block`) | Ei aloitettu |
+| Äänen toisto, avoimet kysymykset, suhteet | **Valmis ja testattu** |
+| Moderointi (`report`, `block`) | Ei aloitettu — PLAN.md §5 leikkauslistalla |
+| Repo englanniksi, demovideo | Jäljellä |
 
 Kriittinen polku on nyt auki: perhe ja synkronointi toimivat, joten media,
 kiintiöt ja moderointi voidaan rakentaa niiden päälle. Jäljellä oleva työ on
@@ -330,8 +331,9 @@ Järjestyksessä, tärkein ensin:
    Vahvistamaton suhde näkyy ehdotuksena.
 6. **Paywall** — RevenueCatin oma paywall riittää, ei omaa toteutusta.
 7. **Asetukset** — vienti, tilin poisto, raportointi ja esto.
-8. **Sukupuu** — piirretty graafi. **Ansa.** Tehdään vain jos kaikki muu on
-   valmista ja kiillotettua.
+8. **Sukupuu** — piirretty graafi. **Ansa.** Suhteet ovat nyt listoina
+   henkilökortissa: sama tieto, toimii suurimmalla tekstikoolla ja on
+   VoiceOverilla luettavissa. Graafi tehdään vain jos kaikki muu on valmista.
 
 ## 9. Rakennusjärjestys
 

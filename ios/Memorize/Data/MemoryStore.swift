@@ -13,6 +13,7 @@ final class MemoryStore {
     private(set) var subjects: [Subject] = []
     private(set) var memories: [Memory] = []
     private(set) var questions: [FollowUpQuestion] = []
+    private(set) var relations: [Relation] = []
 
     /// Kirjoittajan nimi. Perheessä tämä tulee jäsentiedoista.
     var authorName = "Minä"
@@ -27,6 +28,7 @@ final class MemoryStore {
     private(set) var dirtySubjects: Set<String> = []
     private(set) var dirtyMemories: Set<String> = []
     private(set) var dirtyQuestions: Set<String> = []
+    private(set) var dirtyRelations: Set<String> = []
 
     private let fileURL: URL
 
@@ -207,12 +209,14 @@ final class MemoryStore {
         SyncPayload(
             subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
             memories: memories.filter { dirtyMemories.contains($0.id) }.map(\.dto),
-            questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto)
+            questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto),
+            relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto)
         )
     }
 
     var hasPendingChanges: Bool {
         !dirtySubjects.isEmpty || !dirtyMemories.isEmpty || !dirtyQuestions.isEmpty
+            || !dirtyRelations.isEmpty
     }
 
     /// Kuittaa työnnetyt rivit. Vain juuri lähetetyt: jos käyttäjä ehti kirjoittaa
@@ -221,6 +225,7 @@ final class MemoryStore {
         dirtySubjects.subtract(payload.subjects.map(\.id))
         dirtyMemories.subtract(payload.memories.map(\.id))
         dirtyQuestions.subtract(payload.questions.map(\.id))
+        dirtyRelations.subtract(payload.relations.map(\.id))
         save()
     }
 
@@ -259,12 +264,84 @@ final class MemoryStore {
             }
         }
 
+        for dto in reply.relations {
+            guard !dirtyRelations.contains(dto.id), let incoming = Relation(dto: dto) else { continue }
+            if let index = relations.firstIndex(where: { $0.id == dto.id }) {
+                relations[index] = incoming
+            } else {
+                relations.append(incoming)
+            }
+        }
+
         advance(seq: reply.seq)
     }
 
     func advance(seq: Int) {
         guard seq > syncSeq else { return }
         syncSeq = seq
+        save()
+    }
+
+    // MARK: - Sukulaisuus
+
+    /// Henkilön suhteet ryhmiteltyinä siten kuin ihminen ne ajattelee.
+    ///
+    /// Symmetriset suhteet luetaan molempiin suuntiin, `parentOf` suunnattuna:
+    /// sama rivi tarkoittaa toiselle vanhempaa ja toiselle lasta.
+    func relatives(of subjectID: String, kind: RelationKind, asParent: Bool = false) -> [Subject] {
+        relations.compactMap { relation -> Subject? in
+            guard relation.kind == kind else { return nil }
+            let otherID: String?
+            if kind.isSymmetric {
+                otherID = relation.fromSubjectID == subjectID ? relation.toSubjectID
+                    : relation.toSubjectID == subjectID ? relation.fromSubjectID : nil
+            } else if asParent {
+                // Etsitään tämän henkilön lapsia: hän on `from`.
+                otherID = relation.fromSubjectID == subjectID ? relation.toSubjectID : nil
+            } else {
+                otherID = relation.toSubjectID == subjectID ? relation.fromSubjectID : nil
+            }
+            guard let otherID else { return nil }
+            return subject(id: otherID)
+        }
+    }
+
+    func relation(between a: String, and b: String, kind: RelationKind) -> Relation? {
+        relations.first { relation in
+            guard relation.kind == kind else { return false }
+            if kind.isSymmetric {
+                return (relation.fromSubjectID == a && relation.toSubjectID == b)
+                    || (relation.fromSubjectID == b && relation.toSubjectID == a)
+            }
+            return relation.fromSubjectID == a && relation.toSubjectID == b
+        }
+    }
+
+    /// Lisää suhteen, tai vahvistaa olemassa olevan ehdotuksen.
+    @discardableResult
+    func addRelation(from: String, to: String, kind: RelationKind, confirmed: Bool = true) -> Relation? {
+        guard from != to else { return nil }
+        if let existing = relation(between: from, and: to, kind: kind) {
+            if confirmed { confirmRelation(id: existing.id) }
+            return existing
+        }
+        let relation = Relation(fromSubjectID: from, toSubjectID: to, kind: kind, confirmed: confirmed)
+        relations.append(relation)
+        dirtyRelations.insert(relation.id)
+        save()
+        return relation
+    }
+
+    func confirmRelation(id: String) {
+        guard let index = relations.firstIndex(where: { $0.id == id }) else { return }
+        relations[index].confirmed = true
+        dirtyRelations.insert(id)
+        save()
+    }
+
+    func removeRelation(id: String) {
+        relations.removeAll { $0.id == id }
+        dirtyRelations.remove(id)
         save()
     }
 
@@ -319,6 +396,8 @@ final class MemoryStore {
         var dirtySubjects: Set<String> = []
         var dirtyMemories: Set<String> = []
         var dirtyQuestions: Set<String> = []
+        var relations: [Relation] = []
+        var dirtyRelations: Set<String> = []
     }
 
     private func load() {
@@ -334,6 +413,8 @@ final class MemoryStore {
         dirtySubjects = snapshot.dirtySubjects
         dirtyMemories = snapshot.dirtyMemories
         dirtyQuestions = snapshot.dirtyQuestions
+        relations = snapshot.relations
+        dirtyRelations = snapshot.dirtyRelations
     }
 
     func save() {
@@ -344,7 +425,9 @@ final class MemoryStore {
             syncSeq: syncSeq,
             dirtySubjects: dirtySubjects,
             dirtyMemories: dirtyMemories,
-            dirtyQuestions: dirtyQuestions
+            dirtyQuestions: dirtyQuestions,
+            relations: relations,
+            dirtyRelations: dirtyRelations
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: fileURL, options: .atomic)

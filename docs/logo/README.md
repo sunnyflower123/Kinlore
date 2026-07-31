@@ -1,51 +1,75 @@
 # Tunnus
 
-Kolme konseptia. Suositus on **A — vuosirenkaat ja aukko**.
+Valittu merkki on **C — medaljonki**. Umpinainen kiekko, jonka sisällä on
+ääniaalto, ja päällä ripustin.
 
 Merkki on tarkoituksella *nimetön*: `Memorize` on työnimi (PLAN.md §10), ja
-renkaat toimivat myös nimen vaihduttua. Vain `lockup.svg` sisältää nimen.
+medaljonki toimii myös nimen vaihduttua. Vain `lockup.svg` sisältää nimen.
 
-## A — vuosirenkaat ja aukko
+## Miksi medaljonki
 
-Puun vuosirenkaat, joissa jokainen rengas on eri paksuinen — vuodet eivät ole
-samanmittaisia. Renkaat luetaan myös ääniaaltoina, jotka lähtevät keskipisteestä.
-Keskipiste on kertoja, keltainen ja elävä.
+Medaljonki on esine jota isoäiti on pitänyt kaulassaan vuosikymmeniä ja joka
+aukeaa näyttämään kasvot. Se on sovelluksen lupaus esineenä: perheen muisto,
+jota kannetaan mukana. Sisällä on ääniaalto eikä valokuva, koska sääntö 3 sanoo
+että alkuperäinen ääni säilytetään aina — puhuja ei ehkä ole enää
+kysyttävissä. Keskimmäinen palkki on meripihkan värinen: se on elävä ääni.
 
-Kiila renkaiden läpi on **aukko**, ei virhe. Suunnitteluperiaate 5 sanoo:
-*aukot näytetään, tyhjä henkilökortti on kutsu.* Tunnuksessa on reikä, ja se on
-osa muotoa.
+## Miksi A hylättiin
+
+Konsepti A (vuosirenkaat, `concept-a-rings.svg`) oli ensimmäinen suositus.
+Se hylättiin vasta kun ikoni nähtiin simulaattorin kotinäytöllä, ja kahdesta
+syystä:
+
+1. **Törmäys.** ConnectFulin ja Hetkion ikonit ovat molemmat katkaistu rengas
+   ja keskipiste. Vuosirenkaat olivat sama idea käänteisin värein, eikä
+   Memorize erottunut omaksi sovelluksekseen samalla ruudulla.
+2. **Liquid Glass.** iOS 26 piirtää ikonin päälle heijastuksen, joka tummentaa
+   ja mudentaa tumman taustan. Espresso meni lähes mustaksi ja pergamentti
+   himmeni harmaaksi. Vaalea tausta selviää samasta käsittelystä kirkkaana.
+
+Kumpaakaan ei olisi voinut päätellä lähdeaineistosta. **Ikoni pitää katsoa
+kotinäytöltä ennen kuin se on valmis** — sama sääntö kuin ruudun katsominen
+suurimmalla tekstikoolla.
+
+Tiedosto on jätetty repoon, jotta perustelu on jäljitettävissä.
 
 ## Väripaletti
 
 | | Hex | Käyttö |
 |---|---|---|
-| Espresso | `#2E1D16` | Ikonin tausta |
-| Pergamentti | `#FBF1E2` | Merkki tummalla |
-| Meripihka | `#E8A33C` | Keskipiste ikonissa |
-| Terrakotta | `#C4552C` | Keskipiste vaalealla |
-| Muste | `#241A14` | Merkki ja teksti vaalealla |
+| Pergamentti | `#FBF1E2` | Ikonin tausta |
+| Muste | `#241A14` | Merkki ja teksti |
+| Meripihka | `#E8A33C` | Keskimmäinen palkki ikonissa |
+| Terrakotta | `#C4552C` | Keskimmäinen palkki lockupissa |
+| Espresso | `#2E1D16` | Varalla tummiin pintoihin |
 
-Pergamentti espresson päällä on kontrastisuhteeltaan 14:1, meripihka 6,9:1.
-Molemmat ylittävät WCAG AA:n reilusti — ensisijainen käyttäjä on 80-vuotias,
-eikä tunnus ole poikkeus siitä säännöstä.
+Muste pergamentin päällä on 14:1, meripihka musteen päällä 7,3:1. Luvut ovat
+lähdeaineistosta; käyttöjärjestelmän oma käsittely muuttaa lopputulosta, ks.
+yllä. Ensisijainen käyttäjä on 80-vuotias, eikä tunnus ole poikkeus siitä
+säännöstä.
 
 ## Tiedostot
 
 | Tiedosto | Mihin |
 |---|---|
-| `concept-a-rings.svg` | Suositus, ikonimuodossa (512, täysi tausta) |
-| `concept-b-bubble.svg` | Vaihtoehto: puhuva kuva |
-| `concept-c-locket.svg` | Vaihtoehto: medaljonki |
+| `concept-c-locket.svg` | Valittu merkki, ikonimuodossa (512, täysi tausta) |
+| `icon-tinted.svg` | Sävytetty variantti iOS 18+ (harmaasävy, läpinäkyvä) |
 | `mark-mono.svg` | Pelkkä merkki, `currentColor` — README, favicon, UI |
 | `lockup.svg` | Merkki + nimi vaakasuunnassa |
+| `concept-b-bubble.svg` | Vaihtoehto: puhuva kuva |
+| `concept-a-rings.svg` | Hylätty, ks. yllä |
 
 ## Vienti
 
-Sovelluksessa ei ole vielä `.xcassets`-luetteloa. 1024×1024 PNG ikonia varten:
+Ikoni on kytketty: `ios/Memorize/Assets.xcassets/AppIcon.appiconset`.
+Kun SVG muuttuu, PNG:t generoidaan uudelleen:
 
 ```bash
-qlmanage -t -s 1024 -o . docs/logo/concept-a-rings.svg
+qlmanage -t -s 1024 -o . docs/logo/concept-c-locket.svg
 ```
+
+Sävytetty variantti on erillinen tiedosto, koska ilman sitä iOS tekee
+sävytetyn version automaattisesti ja lopputulos on harmaa möykky.
 
 `lockup.svg` käyttää järjestelmän serif-fonttia. Ennen kuin nimi menee videoon
 tai READMEen, teksti pitää muuttaa poluiksi — muuten se renderöityy eri fontilla

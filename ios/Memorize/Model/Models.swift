@@ -129,6 +129,42 @@ struct Memory: Identifiable, Codable, Hashable {
     }
 }
 
+// MARK: - Sukulaisuus
+
+/// Suhteen laji.
+///
+/// `parentOf` on suunnattu ja luetaan `from → to`. Puoliso ja sisarus ovat
+/// symmetrisiä: ne tallennetaan kertaalleen ja luetaan molempiin suuntiin,
+/// jottei sama suhde synny kahdesti eri päin.
+enum RelationKind: String, Codable, CaseIterable {
+    case parentOf = "parent_of"
+    case spouseOf = "spouse_of"
+    case siblingOf = "sibling_of"
+
+    var isSymmetric: Bool { self != .parentOf }
+
+    /// Miten suhde nimetään kun sitä lisätään: "X on tämän henkilön ___".
+    var addLabel: String {
+        switch self {
+        case .parentOf: "Vanhempi"
+        case .spouseOf: "Puoliso"
+        case .siblingOf: "Sisarus"
+        }
+    }
+}
+
+struct Relation: Identifiable, Codable, Hashable {
+    var id: String = UUID().uuidString
+    var fromSubjectID: String
+    var toSubjectID: String
+    var kind: RelationKind
+    /// Tekoälyn päättelemä suhde syntyy vahvistamattomana. Vahvistamaton ei näy
+    /// sukupuussa faktana — väärä sukulaisuussuhde on pahempi kuin puuttuva,
+    /// koska kukaan ei myöhemmin tiedä että se oli arvaus.
+    var confirmed: Bool = false
+    var createdAt: Date = .now
+}
+
 // MARK: - Jatkokysymys
 
 /// Sekä taikahetken loppuosa että retention-moottori: avoin kysymys on syy

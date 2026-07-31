@@ -6,6 +6,8 @@ struct MemorizeApp: App {
     /// toteutuksella jakson C lopussa — näkymät eivät tiedä eroa.
     @State private var store = MemoryStore()
     @State private var session = Session()
+    /// Yksi soitin koko sovellukselle: kaksi yhtäaikaista ääntä olisi sekaannus.
+    @State private var player = AudioPlayer()
     @State private var sync: SyncEngine?
 
     @Environment(\.scenePhase) private var scenePhase
@@ -18,6 +20,7 @@ struct MemorizeApp: App {
             content
                 .environment(store)
                 .environment(session)
+                .environment(player)
                 .task {
                     // Moottori tarvitsee molemmat, joten se syntyy vasta täällä.
                     if sync == nil { sync = SyncEngine(store: store, session: session) }
