@@ -49,7 +49,17 @@ targets:
       path: Memorize/Info.plist
       properties:
         CFBundleDisplayName: Memorize
-        UILaunchScreen: {}
+        # An empty launch screen meant the app opened on a white flash. Parchment
+        # makes the first frame belong to the app — it is also the first frame of
+        # the demo video.
+        #
+        # Colour only, no UIImageName: iOS draws the launch image on an opaque
+        # white plate, which showed as a white card behind the mark. A transparent
+        # PNG and an opaque parchment one both came out white. A splash screen
+        # holding the mark was the other option and was rejected: making an
+        # 80-year-old wait to admire a logo is the opposite of this app.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         # Portrait only: the primary user holds the phone in one hand, and
         # landscape adds nothing for this content.
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]

@@ -66,11 +66,31 @@ The icon is wired up: `ios/Memorize/Assets.xcassets/AppIcon.appiconset`.
 When the SVG changes, regenerate the PNGs:
 
 ```bash
-qlmanage -t -s 1024 -o . docs/logo/concept-c-locket.svg
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/concept-c-locket.svg ios/Memorize/Assets.xcassets/AppIcon.appiconset/icon-1024.png 1024
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/icon-tinted.svg ios/Memorize/Assets.xcassets/AppIcon.appiconset/icon-1024-tinted.png 1024
 ```
 
-The tinted variant is a separate file, because without it iOS generates a tinted
-version automatically and the result is a grey blob.
+Do not use `qlmanage -t` for this. Quick Look composites onto white, so the
+tinted variant shipped as an opaque white square rather than a transparent
+greyscale mark. Every preview looked correct; the bug only surfaced when the
+pixels were read back. `render-svg.swift` prints the corner alpha for exactly
+that reason.
+
+The tinted variant is a separate file, because without it iOS derives one from
+the default icon and the result is a grey blob.
+
+## Launch screen
+
+The launch screen is parchment (`UILaunchScreen.UIColorName`, see
+`ios/project.yml`) and carries no image. The app used to open on a white flash,
+which is also how the demo video would have started.
+
+The mark was tried there and taken out again: iOS draws the launch image on an
+opaque white plate, so the mark arrived sitting on a white card. A transparent
+PNG and an opaque parchment one came out identically. A splash screen holding
+the mark for a moment was the other way to do it, and it was rejected on
+principle — making an 80-year-old wait to admire a logo is the opposite of what
+this app is for.
 
 ## The wordmark
 
