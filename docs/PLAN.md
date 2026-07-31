@@ -165,9 +165,12 @@ finished.**
 
 ## 10. Open decisions
 
-- **Licence.** MIT is the simplest; **AGPL-3.0** satisfies the requirement while
-  making commercial copying unattractive. Use the canonical text from GitHub's
-  licence picker, otherwise the About section will not detect it.
+- ~~**Licence.**~~ **Decided: MIT**, canonical text in `LICENSE`. AGPL-3.0 was
+  the alternative and would have made commercial copying unattractive, but it is
+  effectively incompatible with App Store distribution — and this plan
+  deliberately leaves a store release open for v1.1 (see `SETUP.md`). The
+  protection AGPL buys matters for server software; here the moat is in the
+  product decisions, not the code.
 - **Name.** No longer urgent without App Store Connect. `Memorize` is full of
   flashcard apps in App Store search; candidates: *Heirloom*, *Kinfolk*,
   *Storykeeper*, *Rootline*, *Perennial*.

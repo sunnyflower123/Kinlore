@@ -68,3 +68,7 @@ A single `subject` table covers photos, people, places and events; a `memory`
 attaches to any subject. That is why *"write a memory about this photo"* and
 *"tell us what grandmother was like"* are the same screen and the same code path.
 Schema: [backend/schema.sql](backend/schema.sql).
+
+## Licence
+
+[MIT](LICENSE).
