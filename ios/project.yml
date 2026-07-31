@@ -1,0 +1,54 @@
+name: Memorize
+attributes:
+  LastUpgradeCheck: "9999"
+options:
+  bundleIdPrefix: app.memorize
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    TARGETED_DEVICE_FAMILY: "1"
+# Scheme kirjoitetaan auki, koska XcodeGen ei generoi sellaista oletuksena ja
+# `xcodegen generate` pyyhkii Xcoden automaattisesti luoman xcuserdatasta.
+# Ilman tätä komentorivi-build hajoaa joka kerta kun projekti regeneroidaan.
+schemes:
+  Memorize:
+    build:
+      targets:
+        Memorize: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+targets:
+  Memorize:
+    type: application
+    platform: iOS
+    sources:
+      - path: Memorize
+        # CLAUDE.md-tiedostot kopioituisivat kaikki bundlen juureen ja tuottaisivat
+        # "Multiple commands produce ..." -virheen. Sama ansa kuin Hetkiossa.
+        excludes:
+          - "**/CLAUDE.md"
+          - "CLAUDE.md"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.memorize.Memorize
+        INFOPLIST_KEY_CFBundleDisplayName: Memorize
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # Pystyasento vain: ensisijainen käyttäjä pitää puhelinta yhdellä
+        # kädellä, eikä vaakatila tuo tälle sisällölle mitään.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        # Sanelu on koko sovelluksen ydintoiminto — perustelu näkyy käyttäjälle
+        # järjestelmän kysyessä lupaa, joten se kirjoitetaan ihmiskielellä.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: >-
+          Memorize tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
+          voi kuunnella ne myöhemmin.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: >-
+          Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.

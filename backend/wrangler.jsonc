@@ -1,0 +1,47 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "memorize",
+	"main": "src/worker.ts",
+	"compatibility_date": "2026-07-31",
+	"compatibility_flags": ["nodejs_compat"],
+
+	// Metadata: perheet, subjectit, muistot, suhteet.
+	//   npx wrangler d1 create memorize
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "memorize",
+			"database_id": "TODO-aja-wrangler-d1-create"
+		}
+	],
+
+	// Kuvat ja äänet. Alkuperäinen ääni säilytetään aina, joten tämä kasvaa
+	// nopeammin kuin kuvat — R2:ssa se on silti käytännössä ilmaista.
+	//   npx wrangler r2 bucket create memorize-media
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "memorize-media"
+		}
+	],
+
+	"vars": {
+		// Ilmaiskäytön rajat. Kuvat ja AI-minuutit rajataan — muistojen
+		// kirjoittamista ei koskaan, ks. CLAUDE.md sääntö 2.
+		"FREE_PHOTO_LIMIT": "20",
+		"FREE_AI_SECONDS_PER_MONTH": "600",
+		"RC_ENTITLEMENT_ID": "archive",
+
+		// Jäsennys vaatii structured outputs -tuen. Purku vaatii äänisyötteen.
+		// Gemini Flash osaa molemmat, on halpa ja käsittelee suomea hyvin.
+		// Purkumalli on erillinen muuttuja, koska se voi vaihtua omistettuun
+		// ASR:ään jos scripts/asr-bench.mjs osoittaa sen paremmaksi.
+		"MODEL_EXTRACT": "google/gemini-2.5-flash",
+		// Kolmas yritys vaihtaa mallia: mitattu vika oli tarjoajassa
+		// (finish_reason=error), eikä sama malli uudelleen auta siihen.
+		"MODEL_EXTRACT_FALLBACK": "openai/gpt-4o-mini",
+		"MODEL_TRANSCRIBE": "google/gemini-2.5-flash"
+	},
+
+	"observability": { "enabled": true }
+}

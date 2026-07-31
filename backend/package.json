@@ -1,0 +1,17 @@
+{
+  "name": "memorize-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:local": "wrangler d1 execute memorize --local --file=schema.sql",
+    "db:remote": "wrangler d1 execute memorize --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260730.1",
+    "typescript": "^5.7.0",
+    "wrangler": "^4.0.0"
+  }
+}

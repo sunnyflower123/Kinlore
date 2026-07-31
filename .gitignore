@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+.wrangler/
+.dev.vars
+
+# Konekohtaiset Claude Code -asetukset, ei jaettavaa sisältöä.
+.claude/settings.local.json
+
+# XcodeGen generoi tämän project.yml:stä — ei versionhallintaan.
+ios/*.xcodeproj
+ios/*.xcworkspace
+xcuserdata/
+DerivedData/
+build/
+
+# ASR-testinäytteet: oikeiden ihmisten ääntä, ei repoon.
+samples/
