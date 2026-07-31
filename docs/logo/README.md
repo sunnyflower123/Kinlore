@@ -55,7 +55,9 @@ The primary user is 80 years old, and the mark is no exception to that rule.
 | `concept-c-locket.svg` | The chosen mark, in icon form (512, full background) |
 | `mark.svg` | The same mark without the background — source of the launch screen PNGs |
 | `icon-tinted.svg` | Tinted variant for iOS 18+ (greyscale, transparent) |
-| `mark-mono.svg` | The mark alone, `currentColor` — README, favicon, UI |
+| `mark-mono.svg` | The mark alone, `currentColor` — UI and one-colour contexts |
+| `favicon.svg` | Redrawn for 16 px, see below |
+| `favicon-16.png`, `favicon-32.png` | Raster fallbacks for browsers that want them |
 | `lockup.svg` | Mark + name, horizontal, for light surfaces |
 | `lockup-dark.svg` | The same for dark surfaces — the root README switches between them |
 | `concept-b-bubble.svg` | Alternative: the talking photo |
@@ -147,3 +149,33 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/out
 
 The script prints the bounding box to stderr. The viewBox has to be wide enough
 for its right edge, or the name clips again.
+
+## Favicon
+
+`favicon.svg` is drawn separately rather than scaled down from the icon, and it
+is a different drawing on purpose: **the bail is gone and the disc fills the
+square.**
+
+Shrinking the real icon to 16 px turns the bail into a grey smudge and squeezes
+the two parchment bars until they disappear — and it wastes a fifth of the
+square on the margin the app icon needs. Drawn with the bail kept and the disc
+made smaller to fit it, the result was worse still. At 16 px nothing reads as a
+locket anyway; what survives is a dark disc with three bars and an amber centre,
+so that is what the favicon is.
+
+It is authored on a 16-unit grid so the edges land on whole pixels. Regenerate
+the rasters after editing it:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/favicon.svg docs/logo/favicon-16.png 16
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/favicon.svg docs/logo/favicon-32.png 32
+```
+
+Nothing consumes these yet. **A GitHub repository page cannot have a favicon** —
+the tab always shows GitHub's own. They are here for the first page that is
+actually ours: a GitHub Pages site, or a landing page for the Devpost entry.
+
+```html
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+```
