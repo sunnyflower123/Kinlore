@@ -20,6 +20,7 @@ An honest inventory, not a wish list:
 | Quotas (`/usage`, limits on the server) | **Done and tested** |
 | RevenueCat, shared family entitlement | **Done and tested** |
 | Audio playback, open questions, relationships | **Done and tested** |
+| Paywall | Built — unverified, needs a RevenueCat key |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Not started — on the cut list, PLAN.md §5 |
 | Demo video | Remaining |
@@ -313,24 +314,36 @@ abuse risk is small and the solution matches: no notification centre and no
 moderation queue, only the required minimum. If the release is never made, this
 can be cut entirely (PLAN.md §5, item 6).
 
-## 8. The remaining screens
+## 8. The screens
 
-In order, most important first:
+Built, in the order they were built:
 
 1. **Onboarding** — two options: "Start the family archive" or "Join with a
    link". Nothing else. One screen.
-2. **Family** — members, sharing the invite link, leaving.
-3. **Audio playback** — the memory card's "Listen in her own voice" is currently
-   just a label. This is emotionally the product's strongest detail and small to
-   implement.
-4. **Open questions** — a collected view over `prompt_question`. This is the
-   retention engine: an open question is a reason to come back.
+2. **Family** — members, sharing the invite link, usage.
+3. **Audio playback** — the memory card's "Listen in her own voice". Emotionally
+   the product's strongest detail and small to implement.
+4. **Open questions** — surfaced on the Tell screen rather than in a view of
+   their own. This is the retention engine: an open question is a reason to come
+   back, and it is also an easier start than a blank button.
 5. **Relationships** — "add parent / spouse / sibling" from the person card. An
    unconfirmed relationship shows as a proposal.
-6. **Paywall** — RevenueCat's own paywall is enough, no custom implementation.
-7. **Settings** — export, account deletion, reporting and blocking.
-8. **Family tree** — a drawn graph. **A trap.** Relationships are now lists on
-   the person card: the same information, works at the largest text size and is
+6. **Paywall** — RevenueCat's own, not a hand-built one: it is configured
+   remotely, so prices and wording change without shipping a build. Two ways in,
+   both of which only exist when a RevenueCat key is configured — a dead button
+   is worse than no button. The primary one is the moment a memory finishes,
+   where perceived value peaks; the second is the family view, so a grandchild
+   looking at the limits does not have to go and dictate something to find it.
+   **Closing the paywall is not the end of the purchase**: `syncPurchase` is
+   what turns one person's subscription into the family's entitlement (§6).
+
+Not built:
+
+7. **Settings** — export, account deletion, reporting and blocking. The
+   moderation half is on the cut list (§7); export and deletion are not, and
+   they are the honest remainder of this list.
+8. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
+   person card: the same information, works at the largest text size and is
    readable with VoiceOver. The graph gets built only if everything else is done.
 
 ## 9. Build order

@@ -11,6 +11,7 @@ struct FamilyScreen: View {
 
     @State private var freshCode: String?
     @State private var isSharing = false
+    @State private var isShowingPaywall = false
 
     var body: some View {
         List {
@@ -37,6 +38,20 @@ struct FamilyScreen: View {
                                 ? "rajaton"
                                 : "\(usage.photos.used) / \(usage.photos.limit!)"
                         )
+
+                        // The second way in. The first is the moment a memory
+                        // finishes, which is where value peaks — but a
+                        // grandchild who came here to look at the limits should
+                        // not have to go and dictate something to find this.
+                        if !usage.isPaid, RevenueCatPurchases.configuredKey != nil {
+                            Button {
+                                isShowingPaywall = true
+                            } label: {
+                                Label("Avaa koko arkisto", systemImage: "sparkles")
+                                    .font(.body.weight(.semibold))
+                                    .elderTapTarget()
+                            }
+                        }
                     }
                 }
 
@@ -89,6 +104,7 @@ struct FamilyScreen: View {
         .navigationTitle("Perhe")
         .task { await session.refresh() }
         .refreshable { await session.refresh() }
+        .paywallSheet(isPresented: $isShowingPaywall)
         .sheet(isPresented: $isSharing) {
             if let code = freshCode {
                 ShareLink(item: Self.inviteText(code: code)) {

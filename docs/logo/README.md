@@ -89,6 +89,10 @@ that reason.
 The tinted variant is a separate file, because without it iOS derives one from
 the default icon and the result is a grey blob.
 
+Verified on a home screen in tinted appearance: the locket reads as a light disc
+with the three bars cut out of it, the bail intact and distinct from ConnectFul
+and Hetkio beside it.
+
 ## Launch screen
 
 Parchment with the mark centred on it (`UILaunchScreen`, see `ios/project.yml`).

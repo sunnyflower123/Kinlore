@@ -511,9 +511,15 @@ private struct ResultView: View {
 private struct UpsellCard: View {
     let usage: EntitlementClient.Usage
 
+    @State private var isShowingPaywall = false
+
     private var minutesLeft: Int? {
         usage.aiSeconds.remaining.map { $0 / 60 }
     }
+
+    /// Without a RevenueCat key there is nothing to buy, so the card stays
+    /// informational rather than growing a button that does nothing.
+    private var canPurchase: Bool { RevenueCatPurchases.configuredKey != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -529,10 +535,25 @@ private struct UpsellCard: View {
             Text("Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle.")
                 .elderBody()
                 .foregroundStyle(.secondary)
+
+            if canPurchase {
+                Button {
+                    isShowingPaywall = true
+                } label: {
+                    Text("Avaa koko arkisto")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
         .background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+        .paywallSheet(isPresented: $isShowingPaywall)
     }
 }
 
