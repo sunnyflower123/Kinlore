@@ -71,6 +71,9 @@ struct Subject: Identifiable, Codable, Hashable {
     /// sukupuussa faktana — väärä sukulaisuussuhde on pahempi kuin puuttuva.
     var confirmed: Bool = true
     var createdAt: Date = .now
+    /// Sulautuksen osoite. Kun tämä on asetettu, kohde ei ole enää oma
+    /// henkilönsä vaan ohjaa toiseen — ks. `MemoryStore.rename`.
+    var mergedInto: String?
 
     /// Kuva tuodaan ilman otsikkoa, koska kukaan ei jaksa nimetä kolmeakymmentä
     /// skannattua valokuvaa. Nimi syntyy vasta kun kuvasta kerrotaan.

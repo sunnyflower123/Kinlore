@@ -33,13 +33,22 @@ final class MemoryStore {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// Seuraa sulautusketjua. Viittaus sulautettuun kohteeseen ratkeaa aina
+    /// säilyvään, joten mikään ei osoita tyhjään.
     func subject(id: String) -> Subject? {
-        subjects.first { $0.id == id }
+        var current = subjects.first { $0.id == id }
+        // Kierrossuoja: rikkinäinen data ei saa jumittaa käyttöliittymää.
+        for _ in 0 ..< 8 {
+            guard let target = current?.mergedInto else { return current }
+            current = subjects.first { $0.id == target }
+        }
+        return current
     }
 
+    /// Sulautetut eivät ole omia kohteitaan, joten ne eivät näy listoissa.
     func subjects(of kind: SubjectKind) -> [Subject] {
         subjects
-            .filter { $0.kind == kind }
+            .filter { $0.kind == kind && $0.mergedInto == nil }
             .sorted { $0.createdAt > $1.createdAt }
     }
 
@@ -115,9 +124,10 @@ final class MemoryStore {
 
         let kind = subjects[index].kind
         if let existing = subjects.first(where: {
-            $0.id != subjectID && $0.kind == kind &&
+            $0.id != subjectID && $0.kind == kind && $0.mergedInto == nil &&
                 $0.title.compare(trimmed, options: .caseInsensitive) == .orderedSame
         }) {
+            // Viittaukset siirretään heti, jotta paikallinen näkymä on ehjä...
             for i in memories.indices where memories[i].subjectID == subjectID {
                 memories[i].subjectID = existing.id
             }
@@ -126,7 +136,11 @@ final class MemoryStore {
                     $0 == subjectID ? existing.id : $0
                 }
             }
-            subjects.remove(at: index)
+            // ...mutta riviä EI poisteta. Offline oleva toinen laite voi juuri
+            // nyt lisätä muistoja tähän kohteeseen, ja poisto jättäisi ne
+            // osoittamaan tyhjään. Hautakivi osoitteella ratkaisee sen ja tekee
+            // sulautuksesta myös peruttavan. Ks. docs/ARKKITEHTUURI.md §2.5.
+            subjects[index].mergedInto = existing.id
         } else {
             subjects[index].title = trimmed
         }

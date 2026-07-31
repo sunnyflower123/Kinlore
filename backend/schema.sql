@@ -62,7 +62,14 @@ CREATE TABLE subject (
 
   created_by    TEXT REFERENCES member(id),
   created_at    INTEGER NOT NULL,
-  deleted_at    INTEGER
+  deleted_at    INTEGER,
+
+  -- Sulautus ei poista vaan ohjaa. Kun kertoja korjaa väärin kuullun nimen
+  -- ("Aune" → "Aino") ja kohde on jo olemassa, tämä rivi jää paikalleen
+  -- osoittamaan säilyvään. Poistaminen rikkoisi toisen laitteen viittaukset:
+  -- offline oleva puhelin voi juuri lisätä muistoja sulautettavaan kohteeseen.
+  -- Ohjaus tekee sulautuksesta myös peruttavan.
+  merged_into   TEXT REFERENCES subject(id)
 );
 
 CREATE INDEX idx_subject_family_kind ON subject(family_id, kind);
