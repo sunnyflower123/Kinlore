@@ -1,20 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" width="700" height="200" role="img" aria-label="Memorize">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 200" width="620" height="200" role="img" aria-label="Memorize">
   <title>Memorize</title>
-  <defs>
-    <mask id="locket-lockup">
-      <rect width="512" height="512" fill="#000000"/>
-      <circle cx="256" cy="94" r="34" fill="none" stroke="#FFFFFF" stroke-width="22"/>
-      <circle cx="256" cy="294" r="168" fill="#FFFFFF"/>
-      <g fill="#000000">
-        <rect x="166" y="246" width="48" height="96" rx="24"/>
-        <rect x="232" y="200" width="48" height="188" rx="24"/>
-        <rect x="298" y="229" width="48" height="130" rx="24"/>
-      </g>
-    </mask>
-  </defs>
   <g transform="translate(-14.1 1) scale(0.388)">
-    <rect width="512" height="512" fill="#241A14" mask="url(#locket-lockup)"/>
-    <rect x="232" y="200" width="48" height="188" rx="24" fill="#C4552C"/>
+    <circle cx="256" cy="94" r="34" fill="none" stroke="#241A14" stroke-width="22"/>
+    <circle cx="256" cy="294" r="168" fill="#241A14"/>
+    <g fill="#FBF1E2">
+      <rect x="166" y="246" width="48" height="96" rx="24"/>
+      <rect x="298" y="229" width="48" height="130" rx="24"/>
+    </g>
+    <rect x="232" y="200" width="48" height="188" rx="24" fill="#E8A33C"/>
   </g>
   <text x="178" y="132" font-family="New York, Charter, Georgia, serif" font-size="92" font-weight="600" letter-spacing="-1" fill="#241A14">Memorize</text>
 </svg>

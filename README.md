@@ -1,4 +1,9 @@
-# Memorize
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lockup-dark.svg">
+    <img src="docs/logo/lockup.svg" alt="Memorize" width="340">
+  </picture>
+</p>
 
 > Työnimi. Vaihdetaan ennen julkaisua — ks. [docs/PLAN.md](docs/PLAN.md) §8.
 
@@ -21,7 +26,7 @@ Sivuprojekti [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost
 | `ios/` | SwiftUI-sovellus. Projekti generoidaan `project.yml`:stä XcodeGenillä. |
 | `backend/` | Cloudflare Worker + D1 (metadata) + R2 (kuvat ja äänet). |
 | `scripts/` | `asr-bench.mjs` — suomen puheentunnistuksen vertailu. |
-| `docs/` | `PLAN.md` — laajuus, aikataulu, riskit. |
+| `docs/` | `PLAN.md` — laajuus, aikataulu, riskit. `logo/` — tunnus ja sen perustelu. |
 
 ## Kehitysympäristö
 
