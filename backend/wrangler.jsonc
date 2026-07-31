@@ -31,6 +31,9 @@
 		"FREE_PHOTO_LIMIT": "20",
 		"FREE_AI_SECONDS_PER_MONTH": "600",
 		"RC_ENTITLEMENT_ID": "archive",
+		// Projektin tunniste RevenueCatin hallintapaneelista. Ei salaisuus,
+		// toisin kuin RC_SECRET_KEY ja RC_WEBHOOK_SECRET.
+		"RC_PROJECT_ID": "TODO-revenuecat-projektin-id",
 
 		// Mallit on VALITTU MITTAAMALLA, ei muistista: scripts/asr-bench.mjs,
 		// 3 tekstiä × 4 rappeutusporrasta × 5 mallia.

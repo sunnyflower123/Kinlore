@@ -22,6 +22,23 @@ struct FamilyScreen: View {
                     )
                 }
 
+                if let usage = session.usage {
+                    Section("Käyttö") {
+                        LabeledContent(
+                            "AI-minuutit",
+                            value: usage.aiSeconds.limit == nil
+                                ? "rajaton"
+                                : "\(usage.aiSeconds.used / 60) / \(usage.aiSeconds.limit! / 60) min"
+                        )
+                        LabeledContent(
+                            "Kuvat",
+                            value: usage.photos.limit == nil
+                                ? "rajaton"
+                                : "\(usage.photos.used) / \(usage.photos.limit!)"
+                        )
+                    }
+                }
+
                 Section("Jäsenet") {
                     ForEach(family.members) { member in
                         MemberRow(member: member, isYou: member.id == family.you.id)

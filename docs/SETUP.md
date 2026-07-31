@@ -27,6 +27,7 @@ Sovellus ei koskaan puhu suoraan OpenAI:lle tai vastaavalle. Tämä on syy miksi
 |-------|-------|
 | **`OPENROUTER_API_KEY`** | **Sekä puheen purku että jäsennys.** OpenRouterilla ei ole erillistä transcriptions-päätepistettä — ääni menee chat completionsin `input_audio`-osana base64:nä, joten yksi avain riittää molempiin. |
 | `RC_SECRET_KEY` | RevenueCatin v2 REST API. Backend varmistaa maksajan oikeuden ja mappaa sen koko perheelle. |
+| `RC_PROJECT_ID` | Projektin tunniste hallintapaneelista (ei salaisuus, `wrangler.jsonc`:n vareissa). |
 | `RC_WEBHOOK_SECRET` | Tilaustapahtumien (uusinta, peruutus) autentikointi → `family.entitlement`. Ilman tätä kuka tahansa voisi väärentää tilauksen. |
 
 ```bash
@@ -77,7 +78,7 @@ tai toistaa käyttäjän kertoman muiston.
 
 | Avain | Huom |
 |-------|------|
-| RevenueCat **Test Store API key** | Suunniteltu asiakaspuolelle, turvallinen upottaa. Vaihdetaan alustakohtaiseksi vasta jos joskus julkaistaan storeen. |
+| RevenueCat **Test Store API key** | Suunniteltu asiakaspuolelle, turvallinen upottaa. Annetaan käynnistysargumentilla `-rcKey <avain>`, jotta Test Store ja tuotanto voi vaihtaa kääntämättä uudelleen. Ilman avainta ostot eivät ole tarjolla mutta sovellus toimii normaalisti. |
 
 ### Cloudflare
 

@@ -21,7 +21,9 @@ struct MemorizeApp: App {
                 .task {
                     // Moottori tarvitsee molemmat, joten se syntyy vasta täällä.
                     if sync == nil { sync = SyncEngine(store: store, session: session) }
+                    RevenueCatPurchases.configure(memberID: session.identity.memberID)
                     await sync?.sync()
+                    await syncEntitlementIfPurchased()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     // Etualalle palatessa: perhe on voinut kertoa muistoja sillä
@@ -50,6 +52,14 @@ struct MemorizeApp: App {
             // demoamisen käynnissä silloinkin kun Worker on alhaalla.
             RootView()
         }
+    }
+
+    /// Kertoo palvelimelle jos tällä laitteella on osto. Palvelin varmistaa
+    /// sen RevenueCatilta ja levittää oikeuden koko perheelle.
+    private func syncEntitlementIfPurchased() async {
+        let purchases = AppServices.purchases()
+        guard await purchases.hasActivePurchase, let id = await purchases.customerID else { return }
+        await session.syncPurchase(customerID: id)
     }
 
     /// `memorize://join?code=...`

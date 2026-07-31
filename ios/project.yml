@@ -15,6 +15,11 @@ settings:
 # Scheme kirjoitetaan auki, koska XcodeGen ei generoi sellaista oletuksena ja
 # `xcodegen generate` pyyhkii Xcoden automaattisesti luoman xcuserdatasta.
 # Ilman tätä komentorivi-build hajoaa joka kerta kun projekti regeneroidaan.
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios
+    from: "5.0.0"
+
 schemes:
   Memorize:
     build:
@@ -61,6 +66,17 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: app.memorize.invite
             CFBundleURLSchemes: [memorize]
+    dependencies:
+      - package: RevenueCat
+        product: RevenueCat
+      # Valmis paywall-käyttöliittymä: oman rakentaminen olisi työtä ilman
+      # hyötyä, ja RevenueCatin oma tukee etäkonfiguraatiota.
+      - package: RevenueCat
+        product: RevenueCatUI
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.memorize.Memorize
+        # XcodeGen löytää Assets.xcassets sourcesista, mutta ei tiedä mikä
+        # asseteista on sovelluksen ikoni. Ilman tätä ikonipaikka jää tyhjäksi.
+        # PNG:t generoidaan docs/logo/-SVG:istä, ks. docs/logo/README.md.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

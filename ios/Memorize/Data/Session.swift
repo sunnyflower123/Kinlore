@@ -48,6 +48,10 @@ final class Session {
 
     private(set) var mode: Mode = .local
     private(set) var family: Family?
+    /// Perheen käyttötilanne. Paywall tarvitsee tämän kertoakseen mitä on
+    /// jäljellä ENNEN kuin raja tulee vastaan — jälkikäteen kerrottuna se on
+    /// vain este.
+    private(set) var usage: EntitlementClient.Usage?
     private(set) var isWorking = false
     private(set) var lastError: String?
 
@@ -58,6 +62,13 @@ final class Session {
         guard let base = AppServices.apiBaseURL else { return nil }
         return FamilyClient(baseURL: base, token: identity.token)
     }
+
+    private var entitlements: EntitlementClient? {
+        guard let base = AppServices.apiBaseURL else { return nil }
+        return EntitlementClient(baseURL: base, token: identity.token)
+    }
+
+    var isPaid: Bool { usage?.isPaid ?? false }
 
     init() {
         guard AppServices.apiBaseURL != nil else {
@@ -99,6 +110,17 @@ final class Session {
         } catch {
             lastError = error.localizedDescription
         }
+        // Käyttötilanne haetaan erikseen eikä perheen mukana: se muuttuu
+        // useammin, ja sen epäonnistuminen ei saa piilottaa jäsenlistaa.
+        usage = try? await entitlements?.usage()
+    }
+
+    /// Kertoo palvelimelle ostosta. Palvelin varmistaa sen RevenueCatilta —
+    /// tämä on vihje, ei väite.
+    func syncPurchase(customerID: String) async {
+        guard let entitlements else { return }
+        _ = try? await entitlements.sync(customerID: customerID)
+        await refresh()
     }
 
     func createInvite() async -> String? {

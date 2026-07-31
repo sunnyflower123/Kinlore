@@ -19,7 +19,8 @@ Rehellinen inventaario, ei toivelista:
 | `relation`, `usage_counter`, `report`, `block` | **Skeemassa, ei käytössä** |
 | Media R2:een (`/media`) | **Valmis ja testattu** |
 | Kiintiöt (`/usage`, rajat palvelimella) | **Valmis ja testattu** |
-| RevenueCat, moderointi | Ei aloitettu |
+| RevenueCat, jaettu perhe-entitlement | **Valmis ja testattu** |
+| Moderointi (`report`, `block`) | Ei aloitettu |
 
 Kriittinen polku on nyt auki: perhe ja synkronointi toimivat, joten media,
 kiintiöt ja moderointi voidaan rakentaa niiden päälle. Jäljellä oleva työ on

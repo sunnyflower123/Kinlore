@@ -26,6 +26,12 @@ enum AppServices {
         return RemoteTranscriptionService(baseURL: base)
     }
 
+    static func purchases() -> PurchaseService {
+        RevenueCatPurchases.configuredKey == nil
+            ? StubPurchaseService()
+            : RevenueCatPurchases()
+    }
+
     static func extraction() -> ExtractionService {
         guard let base = apiBaseURL else { return StubExtractionService() }
         return RemoteExtractionService(baseURL: base)

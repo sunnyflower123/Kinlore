@@ -309,6 +309,7 @@ private struct ProcessingView: View {
 
 private struct ResultView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(Session.self) private var session
     let model: TellViewModel
 
     var body: some View {
@@ -326,6 +327,13 @@ private struct ResultView: View {
 
                 if !model.newQuestions.isEmpty {
                     questionSection
+                }
+
+                // Paywall juuri tässä: koettu arvo on huipussaan kun muisto on
+                // valmis. Ei onboardingissa, ei asetuksissa — ja ei esteenä,
+                // koska muisto on jo tallennettu.
+                if let usage = session.usage, !usage.isPaid {
+                    UpsellCard(usage: usage)
                 }
 
                 VStack(spacing: 12) {
@@ -434,6 +442,38 @@ private struct ResultView: View {
                 .padding(.vertical, 4)
             }
         }
+    }
+}
+
+/// Kertoo mitä on jäljellä, ei sitä mitä puuttuu.
+///
+/// Ei estä mitään: muisto on jo tallennettu, ja kertomista ei paywallata
+/// koskaan. Tämä on kutsu, ei muuri.
+private struct UpsellCard: View {
+    let usage: EntitlementClient.Usage
+
+    private var minutesLeft: Int? {
+        usage.aiSeconds.remaining.map { $0 / 60 }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Ilmainen arkisto", systemImage: "sparkles")
+                .font(.headline)
+
+            if let minutes = minutesLeft, let photos = usage.photos.remaining {
+                Text("Kertomista tässä kuussa jäljellä noin \(minutes) minuuttia, ja kuville tilaa \(photos).")
+                    .elderBody()
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle.")
+                .elderBody()
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
     }
 }
 

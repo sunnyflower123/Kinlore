@@ -16,6 +16,8 @@ CREATE TABLE family (
   entitlement   TEXT NOT NULL DEFAULT 'free',   -- 'free' | 'archive'
   -- Kuka maksaa juuri nyt. Tilauksen päättyessä palautuu NULLiksi.
   payer_id      TEXT,
+  -- Milloin oikeus raukeaa. Kaksi maksajaa: pisin voimassaolo voittaa.
+  entitlement_expires_at INTEGER,
   -- Synkronoinnin järjestysluku. Kasvaa jokaisella kirjoituksella. Laitteiden
   -- kelloihin ei voi luottaa: iäkkään puhelimen aikavyöhyke voi olla vuosia
   -- väärässä, ja aikaleimajärjestys tuottaisi hävinneitä kirjoituksia.

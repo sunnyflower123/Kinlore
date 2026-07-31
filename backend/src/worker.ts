@@ -8,6 +8,7 @@ import { authenticate } from './auth'
 import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
 import { download, upload } from './media'
 import { extract } from './extract'
+import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement'
 import { checkAISeconds, checkPhotoCount, recordAISeconds, usage } from './quota'
 import { pull, push } from './sync'
 import { transcribe } from './transcribe'
@@ -19,6 +20,9 @@ export interface Env {
 	MODEL_EXTRACT: string
 	MODEL_EXTRACT_FALLBACK: string
 	MODEL_TRANSCRIBE: string
+	RC_SECRET_KEY: string
+	RC_PROJECT_ID: string
+	RC_WEBHOOK_SECRET: string
 	FREE_PHOTO_LIMIT: string
 	FREE_AI_SECONDS_PER_MONTH: string
 	RC_ENTITLEMENT_ID: string
@@ -106,6 +110,19 @@ export default {
 			return json(result)
 		}
 
+		// Webhook tunnistautuu omalla salaisuudellaan eikä jäsentunnisteella:
+		// se tulee RevenueCatilta, ei laitteelta.
+		if (url.pathname === '/webhook/revenuecat' && request.method === 'POST') {
+			if (!isAuthorizedWebhook(env, request)) return json({ error: 'unauthorized' }, 401)
+			const body = await readJSON<{ event?: Record<string, unknown> }>(request)
+			if (!body?.event) return json({ error: 'invalid_json' }, 400)
+			try {
+				return json(await handleWebhook(env, body.event))
+			} catch (err) {
+				return failure(err, 'webhook')
+			}
+		}
+
 		// --- Tunnistautumista vaativat ---------------------------------------
 
 		const session = await authenticate(request, env)
@@ -119,6 +136,18 @@ export default {
 		if (url.pathname === '/family/invite' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			return json(await createInvite(env, session))
+		}
+
+		if (url.pathname === '/entitlement/sync' && request.method === 'POST') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const body = await readJSON<{ customerID?: string }>(request)
+			if (!body?.customerID) return json({ error: 'missing_customer' }, 400)
+			try {
+				const result = await syncEntitlement(env, session, body.customerID)
+				return 'error' in result ? json(result, 503) : json(result)
+			} catch (err) {
+				return failure(err, 'entitlement')
+			}
 		}
 
 		if (url.pathname === '/usage' && request.method === 'GET') {

@@ -1,10 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" fill="currentColor" role="img" aria-label="Vuosirenkaat ja aukko">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Vuosirenkaat ja aukko">
   <title>Vuosirenkaat ja aukko</title>
   <g transform="rotate(-38 256 256)" fill="none" stroke="currentColor" stroke-linecap="round">
-    <path d="M446.98 300.09 A196 196 0 1 1 446.98 211.91" stroke-width="26"/>
-    <path d="M401.28 284.24 A148 148 0 1 1 401.28 227.76" stroke-width="16"/>
-    <path d="M358.72 272.27 A104 104 0 1 1 358.72 239.73" stroke-width="22"/>
-    <path d="M319.52 263.80 A64 64 0 1 1 319.52 248.20" stroke-width="14"/>
+    <path d="M459.76 306.80 A210 210 0 1 1 459.76 205.20" stroke-width="32"/>
+    <path d="M398.81 286.36 A146 146 0 1 1 398.81 225.64" stroke-width="26"/>
+    <path d="M340.69 270.93 A86 86 0 1 1 340.69 241.07" stroke-width="20"/>
   </g>
-  <circle cx="256" cy="256" r="30"/>
+  <circle cx="256" cy="256" r="34" fill="currentColor"/>
 </svg>
