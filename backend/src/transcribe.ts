@@ -1,16 +1,24 @@
-/// Puheen purku tekstiksi OpenRouterin kautta.
+/// Speech transcription via OpenRouter.
 ///
-/// OpenRouterilla ei ole erillistä transcriptions-päätepistettä: ääni menee
-/// chat completionsin `input_audio`-osana base64:nä. Siksi purku ja jäsennys
-/// kulkevat saman avaimen ja saman klientin läpi.
+/// OpenRouter has no separate transcriptions endpoint: audio goes as an
+/// `input_audio` part of chat completions, base64 encoded. That is why
+/// transcription and extraction travel through the same key and the same client.
 ///
-/// HUOM: monimodaalinen yleismalli ei välttämättä pärjää suomenkieliselle
-/// vanhuksen puheelle yhtä hyvin kuin omistettu ASR. Vertaa ennen kuin lukitset:
+/// NOTE: a multimodal general-purpose model does not necessarily handle Finnish
+/// elderly speech as well as a dedicated ASR. Compare before locking it in:
 /// `node scripts/asr-bench.mjs samples/`.
+///
+/// LANGUAGE: the system prompt below is deliberately in Finnish — it is input to
+/// the model describing Finnish speech, not documentation. See CLAUDE.md.
 
 import { complete, type Message } from './openrouter'
 import type { Env } from './worker'
 
+/// In English: transcribe Finnish speech verbatim; the speaker is often elderly,
+/// quiet, dialectal and leaves sentences unfinished. Do not tidy, summarise or
+/// complete anything — filler words belong in the output, they are cleaned up
+/// separately later and the raw transcript is kept. Pay particular attention to
+/// proper nouns. Return plain text; return an empty string if no speech is heard.
 const SYSTEM_PROMPT = `Puret suomenkielistä puhetta tekstiksi. Puhuja on usein iäkäs: ääni voi olla hiljainen, puhe murteellista ja lauseet keskeneräisiä.
 
 Kirjoita TÄSMÄLLEEN se mitä kuulet. Älä siisti, älä tiivistä, älä täydennä keskeneräisiä lauseita. Täytesanat ja toistot kuuluvat mukaan — ne siivotaan myöhemmin erikseen, ja alkuperäinen purku säilytetään.
@@ -19,30 +27,30 @@ Kiinnitä erityistä huomiota erisnimiin: henkilöiden ja paikkojen nimet ohjaav
 
 Palauta pelkkä teksti ilman lainausmerkkejä tai selityksiä. Jos et kuule puhetta lainkaan, palauta tyhjä merkkijono.`
 
-/// Sanaa sekunnissa, jonka yli purku ei voi olla aitoa. Suomea puhutaan
-/// normaalisti 2–3 sanaa sekunnissa ja iäkäs hitaammin, joten neljä on reilu
-/// yläraja jota kukaan ei ylitä vahingossa.
+/// Words per second above which a transcript cannot be genuine. Finnish is
+/// normally spoken at 2–3 words per second and an elderly speaker slower, so
+/// four is a fair ceiling that nobody crosses by accident.
 const MAX_WORDS_PER_SECOND = 4
-/// Kiinteä lisä lyhyille nauhoituksille, jottei kolmen sekunnin pätkä hylkäydy
-/// siksi että puhuja ehti sanoa kaksi sanaa odotettua enemmän.
+/// A flat allowance for short recordings, so that a three-second clip is not
+/// rejected because the speaker got two more words in than expected.
 const WORD_ALLOWANCE = 20
 
-/// Havaitsee sepittämisen. Huonolla äänellä malli ei vaikene vaan syöksee
-/// seinällisen tekstiä jota kukaan ei sanonut — mittasimme yhden mallin
-/// tuottavan 135-kertaisen määrän sanoja suhteessa todellisuuteen.
+/// Detects hallucination. On poor audio the model does not fall silent — it
+/// pours out a wall of text nobody said. We measured one model producing 135
+/// times as many words as reality contained.
 ///
-/// Sovelluksen kannalta se on pahin mahdollinen lopputulos: käyttäjä saa
-/// keksityn muiston joka näyttää aidolta ja menee arkistoon isoäidin nimissä.
-/// Tyhjä tulos ja uudelleenyritys on aina parempi kuin sepitetty muisto.
+/// For this app that is the worst possible outcome: the user gets an invented
+/// memory that looks genuine and enters the archive under grandmother's name. An
+/// empty result and a retry is always better than a fabricated memory.
 function looksHallucinated(text: string, seconds: number | undefined): boolean {
 	if (!seconds || seconds <= 0) return false
 	const words = text.trim().split(/\s+/).filter(Boolean).length
 	return words > seconds * MAX_WORDS_PER_SECOND + WORD_ALLOWANCE
 }
 
-/// `format` on OpenRouterin odottama muototunniste, esim. "m4a" tai "wav".
-/// `seconds` on nauhoituksen kesto sovelluksen mittaamana; sitä käytetään
-/// sepittämisen havaitsemiseen.
+/// `format` is the format identifier OpenRouter expects, e.g. "m4a" or "wav".
+/// `seconds` is the recording length as measured by the app; it is used for
+/// hallucination detection.
 export async function transcribe(
 	env: Env,
 	audioBase64: string,
@@ -60,8 +68,9 @@ export async function transcribe(
 		},
 	]
 
-	// Nolla lämpötila: purku ei ole luova tehtävä. Malli ei saa arvata sanoja
-	// joita ei kuullut, koska puhuja ei ehkä ole enää kysyttävissä.
+	// Zero temperature: transcription is not a creative task. The model must not
+	// guess at words it did not hear, because the speaker may no longer be
+	// around to ask.
 	const text = (
 		await complete(env, messages, { model: env.MODEL_TRANSCRIBE, temperature: 0 })
 	).trim()
@@ -69,10 +78,10 @@ export async function transcribe(
 	if (looksHallucinated(text, seconds)) {
 		const words = text.trim().split(/\s+/).length
 		console.error(
-			`[transcribe] hylätty sepitteenä: ${words} sanaa ${seconds} sekunnista ` +
-				`(malli ${env.MODEL_TRANSCRIBE})`,
+			`[transcribe] rejected as hallucination: ${words} words from ${seconds} seconds ` +
+				`(model ${env.MODEL_TRANSCRIBE})`,
 		)
-		throw new Error('Purku tuotti enemmän tekstiä kuin ääneen mahtuu')
+		throw new Error('Transcription produced more text than the audio can hold')
 	}
 
 	return text

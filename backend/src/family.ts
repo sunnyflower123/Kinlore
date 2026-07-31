@@ -1,17 +1,23 @@
-/// Perheen luonti, kutsuminen ja liittyminen.
+/// Creating a family, inviting and joining.
 ///
-/// Perhe on eristysraja: jokainen kysely rajataan pyytäjän omaan perheeseen,
-/// eikä vain liittymishetkellä. Ks. docs/ARKKITEHTUURI.md §4.
+/// The family is the isolation boundary: every query is scoped to the caller's
+/// own family, not just at join time. See docs/ARCHITECTURE.md §4.
 
 import { hashSecret, randomCode, type Session } from './auth'
 import type { Env } from './worker'
 
-/// Kutsulinkin voimassaolo. Viikko riittää siihen että lapsenlapsi ehtii
-/// näyttää puhelinta isoäidille käydessään kylässä, mutta vanha linkki
-/// vuotaneessa viestiketjussa lakkaa toimimasta itsestään.
+/// How long an invite link stays valid. A week is enough for a grandchild to
+/// show grandmother the phone on a visit, while an old link in a leaked message
+/// thread stops working on its own.
 const INVITE_DAYS = 7
 
 const now = () => Math.floor(Date.now() / 1000)
+
+/// Fallback display names are Finnish on purpose: they are written straight into
+/// the app's UI, which is Finnish. See the language rule in CLAUDE.md.
+const DEFAULT_FAMILY_NAME = 'Perhe'
+const DEFAULT_OWNER_NAME = 'Minä'
+const DEFAULT_MEMBER_NAME = 'Perheenjäsen'
 
 export type CreateFamilyInput = {
 	memberID: string
@@ -20,10 +26,10 @@ export type CreateFamilyInput = {
 	familyName: string
 }
 
-/// Luo perheen ja sen omistajan yhdellä kertaa.
+/// Creates a family and its owner in one go.
 ///
-/// Jäsentä ei voi olla ilman perhettä: se estää orvot rivit ja tekee
-/// tunnistautumisesta yksiselitteisen — jokaisella tunnisteella on aina perhe.
+/// A member cannot exist without a family: that prevents orphan rows and makes
+/// authentication unambiguous — every id always has a family.
 export async function createFamily(env: Env, input: CreateFamilyInput) {
 	const existing = await env.DB.prepare('SELECT id FROM member WHERE id = ?')
 		.bind(input.memberID)
@@ -36,7 +42,7 @@ export async function createFamily(env: Env, input: CreateFamilyInput) {
 	await env.DB.batch([
 		env.DB.prepare('INSERT INTO family (id, name, created_at) VALUES (?, ?, ?)').bind(
 			familyID,
-			input.familyName.trim() || 'Perhe',
+			input.familyName.trim() || DEFAULT_FAMILY_NAME,
 			timestamp,
 		),
 		env.DB.prepare(
@@ -45,7 +51,7 @@ export async function createFamily(env: Env, input: CreateFamilyInput) {
 		).bind(
 			input.memberID,
 			familyID,
-			input.displayName.trim() || 'Minä',
+			input.displayName.trim() || DEFAULT_OWNER_NAME,
 			await hashSecret(input.secret),
 			timestamp,
 			timestamp,
@@ -69,9 +75,9 @@ export async function joinFamily(env: Env, input: JoinInput) {
 		.bind(input.code.trim())
 		.first<{ code: string; family_id: string; expires_at: number; revoked_at: number | null }>()
 
-	// Sama vastaus kaikissa kolmessa tapauksessa: väärä, umpeutunut ja
-	// mitätöity koodi eivät saa erottua toisistaan, muuten kelvollisen koodin
-	// olemassaolon voi päätellä arvaamalla.
+	// The same answer in all three cases: a wrong, an expired and a revoked code
+	// must be indistinguishable, or the existence of a valid code could be
+	// inferred by guessing.
 	if (!invite || invite.revoked_at || invite.expires_at < now()) {
 		return { error: 'invalid_invite' as const }
 	}
@@ -81,8 +87,8 @@ export async function joinFamily(env: Env, input: JoinInput) {
 		.first<{ id: string; family_id: string }>()
 
 	if (existing) {
-		// Sama laite liittyy uudelleen samaan perheeseen: ei virhe vaan
-		// uudelleenasennus tai iCloud-palautus. Päästetään läpi.
+		// The same device rejoining the same family: not an error but a
+		// reinstall or an iCloud restore. Let it through.
 		if (existing.family_id === invite.family_id) {
 			return { familyID: invite.family_id, role: 'member' as const }
 		}
@@ -97,7 +103,7 @@ export async function joinFamily(env: Env, input: JoinInput) {
 		).bind(
 			input.memberID,
 			invite.family_id,
-			input.displayName.trim() || 'Perheenjäsen',
+			input.displayName.trim() || DEFAULT_MEMBER_NAME,
 			await hashSecret(input.secret),
 			timestamp,
 			timestamp,
@@ -122,8 +128,8 @@ export async function createInvite(env: Env, session: Session) {
 }
 
 export async function revokeInvite(env: Env, session: Session, code: string) {
-	// Perhe tarkistetaan ehdossa: toisen perheen kutsua ei voi mitätöidä
-	// vaikka koodi tiedettäisiin.
+	// The family is checked in the condition: another family's invite cannot be
+	// revoked even if the code is known.
 	const result = await env.DB.prepare(
 		'UPDATE invite SET revoked_at = ? WHERE code = ? AND family_id = ? AND revoked_at IS NULL',
 	)
@@ -147,8 +153,9 @@ export async function getFamily(env: Env, session: Session) {
 		.bind(session.familyID)
 		.all<{ id: string; display_name: string; role: string; created_at: number }>()
 
-	// Vain voimassa olevat kutsut. Omistaja näkee onko linkki elossa ja
-	// kuinka moni on sitä käyttänyt — se on ainoa näkyvyys turvallisuusrajaan.
+	// Valid invites only. The owner sees whether a link is alive and how many
+	// people have used it — that is the only visibility into the security
+	// boundary.
 	const invites = await env.DB.prepare(
 		`SELECT code, expires_at, used_count FROM invite
 		 WHERE family_id = ? AND revoked_at IS NULL AND expires_at > ?

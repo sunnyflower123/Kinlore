@@ -1,23 +1,23 @@
 import SwiftUI
 
-/// Kolme välilehteä, koska neljä on jo liikaa muistettavaksi.
-/// Kertominen on keskellä ja se on oletusvalinta — sovellus avautuu siihen
-/// mitä varten se on olemassa, ei listaan.
+/// Three tabs, because four is already too many to remember.
+/// Telling is in the middle and is the default — the app opens on what it exists
+/// for, not on a list.
 struct RootView: View {
     private enum Tab: Hashable {
         case memories, tell, people
 
-        /// Kertominen on oletus: sovellus avautuu siihen mitä varten se on
-        /// olemassa, ei listaan.
+        /// Telling is the default: the app opens on what it exists for, not on
+        /// a list.
         ///
-        /// Kehitys- ja kuvausapu: `-tab muistot` tai `-tab ihmiset`
-        /// käynnistysargumenttina avaa suoraan halutun välilehden, jotta
-        /// kuvakaappauksia saa ilman napautuksia. Vain DEBUG-buildissa.
+        /// Development and screenshot aid: `-tab memories` or `-tab people` as
+        /// a launch argument opens the given tab directly, so screenshots can be
+        /// taken without any tapping. DEBUG builds only.
         static var initial: Tab {
             #if DEBUG
             switch UserDefaults.standard.string(forKey: "tab") {
-            case "muistot": return .memories
-            case "ihmiset": return .people
+            case "memories": return .memories
+            case "people": return .people
             default: break
             }
             #endif
@@ -44,8 +44,8 @@ struct RootView: View {
     }
 }
 
-/// Suvun henkilöt. Sama `subject`-taulu kuin kuvilla, sama muistonäkymä —
-/// vain listaus poikkeaa.
+/// The people in the family. The same `subject` table as the photos and the same
+/// memory view — only the listing differs.
 struct PeopleScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -74,8 +74,9 @@ struct PeopleScreen: View {
                 SubjectDetailScreen(subject: subject)
             }
             .toolbar {
-                // Perhe kuuluu Ihmisten yhteyteen eikä omaksi välilehdekseen:
-                // kolme välilehteä on jo raja sille mitä 80-vuotias muistaa.
+                // The family belongs under People rather than as its own tab:
+                // three tabs is already the limit of what an 80-year-old holds
+                // in mind.
                 if session.mode != .local {
                     ToolbarItem(placement: .topBarTrailing) {
                         NavigationLink {
@@ -98,9 +99,9 @@ private struct PersonRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // Kuvake kertoo tilan muodollaan, ei pelkällä värillä: merkityksen
-            // koodaaminen väriin yksin on saavutettavuusvirhe, ja tämän
-            // sovelluksen käyttäjä on juuri se joka siitä kärsii.
+            // The icon conveys state through its shape, not colour alone:
+            // encoding meaning in colour only is an accessibility failure, and
+            // this app's user is precisely the one who suffers from it.
             Image(systemName: subject.confirmed
                 ? "person.crop.circle"
                 : "person.crop.circle.badge.questionmark")
@@ -112,14 +113,14 @@ private struct PersonRow: View {
                 Text(subject.displayTitle)
                     .font(.body.weight(.medium))
 
-                // Kaksi eri asiaa, kaksi eri signaalia. Oranssi ja sana
-                // "Ehdotus" = tarkista tämä. Sininen ja mikrofoni = tee tämä.
+                // Two different things, two different signals. Orange plus the
+                // word "Ehdotus" = check this. Blue plus a microphone = do this.
                 if !subject.confirmed {
                     Text("Ehdotus — vahvista henkilö")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.orange)
                 } else if store.memories(for: subject.id).isEmpty {
-                    // Aukkoa ei piiloteta vaan näytetään kutsuna.
+                    // A gap is not hidden but shown as an invitation.
                     Label("Kerro hänestä", systemImage: "mic.fill")
                         .font(.subheadline)
                         .foregroundStyle(.tint)
@@ -135,9 +136,9 @@ private struct PersonRow: View {
     }
 }
 
-/// Kuvan, henkilön ja tapahtuman näkymä on sama: kohde ja siihen kertyneet
-/// muistot. Tämä on `subject`-taulun konkreettinen hyöty — yksi näkymä kolmen
-/// sijaan.
+/// The view for a photo, a person and an event is the same: the subject and the
+/// memories that have gathered on it. This is the concrete payoff of the
+/// `subject` table — one view instead of three.
 struct SubjectDetailScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -177,7 +178,7 @@ struct SubjectDetailScreen: View {
                 .listRowBackground(Color.clear)
             }
 
-            // Suku vain henkilöille: kuvalla ja tapahtumalla ei ole sukulaisia.
+            // Relationships only for people: a photo or an event has none.
             if subject.kind == .person {
                 RelationsSection(subject: subject)
             }
@@ -265,7 +266,7 @@ private struct MemoryRow: View {
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
 
-                // Alkuperäinen ääni on osa lopputuotetta, ei välivaihe.
+                // The original audio is part of the product, not a step towards it.
                 if memory.audioFilename != nil || memory.audioR2Key != nil {
                     MemoryPlaybackButton(memory: memory)
                 }

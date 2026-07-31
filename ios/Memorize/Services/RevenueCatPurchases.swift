@@ -1,17 +1,17 @@
 import Foundation
 import RevenueCat
 
-/// RevenueCat-toteutus.
+/// The RevenueCat implementation.
 ///
-/// Avain luetaan asetuksista eikä koodista: **RevenueCat Test Store** on
-/// kehityksessä ja demossa, ja alustakohtainen avain vasta jos joskus
-/// julkaistaan storeen. Ilman avainta sovellus käyttää stubia ja toimii
-/// normaalisti — ostot vain eivät ole tarjolla.
+/// The key is read from settings rather than code: the **RevenueCat Test Store**
+/// is used in development and in the demo, and a platform key only if this is
+/// ever released to a store. Without a key the app uses the stub and works
+/// normally — purchases just are not offered.
 struct RevenueCatPurchases: PurchaseService {
-    /// Asetetaan käynnistysargumentilla `-rcKey <avain>` tai UserDefaultsiin
-    /// avaimella `rcKey`. Julkinen SDK-avain on suunniteltu asiakaspuolelle,
-    /// joten sen upottaminen olisi turvallista — se luetaan silti asetuksista,
-    /// jotta Test Store ja tuotanto voidaan vaihtaa kääntämättä uudelleen.
+    /// Set with the launch argument `-rcKey <key>`, or in UserDefaults under the
+    /// key `rcKey`. A public SDK key is designed for the client side, so
+    /// embedding it would be safe — it is still read from settings so that Test
+    /// Store and production can be swapped without recompiling.
     static var configuredKey: String? {
         guard let key = UserDefaults.standard.string(forKey: "rcKey"), !key.isEmpty else {
             return nil
@@ -19,12 +19,12 @@ struct RevenueCatPurchases: PurchaseService {
         return key
     }
 
-    /// Kutsutaan kerran käynnistyksessä.
+    /// Called once at launch.
     ///
-    /// `appUserID` sidotaan perheen jäsentunnisteeseen, jotta webhook löytää
-    /// perheen ilman että sovellus on auki. Ilman tätä uusiutunut tilaus
-    /// näkyisi vasta kun maksaja seuraavan kerran avaa sovelluksen — ja hän ei
-    /// ole se joka sitä eniten käyttää.
+    /// `appUserID` is bound to the family member id so that the webhook can find
+    /// the family without the app being open. Without this, a renewed
+    /// subscription would only show up when the payer next opens the app — and
+    /// they are not the one who uses it most.
     static func configure(memberID: String) {
         guard let key = configuredKey else { return }
         Purchases.logLevel = .warn

@@ -1,15 +1,15 @@
-/// Synkronointi.
+/// Sync.
 ///
-/// Paikallinen ensin: asiakas kirjoittaa aina omaan tallennukseensa ja työntää
-/// muutokset taustalla. Muisto ei saa kadota verkon takia — puhuja ei ehkä ole
-/// enää kysyttävissä. Ks. docs/ARKKITEHTUURI.md §3.
+/// Local first: the client always writes to its own storage and pushes changes
+/// in the background. A memory must not be lost to the network — the speaker may
+/// no longer be around to ask. See docs/ARCHITECTURE.md §3.
 
 import type { Session } from './auth'
 import type { Env } from './worker'
 
-/// Yhden pyynnön yläraja. Perheen koko arkisto on satoja rivejä, joten tämä
-/// riittää ensimmäiseen täyteen hakuun ja estää silti väärin toimivaa
-/// asiakasta lähettämästä megatavun kerralla.
+/// Upper bound for a single request. A family's entire archive is hundreds of
+/// rows, so this is enough for the first full fetch while still stopping a
+/// misbehaving client from sending a megabyte at once.
 const MAX_ROWS = 500
 
 export type SubjectRow = {
@@ -73,13 +73,13 @@ type PushPayload = {
 
 const now = () => Math.floor(Date.now() / 1000)
 
-/// Varaa yhden järjestysluvun perheelle.
+/// Reserves one ordering number for the family.
 ///
-/// D1:ssä ei ole pitkiä transaktioita, joten varaus tehdään ehdollisella
-/// päivityksellä: `sync_seq = sync_seq + 1` on atominen yhdellä rivillä.
-/// Kaikki yhden pyynnön rivit saavat saman luvun — se riittää, koska asiakas
-/// kysyy aina "kaikki tätä suuremmat" eikä yksittäisten rivien keskinäisellä
-/// järjestyksellä ole merkitystä.
+/// D1 has no long transactions, so the reservation is made with a conditional
+/// update: `sync_seq = sync_seq + 1` is atomic on a single row. Every row in a
+/// single request gets the same number — which is enough, because the client
+/// always asks for "everything above this" and the relative order of individual
+/// rows does not matter.
 async function nextSeq(env: Env, familyID: string): Promise<number> {
 	await env.DB.prepare('UPDATE family SET sync_seq = sync_seq + 1 WHERE id = ?')
 		.bind(familyID)
@@ -90,7 +90,7 @@ async function nextSeq(env: Env, familyID: string): Promise<number> {
 	return row?.sync_seq ?? 0
 }
 
-// ---------------------------------------------------------------- veto
+// ---------------------------------------------------------------- pull
 
 export async function pull(env: Env, session: Session, since: number) {
 	const family = session.familyID
@@ -121,9 +121,9 @@ export async function pull(env: Env, session: Session, since: number) {
 		.bind(family, since, MAX_ROWS)
 		.all<QuestionRow>()
 
-	// Maininnat kulkevat muiston mukana eivätkä omina riveinään: ne muuttuvat
-	// vain kun muisto syntyy tai kun nimet korjataan, joten erillinen
-	// synkronointi olisi kolmas taulu ilman hyötyä.
+	// Mentions travel with the memory rather than as rows of their own: they
+	// change only when a memory is created or names are corrected, so syncing
+	// them separately would be a third table with no benefit.
 	const memoryRows = memories.results ?? []
 	if (memoryRows.length > 0) {
 		const ids = memoryRows.map((m) => m.id)
@@ -160,7 +160,7 @@ export async function pull(env: Env, session: Session, since: number) {
 
 	return {
 		seq: highest,
-		// Jos jokin taulu täytti rajan, asiakkaan pitää hakea uudelleen.
+		// If any table filled the limit, the client needs to fetch again.
 		more:
 			(subjects.results?.length ?? 0) === MAX_ROWS ||
 			memoryRows.length === MAX_ROWS ||
@@ -173,7 +173,7 @@ export async function pull(env: Env, session: Session, since: number) {
 	}
 }
 
-// ---------------------------------------------------------------- työntö
+// ---------------------------------------------------------------- push
 
 export async function push(env: Env, session: Session, payload: PushPayload) {
 	const family = session.familyID
@@ -195,11 +195,11 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   date_start = excluded.date_start,
 				   date_end = excluded.date_end,
 				   date_precision = excluded.date_precision,
-				   -- Vahvistus on yksisuuntainen: viikon offline ollut laite ei
-				   -- saa palauttaa vahvistettua henkilöä takaisin ehdotukseksi.
+				   -- Confirmation is one-way: a device that has been offline for
+				   -- a week must not turn a confirmed person back into a proposal.
 				   confirmed = MAX(subject.confirmed, excluded.confirmed),
-				   -- Sulautus on tarttuva samasta syystä. Perumiseen tarvittaisiin
-				   -- oma operaationsa, jota ei vielä ole.
+				   -- A merge is sticky for the same reason. Undoing one would
+				   -- need its own operation, which does not exist yet.
 				   merged_into = COALESCE(excluded.merged_into, subject.merged_into),
 				   deleted_at = COALESCE(excluded.deleted_at, subject.deleted_at),
 				   seq = excluded.seq
@@ -235,15 +235,16 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   audio_r2_key = COALESCE(excluded.audio_r2_key, memory.audio_r2_key),
 				   deleted_at = COALESCE(excluded.deleted_at, memory.deleted_at),
 				   seq = excluded.seq
-				 -- Vain kirjoittaja muokkaa omaansa. Kukaan ei saa siivota
-				 -- isoäidin kertomaa, ei edes vahingossa synkronoinnin kautta.
+				 -- Only the author edits their own. Nobody gets to tidy up what
+				 -- grandmother said, not even accidentally through sync.
 				 WHERE memory.author_id = ? AND memory.family_id = excluded.family_id`,
 			).bind(
 				memory.id,
 				family,
 				memory.subject_id,
-				// Kirjoittaja otetaan istunnosta eikä hyötykuormasta: asiakas ei
-				// saa väittää muistoa jonkun toisen kertomaksi.
+				// The author is taken from the session rather than the payload:
+				// a client must not be able to claim a memory was told by
+				// someone else.
 				session.memberID,
 				memory.body,
 				memory.raw_transcript ?? null,
@@ -299,8 +300,8 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                       confirmed, created_at, deleted_at, seq)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
-				   -- Vahvistus on yksisuuntainen myös suhteille: vanha laite ei
-				   -- saa palauttaa vahvistettua sukulaisuutta arvaukseksi.
+				   -- Confirmation is one-way for relationships too: an old device
+				   -- must not turn a confirmed relationship back into a guess.
 				   confirmed = MAX(relation.confirmed, excluded.confirmed),
 				   deleted_at = COALESCE(excluded.deleted_at, relation.deleted_at),
 				   seq = excluded.seq

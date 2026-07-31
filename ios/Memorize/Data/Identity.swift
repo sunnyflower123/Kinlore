@@ -1,28 +1,29 @@
 import Foundation
 import Security
 
-/// Laitteen identiteetti: UUID ja satunnainen salaisuus Keychainissa.
+/// The device's identity: a UUID and a random secret in the Keychain.
 ///
-/// Ei kirjautumisruutua. 80-vuotias ei näe tästä mitään — hän saa kutsulinkin
-/// lapsenlapselta ja on sisällä. Ks. docs/ARKKITEHTUURI.md §4.
+/// No login screen. An 80-year-old sees none of this — she gets an invite link
+/// from a grandchild and she is in. See docs/ARCHITECTURE.md §4.
 struct Identity {
     let memberID: String
     let secret: String
 
-    /// Bearer-token muodossa `<member_id>.<secret>`.
+    /// Bearer token in the form `<member_id>.<secret>`.
     var token: String { "\(memberID).\(secret)" }
 
-    /// Lataa olemassa olevan tai luo uuden. Luonti tapahtuu kerran laitteen
-    /// elinaikana — tai kerran Apple-tilin elinaikana, koska Keychain-merkintä
-    /// synkronoituu iCloudin kautta käyttäjän muille laitteille.
+    /// Loads the existing identity or creates a new one. Creation happens once
+    /// in the lifetime of a device — or once in the lifetime of an Apple
+    /// account, because the Keychain entry syncs via iCloud to the user's other
+    /// devices.
     static func loadOrCreate() -> Identity {
         if let memberID = Keychain.read(Keychain.memberIDKey),
            let secret = Keychain.read(Keychain.secretKey) {
             return Identity(memberID: memberID, secret: secret)
         }
 
-        // Vanha osittainen tila siivotaan pois: puolikas identiteetti on
-        // pahempi kuin ei mitään, koska palvelin hylkäisi sen hiljaa.
+        // An old partial state is cleaned away: half an identity is worse than
+        // none, because the server would reject it silently.
         Keychain.delete(Keychain.memberIDKey)
         Keychain.delete(Keychain.secretKey)
 
@@ -32,22 +33,22 @@ struct Identity {
         return identity
     }
 
-    /// 32 tavua satunnaisuutta heksana. Tämä ei ole salasana vaan avain, joten
-    /// pituus korvaa muistettavuuden.
+    /// 32 bytes of randomness as hex. This is not a password but a key, so
+    /// length replaces memorability.
     private static func randomSecret() -> String {
         var bytes = [UInt8](repeating: 0, count: 32)
         if SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) != errSecSuccess {
-            // Käytännössä ei tapahdu, mutta hiljainen heikko avain olisi
-            // pahempi kuin kaatuminen.
+            // In practice this does not happen, but a silently weak key would be
+            // worse than crashing.
             bytes = (0 ..< 32).map { _ in UInt8.random(in: .min ... .max) }
         }
         return bytes.map { String(format: "%02x", $0) }.joined()
     }
 }
 
-/// Ohut Keychain-kääre. Merkinnät ovat synkronoituvia, jotta identiteetti
-/// seuraa käyttäjää laitteesta toiseen eikä perheeseen tarvitse liittyä
-/// uudelleen puhelinta vaihtaessa.
+/// A thin Keychain wrapper. The entries are synchronizable so that the identity
+/// follows the user from device to device and there is no need to rejoin the
+/// family when changing phones.
 enum Keychain {
     static let memberIDKey = "member_id"
     static let secretKey = "device_secret"
@@ -59,8 +60,8 @@ enum Keychain {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
-            // Synkronoituva merkintä vaatii tämän saatavuustason: tiukemmat
-            // tasot eivät koskaan päädy iCloudiin.
+            // A synchronizable entry requires this accessibility level: stricter
+            // levels never reach iCloud.
             kSecAttrSynchronizable as String: kCFBooleanTrue as Any,
         ]
     }

@@ -1,14 +1,14 @@
-/// Kuvien ja äänten tallennus R2:een.
+/// Storing photos and audio in R2.
 ///
-/// Tiedosto kulkee Workerin läpi. Kuva on pienennettynä noin 300 kt ja 90
-/// sekunnin ääni noin 200 kt, joten esiallekirjoitetut URL:t toisivat vain
-/// liikkuvia osia ilman hyötyä. Ks. docs/ARKKITEHTUURI.md §5.
+/// The file passes through the Worker. A downscaled photo is about 300 kB and 90
+/// seconds of audio about 200 kB, so presigned URLs would add moving parts
+/// without benefit. See docs/ARCHITECTURE.md §5.
 
 import type { Session } from './auth'
 import type { Env } from './worker'
 
-/// Yksittäisen tiedoston yläraja. Kuvat pienennetään asiakkaassa 2048
-/// pikseliin, ja pisinkin muisto mahtuu tähän moninkertaisesti.
+/// Upper bound for a single file. Photos are downscaled to 2048 px on the
+/// client, and even the longest memory fits into this many times over.
 const MAX_BYTES = 10 * 1024 * 1024
 
 const TYPES: Record<string, { ext: string; contentType: string }> = {
@@ -16,9 +16,9 @@ const TYPES: Record<string, { ext: string; contentType: string }> = {
 	audio: { ext: 'm4a', contentType: 'audio/mp4' },
 }
 
-/// Avain alkaa aina perheen tunnisteella. Pääsy tarkistetaan silti istunnosta
-/// eikä avaimesta — etuliite tekee tarkistuksesta yksinkertaisen, mutta se ei
-/// ole se mikä turvaa: pyytäjän perhe ratkaisee.
+/// The key always starts with the family id. Access is still checked from the
+/// session rather than the key — the prefix makes the check simple, but it is
+/// not what provides the security: the caller's family decides.
 function keyFor(familyID: string, kind: string): string {
 	return `${familyID}/${crypto.randomUUID()}.${TYPES[kind].ext}`
 }
@@ -49,8 +49,8 @@ export async function upload(
 }
 
 export async function download(env: Env, session: Session, key: string): Promise<Response> {
-	// Perheen etuliite tarkistetaan ennen R2-kutsua: toisen perheen avaimen
-	// arvaaminen ei saa edes aiheuttaa hakua.
+	// The family prefix is checked before the R2 call: guessing another family's
+	// key must not even cause a lookup.
 	if (!key.startsWith(`${session.familyID}/`)) {
 		return new Response(JSON.stringify({ error: 'not_found' }), { status: 404 })
 	}
@@ -63,8 +63,8 @@ export async function download(env: Env, session: Session, key: string): Promise
 	return new Response(object.body, {
 		headers: {
 			'content-type': object.httpMetadata?.contentType ?? 'application/octet-stream',
-			// Muistot eivät muutu, ja avain on kertakäyttöinen UUID. Pitkä
-			// välimuisti säästää sekä siirtoa että akkua vanhassa puhelimessa.
+			// Memories do not change, and the key is a single-use UUID. A long
+			// cache saves both transfer and battery on an old phone.
 			'cache-control': 'private, max-age=31536000, immutable',
 			etag: object.httpEtag,
 		},

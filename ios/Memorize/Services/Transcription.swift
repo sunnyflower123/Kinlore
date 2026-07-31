@@ -1,18 +1,20 @@
 import Foundation
 
-/// Puheen purku tekstiksi.
+/// Transcribing speech into text.
 ///
-/// Oikea toteutus lataa äänen Workerille, joka kutsuu ASR-palvelua — avaimet
-/// eivät koskaan päädy sovellukseen. Moottori valitaan `scripts/asr-bench.mjs`
-/// -vertailun perusteella.
+/// The real implementation uploads the audio to the Worker, which calls the ASR
+/// service — keys never end up in the app. The engine is chosen on the basis of
+/// the `scripts/asr-bench.mjs` comparison.
 protocol TranscriptionService {
     func transcribe(audioURL: URL) async throws -> String
 }
 
-/// Kehitysvaiheen toteutus. Palauttaa realistisen näytteen vanhuksen puheesta:
-/// rönsyilevää, keskenjääviä lauseita, epävarma ajankohta, useita mainittuja
-/// henkilöitä. Käyttöliittymä pitää suunnitella tällaiselle syötteelle eikä
-/// siistille esimerkkilauseelle.
+/// The development implementation. It returns a realistic sample of elderly
+/// speech: rambling, unfinished sentences, an uncertain date and several people
+/// mentioned. The UI has to be designed for input like this, not for a tidy
+/// example sentence.
+///
+/// The samples are Finnish because that is the input the app actually processes.
 struct StubTranscriptionService: TranscriptionService {
     var simulatedDelay: Duration = .milliseconds(1400)
 
@@ -37,8 +39,8 @@ struct StubTranscriptionService: TranscriptionService {
 
     func transcribe(audioURL: URL) async throws -> String {
         try await Task.sleep(for: simulatedDelay)
-        // Vaihdellaan näytettä nauhoituksen keston mukaan, jottei sama teksti
-        // toistu joka kerta kehitystä tehdessä.
+        // Vary the sample by recording length, so the same text does not come
+        // back every time during development.
         let seed = Int(FileManager.default.fileSize(at: audioURL) / 1024)
         return Self.samples[abs(seed) % Self.samples.count]
     }

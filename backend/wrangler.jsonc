@@ -5,18 +5,18 @@
 	"compatibility_date": "2026-07-31",
 	"compatibility_flags": ["nodejs_compat"],
 
-	// Metadata: perheet, subjectit, muistot, suhteet.
+	// Metadata: families, subjects, memories, relationships.
 	//   npx wrangler d1 create memorize
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "memorize",
-			"database_id": "TODO-aja-wrangler-d1-create"
+			"database_id": "TODO-run-wrangler-d1-create"
 		}
 	],
 
-	// Kuvat ja äänet. Alkuperäinen ääni säilytetään aina, joten tämä kasvaa
-	// nopeammin kuin kuvat — R2:ssa se on silti käytännössä ilmaista.
+	// Photos and audio. The original audio is always kept, so this grows faster
+	// than the photos — on R2 it is still effectively free.
 	//   npx wrangler r2 bucket create memorize-media
 	"r2_buckets": [
 		{
@@ -26,28 +26,29 @@
 	],
 
 	"vars": {
-		// Ilmaiskäytön rajat. Kuvat ja AI-minuutit rajataan — muistojen
-		// kirjoittamista ei koskaan, ks. CLAUDE.md sääntö 2.
+		// Free tier limits. Photos and AI minutes are limited — writing
+		// memories never is, see rule 2 in CLAUDE.md.
 		"FREE_PHOTO_LIMIT": "20",
 		"FREE_AI_SECONDS_PER_MONTH": "600",
 		"RC_ENTITLEMENT_ID": "archive",
-		// Projektin tunniste RevenueCatin hallintapaneelista. Ei salaisuus,
-		// toisin kuin RC_SECRET_KEY ja RC_WEBHOOK_SECRET.
-		"RC_PROJECT_ID": "TODO-revenuecat-projektin-id",
+		// The project identifier from the RevenueCat dashboard. Not a secret,
+		// unlike RC_SECRET_KEY and RC_WEBHOOK_SECRET.
+		"RC_PROJECT_ID": "TODO-revenuecat-project-id",
 
-		// Mallit on VALITTU MITTAAMALLA, ei muistista: scripts/asr-bench.mjs,
-		// 3 tekstiä × 4 rappeutusporrasta × 5 mallia.
+		// The models were CHOSEN BY MEASUREMENT, not from memory:
+		// scripts/asr-bench.mjs, 3 texts × 4 degradation steps × 5 models.
 		//
-		//   gemini-3.6-flash        WER 37,8 %   erisnimet 68 %   ← valittu
-		//   gemini-3.1-flash-lite   WER 43,9 %   erisnimet 49 %
-		//   gpt-audio-mini          WER 58,7 %   erisnimet 57 %   (ei ota m4a:ta)
-		//   gemini-2.5-flash        WER 13 530 % erisnimet 33 %   (sepittää)
-		//   voxtral-small           kaatuu äänisyötteeseen kokonaan
+		//   gemini-3.6-flash        WER 37.8 %   proper nouns 68 %   ← chosen
+		//   gemini-3.1-flash-lite   WER 43.9 %   proper nouns 49 %
+		//   gpt-audio-mini          WER 58.7 %   proper nouns 57 %   (rejects m4a)
+		//   gemini-2.5-flash        WER 13,530 % proper nouns 33 %   (hallucinates)
+		//   voxtral-small           fails on audio input entirely
 		//
-		// Erisnimien osuvuus painaa enemmän kuin WER: sukupuu rakentuu nimistä.
+		// Proper-noun accuracy weighs more than WER: the family tree is built
+		// out of names.
 		"MODEL_EXTRACT": "google/gemini-3.6-flash",
-		// Kolmas yritys vaihtaa mallia: mitattu vika oli tarjoajassa
-		// (finish_reason=error), eikä sama malli uudelleen auta siihen.
+		// The third attempt switches model: the measured fault was in the
+		// provider (finish_reason=error), and the same model again does not help.
 		"MODEL_EXTRACT_FALLBACK": "openai/gpt-4o-mini",
 		"MODEL_TRANSCRIBE": "google/gemini-3.6-flash"
 	},

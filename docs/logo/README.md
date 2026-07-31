@@ -1,76 +1,95 @@
-# Tunnus
+# The mark
 
-Valittu merkki on **C — medaljonki**. Umpinainen kiekko, jonka sisällä on
-ääniaalto, ja päällä ripustin.
+The chosen mark is **C — the locket**. A closed disc with a waveform inside and
+a bail on top.
 
-Merkki on tarkoituksella *nimetön*: `Memorize` on työnimi (PLAN.md §10), ja
-medaljonki toimii myös nimen vaihduttua. Vain `lockup.svg` sisältää nimen.
+The mark is deliberately *nameless*: `Memorize` is a working title (PLAN.md §10),
+and a locket still works after the name changes. Only the lockup files carry the
+name.
 
-## Miksi medaljonki
+## Why a locket
 
-Medaljonki on esine jota isoäiti on pitänyt kaulassaan vuosikymmeniä ja joka
-aukeaa näyttämään kasvot. Se on sovelluksen lupaus esineenä: perheen muisto,
-jota kannetaan mukana. Sisällä on ääniaalto eikä valokuva, koska sääntö 3 sanoo
-että alkuperäinen ääni säilytetään aina — puhuja ei ehkä ole enää
-kysyttävissä. Keskimmäinen palkki on meripihkan värinen: se on elävä ääni.
+A locket is an object a grandmother has worn round her neck for decades and
+which opens to show a face. It is the app's promise as an object: a family
+memory, carried with you. Inside is a waveform rather than a photograph, because
+rule 3 says the original audio is always kept — the speaker may no longer be
+around to ask. The middle bar is amber: it is the living voice.
 
-## Miksi A hylättiin
+## Why A was rejected
 
-Konsepti A (vuosirenkaat, `concept-a-rings.svg`) oli ensimmäinen suositus.
-Se hylättiin vasta kun ikoni nähtiin simulaattorin kotinäytöllä, ja kahdesta
-syystä:
+Concept A (growth rings, `concept-a-rings.svg`) was the first recommendation. It
+was rejected only once the icon had been seen on the simulator's home screen,
+for two reasons:
 
-1. **Törmäys.** ConnectFulin ja Hetkion ikonit ovat molemmat katkaistu rengas
-   ja keskipiste. Vuosirenkaat olivat sama idea käänteisin värein, eikä
-   Memorize erottunut omaksi sovelluksekseen samalla ruudulla.
-2. **Liquid Glass.** iOS 26 piirtää ikonin päälle heijastuksen, joka tummentaa
-   ja mudentaa tumman taustan. Espresso meni lähes mustaksi ja pergamentti
-   himmeni harmaaksi. Vaalea tausta selviää samasta käsittelystä kirkkaana.
+1. **Collision.** The ConnectFul and Hetkio icons are both a broken ring with a
+   centre point. Growth rings were the same idea with inverted colours, and
+   Memorize did not read as its own app on the same screen.
+2. **Liquid Glass.** iOS 26 draws a reflection over the icon that darkens and
+   muddies a dark background. Espresso went almost black and parchment dimmed to
+   grey. A light background survives the same treatment brightly.
 
-Kumpaakaan ei olisi voinut päätellä lähdeaineistosta. **Ikoni pitää katsoa
-kotinäytöltä ennen kuin se on valmis** — sama sääntö kuin ruudun katsominen
-suurimmalla tekstikoolla.
+Neither could have been deduced from the source artwork. **An icon has to be
+looked at on the home screen before it is finished** — the same rule as looking
+at a screen at the largest text size.
 
-Tiedosto on jätetty repoon, jotta perustelu on jäljitettävissä.
+The file is kept in the repo so the reasoning stays traceable.
 
-## Väripaletti
+## Palette
 
-| | Hex | Käyttö |
+| | Hex | Use |
 |---|---|---|
-| Pergamentti | `#FBF1E2` | Ikonin tausta |
-| Muste | `#241A14` | Merkki ja teksti |
-| Meripihka | `#E8A33C` | Keskimmäinen palkki ikonissa |
-| Terrakotta | `#C4552C` | Keskimmäinen palkki lockupissa |
-| Espresso | `#2E1D16` | Varalla tummiin pintoihin |
+| Parchment | `#FBF1E2` | Icon background |
+| Ink | `#241A14` | Mark and text |
+| Amber | `#E8A33C` | Middle bar in the icon and in the light lockup |
+| Terracotta | `#C4552C` | Middle bar in the dark lockup |
+| Espresso | `#2E1D16` | Reserved for dark surfaces |
 
-Muste pergamentin päällä on 14:1, meripihka musteen päällä 7,3:1. Luvut ovat
-lähdeaineistosta; käyttöjärjestelmän oma käsittely muuttaa lopputulosta, ks.
-yllä. Ensisijainen käyttäjä on 80-vuotias, eikä tunnus ole poikkeus siitä
-säännöstä.
+Ink on parchment is 14:1, amber on ink 7.3:1. The figures come from the source
+artwork; the operating system's own processing changes the result, see above.
+The primary user is 80 years old, and the mark is no exception to that rule.
 
-## Tiedostot
+## Files
 
-| Tiedosto | Mihin |
+| File | What for |
 |---|---|
-| `concept-c-locket.svg` | Valittu merkki, ikonimuodossa (512, täysi tausta) |
-| `icon-tinted.svg` | Sävytetty variantti iOS 18+ (harmaasävy, läpinäkyvä) |
-| `mark-mono.svg` | Pelkkä merkki, `currentColor` — README, favicon, UI |
-| `lockup.svg` | Merkki + nimi vaakasuunnassa |
-| `concept-b-bubble.svg` | Vaihtoehto: puhuva kuva |
-| `concept-a-rings.svg` | Hylätty, ks. yllä |
+| `concept-c-locket.svg` | The chosen mark, in icon form (512, full background) |
+| `icon-tinted.svg` | Tinted variant for iOS 18+ (greyscale, transparent) |
+| `mark-mono.svg` | The mark alone, `currentColor` — README, favicon, UI |
+| `lockup.svg` | Mark + name, horizontal, for light surfaces |
+| `lockup-dark.svg` | The same for dark surfaces — the root README switches between them |
+| `concept-b-bubble.svg` | Alternative: the talking photo |
+| `concept-a-rings.svg` | Rejected, see above |
 
-## Vienti
+## Export
 
-Ikoni on kytketty: `ios/Memorize/Assets.xcassets/AppIcon.appiconset`.
-Kun SVG muuttuu, PNG:t generoidaan uudelleen:
+The icon is wired up: `ios/Memorize/Assets.xcassets/AppIcon.appiconset`.
+When the SVG changes, regenerate the PNGs:
 
 ```bash
 qlmanage -t -s 1024 -o . docs/logo/concept-c-locket.svg
 ```
 
-Sävytetty variantti on erillinen tiedosto, koska ilman sitä iOS tekee
-sävytetyn version automaattisesti ja lopputulos on harmaa möykky.
+The tinted variant is a separate file, because without it iOS generates a tinted
+version automatically and the result is a grey blob.
 
-`lockup.svg` käyttää järjestelmän serif-fonttia. Ennen kuin nimi menee videoon
-tai READMEen, teksti pitää muuttaa poluiksi — muuten se renderöityy eri fontilla
-joka koneella.
+## The wordmark
+
+The name is set in Charter Bold and converted to outlines, so the lockup does
+not depend on the fonts a reader happens to have. It used to be a `<text>`
+element asking for `New York, Charter, Georgia, serif`. On this Mac that looked
+right; with Georgia — the likely fallback on Windows — the last letter clipped
+at the edge of the viewBox. The README is read mostly on machines without
+Apple's fonts, so the bug was live on GitHub and invisible here.
+
+Charter rather than New York because Bitstream Charter's licence allows its
+letterforms to be used this way, while Apple's fonts are licensed for user
+interface mock-ups.
+
+`Memorize` is still a working title, so the wordmark will need regenerating:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/outline-wordmark.swift Memorize Charter 0.4 92 -1 178 132
+```
+
+The script prints the bounding box to stderr. The viewBox has to be wide enough
+for its right edge, or the name clips again.

@@ -1,18 +1,18 @@
-/// OpenRouter-klientti.
+/// OpenRouter client.
 ///
-/// Yksi avain kattaa sekä puheen purun että jäsennyksen: OpenRouter tukee
-/// äänisyötettä chat completionsin `input_audio`-osina, joten erillistä
-/// ASR-palvelua ei tarvita.
+/// One key covers both transcription and extraction: OpenRouter accepts audio
+/// input as `input_audio` parts of chat completions, so no separate ASR service
+/// is needed.
 
 import type { Env } from './worker'
 
 const API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 
-/// Upstream-virhe joka tietää kannattaako yrittää uudelleen.
+/// An upstream error that knows whether retrying is worth it.
 ///
-/// Ero on olennainen: krediittien loppuminen (402) tai väärä avain (401) ei
-/// korjaannu odottamalla, ja kolme yritystä vain hidastaa epäonnistumista
-/// kolminkertaiseksi. Ruuhka (429) ja palvelinvirheet sen sijaan korjaantuvat.
+/// The distinction matters: running out of credits (402) or a bad key (401) does
+/// not fix itself by waiting, and three attempts only make the failure three
+/// times slower. Rate limiting (429) and server errors do recover.
 export class UpstreamError extends Error {
 	readonly status: number
 	readonly retryable: boolean
@@ -36,10 +36,10 @@ type ContentPart =
 type CallOptions = {
 	model: string
 	temperature?: number
-	/// JSON Schema. Kun annettu, malli pakotetaan rakenteeseen.
+	/// JSON Schema. When given, the model is forced into the structure.
 	schema?: { name: string; schema: unknown }
-	/// Ilman tätä käytetään reitin oletusta, joka voi olla yllättävän matala.
-	/// Katkennut vastaus näkyy kelvottomana JSONina, mikä johtaa harhaan.
+	/// Without this the route's default is used, which can be surprisingly low.
+	/// A truncated response looks like invalid JSON, which sends you the wrong way.
 	maxTokens?: number
 }
 
@@ -51,9 +51,10 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 		model: opts.model,
 		messages,
 		temperature: opts.temperature ?? 0.3,
-		// Keruunesto on EHDOTON, ei kutsukohtainen valinta. Tämä on perheen
-		// muistoja kuolleista sukulaisista — sisältö on arkaluontoisempaa kuin
-		// lähes mikään muu mitä käyttäjä voisi kirjoittaa. Lippuna se unohtuisi.
+		// Opting out of data collection is UNCONDITIONAL, not a per-call choice.
+		// This is a family's memories of dead relatives — the content is more
+		// sensitive than almost anything else a user could write. As a flag it
+		// would be forgotten somewhere.
 		provider: { data_collection: 'deny' },
 	}
 
@@ -64,8 +65,9 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 			type: 'json_schema',
 			json_schema: { name: opts.schema.name, strict: true, schema: opts.schema.schema },
 		}
-		// Ilman tätä pyyntö voi reitittyä tarjoajalle joka ei tue rakennetta,
-		// jolloin vastaus on vapaata tekstiä ja jäsennys kaatuu satunnaisesti.
+		// Without this the request can be routed to a provider that does not
+		// support structured output, in which case the reply is free text and
+		// parsing fails at random.
 		;(body.provider as Record<string, unknown>).require_parameters = true
 	}
 
@@ -81,8 +83,9 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	})
 
 	if (!res.ok) {
-		// Runko VAIN lokiin: se voi sisältää tilin saldon tai mallin tulostetta
-		// joka toistaa käyttäjän kertoman muiston. Kutsuja saa vain statuksen.
+		// The body goes to the LOG ONLY: it can contain the account balance or
+		// model output echoing back the memory the user just told. The caller
+		// gets nothing but the status.
 		const text = await res.text().catch(() => '')
 		console.error(`[openrouter] ${opts.model} HTTP ${res.status}: ${text.slice(0, 300)}`)
 		throw new UpstreamError(res.status)
@@ -95,14 +98,14 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	const content = choice?.message?.content
 	if (!content?.trim()) throw new UpstreamError(502, true)
 
-	// Osittainen vastaus on tunnistettavasti rikki, joten se hylätään heti sen
-	// sijaan että sitä yritettäisiin jäsentää. "error" tarkoittaa että tarjoaja
-	// kaatui kesken generoinnin, "length" että tokenraja katkaisi. Molemmissa
-	// sisältö on keskeneräistä — ilman tätä tarkistusta vika näyttää skeeman
-	// rikkomiselta ja johtaa etsimään sitä väärästä paikasta.
+	// A partial response is recognisably broken, so it is rejected outright
+	// rather than parsed. "error" means the provider crashed mid-generation,
+	// "length" that the token limit cut it off. In both cases the content is
+	// incomplete — without this check the fault looks like a schema violation
+	// and sends you looking in the wrong place.
 	const reason = choice?.finish_reason
 	if (reason && reason !== 'stop') {
-		console.warn(`[openrouter] ${opts.model} finish_reason=${reason} — vastaus hylätään`)
+		console.warn(`[openrouter] ${opts.model} finish_reason=${reason} — response rejected`)
 		throw new UpstreamError(503, true)
 	}
 

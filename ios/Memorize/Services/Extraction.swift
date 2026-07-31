@@ -1,34 +1,34 @@
 import Foundation
 
-/// Sanelun jäsennys: raakapuheesta rakenteeksi.
+/// Extracting structure out of raw speech.
 ///
-/// Rajapinta on erillään toteutuksesta, koska oikea toteutus (Worker → LLM)
-/// odottaa API-avainta. Stub tuottaa saman muotoisen tuloksen, joten vaihto on
-/// yhden rivin kokoinen `TellScreen`in `.task`-lohkossa eikä kosketa
-/// käyttöliittymää lainkaan.
+/// The protocol is separate from the implementation so that the UI can be built
+/// against a stub. Switching to the real implementation (Worker → LLM) is a
+/// one-line change in `AppServices` and touches no view at all.
 
-// MARK: - Tulos
+// MARK: - Result
 
-/// Vastaa suoraan sitä mitä LLM:n structured output palauttaa ja mitä skeema
-/// odottaa: `memory.body`, `mention`, `subject.date_*` ja `prompt_question`.
+/// Mirrors exactly what the LLM's structured output returns and what the schema
+/// expects: `memory.body`, `mention`, `subject.date_*` and `prompt_question`.
 struct ExtractionResult: Equatable {
-    /// Siivottu teksti. Rönsyt pois, sisältö tallella.
+    /// The cleaned text. Rambling removed, content intact.
     var body: String
     var mentions: [MentionedEntity]
     var dateHint: DateHint?
-    /// Kolme kysymystä. Enempi ahdistaa, vähempi ei vie kertomusta eteenpäin.
+    /// Three questions. More overwhelms, fewer do not carry the story forward.
     var questions: [String]
 }
 
 struct MentionedEntity: Equatable, Hashable {
     var name: String
     var kind: SubjectKind
-    /// LLM:n varmuus. Alle 1.0 syntyy vahvistamattomana ehdotuksena.
+    /// The LLM's confidence. Below 1.0 is created as an unconfirmed proposal.
     var confidence: Double
 }
 
-/// Kertojan tekemä nimenkorjaus. Puheentunnistus erehtyy erisnimissä noin joka
-/// kolmannessa, ja väärä nimi rakentaa väärän henkilön sukupuuhun.
+/// A name correction made by the teller. Speech recognition gets roughly one
+/// proper noun in three wrong, and a wrong name builds a wrong person into the
+/// family tree.
 struct NameCorrection: Equatable, Hashable {
     let from: String
     let to: String
@@ -44,37 +44,42 @@ extension ExtractionService {
     }
 }
 
-// MARK: - Vaatimus oikealle toteutukselle
+// MARK: - Requirement on the real implementation
 //
-// **Nimet on palautettava perusmuodossa.** Suomen taivutus tekee tästä
-// välttämättömän: puheessa esiintyy "Ainon", "Ainolle" ja "Aino", ja jos LLM
-// palauttaa pintamuodon, `MemoryStore.findOrCreateSubject` luo niistä kolme eri
-// henkilöä. Sukupuu täyttyy kaksoiskappaleista joita kukaan ei myöhemmin osaa
-// yhdistää, ja se on juuri se virhe jota periaate "AI ehdottaa, ihminen
-// vahvistaa" ei pysty korjaamaan — käyttäjä vahvistaa kolme oikeaa nimeä
-// tietämättä että ne ovat sama ihminen.
+// **Names must be returned in base form.** Finnish inflection makes this
+// essential: speech contains "Ainon", "Ainolle" and "Aino", and if the LLM
+// returns the surface form, `MemoryStore.findOrCreateSubject` creates three
+// different people from them. The family tree fills with duplicates that nobody
+// can later merge, and that is precisely the error the principle "AI proposes, a
+// human confirms" cannot catch — the user confirms three correct names without
+// knowing they are the same person.
 //
-// Sama koskee paikkoja: "Puumalassa" → "Puumala". Kysymystekstit saavat
-// käyttää taivutettua muotoa, mutta `subject.title` ei.
+// The same applies to places: "Puumalassa" → "Puumala". Question texts may use
+// an inflected form, but `subject.title` may not.
 //
-// Stub ei osaa tätä, koska se poimii sanat sellaisenaan. Se on tiedostettu
-// rajoite eikä korjattava bugi — perusmuotoistus kuuluu kielimallille.
+// The stub cannot do this, because it picks words as they appear. That is a
+// known limitation rather than a bug to fix — base-form normalisation belongs to
+// the language model.
 
 // MARK: - Stub
 
-/// Kehitysvaiheen toteutus. Poimii oikeasti erisnimet ja vuosiluvut tekstistä,
-/// jotta käyttöliittymää voi kehittää realistisella datalla ennen kuin
-/// LLM-avain on olemassa. Ei yritä olla älykäs — sen tekee oikea toteutus.
+/// The development implementation. It genuinely picks proper nouns and years out
+/// of the text, so the UI can be developed against realistic data before an LLM
+/// key exists. It does not try to be clever — the real implementation does that.
+///
+/// The Finnish string literals below are heuristics over Finnish text and text
+/// shown in the Finnish UI, not documentation.
 struct StubExtractionService: ExtractionService {
-    /// Simuloi verkkoviivettä, jotta latausanimaatio tulee suunniteltua
-    /// oikeissa olosuhteissa eikä välähdyksenä.
+    /// Simulates network latency, so the loading animation is designed under
+    /// real conditions rather than as a flash.
     var simulatedDelay: Duration = .milliseconds(2200)
 
     func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult {
         try await Task.sleep(for: simulatedDelay)
 
-        // Stub ei osaa taivuttaa, joten se korvaa vain perusmuodon. Oikea
-        // toteutus hoitaa taivutuksen — tässä riittää että korjaus näkyy.
+        // The stub cannot inflect, so it only replaces the base form. The real
+        // implementation handles inflection — here it is enough that the
+        // correction is visible.
         var text = transcript
         for correction in corrections {
             text = text.replacingOccurrences(of: correction.from, with: correction.to)
@@ -84,7 +89,7 @@ struct StubExtractionService: ExtractionService {
             corrections.first { $0.from == name }?.to ?? name
         }
         let mentions = names.map {
-            // Karkea jako: paikannimet taipuvat usein -ssa/-lla-päätteillä.
+            // A rough split: Finnish place names often carry the -ssa/-lla endings.
             MentionedEntity(
                 name: $0,
                 kind: Self.looksLikePlace($0) ? .place : .person,
@@ -100,9 +105,9 @@ struct StubExtractionService: ExtractionService {
         )
     }
 
-    // MARK: Heuristiikat
+    // MARK: Heuristics
 
-    /// Isolla alkukirjaimella kirjoitetut sanat jotka eivät aloita virkettä.
+    /// Capitalised words that do not start a sentence.
     static func properNouns(in text: String) -> [String] {
         var found: [String] = []
         for sentence in text.components(separatedBy: CharacterSet(charactersIn: ".!?")) {
@@ -121,7 +126,7 @@ struct StubExtractionService: ExtractionService {
         return suffixes.contains { name.lowercased().hasSuffix($0) }
     }
 
-    /// Poimii joko nelinumeroisen vuoden tai "50-luvulla" -tyyppisen vuosikymmenen.
+    /// Picks either a four-digit year or a decade of the "50-luvulla" form.
     static func dateHint(in text: String) -> DateHint? {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Helsinki") ?? .current
@@ -137,8 +142,8 @@ struct StubExtractionService: ExtractionService {
 
         if let match = text.firstMatch(of: /\b([2-9]0)-luvu/),
            let short = Int(match.1) {
-            // 20–90 tulkitaan 1900-luvuksi: puhe vanhoista kuvista tarkoittaa
-            // käytännössä aina viime vuosisataa.
+            // 20–90 is read as the 1900s: talk about old photographs means the
+            // last century in practice every time.
             let decade = 1900 + short
             return DateHint(start: date(year: decade), end: date(year: decade + 9), precision: .decade)
         }
@@ -146,8 +151,9 @@ struct StubExtractionService: ExtractionService {
         return nil
     }
 
-    /// Siivoaa täytesanat mutta ei tiivistä sisältöä. Muiston pituus on osa
-    /// muistoa — oikea toteutus saa muotoilla, ei lyhentää.
+    /// Removes filler words but does not condense the content. The length of a
+    /// memory is part of the memory — the real implementation may reshape, not
+    /// shorten.
     static func tidy(_ text: String) -> String {
         let fillers = ["niinku", "tota", "öö", "ää", "siis niinku"]
         var result = text
@@ -162,12 +168,13 @@ struct StubExtractionService: ExtractionService {
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Kysymykset kohdistuvat aukkoihin: mainittuun henkilöön josta ei kerrottu
-    /// mitään, tai paikkaan josta tiedetään vain nimi.
+    /// The questions target the gaps: a mentioned person nothing was said about,
+    /// or a place only known by name.
     ///
-    /// Tyyppi on otettava huomioon. Pelkkä nimilista tuottaa kysymyksiä kuten
-    /// "Millainen ihminen Puumalassa oli?" — se rikkoo koko taikahetken
-    /// uskottavuuden, koska käyttäjä näkee heti ettei ohjelma ymmärrä mitään.
+    /// The type has to be taken into account. A bare list of names produces
+    /// questions like "Millainen ihminen Puumalassa oli?" — that destroys the
+    /// credibility of the whole magic moment, because the user sees immediately
+    /// that the program understands nothing.
     static func questions(for mentions: [MentionedEntity]) -> [String] {
         let people = mentions.filter { $0.kind == .person }.map(\.name)
         let places = mentions.filter { $0.kind == .place }.map(\.name)
@@ -180,8 +187,8 @@ struct StubExtractionService: ExtractionService {
             out.append("Miten \(people[0]) ja \(people[1]) tunsivat toisensa?")
         }
         if let place = places.first {
-            // Paikannimi on puheessa jo sijamuodossa ("Puumalassa"), joten
-            // kysymys rakennetaan niin ettei sitä tarvitse taivuttaa uudelleen.
+            // In the speech a place name is already inflected ("Puumalassa"), so
+            // the question is built to avoid inflecting it again.
             out.append("\(place) — mitä muuta siellä tapahtui?")
         }
         out.append("Muistatko miltä siellä tuoksui tai kuulosti?")

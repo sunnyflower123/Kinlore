@@ -1,33 +1,35 @@
 import Foundation
 
-/// Ostot ja perheen maksullinen taso.
+/// Purchases and the family's paid tier.
 ///
-/// Sama kuvio kuin AI-palveluilla: protokolla erillään toteutuksesta, jotta
-/// sovellus toimii ilman RevenueCat-avainta ja ilman verkkoa. Ilman tätä
-/// kehitys ja demoaminen pysähtyisivät aina kun ostoja ei ole konfiguroitu.
+/// The same pattern as the AI services: the protocol is separate from the
+/// implementation, so the app works without a RevenueCat key and without a
+/// network. Otherwise development and demoing would stop whenever purchases were
+/// not configured.
 protocol PurchaseService {
-    /// RevenueCatin tuntema asiakastunnus, jos ostoja on konfiguroitu.
+    /// The customer id as RevenueCat knows it, if purchases are configured.
     var customerID: String? { get async }
-    /// Onko tällä laitteella voimassa oleva osto. Perheen oikeus tulee
-    /// palvelimelta — tämä kertoo vain onko tämä laite se joka maksaa.
+    /// Whether this device has an active purchase. The family's entitlement
+    /// comes from the server — this only says whether this device is the one
+    /// paying.
     var hasActivePurchase: Bool { get async }
 }
 
-/// Kehitysvaiheen toteutus. Ei koskaan omista mitään, joten paywall näkyy
-/// normaalisti ja kiintiörajat tulevat vastaan kuten oikeallakin käyttäjällä.
+/// The development implementation. It never owns anything, so the paywall shows
+/// normally and the quota limits are hit just as a real user would hit them.
 struct StubPurchaseService: PurchaseService {
     var customerID: String? { get async { nil } }
     var hasActivePurchase: Bool { get async { false } }
 }
 
-// MARK: - Perheen oikeus
+// MARK: - The family's entitlement
 
-/// Kertoo palvelimelle ostosta ja lukee perheen tilan.
+/// Reports a purchase to the server and reads the family's state.
 ///
-/// **Asiakkaan sanaan ei luoteta.** Tämä ei lähetä tilaa vaan vihjeen:
-/// palvelin kysyy totuuden RevenueCatilta ja päättää perheen oikeuden sen
-/// perusteella. Muuten kuka tahansa voisi avata maksullisen tason koko
-/// perheelle muokkaamalla sovellusta.
+/// **The client's word is not trusted.** This does not send a state but a hint:
+/// the server asks RevenueCat for the truth and decides the family's
+/// entitlement from that. Otherwise anyone could unlock the paid tier for a
+/// whole family by editing the app.
 struct EntitlementClient {
     let baseURL: URL
     let token: String
@@ -58,8 +60,8 @@ struct EntitlementClient {
         return try JSONDecoder().decode(Status.self, from: data)
     }
 
-    /// Perheen käyttötilanne. Paywall tarvitsee tämän kertoakseen mitä on
-    /// jäljellä ennen kuin raja tulee vastaan.
+    /// The family's usage. The paywall needs this to say what is left before the
+    /// limit is reached.
     struct Usage: Decodable {
         struct Meter: Decodable {
             let used: Int

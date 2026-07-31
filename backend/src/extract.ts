@@ -1,14 +1,20 @@
-/// Muiston jäsennys: rönsyilevästä puheesta rakenteeksi.
+/// Memory extraction: from rambling speech to structure.
 ///
-/// Vastaa iOS-puolen `ExtractionResult`-tyyppiä. Vuosiluvut kulkevat
-/// kokonaislukuina eivätkä unix-aikaleimoina, koska kielimallit käsittelevät
-/// vuosia luotettavasti ja aikaleimoja eivät lainkaan.
+/// Mirrors the iOS-side `ExtractionResult` type. Years travel as integers rather
+/// than unix timestamps, because language models handle years reliably and
+/// timestamps not at all.
+///
+/// NOTE ON LANGUAGE: the system prompt and the schema `description` fields below
+/// are deliberately in Finnish. They are not documentation — they are input to
+/// the model, and they instruct it about Finnish morphology (see rule 1). They
+/// were tuned by measurement; rewriting them in English would be a behaviour
+/// change, not a translation. Everything else in this file is English.
 
 import { complete, UpstreamError, type Message } from './openrouter'
 import type { Env } from './worker'
 
 export const EXTRACTION_SCHEMA = {
-	name: 'muisto',
+	name: 'memory',
 	schema: {
 		type: 'object',
 		properties: {
@@ -64,6 +70,13 @@ export const EXTRACTION_SCHEMA = {
 	},
 } as const
 
+/// Finnish by design — see the note at the top of this file. The six rules, in
+/// English for the reader: (1) names in base form, or the family tree fills with
+/// duplicates; (2) clean up filler words but never shorten, the length is part
+/// of the memory; (3) proper nouns only, a common noun like "grandma's house"
+/// identifies nobody; (4) never invent, an invented relative is worse than a
+/// missing one; (5) preserve uncertainty, a decade stays a decade; (6) exactly
+/// three follow-up questions aimed at the gaps.
 const SYSTEM_PROMPT = `Autat suomalaista perhettä säilyttämään muistoja. Käyttäjä on usein iäkäs ja puhuu rönsyillen, keskeneräisin lausein ja epävarmoin ajankohdin. Se on normaalia, ei virhe.
 
 TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdottomasti:
@@ -82,12 +95,19 @@ TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdott
 
 Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan name-kenttä on perusmuodossa.`
 
-/// Lisäohje kun käyttäjä on korjannut puheentunnistuksen kuulemat nimet.
+/// Extra instruction for when the user has corrected the names that speech
+/// recognition heard.
 ///
-/// Korjaus on välttämätön, koska puheentunnistus erehtyy erisnimissä noin
-/// joka kolmannessa: mitatussa vertailussa "Sotkamo" kuultiin "Skotlantina" ja
-/// "Eevertti" sanana "edes". Väärä nimi rakentaa väärän henkilön sukupuuhun,
-/// eikä kukaan osaa myöhemmin korjata sitä.
+/// The correction step is essential, because speech recognition gets roughly one
+/// proper noun in three wrong: in the measured comparison "Sotkamo" was heard as
+/// "Skotlanti" and "Eevertti" as the word "edes". A wrong name builds a wrong
+/// person into the family tree, and nobody can correct it later.
+///
+/// Finnish by design — see the note at the top of this file. In English: the
+/// user's corrections are authoritative, must not be reverted anywhere, and must
+/// also be applied to the memory text *inflected to fit the sentence*. That last
+/// part is the whole point: a plain string replacement never matches an inflected
+/// form, which is why the model does it instead.
 function correctionInstruction(corrections: Correction[]): string {
 	const list = corrections.map((c) => `"${c.from}" → "${c.to}"`).join(', ')
 	return `
@@ -112,48 +132,48 @@ export type ExtractionResult = {
 	questions: string[]
 }
 
-/// Puolustus muotoilupoikkeamia vastaan.
+/// Defence against formatting deviations.
 ///
-/// `strict: true` ei ole takuu — OpenRouterin dokumentaatio sanoo että osa
-/// tarjoajista kohtelee tiukkaa tilaa ohjeena. Katkenneet vastaukset hylätään
-/// jo `openrouter.ts`:ssä finish_reasonin perusteella, joten tänne jää vain
-/// tapaus jossa JSON on kokonainen mutta kääritty johonkin.
+/// `strict: true` is not a guarantee — OpenRouter's documentation says some
+/// providers treat strict mode as a hint. Truncated responses are already
+/// rejected in `openrouter.ts` based on finish_reason, so what is left here is
+/// the case where the JSON is complete but wrapped in something.
 function parseStructured(raw: string): ExtractionResult {
 	try {
 		return JSON.parse(raw)
 	} catch {
-		// jatketaan korjausyrityksiin
+		// fall through to the repair attempts
 	}
 
-	// Yleisin syy: malli kääri JSONin markdown-aitoihin.
+	// The most common cause: the model wrapped the JSON in markdown fences.
 	const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/)
 	if (fenced) {
 		try {
 			const result = JSON.parse(fenced[1])
-			console.warn('[extract] korjattu: JSON oli markdown-aidoissa')
+			console.warn('[extract] repaired: JSON was inside markdown fences')
 			return result
 		} catch {
-			// jatketaan
+			// keep going
 		}
 	}
 
-	// Toiseksi yleisin: saatesanoja ennen tai jälkeen objektin.
+	// The second most common: prose before or after the object.
 	const start = raw.indexOf('{')
 	const end = raw.lastIndexOf('}')
 	if (start !== -1 && end > start) {
 		try {
 			const result = JSON.parse(raw.slice(start, end + 1))
-			console.warn('[extract] korjattu: objektin ympärillä oli ylimääräistä tekstiä')
+			console.warn('[extract] repaired: extra text around the object')
 			return result
 		} catch {
-			// jatketaan
+			// keep going
 		}
 	}
 
-	// Alkupää lokiin jotta uusi poikkeama on diagnosoitavissa. Vain loki:
-	// sisältö voi toistaa käyttäjän kertoman muiston.
-	console.error(`[extract] kelvoton JSON, alku: ${raw.slice(0, 300)}`)
-	throw new Error('Jäsennys palautti kelvottoman JSONin')
+	// Log the beginning so a new deviation can be diagnosed. Log only: the
+	// content can echo back the memory the user just told.
+	console.error(`[extract] invalid JSON, starts with: ${raw.slice(0, 300)}`)
+	throw new Error('Extraction returned invalid JSON')
 }
 
 export async function extract(
@@ -169,11 +189,11 @@ export async function extract(
 		{ role: 'user', content: `Jäsennä tämä muisto:\n\n${transcript}` },
 	]
 
-	// Tämä on sovelluksen ydinpolku: käyttäjä on juuri puhunut puolitoista
-	// minuuttia, eikä tarjoajan satunnainen kaatuminen saa hukata sitä.
-	// Mitattu virhetaajuus oli ~12 %, joten kaksi yritystä jättäisi yhä 1,4 %
-	// läpi. Kolmas yritys vaihtaa mallia, koska vika on toistuvasti ollut
-	// tarjoajassa eikä syötteessä — sama malli uudelleen ei auta siihen.
+	// This is the app's core path: the user has just spoken for a minute and a
+	// half, and a provider crashing at random must not lose it. The measured
+	// failure rate was ~12 %, so two attempts would still let 1.4 % through. The
+	// third attempt switches model, because the fault has repeatedly been in the
+	// provider rather than the input — retrying the same model does not help.
 	const models = [env.MODEL_EXTRACT, env.MODEL_EXTRACT, env.MODEL_EXTRACT_FALLBACK || env.MODEL_EXTRACT]
 	let lastError: unknown
 
@@ -181,29 +201,30 @@ export async function extract(
 		try {
 			const raw = await complete(env, messages, {
 				model,
-				// Matala mutta ei nolla: jatkokysymyksistä tulee nollalla kaavamaisia.
+				// Low but not zero: at zero the follow-up questions become formulaic.
 				temperature: 0.4,
 				schema: EXTRACTION_SCHEMA,
-				// Reilusti yli pisimmän odotettavan muiston.
+				// Comfortably above the longest memory to be expected.
 				maxTokens: 2000,
 			})
 			const parsed = parseStructured(raw)
 
-			// Skeema ei takaa määrää, joten kolmeen rajaus tehdään täällä. Neljä
-			// kysymystä ahdistaa iäkästä käyttäjää, kaksi ei vie kertomusta eteenpäin.
+			// The schema does not enforce the count, so the cap of three is
+			// applied here. Four questions overwhelm an elderly user, two do not
+			// carry the story forward.
 			parsed.questions = (parsed.questions ?? []).slice(0, 3)
 			parsed.mentions = parsed.mentions ?? []
 			return parsed
 		} catch (err) {
 			lastError = err
-			// Krediitit loppu tai avain väärin: uudelleenyritys ei korjaa
-			// mitään, se vain kolminkertaistaa odotusajan ennen virhettä.
+			// Out of credits or a bad key: retrying fixes nothing, it only
+			// triples the wait before the failure.
 			if (err instanceof UpstreamError && !err.retryable) {
-				console.error(`[extract] ei uudelleenyritettävä (HTTP ${err.status}) — lopetetaan`)
+				console.error(`[extract] not retryable (HTTP ${err.status}) — giving up`)
 				break
 			}
 			if (index < models.length - 1) {
-				console.warn(`[extract] yritys ${index + 1} (${model}) epäonnistui, jatketaan`)
+				console.warn(`[extract] attempt ${index + 1} (${model}) failed, continuing`)
 			}
 		}
 	}

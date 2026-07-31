@@ -1,365 +1,363 @@
-# Arkkitehtuuri — loppuosa
+# Architecture — the remaining half
 
-Tämä dokumentti suunnittelee sen mitä ei ole vielä rakennettu. Toteutettu osa on
-kuvattu [PLAN.md](PLAN.md) §6:ssa ja koodissa.
+This document designs what had not been built yet. The finished part is
+described in [PLAN.md](PLAN.md) §7 and in the code.
 
 ---
 
-## 1. Missä ollaan
+## 1. Where things stand
 
-Rehellinen inventaario, ei toivelista:
+An honest inventory, not a wish list:
 
-| Osa | Tila |
-|-----|------|
-| Sanelu, kirjoitus, jäsennys, nimien korjaus | **Valmis ja testattu** |
-| Kuvien tuonti, galleria, henkilökortit | **Valmis** |
-| `subject`, `memory`, `mention`, `prompt_question` | Käytössä |
-| Identiteetti, perhe, kutsulinkit | **Valmis ja testattu** |
-| Synkronointi (`/sync` veto ja työntö) | **Valmis ja testattu** |
-| Media R2:een (`/media`) | **Valmis ja testattu** |
-| Kiintiöt (`/usage`, rajat palvelimella) | **Valmis ja testattu** |
-| RevenueCat, jaettu perhe-entitlement | **Valmis ja testattu** |
-| Äänen toisto, avoimet kysymykset, suhteet | **Valmis ja testattu** |
-| Moderointi (`report`, `block`) | Ei aloitettu — PLAN.md §5 leikkauslistalla |
-| Repo englanniksi, demovideo | Jäljellä |
+| Part | State |
+|------|-------|
+| Dictation, typing, extraction, name correction | **Done and tested** |
+| Photo import, gallery, person cards | **Done** |
+| `subject`, `memory`, `mention`, `prompt_question` | In use |
+| Identity, family, invite links | **Done and tested** |
+| Sync (`/sync` pull and push) | **Done and tested** |
+| Media to R2 (`/media`) | **Done and tested** |
+| Quotas (`/usage`, limits on the server) | **Done and tested** |
+| RevenueCat, shared family entitlement | **Done and tested** |
+| Audio playback, open questions, relationships | **Done and tested** |
+| Repo in English | **Done** |
+| Moderation (`report`, `block`) | Not started — on the cut list, PLAN.md §5 |
+| Demo video | Remaining |
 
-Kriittinen polku on nyt auki: perhe ja synkronointi toimivat, joten media,
-kiintiöt ja moderointi voidaan rakentaa niiden päälle. Jäljellä oleva työ on
-rinnakkaista ja leikattavissa.
+The critical path is open: family and sync work, so media, quotas and moderation
+can be built on top of them. The remaining work is parallel and cuttable.
 
-**Todennetut säännöt.** Vahvistus on yksisuuntainen, sulautus tarttuva, vain
-kirjoittaja muokkaa omaansa, ja toinen perhe ei näe eikä voi kirjoittaa. Lähtevä
-jono säilyy levyllä sovelluksen sulkemisen yli, eikä paikallisesti muuttunut rivi
-huku etäversion alle.
+**Verified rules.** Confirmation is one-way, merges are sticky, only the author
+edits their own, and another family can neither see nor write. The outbox
+survives the app being closed, and a locally changed row is not lost underneath
+the remote version.
 
-## 2. Viisi päätöstä jotka ratkaisevat loput
+## 2. Five decisions that determine the rest
 
-### 2.1 Paikallinen ensin, ei palvelin ensin
+### 2.1 Local first, not server first
 
-**Päätös: jokainen kirjoitus menee ensin paikalliseen tallennukseen ja
-synkronoituu taustalla.**
+**Decision: every write goes to local storage first and syncs in the
+background.**
 
-Vaihtoehto olisi ollut suora palvelinkutsu joka kirjoituksessa. Se on
-yksinkertaisempi, mutta väärä tälle sovellukselle: 80-vuotias voi olla mökillä
-ilman kenttää, ja muisto jonka hän juuri kertoi on korvaamaton. Puhuja ei ehkä
-ole enää kysyttävissä.
+The alternative would have been a direct server call on every write. That is
+simpler, but wrong for this app: an 80-year-old may be at a summer cottage with
+no signal, and the memory she just told is irreplaceable. The speaker may no
+longer be around to ask.
 
-Hinta on synkronointikoneisto ja ristiriitojen käsittely. Se on hyväksyttävä
-hinta siitä että **mikään kerrottu ei koskaan katoa verkon takia**.
+The price is sync machinery and conflict handling. That is an acceptable price
+for **nothing that was told ever being lost to the network**.
 
-### 2.2 Perhekohtainen juokseva numero, ei aikaleimoja
+### 2.2 A per-family counter, not timestamps
 
-Synkronoinnin järjestys tulee `family.sync_seq`-laskurista, jota palvelin
-kasvattaa jokaisella kirjoituksella. Ei laitteiden kelloista.
+Sync ordering comes from the `family.sync_seq` counter, which the server
+increments on every write. Not from device clocks.
 
-Syy: laitteiden kellot ovat eri ajassa, ja iäkkään käyttäjän puhelimessa
-aikavyöhyke voi olla väärä vuosikausia. Aikaleimapohjainen järjestys tuottaisi
-satunnaisia hävinneitä kirjoituksia joita on mahdoton jäljittää. Perheen arkisto
-on satoja rivejä, joten yksi laskuri riittää mainiosti.
+The reason: device clocks disagree, and on an elderly user's phone the time zone
+can be wrong for years. Timestamp-based ordering would produce random lost
+writes that are impossible to trace. A family archive is hundreds of rows, so
+one counter is plenty.
 
-### 2.3 Muistot ovat lisättäviä, eivät muokattavia
+### 2.3 Memories are appended, not edited
 
-`memory` on käytännössä append-only. Vain kirjoittaja itse voi muokata tai
-poistaa omansa, ja ainoa automaattinen muokkaus on nimenkorjauksen tekemä
-tekstin päivitys.
+`memory` is effectively append-only. Only the author can edit or delete their
+own, and the sole automatic edit is the text update made by name correction.
 
-Tämä poistaa ristiriidat lähes kokonaan: kaksi ihmistä ei voi muokata samaa
-muistoa. Se on myös oikea tuotesääntö — kukaan ei saa siivota isoäidin kertomaa.
+This removes conflicts almost entirely: two people cannot edit the same memory.
+It is also the right product rule — nobody gets to tidy up what grandmother said.
 
-### 2.4 Vahvistus on yksisuuntainen
+### 2.4 Confirmation is one-way
 
-`confirmed = 1` ei koskaan palaudu nollaksi synkronoinnissa.
+`confirmed = 1` never goes back to zero during sync.
 
-Ilman tätä sääntöä vanha laite joka tulee verkkoon viikon jälkeen voisi
-"palauttaa" vahvistetun henkilön takaisin ehdotukseksi. Sama koskee
-`relation.confirmed`ia.
+Without this rule, an old device coming online after a week could "restore" a
+confirmed person back into a proposal. The same applies to `relation.confirmed`.
 
-### 2.5 Sulautus ei poista, se ohjaa
+### 2.5 A merge does not delete, it redirects
 
-**Tämä on korjaus jo tehtyyn koodiin.** `MemoryStore.rename` poistaa nyt
-sulautetun kohteen. Yhdellä laitteella se toimii, mutta synkronoinnissa se
-rikkoo: jos laite A sulauttaa *Aune → Aino* samaan aikaan kun laite B on offline
-lisäämässä muistoja Aunelle, B:n muistot osoittavat kadonneeseen kohteeseen.
+**This is a correction to code that already existed.** `MemoryStore.rename` used
+to delete the merged subject. On a single device that works, but it breaks under
+sync: if device A merges *Aune → Aino* while device B is offline adding memories
+to Aune, B's memories end up pointing at a subject that is gone.
 
-Ratkaisu on hautakivi jossa on osoite:
+The solution is a tombstone with a forwarding address:
 
 ```sql
 ALTER TABLE subject ADD COLUMN merged_into TEXT REFERENCES subject(id);
 ```
 
-Sulautettu rivi jää paikalleen `merged_into`-viitteellä, ja kaikki viittaukset
-seuraavat ketjua. Mikään ei osoita tyhjään, ja sulautuksen voi jopa perua.
+The merged row stays in place with a `merged_into` reference, and all references
+follow the chain. Nothing points at nothing, and the merge can even be undone.
 
-## 3. Synkronointi
+## 3. Sync
 
-### Reitit
+### Routes
 
 ```
-GET  /sync?since=<seq>     → muuttuneet rivit + uusi kursori
-POST /sync                 → paikalliset muutokset, palauttaa myönnetyt seq:t
+GET  /sync?since=<seq>     → changed rows + a new cursor
+POST /sync                 → local changes, returns the granted seq
 ```
 
-Molemmat vaativat jäsentunnisteen (§4). Palvelin palauttaa vain pyytäjän oman
-perheen rivit — perhe on eristysraja, ja se tarkistetaan jokaisessa kyselyssä
-eikä vain liittymisessä.
+Both require a member identity (§4). The server returns only rows from the
+caller's own family — the family is the isolation boundary, and it is checked on
+every query rather than only at join time.
 
-### Rivien lisäkentät
+### Extra columns on synced rows
 
-Jokainen synkronoituva taulu saa:
+Every synced table gets:
 
 ```sql
-seq         INTEGER NOT NULL   -- palvelimen myöntämä, perhekohtainen
-deleted_at  INTEGER            -- pehmeä poisto, jotta poisto leviää
+seq         INTEGER NOT NULL   -- granted by the server, per family
+deleted_at  INTEGER            -- soft delete, so deletion propagates
 ```
 
-Pehmeä poisto on pakollinen: kova poisto ei koskaan päädy toiselle laitteelle,
-joka jatkaisi poistetun rivin näyttämistä ikuisesti.
+Soft deletion is mandatory: a hard delete never reaches the other device, which
+would go on showing the deleted row forever.
 
-### Asiakkaan lähtevä jono
+### The client's outbox
 
-Paikalliset muutokset kirjataan `outbox`-jonoon: operaatio, kohde-id ja hyötykuorma.
-Jono puretaan taustalla eksponentiaalisella odotuksella.
+Local changes are recorded in an `outbox` queue: operation, target id and
+payload. The queue is drained in the background with exponential backoff.
 
-Operaatiot ovat **idempotentteja**: kaikki on upsert asiakkaan generoimalla
-UUID:llä. Sama operaatio kahdesti ei riko mitään, mikä tekee uudelleenyrityksestä
-turvallista ilman koordinaatiota.
+Operations are **idempotent**: everything is an upsert keyed by a client
+generated UUID. The same operation twice breaks nothing, which makes retrying
+safe without coordination.
 
-### Ristiriitasäännöt
+### Conflict rules
 
-| Tilanne | Ratkaisu |
-|---------|----------|
-| Kaksi muistoa samaan kohteeseen | Ei ristiriitaa, molemmat säilyvät |
-| Sama muisto muokattu kahdella laitteella | Ei mahdollista: vain kirjoittaja muokkaa |
-| Kohteen nimi muutettu kahdella | Suurempi `seq` voittaa |
-| Toinen vahvistaa, toinen ei | Vahvistus voittaa aina (§2.4) |
-| Toinen sulauttaa, toinen lisää | Sulautus ohjaa, mitään ei katoa (§2.5) |
-| Toinen poistaa muiston, toinen lukee | Vain kirjoittaja voi poistaa |
+| Situation | Resolution |
+|-----------|------------|
+| Two memories on the same subject | No conflict, both are kept |
+| The same memory edited on two devices | Impossible: only the author edits |
+| A subject renamed on two devices | The higher `seq` wins |
+| One confirms, the other does not | Confirmation always wins (§2.4) |
+| One merges, the other adds | The merge redirects, nothing is lost (§2.5) |
+| One deletes a memory, the other reads it | Only the author can delete |
 
-Loput ratkeaa suuremmalla `seq`:llä. Sääntöjä on tarkoituksella vähän — jokainen
-lisäsääntö on kohta jossa data voi hiljaa vääristyä.
+Everything else is resolved by the higher `seq`. There are deliberately few
+rules — every extra rule is a place where data can silently go wrong.
 
-### Miksi JSON eikä SQLite
+### Why JSON and not SQLite
 
-Paikallinen tallennus pysyy JSON-tiedostona myös synkronoinnin jälkeen.
+Local storage stays a JSON file even after sync.
 
-Perheen arkisto on satoja rivejä, ei satojatuhansia. Koko tiedosto mahtuu
-muistiin, ja kirjoitus on atominen. SQLite toisi indeksit ja osittaiset
-päivitykset, mutta myös riippuvuuden, migraatiot ja enemmän koodia arvioitavaksi.
+A family archive is hundreds of rows, not hundreds of thousands. The whole file
+fits in memory and the write is atomic. SQLite would bring indexes and partial
+updates, but also a dependency, migrations and more code to be judged.
 
-**Vaihda vasta jos mittaat ongelman.** Puolivalmis SQLite-kerros on huonompi
-kuin toimiva JSON, ja tämä repo tuomaroidaan luettavuudesta.
+**Switch only if you measure a problem.** A half-finished SQLite layer is worse
+than working JSON, and this repo is judged on readability.
 
-## 4. Identiteetti ja perhe
+## 4. Identity and family
 
-### Ei kirjautumisruutua
+### No login screen
 
-Ensimmäisellä käynnistyksellä luodaan Keychainiin
-(`kSecAttrSynchronizable`, synkronoituu iCloudin kautta käyttäjän laitteille):
+On first launch the following are created in the Keychain
+(`kSecAttrSynchronizable`, syncs via iCloud to the user's devices):
 
-- `member_id` — UUID
-- `device_secret` — 32 satunnaista tavua
+- `member_id` — a UUID
+- `device_secret` — 32 random bytes
 
-Palvelin tallentaa salaisuudesta vain tiivisteen, kuten salasanasta. Pyynnöt
-tunnistautuvat `Authorization: Bearer <member_id>.<device_secret>`.
+The server stores only a hash of the secret, as it would for a password.
+Requests authenticate with `Authorization: Bearer <member_id>.<device_secret>`.
 
-80-vuotias ei näe tästä mitään. Hän saa linkin lapsenlapselta ja on sisällä.
+An 80-year-old sees none of this. She gets a link from a grandchild and she is in.
 
-### Kutsu
+### Invitations
 
 ```
-POST /family              → luo perhe, kutsuja on omistaja
-POST /family/invite       → luo kutsukoodi, voimassa 7 vrk
-POST /family/join         → { code } liittää jäsenen
-GET  /family              → jäsenet, oma rooli, kutsulinkin tila
-DELETE /family/invite/:id → mitätöi linkki
+POST /family              → create a family, the creator is the owner
+POST /family/invite       → create an invite code, valid for 7 days
+POST /family/join         → { code } adds the member
+GET  /family              → members, own role, invite link status
+DELETE /family/invite/:id → revoke a link
 ```
 
-**Kutsulinkki on koko turvallisuusraja.** Kuka tahansa linkin saanut näkee
-perheen kaikki muistot. Siksi:
+**The invite link is the entire security boundary.** Anyone who receives the
+link sees all of the family's memories. Therefore:
 
-- Koodi on pitkä ja satunnainen, ei ihmisen luettavaksi tarkoitettu
-- Voimassaolo umpeutuu, ja omistaja voi mitätöidä sen milloin tahansa
-- Liittymisyritykset rajoitetaan (Cloudflaren `ratelimits`, kuten Hetkiossa)
-- Perheen näkymässä näkyy kuka on liittynyt ja milloin
+- The code is long and random, not meant to be read by a human
+- It expires, and the owner can revoke it at any time
+- Join attempts are rate limited (Cloudflare `ratelimits`, as in Hetkio)
+- The family view shows who has joined and when
 
-Tämä on kohta jossa yksinkertaisuus ja turvallisuus ovat oikeasti ristiriidassa,
-ja valinta on tietoinen: helppous voittaa, koska kirjautumismuuri karkottaisi
-juuri sen käyttäjän jota varten sovellus on olemassa.
+This is a point where simplicity and security genuinely conflict, and the choice
+is deliberate: ease wins, because a login wall would drive away exactly the user
+the app exists for.
 
-### Kutsulinkin muoto — tiedostettu puute
+### The shape of the invite link — a known shortcoming
 
-Linkki on `memorize://join?code=...`. **iOS näyttää mukautetulle URL-skeemalle
-vahvistusdialogin** ("Open in Memorize?"), joka on englanninkielinen ja
-ylimääräinen askel juuri sille käyttäjälle joka hämmentyy helpoiten.
+The link is `memorize://join?code=...`. **iOS shows a confirmation dialog for
+custom URL schemes** ("Open in Memorize?"), which is in English and is one extra
+step for precisely the user who is most easily confused.
 
-Universal link (`https://…`) avautuisi suoraan ilman dialogia, mutta se vaatii
-verkkotunnuksen ja AASA-tiedoston — eli store-julkaisun infrastruktuuria.
+A universal link (`https://…`) would open directly without a dialog, but it
+requires a domain and an AASA file — that is, store-release infrastructure.
 
-Lievennys on jo paikallaan: jaettava teksti sisältää **sekä linkin että
-koodin**, ja liittymislomakkeessa on liittämiskenttä. Isoäiti pääsee perheeseen
-vaikka linkki ei aukeaisi lainkaan. Jos verkkotunnus joskus hankitaan, tämä on
-ensimmäinen asia joka kannattaa vaihtaa.
+The mitigation is already in place: the shared text contains **both the link and
+the code**, and the join form has a paste field. Grandmother gets into the
+family even if the link never opens at all. If a domain is ever acquired, this
+is the first thing worth changing.
 
-### Identiteetti kestää sovelluksen poiston
+### The identity survives deleting the app
 
-Keychain-merkinnät säilyvät sovelluksen poiston yli, ja
-`kSecAttrSynchronizable` vie ne iCloudin kautta käyttäjän muille laitteille.
-Todennettu: sama jäsentunnus kolmella käynnistyksellä, myös poiston ja
-uudelleenasennuksen jälkeen.
+Keychain entries persist across app deletion, and `kSecAttrSynchronizable`
+carries them via iCloud to the user's other devices. Verified: the same member
+id across three launches, including after deletion and reinstallation.
 
-Se on oikea käytös tälle käyttäjäryhmälle. Vahingossa poistettu sovellus ei saa
-tarkoittaa perheen menettämistä.
+That is the correct behaviour for this audience. Accidentally deleting the app
+must not mean losing the family.
 
 ## 5. Media
 
-Kuvat ja äänet menevät R2:een, metatieto D1:een.
+Photos and audio go to R2, metadata to D1.
 
 ```
-POST /media          → lataa tiedosto, palauttaa r2_key
-GET  /media/:key     → lataa (tarkistaa perheen jäsenyyden)
+POST /media          → upload a file, returns r2_key
+GET  /media/:key     → download (checks family membership)
 ```
 
-Paikallinen tiedostonimi ja R2-avain ovat **eri kenttiä** (`imageFilename` ja
-`r2Key`). Sama kuva on eri laitteilla eri tiedostonimellä mutta samalla
-avaimella, joten yksi kenttä ei riittäisi.
+The local filename and the R2 key are **different fields** (`imageFilename` and
+`r2Key`). The same photo has a different filename on each device but the same
+key, so one field would not be enough.
 
-Lataus tapahtuu **ennen työntöä**, jotta rivit kulkevat avaimineen. Muuten
-toinen laite näkisi muiston mutta ei kuvaa johon se liittyy.
+Upload happens **before push**, so rows travel with their keys. Otherwise the
+other device would see the memory but not the photo it belongs to.
 
-Nouto on **tarvepohjainen**: perheellä voi olla satoja kuvia, eikä niitä haeta
-käynnistyksessä. Ruudukko noutaa vain sen mitä näkyy.
+Fetching is **on demand**: a family may have hundreds of photos, and they are
+not fetched at launch. The grid fetches only what is visible.
 
-**MVP:ssä tiedosto kulkee Workerin läpi.** Kuvat ovat noin 300 kt (pienennetty
-2048 pikseliin) ja 90 sekunnin ääni noin 200 kt, joten se on täysin riittävää.
-Esiallekirjoitetut URL:t ovat oikea ratkaisu isommilla tiedostoilla, mutta ne
-lisäisivät nyt vain liikkuvia osia.
+**In the MVP the file passes through the Worker.** Photos are about 300 kB
+(downscaled to 2048 px) and 90 seconds of audio about 200 kB, so that is
+entirely sufficient. Presigned URLs are the right answer for larger files, but
+right now they would only add moving parts.
 
-Lataus on osa lähtevää jonoa: kuva näkyy heti paikallisesti, ja muut perheen
-jäsenet näkevät sen kun synkronointi ehtii. Offline lisätty kuva ei katoa.
+Upload is part of the outbox: a photo appears locally at once, and other family
+members see it when sync catches up. A photo added offline is not lost.
 
-**Alkuperäinen ääni ladataan aina**, myös ilmaisella tasolla. Se on tuotteen
-ydin eikä lisäominaisuus.
+**The original audio is always uploaded**, including on the free tier. It is the
+core of the product, not an extra.
 
-## 6. Raha
+## 6. Money
 
-### Malli
+### The model
 
-Maksaja ei ole hyötyjä: lapsenlapsi ostaa, koko perhe saa. RevenueCat antaa
-oikeuden ostajalle, backend levittää sen perheelle.
+The payer is not the beneficiary: the grandchild buys, the whole family gets it.
+RevenueCat grants the right to the buyer; the backend spreads it to the family.
 
 ```
-POST /entitlement/sync   → asiakas kertoo ostaneensa, palvelin VARMISTAA
-POST /webhook/revenuecat → uusinta, peruutus, hyvitys
+POST /entitlement/sync   → the client reports a purchase, the server VERIFIES it
+POST /webhook/revenuecat → renewal, cancellation, refund
 ```
 
-**Asiakkaan sanaan ei luoteta.** `/entitlement/sync` ei ota vastaan tilaa vaan
-vihjeen: palvelin kysyy totuuden RevenueCatin REST-rajapinnasta
-`RC_SECRET_KEY`:llä ja kirjoittaa `family.entitlement`in sen perusteella.
-Webhook pitää sen ajan tasalla ilman että sovellusta tarvitsee avata.
+**The client's word is not trusted.** `/entitlement/sync` does not accept a
+state but a hint: the server asks RevenueCat's REST API for the truth using
+`RC_SECRET_KEY` and writes `family.entitlement` based on that. The webhook keeps
+it current without the app having to be opened.
 
-### Reunatapaukset joita ei saa unohtaa
+### Edge cases that must not be forgotten
 
-| Tilanne | Käytös |
-|---------|--------|
-| Tilaus päättyy | Perhe palaa ilmaistasolle. **Mitään ei poisteta.** Vanhat kuvat ja äänet säilyvät ja ovat luettavissa; rajat koskevat vain uutta. |
-| Maksaja poistuu perheestä | Oikeus raukeaa seuraavassa webhookissa. Toinen jäsen voi ostaa. |
-| Kaksi maksajaa | Pisin voimassaolo voittaa. Molemmat näkyvät perheen näkymässä. |
-| Hyvitys | Webhook laskee oikeuden heti. |
+| Situation | Behaviour |
+|-----------|-----------|
+| Subscription ends | The family returns to the free tier. **Nothing is deleted.** Existing photos and audio remain and stay readable; the limits apply only to new content. |
+| The payer leaves the family | The right lapses on the next webhook. Another member can buy. |
+| Two payers | The longest expiry wins. Both are shown in the family view. |
+| Refund | The webhook drops the right immediately. |
 
-Sääntö **"alennus ei koskaan poista"** on ehdoton. Perhe joka menettää muistoja
-maksun päätyttyä ei palaa koskaan, eikä sellaista tuotetta pidä tehdä.
+The rule **"downgrade never deletes"** is absolute. A family that loses memories
+when the payment ends never comes back, and that is not a product worth building.
 
-### Paywallin paikka
+### Where the paywall goes
 
-Heti kun ensimmäinen AI-jäsennelty muisto valmistuu. Silloin koettu arvo on
-huipussaan. Ei onboardingissa, ei asetuksissa.
+Right after the first AI-structured memory is finished. That is when perceived
+value peaks. Not in onboarding, not in settings.
 
-**Kertomista ei paywallata koskaan.** Rajat koskevat kuvamäärää ja AI-minuutteja.
+**Telling is never paywalled.** The limits apply to the photo count and AI
+minutes.
 
-## 7. Kiintiöt ja moderointi
+## 7. Quotas and moderation
 
-### Kiintiöt palvelimella
+### Quotas on the server
 
-`usage_counter` tarkistetaan **ennen** OpenRouter-kutsua ja kasvatetaan sen
-jälkeen. Asiakkaan laskuriin ei luoteta — se on muokattavissa.
+`usage_counter` is checked **before** the OpenRouter call and incremented after
+it. The client's counter is not trusted — it can be edited.
 
-Kahden laitteen yhtäaikainen kutsu voi ylittää rajan hieman. Se on hyväksyttävää:
-vaihtoehto olisi lukitus, joka maksaisi enemmän kuin muutama ylimääräinen
-sekunti puhetta.
+Two devices calling at the same time can overshoot the limit slightly. That is
+acceptable: the alternative is locking, which would cost more than a few extra
+seconds of speech.
 
-Kun raja tulee vastaan, sanelun **purku** estyy mutta kirjoittaminen ei — muuten
-maksumuuri estäisi kertomista, mikä on säännön 2 vastaista. `/extract` on
-tarkoituksella mittaamaton: se on tekstiä ja maksaa murto-osan sentistä, ja sen
-rajoittaminen estäisi kirjoitetun muiston tallentamisen.
+When the limit is reached, **transcription** of a dictation is blocked but
+typing is not — otherwise the paywall would block telling, which violates rule 2.
+`/extract` is deliberately unmetered: it is text, it costs a fraction of a cent,
+and limiting it would prevent a typed memory from being saved at all.
 
-**Kiintiö ei koskaan hylkää nauhoitusta.** Jos minuutit ovat lopussa, ääni
-tallennetaan silti ja purku jää odottamaan — `Memory.isAwaitingTranscription`.
-Ääni on korvaamaton ja purku korvattavissa: se tehdään kun minuutit uusiutuvat
-tai perhe ottaa maksullisen. Sama koskee verkkovirhettä.
+**A quota never rejects a recording.** If the minutes are gone, the audio is
+saved anyway and transcription waits — `Memory.isAwaitingTranscription`. The
+audio is irreplaceable and the transcription is replaceable: it is done when the
+minutes reset or the family goes paid. The same applies to a network error.
 
-Tarkistus tehdään jo käytetyn määrän perusteella eikä käytetty+tuleva:
-aloitettua nauhoitusta ei katkaista sen takia että se sattui olemaan pitkä.
-Raja ylittyy hieman, ja se on halvempi kuin hylätty muisto.
+The check uses the amount already consumed rather than consumed + incoming: a
+recording that has started is not cut off because it happened to be long. The
+limit is exceeded slightly, and that is cheaper than a rejected memory.
 
-### Moderointi
+### Moderation
 
-`report` ja `block` ovat skeemassa, koska Applen sääntö 1.2 vaatii ne
-käyttäjäsisältöä sisältävältä sovellukselta. Toteutus on pieni:
+`report` and `block` are in the schema because Apple's rule 1.2 requires them of
+an app containing user content. The implementation is small:
 
-- Muiston voi raportoida (kirjaus `report`-tauluun)
-- Jäsenen voi estää, jolloin hänen muistonsa piiloutuvat estäjältä
-- Perheen omistaja voi poistaa jäsenen
+- A memory can be reported (a row in `report`)
+- A member can be blocked, hiding their memories from the blocker
+- The family owner can remove a member
 
-**Tämä on kuitenkin perheen yksityinen kanava, ei julkinen verkosto.** Todellinen
-väärinkäyttöriski on pieni, ja ratkaisu on sen mukainen: ei ilmoituskeskusta eikä
-moderointijonoa, vain vaadittu minimi. Jos julkaisu jää tekemättä, tämän voi
-leikata kokonaan (PLAN.md §5, kohta 6).
+**This is a family's private channel, though, not a public network.** The real
+abuse risk is small and the solution matches: no notification centre and no
+moderation queue, only the required minimum. If the release is never made, this
+can be cut entirely (PLAN.md §5, item 6).
 
-## 8. Jäljellä olevat ruudut
+## 8. The remaining screens
 
-Järjestyksessä, tärkein ensin:
+In order, most important first:
 
-1. **Aloitus** — kaksi vaihtoehtoa: "Aloita perheen arkisto" tai "Liity linkillä".
-   Ei muuta. Yksi ruutu.
-2. **Perhe** — jäsenet, kutsulinkin jakaminen, poistuminen.
-3. **Äänen toisto** — muistokortin "Kuuntele omalla äänellä" on tällä hetkellä
-   pelkkä merkintä. Tämä on emotionaalisesti tuotteen vahvin yksityiskohta ja
-   toteutuksena pieni.
-4. **Avoimet kysymykset** — koottu näkymä `prompt_question`ista. Tämä on
-   retention-moottori: avoin kysymys on syy palata.
-5. **Suhteet** — henkilökortista "lisää vanhempi / puoliso / sisarus".
-   Vahvistamaton suhde näkyy ehdotuksena.
-6. **Paywall** — RevenueCatin oma paywall riittää, ei omaa toteutusta.
-7. **Asetukset** — vienti, tilin poisto, raportointi ja esto.
-8. **Sukupuu** — piirretty graafi. **Ansa.** Suhteet ovat nyt listoina
-   henkilökortissa: sama tieto, toimii suurimmalla tekstikoolla ja on
-   VoiceOverilla luettavissa. Graafi tehdään vain jos kaikki muu on valmista.
+1. **Onboarding** — two options: "Start the family archive" or "Join with a
+   link". Nothing else. One screen.
+2. **Family** — members, sharing the invite link, leaving.
+3. **Audio playback** — the memory card's "Listen in her own voice" is currently
+   just a label. This is emotionally the product's strongest detail and small to
+   implement.
+4. **Open questions** — a collected view over `prompt_question`. This is the
+   retention engine: an open question is a reason to come back.
+5. **Relationships** — "add parent / spouse / sibling" from the person card. An
+   unconfirmed relationship shows as a proposal.
+6. **Paywall** — RevenueCat's own paywall is enough, no custom implementation.
+7. **Settings** — export, account deletion, reporting and blocking.
+8. **Family tree** — a drawn graph. **A trap.** Relationships are now lists on
+   the person card: the same information, works at the largest text size and is
+   readable with VoiceOver. The graph gets built only if everything else is done.
 
-## 9. Rakennusjärjestys
+## 9. Build order
 
-Kiinnitetty PLAN.md §8:n jaksoihin.
+Pinned to the phases in PLAN.md §3.
 
-| Jakso | Sisältö |
-|-------|---------|
-| **C** (11.–31.8.) | Identiteetti, perhe, kutsulinkki, synkronoinnin runko. `merged_into` -korjaus ennen kuin synkronointi rakennetaan sen päälle. |
-| **D** (1.–14.9.) | Media R2:een, RevenueCat, kiintiöt, paywall. Käsityö ja saavutettavuus. |
-| **E** (15.–24.9.) | Äänen toisto, avoimet kysymykset, suhteet. Testaus isovanhemmalla. Repo englanniksi. |
-| **F** (25.–28.9.) | Demovideo, submissio. |
+| Phase | Contents |
+|-------|----------|
+| **C** (11–31 Aug) | Identity, family, invite link, the sync backbone. The `merged_into` fix before sync is built on top of it. |
+| **D** (1–14 Sep) | Media to R2, RevenueCat, quotas, paywall. Craft and accessibility. |
+| **E** (15–24 Sep) | Audio playback, open questions, relationships. Testing with a grandparent. Repo in English. |
+| **F** (25–28 Sep) | Demo video, submission. |
 
-### Kriittinen polku
+### The critical path
 
-Synkronointi on ainoa asia joka **estää** muita: media, kiintiöt ja moderointi
-kaikki olettavat jäsenyyden ja perheen. Se pitää saada toimimaan jakson C aikana
-tai loput valuu.
+Sync is the only thing that **blocks** others: media, quotas and moderation all
+assume membership and a family. It has to work during phase C or the rest slips.
 
-Kaikki muu on rinnakkaista ja leikattavissa.
+Everything else is parallel and cuttable.
 
-### Mitä leikataan ensin
+### What gets cut first
 
-PLAN.md §5:n järjestys pätee edelleen, ja tämä suunnitelma tarkentaa sen
-ykköskohdan: **jos synkronointi ei valmistu, siemennetään demoperhe.**
+The order in PLAN.md §5 still holds, and this plan sharpens its first item: **if
+sync does not get finished, seed a demo family.**
 
-Tietomalli tukee jo useaa jäsentä (`memory.author_id`), joten video voi näyttää
-usean sukulaisen muistot samassa kuvassa vaikka liittymisvirtaa ei olisi
-rakennettu. Konsepti näkyy, toteutus on kesken — ja se on rehellisempi
-lopputulos kuin puolivalmis synkronointi joka hukkaa dataa demossa.
+The data model already supports multiple members (`memory.author_id`), so the
+video can show several relatives' memories on the same photo even without a join
+flow being built. The concept is visible, the implementation is incomplete — and
+that is a more honest outcome than half-finished sync that loses data in the
+demo.

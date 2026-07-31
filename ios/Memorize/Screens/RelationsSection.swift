@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Henkilön sukulaiset.
+/// A person's relatives.
 ///
-/// Ei piirrettyä puuta vaan listat — puugraafi on suunnitelman tietoinen
-/// leikkaus (PLAN.md §5). Lista kertoo saman tiedon, toimii suurimmalla
-/// tekstikoolla ja on VoiceOverilla luettavissa.
+/// Lists rather than a drawn tree — the graph is a deliberate cut in the plan
+/// (PLAN.md §5). A list carries the same information, works at the largest text
+/// size and is readable with VoiceOver.
 struct RelationsSection: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
@@ -108,11 +108,11 @@ private struct RelativeRow: View {
     }
 }
 
-/// Sukulaisen valinta jo tunnetuista henkilöistä.
+/// Choosing a relative from the people already known.
 ///
-/// Ei nimen kirjoittamista: henkilö syntyy kertomisesta, ei lomakkeesta. Jos
-/// haluttua ihmistä ei ole listassa, hänestä ei ole vielä kerrottu — ja se on
-/// oikea järjestys.
+/// No typing a name: a person is born out of telling, not out of a form. If the
+/// person you want is not in the list, nobody has told about them yet — and that
+/// is the correct order.
 private struct RelationPicker: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -139,8 +139,9 @@ private struct RelationPicker: View {
                 } else {
                     List(candidates) { person in
                         Button {
-                            // `parentOf` luetaan from → to. Lapsi lisättäessä
-                            // suunta kääntyy, muuten sukupuu menisi ylösalaisin.
+                            // `parentOf` reads from → to. Adding a child flips
+                            // the direction; otherwise the family tree would
+                            // come out upside down.
                             if asChild {
                                 store.addRelation(from: subject.id, to: person.id, kind: kind)
                             } else if kind == .parentOf {

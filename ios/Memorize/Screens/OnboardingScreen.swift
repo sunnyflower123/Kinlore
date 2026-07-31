@@ -1,14 +1,14 @@
 import SwiftUI
 
-/// Aloitus. Kaksi vaihtoehtoa, ei muuta.
+/// Onboarding. Two options, nothing else.
 ///
-/// Ei kirjautumista, ei sähköpostia, ei salasanaa. Isoäiti saa linkin
-/// lapsenlapselta ja painaa "Liity". Juuri tässä kohdassa tämä käyttäjäryhmä
-/// tavallisesti putoaa pois.
+/// No sign-in, no email, no password. Grandmother gets a link from a grandchild
+/// and taps "Liity". This is precisely the point where this audience normally
+/// drops out.
 struct OnboardingScreen: View {
     @Environment(Session.self) private var session
 
-    /// Kutsulinkistä avattaessa koodi tulee valmiiksi täytettynä.
+    /// When opened from an invite link, the code arrives pre-filled.
     var prefilledCode: String?
 
     @State private var route: Route?
@@ -83,7 +83,7 @@ struct OnboardingScreen: View {
     }
 }
 
-// MARK: - Perheen luonti
+// MARK: - Creating a family
 
 private struct CreateFamilyForm: View {
     @Environment(Session.self) private var session
@@ -140,7 +140,7 @@ private struct CreateFamilyForm: View {
     }
 }
 
-// MARK: - Liittyminen
+// MARK: - Joining
 
 private struct JoinFamilyForm: View {
     @Environment(Session.self) private var session
@@ -164,8 +164,8 @@ private struct JoinFamilyForm: View {
             }
 
             Section {
-                // Kutsukoodi ei ole luettavaksi tarkoitettu, joten
-                // automaattikorjaus ja isot alkukirjaimet vain rikkoisivat sen.
+                // The invite code is not meant to be read, so autocorrection and
+                // capitalisation would only break it.
                 TextField("Liitä kutsukoodi", text: $code)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()

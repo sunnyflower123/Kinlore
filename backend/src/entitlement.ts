@@ -1,25 +1,28 @@
-/// RevenueCat: maksaja ei ole hyötyjä.
+/// RevenueCat: the payer is not the beneficiary.
 ///
-/// Lapsenlapsi ostaa tilauksen, ja koko perhekanava aukeaa kaikille jäsenille.
-/// RevenueCat antaa oikeuden ostajalle, backend levittää sen perheelle.
+/// The grandchild buys the subscription and the whole family channel opens for
+/// every member. RevenueCat grants the right to the buyer; the backend spreads
+/// it to the family.
 ///
-/// Tämä ei ole kilpailutemppu vaan ainoa toimiva malli tälle kohderyhmälle:
-/// maksukyky on eri henkilössä kuin arvon tuottaja. 80-vuotias ei osta
-/// tilausta, mutta hän on se joka kertoo muistot.
+/// This is not a contest trick but the only model that works for this audience:
+/// the ability to pay sits in a different person than the one producing the
+/// value. An 80-year-old does not buy a subscription, but she is the one who
+/// tells the memories.
 
 import type { Session } from './auth'
 import type { Env } from './worker'
 
 const now = () => Math.floor(Date.now() / 1000)
 
-// ---------------------------------------------------------------- ydin
+// ---------------------------------------------------------------- core
 
-/// Asettaa perheen oikeuden. Ainoa paikka joka kirjoittaa `family.entitlement`.
+/// Sets the family's entitlement. The only place that writes
+/// `family.entitlement`.
 ///
-/// **Alennus ei koskaan poista mitään.** Tilauksen päättyessä perhe palaa
-/// ilmaistasolle: vanhat kuvat ja äänet säilyvät ja ovat luettavissa, rajat
-/// koskevat vain uutta. Perhe joka menettää muistoja maksun päätyttyä ei palaa
-/// koskaan, eikä sellaista tuotetta pidä tehdä.
+/// **A downgrade never deletes anything.** When the subscription ends the family
+/// returns to the free tier: existing photos and audio remain and stay readable,
+/// the limits apply only to new content. A family that loses memories when the
+/// payment ends never comes back, and that is not a product worth building.
 export async function applyEntitlement(
 	env: Env,
 	familyID: string,
@@ -32,8 +35,8 @@ export async function applyEntitlement(
 		.bind(familyID)
 		.first<{ payer_id: string | null; entitlement_expires_at: number | null }>()
 
-	// Kaksi maksajaa: pisin voimassaolo voittaa. Perhe ei saa menettää
-	// oikeutta siksi että toinen jäsen peruu omansa aiemmin.
+	// Two payers: the longest expiry wins. The family must not lose the right
+	// because one member cancels theirs earlier.
 	const existing = current?.entitlement_expires_at ?? null
 	const keepExisting =
 		existing !== null &&
@@ -57,14 +60,14 @@ export async function applyEntitlement(
 	return { entitlement, expiresAt: winner.expires }
 }
 
-// ---------------------------------------------------------------- varmistus
+// ---------------------------------------------------------------- verification
 
 type ActiveEntitlement = { entitlement_id: string; expires_at: number | null }
 
-/// Kysyy RevenueCatilta mitä asiakas oikeasti omistaa.
+/// Asks RevenueCat what the customer actually owns.
 ///
-/// Asiakkaan sanaan ei luoteta: sovellus voi väittää mitä tahansa, ja
-/// entitlement on se mikä avaa maksullisen tason koko perheelle.
+/// The client's word is not trusted: the app can claim anything, and the
+/// entitlement is what unlocks the paid tier for the entire family.
 async function fetchActiveEntitlements(env: Env, customerID: string): Promise<ActiveEntitlement[]> {
 	const url =
 		`https://api.revenuecat.com/v2/projects/${env.RC_PROJECT_ID}` +
@@ -84,7 +87,7 @@ async function fetchActiveEntitlements(env: Env, customerID: string): Promise<Ac
 	return data.items ?? []
 }
 
-/// Sovelluksen kertoma osto varmistetaan ja levitetään perheelle.
+/// A purchase reported by the app is verified and spread to the family.
 export async function syncEntitlement(env: Env, session: Session, customerID: string) {
 	if (!env.RC_SECRET_KEY || !env.RC_PROJECT_ID) {
 		return { error: 'revenuecat_not_configured' as const }
@@ -92,17 +95,18 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 
 	const items = await fetchActiveEntitlements(env, customerID)
 
-	// Mikä tahansa voimassa oleva oikeus avaa arkiston. Sovelluksessa on yksi
-	// maksullinen taso, joten tunnisteen muotoon ei kannata sitoutua —
-	// RevenueCatin v2 palauttaa sisäisen tunnisteen eikä hakuavainta.
+	// Any active entitlement unlocks the archive. The app has a single paid
+	// tier, so it is not worth binding to the shape of the identifier —
+	// RevenueCat v2 returns an internal id rather than the lookup key.
 	const furthest = items.reduce<number | null>((max, item) => {
-		// expires_at on millisekunteina, ja null tarkoittaa ikuista oikeutta.
+		// expires_at is in milliseconds, and null means a perpetual entitlement.
 		if (item.expires_at === null) return Number.MAX_SAFE_INTEGER
 		const seconds = Math.floor(item.expires_at / 1000)
 		return max === null ? seconds : Math.max(max, seconds)
 	}, null)
 
-	// Maksaja sidotaan jäseneen, jotta webhook löytää perheen ilman sovellusta.
+	// The payer is bound to the member so the webhook can find the family
+	// without the app.
 	await env.DB.prepare('UPDATE member SET rc_app_user_id = ? WHERE id = ?')
 		.bind(customerID, session.memberID)
 		.run()
@@ -120,14 +124,14 @@ type WebhookEvent = {
 	product_id?: string
 }
 
-/// Tapahtumat jotka päättävät oikeuden heti riippumatta voimassaolosta.
-/// Hyvitys ja siirto pois eivät odota vanhenemista.
+/// Events that end the entitlement immediately regardless of its expiry.
+/// A refund and a transfer away do not wait for expiration.
 const REVOKING = new Set(['CANCELLATION', 'EXPIRATION', 'REFUND', 'TRANSFER', 'SUBSCRIPTION_PAUSED'])
 
-/// Pitää oikeuden ajan tasalla ilman että sovellusta avataan.
+/// Keeps the entitlement current without the app being opened.
 ///
-/// Ilman webhookia uusiutunut tilaus näkyisi vasta kun maksaja seuraavan
-/// kerran käynnistää sovelluksen — ja hän ei ole se joka sitä eniten käyttää.
+/// Without the webhook, a renewed subscription would only show up when the payer
+/// next launches the app — and they are not the one who uses it most.
 export async function handleWebhook(env: Env, event: WebhookEvent) {
 	const customerID = event.app_user_id
 	if (!customerID) return { ignored: 'missing_app_user_id' as const }
@@ -138,8 +142,8 @@ export async function handleWebhook(env: Env, event: WebhookEvent) {
 		.bind(customerID)
 		.first<{ id: string; family_id: string }>()
 
-	// Tuntematon asiakas: osto tehtiin ennen kuin sovellus ehti kertoa
-	// tunnisteen. Ei virhe — seuraava /entitlement/sync korjaa tilanteen.
+	// Unknown customer: the purchase happened before the app got to report the
+	// id. Not an error — the next /entitlement/sync fixes it.
 	if (!member) return { ignored: 'unknown_customer' as const }
 
 	const revoking = REVOKING.has(event.type ?? '')
@@ -154,9 +158,9 @@ export async function handleWebhook(env: Env, event: WebhookEvent) {
 	return result
 }
 
-/// Webhookin tunnistautuminen on RevenueCatin hallintapaneelissa asetettu
-/// Authorization-otsake. Ilman tarkistusta kuka tahansa voisi avata perheen
-/// maksullisen tason lähettämällä väärennetyn tapahtuman.
+/// Webhook authentication is an Authorization header configured in RevenueCat's
+/// dashboard. Without the check, anyone could unlock a family's paid tier by
+/// sending a forged event.
 export function isAuthorizedWebhook(env: Env, request: Request): boolean {
 	if (!env.RC_WEBHOOK_SECRET) return false
 	const header = request.headers.get('Authorization') ?? ''

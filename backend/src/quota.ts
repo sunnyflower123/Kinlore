@@ -1,13 +1,14 @@
-/// Ilmaiskäytön rajat.
+/// Free tier limits.
 ///
-/// Kaksi periaatetta ohjaavat tätä:
+/// Two principles govern this file:
 ///
-/// 1. **Kertomista ei koskaan paywallata.** Kiintiö rajaa kuvia ja AI-minuutteja,
-///    ei sitä että joku kirjoittaa muiston. Kirjoitettu muisto menee aina läpi.
-/// 2. **Alkuperäinen ääni säilytetään aina.** Kiintiön täyttyminen ei hylkää
-///    nauhoitusta vaan lykkää sen purkua — ääni on lopputuotetta, ei välivaihe.
+/// 1. **Telling is never paywalled.** The quota limits photos and AI minutes,
+///    not the act of writing a memory. A typed memory always goes through.
+/// 2. **The original audio is always kept.** Hitting the quota does not reject a
+///    recording, it defers its transcription — the audio is the product, not an
+///    intermediate step.
 ///
-/// Laskurit ovat palvelimella, koska asiakkaan laskuri on muokattavissa.
+/// The counters live on the server, because a client-side counter can be edited.
 
 import type { Session } from './auth'
 import type { Env } from './worker'
@@ -19,8 +20,8 @@ export type QuotaDenial = {
 	limit: number
 }
 
-/// Kuukausi UTC:ssä. Suomalaiselle perheelle rajan tarkka hetki ei merkitse
-/// mitään, ja aikavyöhykkeen huomiointi toisi vain virhelähteen.
+/// The month in UTC. For a Finnish family the exact moment the limit resets
+/// means nothing, and handling the time zone would only add a source of error.
 function period(): string {
 	const now = new Date()
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
@@ -33,9 +34,9 @@ async function isPaid(env: Env, familyID: string): Promise<boolean> {
 	return row?.entitlement === 'archive'
 }
 
-// ---------------------------------------------------------------- AI-minuutit
+// ---------------------------------------------------------------- AI minutes
 
-/// Tarkistetaan ENNEN kallista kutsua. Palauttaa null jos saa jatkaa.
+/// Checked BEFORE the expensive call. Returns null when it is fine to proceed.
 export async function checkAISeconds(
 	env: Env,
 	session: Session,
@@ -51,17 +52,17 @@ export async function checkAISeconds(
 		.first<{ ai_seconds: number }>()
 
 	const used = row?.ai_seconds ?? 0
-	// Tarkistus tehdään käytetyn määrän perusteella eikä käytetty+tuleva:
-	// aloitettua nauhoitusta ei katkaista sen takia että se sattui olemaan
-	// pitkä. Raja ylittyy hieman, ja se on halvempi kuin hylätty muisto.
+	// The check uses the amount already consumed rather than consumed + incoming:
+	// a recording that has started is not cut off because it happened to be long.
+	// The limit is exceeded slightly, and that is cheaper than a rejected memory.
 	if (used >= limit) {
 		return { error: 'quota_exceeded', kind: 'ai_seconds', used, limit }
 	}
 	return null
 }
 
-/// Kirjataan kutsun jälkeen. Onnistunut purku maksoi jo, joten se lasketaan
-/// vaikka jäsennys myöhemmin epäonnistuisi.
+/// Recorded after the call. A successful transcription has already cost money,
+/// so it counts even if extraction fails afterwards.
 export async function recordAISeconds(env: Env, session: Session, seconds: number): Promise<void> {
 	const rounded = Math.max(0, Math.round(seconds))
 	if (rounded === 0) return
@@ -75,13 +76,14 @@ export async function recordAISeconds(env: Env, session: Session, seconds: numbe
 		.run()
 }
 
-// ---------------------------------------------------------------- kuvat
+// ---------------------------------------------------------------- photos
 
-/// Kuvamäärä lasketaan suoraan `subject`-taulusta eikä erillisestä laskurista.
+/// The photo count is derived straight from the `subject` table rather than a
+/// separate counter.
 ///
-/// Raja on kokonaismäärä eikä kuukausikohtainen, ja poistettu kuva vapauttaa
-/// paikan. Erillinen laskuri ajautuisi väistämättä eri tahtiin todellisuuden
-/// kanssa, ja perheen arkistossa rivejä on satoja — laskeminen on ilmaista.
+/// The limit is a total rather than monthly, and a deleted photo frees its slot.
+/// A separate counter would inevitably drift out of step with reality, and a
+/// family archive holds hundreds of rows — counting is free.
 export async function checkPhotoCount(env: Env, session: Session): Promise<QuotaDenial | null> {
 	if (await isPaid(env, session.familyID)) return null
 
@@ -100,10 +102,10 @@ export async function checkPhotoCount(env: Env, session: Session): Promise<Quota
 	return null
 }
 
-// ---------------------------------------------------------------- tila
+// ---------------------------------------------------------------- status
 
-/// Perheen käyttötilanne sovellukselle. Paywall tarvitsee tämän voidakseen
-/// näyttää mitä on jäljellä ennen kuin raja tulee vastaan.
+/// The family's usage for the app. The paywall needs this so it can show what is
+/// left before the limit is reached.
 export async function usage(env: Env, session: Session) {
 	const paid = await isPaid(env, session.familyID)
 	const seconds = await env.DB.prepare(

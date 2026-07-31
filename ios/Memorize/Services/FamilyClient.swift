@@ -1,9 +1,9 @@
 import Foundation
 
-/// Perhereittien asiakas.
+/// Client for the family routes.
 ///
-/// Erillään `AppServices`in AI-palveluista, koska nämä vaativat aina
-/// tunnistautumisen ja käsittelevät jäsenyyttä eivätkä sisältöä.
+/// Kept apart from the AI services in `AppServices`, because these always
+/// require authentication and deal with membership rather than content.
 struct FamilyClient {
     let baseURL: URL
     let token: String
@@ -13,7 +13,7 @@ struct FamilyClient {
         let role: String
     }
 
-    // MARK: - Reitit
+    // MARK: - Routes
 
     func createFamily(familyName: String, displayName: String) async throws -> JoinResult {
         struct Body: Encodable {
@@ -83,7 +83,7 @@ struct FamilyClient {
         )
     }
 
-    // MARK: - Kuljetus
+    // MARK: - Transport
 
     private func split(_ token: String) -> (id: String, secret: String) {
         guard let dot = token.firstIndex(of: ".") else { return (token, "") }
@@ -128,8 +128,9 @@ enum FamilyError: LocalizedError {
         switch self { case .message(let text): text }
     }
 
-    /// Virheteksti kirjoitetaan käyttäjälle, ei kehittäjälle: iäkäs ihminen ei
-    /// hyödy koodista 404 vaan siitä mitä hänen pitäisi tehdä seuraavaksi.
+    /// The error text is written for the user, not the developer: an elderly
+    /// person gains nothing from a 404 and everything from being told what to do
+    /// next. Finnish, because it is shown in the UI.
     static func forStatus(_ status: Int, data: Data) -> FamilyError {
         struct Payload: Decodable { let error: String? }
         let code = (try? JSONDecoder().decode(Payload.self, from: data))?.error

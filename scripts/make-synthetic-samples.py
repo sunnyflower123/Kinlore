@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
-"""Generoi synteettisiä suomenkielisiä näytteitä ASR-vertailuun.
+"""Generate synthetic Finnish samples for the ASR comparison.
 
-MIKSI: oikeiden nauhoitusten hankkiminen kestää, mutta moottorin valinnan voi
-tehdä jo ennen sitä. Synteettisellä äänellä on yksi todellinen etu — referenssi
-on virheetön, koska tiedämme täsmälleen mitä sanottiin. Käsin litteroinnissa on
-omat virheensä.
+WHY: getting real recordings takes time, but the engine can be chosen before
+that. Synthetic audio has one real advantage — the reference is flawless,
+because we know exactly what was said. Transcribing by hand has errors of its
+own.
 
-MITÄ TÄMÄ EI KERRO: absoluuttista laatua. TTS ei tuota murretta, änkytystä,
-itsensä korjaamista, päällekkäistä puhetta eikä sitä että lause jää kesken.
-Oikea vanhus tekee kaikkea tätä. Näiden luvut ovat siis optimistisia.
+WHAT THIS DOES NOT TELL YOU: absolute quality. TTS does not produce dialect,
+stammering, self-correction, overlapping speech, or a sentence trailing off. A
+real elderly speaker does all of that. These figures are therefore optimistic.
 
-MITÄ TÄMÄ KERTOO: moottoreiden keskinäisen paremmuusjärjestyksen ja sen kuinka
-nopeasti kukin hajoaa kun ääni huononee. Se riittää MODEL_TRANSCRIBE-valintaan.
+WHAT THIS DOES TELL YOU: the relative ranking of the engines and how fast each
+falls apart as the audio degrades. That is enough to choose MODEL_TRANSCRIBE.
 
-Rappeutus tehdään puhtaalla Pythonilla, koska koneessa ei ole ffmpegiä eikä
-soxia. Kolme porrasta jäljittelevät sitä mikä oikeassa nauhoituksessa menee
-pieleen: hiljainen puhuja, huoneen taustaääni ja vaimea sointi.
+Degradation is done in pure Python, because this machine has neither ffmpeg nor
+sox. The three steps imitate what goes wrong in a real recording: a quiet
+speaker, room noise and a muffled tone.
 
-Käyttö:
+The sample texts are Finnish because that is the input under test.
+
+Usage:
     python3 scripts/make-synthetic-samples.py
 """
 
@@ -33,39 +35,39 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "samples"
 
-# Sisältö on valittu sen mukaan mikä arkistolle merkitsee: erisnimiä, paikkoja
-# ja epätarkka vuosikymmen. Nämä ohjaavat sukupuun rakentumista, joten niiden
-# osuvuus painaa enemmän kuin täytesanojen.
+# The content is chosen for what matters to the archive: proper nouns, places
+# and an imprecise decade. These drive how the family tree is built, so their
+# accuracy weighs more than that of filler words.
 TEXTS = {
-    "mokki": (
+    "cottage": (
         "Siinä kuvassa ollaan sen mökin rannassa, se oli Puumalassa se mökki. "
         "Aino oli siinä vieressäni ja Toivo otti sen kuvan. "
         "Se oli joskus viideskymmenluvulla, en muista tarkkaan."
     ),
-    "sisarukset": (
+    "siblings": (
         "Impi ja Tyyne olivat siskoksia. Eevertti oli heidän veljensä "
         "ja se muutti Amerikkaan eikä palannut koskaan. "
         "Hilma jäi Sotkamoon hoitamaan taloa."
     ),
-    "haat": (
+    "wedding": (
         "Me mentiin naimisiin vuonna kuusikymmentäkaksi Tampereella. "
         "Kaarina oli kaaso ja Väinö oli bestman. "
         "Sinä päivänä satoi kaatamalla."
     ),
 }
 
-# Portaat: nimi -> (voimakkuus, kohinan taso, vaimennuksen leveys)
-# Viimeinen porras on lähinnä sitä mitä puhelin nauhoittaa olohuoneessa
-# hiljaa puhuvasta ihmisestä.
+# Steps: name -> (gain, noise level, smoothing width)
+# The last step is closest to what a phone records of someone speaking quietly
+# in a living room.
 STAGES = {
-    "puhdas": (1.0, 0.0, 0),
-    "hiljainen": (0.18, 0.0, 0),
-    "kohina": (0.5, 0.010, 0),
-    "vaikea": (0.15, 0.014, 4),
+    "clean": (1.0, 0.0, 0),
+    "quiet": (0.18, 0.0, 0),
+    "noisy": (0.5, 0.010, 0),
+    "hard": (0.15, 0.014, 4),
 }
 
 VOICE = "Grandma (Finnish (Finland))"
-RATE = 150  # sanaa minuutissa; hitaampi kuin oletus, kuten iäkkäällä puhujalla
+RATE = 150  # words per minute; slower than the default, as with an elderly speaker
 
 
 def synth(text: str, aiff: Path) -> None:
@@ -85,7 +87,7 @@ def to_wav(src: Path, dst: Path) -> None:
 
 
 def to_m4a(src: Path, dst: Path) -> None:
-    # Sama muoto jota AudioRecorder tuottaa: AAC, mono.
+    # The same format AudioRecorder produces: AAC, mono.
     subprocess.run(
         ["afconvert", "-f", "m4af", "-d", "aac", "-c", "1", str(src), str(dst)],
         check=True,
@@ -95,13 +97,13 @@ def to_m4a(src: Path, dst: Path) -> None:
 
 
 def degrade(src: Path, dst: Path, gain: float, noise: float, smooth: int) -> None:
-    """Vaimennus, taustakohina ja liukuva keskiarvo (karkea alipäästö)."""
+    """Attenuation, background noise and a moving average (a crude low-pass)."""
     with wave.open(str(src), "rb") as w:
         params = w.getparams()
         samples = array.array("h")
         samples.frombytes(w.readframes(params.nframes))
 
-    rng = random.Random(12345)  # toistettava: sama kohina joka ajolla
+    rng = random.Random(12345)  # reproducible: the same noise on every run
     peak = 32767
     noise_amp = noise * peak
 
@@ -113,8 +115,8 @@ def degrade(src: Path, dst: Path, gain: float, noise: float, smooth: int) -> Non
         out[i] = max(-peak, min(peak, int(v)))
 
     if smooth > 1:
-        # Liukuva keskiarvo vaimentaa korkeat taajuudet: puhe kuulostaa
-        # peitetymmältä, kuten kaukaa tai iäkkäältä puhujalta.
+        # A moving average attenuates the high frequencies: the speech sounds
+        # more muffled, as if from a distance or from an elderly speaker.
         smoothed = array.array("h", bytes(len(out) * 2))
         acc = 0
         for i in range(len(out)):
@@ -131,7 +133,7 @@ def degrade(src: Path, dst: Path, gain: float, noise: float, smooth: int) -> Non
 
 def main() -> int:
     if sys.platform != "darwin":
-        print("Tämä skripti käyttää macOS:n say- ja afconvert-työkaluja.")
+        print("This script uses the macOS say and afconvert tools.")
         return 1
 
     OUT.mkdir(parents=True, exist_ok=True)
@@ -151,7 +153,7 @@ def main() -> int:
 
             base = OUT / f"{name}-{stage}"
             to_m4a(degraded, base.with_suffix(".m4a"))
-            # Referenssi on virheetön: tämä on täsmälleen se mitä syntetisoitiin.
+            # The reference is flawless: this is exactly what was synthesised.
             base.with_suffix(".txt").write_text(text, encoding="utf-8")
             made += 1
 
@@ -159,12 +161,12 @@ def main() -> int:
         f.unlink()
     tmp.rmdir()
 
-    print(f"Tehtiin {made} näytettä kansioon {OUT}")
-    print(f"  {len(TEXTS)} tekstiä × {len(STAGES)} rappeutusporrasta")
-    print("\nAja vertailu:  node scripts/asr-bench.mjs")
-    print("\nHUOM: nämä luvut ovat optimistisia. TTS ei tuota murretta,")
-    print("itsensä korjaamista eikä kesken jääviä lauseita. Käytä näitä")
-    print("moottorin VALINTAAN, älä sen hyväksymiseen.")
+    print(f"Made {made} samples in {OUT}")
+    print(f"  {len(TEXTS)} texts × {len(STAGES)} degradation steps")
+    print("\nRun the comparison:  node scripts/asr-bench.mjs")
+    print("\nNOTE: these figures are optimistic. TTS does not produce dialect,")
+    print("self-correction or sentences trailing off. Use these to CHOOSE an")
+    print("engine, not to accept one.")
     return 0
 
 

@@ -1,144 +1,150 @@
 #!/usr/bin/env node
-// Jäsennyksen testipenkki.
+// Test bench for extraction.
 //
-// Ajaa joukon suomenkielisiä muistoja `/extract`-päätepisteen läpi ja
-// tarkistaa väittämät. Jokainen tapaus mittaa YHTÄ asiaa, jotta epäonnistuminen
-// kertoo suoraan mikä on rikki.
+// Runs a set of Finnish memories through the `/extract` endpoint and checks the
+// assertions. Each case measures ONE thing, so a failure says directly what is
+// broken.
 //
-// Nämä eivät kärsi TTS-ongelmasta: jäsennys toimii tekstillä, joten syöte on
-// täsmälleen se mitä halutaan testata. Ainoa muuttuja on malli ja prompt.
+// These do not suffer from the TTS problem: extraction works on text, so the
+// input is exactly what we want to test. The only variable is the model and the
+// prompt.
 //
-// Vaatii että Worker on käynnissä:
+// The transcripts are Finnish because that is the input under test — see the
+// language rule in CLAUDE.md.
+//
+// Requires a running Worker:
 //   cd backend && npx wrangler dev
 //
-// Käyttö (mistä tahansa hakemistosta):
+// Usage (from any directory):
 //   node scripts/extract-tests.mjs
 //   node scripts/extract-tests.mjs http://localhost:8787
 
 const API = process.argv[2] ?? 'http://localhost:8787'
 
-// ---------------------------------------------------------------- tapaukset
+// ---------------------------------------------------------------- cases
 
 const CASES = [
   {
-    name: 'perusmuoto: henkilö kolmessa sijamuodossa',
-    why: 'Jos pintamuoto päätyy läpi, sukupuuhun syntyy kolme eri Ainoa.',
+    name: 'base form: a person in three cases',
+    why: 'If the surface form gets through, the family tree gains three different Ainos.',
     transcript:
       'Ainolle annettiin se hopealusikka ristiäisissä. Ainon kanssa me leikittiin ' +
       'joka kesä, ja Aino oli aina se rohkein meistä.',
     expect: { people: ['Aino'], exactPeople: true },
   },
   {
-    name: 'perusmuoto: paikka kolmessa sijamuodossa',
-    why: 'Sama ansa paikoille: "Kuopiosta" ja "Kuopiossa" ovat sama paikka.',
+    name: 'base form: a place in three cases',
+    why: 'The same trap for places: "Kuopiosta" and "Kuopiossa" are the same place.',
     transcript:
       'Me muutettiin Kuopiosta pois kun olin pieni. Kuopiossa oli semmoinen tori ' +
       'jossa käytiin, ja Kuopioon palattiin joka kesä mummolaan.',
     expect: { places: ['Kuopio'], exactPlaces: true },
   },
   {
-    name: 'harvinainen nimi: Aune ei saa muuttua Ainoksi',
-    why: 'Malli korjasi savutestissä "puumassa" → "Puumala". Sama mekanismi voi ' +
-      'normalisoida aidon harvinaisen nimen tutummaksi — hiljaa ja väärin.',
+    name: 'rare name: Aune must not become Aino',
+    why: 'In a smoke test the model corrected "puumassa" → "Puumala". The same ' +
+      'mechanism can normalise a genuine rare name into a more familiar one — ' +
+      'silently and wrongly.',
     transcript:
       'Aune oli äitini sisko. Aune asui Kajaanissa ja tuli meille aina jouluksi. ' +
       'Aune lauloi kauniisti.',
     expect: { people: ['Aune'], forbidPeople: ['Aino'] },
   },
   {
-    name: 'harvinaiset vanhat etunimet säilyvät',
-    why: 'Impi, Tyyne ja Eevertti ovat aitoja mutta harvinaisia. Näitä ei saa siistiä.',
+    name: 'rare old first names survive',
+    why: 'Impi, Tyyne and Eevertti are genuine but rare. These must not be tidied.',
     transcript:
       'Impi ja Tyyne olivat siskoksia. Eevertti oli heidän veljensä ja se muutti ' +
       'Amerikkaan eikä palannut koskaan.',
     expect: { people: ['Impi', 'Tyyne', 'Eevertti'] },
   },
   {
-    name: 'ei ajankohtaa: ei saa keksiä',
-    why: 'Keksitty vuosiluku on pahempi kuin puuttuva, koska se näyttää faktalta.',
+    name: 'no date given: must not invent one',
+    why: 'An invented year is worse than a missing one, because it looks like fact.',
     transcript:
       'Siinä kuvassa ollaan pihalla. Isä seisoo takana ja me lapset ollaan edessä. ' +
       'Aurinko paistoi ja oli lämmin.',
     expect: { datePrecision: 'unknown', dateYears: [null, null] },
   },
   {
-    name: 'epätarkka vuosikymmen säilyy epätarkkana',
-    why: 'Epävarmuus on ensiluokkainen tila, ei pyöristettävä.',
+    name: 'a vague decade stays vague',
+    why: 'Uncertainty is a first-class state, not something to round off.',
     transcript: 'Se oli joskus 50-luvulla, en mä nyt tarkkaan muista.',
     expect: { datePrecision: 'decade', dateYears: [1950, 1959] },
   },
   {
-    name: 'tarkka vuosi tunnistetaan tarkaksi',
-    why: 'Kun puhuja tietää vuoden, sitä ei saa löysätä vuosikymmeneksi.',
+    name: 'an exact year is recognised as exact',
+    why: 'When the speaker knows the year, it must not be loosened to a decade.',
     transcript: 'Me mentiin naimisiin vuonna 1962 Tampereella.',
     expect: { datePrecision: 'year', dateYears: [1962, 1962] },
   },
   {
-    name: 'ristiriitainen ajankohta ei kaada jäsennystä',
-    why: 'Vanhus korjaa itseään kesken lauseen. Sen pitää olla normaalia syötettä.',
+    name: 'a self-contradicting date does not break extraction',
+    why: 'An elderly speaker corrects themselves mid-sentence. That has to be normal input.',
     transcript:
       'Se oli 50-luvulla... ei kun odotas, se taisi olla vasta 60-luvun alussa. ' +
       'En mä ole varma.',
     expect: { datePrecisionOneOf: ['decade', 'year', 'unknown'] },
   },
   {
-    name: 'Salo paikkana',
-    why: 'Salo, Lahti, Koski ja Nurmi ovat sekä paikkoja että sukunimiä.',
+    name: 'Salo as a place',
+    why: 'Salo, Lahti, Koski and Nurmi are both place names and surnames.',
     transcript: 'Me käytiin Salossa katsomassa serkkuja joka kesä.',
     expect: { places: ['Salo'], forbidPeople: ['Salo'] },
   },
   {
-    name: 'Salo henkilönä',
-    why: 'Sama sana, eri rooli. Konteksti ratkaisee.',
+    name: 'Salo as a person',
+    why: 'The same word, a different role. Context decides.',
     transcript: 'Salo oli isän työkaveri ja se tuli meille korttia pelaamaan.',
     expect: { people: ['Salo'], forbidPlaces: ['Salo'] },
   },
   {
-    name: 'ei erisnimiä: ei saa keksiä henkilöitä',
-    why: 'Tyhjä maininta­lista on oikea vastaus. Keksitty sukulainen on pahin virhe.',
+    name: 'no proper nouns: must not invent people',
+    why: 'An empty mention list is the right answer. An invented relative is the worst error.',
     transcript:
       'Se oli semmoinen tavallinen kesäpäivä. Meillä oli hauskaa ja syötiin ' +
       'mansikoita pihalla.',
     expect: { maxMentions: 0 },
   },
   {
-    name: 'lähes tyhjä sisältö',
-    why: 'Joskus muistaminen ei onnistu. Silloinkaan ei saa täyttää aukkoja.',
+    name: 'almost no content',
+    why: 'Sometimes remembering does not work. Even then the gaps must not be filled.',
     transcript: 'No en mä oikein muista. Se oli semmoinen. Joo.',
     expect: { maxMentions: 0, datePrecision: 'unknown' },
   },
   {
-    name: 'monta henkilöä samassa muistossa',
-    why: 'Yhdessä valokuvassa on usein koko suku. Kukaan ei saa pudota pois.',
+    name: 'several people in one memory',
+    why: 'One photograph often holds the whole family. Nobody may be dropped.',
     transcript:
       'Siinä on Väinö, Hilma, Kaarlo ja Sylvi. Väinö oli vanhin ja Sylvi nuorin. ' +
       'Kaarlo lähti merille myöhemmin.',
     expect: { people: ['Väinö', 'Hilma', 'Kaarlo', 'Sylvi'] },
   },
   {
-    name: 'yleisnimet eivät ole mainintoja',
+    name: 'common nouns are not mentions',
     why:
-      '"Mummola" ja "mökki" ovat muiston tärkeimpiä paikkoja mutta kohteina ' +
-      'tunnistamattomia: kenen mummola, kumman suvun mökki? Sääntö on ' +
-      'yksiselitteinen, jottei arkistoon synny sekalaista.',
+      '"Mummola" and "mökki" are a memory\'s most important places but are ' +
+      'unidentifiable as subjects: whose grandmother\'s house, which family\'s ' +
+      'cottage? The rule is unambiguous so the archive does not fill with mush.',
     transcript:
       'Me oltiin mummolassa koko kesä. Mökki oli järven rannassa ja koulu ' +
       'alkoi vasta elokuussa.',
     expect: { maxMentions: 0 },
   },
   {
-    name: 'erisnimi poimitaan, yleisnimi ei — samassa lauseessa',
-    why: 'Rajan pitää pitää silloinkin kun molemmat esiintyvät vierekkäin.',
+    name: 'proper noun taken, common noun not — in the same sentence',
+    why: 'The boundary has to hold even when both appear side by side.',
     transcript: 'Mummola oli Sotkamossa ja siellä oli iso navetta.',
     expect: { places: ['Sotkamo'], exactPlaces: true },
   },
   {
-    name: 'korjaus taivutetaan oikein tekstiin',
+    name: 'a correction is inflected correctly into the text',
     why:
-      'Puheentunnistus erehtyy erisnimissä noin joka kolmannessa. Kertojan ' +
-      'korjaus ei riitä kohteen nimeen: muiston teksti sanoisi yhä ' +
-      '"Skotlannissa". Merkkijonon korvaus ei osu taivutettuun muotoon, joten ' +
-      'malli hoitaa taivutuksen — tämä testi lukitsee sen.',
+      'Speech recognition gets roughly one proper noun in three wrong. The ' +
+      "teller's correction is not enough for the subject name alone: the memory " +
+      'text would still say "Skotlannissa". A string replacement never matches ' +
+      'the inflected form, so the model handles the inflection — this test locks ' +
+      'that in.',
     transcript:
       'Hilma jäi Skotlantiin hoitamaan taloa, ja Skotlannissa oli iso navetta.',
     corrections: [{ from: 'Skotlanti', to: 'Sotkamo' }],
@@ -150,14 +156,14 @@ const CASES = [
     },
   },
   {
-    name: 'kysymyksiä on tasan kolme',
-    why: 'Neljä ahdistaa iäkästä käyttäjää, kaksi ei vie kertomusta eteenpäin.',
+    name: 'there are exactly three questions',
+    why: 'Four overwhelms an elderly user, two do not carry the story forward.',
     transcript: 'Toivo otti sen kuvan mökin rannassa.',
     expect: { questionCount: 3 },
   },
 ]
 
-// ---------------------------------------------------------------- tarkistus
+// ---------------------------------------------------------------- checking
 
 const norm = (s) => s.trim().toLowerCase()
 
@@ -168,76 +174,76 @@ function check(result, expect) {
   const has = (list, name) => list.some((x) => norm(x) === norm(name))
 
   for (const name of expect.people ?? []) {
-    if (!has(people, name)) problems.push(`henkilö "${name}" puuttuu (saatiin: ${people.join(', ') || 'ei mitään'})`)
+    if (!has(people, name)) problems.push(`person "${name}" missing (got: ${people.join(', ') || 'nothing'})`)
   }
   for (const name of expect.places ?? []) {
-    if (!has(places, name)) problems.push(`paikka "${name}" puuttuu (saatiin: ${places.join(', ') || 'ei mitään'})`)
+    if (!has(places, name)) problems.push(`place "${name}" missing (got: ${places.join(', ') || 'nothing'})`)
   }
   for (const name of expect.forbidPeople ?? []) {
-    if (has(people, name)) problems.push(`henkilö "${name}" EI saisi esiintyä`)
+    if (has(people, name)) problems.push(`person "${name}" must NOT appear`)
   }
   for (const name of expect.forbidPlaces ?? []) {
-    if (has(places, name)) problems.push(`paikka "${name}" EI saisi esiintyä`)
+    if (has(places, name)) problems.push(`place "${name}" must NOT appear`)
   }
   if (expect.exactPeople && people.length !== (expect.people ?? []).length) {
-    problems.push(`odotettiin ${expect.people.length} henkilöä, saatiin ${people.length}: ${people.join(', ')}`)
+    problems.push(`expected ${expect.people.length} people, got ${people.length}: ${people.join(', ')}`)
   }
   if (expect.exactPlaces && places.length !== (expect.places ?? []).length) {
-    problems.push(`odotettiin ${expect.places.length} paikkaa, saatiin ${places.length}: ${places.join(', ')}`)
+    problems.push(`expected ${expect.places.length} places, got ${places.length}: ${places.join(', ')}`)
   }
   if (expect.maxMentions !== undefined && result.mentions.length > expect.maxMentions) {
     problems.push(
-      `odotettiin enintään ${expect.maxMentions} mainintaa, saatiin ${result.mentions.length}: ` +
+      `expected at most ${expect.maxMentions} mentions, got ${result.mentions.length}: ` +
         result.mentions.map((m) => `${m.name}(${m.kind})`).join(', '),
     )
   }
   if (expect.datePrecision && result.date.precision !== expect.datePrecision) {
-    problems.push(`tarkkuus odotettiin "${expect.datePrecision}", saatiin "${result.date.precision}"`)
+    problems.push(`expected precision "${expect.datePrecision}", got "${result.date.precision}"`)
   }
   if (expect.datePrecisionOneOf && !expect.datePrecisionOneOf.includes(result.date.precision)) {
-    problems.push(`tarkkuus "${result.date.precision}" ei ole sallittujen joukossa`)
+    problems.push(`precision "${result.date.precision}" is not among the allowed values`)
   }
   if (expect.dateYears) {
     const [start, end] = expect.dateYears
     if (result.date.start_year !== start || result.date.end_year !== end) {
       problems.push(
-        `vuodet odotettiin [${start}, ${end}], saatiin [${result.date.start_year}, ${result.date.end_year}]`,
+        `expected years [${start}, ${end}], got [${result.date.start_year}, ${result.date.end_year}]`,
       )
     }
   }
   if (expect.questionCount !== undefined && result.questions.length !== expect.questionCount) {
-    problems.push(`kysymyksiä odotettiin ${expect.questionCount}, saatiin ${result.questions.length}`)
+    problems.push(`expected ${expect.questionCount} questions, got ${result.questions.length}`)
   }
   for (const needle of expect.bodyIncludes ?? []) {
     if (!result.body.includes(needle)) {
-      problems.push(`tekstistä puuttuu "${needle}": "${result.body.slice(0, 120)}"`)
+      problems.push(`text is missing "${needle}": "${result.body.slice(0, 120)}"`)
     }
   }
   for (const needle of expect.bodyExcludes ?? []) {
     if (result.body.includes(needle)) {
-      problems.push(`teksti sisältää yhä "${needle}": "${result.body.slice(0, 120)}"`)
+      problems.push(`text still contains "${needle}": "${result.body.slice(0, 120)}"`)
     }
   }
-  // Muiston teksti ei saa kadota: se on koko arkiston sisältö.
-  if (!result.body || result.body.trim().length === 0) problems.push('body on tyhjä')
+  // The memory text must not disappear: it is the entire content of the archive.
+  if (!result.body || result.body.trim().length === 0) problems.push('body is empty')
 
   return problems
 }
 
-// ---------------------------------------------------------------- ajo
+// ---------------------------------------------------------------- run
 
 const health = await fetch(`${API}/health`).then((r) => r.json()).catch(() => null)
 if (!health) {
-  console.error(`Worker ei vastaa osoitteessa ${API}`)
-  console.error('Käynnistä: cd backend && npx wrangler dev')
+  console.error(`The Worker is not answering at ${API}`)
+  console.error('Start it: cd backend && npx wrangler dev')
   process.exit(1)
 }
 if (!health.hasKey) {
-  console.error('OPENROUTER_API_KEY puuttuu — lisää se backend/.dev.vars:iin')
+  console.error('OPENROUTER_API_KEY is missing — add it to backend/.dev.vars')
   process.exit(1)
 }
 
-console.log(`Jäsennyksen testit — ${API}\n`)
+console.log(`Extraction tests — ${API}\n`)
 
 let passed = 0
 const failures = []
@@ -257,7 +263,7 @@ for (const testCase of CASES) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     result = await res.json()
   } catch (err) {
-    console.log('VIRHE')
+    console.log('ERROR')
     failures.push({ testCase, problems: [String(err.message)] })
     continue
   }
@@ -267,22 +273,22 @@ for (const testCase of CASES) {
     console.log('ok')
     passed++
   } else {
-    console.log('EPÄONNISTUI')
+    console.log('FAILED')
     failures.push({ testCase, problems, result })
   }
 }
 
-console.log(`\n${passed}/${CASES.length} läpi\n`)
+console.log(`\n${passed}/${CASES.length} passed\n`)
 
 for (const { testCase, problems, result } of failures) {
   console.log(`━━ ${testCase.name}`)
-  console.log(`   miksi tärkeä: ${testCase.why}`)
-  console.log(`   syöte: "${testCase.transcript.slice(0, 110)}${testCase.transcript.length > 110 ? '…' : ''}"`)
+  console.log(`   why it matters: ${testCase.why}`)
+  console.log(`   input: "${testCase.transcript.slice(0, 110)}${testCase.transcript.length > 110 ? '…' : ''}"`)
   for (const problem of problems) console.log(`   ✗ ${problem}`)
   if (result) {
-    const mentions = result.mentions.map((m) => `${m.name}(${m.kind})`).join(', ') || 'ei mitään'
-    console.log(`   maininnat: ${mentions}`)
-    console.log(`   aika: ${result.date.precision} [${result.date.start_year}, ${result.date.end_year}]`)
+    const mentions = result.mentions.map((m) => `${m.name}(${m.kind})`).join(', ') || 'nothing'
+    console.log(`   mentions: ${mentions}`)
+    console.log(`   date: ${result.date.precision} [${result.date.start_year}, ${result.date.end_year}]`)
   }
   console.log()
 }

@@ -1,10 +1,10 @@
 import Foundation
 
-/// Perheen jäsenyys ja sen tila.
+/// Family membership and its state.
 ///
-/// Perheen tunniste säilytetään paikallisesti, jotta sovellus avautuu
-/// suoraan käyttöön myös ilman verkkoa. Perhe on tila, ei kysely — 80-vuotias
-/// ei saa jäädä latausruutuun siksi että mökillä ei ole kenttää.
+/// The family id is kept locally so the app opens straight into use even without
+/// a network. Membership is state, not a query — an 80-year-old must not be left
+/// staring at a loading screen because there is no signal at the cottage.
 @MainActor
 @Observable
 final class Session {
@@ -38,19 +38,18 @@ final class Session {
     }
 
     enum Mode: Equatable {
-        /// Backendiä ei ole määritetty: yhden laitteen arkisto, ei perhettä.
-        /// Sovellus toimii täysin, eikä käyttäjää kiusata liittymisruudulla.
+        /// No backend configured: a single-device archive, no family. The app
+        /// works fully, and the user is not bothered with a join screen.
         case local
-        /// Backend on olemassa mutta perhettä ei vielä.
+        /// A backend exists but a family does not, yet.
         case needsFamily
         case inFamily(id: String)
     }
 
     private(set) var mode: Mode = .local
     private(set) var family: Family?
-    /// Perheen käyttötilanne. Paywall tarvitsee tämän kertoakseen mitä on
-    /// jäljellä ENNEN kuin raja tulee vastaan — jälkikäteen kerrottuna se on
-    /// vain este.
+    /// The family's usage. The paywall needs this to say what is left BEFORE the
+    /// limit is reached — told afterwards, it is only an obstacle.
     private(set) var usage: EntitlementClient.Usage?
     private(set) var isWorking = false
     private(set) var lastError: String?
@@ -82,7 +81,7 @@ final class Session {
         }
     }
 
-    // MARK: - Liittyminen
+    // MARK: - Joining
 
     func createFamily(named familyName: String, displayName: String) async {
         await perform { client in
@@ -101,8 +100,8 @@ final class Session {
         }
     }
 
-    /// Päivittää perheen tiedot. Epäonnistuminen ei pudota käyttäjää ulos:
-    /// jäsenyys on paikallinen tila, ei verkkokyselyn tulos.
+    /// Refreshes the family details. A failure does not throw the user out:
+    /// membership is local state, not the result of a network query.
     func refresh() async {
         guard case .inFamily = mode, let client else { return }
         do {
@@ -110,13 +109,13 @@ final class Session {
         } catch {
             lastError = error.localizedDescription
         }
-        // Käyttötilanne haetaan erikseen eikä perheen mukana: se muuttuu
-        // useammin, ja sen epäonnistuminen ei saa piilottaa jäsenlistaa.
+        // Usage is fetched separately rather than alongside the family: it
+        // changes more often, and its failure must not hide the member list.
         usage = try? await entitlements?.usage()
     }
 
-    /// Kertoo palvelimelle ostosta. Palvelin varmistaa sen RevenueCatilta —
-    /// tämä on vihje, ei väite.
+    /// Reports a purchase to the server. The server verifies it with RevenueCat —
+    /// this is a hint, not a claim.
     func syncPurchase(customerID: String) async {
         guard let entitlements else { return }
         _ = try? await entitlements.sync(customerID: customerID)
@@ -143,7 +142,7 @@ final class Session {
         await refresh()
     }
 
-    // MARK: - Apurit
+    // MARK: - Helpers
 
     private func store(familyID: String) {
         UserDefaults.standard.set(familyID, forKey: familyKey)

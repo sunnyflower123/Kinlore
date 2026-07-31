@@ -1,6 +1,6 @@
 import Foundation
 
-/// Kuvien ja äänten siirto R2:een Workerin kautta.
+/// Transferring photos and audio to R2 through the Worker.
 struct MediaClient {
     let baseURL: URL
     let token: String
@@ -23,8 +23,8 @@ struct MediaClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        // Kuva voi olla megatavu ja verkko mökillä hidas. Lyhyt aikakatkaisu
-        // hylkäisi latauksen juuri silloin kun se on hitaimmillaan.
+        // A photo can be a megabyte and the network at a cottage slow. A short
+        // timeout would abandon the upload exactly when it is slowest.
         request.timeoutInterval = 120
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")

@@ -3,10 +3,10 @@ node_modules/
 .wrangler/
 .dev.vars
 
-# Konekohtaiset Claude Code -asetukset, ei jaettavaa sisältöä.
+# Machine-local Claude Code settings, nothing shareable.
 .claude/settings.local.json
 
-# XcodeGen generoi nämä project.yml:stä — ei versionhallintaan.
+# XcodeGen generates these from project.yml — not under version control.
 ios/*.xcodeproj
 ios/Memorize/Info.plist
 ios/*.xcworkspace
@@ -14,5 +14,5 @@ xcuserdata/
 DerivedData/
 build/
 
-# ASR-testinäytteet: oikeiden ihmisten ääntä, ei repoon.
+# ASR test samples: real people's voices, not for the repo.
 samples/

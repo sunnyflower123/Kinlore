@@ -1,144 +1,140 @@
-# Tilit ja API-avaimet
+# Accounts and API keys
 
-Yhteenveto: **kolme salaisuutta backendiin, yksi julkinen avain sovellukseen,
-nolla Applelta.** Kehityskulut jäävät kahdessa kuukaudessa muutamaan kymmeneen
-euroon.
+In short: **three secrets in the backend, one public key in the app, nothing
+from Apple.** Development costs over two months land in the low tens of euros.
 
-## Perussääntö
+## The ground rule
 
-**ASR- ja LLM-avaimet elävät vain Workerin salaisuuksissa, eivät koskaan
-iOS-sovelluksessa.** IPA-tiedoston purkaminen on triviaalia, ja vuotanut avain on
-opiskelijan budjetilla oikea lasku. Tästä seuraa arkkitehtuuriin:
+**ASR and LLM keys live only in the Worker's secrets, never in the iOS app.**
+Unpacking an IPA is trivial, and a leaked key is a real bill on a student
+budget. This dictates the architecture:
 
 ```
-iOS  ──ääni──▶  Worker  ──▶  ASR-palvelu
-                   │
-                   └────────▶  LLM (jäsennys)
+iOS  ──audio──▶  Worker  ──▶  ASR service
+                    │
+                    └────────▶  LLM (extraction)
 ```
 
-Sovellus ei koskaan puhu suoraan OpenAI:lle tai vastaavalle. Tämä on syy miksi
-äänen lataus Workerille on viikon 2 kriittisellä polulla.
+The app never talks directly to OpenAI or similar. That is why uploading audio
+to the Worker sits on the critical path of week 2.
 
-## Tarvittavat avaimet
+## Keys required
 
-### Backend — Worker-salaisuuksina
+### Backend — as Worker secrets
 
-| Avain | Mihin |
-|-------|-------|
-| **`OPENROUTER_API_KEY`** | **Sekä puheen purku että jäsennys.** OpenRouterilla ei ole erillistä transcriptions-päätepistettä — ääni menee chat completionsin `input_audio`-osana base64:nä, joten yksi avain riittää molempiin. |
-| `RC_SECRET_KEY` | RevenueCatin v2 REST API. Backend varmistaa maksajan oikeuden ja mappaa sen koko perheelle. |
-| `RC_PROJECT_ID` | Projektin tunniste hallintapaneelista (ei salaisuus, `wrangler.jsonc`:n vareissa). |
-| `RC_WEBHOOK_SECRET` | Tilaustapahtumien (uusinta, peruutus) autentikointi → `family.entitlement`. Ilman tätä kuka tahansa voisi väärentää tilauksen. |
+| Key | What for |
+|-----|----------|
+| **`OPENROUTER_API_KEY`** | **Both transcription and extraction.** OpenRouter has no separate transcriptions endpoint — audio goes as an `input_audio` part of chat completions, base64 encoded, so one key covers both. |
+| `RC_SECRET_KEY` | RevenueCat's v2 REST API. The backend verifies the payer's entitlement and maps it to the whole family. |
+| `RC_PROJECT_ID` | The project identifier from the dashboard (not a secret, lives in `wrangler.jsonc` vars). |
+| `RC_WEBHOOK_SECRET` | Authentication for subscription events (renewal, cancellation) → `family.entitlement`. Without it anyone could forge a subscription. |
 
 ```bash
 cd backend
 npx wrangler secret put OPENROUTER_API_KEY
 ```
 
-Mallit valitaan `wrangler.jsonc`:n vareissa, ei koodissa:
-`MODEL_EXTRACT` ja `MODEL_TRANSCRIBE`, oletuksena `google/gemini-2.5-flash`.
-Purkumalli on erillinen muuttuja, koska se voi vaihtua omistettuun ASR:ään jos
-vertailu osoittaa sen paremmaksi.
+Models are chosen in `wrangler.jsonc` vars, not in code: `MODEL_EXTRACT` and
+`MODEL_TRANSCRIBE`. The transcription model is a separate variable because it
+may switch to a dedicated ASR if the comparison shows one to be better.
 
-**Paikalliskehitys.** Luo `backend/.dev.vars`:
+**Local development.** Create `backend/.dev.vars`:
 
 ```
 OPENROUTER_API_KEY=sk-or-...
 ```
 
-Se on jo `.gitignore`ssa — **tarkista silti ennen ensimmäistä pushia**, koska
-repo on julkinen. Sen jälkeen:
+It is already in `.gitignore` — **check anyway before the first push**, because
+the repo is public. After that:
 
 ```bash
 cd backend && npx wrangler dev
 ```
 
-Sovellus käyttää stubeja kunnes sille kerrotaan backendin osoite. Kytke oikeat
-palvelut käynnistysargumentilla:
+The app uses stubs until it is told the backend's address. Switch the real
+services on with a launch argument:
 
 ```
 -api http://localhost:8787
 ```
 
-Ilman sitä sovellus toimii yhä täysin — se on tarkoituksellista, jotta kehitys
-ei pysähdy silloin kun Worker on rikki tai verkkoa ei ole.
+Without it the app still works completely — that is deliberate, so development
+does not stop when the Worker is broken or there is no network.
 
-### Terveystarkistus
+### Health check
 
 ```bash
 curl -s http://localhost:8787/health
 ```
 
-Palauttaa `{"ok":true,"hasKey":true}` kun avain on paikallaan. Jos `hasKey` on
-`false`, jäsennys vastaa `502 upstream_failed` — virheen syy menee vain
-Workerin lokiin, ei koskaan sovellukselle, koska se voi sisältää tilin tietoja
-tai toistaa käyttäjän kertoman muiston.
+Returns `{"ok":true,"hasKey":true}` when the key is in place. If `hasKey` is
+`false`, extraction answers `502 upstream_failed` — the cause goes only to the
+Worker's log, never to the app, because it can contain account details or echo
+back the memory the user just told.
 
-### iOS-sovellus — julkinen
+### iOS app — public
 
-| Avain | Huom |
-|-------|------|
-| RevenueCat **Test Store API key** | Suunniteltu asiakaspuolelle, turvallinen upottaa. Annetaan käynnistysargumentilla `-rcKey <avain>`, jotta Test Store ja tuotanto voi vaihtaa kääntämättä uudelleen. Ilman avainta ostot eivät ole tarjolla mutta sovellus toimii normaalisti. |
+| Key | Note |
+|-----|------|
+| RevenueCat **Test Store API key** | Designed for the client side, safe to embed. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling. Without a key, purchases are unavailable but the app works normally. |
 
 ### Cloudflare
 
-Ei manuaalista avainta. `npx wrangler login` hoitaa OAuthilla.
-`CLOUDFLARE_API_TOKEN` tarvitaan vain jos joskus pystytetään CI.
+No manual key. `npx wrangler login` handles it via OAuth.
+`CLOUDFLARE_API_TOKEN` is only needed if CI is ever set up.
 
-## Mitä EI tarvita
+## What is NOT needed
 
-- **Apple: ei mitään.** Ei 99 $ tiliä, ei Sign in with Applea, ei APNs-sertifikaattia.
-- **Google / Firebase:** ei mitään.
-- **Sähköpostipalvelu:** ei mitään, koska tunnistautuminen on laitepohjainen.
-- **OneSignal:** poistui push-ilmoitusten mukana laajuudesta.
+- **Apple: nothing.** No $99 account, no Sign in with Apple, no APNs certificate.
+- **Google / Firebase:** nothing.
+- **Email service:** nothing, because authentication is device based.
+- **OneSignal:** dropped from scope along with push notifications.
 
-## Tunnistautuminen ilman kirjautumisruutua
+## Authentication without a login screen
 
-Käytössä on maksullinen Apple Developer -tili, joten Sign in with Apple, push,
-iCloud ja App Groups **olisivat** teknisesti mahdollisia. Silti tunnistautuminen
-tehdään ilman niitä — ei rajoitteen takia vaan koska se on tälle käyttäjäryhmälle
-parempi:
+A paid Apple Developer account is available, so Sign in with Apple, push, iCloud
+and App Groups **would** be technically possible. Authentication is still done
+without them — not because of a constraint, but because it is better for this
+audience:
 
-1. Ensimmäisellä käynnistyksellä luodaan UUID ja tallennetaan se Keychainiin
-   `kSecAttrSynchronizable`-lipulla. iCloud Keychain synkronoi sen käyttäjän
-   laitteiden välillä — se ei vaadi iCloud-entitlementtiä, joten se toimii
-   ilmaisella tilillä.
-2. Backend myöntää jäsentunnisteen tälle identiteetille.
-3. Perheeseen liitytään kutsulinkillä. Ei sähköpostia, ei salasanaa, ei
-   kirjautumisruutua.
+1. On first launch a UUID is generated and stored in the Keychain with the
+   `kSecAttrSynchronizable` flag. iCloud Keychain syncs it between the user's
+   devices — this does not require an iCloud entitlement, so it works on a free
+   account.
+2. The backend issues a member id for this identity.
+3. You join a family with an invite link. No email, no password, no login screen.
 
-**80-vuotias ei törmää kirjautumismuuriin lainkaan** — hän saa linkin
-lapsenlapselta ja on sisällä. Se on juuri se kohta jossa tämä käyttäjäryhmä
-tavallisesti putoaa pois.
+**An 80-year-old never hits a login wall** — she gets a link from a grandchild
+and she is in. That is precisely the point where this audience normally drops out.
 
-Rehellinen haitta: laitteen katoaminen vie identiteetin, jos iCloud Keychain ei
-ole päällä. Lieventäjä: perheen omistaja voi kutsua uudelleen, eikä kukaan menetä
-muistoja — ne kuuluvat perheelle, eivät jäsenelle.
+The honest downside: losing the device loses the identity if iCloud Keychain is
+off. The mitigation: the family owner can re-invite, and nobody loses memories —
+they belong to the family, not to the member.
 
-**Sign in with Apple otetaan käyttöön vain vapaaehtoisena tilin palautuksena
-maksavalle jäsenelle**, ei kenenkään porttina sisään. Lapsenlapsi joka ostaa
-tilauksen haluaa perustellusti sitoa sen johonkin pysyvään; isoäiti ei halua
-kirjautua mihinkään. Nämä ovat eri tarpeita eikä niitä pidä ratkaista samalla
-ruudulla. Tämä on v1.1:n asia, ei MVP:n.
+**Sign in with Apple will be adopted only as optional account recovery for a
+paying member**, never as anyone's gate in. A grandchild buying a subscription
+justifiably wants it tied to something permanent; grandmother does not want to
+sign in to anything. Those are different needs and should not be solved on the
+same screen. This is a v1.1 matter, not an MVP one.
 
-## Kustannusarvio kehitysvaiheessa
+## Cost estimate during development
 
-Suuruusluokat, tarkista ajantasaiset hinnat itse:
+Orders of magnitude; check current prices yourself:
 
-| Palvelu | Arvio |
-|---------|-------|
-| OpenRouter, purku (Gemini Flash, äänisyöte) | Ääni maksaa tokeneina ja on kalliimpaa kuin teksti — tämä on suurin yksittäinen erä |
-| OpenRouter, jäsennys | 90 s muisto ≈ 300 tokenia sisään, 500 ulos — selvästi alle sentin per muisto |
-| Vaihtoehto purkuun: Groq whisper-large-v3 | Ilmaistaso kattaa kehityksen. Kannattaa vertailla, jos äänen tokenihinta yllättää |
-| Cloudflare Workers + D1 + R2 | Ilmaistaso riittää hackathoniin. R2:ssa ei egress-maksuja, mikä on tälle olennaista koska äänet säilytetään pysyvästi |
-| RevenueCat | Ilmainen alle 2 500 $ kuukausittaisella liikevaihdolla |
+| Service | Estimate |
+|---------|----------|
+| OpenRouter, transcription (Gemini Flash, audio input) | Audio is billed as tokens and costs more than text — this is the single largest item |
+| OpenRouter, extraction | A 90 s memory ≈ 300 tokens in, 500 out — clearly under a cent per memory |
+| Alternative for transcription: Groq whisper-large-v3 | The free tier covers development. Worth comparing if the audio token price surprises you |
+| Cloudflare Workers + D1 + R2 | The free tier is enough for a hackathon. R2 has no egress fees, which matters here because audio is kept permanently |
+| RevenueCat | Free below $2,500 monthly revenue |
 
-**Realistinen kokonaiskulu kahdelta kuukaudelta: alle 20 €.** Suurin yksittäinen
-erä on ASR, ja sekin vain jos testaat paljon pitkiä nauhoituksia.
+**Realistic total for two months: under €20.** The largest single item is ASR,
+and only if you test a lot of long recordings.
 
-## Järjestys viikolle 0
+## Order of operations for week 0
 
-1. Cloudflare-tili + `wrangler login`, `d1 create`, `r2 bucket create`
-2. Yksi ASR-avain → aja `scripts/asr-bench.mjs`
-3. RevenueCat-tili → projekti → Test Store → testiavain
-4. LLM-avain (voi olla sama kuin ASR)
+1. Cloudflare account + `wrangler login`, `d1 create`, `r2 bucket create`
+2. One ASR key → run `scripts/asr-bench.mjs`
+3. RevenueCat account → project → Test Store → test key
+4. LLM key (can be the same as the ASR one)

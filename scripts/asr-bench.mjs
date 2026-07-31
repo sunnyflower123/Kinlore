@@ -1,26 +1,25 @@
 #!/usr/bin/env node
-// ASR-vertailu suomenkieliselle vanhuksen puheelle.
+// ASR comparison for Finnish elderly speech.
 //
-// Tämä on suunnitelman riski nro 1. Aja tämä ENNEN kuin kirjoitat sovelluskoodia:
-// jos yksikään moottori ei pärjää oikealla isovanhemman puheella, koko
-// sanelukonsepti pitää suunnitella uusiksi — ja se on halvempaa nyt kuin elokuun
-// lopussa.
+// This is risk #1 in the plan. Run it BEFORE writing app code: if no engine
+// copes with real grandparent speech, the whole dictation concept has to be
+// redesigned — and that is cheaper now than at the end of August.
 //
-// Käyttö:
-//   1. Nauhoita 3 OIKEAA näytettä. Ei omaa selkeää puhettasi — se antaa
-//      valheellisen hyvän tuloksen. Tarvitset hiljaista ääntä, murretta,
-//      taukoja, keskenjääviä lauseita, sukunimiä ja paikannimiä.
-//   2. Kirjoita kustakin käsin oikea teksti tiedostoon <nimi>.txt (sama
-//      kansio, sama nimi kuin äänitiedostolla).
-//   3. export OPENAI_API_KEY=...   ja/tai   export ELEVENLABS_API_KEY=...
-//                                  ja/tai   export GROQ_API_KEY=...
+// Usage:
+//   1. Record 3 REAL samples. Not your own clear speech — that gives a
+//      falsely good result. You need a quiet voice, dialect, pauses, unfinished
+//      sentences, surnames and place names.
+//   2. Write the correct text for each by hand into <name>.txt (same directory,
+//      same name as the audio file).
+//   3. export OPENAI_API_KEY=...   and/or   export ELEVENLABS_API_KEY=...
+//                                  and/or   export GROQ_API_KEY=...
 //   4. node scripts/asr-bench.mjs samples/
 //
-// Mittarit:
-//   WER  = sanavirheprosentti. < 15 % on käyttökelpoinen, > 30 % ei ole.
-//   NAME = erisnimien osuvuus. Tämä on tärkeämpi kuin WER: "Aino" väärin on
-//          pahempi kuin viisi väärää täytesanaa, koska erisnimet ohjaavat
-//          sukupuun rakentumista.
+// Metrics:
+//   WER  = word error rate. Below 15 % is usable, above 30 % is not.
+//   NAME = proper-noun recall. This matters more than WER: getting "Aino" wrong
+//          is worse than five wrong filler words, because proper nouns drive how
+//          the family tree is built.
 
 import { readdir, readFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
@@ -30,13 +29,13 @@ import { readFileSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-// Repon juuri skriptin sijainnista, ei työhakemistosta: tämän voi ajaa mistä
-// tahansa kansiosta ilman että polut hajoavat.
+// The repo root from the script's own location, not from the working directory:
+// this can be run from any folder without the paths falling apart.
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-// Avaimet luetaan backend/.dev.vars:sta jos niitä ei ole ympäristössä. Sama
-// tiedosto jota Worker käyttää — ei kahta paikkaa joita pitää pitää synkassa,
-// eikä avaimen liittämistä komentoriville jossa se jää shell-historiaan.
+// Keys are read from backend/.dev.vars if they are not in the environment. The
+// same file the Worker uses — not two places to keep in sync, and no pasting a
+// key onto a command line where it stays in shell history.
 try {
   const vars = readFileSync(join(REPO_ROOT, 'backend/.dev.vars'), 'utf8')
   for (const line of vars.split('\n')) {
@@ -44,12 +43,12 @@ try {
     if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
   }
 } catch {
-  // Tiedostoa ei ole — avaimet voivat silti tulla ympäristöstä.
+  // No such file — the keys may still come from the environment.
 }
 
 const AUDIO_EXT = new Set(['.m4a', '.mp3', '.wav', '.mp4', '.mpeg', '.mpga', '.webm', '.ogg', '.flac'])
 
-// ---------------------------------------------------------------- moottorit
+// ---------------------------------------------------------------- engines
 
 const ENGINES = [
   {
@@ -78,21 +77,21 @@ const ENGINES = [
     key: 'ELEVENLABS_API_KEY',
     url: 'https://api.elevenlabs.io/v1/speech-to-text',
     model: 'scribe_v1',
-    // ElevenLabs käyttää omaa headeria, ei Bearer-tokenia.
+    // ElevenLabs uses its own header, not a Bearer token.
     header: 'xi-api-key',
     auth: (k) => k,
-    // Kenttien nimet poikkeavat OpenAI-yhteensopivasta rajapinnasta.
+    // The field names differ from the OpenAI-compatible interface.
     fields: { model: 'model_id', lang: 'language_code' },
   },
-  // OpenRouterilla ei ole transcriptions-päätepistettä: ääni menee chat
-  // completionsin osana base64:nä. Mukana koska sama avain hoitaa myös
-  // jäsennyksen — jos tämä pärjää, koko sovellus tarvitsee yhden avaimen.
-  // Ehdokkaat MODEL_TRANSCRIBE-muuttujalle. Hinnat $/Mtok syötettä.
-  { name: 'voxtral-small (0,10)', key: 'OPENROUTER_API_KEY', model: 'mistralai/voxtral-small-24b-2507', custom: openRouterTranscribe, needsWav: true },
-  { name: 'gemini-2.5-flash (0,30)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-2.5-flash', custom: openRouterTranscribe },
-  { name: 'gemini-3.1-flash-lite (0,25)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-3.1-flash-lite', custom: openRouterTranscribe },
-  { name: 'gemini-3.6-flash (1,50)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-3.6-flash', custom: openRouterTranscribe },
-  { name: 'gpt-audio-mini (0,60)', key: 'OPENROUTER_API_KEY', model: 'openai/gpt-audio-mini', custom: openRouterTranscribe, needsWav: true },
+  // OpenRouter has no transcriptions endpoint: audio goes as part of chat
+  // completions, base64 encoded. Included because the same key also handles
+  // extraction — if this holds up, the whole app needs one key.
+  // Candidates for MODEL_TRANSCRIBE. Prices are $/Mtok of input.
+  { name: 'voxtral-small (0.10)', key: 'OPENROUTER_API_KEY', model: 'mistralai/voxtral-small-24b-2507', custom: openRouterTranscribe, needsWav: true },
+  { name: 'gemini-2.5-flash (0.30)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-2.5-flash', custom: openRouterTranscribe },
+  { name: 'gemini-3.1-flash-lite (0.25)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-3.1-flash-lite', custom: openRouterTranscribe },
+  { name: 'gemini-3.6-flash (1.50)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-3.6-flash', custom: openRouterTranscribe },
+  { name: 'gpt-audio-mini (0.60)', key: 'OPENROUTER_API_KEY', model: 'openai/gpt-audio-mini', custom: openRouterTranscribe, needsWav: true },
 ]
 
 async function openRouterTranscribe(engine, filePath, bytes) {
@@ -109,6 +108,9 @@ async function openRouterTranscribe(engine, filePath, bytes) {
       provider: { data_collection: 'deny' },
       messages: [
         {
+          // Finnish on purpose: this mirrors the prompt in
+          // backend/src/transcribe.ts, so the benchmark measures what the app
+          // will actually do.
           role: 'system',
           content:
             'Puret suomenkielistä puhetta tekstiksi. Kirjoita täsmälleen se mitä kuulet, ' +
@@ -136,10 +138,10 @@ async function openRouterTranscribe(engine, filePath, bytes) {
   return (json.choices?.[0]?.message?.content ?? '').trim()
 }
 
-// Osa malleista hyväksyy vain wav/mp3, ei m4a:ta. Muunnetaan lennossa, jotta
-// vertailu mittaa mallia eikä tämän skriptin rajoitetta. HUOM: sama rajoite
-// koskee sovellusta — se nauhoittaa m4a:ta, joten näiden käyttöönotto vaatisi
-// muunnoksen myös Workerissa, mikä ei ole siellä triviaalia.
+// Some models accept only wav/mp3, not m4a. Convert on the fly so the
+// comparison measures the model rather than this script's limitation. NOTE: the
+// same limitation applies to the app — it records m4a, so adopting these would
+// require conversion in the Worker too, which is not trivial there.
 const WAV_CACHE = new Map()
 function asWav(filePath, bytes) {
   if (extname(filePath).toLowerCase() === '.wav') return bytes
@@ -174,18 +176,19 @@ async function transcribe(engine, filePath, bytes) {
   return (json.text ?? '').trim()
 }
 
-// ---------------------------------------------------------------- mittarit
+// ---------------------------------------------------------------- metrics
 
-// Suomessa taivutus tekee osasta virheistä merkityksettömiä ("mökillä" vs
-// "mökille"), mutta emme yritä olla fiksuja: raaka WER on rehellisempi mittari
-// kuin oma keksitty normalisointi. Poistetaan vain välimerkit ja kirjainkoko.
+// In Finnish, inflection makes some errors meaningless ("mökillä" vs
+// "mökille"), but we do not try to be clever: raw WER is a more honest metric
+// than a normalisation of our own invention. Only punctuation and case are
+// stripped.
 const normalize = (s) =>
   s.toLowerCase()
     .replace(/[.,!?;:"'()\[\]…—–-]/g, ' ')
     .split(/\s+/)
     .filter(Boolean)
 
-// Levenshtein sanatasolla.
+// Levenshtein at the word level.
 function wer(refWords, hypWords) {
   const n = refWords.length
   const m = hypWords.length
@@ -202,8 +205,8 @@ function wer(refWords, hypWords) {
   return prev[m] / n
 }
 
-// Erisnimet: referenssistä isolla alkukirjaimella kirjoitetut sanat jotka eivät
-// ole lauseen ensimmäisiä. Karkea heuristiikka, mutta riittää vertailuun.
+// Proper nouns: capitalised words in the reference that are not sentence
+// initial. A crude heuristic, but enough for a comparison.
 function properNouns(reference) {
   const out = new Set()
   for (const sentence of reference.split(/(?<=[.!?])\s+/)) {
@@ -225,39 +228,40 @@ function nameRecall(reference, hypothesis) {
   return { recall: hit / names.size, total: names.size, missed: [...names].filter((n) => !hyp.has(n)) }
 }
 
-// ---------------------------------------------------------------- ajo
+// ---------------------------------------------------------------- run
 
-// Oletuskansio repon juuresta, jotta komento toimii mistä tahansa ajettuna.
+// Default directory relative to the repo root, so the command works from
+// anywhere.
 const dir = process.argv[2] ? resolve(process.argv[2]) : join(REPO_ROOT, 'samples')
 
 let entries
 try {
   entries = await readdir(dir)
 } catch {
-  console.error(`Kansiota ei ole: ${dir}\n`)
-  console.error('Luo se ja laita sinne nauhoitukset sekä käsin kirjoitetut oikeat tekstit:')
+  console.error(`No such directory: ${dir}\n`)
+  console.error('Create it and put the recordings and hand-written references there:')
   console.error(`  mkdir -p ${dir}`)
-  console.error(`  # ${dir}/mummo-1.m4a  ja  ${dir}/mummo-1.txt`)
-  console.error('\nNäytteiden pitää olla OIKEAA vanhuksen puhetta — oma selkeä')
-  console.error('puheesi antaa valheellisen hyvän tuloksen eikä kerro mitään.')
+  console.error(`  # ${dir}/grandma-1.m4a  and  ${dir}/grandma-1.txt`)
+  console.error('\nThe samples have to be REAL elderly speech — your own clear')
+  console.error('speech gives a falsely good result and tells you nothing.')
   process.exit(1)
 }
 
 const active = ENGINES.filter((e) => process.env[e.key])
 if (active.length === 0) {
-  console.error('Yhtään API-avainta ei ole asetettu. Tarvitaan vähintään yksi:')
+  console.error('No API key is set. At least one is required:')
   console.error('  ' + [...new Set(ENGINES.map((e) => e.key))].join(', '))
   process.exit(1)
 }
 
 const samples = entries.filter((f) => AUDIO_EXT.has(extname(f).toLowerCase()))
 if (samples.length === 0) {
-  console.error(`Ei äänitiedostoja kansiossa ${dir}`)
+  console.error(`No audio files in ${dir}`)
   process.exit(1)
 }
 
-console.log(`Moottorit: ${active.map((e) => e.name).join(', ')}`)
-console.log(`Näytteet:  ${samples.length}\n`)
+console.log(`Engines: ${active.map((e) => e.name).join(', ')}`)
+console.log(`Samples: ${samples.length}\n`)
 
 const totals = new Map(active.map((e) => [e.name, { werScores: [], nameScores: [] }]))
 
@@ -269,7 +273,7 @@ for (const sample of samples) {
   try {
     reference = (await readFile(refPath, 'utf8')).trim()
   } catch {
-    console.log(`⚠ ${sample}: ei referenssiä (${basename(refPath)}) — ohitetaan`)
+    console.log(`⚠ ${sample}: no reference (${basename(refPath)}) — skipping`)
     continue
   }
 
@@ -283,7 +287,7 @@ for (const sample of samples) {
     try {
       text = await transcribe(engine, audioPath, bytes)
     } catch (err) {
-      console.log(`  ${engine.name.padEnd(26)} VIRHE  ${err.message}`)
+      console.log(`  ${engine.name.padEnd(26)} ERROR  ${err.message}`)
       continue
     }
     const secs = ((performance.now() - t0) / 1000).toFixed(1)
@@ -294,9 +298,9 @@ for (const sample of samples) {
     if (names) totals.get(engine.name).nameScores.push(names.recall)
 
     const nameStr = names
-      ? `nimet ${(names.recall * 100).toFixed(0)}% (${names.total})` +
-        (names.missed.length ? `  hukassa: ${names.missed.join(', ')}` : '')
-      : 'nimet —'
+      ? `names ${(names.recall * 100).toFixed(0)}% (${names.total})` +
+        (names.missed.length ? `  missed: ${names.missed.join(', ')}` : '')
+      : 'names —'
     console.log(`  ${engine.name.padEnd(26)} WER ${(w * 100).toFixed(1).padStart(5)}%  ${nameStr}  ${secs}s`)
     console.log(`  ${' '.repeat(26)} “${text.slice(0, 160)}${text.length > 160 ? '…' : ''}”`)
   }
@@ -304,7 +308,7 @@ for (const sample of samples) {
 
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
 
-console.log('\n━━ YHTEENVETO')
+console.log('\n━━ SUMMARY')
 const ranked = active
   .map((e) => ({ name: e.name, ...totals.get(e.name) }))
   .filter((r) => r.werScores.length > 0)
@@ -312,14 +316,14 @@ const ranked = active
   .sort((a, b) => a.wer - b.wer)
 
 for (const r of ranked) {
-  const verdict = r.wer < 0.15 ? 'käyttökelpoinen' : r.wer < 0.30 ? 'rajatapaus' : 'EI RIITÄ'
+  const verdict = r.wer < 0.15 ? 'usable' : r.wer < 0.30 ? 'borderline' : 'NOT ENOUGH'
   console.log(
     `  ${r.name.padEnd(26)} WER ${(r.wer * 100).toFixed(1).padStart(5)}%  ` +
-      `nimet ${r.names === null ? '  —' : (r.names * 100).toFixed(0).padStart(3) + '%'}  ${verdict}`,
+      `names ${r.names === null ? '  —' : (r.names * 100).toFixed(0).padStart(3) + '%'}  ${verdict}`,
   )
 }
 
 console.log(
-  '\nMuista: erisnimien osuvuus painaa enemmän kuin WER. Sukupuu rakentuu nimistä,\n' +
-    'ja väärä nimi tuottaa väärän henkilön jota kukaan ei myöhemmin osaa korjata.',
+  '\nRemember: proper-noun recall weighs more than WER. The family tree is built\n' +
+    'out of names, and a wrong name produces a wrong person that nobody can fix later.',
 )

@@ -1,16 +1,16 @@
 import AVFoundation
 import Foundation
 
-/// Mistä sovellus hakee puheen purun ja jäsennyksen.
+/// Where the app gets transcription and extraction from.
 ///
-/// Jos backendin osoitetta ei ole määritetty, käytetään stubeja. Sovellus
-/// toimii siis aina — ilman avainta, ilman verkkoa, ilman backendiä — ja
-/// osoitteen asettaminen kytkee oikeat palvelut päälle. Se pitää kehityksen
-/// käynnissä silloinkin kun Worker on rikki.
+/// If no backend address is configured, stubs are used. The app therefore always
+/// works — without a key, without a network, without a backend — and setting the
+/// address switches the real services on. That keeps development moving even
+/// when the Worker is broken.
 enum AppServices {
-    /// Backendin osoite. Asetetaan käynnistysargumentilla:
+    /// The backend address. Set with a launch argument:
     ///   `-api http://localhost:8787`
-    /// tai pysyvästi `UserDefaults`iin avaimella `api`.
+    /// or permanently in `UserDefaults` under the key `api`.
     static var apiBaseURL: URL? {
         guard let raw = UserDefaults.standard.string(forKey: "api"),
               !raw.isEmpty,
@@ -38,14 +38,14 @@ enum AppServices {
     }
 }
 
-// MARK: - Yhteinen kutsu
+// MARK: - Shared request
 
 enum RemoteError: LocalizedError {
     case badStatus(Int)
     case emptyResult
-    /// Kuukauden AI-minuutit tai kuvaraja täynnä. Erillinen tapaus, koska
-    /// tämä EI ole virhe vaan tilanne johon sovelluksella on vastaus:
-    /// nauhoitus tallennetaan silti ja puretaan myöhemmin.
+    /// The month's AI minutes or the photo limit are used up. A separate case,
+    /// because this is NOT an error but a situation the app has an answer to:
+    /// the recording is saved anyway and transcribed later.
     case quotaExceeded(kind: String, used: Int, limit: Int)
 
     var isQuota: Bool {
@@ -53,6 +53,7 @@ enum RemoteError: LocalizedError {
         return false
     }
 
+    /// Finnish: these strings are shown to the user.
     var errorDescription: String? {
         switch self {
         case .badStatus(let code): "Palvelin vastasi virheellä \(code)."
@@ -65,8 +66,8 @@ enum RemoteError: LocalizedError {
     }
 }
 
-/// Palvelimen kiintiövastaus. Omana tyyppinään, koska sisäkkäinen tyyppi ei
-/// kelpaa geneerisessä funktiossa.
+/// The server's quota response. Its own type, because a nested type is not
+/// allowed inside a generic function.
 private struct QuotaDenial: Decodable {
     let kind: String
     let used: Int
@@ -83,8 +84,9 @@ private func post<Response: Decodable>(
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try JSONEncoder().encode(body)
-    // Iäkäs käyttäjä voi puhua pitkään, ja äänen purku kestää sen mukana.
-    // Oletusaikakatkaisu katkaisisi pisimmät ja arvokkaimmat muistot.
+    // An elderly user may talk for a long time, and transcription takes as long
+    // as the audio. The default timeout would cut off the longest and most
+    // valuable memories.
     request.timeoutInterval = timeout
 
     let (data, response) = try await URLSession.shared.data(for: request)
@@ -98,7 +100,7 @@ private func post<Response: Decodable>(
     return try JSONDecoder().decode(Response.self, from: data)
 }
 
-// MARK: - Purku
+// MARK: - Transcription
 
 struct RemoteTranscriptionService: TranscriptionService {
     let baseURL: URL
@@ -106,9 +108,10 @@ struct RemoteTranscriptionService: TranscriptionService {
     private struct Request: Encodable {
         let audio: String
         let format: String
-        /// Nauhoituksen kesto. Backend hylkää purun jos siinä on enemmän sanoja
-        /// kuin tähän aikaan mahtuu — huonolla äänellä malli sepittää eikä
-        /// vaikene, ja keksitty muisto on pahempi kuin puuttuva.
+        /// The recording's length. The backend rejects a transcript that
+        /// contains more words than fit into this much time — on poor audio the
+        /// model hallucinates rather than falling silent, and an invented memory
+        /// is worse than a missing one.
         let seconds: Double?
     }
 
@@ -134,15 +137,15 @@ struct RemoteTranscriptionService: TranscriptionService {
         return reply.text
     }
 
-    /// Luetaan tiedostosta eikä nauhoittimen kellosta: jos ääni tulee joskus
-    /// muualta kuin omasta nauhoituksesta, kesto on silti oikea.
+    /// Read from the file rather than the recorder's clock: if audio ever comes
+    /// from somewhere other than our own recording, the duration is still right.
     private static func duration(of url: URL) -> Double? {
         guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
         return player.duration
     }
 }
 
-// MARK: - Jäsennys
+// MARK: - Extraction
 
 struct RemoteExtractionService: ExtractionService {
     let baseURL: URL
@@ -157,9 +160,9 @@ struct RemoteExtractionService: ExtractionService {
         }
     }
 
-    /// Vastaa backendin `ExtractionResult`ia. Vuodet kulkevat kokonaislukuina,
-    /// koska kielimallit käsittelevät vuosia luotettavasti ja unix-aikaleimoja
-    /// eivät lainkaan — muunnos tehdään täällä.
+    /// Mirrors the backend's `ExtractionResult`. Years travel as integers,
+    /// because language models handle years reliably and unix timestamps not at
+    /// all — the conversion happens here.
     private struct Reply: Decodable {
         struct Mention: Decodable {
             let name: String
@@ -193,8 +196,8 @@ struct RemoteExtractionService: ExtractionService {
         return ExtractionResult(
             body: reply.body,
             mentions: reply.mentions.compactMap { mention in
-                // Tuntematon kind hylätään mieluummin kuin arvataan henkilöksi:
-                // väärä sukulainen on pahempi kuin puuttuva.
+                // An unknown kind is dropped rather than guessed as a person:
+                // a wrong relative is worse than a missing one.
                 guard let kind = SubjectKind(rawValue: mention.kind) else { return nil }
                 return MentionedEntity(
                     name: mention.name,

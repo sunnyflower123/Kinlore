@@ -1,25 +1,26 @@
 import AVFoundation
 import Foundation
 
-/// Nauhoitus ja äänitason mittaus.
+/// Recording and level metering.
 ///
-/// Tason mittaus ei ole koristetta: se on ainoa palaute siitä että laite
-/// kuulee. Hiljaa puhuva vanhus ei tiedä toimiiko mikrofoni, ja vaimeneva
-/// aaltokuvio kertoo sen ilman että kenenkään tarvitsee lukea mitään.
+/// The level meter is not decoration: it is the only feedback that the device
+/// can hear. An elderly person speaking quietly does not know whether the
+/// microphone works, and a fading waveform says so without anyone having to read
+/// anything.
 @MainActor
 @Observable
 final class AudioRecorder {
     private(set) var isRecording = false
     private(set) var elapsed: TimeInterval = 0
-    /// Viimeisimmät tasonäytteet, uusin viimeisenä. 0…1.
+    /// The most recent level samples, newest last. 0…1.
     private(set) var levels: [Float] = []
     private(set) var lastRecordingURL: URL?
 
     private var recorder: AVAudioRecorder?
     private var ticker: Timer?
 
-    /// Näytteitä pidetään sen verran kuin aaltokuvioon mahtuu. Vanhat pois,
-    /// jotta muistinkäyttö ei kasva pitkässä nauhoituksessa.
+    /// Only as many samples are kept as fit in the waveform. Old ones are
+    /// dropped, so memory use does not grow during a long recording.
     private let maxLevels = 48
 
     func requestPermission() async -> Bool {
@@ -38,8 +39,8 @@ final class AudioRecorder {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("memory-\(UUID().uuidString).m4a")
 
-        // Puhe, ei musiikki: 22 kHz mono riittää ASR:lle ja pitää tiedostot
-        // pieninä. Ääni säilytetään pysyvästi, joten koko kertyy ajan myötä.
+        // Speech, not music: 22 kHz mono is enough for ASR and keeps the files
+        // small. The audio is kept permanently, so the size accumulates.
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
             AVSampleRateKey: 22_050,
@@ -61,8 +62,8 @@ final class AudioRecorder {
         }
     }
 
-    /// Palauttaa nauhoitetun tiedoston, tai nil jos nauhoitus oli liian lyhyt
-    /// ollakseen mitään.
+    /// Returns the recorded file, or nil if the recording was too short to be
+    /// anything.
     @discardableResult
     func stop() -> URL? {
         ticker?.invalidate()
@@ -88,8 +89,8 @@ final class AudioRecorder {
         recorder.updateMeters()
         elapsed = recorder.currentTime
 
-        // averagePower on desibeleissä, tyypillisesti −60…0. Normalisoidaan
-        // niin että hiljainen puhe erottuu yhä täydestä hiljaisuudesta.
+        // averagePower is in decibels, typically −60…0. Normalised so that quiet
+        // speech still stands out from complete silence.
         let db = recorder.averagePower(forChannel: 0)
         let normalized = max(0, (db + 55) / 55)
         levels.append(normalized)

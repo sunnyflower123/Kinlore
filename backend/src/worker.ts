@@ -1,8 +1,8 @@
 /// Memorize — Cloudflare Worker.
 ///
-/// Workerin tehtävä on pitää API-avain poissa sovelluksesta. IPA-tiedoston
-/// purkaminen on triviaalia, ja vuotanut avain on opiskelijan budjetilla oikea
-/// lasku. Siksi ääni ja teksti kulkevat aina täältä.
+/// The Worker exists to keep the API key out of the app. Unpacking an IPA is
+/// trivial, and a leaked key is a real bill on a student budget. That is why
+/// audio and text always travel through here.
 
 import { authenticate } from './auth'
 import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
@@ -34,8 +34,8 @@ const json = (data: unknown, status = 200) =>
 		headers: { 'content-type': 'application/json; charset=utf-8' },
 	})
 
-/// Virheet eivät koskaan vuoda mallin tai OpenRouterin tekstiä asiakkaalle:
-/// se voi sisältää tilin tietoja tai toistaa käyttäjän kertoman muiston.
+/// Errors never leak the model's or OpenRouter's text to the client: it can
+/// contain account details or echo back the memory the user just told.
 function failure(err: unknown, route: string): Response {
 	console.error(`[${route}]`, err)
 	return json({ error: 'upstream_failed' }, 502)
@@ -49,9 +49,9 @@ async function readJSON<T>(request: Request): Promise<T | null> {
 	}
 }
 
-/// Ääntä ei oteta rajattomasti vastaan. 25 MB on noin 3 tuntia puhetta tällä
-/// pakkauksella — reilusti yli minkään yksittäisen muiston, mutta estää sen
-/// että väärin toiminut asiakas lähettää gigatavun.
+/// Audio is not accepted without limit. 25 MB is about 3 hours of speech at this
+/// compression — far beyond any single memory, but it stops a misbehaving client
+/// from sending a gigabyte.
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
 export default {
@@ -62,10 +62,10 @@ export default {
 			return json({ ok: true, hasKey: Boolean(env.OPENROUTER_API_KEY) })
 		}
 
-		// --- Perhe ja identiteetti -------------------------------------------
+		// --- Family and identity ---------------------------------------------
 		//
-		// Nämä tarkistetaan ennen tunnistautumista, koska ne ovat juuri se
-		// kohta jossa jäsen syntyy: kutsujalla ei vielä ole tunnusta.
+		// These are checked before authentication, because they are precisely
+		// the point where a member is created: the caller has no id yet.
 
 		if (url.pathname === '/family' && request.method === 'POST') {
 			const body = await readJSON<{
@@ -110,8 +110,8 @@ export default {
 			return json(result)
 		}
 
-		// Webhook tunnistautuu omalla salaisuudellaan eikä jäsentunnisteella:
-		// se tulee RevenueCatilta, ei laitteelta.
+		// The webhook authenticates with its own secret rather than a member
+		// identity: it comes from RevenueCat, not from a device.
 		if (url.pathname === '/webhook/revenuecat' && request.method === 'POST') {
 			if (!isAuthorizedWebhook(env, request)) return json({ error: 'unauthorized' }, 401)
 			const body = await readJSON<{ event?: Record<string, unknown> }>(request)
@@ -123,7 +123,7 @@ export default {
 			}
 		}
 
-		// --- Tunnistautumista vaativat ---------------------------------------
+		// --- Routes that require authentication ------------------------------
 
 		const session = await authenticate(request, env)
 
@@ -183,8 +183,9 @@ export default {
 				const denial = await checkPhotoCount(env, session)
 				if (denial) return json(denial, 402)
 			}
-			// Ääntä ei rajoiteta kuvarajalla: alkuperäinen ääni ladataan aina,
-			// myös ilmaisella tasolla, koska se on tuotteen ydin.
+			// Audio is not subject to the photo limit: the original audio is
+			// always uploaded, free tier included, because it is the core of
+			// the product.
 			try {
 				return await upload(env, session, kind, await request.arrayBuffer())
 			} catch (err) {
@@ -220,16 +221,16 @@ export default {
 				}
 				if (!payload.audio) return json({ error: 'missing_audio' }, 400)
 
-				// Base64 kasvattaa kokoa noin kolmanneksella.
+				// Base64 inflates the size by roughly a third.
 				if (payload.audio.length > MAX_AUDIO_BYTES * 1.37) {
 					return json({ error: 'audio_too_large' }, 413)
 				}
 
 				if (!session) return json({ error: 'unauthorized' }, 401)
 
-				// Kiintiö tarkistetaan ENNEN kallista kutsua. Jos raja on
-				// täynnä, sovellus tallentaa äänen silti ja purkaa sen
-				// myöhemmin — nauhoitusta ei hylätä.
+				// The quota is checked BEFORE the expensive call. If the limit
+				// is reached, the app saves the audio anyway and transcribes it
+				// later — the recording is never discarded.
 				const denial = await checkAISeconds(env, session, payload.seconds ?? 0)
 				if (denial) return json(denial, 402)
 
@@ -260,8 +261,8 @@ export default {
 				const transcript = payload.transcript?.trim()
 				if (!transcript) return json({ error: 'missing_transcript' }, 400)
 
-				// Tyhjät ja muuttumattomat korjaukset siivotaan pois, jottei
-				// promptiin päädy kohinaa joka vain sekoittaa mallia.
+				// Empty and no-op corrections are stripped so that no noise
+				// reaches the prompt and merely confuses the model.
 				const corrections = (payload.corrections ?? [])
 					.map((c) => ({ from: (c.from ?? '').trim(), to: (c.to ?? '').trim() }))
 					.filter((c) => c.from && c.to && c.from !== c.to)

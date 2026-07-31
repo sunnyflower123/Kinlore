@@ -1,101 +1,122 @@
 # Memorize
 
-Perheen jaettu muistiarkisto. Vanha ihminen kertoo rönsyillen, tekoäly tekee
-rakennetta. Sivuprojekti RevenueCat Shipaton 2026:een.
+A family's shared memory archive. An old person rambles; the AI gives it
+structure. Side project for RevenueCat Shipaton 2026.
 
-**Kohdesarja: Next Gen** (opiskelijasarja). **Ei App Store -julkaisua** — se
-pudotettiin, koska lukio alkaa ~11.8. eikä aika riitä App Store Connectiin.
-Deadline: Devpost-submissio 28.9.2026. Ostot RevenueCat Test Storella.
+**Target category: Next Gen** (student category). **No App Store release** — it
+was dropped because upper secondary school starts around 11 Aug and there is no
+time for App Store Connect. Deadline: Devpost submission 28 Sep 2026. Purchases
+run on the RevenueCat Test Store.
 
-Koska sarja tuomaroi **julkisen lähdekoodin**, repo on näyteikkuna eikä vain
-työkalu: README ja koodikommentit kirjoitetaan lopulta englanniksi (jakso E),
-sovelluksen käyttöliittymä pysyy suomena.
+**The schedule is built around school:** the heaviest work (backbone + magic
+moment) happens 4–10 Aug during the holiday, not alongside school. When time
+runs out, cut in the order given in PLAN.md §5 — it was decided in advance so
+that nobody has to choose while exhausted.
 
-**Aikataulu on rakennettu koulun ympärille:** raskain työ (selkäranka +
-taikahetki) tehdään 4.–10.8. lomalla, ei koulun ohessa. Kun aika loppuu, leikkaa
-PLAN.md §5:n järjestyksessä — se on päätetty etukäteen jottei väsyneenä tarvitse
-valita.
+Plan and scope: [docs/PLAN.md](docs/PLAN.md). **Read it before adding features** —
+the scope is deliberately cut, and every addition requires a removal.
 
-Suunnitelma ja laajuus: [docs/PLAN.md](docs/PLAN.md). **Lue se ennen kuin lisäät
-ominaisuuksia** — laajuus on tarkoituksella leikattu, ja jokainen lisäys vaatii
-jonkin poiston.
+## Language — this repo is written in English
 
-## Rakenne
+The category judges the **public source code**, so the repo is a shop window and
+not just a tool. Two languages coexist here on purpose, and the boundary is not
+negotiable:
+
+| Audience | Language | Covers |
+|----------|----------|--------|
+| Whoever reads the repo | **English** | Docs, code comments, commit messages, identifiers, developer-facing log output, test names, debug launch arguments, config comments |
+| Whoever uses the app | **Finnish** | Every string the user sees or hears — labels, accessibility labels, `Info.plist` usage descriptions, user-facing error messages |
+
+Three things stay Finnish even though no user reads them, and each has a reason:
+
+1. **LLM system prompts and JSON-schema `description` fields**
+   (`backend/src/extract.ts`, `backend/src/transcribe.ts`). They instruct the
+   model about Finnish morphology and were tuned by measurement. Rewriting them
+   is a behaviour change, not a translation, and it cannot be re-validated
+   without spending credits.
+2. **Test transcripts and TTS sample texts** (`scripts/`). That is the input
+   under test. Translating it would test a different thing.
+3. **Server-side default display names** (`'Perhe'`, `'Minä'`, `'Perheenjäsen'`
+   in `backend/src/family.ts`). They are written straight into the app's UI.
+
+Everything new follows this rule from the start. Do not write a Finnish comment
+now and translate it later — the translation pass has already happened once.
+
+## Layout
 
 ```
-ios/       SwiftUI-sovellus, XcodeGen (project.yml → .xcodeproj)
-backend/   Cloudflare Worker + D1 (metadata) + R2 (kuvat ja äänet)
-scripts/   asr-bench.mjs — suomen puheentunnistuksen vertailu
-docs/      PLAN.md
+ios/       SwiftUI app, XcodeGen (project.yml → .xcodeproj)
+backend/   Cloudflare Worker + D1 (metadata) + R2 (photos and audio)
+scripts/   asr-bench.mjs — Finnish speech recognition comparison
+docs/      PLAN.md, ARCHITECTURE.md, SETUP.md
 ```
 
-## Tietomalli
+## Data model
 
-Yksi `subject`-taulu kattaa kuvat, henkilöt, paikat ja tapahtumat. `memory`
-kiinnittyy mihin tahansa subjectiin. Siksi "kirjoita muisto kuvaan" ja "kerro
-millainen isoäiti oli" ovat sama ruutu ja sama reitti — älä hajota näitä
-erillisiksi toteutuksiksi, se on koko arkkitehtuurin ydin.
-Skeema: [backend/schema.sql](backend/schema.sql).
+A single `subject` table covers photos, people, places and events. A `memory`
+attaches to any subject. That is why "write a memory about this photo" and "tell
+us what grandmother was like" are the same screen and the same code path — do
+not split these into separate implementations, it is the core of the whole
+architecture. Schema: [backend/schema.sql](backend/schema.sql).
 
-## Säännöt jotka eivät jousta
+## Rules that do not bend
 
-1. **Ensisijainen käyttäjä on 80-vuotias.** Dynamic Type XXL asti, VoiceOver,
-   isot kosketuskohteet. Jos uusi ruutu ei toimi suurimmalla tekstikoolla, se ei
-   ole valmis. Tämä ei ole compliance-lista vaan tuotteen ydin.
-2. **Kertomista ei koskaan paywallata.** Maksumuuri rajaa kuvia ja AI-minuutteja,
-   ei sitä että joku kirjoittaa tai sanelee muiston.
-3. **Alkuperäinen ääni ja raakapurku säilytetään aina.** Puhuja ei ehkä ole enää
-   kysyttävissä. `memory.audio_r2_key` ja `memory.raw_transcript` eivät ole
-   välivaiheita vaan lopputuotetta.
-4. **AI ehdottaa, ihminen vahvistaa.** Tekoälyn päättelemä henkilö tai
-   sukulaisuussuhde syntyy `confirmed = 0` -tilassa. Vahvistamaton ei näy
-   sukupuussa faktana. Väärä suhde on pahempi kuin puuttuva.
-5. **Epävarmuus tallennetaan, ei pyöristetä.** "Joskus 50-luvulla" menee
-   `date_start`/`date_end`-välinä tarkkuudella `decade`. Älä pakota
-   päivämäärään.
-6. **Ei kirjautumisruutua.** Identiteetti on Keychainissa oleva UUID
-   (`kSecAttrSynchronizable`), perheeseen liitytään kutsulinkillä. Maksullinen
-   Apple-tili on olemassa, joten Sign in with Apple *olisi* mahdollinen — sitä
-   ei silti käytetä porttina, korkeintaan maksavan jäsenen vapaaehtoisena tilin
-   palautuksena v1.1:ssä. Ks. [docs/SETUP.md](docs/SETUP.md).
-7. **`OPENROUTER_API_KEY` vain Worker-salaisuutena.** Sovellus lataa äänen ja
-   tekstin Workerille, Worker kutsuu OpenRouteria. Repo on julkinen — tarkista
-   `.dev.vars` ennen jokaista pushia.
-8. **`provider: { data_collection: "deny" }` on ehdoton**, ei kutsukohtainen
-   lippu. Sisältö on perheen muistoja kuolleista sukulaisista. Lippuna se
-   unohtuisi jostain kutsusta.
-9. **Virheen syy ei koskaan vuoda asiakkaalle.** Upstream-rungot menevät vain
-   `console.error`iin: ne voivat sisältää tilin tietoja tai toistaa käyttäjän
-   kertoman muiston. Sovellus saa `{ error: "upstream_failed" }`.
+1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver,
+   large tap targets. If a new screen does not work at the largest text size, it
+   is not done. This is not a compliance checklist; it is the product.
+2. **Telling is never paywalled.** The paywall limits photos and AI minutes, not
+   the act of writing or dictating a memory.
+3. **The original audio and the raw transcript are always kept.** The speaker
+   may no longer be around to ask. `memory.audio_r2_key` and
+   `memory.raw_transcript` are not intermediate steps; they are the product.
+4. **AI proposes, a human confirms.** A person or relationship inferred by the
+   AI is created with `confirmed = 0`. Unconfirmed never appears in the family
+   tree as fact. A wrong relationship is worse than a missing one.
+5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
+   `date_start`/`date_end` with precision `decade`. Do not force a date.
+6. **No login screen.** Identity is a UUID in the Keychain
+   (`kSecAttrSynchronizable`); you join a family through an invite link. A paid
+   Apple account exists, so Sign in with Apple *would* be possible — it is still
+   not used as a gate, at most as an optional account recovery for a paying
+   member in v1.1. See [docs/SETUP.md](docs/SETUP.md).
+7. **`OPENROUTER_API_KEY` lives only as a Worker secret.** The app uploads audio
+   and text to the Worker; the Worker calls OpenRouter. The repo is public —
+   check `.dev.vars` before every push.
+8. **`provider: { data_collection: "deny" }` is unconditional**, never a
+   per-call flag. The content is a family's memories of dead relatives. As a
+   flag it would be forgotten on some call.
+9. **The cause of an error never leaks to the client.** Upstream bodies go only
+   to `console.error`: they can contain account details or echo back the memory
+   the user just told. The app gets `{ error: "upstream_failed" }`.
 
-## Komennot
+## Commands
 
 ```bash
-# iOS-projektin generointi (aja aina project.yml-muutoksen jälkeen)
+# Generate the iOS project (always run after changing project.yml)
 cd ios && xcodegen generate
 
-# iOS-build. DEVELOPER_DIR on pakollinen: koneen xcode-select osoittaa
-# CommandLineToolsiin, ja sen vaihto vaatisi sudon. Tämä ohittaa sen.
+# iOS build. DEVELOPER_DIR is mandatory: this machine's xcode-select points at
+# CommandLineTools, and changing it would need sudo. This overrides it.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 
-# Backend paikallisesti
+# Backend locally
 cd backend && npx wrangler dev
 
-# D1-skeema paikalliseen kantaan
+# D1 schema into the local database
 cd backend && npx wrangler d1 execute memorize --local --file=schema.sql
 
-# ASR-vertailu
+# ASR comparison
 node scripts/asr-bench.mjs samples/
 ```
 
-## Ympäristön huomiot
+## Environment notes
 
-- **`sudo`a ei ole käytettävissä.** Älä ehdota `xcode-select -s`:ää — käytä
-  `DEVELOPER_DIR`-muuttujaa yllä olevan komennon tapaan. Xcode 26.6,
-  iOS 26.5 -simulaattori-SDK.
-- Sovelluksen nimi ja bundle ID ovat vielä väliaikaiset (`app.memorize.Memorize`),
-  ks. PLAN.md §11.
-- Ostot tehdään **RevenueCat Test Storella**, ei App Store Connectin tuotteilla.
-  Maksullista Apple-kehittäjätiliä ei tarvita.
+- **`sudo` is not available.** Do not suggest `xcode-select -s` — use the
+  `DEVELOPER_DIR` variable as in the command above. Xcode 26.6, iOS 26.5
+  simulator SDK.
+- The app name and bundle ID are still provisional (`app.memorize.Memorize`),
+  see PLAN.md §10.
+- Purchases go through the **RevenueCat Test Store**, not App Store Connect
+  products. No paid Apple Developer account is needed.

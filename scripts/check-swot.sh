@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Tarkistaa kelpaako sähköpostidomain Shipatonin Next Gen -sarjan
-# opiskelijaverifiointiin. Devpost käyttää JetBrainsin ylläpitämää Swot-listaa.
+# Checks whether an email domain qualifies for the student verification of the
+# Shipaton Next Gen category. Devpost uses the Swot list maintained by JetBrains.
 #
-# Tämän voi ajaa ILMAN että sinulla on vielä osoitetta — riittää että tiedät
-# oppilaitoksesi domainin.
+# This can be run WITHOUT having an address yet — knowing your institution's
+# domain is enough.
 #
 #   ./scripts/check-swot.sh student.oulu.fi
 #   ./scripts/check-swot.sh matti.meikalainen@aalto.fi
@@ -11,16 +11,16 @@
 set -uo pipefail
 
 input="${1:-}"
-[ -z "$input" ] && { echo "Käyttö: $0 <domain tai sähköposti>"; exit 1; }
+[ -z "$input" ] && { echo "Usage: $0 <domain or email>"; exit 1; }
 
-# Hyväksytään sekä pelkkä domain että kokonainen osoite.
+# Both a bare domain and a full address are accepted.
 domain="$(echo "${input##*@}" | tr '[:upper:]' '[:lower:]')"
 
 RAW="https://raw.githubusercontent.com/JetBrains/swot/master/lib/domains"
 
-# Swot tallentaa domainit käänteisenä polkuna: aalto.fi → fi/aalto.txt,
-# edu.turku.fi → fi/turku/edu.txt. Tarkistetaan tarkin osuma ensin ja
-# kavennetaan siitä ylöspäin, koska osuma emodomainiin kattaa alidomainit.
+# Swot stores domains as a reversed path: aalto.fi → fi/aalto.txt,
+# edu.turku.fi → fi/turku/edu.txt. Check the most specific match first and widen
+# from there, because a match on the parent domain covers its subdomains.
 IFS='.' read -r -a parts <<< "$domain"
 n=${#parts[@]}
 
@@ -33,16 +33,16 @@ for (( start = 0; start < n - 1; start++ )); do
 	if curl -sf -o /dev/null "$url"; then
 		name="$(curl -s "$url" | head -1)"
 		matched="$(IFS=.; echo "${parts[*]:$start}")"
-		echo "KELPAA — $domain"
-		echo "  osuma:      $matched"
-		[ -n "$name" ] && echo "  oppilaitos: $name"
+		echo "QUALIFIES — $domain"
+		echo "  matched:     $matched"
+		[ -n "$name" ] && echo "  institution: $name"
 		exit 0
 	fi
 done
 
-echo "EI LÖYTYNYT — $domain"
+echo "NOT FOUND — $domain"
 echo
-echo "Tämä ei vielä tarkoita ettei osoite kelpaisi: Devpost voi hyväksyä"
-echo "manuaalisesti, ja Swotiin voi lähettää pull requestin puuttuvasta"
-echo "oppilaitoksesta. Molemmat vievät aikaa, joten selvitä se elokuun alussa."
+echo "This does not yet mean the address will be rejected: Devpost can approve"
+echo "manually, and a missing institution can be added to Swot with a pull"
+echo "request. Both take time, so find out at the beginning of August."
 exit 1

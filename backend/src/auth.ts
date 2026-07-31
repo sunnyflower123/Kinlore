@@ -1,8 +1,8 @@
-/// Tunnistautuminen ilman kirjautumisruutua.
+/// Authentication without a login screen.
 ///
-/// Identiteetti on laitteen Keychainissa oleva UUID ja satunnainen salaisuus.
-/// 80-vuotias ei näe tästä mitään: hän saa kutsulinkin lapsenlapselta ja on
-/// sisällä. Ks. docs/ARKKITEHTUURI.md §4.
+/// The identity is a UUID and a random secret in the device's Keychain. An
+/// 80-year-old sees none of it: she gets an invite link from a grandchild and
+/// she is in. See docs/ARCHITECTURE.md §4.
 
 import type { Env } from './worker'
 
@@ -13,16 +13,16 @@ export type Session = {
 	displayName: string
 }
 
-/// Salaisuus on 32 satunnaista tavua, ei salasana. Arvattavuutta ei ole, joten
-/// hidas tiiviste ei toisi turvaa — se vain hidastaisi jokaista pyyntöä.
-/// Tiivistetään silti, jottei kannan vuoto anna suoraa pääsyä.
+/// The secret is 32 random bytes, not a password. There is no guessability, so a
+/// slow hash would add no security — it would only slow down every request. It
+/// is hashed anyway so that a database leak grants no direct access.
 export async function hashSecret(secret: string): Promise<string> {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret))
 	return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-/// Vakioaikainen vertailu. Ilman tätä vastausaika vuotaisi tiivisteen tavu
-/// kerrallaan — teoreettinen hyökkäys, mutta korjaus maksaa kolme riviä.
+/// Constant-time comparison. Without it the response time would leak the hash one
+/// byte at a time — a theoretical attack, but the fix costs three lines.
 function equals(a: string, b: string): boolean {
 	if (a.length !== b.length) return false
 	let diff = 0
@@ -30,8 +30,8 @@ function equals(a: string, b: string): boolean {
 	return diff === 0
 }
 
-/// Lukee `Authorization: Bearer <member_id>.<secret>` ja varmistaa jäsenen.
-/// Palauttaa null jos tunnistus epäonnistuu — kutsuja päättää mitä siitä seuraa.
+/// Reads `Authorization: Bearer <member_id>.<secret>` and verifies the member.
+/// Returns null if authentication fails — the caller decides what follows.
 export async function authenticate(request: Request, env: Env): Promise<Session | null> {
 	const header = request.headers.get('Authorization') ?? ''
 	if (!header.startsWith('Bearer ')) return null
@@ -67,7 +67,7 @@ export async function authenticate(request: Request, env: Env): Promise<Session 
 	}
 }
 
-/// Satunnainen base64url-merkkijono. Käytetään kutsukoodeihin.
+/// A random base64url string. Used for invite codes.
 export function randomCode(bytes = 16): string {
 	const raw = crypto.getRandomValues(new Uint8Array(bytes))
 	return btoa(String.fromCharCode(...raw))

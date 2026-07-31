@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// Sovelluksen tärkein ruutu. Yksi nappi, ei valikkoja, ei asetuksia.
+/// The app's most important screen. One button, no menus, no settings.
 struct TellScreen: View {
     @Environment(MemoryStore.self) private var store
 
-    /// Kun ruutu avataan kuvasta tai henkilöstä, muisto kiinnittyy siihen.
-    /// Nil = vapaa sanelu, jolloin kohde päätellään puheesta.
+    /// When the screen is opened from a photo or a person, the memory attaches
+    /// to it. Nil = free dictation, in which case the subject is inferred from
+    /// the speech.
     var target: Subject?
-    /// Kun ruutu avataan avoimesta kysymyksestä, se kuitataan tallennuksessa.
+    /// When the screen is opened from an open question, the question is marked
+    /// answered on save.
     var question: FollowUpQuestion?
 
     @State private var model: TellViewModel?
@@ -22,9 +24,9 @@ struct TellScreen: View {
         }
         .task {
             guard model == nil else { return }
-            // AppServices valitsee stubin tai oikean palvelun sen mukaan onko
-            // backendin osoite määritetty. Käyttöliittymä ei tiedä eroa, koska
-            // se tuntee vain protokollat.
+            // AppServices picks the stub or the real service depending on
+            // whether a backend address is configured. The UI cannot tell the
+            // difference, because it only knows the protocols.
             let created = TellViewModel(
                 store: store,
                 transcription: AppServices.transcription(),
@@ -33,8 +35,8 @@ struct TellScreen: View {
                 question: question
             )
             #if DEBUG
-            // Kuvausapu: `-screen kirjoita` avaa suoraan kirjoitusnäkymän.
-            if UserDefaults.standard.string(forKey: "screen") == "kirjoita" {
+            // Screenshot aid: `-screen write` opens the typing view directly.
+            if UserDefaults.standard.string(forKey: "screen") == "write" {
                 created.beginWriting()
             }
             #endif
@@ -62,9 +64,9 @@ struct TellScreen: View {
                 FailureView(message: message) { model.reset() }
             }
         }
-        // Kesken kertomisen ruudulla on yksi tehtävä. Välilehtipalkki tarjoaisi
-        // poistumistien joka hukkaisi keskeneräisen muiston, eikä 80-vuotias
-        // käyttäjä hyödy vaihtoehdoista juuri silloin kun hän keskittyy.
+        // Mid-telling, the screen has one job. A tab bar would offer an exit
+        // that loses the unfinished memory, and an 80-year-old user gains
+        // nothing from alternatives at exactly the moment she is concentrating.
         .toolbar(hidesTabBar(model.phase) ? .hidden : .visible, for: .tabBar)
     }
 
@@ -76,7 +78,7 @@ struct TellScreen: View {
     }
 }
 
-// MARK: - Lepotila
+// MARK: - Idle
 
 private struct IdleView: View {
     @Environment(MemoryStore.self) private var store
@@ -84,9 +86,9 @@ private struct IdleView: View {
 
     @State private var answering: FollowUpQuestion?
 
-    /// Avoimet kysymykset näkyvät vain vapaassa sanelussa. Kuvasta tai
-    /// henkilöstä kerrottaessa ruudulla on jo aihe, eikä siihen pidä tarjota
-    /// kilpailevaa.
+    /// Open questions appear only in free dictation. When telling about a photo
+    /// or a person the screen already has a subject, and it should not be
+    /// offered a competing one.
     private var openQuestions: [FollowUpQuestion] {
         model.target == nil ? store.openQuestions(limit: 2) : []
     }
@@ -121,9 +123,9 @@ private struct IdleView: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
-            // Avoin kysymys on syy palata sovellukseen. Se on myös helpompi
-            // aloitus kuin tyhjä nappi: iäkkään on vaikea kertoa "jotain",
-            // mutta helppo vastata kysymykseen.
+            // An open question is a reason to come back to the app. It is also
+            // an easier start than a blank button: telling "something" is hard
+            // for an elderly person, answering a question is easy.
             if !openQuestions.isEmpty {
                 VStack(spacing: 10) {
                     Text("Tai vastaa aiempaan kysymykseen")
@@ -149,9 +151,9 @@ private struct IdleView: View {
                 .padding(.top, 4)
             }
 
-            // Puhuminen on ensisijainen tapa, mutta ei ainoa: kuvia lisäävä
-            // lapsenlapsi kirjoittaa usein mieluummin, eikä bussissa tai
-            // sairaalahuoneessa voi sanella.
+            // Speaking is the primary way but not the only one: a grandchild
+            // adding photos often prefers to type, and you cannot dictate on a
+            // bus or in a hospital room.
             Button {
                 model.beginWriting()
             } label: {
@@ -179,7 +181,7 @@ private struct IdleView: View {
     }
 }
 
-// MARK: - Kirjoittaminen
+// MARK: - Typing
 
 private struct WritingView: View {
     @Bindable var model: TellViewModel
@@ -195,7 +197,7 @@ private struct WritingView: View {
                 .font(.title.weight(.semibold))
 
             ZStack(alignment: .topLeading) {
-                // TextEditorissa ei ole omaa placeholderia.
+                // TextEditor has no placeholder of its own.
                 if model.draft.isEmpty {
                     Text("Kirjoita ihan vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.")
                         .elderBody()
@@ -240,7 +242,7 @@ private struct WritingView: View {
     }
 }
 
-// MARK: - Nauhoitus
+// MARK: - Recording
 
 private struct RecordingView: View {
     let model: TellViewModel
@@ -252,8 +254,9 @@ private struct RecordingView: View {
             Text("Kuuntelen")
                 .font(.largeTitle.weight(.semibold))
 
-            // Aaltokuvio on ainoa palaute siitä että laite kuulee. Hiljaa
-            // puhuva ei muuten tiedä toimiiko mikrofoni.
+            // The waveform is the only feedback that the device can hear.
+            // Somebody speaking quietly has no other way to know whether the
+            // microphone works.
             Waveform(levels: model.recorder.levels)
                 .frame(height: 96)
                 .padding(.horizontal, 8)
@@ -284,8 +287,8 @@ private struct RecordingView: View {
     }
 }
 
-/// Palkit uusin oikealla. Keskitetty pystysuunnassa, jotta hiljaisuus näyttää
-/// ohuelta viivalta eikä tyhjältä ruudulta.
+/// Bars with the newest on the right. Centred vertically, so that silence looks
+/// like a thin line rather than an empty screen.
 private struct Waveform: View {
     let levels: [Float]
 
@@ -312,7 +315,7 @@ private struct Waveform: View {
         .accessibilityHidden(true)
     }
 
-    /// Täytetään oikealta: uusin näyte on aina reunimmaisena.
+    /// Filled from the right: the newest sample is always at the edge.
     private func level(at index: Int, of count: Int) -> Float {
         let offset = count - levels.count
         guard index >= offset else { return 0 }
@@ -320,7 +323,7 @@ private struct Waveform: View {
     }
 }
 
-// MARK: - Käsittely
+// MARK: - Processing
 
 private struct ProcessingView: View {
     let phase: TellViewModel.Phase
@@ -359,7 +362,7 @@ private struct ProcessingView: View {
     }
 }
 
-// MARK: - Tulos
+// MARK: - Result
 
 private struct ResultView: View {
     @Environment(\.dismiss) private var dismiss
@@ -383,9 +386,9 @@ private struct ResultView: View {
                     questionSection
                 }
 
-                // Paywall juuri tässä: koettu arvo on huipussaan kun muisto on
-                // valmis. Ei onboardingissa, ei asetuksissa — ja ei esteenä,
-                // koska muisto on jo tallennettu.
+                // The paywall goes exactly here: perceived value peaks when the
+                // memory is finished. Not in onboarding, not in settings — and
+                // not as an obstacle, because the memory is already saved.
                 if let usage = session.usage, !usage.isPaid {
                     UpsellCard(usage: usage)
                 }
@@ -399,8 +402,8 @@ private struct ResultView: View {
                     .frame(maxWidth: .infinity)
                     .elderTapTarget()
 
-                    // Kuvasta kerrottaessa ruutu on esitetty modaalina, joten
-                    // siitä pitää päästä myös takaisin kuvaan.
+                    // When telling about a photo the screen is presented
+                    // modally, so there has to be a way back to the photo.
                     if model.target != nil {
                         Button("Valmis") { dismiss() }
                             .controlSize(.large)
@@ -420,8 +423,9 @@ private struct ResultView: View {
                 .foregroundStyle(.green)
 
             if let placed = model.placedSubject {
-                // Tuloksen tärkein tieto: mihin tekoäly sijoitti muiston.
-                // Juuri se järjestely jota käyttäjä ei itse jaksaisi tehdä.
+                // The most important piece of the result: where the AI filed
+                // the memory. Precisely the organising the user would never do
+                // themselves.
                 Text(
                     model.target == nil
                         ? "Sijoitin sen kohteeseen **\(placed.displayTitle)**"
@@ -438,8 +442,9 @@ private struct ResultView: View {
             Text("Kuulinko nimet oikein?")
                 .font(.headline)
 
-            // Puheentunnistus erehtyy erisnimissä noin joka kolmannessa, ja
-            // tämä on ainoa hetki jolloin kertoja vielä muistaa mitä sanoi.
+            // Speech recognition gets roughly one proper noun in three wrong,
+            // and this is the only moment when the teller still remembers what
+            // they said.
             Text("Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -465,8 +470,8 @@ private struct ResultView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     } else {
-                        // Kerrotaan että korjaus ulottuu myös muiston tekstiin
-                        // — muuten käyttäjä luulee korjaavansa vain kortin.
+                        // Say that the correction reaches the memory text too —
+                        // otherwise the user thinks they are only fixing the card.
                         Label("Korjaa nimet myös muistoon", systemImage: "checkmark.circle")
                             .font(.body.weight(.semibold))
                             .frame(maxWidth: .infinity)
@@ -499,10 +504,10 @@ private struct ResultView: View {
     }
 }
 
-/// Kertoo mitä on jäljellä, ei sitä mitä puuttuu.
+/// Says what is left, not what is missing.
 ///
-/// Ei estä mitään: muisto on jo tallennettu, ja kertomista ei paywallata
-/// koskaan. Tämä on kutsu, ei muuri.
+/// Blocks nothing: the memory is already saved, and telling is never paywalled.
+/// This is an invitation, not a wall.
 private struct UpsellCard: View {
     let usage: EntitlementClient.Usage
 
@@ -533,7 +538,7 @@ private struct UpsellCard: View {
 
 private struct MemoryCard: View {
     let text: String
-    /// Nil kun muisto kirjoitettiin — silloin ei ole ääntä kuunneltavaksi.
+    /// Nil when the memory was typed — then there is no audio to listen to.
     let memory: Memory?
 
     var body: some View {
@@ -541,8 +546,8 @@ private struct MemoryCard: View {
             Text(text)
                 .elderBody()
 
-            // Alkuperäinen ääni on soitettavissa heti muiston vierestä: se ei
-            // ole välivaihe kohti tekstiä vaan osa lopputuotetta.
+            // The original audio is playable right next to the memory: it is not
+            // a step on the way to text but part of the product.
             if let memory, memory.audioFilename != nil || memory.audioR2Key != nil {
                 MemoryPlaybackButton(memory: memory)
             }
@@ -572,9 +577,9 @@ private struct ProposalRow: View {
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 2) {
-                // Kenttä eikä teksti: nimen korjaaminen on tämän ruudun
-                // tarkoitus, joten sen pitää olla ilmeistä ilman että mitään
-                // täytyy painaa ensin.
+                // A field rather than a label: correcting the name is the point
+                // of this screen, so it has to be obvious without anything
+                // needing to be tapped first.
                 TextField("Nimi", text: $text)
                     .font(.body.weight(.medium))
                     .textInputAutocapitalization(.words)
@@ -612,10 +617,10 @@ private struct ProposalRow: View {
     }
 }
 
-// MARK: - Ääni tallessa, purku odottaa
+// MARK: - Audio saved, transcription pending
 
-/// Kiintiö oli täynnä tai verkko poikki. Tämä ei ole virheruutu: käyttäjä ei
-/// tehnyt mitään väärin eikä menettänyt mitään.
+/// The quota was full or the network was down. This is not an error screen: the
+/// user did nothing wrong and lost nothing.
 private struct AudioSavedView: View {
     @Environment(\.dismiss) private var dismiss
     let model: TellViewModel
@@ -660,7 +665,7 @@ private struct AudioSavedView: View {
     }
 }
 
-// MARK: - Virhe
+// MARK: - Failure
 
 private struct FailureView: View {
     let message: String
@@ -685,10 +690,10 @@ private struct FailureView: View {
     }
 }
 
-// MARK: - Nauhoitusnappi
+// MARK: - Record button
 
-/// Sovelluksen tärkein kontrolli. Sen pitää löytyä ilman lukemista, joten se on
-/// iso, pyöreä ja aina samassa paikassa.
+/// The app's most important control. It has to be findable without reading, so
+/// it is large, round and always in the same place.
 private struct RecordButton: View {
     let isRecording: Bool
     let action: () -> Void

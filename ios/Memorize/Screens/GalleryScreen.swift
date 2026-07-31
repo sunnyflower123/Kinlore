@@ -1,11 +1,11 @@
 import PhotosUI
 import SwiftUI
 
-/// Perheen kuvat ja kerrotut tapahtumat.
+/// The family's photos and the events that have been told about.
 ///
-/// Kuvat ruudukkona, tapahtumat listana — sama `subject`-taulu, eri esitys.
-/// Ruudukko siksi että vanha valokuva tunnistetaan katsomalla, ei lukemalla
-/// otsikkoa.
+/// Photos as a grid, events as a list — the same `subject` table, a different
+/// presentation. A grid because an old photograph is recognised by looking at
+/// it, not by reading a title.
 struct GalleryScreen: View {
     @Environment(MemoryStore.self) private var store
 
@@ -114,9 +114,9 @@ struct GalleryScreen: View {
                   let filename = MediaStore.save(imageData: data)
             else { continue }
 
-            // Otsikko jätetään tyhjäksi tarkoituksella: kukaan ei jaksa nimetä
-            // kolmeakymmentä skannattua kuvaa. Nimi syntyy kun kuvasta
-            // kerrotaan, eikä sitä ennen tarvita.
+            // The title is left empty on purpose: nobody will name thirty
+            // scanned photographs. The name arrives when someone talks about
+            // the photo, and it is not needed before that.
             store.add(Subject(kind: .photo, title: "", imageFilename: filename))
         }
     }
@@ -153,8 +153,9 @@ private struct PhotoTile: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14))
 
-            // Muistojen määrä kertoo mistä on jo puhuttu ja mistä ei. Tyhjä
-            // kuva ei ole virhe vaan kutsu — siksi merkintä on aina näkyvissä.
+            // The memory count says what has already been talked about and what
+            // has not. An empty photo is not an error but an invitation — which
+            // is why the badge is always visible.
             let count = store.memories(for: subject.id).count
             Label(
                 count == 0 ? "Kerro" : "\(count)",
@@ -169,8 +170,8 @@ private struct PhotoTile: View {
         }
         .task {
             guard thumbnail == nil else { return }
-            // Toisen perheenjäsenen lisäämä kuva on aluksi vain avain: se
-            // noudetaan vasta kun ruutu tarvitsee sen.
+            // A photo added by another family member is at first only a key: it
+            // is fetched when the screen actually needs it.
             guard let filename = await MediaLoader.imageFilename(
                 for: subject, store: store, session: session
             ) else { return }

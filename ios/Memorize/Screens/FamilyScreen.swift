@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Perheen jäsenet ja kutsulinkki.
+/// The family's members and the invite link.
 ///
-/// Kutsulinkki on koko turvallisuusraja: kuka tahansa sen saanut näkee perheen
-/// kaikki muistot. Siksi tässä näkyy kuka on liittynyt ja kuinka moni on
-/// linkkiä käyttänyt — se on ainoa näkyvyys siihen rajaan.
+/// The invite link is the entire security boundary: anyone who receives it sees
+/// all of the family's memories. That is why this screen shows who has joined
+/// and how many people have used the link — it is the only visibility into that
+/// boundary.
 struct FamilyScreen: View {
     @Environment(Session.self) private var session
 
@@ -75,8 +76,8 @@ struct FamilyScreen: View {
                 }
             } else {
                 Section {
-                    // Perheen tiedot eivät ole ehto käytölle: jäsenyys on
-                    // paikallinen tila, ja sovellus toimii ilman verkkoa.
+                    // The family details are not a precondition for use:
+                    // membership is local state and the app works offline.
                     Label("Perheen tietoja ei saatu haettua", systemImage: "wifi.slash")
                         .foregroundStyle(.secondary)
                     Text("Voit silti kertoa muistoja. Ne synkronoituvat kun yhteys palaa.")
@@ -99,9 +100,10 @@ struct FamilyScreen: View {
         }
     }
 
-    /// Jaettava teksti sisältää sekä linkin että koodin. Linkki on nopea, mutta
-    /// koodi toimii silloinkin kun viestisovellus ei tee siitä painettavaa —
-    /// eikä isoäitiä voi pyytää selvittämään miksi linkki ei aukea.
+    /// The shared text contains both the link and the code. The link is quick,
+    /// but the code works even when the messaging app does not make the link
+    /// tappable — and grandmother cannot be asked to work out why a link will
+    /// not open.
     private static func inviteText(code: String) -> String {
         """
         Liity perheen muistoarkistoon:

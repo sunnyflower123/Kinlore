@@ -2,17 +2,16 @@ import SwiftUI
 
 @main
 struct MemorizeApp: App {
-    /// Yksi jaettu tallennus koko sovellukselle. Korvautuu synkronoivalla
-    /// toteutuksella jakson C lopussa — näkymät eivät tiedä eroa.
+    /// One shared store for the whole app.
     @State private var store = MemoryStore()
     @State private var session = Session()
-    /// Yksi soitin koko sovellukselle: kaksi yhtäaikaista ääntä olisi sekaannus.
+    /// One player for the whole app: two simultaneous sounds would be confusing.
     @State private var player = AudioPlayer()
     @State private var sync: SyncEngine?
 
     @Environment(\.scenePhase) private var scenePhase
 
-    /// Kutsulinkistä poimittu koodi, jos sovellus avattiin sellaisesta.
+    /// The code picked out of an invite link, if the app was opened from one.
     @State private var invitedCode: String?
 
     var body: some Scene {
@@ -22,15 +21,16 @@ struct MemorizeApp: App {
                 .environment(session)
                 .environment(player)
                 .task {
-                    // Moottori tarvitsee molemmat, joten se syntyy vasta täällä.
+                    // The engine needs both, so it is created here.
                     if sync == nil { sync = SyncEngine(store: store, session: session) }
                     RevenueCatPurchases.configure(memberID: session.identity.memberID)
                     await sync?.sync()
                     await syncEntitlementIfPurchased()
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    // Etualalle palatessa: perhe on voinut kertoa muistoja sillä
-                    // välin, ja oma jono voi olla purkamatta.
+                    // Coming back to the foreground: the family may have told
+                    // memories in the meantime, and our own queue may be
+                    // undrained.
                     guard phase == .active else { return }
                     Task { await sync?.sync() }
                 }
@@ -50,15 +50,15 @@ struct MemorizeApp: App {
         case .needsFamily:
             OnboardingScreen(prefilledCode: invitedCode)
         case .local, .inFamily:
-            // Ilman backendiä sovellus on yhden laitteen arkisto eikä
-            // liittymisruutua näytetä lainkaan. Se pitää kehityksen ja
-            // demoamisen käynnissä silloinkin kun Worker on alhaalla.
+            // Without a backend the app is a single-device archive and no join
+            // screen is shown at all. That keeps development and demoing going
+            // even when the Worker is down.
             RootView()
         }
     }
 
-    /// Kertoo palvelimelle jos tällä laitteella on osto. Palvelin varmistaa
-    /// sen RevenueCatilta ja levittää oikeuden koko perheelle.
+    /// Tells the server if this device has a purchase. The server verifies it
+    /// with RevenueCat and spreads the entitlement to the whole family.
     private func syncEntitlementIfPurchased() async {
         let purchases = AppServices.purchases()
         guard await purchases.hasActivePurchase, let id = await purchases.customerID else { return }
@@ -75,17 +75,18 @@ struct MemorizeApp: App {
     }
 
     #if DEBUG
-    /// Kertoo käynnistyksessä käytetäänkö stubeja vai oikeaa backendiä, ja
-    /// vastaako backend. Ilman tätä väärä osoite näkyisi vasta siinä vaiheessa
-    /// kun käyttäjä on jo puhunut minuutin ja tulos katoaa.
+    /// Reports at launch whether stubs or a real backend are in use, and whether
+    /// the backend answers. Without this, a wrong address would only surface
+    /// once the user had already spoken for a minute and the result vanished.
     private static func reportBackendStatus(session: Session) async {
-        // Identiteetin alkupää lokiin. Jos Keychain ei toimi, tämä vaihtuu
-        // joka käynnistyksellä — ja käyttäjä menettäisi perheensä hiljaa,
-        // mikä olisi lähes mahdoton huomata ilman tätä riviä.
-        print("[memorize] jäsen \(session.identity.memberID.prefix(8))… tila \(session.mode)")
+        // The start of the identity goes into the log. If the Keychain is not
+        // working, this changes on every launch — and the user would silently
+        // lose their family, which is nearly impossible to notice without this
+        // one line.
+        print("[memorize] member \(session.identity.memberID.prefix(8))… mode \(session.mode)")
 
         guard let base = AppServices.apiBaseURL else {
-            print("[memorize] backend: ei määritetty — stubit käytössä")
+            print("[memorize] backend: not configured — using stubs")
             return
         }
         do {
@@ -96,7 +97,7 @@ struct MemorizeApp: App {
             let body = String(data: data, encoding: .utf8) ?? ""
             print("[memorize] backend \(base.absoluteString) → HTTP \(code) \(body)")
         } catch {
-            print("[memorize] backend \(base.absoluteString) → VIRHE: \(error.localizedDescription)")
+            print("[memorize] backend \(base.absoluteString) → ERROR: \(error.localizedDescription)")
         }
     }
     #endif

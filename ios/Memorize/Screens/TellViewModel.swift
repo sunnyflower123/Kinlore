@@ -1,60 +1,62 @@
 import Foundation
 
-/// Taikahetken tilakone: nauhoitus → purku → jäsennys → tulos.
+/// The magic moment's state machine: record → transcribe → extract → result.
 ///
-/// Vaiheet ovat erillisiä, koska käyttäjän pitää nähdä mitä tapahtuu. Yksi
-/// geneerinen "ladataan" -pyörä 20 sekunnin ajan tuntuu rikkinäiseltä; "puran
-/// puhetta" ja "järjestelen muistoa" tuntuvat työltä.
+/// The phases are distinct because the user needs to see what is happening. One
+/// generic "loading" spinner for 20 seconds feels broken; "transcribing your
+/// speech" and "organising the memory" feel like work.
 @MainActor
 @Observable
 final class TellViewModel {
     enum Phase: Equatable {
         case idle
         case recording
-        /// Näppäimistöllä kirjoittaminen. Sanelu on ensisijainen tapa, mutta
-        /// kuvia lisäävä lapsenlapsi haluaa usein kirjoittaa — ja hiljaisessa
-        /// tilassa tai kuulokkeitta puhuminen ei aina käy.
+        /// Typing on the keyboard. Dictation is the primary path, but a
+        /// grandchild adding photos often wants to type — and speaking is not
+        /// always possible in a quiet room or without headphones.
         case writing
         case transcribing
         case organizing
         case done
-        /// Kiintiö täynnä. Ääni on tallennettu, purku odottaa. Ei virhetila —
-        /// käyttäjä ei tehnyt mitään väärin eikä menettänyt mitään.
+        /// Quota full. The audio is saved, transcription is pending. Not an
+        /// error state — the user did nothing wrong and lost nothing.
         case savedWithoutTranscript
         case failed(String)
     }
 
     private(set) var phase: Phase = .idle
 
-    /// Kirjoitettavan muiston teksti.
+    /// The text of a memory being typed.
     var draft = ""
     private(set) var transcript: String?
     private(set) var result: ExtractionResult?
-    /// Kohde johon muisto sijoitettiin — tuloksen tärkein tieto.
+    /// The subject the memory was filed under — the most important part of the
+    /// result.
     private(set) var placedSubject: Subject?
-    /// AI:n ehdottamat henkilöt ja paikat. Käyttäjä vahvistaa tai hylkää.
+    /// People and places proposed by the AI. The user confirms or rejects.
     private(set) var proposals: [Subject] = []
     private(set) var newQuestions: [FollowUpQuestion] = []
-    /// Tallennetun muiston kesto, tai nil jos se kirjoitettiin. Tulosruutu
-    /// näyttää äänen toiston vain kun ääntä on.
+    /// The saved memory's duration, or nil if it was typed. The result screen
+    /// shows playback only when there is audio.
     private(set) var savedAudioDuration: TimeInterval?
     private(set) var savedMemoryID: String?
 
-    /// Tallennettu muisto sellaisenaan. Tulosruutu tarvitsee sen äänen
-    /// toistoon, ei pelkkää kestoa.
+    /// The saved memory itself. The result screen needs it for playback, not
+    /// just the duration.
     var savedMemory: Memory? {
         guard let savedMemoryID else { return nil }
         return store.memories.first { $0.id == savedMemoryID }
     }
 
-    /// Kertojan kirjoittamat nimet, avaimena kohteen tunniste.
-    /// Puheentunnistus erehtyy erisnimissä noin joka kolmannessa, ja tämä on
-    /// ainoa hetki jolloin virhe on korjattavissa — kertoja muistaa vielä mitä
-    /// sanoi. Viikon päästä kukaan ei tiedä oliko se Sotkamo vai Skotlanti.
+    /// Names as written by the teller, keyed by subject id.
+    /// Speech recognition gets roughly one proper noun in three wrong, and this
+    /// is the only moment the error can be fixed — the teller still remembers
+    /// what they said. A week later nobody knows whether it was Sotkamo or
+    /// Skotlanti.
     var editedNames: [String: String] = [:]
     private(set) var isCorrecting = false
 
-    /// Ne muokkaukset jotka oikeasti muuttavat jotain.
+    /// The edits that actually change something.
     var pendingCorrections: [NameCorrection] {
         proposals.compactMap { subject in
             guard let edited = editedNames[subject.id]?
@@ -71,12 +73,13 @@ final class TellViewModel {
     private let store: MemoryStore
     private let transcription: TranscriptionService
     private let extraction: ExtractionService
-    /// Kun muisto kerrotaan tietystä kuvasta tai henkilöstä, se kiinnittyy
-    /// siihen. Vapaassa sanelussa tämä on nil ja kohde päätellään puheesta.
+    /// When a memory is told about a specific photo or person, it attaches to
+    /// that. In free dictation this is nil and the subject is inferred from the
+    /// speech.
     let target: Subject?
-    /// Kysymys johon ollaan vastaamassa. Merkitään vastatuksi vasta kun muisto
-    /// on oikeasti tallennettu — avoin kysymys on syy palata sovellukseen, eikä
-    /// sitä saa kuitata pelkästä napautuksesta.
+    /// The question being answered. Marked answered only once the memory has
+    /// actually been saved — an open question is a reason to come back to the
+    /// app, and it must not be cleared by a mere tap.
     let question: FollowUpQuestion?
 
     init(
@@ -93,7 +96,7 @@ final class TellViewModel {
         self.question = question
     }
 
-    // MARK: - Nauhoitus
+    // MARK: - Recording
 
     func startRecording() async {
         guard await recorder.requestPermission() else {
@@ -110,7 +113,7 @@ final class TellViewModel {
 
     func stopAndProcess() async {
         guard let url = recorder.stop() else {
-            // Alle sekunnin nauhoitus on vahinko, ei muisto.
+            // A recording under a second is an accident, not a memory.
             phase = .idle
             return
         }
@@ -120,19 +123,19 @@ final class TellViewModel {
             let text = try await transcription.transcribe(audioURL: url)
             await process(transcript: text, audioURL: url, duration: duration)
         } catch let error as RemoteError where error.isQuota {
-            // Kiintiö ei saa hylätä nauhoitusta. Ääni on korvaamaton ja purku
-            // on korvattavissa: se tehdään kun minuutit uusiutuvat tai perhe
-            // ottaa maksullisen. Ks. docs/ARKKITEHTUURI.md §7.
+            // A quota must not reject a recording. The audio is irreplaceable
+            // and the transcription is replaceable: it is done when the minutes
+            // reset or the family goes paid. See docs/ARCHITECTURE.md §7.
             saveAudioOnly(audioURL: url, duration: duration)
             phase = .savedWithoutTranscript
         } catch {
-            // Sama pätee verkkovirheeseen: ääni talteen, teksti myöhemmin.
+            // The same applies to a network error: keep the audio, text later.
             saveAudioOnly(audioURL: url, duration: duration)
             phase = .savedWithoutTranscript
         }
     }
 
-    // MARK: - Kirjoittaminen
+    // MARK: - Typing
 
     func beginWriting() {
         draft = ""
@@ -144,16 +147,17 @@ final class TellViewModel {
         phase = .idle
     }
 
-    /// Kirjoitettu teksti kulkee saman jäsennyksen läpi kuin puhuttu. Muuten
-    /// kirjoittaja jäisi ilman löydettyjä henkilöitä ja jatkokysymyksiä, ja
-    /// muistot olisivat kahta eri lajia samassa arkistossa.
+    /// Typed text goes through the same extraction as spoken text. Otherwise a
+    /// writer would be left without the discovered people and the follow-up
+    /// questions, and there would be two different species of memory in the same
+    /// archive.
     func submitTyped() async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         await process(transcript: text, audioURL: nil, duration: nil)
     }
 
-    // MARK: - Putki
+    // MARK: - Pipeline
 
     private func process(transcript text: String, audioURL: URL?, duration: TimeInterval?) async {
         do {
@@ -169,11 +173,11 @@ final class TellViewModel {
         }
     }
 
-    /// Tallentaa pelkän äänen ilman purkua ja jäsennystä.
+    /// Saves the audio alone, without transcription or extraction.
     ///
-    /// Muisto kiinnittyy kohteeseen jos sellainen tiedetään, muuten omaan
-    /// tapahtumaansa. Teksti jää tyhjäksi, ja `isAwaitingTranscription`
-    /// kertoo käyttöliittymälle että purku on kesken.
+    /// The memory attaches to the target subject if one is known, otherwise to
+    /// an event of its own. The text is left empty, and
+    /// `isAwaitingTranscription` tells the UI that transcription is pending.
     private func saveAudioOnly(audioURL: URL, duration: TimeInterval) {
         let home = target ?? {
             let subject = Subject(kind: .event, title: "Kertomatta purettu muisto")
@@ -196,8 +200,8 @@ final class TellViewModel {
         markQuestionAnswered()
     }
 
-    /// Kysymys kuitataan vasta tallennuksen jälkeen. Myös ilman purkua
-    /// tallennettu ääni vastaa kysymykseen — teksti tulee myöhemmin.
+    /// The question is cleared only after saving. Audio saved without a
+    /// transcript answers the question too — the text arrives later.
     private func markQuestionAnswered() {
         guard let question else { return }
         store.markAnswered(questionID: question.id)
@@ -209,19 +213,19 @@ final class TellViewModel {
         audioURL: URL?,
         duration: TimeInterval?
     ) {
-        // Mainitut henkilöt ja paikat syntyvät vahvistamattomina ehdotuksina.
-        // Vahvistamaton ei näy sukupuussa faktana — väärä sukulaisuussuhde on
-        // pahempi kuin puuttuva.
+        // Mentioned people and places are created as unconfirmed proposals.
+        // Unconfirmed never appears in the family tree as fact — a wrong
+        // relationship is worse than a missing one.
         var mentioned: [Subject] = []
         for entity in extracted.mentions {
-            // Uusi henkilö syntyy AINA vahvistamattomana, riippumatta siitä
-            // kuinka varma malli on. Varmuus koskee mallin omaa jäsennystä, ei
-            // sitä onko henkilö oikea: se kuuli "Aino", mutta puhuja saattoi
-            // sanoa "Aune". Varma-mutta-väärä on juuri se vaarallinen tapaus,
-            // ja jos varmuus ohittaisi vahvistuksen, se ohittuisi aina.
+            // A new person is ALWAYS created unconfirmed, no matter how certain
+            // the model is. The confidence covers the model's own parsing, not
+            // whether the person is right: it heard "Aino", but the speaker may
+            // have said "Aune". Confident-but-wrong is exactly the dangerous
+            // case, and if confidence could bypass confirmation, it always would.
             //
-            // `findOrCreateSubject` palauttaa jo tunnetun henkilön sellaisenaan,
-            // joten vahvistus kysytään kerran per henkilö, ei per muisto.
+            // `findOrCreateSubject` returns an already known person as is, so
+            // confirmation is asked once per person, not once per memory.
             let subject = store.findOrCreateSubject(
                 named: entity.name,
                 kind: entity.kind,
@@ -231,8 +235,8 @@ final class TellViewModel {
         }
         proposals = mentioned.filter { !$0.confirmed }
 
-        // Vapaa sanelu tarvitsee kodin. Nimetään se paikan ja ajan mukaan —
-        // juuri se järjestely jota käyttäjä ei itse jaksaisi tehdä.
+        // Free dictation needs a home. It is named after the place and the time
+        // — precisely the organising the user would never do themselves.
         let home = placeSubject(for: extracted, mentioned: mentioned)
         placedSubject = home
 
@@ -242,9 +246,9 @@ final class TellViewModel {
             subjectID: home.id,
             authorName: store.authorName,
             body: extracted.body,
-            // Kirjoitetussa muistossa raakateksti on sama kuin siivottu, mutta
-            // se tallennetaan silti: jos siivousta joskus muutetaan, alkuperäinen
-            // sanamuoto on yhä tallessa.
+            // In a typed memory the raw text equals the cleaned one, but it is
+            // stored anyway: if the cleanup is ever changed, the original
+            // wording is still on file.
             rawTranscript: transcript,
             audioFilename: audioName,
             audioDuration: duration,
@@ -263,22 +267,21 @@ final class TellViewModel {
         markQuestionAnswered()
     }
 
-    /// Etsii tai luo kohteen johon muisto kuuluu.
+    /// Finds or creates the subject the memory belongs to.
     private func placeSubject(for extracted: ExtractionResult, mentioned: [Subject]) -> Subject {
         let suggested = Self.suggestedTitle(for: extracted, mentioned: mentioned)
 
-        // Kuvasta kerrottu muisto kuuluu siihen kuvaan — ei arvailua. Kuva myös
-        // saa nimen ja ajankohdan siitä mitä siitä kerrottiin: juuri se
-        // järjestely jota kukaan ei jaksaisi tehdä kolmellekymmenelle
-        // skannatulle valokuvalle.
+        // A memory told about a photo belongs to that photo — no guessing. The
+        // photo also gets its name and date from what was told about it: exactly
+        // the organising nobody would do for thirty scanned photographs.
         if let target {
             store.describe(subjectID: target.id, title: suggested, dateHint: extracted.dateHint)
             return store.subject(id: target.id) ?? target
         }
 
-        // Vapaa sanelu tarvitsee kodin. Sama paikka ja aika kokoaa muistot
-        // yhteen sen sijaan että jokainen sanelu synnyttäisi oman irrallisen
-        // tapahtumansa.
+        // Free dictation needs a home. The same place and time gather the
+        // memories together instead of every dictation spawning its own
+        // disconnected event.
         let title = suggested ?? "Kerrottu muisto"
         if let existing = store.subjects(of: .event).first(where: { $0.title == title }) {
             return existing
@@ -288,9 +291,9 @@ final class TellViewModel {
         return subject
     }
 
-    /// Otsikko paikasta ja ajasta: "Puumalassa, 1950-luku".
-    /// Nil jos puheesta ei irronnut kumpaakaan — silloin on rehellisempää
-    /// jättää nimeämättä kuin keksiä otsikko tyhjästä.
+    /// A title from the place and the time: "Puumalassa, 1950-luku".
+    /// Nil if neither came out of the speech — then it is more honest to leave
+    /// it unnamed than to invent a title out of nothing.
     private static func suggestedTitle(
         for extracted: ExtractionResult,
         mentioned: [Subject]
@@ -305,8 +308,9 @@ final class TellViewModel {
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
-    /// Siirtää äänen väliaikaishakemistosta pysyvään. Isoäidin ääni on itsessään
-    /// perintö, joten sitä ei jätetä paikkaan jonka järjestelmä saa tyhjentää.
+    /// Moves the audio out of the temporary directory into a permanent one.
+    /// Grandmother's voice is itself the inheritance, so it is not left in a
+    /// place the system is allowed to empty.
     private static func persistAudio(from url: URL) -> String? {
         let destination = URL.documentsDirectory.appendingPathComponent(url.lastPathComponent)
         do {
@@ -318,14 +322,15 @@ final class TellViewModel {
         }
     }
 
-    // MARK: - Nimien korjaus
+    // MARK: - Name correction
 
-    /// Lähettää korjatut nimet takaisin jäsennykseen.
+    /// Sends the corrected names back through extraction.
     ///
-    /// Pelkkä kohteen uudelleennimeäminen ei riitä: muiston teksti sanoisi yhä
-    /// "Skotlannissa" vaikka paikkakortissa lukisi "Sotkamo". Suomen taivutuksen
-    /// takia merkkijonon korvaus ei osu taivutettuun muotoon, joten teksti
-    /// pyydetään uudelleen mallilta joka osaa taivuttaa korjatun nimen oikein.
+    /// Renaming the subject alone is not enough: the memory text would still say
+    /// "Skotlannissa" while the place card reads "Sotkamo". Because of Finnish
+    /// inflection a string replacement never matches the inflected form, so the
+    /// text is requested again from the model, which knows how to inflect the
+    /// corrected name properly.
     func applyCorrections() async {
         let corrections = pendingCorrections
         guard !corrections.isEmpty, let transcript, let memoryID = savedMemoryID else { return }
@@ -333,9 +338,9 @@ final class TellViewModel {
         isCorrecting = true
         defer { isCorrecting = false }
 
-        // Kohteiden nimet korjataan aina, myös jos tekstin uudelleenjäsennys
-        // epäonnistuu. Oikea nimi sukupuussa on tärkeämpi kuin yhtenäinen
-        // sanamuoto muiston tekstissä.
+        // The subject names are always corrected, even if re-extracting the text
+        // fails. The right name in the family tree matters more than consistent
+        // wording in the memory text.
         for subject in proposals {
             if let edited = editedNames[subject.id]?.trimmingCharacters(in: .whitespacesAndNewlines),
                !edited.isEmpty {
@@ -351,14 +356,14 @@ final class TellViewModel {
             store.updateBody(memoryID: memoryID, body: corrected.body)
             result = corrected
         } catch {
-            // Nimet on jo korjattu, joten epäonnistuminen menettää vain tekstin
-            // yhtenäisyyden. Sitä ei kannata näyttää virheenä.
-            print("[tell] tekstin uudelleenjäsennys epäonnistui: \(error.localizedDescription)")
+            // The names are already corrected, so a failure only costs the
+            // consistency of the text. That is not worth showing as an error.
+            print("[tell] re-extracting the text failed: \(error.localizedDescription)")
         }
 
-        // Korjatut kohteet ovat kertojan itsensä kirjoittamia, joten ne ovat
-        // vahvistettuja. Erillinen vahvistuspyyntö olisi saman asian kysymistä
-        // kahdesti.
+        // Corrected subjects were written by the teller themselves, so they are
+        // confirmed. A separate confirmation prompt would be asking the same
+        // thing twice.
         for subject in proposals where editedNames[subject.id] != nil {
             store.confirm(subjectID: subject.id)
         }
@@ -366,7 +371,7 @@ final class TellViewModel {
         editedNames = [:]
     }
 
-    // MARK: - Ehdotusten käsittely
+    // MARK: - Handling proposals
 
     func confirm(_ subject: Subject) {
         store.confirm(subjectID: subject.id)

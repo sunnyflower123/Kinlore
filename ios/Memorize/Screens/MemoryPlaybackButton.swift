@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// "Kuuntele omalla äänellä" — nappi joka oikeasti soittaa.
+/// "Kuuntele omalla äänellä" — the button that actually plays.
 ///
-/// Nouto on tarvepohjainen: toisen perheenjäsenen nauhoitus on aluksi vain
-/// R2-avain, ja se ladataan vasta kun joku painaa. Latauksen ajan nappi näyttää
-/// etenemistä eikä jää tuntumaan rikkinäiseltä.
+/// Fetching is on demand: another family member's recording is at first only an
+/// R2 key, and it is downloaded when someone taps. While it downloads the button
+/// shows progress rather than feeling broken.
 struct MemoryPlaybackButton: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session

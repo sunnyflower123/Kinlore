@@ -1,18 +1,18 @@
 import Foundation
 
-/// Synkronoinnin ajuri: työnnä ensin, vedä sitten.
+/// The sync driver: push first, then pull.
 ///
-/// Järjestys on tärkeä. Jos vetäisi ensin, juuri kerrottu muisto olisi vielä
-/// vain paikallisesti ja etäversio voisi ylikirjoittaa sen. Työntö ensin
-/// tarkoittaa että oma työ on turvassa ennen kuin mitään sovelletaan päälle.
+/// The order matters. Pulling first would leave a memory that was just told
+/// only local, and the remote version could overwrite it. Pushing first means
+/// our own work is safe before anything is applied on top of it.
 @MainActor
 @Observable
 final class SyncEngine {
     enum State: Equatable {
         case idle
         case syncing
-        /// Epäonnistuminen ei ole virhetila vaan odotustila: paikallinen data on
-        /// tallessa ja jono purkautuu kun yhteys palaa.
+        /// A failure is not an error state but a waiting state: the local data
+        /// is safe and the queue drains when the connection returns.
         case waitingForNetwork
     }
 
@@ -33,7 +33,7 @@ final class SyncEngine {
         return false
     }
 
-    /// Yksi kierros. Turvallinen kutsua usein — päällekkäiset kutsut ohitetaan.
+    /// One round. Safe to call often — overlapping calls are ignored.
     func sync() async {
         guard isEnabled, !isRunning, let base = AppServices.apiBaseURL else { return }
         isRunning = true
@@ -43,12 +43,13 @@ final class SyncEngine {
         let client = SyncClient(baseURL: base, token: session.identity.token)
 
         do {
-            // 0. Lataa media ENNEN työntöä, jotta rivit kulkevat avaimineen.
-            //    Muuten toinen laite näkisi muiston mutta ei kuvaa johon se
-            //    liittyy, ja korjaus tulisi vasta seuraavalla kierroksella.
+            // 0. Upload media BEFORE pushing, so the rows travel with their
+            //    keys. Otherwise the other device would see the memory but not
+            //    the photo it belongs to, and the fix would only arrive on the
+            //    next round.
             await uploadPendingMedia(base: base)
 
-            // 1. Työnnä oma työ.
+            // 1. Push our own work.
             let payload = store.pendingPayload()
             if store.hasPendingChanges {
                 let result = try await client.push(payload)
@@ -56,9 +57,9 @@ final class SyncEngine {
                 store.advance(seq: result.seq)
             }
 
-            // 2. Vedä muiden työ. Silmukka, koska palvelin rajaa yhden
-            //    vastauksen kokoa: ensimmäinen synkronointi voi tuoda satoja
-            //    rivejä useassa erässä.
+            // 2. Pull everyone else's work. A loop, because the server caps the
+            //    size of one response: the first sync can bring hundreds of
+            //    rows in several batches.
             var rounds = 0
             while rounds < 20 {
                 let reply = try await client.pull(since: store.syncSeq)
@@ -70,14 +71,14 @@ final class SyncEngine {
             lastSyncedAt = .now
             state = .idle
         } catch {
-            // Ei näytetä käyttäjälle. Muistot ovat tallessa paikallisesti, ja
-            // jono purkautuu itsestään — verkkovirhe ei ole hänen ongelmansa.
+            // Not shown to the user. The memories are safe locally and the
+            // queue drains by itself — a network error is not her problem.
             state = .waitingForNetwork
         }
     }
 
-    /// Lataa odottavat kuvat ja äänet. Yksi epäonnistunut tiedosto ei estä
-    /// muita: kuva voi olla rikki, mutta muiston pitää silti päästä perille.
+    /// Uploads pending photos and audio. One failed file does not block the
+    /// others: a photo may be broken, but the memory still has to get through.
     private func uploadPendingMedia(base: URL) async {
         let media = MediaClient(baseURL: base, token: session.identity.token)
 
@@ -101,7 +102,7 @@ final class SyncEngine {
     }
 }
 
-// MARK: - Kuljetus
+// MARK: - Transport
 
 private struct SyncClient {
     let baseURL: URL

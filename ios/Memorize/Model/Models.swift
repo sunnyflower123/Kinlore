@@ -1,14 +1,17 @@
 import Foundation
 
-/// Mallit vastaavat `backend/schema.sql`:ää tarkoituksella yksi yhteen.
-/// Kun synkronointi backendiin tulee, näitä ei tarvitse kääntää välimallin läpi.
+/// The models mirror `backend/schema.sql` one to one, on purpose. Sync does not
+/// have to translate through an intermediate representation.
+///
+/// The Finnish string literals in this file are user-visible text. The app's UI
+/// is Finnish; the code around it is English. See the language rule in CLAUDE.md.
 
 // MARK: - Subject
 
-/// Kuva, henkilö, paikka ja tapahtuma ovat kaikki sama asia: kohde, johon
-/// muistoja kiinnittyy. Tämä on koko sovelluksen arkkitehtuurin ydin — sen
-/// ansiosta "kirjoita muisto kuvaan" ja "kerro millainen isoäiti oli" ovat sama
-/// ruutu eikä kolmea rinnakkaista toteutusta.
+/// A photo, a person, a place and an event are all the same thing: a subject
+/// that memories attach to. This is the core of the whole architecture — it is
+/// why "write a memory about this photo" and "tell us what grandmother was like"
+/// are the same screen rather than three parallel implementations.
 enum SubjectKind: String, Codable, CaseIterable {
     case photo, person, place, event
 
@@ -21,7 +24,7 @@ enum SubjectKind: String, Codable, CaseIterable {
         }
     }
 
-    /// Käyttöliittymässä näytettävä nimi. Suomeksi, koska sovelluksen kieli on suomi.
+    /// The name shown in the UI. Finnish, because the app's language is Finnish.
     var label: String {
         switch self {
         case .photo: "Kuva"
@@ -32,8 +35,8 @@ enum SubjectKind: String, Codable, CaseIterable {
     }
 }
 
-/// Epävarma ajoitus on sääntö, ei poikkeus. "Joskus 50-luvulla" on kelvollinen
-/// vastaus, eikä sitä pidä pyöristää valheelliseksi päivämääräksi.
+/// Uncertain dating is the rule, not the exception. "Sometime in the fifties" is
+/// a valid answer, and it must not be rounded into a false date.
 enum DatePrecision: String, Codable {
     case day, month, year, decade, unknown
 }
@@ -43,7 +46,7 @@ struct DateHint: Codable, Hashable {
     var end: Date?
     var precision: DatePrecision
 
-    /// Ihmisluettava muoto joka kertoo epävarmuuden rehellisesti.
+    /// Human-readable form that states the uncertainty honestly.
     var displayText: String {
         guard let start else { return "Ajankohta ei tiedossa" }
         let year = Calendar.current.component(.year, from: start)
@@ -64,24 +67,25 @@ struct Subject: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var kind: SubjectKind
     var title: String
-    /// Paikallinen välimuistitiedosto. Nil vastaanottavalla laitteella kunnes
-    /// kuva on ladattu.
+    /// The local cache file. Nil on a receiving device until the photo has been
+    /// downloaded.
     var imageFilename: String?
-    /// R2-avain. Nil kunnes kuva on työnnetty palvelimelle. Nämä ovat eri
-    /// asioita: sama kuva on eri laitteilla eri tiedostonimellä mutta samalla
-    /// avaimella.
+    /// The R2 key. Nil until the photo has been pushed to the server. These are
+    /// different things: the same photo has a different filename on each device
+    /// but the same key.
     var r2Key: String?
     var dateHint: DateHint?
-    /// AI:n ehdottama kohde syntyy vahvistamattomana. Vahvistamaton ei näy
-    /// sukupuussa faktana — väärä sukulaisuussuhde on pahempi kuin puuttuva.
+    /// A subject proposed by the AI is created unconfirmed. Unconfirmed never
+    /// appears in the family tree as fact — a wrong relationship is worse than a
+    /// missing one.
     var confirmed: Bool = true
     var createdAt: Date = .now
-    /// Sulautuksen osoite. Kun tämä on asetettu, kohde ei ole enää oma
-    /// henkilönsä vaan ohjaa toiseen — ks. `MemoryStore.rename`.
+    /// The forwarding address of a merge. When this is set, the subject is no
+    /// longer its own person but redirects to another — see `MemoryStore.rename`.
     var mergedInto: String?
 
-    /// Kuva tuodaan ilman otsikkoa, koska kukaan ei jaksa nimetä kolmeakymmentä
-    /// skannattua valokuvaa. Nimi syntyy vasta kun kuvasta kerrotaan.
+    /// A photo is imported without a title on purpose, because nobody will name
+    /// thirty scanned photographs. The name arrives when someone talks about it.
     var displayTitle: String {
         if !title.isEmpty { return title }
         return kind == .photo ? "Valokuva" : kind.label
@@ -97,45 +101,45 @@ enum MemorySource: String, Codable {
 struct Memory: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var subjectID: String
-    /// Palvelimen tuntema kirjoittaja. Paikallisesti luodussa muistossa nil,
-    /// koska palvelin asettaa sen istunnosta — asiakas ei saa väittää muistoa
-    /// jonkun toisen kertomaksi.
+    /// The author as the server knows them. Nil on a locally created memory,
+    /// because the server sets it from the session — a client must not be able
+    /// to claim a memory was told by someone else.
     var authorID: String?
     var authorName: String
-    /// Siivottu, luettava teksti.
+    /// Cleaned, readable text.
     var body: String
-    /// Alkuperäinen purku säilytetään aina. Jos siivous menee pieleen, totuus on
-    /// yhä tallessa — puhuja ei ehkä ole enää kysyttävissä.
+    /// The original transcript is always kept. If the cleanup goes wrong, the
+    /// truth is still on file — the speaker may no longer be around to ask.
     var rawTranscript: String?
-    /// Alkuperäinen ääni. Isoäidin ääni on itsessään perintö, ei välivaihe
-    /// kohti tekstiä, ja se on soitettavissa muistokortista.
+    /// The original audio. Grandmother's voice is itself the inheritance, not a
+    /// step on the way to text, and it is playable from the memory card.
     var audioFilename: String?
-    /// R2-avain äänelle. Ks. `Subject.r2Key`.
+    /// The R2 key for the audio. See `Subject.r2Key`.
     var audioR2Key: String?
     var audioDuration: TimeInterval?
     var source: MemorySource
     var createdAt: Date = .now
-    /// Muistossa mainitut kohteet. Tämä kudos on se mitä tekoäly "yhdistelee":
-    /// sama henkilö esiintyy kymmenessä muistossa eri kuvien alla.
+    /// Subjects mentioned in the memory. This web is what the AI "connects": the
+    /// same person appears in ten memories under different photos.
     var mentionedSubjectIDs: [String] = []
 
-    /// Ääni on tallessa mutta purkua ei ole tehty — kiintiö oli täynnä tai
-    /// verkko poikki. Johdettu kenttä, ei erillistä tilaa synkronoitavaksi.
+    /// The audio is saved but not yet transcribed — the quota was full or the
+    /// network was down. A derived property, not a separate state to sync.
     ///
-    /// Tämä on säännön 3 näkyvä muoto: kiintiö ei koskaan hylkää nauhoitusta
-    /// vaan lykkää sen purkua. Isoäidin ääni on lopputuotetta.
+    /// This is the visible form of rule 3: a quota never rejects a recording, it
+    /// defers its transcription. Grandmother's voice is the product.
     var isAwaitingTranscription: Bool {
         body.isEmpty && (audioFilename != nil || audioR2Key != nil)
     }
 }
 
-// MARK: - Sukulaisuus
+// MARK: - Relationships
 
-/// Suhteen laji.
+/// The kind of a relationship.
 ///
-/// `parentOf` on suunnattu ja luetaan `from → to`. Puoliso ja sisarus ovat
-/// symmetrisiä: ne tallennetaan kertaalleen ja luetaan molempiin suuntiin,
-/// jottei sama suhde synny kahdesti eri päin.
+/// `parentOf` is directed and reads `from → to`. Spouse and sibling are
+/// symmetric: they are stored once and read in both directions, so the same
+/// relationship cannot be created twice the other way round.
 enum RelationKind: String, Codable, CaseIterable {
     case parentOf = "parent_of"
     case spouseOf = "spouse_of"
@@ -143,7 +147,7 @@ enum RelationKind: String, Codable, CaseIterable {
 
     var isSymmetric: Bool { self != .parentOf }
 
-    /// Miten suhde nimetään kun sitä lisätään: "X on tämän henkilön ___".
+    /// How the relationship is named when adding it: "X is this person's ___".
     var addLabel: String {
         switch self {
         case .parentOf: "Vanhempi"
@@ -158,17 +162,17 @@ struct Relation: Identifiable, Codable, Hashable {
     var fromSubjectID: String
     var toSubjectID: String
     var kind: RelationKind
-    /// Tekoälyn päättelemä suhde syntyy vahvistamattomana. Vahvistamaton ei näy
-    /// sukupuussa faktana — väärä sukulaisuussuhde on pahempi kuin puuttuva,
-    /// koska kukaan ei myöhemmin tiedä että se oli arvaus.
+    /// A relationship inferred by the AI is created unconfirmed. Unconfirmed
+    /// never appears in the family tree as fact — a wrong relationship is worse
+    /// than a missing one, because later nobody knows it was a guess.
     var confirmed: Bool = false
     var createdAt: Date = .now
 }
 
-// MARK: - Jatkokysymys
+// MARK: - Follow-up question
 
-/// Sekä taikahetken loppuosa että retention-moottori: avoin kysymys on syy
-/// palata sovellukseen.
+/// Both the tail of the magic moment and the retention engine: an open question
+/// is a reason to come back.
 struct FollowUpQuestion: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var subjectID: String?

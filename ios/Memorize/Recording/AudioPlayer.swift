@@ -1,17 +1,18 @@
 import AVFoundation
 import Foundation
 
-/// Muistojen kuuntelu.
+/// Listening to memories.
 ///
-/// Yksi soitin koko sovellukselle: kaksi yhtäaikaista ääntä olisi sekaannus,
-/// ja uuden aloittaminen lopettaa edellisen itsestään.
+/// One player for the whole app: two simultaneous sounds would be confusing, and
+/// starting a new one stops the previous by itself.
 ///
-/// Tämä on se kohta jossa arkisto lakkaa olemasta tekstiä. Isoäidin ääni on
-/// itsessään perintö — teksti on hakukelpoinen muoto siitä, ei korvaaja.
+/// This is the point where the archive stops being text. Grandmother's voice is
+/// itself the inheritance — the text is a searchable form of it, not a
+/// replacement.
 @MainActor
 @Observable
 final class AudioPlayer: NSObject {
-    /// Soitettavan muiston tunniste, tai nil jos mikään ei soi.
+    /// The id of the memory being played, or nil if nothing is playing.
     private(set) var playingMemoryID: String?
     private(set) var progress: Double = 0
 
@@ -30,9 +31,10 @@ final class AudioPlayer: NSObject {
         stop()
 
         do {
-            // `.playback` eikä `.ambient`: muiston kuuntelu on se mitä käyttäjä
-            // juuri nyt tekee, ja se kuuluu myös äänettömällä kytkimellä.
-            // Vanhus ei osaa etsiä miksi puhelin on hiljaa.
+            // `.playback` rather than `.ambient`: listening to a memory is what
+            // the user is doing right now, and it plays even with the silent
+            // switch on. An elderly person will not know to look for why the
+            // phone is quiet.
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
             try AVAudioSession.sharedInstance().setActive(true)
 
@@ -47,8 +49,8 @@ final class AudioPlayer: NSObject {
                 Task { @MainActor in self?.tick() }
             }
         } catch {
-            // Rikkinäinen tai puuttuva tiedosto ei ansaitse virheruutua:
-            // painallus ei vain tee mitään, ja teksti on yhä luettavissa.
+            // A broken or missing file does not deserve an error screen: the tap
+            // simply does nothing, and the text is still readable.
             stop()
         }
     }

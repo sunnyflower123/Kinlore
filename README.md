@@ -5,30 +5,38 @@
   </picture>
 </p>
 
-> Työnimi. Vaihdetaan ennen julkaisua — ks. [docs/PLAN.md](docs/PLAN.md) §8.
+> Working title. To be changed before release — see [docs/PLAN.md](docs/PLAN.md) §10.
 
-Perheen jaettu muistiarkisto. Vanha ihminen kertoo rönsyillen, tekoäly tekee
-siitä rakennetta: muistot kiinnittyvät kuviin ja henkilöihin, sukupuu kasvaa
-kertomuksista, ja avoimet kysymykset palaavat kysyttäviksi.
+A family's shared memory archive. An old person rambles; the AI turns it into
+structure: memories attach to photos and people, the family tree grows out of
+the stories, and open questions come back to be asked.
 
-Ratkaistava ongelma: isovanhemmat *tietävät*, mutta eivät osaa selittää
-jäsennellysti. He eivät täytä lomakkeita eivätkä tagita kuvia — he puhuvat.
-Nykyiset albumi- ja sukututkimussovellukset vaativat jäsenneltyä syötettä
-ihmiseltä joka ei sitä tuota, ja siksi tieto katoaa hautajaisissa.
+The problem being solved: grandparents *know*, but cannot explain in a
+structured way. They do not fill in forms and they do not tag photos — they
+talk. Existing album and genealogy apps demand structured input from the one
+person who will never produce it, and so the knowledge disappears at the funeral.
 
-Sivuprojekti [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
--kilpailuun. Tavoitesarjat: Peace Prize ja Design Award.
+Side project for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
+hackathon. Target category: **Next Gen Award** (student category).
 
-## Rakenne
+## Layout
 
-| Kansio | Sisältö |
-|--------|---------|
-| `ios/` | SwiftUI-sovellus. Projekti generoidaan `project.yml`:stä XcodeGenillä. |
-| `backend/` | Cloudflare Worker + D1 (metadata) + R2 (kuvat ja äänet). |
-| `scripts/` | `asr-bench.mjs` — suomen puheentunnistuksen vertailu. |
-| `docs/` | `PLAN.md` — laajuus, aikataulu, riskit. `logo/` — tunnus ja sen perustelu. |
+| Directory | Contents |
+|-----------|----------|
+| `ios/` | SwiftUI app. The project is generated from `project.yml` with XcodeGen. |
+| `backend/` | Cloudflare Worker + D1 (metadata) + R2 (photos and audio). |
+| `scripts/` | `asr-bench.mjs` — Finnish speech recognition comparison. |
+| `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `logo/` (the mark and why it looks like that). |
 
-## Kehitysympäristö
+## Two languages, on purpose
+
+The repo is written in **English**: docs, comments, identifiers, commit
+messages. The app's user interface is **Finnish**, because the person it exists
+for is a Finnish 80-year-old. A handful of Finnish strings therefore live in the
+source on purpose — the boundary and its exceptions are spelled out in
+[CLAUDE.md](CLAUDE.md).
+
+## Development environment
 
 ```bash
 # iOS
@@ -40,23 +48,23 @@ npx wrangler d1 execute memorize --local --file=schema.sql
 npx wrangler dev
 ```
 
-Komentoriviltä kääntäessä `DEVELOPER_DIR` on pakollinen, koska koneen
-`xcode-select` osoittaa CommandLineToolsiin:
+When building from the command line, `DEVELOPER_DIR` is mandatory because this
+machine's `xcode-select` points at CommandLineTools:
 
 ```bash
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
-Ennen ensimmäistä pilvideployta luo resurssit ja päivitä `database_id`
-tiedostoon `backend/wrangler.jsonc`:
+Before the first cloud deploy, create the resources and update `database_id` in
+`backend/wrangler.jsonc`:
 
 ```bash
 npx wrangler d1 create memorize && npx wrangler r2 bucket create memorize-media
 ```
 
-## Tietomallin ydin
+## The core of the data model
 
-Yksi `subject`-taulu kattaa kuvat, henkilöt, paikat ja tapahtumat; `memory`
-kiinnittyy mihin tahansa subjectiin. Siksi *"kirjoita muisto kuvaan"* ja
-*"kerro millainen isoäiti oli"* ovat sama ruutu ja sama reitti.
-Skeema: [backend/schema.sql](backend/schema.sql).
+A single `subject` table covers photos, people, places and events; a `memory`
+attaches to any subject. That is why *"write a memory about this photo"* and
+*"tell us what grandmother was like"* are the same screen and the same code path.
+Schema: [backend/schema.sql](backend/schema.sql).

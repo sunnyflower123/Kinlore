@@ -1,11 +1,11 @@
 import Foundation
 
-/// Synkronoinnin siirtomuodot ja niiden soveltaminen.
+/// The sync transfer types and the conversions to and from them.
 ///
-/// Erillään tallennuksen ydinlogiikasta, koska nämä ovat sopimus palvelimen
-/// kanssa: kentät vastaavat `backend/src/sync.ts`:n rivimuotoja yksi yhteen.
+/// Kept apart from the storage logic because these are the contract with the
+/// server: the fields match the row shapes in `backend/src/sync.ts` one to one.
 
-// MARK: - Siirtomuodot
+// MARK: - Transfer types
 
 struct SubjectDTO: Codable {
     var id: String
@@ -72,11 +72,11 @@ struct SyncPullReply: Codable {
     var subjects: [SubjectDTO]
     var memories: [MemoryDTO]
     var questions: [QuestionDTO]
-    /// Vanhempi palvelin ei lähetä tätä, joten oletus pitää olla.
+    /// An older server does not send this, so a default is required.
     var relations: [RelationDTO] = []
 }
 
-// MARK: - Muunnokset
+// MARK: - Conversions
 
 extension Subject {
     var dto: SubjectDTO {
@@ -147,8 +147,9 @@ extension Memory {
             id: dto.id,
             subjectID: dto.subject_id,
             authorID: dto.author_id,
-            // Palvelin liittää mukaan jäsenen näyttönimen, jottei asiakkaan
-            // tarvitse pitää erillistä jäsenhakemistoa vain lukemista varten.
+            // The server attaches the member's display name so the client does
+            // not have to keep a separate member directory just for reading.
+            // The fallback is Finnish because it is shown in the UI.
             authorName: dto.author_name ?? "Perheenjäsen",
             body: dto.body,
             rawTranscript: dto.raw_transcript,

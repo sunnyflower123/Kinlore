@@ -2,14 +2,14 @@ import ImageIO
 import UIKit
 import UniformTypeIdentifiers
 
-/// Kuvatiedostojen tallennus levylle.
+/// Storing media files on disk.
 ///
-/// Korvautuu R2-lataukselle kun backend tulee, mutta rajapinta pysyy: näkymät
-/// tuntevat vain tiedostonimen, eivät sitä missä kuva fyysisesti on.
+/// The interface hides where a file physically lives: views know only the
+/// filename, and R2 download fills the same cache.
 enum MediaStore {
-    /// Pisin sivu tallennettaessa. Vanhat skannatut valokuvat ovat usein
-    /// valtavia, ja täysikokoisina ne täyttäisivät sekä levyn että myöhemmin
-    /// R2:n. 2048 riittää katseluun ja tulevaan tulostukseen.
+    /// The longest side when saving. Old scanned photographs are often enormous,
+    /// and at full size they would fill both the disk and R2. 2048 is enough for
+    /// viewing and for eventual printing.
     private static let maxDimension = 2048
 
     private static let thumbnailDimension = 600
@@ -18,11 +18,11 @@ enum MediaStore {
         URL.documentsDirectory.appendingPathComponent(filename)
     }
 
-    /// Tallentaa kuvan pienennettynä ja palauttaa tiedostonimen.
+    /// Saves a downscaled photo and returns the filename.
     ///
-    /// Pienennys tehdään ImageIO:lla, joka lukee vain tarvittavat tavut sen
-    /// sijaan että purkaisi koko kuvan muistiin. Kymmenen skannatun valokuvan
-    /// tuonti kaataisi muuten sovelluksen vanhemmalla laitteella.
+    /// Downscaling uses ImageIO, which reads only the bytes it needs instead of
+    /// decoding the whole image into memory. Importing ten scanned photographs
+    /// would otherwise crash the app on an older device.
     static func save(imageData: Data) -> String? {
         guard let downsized = downsample(imageData, to: maxDimension) else { return nil }
         let filename = "photo-\(UUID().uuidString).jpg"
@@ -38,9 +38,9 @@ enum MediaStore {
         FileManager.default.fileExists(atPath: url(for: filename).path)
     }
 
-    /// Tallentaa tavut sellaisenaan. Käytetään R2:sta ladatulle medialle ja
-    /// äänelle: ääntä ei saa koodata uudelleen, koska alkuperäinen nauhoitus on
-    /// lopputuotetta eikä välivaihe.
+    /// Saves bytes verbatim. Used for media downloaded from R2 and for audio:
+    /// audio must never be re-encoded, because the original recording is the
+    /// product rather than an intermediate step.
     static func saveRaw(_ data: Data, extension ext: String) -> String? {
         let filename = "media-\(UUID().uuidString).\(ext)"
         do {
@@ -55,7 +55,7 @@ enum MediaStore {
         UIImage(contentsOfFile: url(for: filename).path)
     }
 
-    /// Ruudukkoa varten. Täysikokoisten kuvien lataaminen ruudukkoon nykii.
+    /// For the grid. Loading full-size images into a grid stutters.
     static func loadThumbnail(named filename: String) -> UIImage? {
         guard let data = try? Data(contentsOf: url(for: filename)),
               let jpeg = downsample(data, to: thumbnailDimension)
@@ -67,7 +67,7 @@ enum MediaStore {
         try? FileManager.default.removeItem(at: url(for: filename))
     }
 
-    // MARK: - Pienennys
+    // MARK: - Downscaling
 
     private static func downsample(_ data: Data, to maxPixels: Int) -> Data? {
         let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
@@ -77,8 +77,8 @@ enum MediaStore {
 
         let thumbnailOptions = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
-            // Vanhat kuvat ovat usein skannattuja ja käännettyjä. Ilman tätä
-            // ne kääntyisivät väärin päin ruudukossa.
+            // Old photos are often scanned and rotated. Without this they would
+            // come out the wrong way round in the grid.
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: maxPixels,
         ] as CFDictionary

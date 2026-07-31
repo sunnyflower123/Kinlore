@@ -1,13 +1,14 @@
 import UIKit
 
-/// Median nouto näkymille: paikallinen ensin, R2 tarvittaessa.
+/// Fetching media for the views: local first, R2 when needed.
 ///
-/// Lataus on tarvepohjainen eikä ennakoiva. Perheellä voi olla satoja kuvia,
-/// eikä niitä pidä hakea kaikkia käynnistyksessä — vanhan puhelimen akku ja
-/// mökin verkko eivät kestä sitä. Ruudukko hakee vain sen mitä näkyy.
+/// Fetching is on demand rather than eager. A family may have hundreds of
+/// photos, and they must not all be fetched at launch — an old phone's battery
+/// and a cottage's network will not take it. The grid fetches only what is
+/// visible.
 @MainActor
 enum MediaLoader {
-    /// Varmistaa että kohteen kuva on paikallisesti, ja palauttaa tiedostonimen.
+    /// Ensures the subject's photo is present locally and returns its filename.
     static func imageFilename(
         for subject: Subject,
         store: MemoryStore,
@@ -25,8 +26,8 @@ enum MediaLoader {
         return filename
     }
 
-    /// Sama äänelle. Alkuperäinen ääni on lopputuotetta, joten sitä ei koodata
-    /// uudelleen missään vaiheessa.
+    /// The same for audio. The original audio is the product, so it is never
+    /// re-encoded at any point.
     static func audioFilename(
         for memory: Memory,
         store: MemoryStore,

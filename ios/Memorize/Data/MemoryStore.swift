@@ -1,12 +1,11 @@
 import Foundation
 
-/// Paikallinen tallennus.
+/// Local storage.
 ///
-/// Rajapinta on erillään toteutuksesta, koska tämä korvautuu Worker-clientilla
-/// kun synkronointi tulee. JSON-tiedosto riittää siihen asti: perheen muistojen
-/// määrä on satoja, ei satojatuhansia, eikä tietokantaa kannata valita ennen
-/// kuin backend on olemassa — kahden totuudenlähteen synkronointi on se ansa
-/// jota vasten tämä on suunniteltu.
+/// A JSON file is enough: a family's memories number in the hundreds, not the
+/// hundreds of thousands. The whole file fits in memory and the write is atomic.
+/// SQLite would bring indexes and partial updates, but also a dependency,
+/// migrations and more code to be judged — see docs/ARCHITECTURE.md §3.
 @MainActor
 @Observable
 final class MemoryStore {
@@ -15,16 +14,16 @@ final class MemoryStore {
     private(set) var questions: [FollowUpQuestion] = []
     private(set) var relations: [Relation] = []
 
-    /// Kirjoittajan nimi. Perheessä tämä tulee jäsentiedoista.
+    /// The author's name. In a family this comes from the member record.
     var authorName = "Minä"
 
-    /// Viimeisin palvelimelta saatu järjestysluku. Seuraava veto pyytää kaiken
-    /// tätä suuremman.
+    /// The most recent ordering number received from the server. The next pull
+    /// asks for everything above it.
     private(set) var syncSeq = 0
 
-    /// Lähtevä jono: paikallisesti muuttuneet rivit joita ei ole vielä työnnetty.
-    /// Erillinen joukko eikä mallin kenttä, jotta mallit pysyvät puhtaina ja
-    /// vastaavat sitä mitä palvelimelle lähetetään.
+    /// The outbox: locally changed rows that have not been pushed yet. A
+    /// separate set rather than a field on the model, so that the models stay
+    /// clean and match exactly what is sent to the server.
     private(set) var dirtySubjects: Set<String> = []
     private(set) var dirtyMemories: Set<String> = []
     private(set) var dirtyQuestions: Set<String> = []
@@ -38,7 +37,7 @@ final class MemoryStore {
         load()
     }
 
-    // MARK: - Kyselyt
+    // MARK: - Queries
 
     func memories(for subjectID: String) -> [Memory] {
         memories
@@ -46,11 +45,11 @@ final class MemoryStore {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
-    /// Seuraa sulautusketjua. Viittaus sulautettuun kohteeseen ratkeaa aina
-    /// säilyvään, joten mikään ei osoita tyhjään.
+    /// Follows the merge chain. A reference to a merged subject always resolves
+    /// to the survivor, so nothing points at nothing.
     func subject(id: String) -> Subject? {
         var current = subjects.first { $0.id == id }
-        // Kierrossuoja: rikkinäinen data ei saa jumittaa käyttöliittymää.
+        // Cycle guard: broken data must not hang the UI.
         for _ in 0 ..< 8 {
             guard let target = current?.mergedInto else { return current }
             current = subjects.first { $0.id == target }
@@ -58,7 +57,7 @@ final class MemoryStore {
         return current
     }
 
-    /// Sulautetut eivät ole omia kohteitaan, joten ne eivät näy listoissa.
+    /// Merged subjects are no longer their own, so they do not appear in lists.
     func subjects(of kind: SubjectKind) -> [Subject] {
         subjects
             .filter { $0.kind == kind && $0.mergedInto == nil }
@@ -69,16 +68,16 @@ final class MemoryStore {
         Array(questions.filter { !$0.answered }.prefix(limit))
     }
 
-    /// Kohde jolla ei ole vielä yhtään muistoa. Näitä ei piiloteta vaan
-    /// näytetään kutsuna: "kukaan ei ole vielä kertonut mitään Ainosta".
+    /// A subject that has no memories yet. These are not hidden but shown as an
+    /// invitation: "nobody has said anything about Aino yet".
     func isEmpty(_ subject: Subject) -> Bool {
         !memories.contains { $0.subjectID == subject.id }
     }
 
-    // MARK: - Kirjoitus
+    // MARK: - Writes
 
-    /// Etsii samannimisen kohteen tai luo uuden. Tämä on se kohta jossa sama
-    /// henkilö eri muistoista yhdistyy yhdeksi henkilökortiksi.
+    /// Finds a subject with the same name or creates a new one. This is the
+    /// point where the same person from different memories becomes one card.
     func findOrCreateSubject(named name: String, kind: SubjectKind, confirmed: Bool) -> Subject {
         if let existing = subjects.first(where: {
             $0.kind == kind && $0.title.compare(name, options: .caseInsensitive) == .orderedSame
@@ -110,11 +109,11 @@ final class MemoryStore {
         save()
     }
 
-    /// Täydentää kohteen tiedot sillä mitä siitä kerrottiin.
+    /// Fills in a subject's details from what was told about it.
     ///
-    /// **Vain tyhjät kentät täytetään.** Ihmisen kirjoittamaa otsikkoa tai
-    /// aiemman muiston tuomaa ajankohtaa ei ylikirjoiteta — myöhempi sanelu ei
-    /// saa hiljaa muuttaa sitä mitä perhe on jo yhdessä päättänyt.
+    /// **Only empty fields are filled.** A title written by a human, or a date
+    /// brought by an earlier memory, is not overwritten — a later dictation must
+    /// not silently change what the family has already agreed on.
     func describe(subjectID: String, title: String?, dateHint: DateHint?) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         if let title, subjects[index].title.isEmpty {
@@ -127,13 +126,13 @@ final class MemoryStore {
         save()
     }
 
-    /// Nimeää kohteen uudelleen. Käytetään kun kertoja korjaa puheentunnistuksen
-    /// väärin kuuleman nimen — se on ainoa hetki jolloin virhe on vielä
-    /// korjattavissa, koska myöhemmin kukaan ei tiedä mitä nauhalla sanottiin.
+    /// Renames a subject. Used when the teller corrects a name that speech
+    /// recognition misheard — that is the only moment the error can still be
+    /// fixed, because later nobody knows what was said on the recording.
     ///
-    /// Jos samanniminen kohde on jo olemassa, korjattu sulautuu siihen: kertoja
-    /// tarkoitti samaa ihmistä, ja kaksi korttia olisi juuri se kaksoiskappale
-    /// jota koko perusmuotovaatimus yrittää estää.
+    /// If a subject with the same name already exists, the corrected one merges
+    /// into it: the teller meant the same person, and two cards would be exactly
+    /// the duplicate that the whole base-form requirement exists to prevent.
     func rename(subjectID: String, to newTitle: String) {
         let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
@@ -145,7 +144,7 @@ final class MemoryStore {
             $0.id != subjectID && $0.kind == kind && $0.mergedInto == nil &&
                 $0.title.compare(trimmed, options: .caseInsensitive) == .orderedSame
         }) {
-            // Viittaukset siirretään heti, jotta paikallinen näkymä on ehjä...
+            // References move immediately, so the local view stays coherent...
             for i in memories.indices where memories[i].subjectID == subjectID {
                 memories[i].subjectID = existing.id
             }
@@ -154,10 +153,11 @@ final class MemoryStore {
                     $0 == subjectID ? existing.id : $0
                 }
             }
-            // ...mutta riviä EI poisteta. Offline oleva toinen laite voi juuri
-            // nyt lisätä muistoja tähän kohteeseen, ja poisto jättäisi ne
-            // osoittamaan tyhjään. Hautakivi osoitteella ratkaisee sen ja tekee
-            // sulautuksesta myös peruttavan. Ks. docs/ARKKITEHTUURI.md §2.5.
+            // ...but the row is NOT deleted. Another device that is offline may
+            // be adding memories to this subject right now, and deleting it
+            // would leave them pointing at nothing. A tombstone with a
+            // forwarding address solves that and makes the merge reversible.
+            // See docs/ARCHITECTURE.md §2.5.
             subjects[index].mergedInto = existing.id
             dirtyMemories.formUnion(
                 memories.filter { $0.subjectID == existing.id }.map(\.id)
@@ -169,8 +169,8 @@ final class MemoryStore {
         save()
     }
 
-    /// Päivittää muiston siivotun tekstin. `rawTranscript` ei muutu koskaan —
-    /// alkuperäinen purku on todiste siitä mitä nauhalla oikeasti sanottiin.
+    /// Updates a memory's cleaned text. `rawTranscript` never changes — the
+    /// original transcript is the evidence of what was actually said.
     func updateBody(memoryID: String, body: String) {
         guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
         memories[index].body = body
@@ -197,14 +197,13 @@ final class MemoryStore {
         save()
     }
 
-    // MARK: - Synkronointi
+    // MARK: - Sync
     //
-    // Mutaatiot ovat täällä eivätkä laajennuksessa, koska ne koskevat samoja
-    // private(set)-kenttiä kuin muukin kirjoitus. Siirtomuodot ovat
-    // MemoryStore+Sync.swift:ssä: ne ovat sopimus palvelimen kanssa.
+    // The mutations live here rather than in the extension, because they touch
+    // the same private(set) fields as every other write. The transfer types are
+    // in MemoryStore+Sync.swift: those are the contract with the server.
 
-    /// Työnnettävät rivit. Tyhjä hyötykuorma tarkoittaa ettei ole mitään
-    /// lähetettävää.
+    /// The rows to push. An empty payload means there is nothing to send.
     func pendingPayload() -> SyncPayload {
         SyncPayload(
             subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
@@ -219,8 +218,9 @@ final class MemoryStore {
             || !dirtyRelations.isEmpty
     }
 
-    /// Kuittaa työnnetyt rivit. Vain juuri lähetetyt: jos käyttäjä ehti kirjoittaa
-    /// pyynnön aikana, uusi muutos jää jonoon eikä katoa.
+    /// Acknowledges the rows that were pushed. Only the ones just sent: if the
+    /// user managed to write during the request, the new change stays queued
+    /// rather than being lost.
     func clearPending(_ payload: SyncPayload) {
         dirtySubjects.subtract(payload.subjects.map(\.id))
         dirtyMemories.subtract(payload.memories.map(\.id))
@@ -229,11 +229,11 @@ final class MemoryStore {
         save()
     }
 
-    /// Soveltaa palvelimelta saadut rivit.
+    /// Applies rows received from the server.
     ///
-    /// Paikallisesti muuttunut rivi ohitetaan: se on vielä jonossa, ja etäversio
-    /// ylikirjoittaisi juuri kerrotun muiston. Se päätyy palvelimelle
-    /// seuraavalla työnnöllä ja voittaa silloin suuremmalla järjestysluvulla.
+    /// A locally changed row is skipped: it is still queued, and the remote
+    /// version would overwrite the memory that was just told. It reaches the
+    /// server on the next push and wins there with a higher ordering number.
     func applyRemote(_ reply: SyncPullReply) {
         for dto in reply.subjects {
             guard !dirtySubjects.contains(dto.id), let incoming = Subject(dto: dto) else { continue }
@@ -282,12 +282,12 @@ final class MemoryStore {
         save()
     }
 
-    // MARK: - Sukulaisuus
+    // MARK: - Relationships
 
-    /// Henkilön suhteet ryhmiteltyinä siten kuin ihminen ne ajattelee.
+    /// A person's relationships, grouped the way a human thinks of them.
     ///
-    /// Symmetriset suhteet luetaan molempiin suuntiin, `parentOf` suunnattuna:
-    /// sama rivi tarkoittaa toiselle vanhempaa ja toiselle lasta.
+    /// Symmetric relationships are read in both directions, `parentOf` as
+    /// directed: the same row means a parent to one side and a child to the other.
     func relatives(of subjectID: String, kind: RelationKind, asParent: Bool = false) -> [Subject] {
         relations.compactMap { relation -> Subject? in
             guard relation.kind == kind else { return nil }
@@ -296,7 +296,7 @@ final class MemoryStore {
                 otherID = relation.fromSubjectID == subjectID ? relation.toSubjectID
                     : relation.toSubjectID == subjectID ? relation.fromSubjectID : nil
             } else if asParent {
-                // Etsitään tämän henkilön lapsia: hän on `from`.
+                // Looking for this person's children: they are the `from` side.
                 otherID = relation.fromSubjectID == subjectID ? relation.toSubjectID : nil
             } else {
                 otherID = relation.toSubjectID == subjectID ? relation.fromSubjectID : nil
@@ -317,7 +317,7 @@ final class MemoryStore {
         }
     }
 
-    /// Lisää suhteen, tai vahvistaa olemassa olevan ehdotuksen.
+    /// Adds a relationship, or confirms an existing proposal.
     @discardableResult
     func addRelation(from: String, to: String, kind: RelationKind, confirmed: Bool = true) -> Relation? {
         guard from != to else { return nil }
@@ -347,13 +347,13 @@ final class MemoryStore {
 
     // MARK: - Media
 
-    /// Kohteet joilla on paikallinen kuva mutta ei vielä R2-avainta.
+    /// Subjects that have a local photo but no R2 key yet.
     func subjectsAwaitingUpload() -> [Subject] {
         subjects.filter { $0.imageFilename != nil && $0.r2Key == nil }
     }
 
-    /// Muistot joiden ääni on vielä vain paikallisesti. Alkuperäinen ääni
-    /// ladataan aina, myös ilmaisella tasolla — se on tuotteen ydin.
+    /// Memories whose audio is still only local. The original audio is always
+    /// uploaded, free tier included — it is the core of the product.
     func memoriesAwaitingUpload() -> [Memory] {
         memories.filter { $0.audioFilename != nil && $0.audioR2Key == nil }
     }
@@ -372,8 +372,8 @@ final class MemoryStore {
         save()
     }
 
-    /// Ladatun median paikallinen välimuisti. Ei merkitä jonoon: tiedostonimi
-    /// on laitekohtainen eikä kuulu palvelimelle.
+    /// The local cache of downloaded media. Not marked dirty: the filename is
+    /// device specific and is none of the server's business.
     func setLocalImage(subjectID: String, filename: String) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].imageFilename = filename
@@ -386,7 +386,7 @@ final class MemoryStore {
         save()
     }
 
-    // MARK: - Levy
+    // MARK: - Disk
 
     struct Snapshot: Codable {
         var subjects: [Subject]
@@ -408,8 +408,8 @@ final class MemoryStore {
         memories = snapshot.memories
         questions = snapshot.questions
         syncSeq = snapshot.syncSeq
-        // Lähtevä jono säilyy levyllä: offline tehty muisto ei saa jäädä
-        // työntämättä vain siksi että sovellus suljettiin välissä.
+        // The outbox persists on disk: a memory told offline must not go
+        // unpushed just because the app was closed in between.
         dirtySubjects = snapshot.dirtySubjects
         dirtyMemories = snapshot.dirtyMemories
         dirtyQuestions = snapshot.dirtyQuestions
