@@ -11,7 +11,6 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    GENERATE_INFOPLIST_FILE: YES
     TARGETED_DEVICE_FAMILY: "1"
 # Scheme kirjoitetaan auki, koska XcodeGen ei generoi sellaista oletuksena ja
 # `xcodegen generate` pyyhkii Xcoden automaattisesti luoman xcuserdatasta.
@@ -37,18 +36,31 @@ targets:
         excludes:
           - "**/CLAUDE.md"
           - "CLAUDE.md"
+    # Info.plist generoidaan tästä, koska kutsulinkin URL-skeema on taulukko
+    # sanakirjoja eikä sitä voi asettaa INFOPLIST_KEY_-muuttujilla.
+    # Tiedosto on johdettu project.yml:stä, joten se on .gitignoressa.
+    info:
+      path: Memorize/Info.plist
+      properties:
+        CFBundleDisplayName: Memorize
+        UILaunchScreen: {}
+        # Pystyasento vain: ensisijainen käyttäjä pitää puhelinta yhdellä
+        # kädellä, eikä vaakatila tuo tälle sisällölle mitään.
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Sanelu on koko sovelluksen ydintoiminto — perustelu näkyy käyttäjälle
+        # järjestelmän kysyessä lupaa, joten se kirjoitetaan ihmiskielellä.
+        NSMicrophoneUsageDescription: >-
+          Memorize tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
+          voi kuunnella ne myöhemmin.
+        NSPhotoLibraryUsageDescription: >-
+          Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.
+        # Kutsulinkki: memorize://join?code=...
+        # Universal link olisi parempi, mutta se vaatii verkkotunnuksen ja
+        # AASA-tiedoston. Jaettu teksti sisältää myös koodin, joten liittyminen
+        # onnistuu vaikka skeema ei aukeaisi viestisovelluksessa.
+        CFBundleURLTypes:
+          - CFBundleURLName: app.memorize.invite
+            CFBundleURLSchemes: [memorize]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.memorize.Memorize
-        INFOPLIST_KEY_CFBundleDisplayName: Memorize
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        # Pystyasento vain: ensisijainen käyttäjä pitää puhelinta yhdellä
-        # kädellä, eikä vaakatila tuo tälle sisällölle mitään.
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-        # Sanelu on koko sovelluksen ydintoiminto — perustelu näkyy käyttäjälle
-        # järjestelmän kysyessä lupaa, joten se kirjoitetaan ihmiskielellä.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: >-
-          Memorize tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
-          voi kuunnella ne myöhemmin.
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: >-
-          Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.

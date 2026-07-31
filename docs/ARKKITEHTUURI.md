@@ -176,6 +176,30 @@ Tämä on kohta jossa yksinkertaisuus ja turvallisuus ovat oikeasti ristiriidass
 ja valinta on tietoinen: helppous voittaa, koska kirjautumismuuri karkottaisi
 juuri sen käyttäjän jota varten sovellus on olemassa.
 
+### Kutsulinkin muoto — tiedostettu puute
+
+Linkki on `memorize://join?code=...`. **iOS näyttää mukautetulle URL-skeemalle
+vahvistusdialogin** ("Open in Memorize?"), joka on englanninkielinen ja
+ylimääräinen askel juuri sille käyttäjälle joka hämmentyy helpoiten.
+
+Universal link (`https://…`) avautuisi suoraan ilman dialogia, mutta se vaatii
+verkkotunnuksen ja AASA-tiedoston — eli store-julkaisun infrastruktuuria.
+
+Lievennys on jo paikallaan: jaettava teksti sisältää **sekä linkin että
+koodin**, ja liittymislomakkeessa on liittämiskenttä. Isoäiti pääsee perheeseen
+vaikka linkki ei aukeaisi lainkaan. Jos verkkotunnus joskus hankitaan, tämä on
+ensimmäinen asia joka kannattaa vaihtaa.
+
+### Identiteetti kestää sovelluksen poiston
+
+Keychain-merkinnät säilyvät sovelluksen poiston yli, ja
+`kSecAttrSynchronizable` vie ne iCloudin kautta käyttäjän muille laitteille.
+Todennettu: sama jäsentunnus kolmella käynnistyksellä, myös poiston ja
+uudelleenasennuksen jälkeen.
+
+Se on oikea käytös tälle käyttäjäryhmälle. Vahingossa poistettu sovellus ei saa
+tarkoittaa perheen menettämistä.
+
 ## 5. Media
 
 Kuvat ja äänet menevät R2:een, metatieto D1:een.

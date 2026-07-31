@@ -12,12 +12,14 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE family (
   id            TEXT PRIMARY KEY,
   name          TEXT NOT NULL,
-  -- Jaettavan kutsulinkin koodi. Kierrätettävissä jos linkki vuotaa.
-  invite_code   TEXT NOT NULL UNIQUE,
   -- Kanavatason oikeus: yksi maksaja avaa koko perheen. Ei per-käyttäjä.
   entitlement   TEXT NOT NULL DEFAULT 'free',   -- 'free' | 'archive'
   -- Kuka maksaa juuri nyt. Tilauksen päättyessä palautuu NULLiksi.
   payer_id      TEXT,
+  -- Synkronoinnin järjestysluku. Kasvaa jokaisella kirjoituksella. Laitteiden
+  -- kelloihin ei voi luottaa: iäkkään puhelimen aikavyöhyke voi olla vuosia
+  -- väärässä, ja aikaleimajärjestys tuottaisi hävinneitä kirjoituksia.
+  sync_seq      INTEGER NOT NULL DEFAULT 0,
   created_at    INTEGER NOT NULL
 );
 
@@ -25,14 +27,33 @@ CREATE TABLE member (
   id            TEXT PRIMARY KEY,
   family_id     TEXT NOT NULL REFERENCES family(id) ON DELETE CASCADE,
   display_name  TEXT NOT NULL,
-  apple_sub     TEXT UNIQUE,          -- Sign in with Apple, vakaa tunniste
+  -- Laitteen salaisuuden SHA-256. Salaisuus on 32 satunnaista tavua, ei
+  -- salasana, joten hidas tiiviste ei toisi mitään: arvattavuutta ei ole.
+  -- Tallennetaan silti tiivisteenä, jottei kannan vuoto anna pääsyä.
+  secret_hash   TEXT NOT NULL,
   -- Vain maksajalla. RevenueCatin webhookit osuvat tähän.
   rc_app_user_id TEXT,
   role          TEXT NOT NULL DEFAULT 'member',  -- 'owner' | 'member'
   -- Jäsenen oma henkilökortti puussa. Jäsen on subject siinä missä vainajakin.
   person_subject_id TEXT REFERENCES subject(id),
+  created_at    INTEGER NOT NULL,
+  last_seen_at  INTEGER
+);
+
+-- Kutsulinkit. Oma taulu eikä perheen kenttä, koska linkin pitää voida
+-- umpeutua ja olla mitätöitävissä erikseen: linkki on koko turvallisuusraja,
+-- ja kuka tahansa sen saanut näkee perheen kaikki muistot.
+CREATE TABLE invite (
+  code          TEXT PRIMARY KEY,     -- 22 merkkiä base64url, ei luettavaksi
+  family_id     TEXT NOT NULL REFERENCES family(id) ON DELETE CASCADE,
+  created_by    TEXT NOT NULL REFERENCES member(id),
+  expires_at    INTEGER NOT NULL,
+  revoked_at    INTEGER,
+  used_count    INTEGER NOT NULL DEFAULT 0,
   created_at    INTEGER NOT NULL
 );
+
+CREATE INDEX idx_invite_family ON invite(family_id);
 
 CREATE INDEX idx_member_family ON member(family_id);
 CREATE INDEX idx_member_rc     ON member(rc_app_user_id);

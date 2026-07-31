@@ -48,6 +48,7 @@ struct RootView: View {
 /// vain listaus poikkeaa.
 struct PeopleScreen: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
 
     var body: some View {
         NavigationStack {
@@ -71,6 +72,21 @@ struct PeopleScreen: View {
             .navigationTitle("Ihmiset")
             .navigationDestination(for: Subject.self) { subject in
                 SubjectDetailScreen(subject: subject)
+            }
+            .toolbar {
+                // Perhe kuuluu Ihmisten yhteyteen eikä omaksi välilehdekseen:
+                // kolme välilehteä on jo raja sille mitä 80-vuotias muistaa.
+                if session.mode != .local {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            FamilyScreen()
+                        } label: {
+                            Image(systemName: "person.2.badge.gearshape")
+                                .elderTapTarget()
+                        }
+                        .accessibilityLabel("Perheen asetukset")
+                    }
+                }
             }
         }
     }

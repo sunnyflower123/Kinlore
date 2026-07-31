@@ -4,6 +4,8 @@
 /// purkaminen on triviaalia, ja vuotanut avain on opiskelijan budjetilla oikea
 /// lasku. Siksi ääni ja teksti kulkevat aina täältä.
 
+import { authenticate } from './auth'
+import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
 import { extract } from './extract'
 import { transcribe } from './transcribe'
 
@@ -32,6 +34,14 @@ function failure(err: unknown, route: string): Response {
 	return json({ error: 'upstream_failed' }, 502)
 }
 
+async function readJSON<T>(request: Request): Promise<T | null> {
+	try {
+		return (await request.json()) as T
+	} catch {
+		return null
+	}
+}
+
 /// Ääntä ei oteta rajattomasti vastaan. 25 MB on noin 3 tuntia puhetta tällä
 /// pakkauksella — reilusti yli minkään yksittäisen muiston, mutta estää sen
 /// että väärin toiminut asiakas lähettää gigatavun.
@@ -43,6 +53,76 @@ export default {
 
 		if (url.pathname === '/health') {
 			return json({ ok: true, hasKey: Boolean(env.OPENROUTER_API_KEY) })
+		}
+
+		// --- Perhe ja identiteetti -------------------------------------------
+		//
+		// Nämä tarkistetaan ennen tunnistautumista, koska ne ovat juuri se
+		// kohta jossa jäsen syntyy: kutsujalla ei vielä ole tunnusta.
+
+		if (url.pathname === '/family' && request.method === 'POST') {
+			const body = await readJSON<{
+				memberID?: string
+				secret?: string
+				displayName?: string
+				familyName?: string
+			}>(request)
+			if (!body) return json({ error: 'invalid_json' }, 400)
+			if (!body.memberID || !body.secret) return json({ error: 'missing_identity' }, 400)
+
+			const result = await createFamily(env, {
+				memberID: body.memberID,
+				secret: body.secret,
+				displayName: body.displayName ?? '',
+				familyName: body.familyName ?? '',
+			})
+			return 'error' in result ? json(result, 409) : json(result)
+		}
+
+		if (url.pathname === '/family/join' && request.method === 'POST') {
+			const body = await readJSON<{
+				memberID?: string
+				secret?: string
+				displayName?: string
+				code?: string
+			}>(request)
+			if (!body) return json({ error: 'invalid_json' }, 400)
+			if (!body.memberID || !body.secret || !body.code) {
+				return json({ error: 'missing_fields' }, 400)
+			}
+
+			const result = await joinFamily(env, {
+				memberID: body.memberID,
+				secret: body.secret,
+				displayName: body.displayName ?? '',
+				code: body.code,
+			})
+			if ('error' in result) {
+				return json(result, result.error === 'invalid_invite' ? 404 : 409)
+			}
+			return json(result)
+		}
+
+		// --- Tunnistautumista vaativat ---------------------------------------
+
+		const session = await authenticate(request, env)
+
+		if (url.pathname === '/family' && request.method === 'GET') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const result = await getFamily(env, session)
+			return 'error' in result ? json(result, 404) : json(result)
+		}
+
+		if (url.pathname === '/family/invite' && request.method === 'POST') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			return json(await createInvite(env, session))
+		}
+
+		if (url.pathname === '/family/invite' && request.method === 'DELETE') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const code = url.searchParams.get('code')
+			if (!code) return json({ error: 'missing_code' }, 400)
+			return json(await revokeInvite(env, session, code))
 		}
 
 		if (request.method !== 'POST') return json({ error: 'not_found' }, 404)

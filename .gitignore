@@ -6,8 +6,9 @@ node_modules/
 # Konekohtaiset Claude Code -asetukset, ei jaettavaa sisältöä.
 .claude/settings.local.json
 
-# XcodeGen generoi tämän project.yml:stä — ei versionhallintaan.
+# XcodeGen generoi nämä project.yml:stä — ei versionhallintaan.
 ios/*.xcodeproj
+ios/Memorize/Info.plist
 ios/*.xcworkspace
 xcuserdata/
 DerivedData/
