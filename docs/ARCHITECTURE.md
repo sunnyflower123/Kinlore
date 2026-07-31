@@ -21,6 +21,7 @@ An honest inventory, not a wish list:
 | RevenueCat, shared family entitlement | **Done and tested** |
 | Audio playback, open questions, relationships | **Done and tested** |
 | Paywall | Built — unverified, needs a RevenueCat key |
+| Interview loop (questions asked aloud) | **Done** |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Not started — on the cut list, PLAN.md §5 |
 | Demo video | Remaining |
@@ -374,3 +375,42 @@ video can show several relatives' memories on the same photo even without a join
 flow being built. The concept is visible, the implementation is incomplete — and
 that is a more honest outcome than half-finished sync that loses data in the
 demo.
+
+## 10. The interview loop
+
+Added after the inventory above: the follow-up questions the extraction
+already produces are now asked aloud. One button on the result screen starts
+the loop — the app reads the top question with the device's own Finnish voice
+(`InterviewVoice`), starts recording when the sentence ends, and the answer
+runs through the same transcribe → extract → save pipeline as any other
+memory, which yields the next question. Ninety seconds of telling becomes a
+guided conversation, and no hand touches the screen until "Riittää tältä erää".
+
+Decisions, in the order they were argued about:
+
+- **Opt-in, not automatic.** A result screen that starts talking by itself
+  would startle exactly the user this app is for, and the name-correction
+  moment needs a calm screen more than the loop needs one saved tap.
+- **Same pipeline, not a second one.** Each answer is an ordinary memory on
+  the subject the first memory landed on, and the spoken question is marked
+  answered by the same rule as any answered question. The loop wraps the magic
+  moment; it does not reimplement it (the data-model rule in CLAUDE.md).
+- **On-device TTS.** Works at a summer cottage without signal and sends
+  nothing anywhere. The voice that matters in this app is grandmother's, not
+  ours.
+- **VoiceOver never competes.** When the screen reader runs, the app does not
+  speak and does not auto-start the microphone — it would record the reader.
+  The question takes accessibility focus, and the record button answers it.
+- **Ending is cheap, and never eats a question.** Silence (a sub-second
+  recording) ends the loop like the button does, and the question that was
+  being asked stays open. Quota running out mid-loop ends the loop with the
+  answer's audio safe, exactly as in a single dictation.
+
+One knowingly open edge: every round adds three questions and answers one, so
+a long interview grows the open-question list. That is today's behaviour for
+every answered question, not something the loop introduced — if it starts to
+hurt, the cap belongs in the store, not here.
+
+The pairing required by "every addition requires a removal" (CLAUDE.md): the
+drawn family-tree graph, already last in line in §8, is now formally out of
+v1. The person-card lists carry the same information.

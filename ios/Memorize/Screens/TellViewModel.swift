@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// The magic moment's state machine: record → transcribe → extract → result.
 ///
@@ -18,6 +19,9 @@ final class TellViewModel {
         case transcribing
         case organizing
         case done
+        /// The interview loop is reading a follow-up question aloud. Recording
+        /// restarts by itself when the question ends.
+        case asking
         /// Quota full. The audio is saved, transcription is pending. Not an
         /// error state — the user did nothing wrong and lost nothing.
         case savedWithoutTranscript
@@ -69,18 +73,33 @@ final class TellViewModel {
     }
 
     let recorder = AudioRecorder()
+    /// Reads the interview loop's questions aloud.
+    let voice = InterviewVoice()
+
+    /// True while the hands-free loop runs: each saved answer speaks the next
+    /// question and restarts recording by itself.
+    private(set) var isInterviewing = false
+    /// The question currently being read aloud.
+    private(set) var askedQuestion: FollowUpQuestion?
 
     private let store: MemoryStore
     private let transcription: TranscriptionService
     private let extraction: ExtractionService
     /// When a memory is told about a specific photo or person, it attaches to
     /// that. In free dictation this is nil and the subject is inferred from the
-    /// speech.
-    let target: Subject?
+    /// speech. During an interview this moves to wherever the first memory
+    /// landed, so every answer stays in the same place.
+    private(set) var target: Subject?
     /// The question being answered. Marked answered only once the memory has
     /// actually been saved — an open question is a reason to come back to the
-    /// app, and it must not be cleared by a mere tap.
-    let question: FollowUpQuestion?
+    /// app, and it must not be cleared by a mere tap. During an interview this
+    /// is the question most recently asked aloud.
+    private(set) var question: FollowUpQuestion?
+    /// What the screen was opened with. `target` and `question` move during an
+    /// interview, but presentation decisions (a modal's close button) must not
+    /// move with them.
+    let initialTarget: Subject?
+    private let initialQuestion: FollowUpQuestion?
 
     init(
         store: MemoryStore,
@@ -94,6 +113,8 @@ final class TellViewModel {
         self.extraction = extraction
         self.target = target
         self.question = question
+        self.initialTarget = target
+        self.initialQuestion = question
     }
 
     // MARK: - Recording
@@ -113,8 +134,15 @@ final class TellViewModel {
 
     func stopAndProcess() async {
         guard let url = recorder.stop() else {
-            // A recording under a second is an accident, not a memory.
-            phase = .idle
+            // A recording under a second is an accident, not a memory. In the
+            // interview loop it is also the natural "I have nothing to add":
+            // land on the last result, not on the empty idle screen.
+            if isInterviewing {
+                leaveInterview()
+                phase = .done
+            } else {
+                phase = .idle
+            }
             return
         }
         let duration = recorder.elapsed
@@ -126,13 +154,75 @@ final class TellViewModel {
             // A quota must not reject a recording. The audio is irreplaceable
             // and the transcription is replaceable: it is done when the minutes
             // reset or the family goes paid. See docs/ARCHITECTURE.md §7.
+            // Without a transcript there is no next question either, so an
+            // interview ends here — with the answer safe.
+            leaveInterview()
             saveAudioOnly(audioURL: url, duration: duration)
             phase = .savedWithoutTranscript
         } catch {
             // The same applies to a network error: keep the audio, text later.
+            leaveInterview()
             saveAudioOnly(audioURL: url, duration: duration)
             phase = .savedWithoutTranscript
         }
+    }
+
+    // MARK: - Interview loop
+
+    /// Starts the hands-free loop from the result screen: the top follow-up
+    /// question is read aloud, the answer is recorded, and the answer's own
+    /// extraction yields the next question. One tap opts in; after that the
+    /// hands stay in the lap until "Riittää tältä erää".
+    ///
+    /// Opt-in rather than automatic on purpose. A result screen that starts
+    /// talking by itself would startle exactly the user this app is for, and
+    /// the name-correction moment needs a calm screen more than the loop needs
+    /// one saved tap.
+    func beginInterview() async {
+        guard phase == .done, let next = newQuestions.first else { return }
+        isInterviewing = true
+        await ask(next)
+    }
+
+    private func ask(_ next: FollowUpQuestion) async {
+        askedQuestion = next
+        // The answer is saved through the same path an ordinary answered
+        // question takes: it lands on the same subject, and saving it marks
+        // the spoken question answered.
+        question = next
+        if let placedSubject { target = placedSubject }
+        phase = .asking
+
+        // With VoiceOver the app must not speak over the screen reader, and
+        // auto-starting the microphone would record the reader's voice. The
+        // question gets accessibility focus; the record button answers it.
+        guard !UIAccessibility.isVoiceOverRunning else { return }
+
+        let spokenToEnd = await voice.speak(next.text)
+        guard spokenToEnd, isInterviewing, phase == .asking else { return }
+        await startRecording()
+    }
+
+    /// The record button on the asking screen: answer before the question has
+    /// finished playing. Also the entire path when VoiceOver is running.
+    func answerNow() async {
+        guard phase == .asking else { return }
+        voice.stop()
+        await startRecording()
+    }
+
+    /// Ends the loop and returns to the last result. The question that was
+    /// being asked stays open — an ended interview must not eat a question
+    /// nobody answered.
+    func endInterview() {
+        voice.stop()
+        leaveInterview()
+        if phase == .asking { phase = .done }
+    }
+
+    private func leaveInterview() {
+        isInterviewing = false
+        askedQuestion = nil
     }
 
     // MARK: - Typing
@@ -167,8 +257,17 @@ final class TellViewModel {
             result = extracted
 
             save(extracted, transcript: text, audioURL: audioURL, duration: duration)
-            phase = .done
+            if isInterviewing, let next = newQuestions.first {
+                // The loop feeds itself: this answer's extraction produced the
+                // next questions. No result screen between rounds — proposals
+                // pile up unconfirmed and are handled when the loop ends.
+                await ask(next)
+            } else {
+                leaveInterview()
+                phase = .done
+            }
         } catch {
+            leaveInterview()
             phase = .failed("Muiston järjestely ei onnistunut. Voit yrittää uudelleen.")
         }
     }
@@ -384,6 +483,10 @@ final class TellViewModel {
     }
 
     func reset() {
+        voice.stop()
+        leaveInterview()
+        target = initialTarget
+        question = initialQuestion
         phase = .idle
         draft = ""
         transcript = nil

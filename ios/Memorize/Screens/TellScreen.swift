@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The app's most important screen. One button, no menus, no settings.
 struct TellScreen: View {
@@ -39,6 +40,27 @@ struct TellScreen: View {
             if UserDefaults.standard.string(forKey: "screen") == "write" {
                 created.beginWriting()
             }
+            // Demo and screenshot aid: `-screen interview` runs a canned
+            // memory through the stub pipeline and enters the interview loop,
+            // finishing the first spoken round by itself. One launch argument
+            // shows the whole loop hands-free — it is also how the loop can be
+            // verified and filmed without a second pair of hands.
+            if UserDefaults.standard.string(forKey: "screen") == "interview" {
+                Task {
+                    created.beginWriting()
+                    created.draft = StubTranscriptionService.samples[0]
+                    await created.submitTyped()
+                    await created.beginInterview()
+                    // beginInterview returns once the question has been spoken
+                    // and the answer is recording. Give the waveform a moment,
+                    // then finish the round so the loop visibly reaches its
+                    // second question.
+                    try? await Task.sleep(for: .seconds(3))
+                    if created.phase == .recording {
+                        await created.stopAndProcess()
+                    }
+                }
+            }
             #endif
             model = created
         }
@@ -56,6 +78,8 @@ struct TellScreen: View {
                 WritingView(model: model)
             case .transcribing, .organizing:
                 ProcessingView(phase: model.phase)
+            case .asking:
+                AskingView(model: model)
             case .done:
                 ResultView(model: model)
             case .savedWithoutTranscript:
@@ -73,7 +97,7 @@ struct TellScreen: View {
     private func hidesTabBar(_ phase: TellViewModel.Phase) -> Bool {
         switch phase {
         case .idle, .done, .savedWithoutTranscript, .failed: false
-        case .recording, .writing, .transcribing, .organizing: true
+        case .recording, .writing, .transcribing, .organizing, .asking: true
         }
     }
 }
@@ -82,9 +106,21 @@ struct TellScreen: View {
 
 private struct IdleView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(\.dynamicTypeSize) private var typeSize
     let model: TellViewModel
 
     @State private var answering: FollowUpQuestion?
+
+    /// The reassurance is what makes an elderly person willing to start talking,
+    /// so it is not dropped at large text sizes — it is shortened. In full it ran
+    /// to five lines at the largest size and pushed the record button, the one
+    /// thing this screen exists for, below the fold where it has to be found by
+    /// scrolling. The first sentence carries the permission; the rest is detail.
+    private var intro: String {
+        typeSize.isAccessibilitySize
+            ? "Puhu ihan rauhassa ja vapaasti."
+            : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
+    }
 
     /// Open questions appear only in free dictation. When telling about a photo
     /// or a person the screen already has a subject, and it should not be
@@ -101,27 +137,63 @@ private struct IdleView: View {
     }
 
     var body: some View {
+        // Scrolling rather than a plain stack. At the largest text size this
+        // screen is taller than the phone, and without a scroll view SwiftUI
+        // compresses it: the title left the screen, "Paina ja ala puhua"
+        // truncated to an ellipsis, and the open question disappeared under the
+        // tab bar. The minimum height keeps everything centred at normal sizes,
+        // which is where this screen spends most of its life.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .sheet(item: $answering) { question in
+            NavigationStack {
+                TellScreen(
+                    target: question.subjectID.flatMap { store.subject(id: $0) },
+                    question: question
+                )
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Sulje") { answering = nil }
+                    }
+                }
+            }
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 28) {
-            Spacer()
+            Spacer(minLength: 0)
 
             Text(title)
                 .font(.largeTitle.weight(.semibold))
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
-            Text("Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.")
+            Text(intro)
                 .elderBody()
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            Spacer()
+            Spacer(minLength: 0)
 
             RecordButton(isRecording: false) {
                 Task { await model.startRecording() }
             }
 
+            // fixedSize on every label below: under vertical pressure SwiftUI
+            // truncates a Text before it shrinks anything else, and a truncated
+            // instruction is worse than a longer screen.
             Text("Paina ja ala puhua")
                 .font(.headline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             // An open question is a reason to come back to the app. It is also
             // an easier start than a blank button: telling "something" is hard
@@ -131,6 +203,8 @@ private struct IdleView: View {
                     Text("Tai vastaa aiempaan kysymykseen")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     ForEach(openQuestions) { question in
                         Button { answering = question } label: {
@@ -159,24 +233,12 @@ private struct IdleView: View {
             } label: {
                 Label("Kirjoita sen sijaan", systemImage: "keyboard")
                     .font(.body.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .elderTapTarget()
             }
 
-            Spacer()
-        }
-        .padding(Elder.screenPadding)
-        .sheet(item: $answering) { question in
-            NavigationStack {
-                TellScreen(
-                    target: question.subjectID.flatMap { store.subject(id: $0) },
-                    question: question
-                )
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Sulje") { answering = nil }
-                    }
-                }
-            }
+            Spacer(minLength: 0)
         }
     }
 }
@@ -184,6 +246,7 @@ private struct IdleView: View {
 // MARK: - Typing
 
 private struct WritingView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Bindable var model: TellViewModel
     @FocusState private var isFocused: Bool
 
@@ -191,10 +254,58 @@ private struct WritingView: View {
         model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private var heading: String {
+        model.target == nil ? "Kirjoita muisto" : "Kirjoita tästä muisto"
+    }
+
     var body: some View {
+        // The height is pinned to what the container actually offers rather than
+        // left to `maxHeight: .infinity`.
+        //
+        // An editor that asks for infinite height reaches under the keyboard, and
+        // iOS answers by shoving the whole view upwards — the heading went out
+        // through the status bar and the first line of the placeholder went with
+        // it. GeometryReader measures the space left *after* the keyboard has
+        // taken its share, so nothing overflows and nothing is displaced.
+        GeometryReader { proxy in
+            editor
+                .padding(Elder.screenPadding)
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+        }
+        // The actions live on the keyboard, not under the editor. Stacked below
+        // they were pushed off the bottom at the largest text size: the memory
+        // could be written but not saved. Attached to the keyboard they cannot be
+        // displaced, because they travel with it.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Button("Peruuta") {
+                    isFocused = false
+                    model.cancelWriting()
+                }
+
+                Spacer()
+
+                Button("Tallenna") {
+                    isFocused = false
+                    Task { await model.submitTyped() }
+                }
+                .font(.body.weight(.semibold))
+                .disabled(isEmpty)
+            }
+        }
+        .onAppear { isFocused = true }
+    }
+
+    private var editor: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text(model.target == nil ? "Kirjoita muisto" : "Kirjoita tästä muisto")
-                .font(.title.weight(.semibold))
+            // The heading is dropped at accessibility sizes: with the keyboard up
+            // there is barely a screen left, and the placeholder already says what
+            // to do. VoiceOver still hears it — it is on the editor below.
+            if !typeSize.isAccessibilitySize {
+                Text(heading)
+                    .font(.title.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             ZStack(alignment: .topLeading) {
                 // TextEditor has no placeholder of its own.
@@ -212,33 +323,12 @@ private struct WritingView: View {
                     .lineSpacing(Elder.lineSpacing)
                     .scrollContentBackground(.hidden)
                     .focused($isFocused)
+                    .accessibilityLabel(heading)
             }
             .frame(maxHeight: .infinity)
             .padding(10)
             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
-
-            HStack(spacing: 12) {
-                Button("Peruuta") {
-                    isFocused = false
-                    model.cancelWriting()
-                }
-                .controlSize(.large)
-                .elderTapTarget()
-
-                Spacer()
-
-                Button("Tallenna") {
-                    isFocused = false
-                    Task { await model.submitTyped() }
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(isEmpty)
-                .elderTapTarget()
-            }
         }
-        .padding(Elder.screenPadding)
-        .onAppear { isFocused = true }
     }
 }
 
@@ -276,6 +366,8 @@ private struct RecordingView: View {
             Text("Paina kun olet valmis")
                 .font(.headline)
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
         }
@@ -362,6 +454,92 @@ private struct ProcessingView: View {
     }
 }
 
+// MARK: - Asking (interview loop)
+
+/// The app is reading a follow-up question aloud. Same geometry as
+/// RecordingView — the big button stays in the same place, because
+/// mid-conversation is the wrong moment to relearn a layout.
+private struct AskingView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let model: TellViewModel
+
+    @AccessibilityFocusState private var questionFocused: Bool
+
+    /// VoiceOver users answer with the button; everyone else can just start
+    /// talking when the voice stops. Shortened at accessibility sizes for the
+    /// same reason as IdleView's intro: the question and the button matter
+    /// more than the full instruction.
+    private var hint: String {
+        if UIAccessibility.isVoiceOverRunning { return "Paina nauhoitusnappia ja vastaa." }
+        return typeSize.isAccessibilitySize
+            ? "Voit vastata puhumalla."
+            : "Voit vastata puhumalla heti kun kysymys loppuu."
+    }
+
+    private var buttonCaption: String {
+        UIAccessibility.isVoiceOverRunning
+            ? "Paina ja vastaa"
+            : "Paina jos haluat vastata heti"
+    }
+
+    var body: some View {
+        // The same scroll treatment as IdleView: at the largest text size the
+        // stack is taller than the phone, and truncating the question the
+        // voice is reading aloud would be absurd.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+        .onAppear { questionFocused = true }
+    }
+
+    private var content: some View {
+        VStack(spacing: 28) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "speaker.wave.2.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.tint)
+                .symbolEffect(.variableColor.iterative, isActive: model.voice.isSpeaking)
+                .accessibilityHidden(true)
+
+            Text(model.askedQuestion?.text ?? "")
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .lineSpacing(Elder.lineSpacing)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityFocused($questionFocused)
+
+            Text(hint)
+                .elderBody()
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Spacer(minLength: 0)
+
+            RecordButton(isRecording: false) {
+                Task { await model.answerNow() }
+            }
+
+            Text(buttonCaption)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Button("Riittää tältä erää") { model.endInterview() }
+                .controlSize(.large)
+                .elderTapTarget()
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 // MARK: - Result
 
 private struct ResultView: View {
@@ -404,7 +582,10 @@ private struct ResultView: View {
 
                     // When telling about a photo the screen is presented
                     // modally, so there has to be a way back to the photo.
-                    if model.target != nil {
+                    // `initialTarget`, not `target`: an interview moves the
+                    // latter even in free dictation, and the tab screen must
+                    // not grow a close button that closes nothing.
+                    if model.initialTarget != nil {
                         Button("Valmis") { dismiss() }
                             .controlSize(.large)
                             .frame(maxWidth: .infinity)
@@ -500,6 +681,26 @@ private struct ResultView: View {
                 }
                 .padding(.vertical, 4)
             }
+
+            // One tap turns the questions into a spoken conversation: the app
+            // asks aloud, listens, and asks again. See the interview loop in
+            // TellViewModel.
+            Button {
+                Task { await model.beginInterview() }
+            } label: {
+                Label("Jatketaan jutellen", systemImage: "waveform.and.mic")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .elderTapTarget()
+            .padding(.top, 4)
+
+            Text("Kysyn nämä ääneen, ja voit vastata puhumalla.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
