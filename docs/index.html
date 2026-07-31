@@ -38,8 +38,15 @@
     font-size: 1.0625rem;
     line-height: 1.7;
     -webkit-text-size-adjust: 100%;
+    /* A long word must break rather than push the page sideways at large text
+       sizes. The primary user of the app is 80; the page it is announced on
+       does not get to be the exception. */
+    overflow-wrap: break-word;
   }
-  .wrap { max-width: 42rem; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+  /* Horizontal padding is deliberately not in rem. rem scales with the text
+     size, so at 200% the insets ate the line width and the page scrolled
+     sideways on a 320 px screen. */
+  .wrap { max-width: 42rem; margin: 0 auto; padding: 3rem clamp(16px, 5vw, 24px) 4rem; }
   h1, h2 { font-family: Charter, Georgia, "Times New Roman", serif; line-height: 1.2; }
   h1 { margin: 0; font-size: 0; }
   h1 img { width: min(340px, 80%); height: auto; display: block; }
@@ -51,7 +58,7 @@
   .lede { font-size: 1.25rem; margin-top: 1.75rem; }
   .moment {
     margin: 0 0 1.25rem;
-    padding: 1.5rem 1.75rem;
+    padding: 1.5rem clamp(16px, 5vw, 28px);
     background: var(--card);
     border-left: 4px solid var(--terracotta);
     font-family: Charter, Georgia, "Times New Roman", serif;
@@ -60,7 +67,7 @@
   .moment p:last-child { margin-bottom: 0; }
   .video {
     margin: 1.5rem 0;
-    padding: 2.5rem 1.5rem;
+    padding: 2.5rem clamp(12px, 4vw, 24px);
     border: 2px dashed var(--rule);
     border-radius: 12px;
     text-align: center;
