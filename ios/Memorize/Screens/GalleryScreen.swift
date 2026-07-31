@@ -9,10 +9,18 @@ import SwiftUI
 struct GalleryScreen: View {
     @Environment(MemoryStore.self) private var store
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     @State private var picked: [PhotosPickerItem] = []
     @State private var isImporting = false
 
-    private let columns = [GridItem(.adaptive(minimum: 110), spacing: 10)]
+    /// Bigger tiles when the text is bigger. The memory-count badge scales with
+    /// Dynamic Type, and at accessibility sizes it was clipped by a 110 pt tile —
+    /// the count simply ran off the edge. Larger photographs are the right answer
+    /// for this user anyway; the grid just holds fewer per row.
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 170 : 110), spacing: 10)]
+    }
 
     private var photos: [Subject] { store.subjects(of: .photo) }
     private var events: [Subject] { store.subjects(of: .event) }
@@ -163,6 +171,11 @@ private struct PhotoTile: View {
             )
             .font(.caption.weight(.semibold))
             .labelStyle(.titleAndIcon)
+            // Bounded growth: the badge sits on top of a photograph, so past a
+            // point it stops being a label and starts being the tile. The count
+            // is also in the tile's accessibility label and on the detail screen,
+            // so nothing is only available here.
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .background(.ultraThinMaterial, in: Capsule())
