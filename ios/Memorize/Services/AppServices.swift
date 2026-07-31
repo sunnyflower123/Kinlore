@@ -119,6 +119,12 @@ struct RemoteExtractionService: ExtractionService {
 
     private struct Request: Encodable {
         let transcript: String
+        let corrections: [Correction]
+
+        struct Correction: Encodable {
+            let from: String
+            let to: String
+        }
     }
 
     /// Vastaa backendin `ExtractionResult`ia. Vuodet kulkevat kokonaislukuina,
@@ -143,11 +149,14 @@ struct RemoteExtractionService: ExtractionService {
         let questions: [String]
     }
 
-    func extract(transcript: String) async throws -> ExtractionResult {
+    func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult {
         let reply: Reply = try await post(
             "extract",
             baseURL: baseURL,
-            body: Request(transcript: transcript),
+            body: Request(
+                transcript: transcript,
+                corrections: corrections.map { .init(from: $0.from, to: $0.to) }
+            ),
             timeout: 90
         )
 

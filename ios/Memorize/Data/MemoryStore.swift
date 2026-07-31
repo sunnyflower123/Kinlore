@@ -100,6 +100,47 @@ final class MemoryStore {
         save()
     }
 
+    /// Nimeää kohteen uudelleen. Käytetään kun kertoja korjaa puheentunnistuksen
+    /// väärin kuuleman nimen — se on ainoa hetki jolloin virhe on vielä
+    /// korjattavissa, koska myöhemmin kukaan ei tiedä mitä nauhalla sanottiin.
+    ///
+    /// Jos samanniminen kohde on jo olemassa, korjattu sulautuu siihen: kertoja
+    /// tarkoitti samaa ihmistä, ja kaksi korttia olisi juuri se kaksoiskappale
+    /// jota koko perusmuotovaatimus yrittää estää.
+    func rename(subjectID: String, to newTitle: String) {
+        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let index = subjects.firstIndex(where: { $0.id == subjectID })
+        else { return }
+
+        let kind = subjects[index].kind
+        if let existing = subjects.first(where: {
+            $0.id != subjectID && $0.kind == kind &&
+                $0.title.compare(trimmed, options: .caseInsensitive) == .orderedSame
+        }) {
+            for i in memories.indices where memories[i].subjectID == subjectID {
+                memories[i].subjectID = existing.id
+            }
+            for i in memories.indices {
+                memories[i].mentionedSubjectIDs = memories[i].mentionedSubjectIDs.map {
+                    $0 == subjectID ? existing.id : $0
+                }
+            }
+            subjects.remove(at: index)
+        } else {
+            subjects[index].title = trimmed
+        }
+        save()
+    }
+
+    /// Päivittää muiston siivotun tekstin. `rawTranscript` ei muutu koskaan —
+    /// alkuperäinen purku on todiste siitä mitä nauhalla oikeasti sanottiin.
+    func updateBody(memoryID: String, body: String) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
+        memories[index].body = body
+        save()
+    }
+
     func confirm(subjectID: String) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].confirmed = true

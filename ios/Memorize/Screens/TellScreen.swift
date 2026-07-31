@@ -371,10 +371,12 @@ private struct ResultView: View {
 
     private var proposalSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Löysin nämä — ovatko oikein?")
+            Text("Kuulinko nimet oikein?")
                 .font(.headline)
 
-            Text("Tekoäly ehdottaa, sinä vahvistat. Emme lisää sukuun ketään jota et ole hyväksynyt.")
+            // Puheentunnistus erehtyy erisnimissä noin joka kolmannessa, ja
+            // tämä on ainoa hetki jolloin kertoja vielä muistaa mitä sanoi.
+            Text("Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -382,9 +384,34 @@ private struct ResultView: View {
             ForEach(model.proposals) { subject in
                 ProposalRow(
                     subject: subject,
+                    text: Binding(
+                        get: { model.editedNames[subject.id] ?? subject.title },
+                        set: { model.editedNames[subject.id] = $0 }
+                    ),
                     onConfirm: { model.confirm(subject) },
                     onReject: { model.reject(subject) }
                 )
+            }
+
+            if !model.pendingCorrections.isEmpty {
+                Button {
+                    Task { await model.applyCorrections() }
+                } label: {
+                    if model.isCorrecting {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else {
+                        // Kerrotaan että korjaus ulottuu myös muiston tekstiin
+                        // — muuten käyttäjä luulee korjaavansa vain kortin.
+                        Label("Korjaa nimet myös muistoon", systemImage: "checkmark.circle")
+                            .font(.body.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(model.isCorrecting)
+                .elderTapTarget()
             }
         }
     }
@@ -437,8 +464,14 @@ private struct MemoryCard: View {
 
 private struct ProposalRow: View {
     let subject: Subject
+    @Binding var text: String
     let onConfirm: () -> Void
     let onReject: () -> Void
+
+    private var isEdited: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .compare(subject.title, options: .caseInsensitive) != .orderedSame
+    }
 
     var body: some View {
         HStack(spacing: 14) {
@@ -448,11 +481,18 @@ private struct ProposalRow: View {
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(subject.title)
+                // Kenttä eikä teksti: nimen korjaaminen on tämän ruudun
+                // tarkoitus, joten sen pitää olla ilmeistä ilman että mitään
+                // täytyy painaa ensin.
+                TextField("Nimi", text: $text)
                     .font(.body.weight(.medium))
-                Text(subject.kind.label)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+
+                Text(isEdited ? "\(subject.kind.label) · korjattu" : subject.kind.label)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isEdited ? Color.accentColor : Color.secondary)
             }
 
             Spacer()

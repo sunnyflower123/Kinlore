@@ -82,6 +82,25 @@ TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdott
 
 Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan name-kenttä on perusmuodossa.`
 
+/// Lisäohje kun käyttäjä on korjannut puheentunnistuksen kuulemat nimet.
+///
+/// Korjaus on välttämätön, koska puheentunnistus erehtyy erisnimissä noin
+/// joka kolmannessa: mitatussa vertailussa "Sotkamo" kuultiin "Skotlantina" ja
+/// "Eevertti" sanana "edes". Väärä nimi rakentaa väärän henkilön sukupuuhun,
+/// eikä kukaan osaa myöhemmin korjata sitä.
+function correctionInstruction(corrections: Correction[]): string {
+	const list = corrections.map((c) => `"${c.from}" → "${c.to}"`).join(', ')
+	return `
+
+TÄRKEÄÄ — KÄYTTÄJÄN KORJAUKSET: ${list}
+
+Puheentunnistus kuuli nämä nimet väärin ja kertoja on korjannut ne. Korjaukset ovat AUKTORITEETTI: käytä niitä sellaisenaan äläkä palauta vanhaa muotoa missään kohdassa.
+
+Korjaa nimi myös muiston tekstiin, ja TAIVUTA SE OIKEIN asiayhteyteen. Jos teksti sanoo "Skotlannissa" ja korjaus on "Sotkamo", tekstiin tulee "Sotkamossa" — ei "Sotkamo" perusmuodossa keskelle lausetta. Tämä on koko korjauksen tarkoitus: pelkkä merkkijonon vaihto ei osu taivutettuun muotoon.`
+}
+
+export type Correction = { from: string; to: string }
+
 export type ExtractionResult = {
 	body: string
 	mentions: { name: string; kind: 'person' | 'place'; confidence: number }[]
@@ -137,9 +156,16 @@ function parseStructured(raw: string): ExtractionResult {
 	throw new Error('Jäsennys palautti kelvottoman JSONin')
 }
 
-export async function extract(env: Env, transcript: string): Promise<ExtractionResult> {
+export async function extract(
+	env: Env,
+	transcript: string,
+	corrections: Correction[] = [],
+): Promise<ExtractionResult> {
+	const system =
+		corrections.length > 0 ? SYSTEM_PROMPT + correctionInstruction(corrections) : SYSTEM_PROMPT
+
 	const messages: Message[] = [
-		{ role: 'system', content: SYSTEM_PROMPT },
+		{ role: 'system', content: system },
 		{ role: 'user', content: `Jäsennä tämä muisto:\n\n${transcript}` },
 	]
 

@@ -133,6 +133,23 @@ const CASES = [
     expect: { places: ['Sotkamo'], exactPlaces: true },
   },
   {
+    name: 'korjaus taivutetaan oikein tekstiin',
+    why:
+      'Puheentunnistus erehtyy erisnimissä noin joka kolmannessa. Kertojan ' +
+      'korjaus ei riitä kohteen nimeen: muiston teksti sanoisi yhä ' +
+      '"Skotlannissa". Merkkijonon korvaus ei osu taivutettuun muotoon, joten ' +
+      'malli hoitaa taivutuksen — tämä testi lukitsee sen.',
+    transcript:
+      'Hilma jäi Skotlantiin hoitamaan taloa, ja Skotlannissa oli iso navetta.',
+    corrections: [{ from: 'Skotlanti', to: 'Sotkamo' }],
+    expect: {
+      places: ['Sotkamo'],
+      forbidPlaces: ['Skotlanti'],
+      bodyIncludes: ['Sotkamoon', 'Sotkamossa'],
+      bodyExcludes: ['Skotlan'],
+    },
+  },
+  {
     name: 'kysymyksiä on tasan kolme',
     why: 'Neljä ahdistaa iäkästä käyttäjää, kaksi ei vie kertomusta eteenpäin.',
     transcript: 'Toivo otti sen kuvan mökin rannassa.',
@@ -191,6 +208,16 @@ function check(result, expect) {
   if (expect.questionCount !== undefined && result.questions.length !== expect.questionCount) {
     problems.push(`kysymyksiä odotettiin ${expect.questionCount}, saatiin ${result.questions.length}`)
   }
+  for (const needle of expect.bodyIncludes ?? []) {
+    if (!result.body.includes(needle)) {
+      problems.push(`tekstistä puuttuu "${needle}": "${result.body.slice(0, 120)}"`)
+    }
+  }
+  for (const needle of expect.bodyExcludes ?? []) {
+    if (result.body.includes(needle)) {
+      problems.push(`teksti sisältää yhä "${needle}": "${result.body.slice(0, 120)}"`)
+    }
+  }
   // Muiston teksti ei saa kadota: se on koko arkiston sisältö.
   if (!result.body || result.body.trim().length === 0) problems.push('body on tyhjä')
 
@@ -222,7 +249,10 @@ for (const testCase of CASES) {
     const res = await fetch(`${API}/extract`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ transcript: testCase.transcript }),
+      body: JSON.stringify({
+        transcript: testCase.transcript,
+        corrections: testCase.corrections ?? [],
+      }),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     result = await res.json()

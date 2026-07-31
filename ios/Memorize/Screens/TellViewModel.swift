@@ -35,6 +35,26 @@ final class TellViewModel {
     /// Tallennetun muiston kesto, tai nil jos se kirjoitettiin. Tulosruutu
     /// näyttää äänen toiston vain kun ääntä on.
     private(set) var savedAudioDuration: TimeInterval?
+    private(set) var savedMemoryID: String?
+
+    /// Kertojan kirjoittamat nimet, avaimena kohteen tunniste.
+    /// Puheentunnistus erehtyy erisnimissä noin joka kolmannessa, ja tämä on
+    /// ainoa hetki jolloin virhe on korjattavissa — kertoja muistaa vielä mitä
+    /// sanoi. Viikon päästä kukaan ei tiedä oliko se Sotkamo vai Skotlanti.
+    var editedNames: [String: String] = [:]
+    private(set) var isCorrecting = false
+
+    /// Ne muokkaukset jotka oikeasti muuttavat jotain.
+    var pendingCorrections: [NameCorrection] {
+        proposals.compactMap { subject in
+            guard let edited = editedNames[subject.id]?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                !edited.isEmpty,
+                edited.compare(subject.title, options: .caseInsensitive) != .orderedSame
+            else { return nil }
+            return NameCorrection(from: subject.title, to: edited)
+        }
+    }
 
     let recorder = AudioRecorder()
 
@@ -175,6 +195,7 @@ final class TellViewModel {
         )
         store.add(memory)
         savedAudioDuration = duration
+        savedMemoryID = memory.id
 
         let questions = extracted.questions.map {
             FollowUpQuestion(subjectID: home.id, text: $0)
@@ -238,6 +259,54 @@ final class TellViewModel {
         }
     }
 
+    // MARK: - Nimien korjaus
+
+    /// Lähettää korjatut nimet takaisin jäsennykseen.
+    ///
+    /// Pelkkä kohteen uudelleennimeäminen ei riitä: muiston teksti sanoisi yhä
+    /// "Skotlannissa" vaikka paikkakortissa lukisi "Sotkamo". Suomen taivutuksen
+    /// takia merkkijonon korvaus ei osu taivutettuun muotoon, joten teksti
+    /// pyydetään uudelleen mallilta joka osaa taivuttaa korjatun nimen oikein.
+    func applyCorrections() async {
+        let corrections = pendingCorrections
+        guard !corrections.isEmpty, let transcript, let memoryID = savedMemoryID else { return }
+
+        isCorrecting = true
+        defer { isCorrecting = false }
+
+        // Kohteiden nimet korjataan aina, myös jos tekstin uudelleenjäsennys
+        // epäonnistuu. Oikea nimi sukupuussa on tärkeämpi kuin yhtenäinen
+        // sanamuoto muiston tekstissä.
+        for subject in proposals {
+            if let edited = editedNames[subject.id]?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !edited.isEmpty {
+                store.rename(subjectID: subject.id, to: edited)
+            }
+        }
+
+        do {
+            let corrected = try await extraction.extract(
+                transcript: transcript,
+                corrections: corrections
+            )
+            store.updateBody(memoryID: memoryID, body: corrected.body)
+            result = corrected
+        } catch {
+            // Nimet on jo korjattu, joten epäonnistuminen menettää vain tekstin
+            // yhtenäisyyden. Sitä ei kannata näyttää virheenä.
+            print("[tell] tekstin uudelleenjäsennys epäonnistui: \(error.localizedDescription)")
+        }
+
+        // Korjatut kohteet ovat kertojan itsensä kirjoittamia, joten ne ovat
+        // vahvistettuja. Erillinen vahvistuspyyntö olisi saman asian kysymistä
+        // kahdesti.
+        for subject in proposals where editedNames[subject.id] != nil {
+            store.confirm(subjectID: subject.id)
+        }
+        proposals = proposals.filter { editedNames[$0.id] == nil }
+        editedNames = [:]
+    }
+
     // MARK: - Ehdotusten käsittely
 
     func confirm(_ subject: Subject) {
@@ -259,5 +328,7 @@ final class TellViewModel {
         proposals = []
         newQuestions = []
         savedAudioDuration = nil
+        savedMemoryID = nil
+        editedNames = [:]
     }
 }

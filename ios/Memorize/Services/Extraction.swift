@@ -27,8 +27,21 @@ struct MentionedEntity: Equatable, Hashable {
     var confidence: Double
 }
 
+/// Kertojan tekemä nimenkorjaus. Puheentunnistus erehtyy erisnimissä noin joka
+/// kolmannessa, ja väärä nimi rakentaa väärän henkilön sukupuuhun.
+struct NameCorrection: Equatable, Hashable {
+    let from: String
+    let to: String
+}
+
 protocol ExtractionService {
-    func extract(transcript: String) async throws -> ExtractionResult
+    func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult
+}
+
+extension ExtractionService {
+    func extract(transcript: String) async throws -> ExtractionResult {
+        try await extract(transcript: transcript, corrections: [])
+    }
 }
 
 // MARK: - Vaatimus oikealle toteutukselle
@@ -57,10 +70,19 @@ struct StubExtractionService: ExtractionService {
     /// oikeissa olosuhteissa eikä välähdyksenä.
     var simulatedDelay: Duration = .milliseconds(2200)
 
-    func extract(transcript: String) async throws -> ExtractionResult {
+    func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult {
         try await Task.sleep(for: simulatedDelay)
 
-        let names = Self.properNouns(in: transcript)
+        // Stub ei osaa taivuttaa, joten se korvaa vain perusmuodon. Oikea
+        // toteutus hoitaa taivutuksen — tässä riittää että korjaus näkyy.
+        var text = transcript
+        for correction in corrections {
+            text = text.replacingOccurrences(of: correction.from, with: correction.to)
+        }
+
+        let names = Self.properNouns(in: text).map { name -> String in
+            corrections.first { $0.from == name }?.to ?? name
+        }
         let mentions = names.map {
             // Karkea jako: paikannimet taipuvat usein -ssa/-lla-päätteillä.
             MentionedEntity(
@@ -71,9 +93,9 @@ struct StubExtractionService: ExtractionService {
         }
 
         return ExtractionResult(
-            body: Self.tidy(transcript),
+            body: Self.tidy(text),
             mentions: mentions,
-            dateHint: Self.dateHint(in: transcript),
+            dateHint: Self.dateHint(in: text),
             questions: Self.questions(for: mentions)
         )
     }

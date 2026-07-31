@@ -76,7 +76,10 @@ export default {
 			}
 
 			case '/extract': {
-				let payload: { transcript?: string }
+				let payload: {
+					transcript?: string
+					corrections?: { from?: string; to?: string }[]
+				}
 				try {
 					payload = await request.json()
 				} catch {
@@ -85,8 +88,15 @@ export default {
 				const transcript = payload.transcript?.trim()
 				if (!transcript) return json({ error: 'missing_transcript' }, 400)
 
+				// Tyhjät ja muuttumattomat korjaukset siivotaan pois, jottei
+				// promptiin päädy kohinaa joka vain sekoittaa mallia.
+				const corrections = (payload.corrections ?? [])
+					.map((c) => ({ from: (c.from ?? '').trim(), to: (c.to ?? '').trim() }))
+					.filter((c) => c.from && c.to && c.from !== c.to)
+					.slice(0, 20)
+
 				try {
-					return json(await extract(env, transcript))
+					return json(await extract(env, transcript, corrections))
 				} catch (err) {
 					return failure(err, 'extract')
 				}
