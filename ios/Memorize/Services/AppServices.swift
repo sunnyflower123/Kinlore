@@ -37,13 +37,34 @@ enum AppServices {
 enum RemoteError: LocalizedError {
     case badStatus(Int)
     case emptyResult
+    /// Kuukauden AI-minuutit tai kuvaraja täynnä. Erillinen tapaus, koska
+    /// tämä EI ole virhe vaan tilanne johon sovelluksella on vastaus:
+    /// nauhoitus tallennetaan silti ja puretaan myöhemmin.
+    case quotaExceeded(kind: String, used: Int, limit: Int)
+
+    var isQuota: Bool {
+        if case .quotaExceeded = self { return true }
+        return false
+    }
 
     var errorDescription: String? {
         switch self {
         case .badStatus(let code): "Palvelin vastasi virheellä \(code)."
         case .emptyResult: "Palvelin ei palauttanut tulosta."
+        case .quotaExceeded(let kind, _, let limit):
+            kind == "photos"
+                ? "Ilmaisessa arkistossa on tilaa \(limit) kuvalle."
+                : "Tämän kuukauden AI-minuutit on käytetty."
         }
     }
+}
+
+/// Palvelimen kiintiövastaus. Omana tyyppinään, koska sisäkkäinen tyyppi ei
+/// kelpaa geneerisessä funktiossa.
+private struct QuotaDenial: Decodable {
+    let kind: String
+    let used: Int
+    let limit: Int
 }
 
 private func post<Response: Decodable>(
@@ -62,6 +83,9 @@ private func post<Response: Decodable>(
 
     let (data, response) = try await URLSession.shared.data(for: request)
     guard let http = response as? HTTPURLResponse else { throw RemoteError.emptyResult }
+    if http.statusCode == 402, let denial = try? JSONDecoder().decode(QuotaDenial.self, from: data) {
+        throw RemoteError.quotaExceeded(kind: denial.kind, used: denial.used, limit: denial.limit)
+    }
     guard (200 ..< 300).contains(http.statusCode) else {
         throw RemoteError.badStatus(http.statusCode)
     }

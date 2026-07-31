@@ -183,11 +183,14 @@ CREATE INDEX idx_question_seq  ON prompt_question(family_id, seq);
 
 -- Ilmaiskäytön mittarit. Kuvamäärä ja AI-minuutit rajataan; muistojen
 -- kirjoittamista ei koskaan — se on koko tuotteen arvo.
+-- Vain AI-minuutit ovat kuukausikohtaisia. Kuvamäärä lasketaan suoraan
+-- subject-taulusta: raja on kokonaismäärä eikä kuukausiraja, poistettu kuva
+-- vapauttaa paikan, ja erillinen laskuri ajautuisi väistämättä eri tahtiin
+-- todellisuuden kanssa.
 CREATE TABLE usage_counter (
   family_id     TEXT NOT NULL REFERENCES family(id) ON DELETE CASCADE,
-  period        TEXT NOT NULL,        -- 'YYYY-MM'
+  period        TEXT NOT NULL,        -- 'YYYY-MM' UTC
   ai_seconds    INTEGER NOT NULL DEFAULT 0,
-  photos_total  INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (family_id, period)
 );
 

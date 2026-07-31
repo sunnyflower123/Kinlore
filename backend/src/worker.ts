@@ -8,6 +8,7 @@ import { authenticate } from './auth'
 import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
 import { download, upload } from './media'
 import { extract } from './extract'
+import { checkAISeconds, checkPhotoCount, recordAISeconds, usage } from './quota'
 import { pull, push } from './sync'
 import { transcribe } from './transcribe'
 
@@ -120,6 +121,11 @@ export default {
 			return json(await createInvite(env, session))
 		}
 
+		if (url.pathname === '/usage' && request.method === 'GET') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			return json(await usage(env, session))
+		}
+
 		if (url.pathname === '/sync' && request.method === 'GET') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			const since = Number(url.searchParams.get('since') ?? '0')
@@ -144,6 +150,12 @@ export default {
 		if (url.pathname === '/media' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			const kind = url.searchParams.get('kind') ?? 'photo'
+			if (kind === 'photo') {
+				const denial = await checkPhotoCount(env, session)
+				if (denial) return json(denial, 402)
+			}
+			// Ääntä ei rajoiteta kuvarajalla: alkuperäinen ääni ladataan aina,
+			// myös ilmaisella tasolla, koska se on tuotteen ydin.
 			try {
 				return await upload(env, session, kind, await request.arrayBuffer())
 			} catch (err) {
@@ -184,6 +196,14 @@ export default {
 					return json({ error: 'audio_too_large' }, 413)
 				}
 
+				if (!session) return json({ error: 'unauthorized' }, 401)
+
+				// Kiintiö tarkistetaan ENNEN kallista kutsua. Jos raja on
+				// täynnä, sovellus tallentaa äänen silti ja purkaa sen
+				// myöhemmin — nauhoitusta ei hylätä.
+				const denial = await checkAISeconds(env, session, payload.seconds ?? 0)
+				if (denial) return json(denial, 402)
+
 				try {
 					const text = await transcribe(
 						env,
@@ -191,6 +211,7 @@ export default {
 						payload.format ?? 'm4a',
 						payload.seconds,
 					)
+					await recordAISeconds(env, session, payload.seconds ?? 0)
 					return json({ text })
 				} catch (err) {
 					return failure(err, 'transcribe')

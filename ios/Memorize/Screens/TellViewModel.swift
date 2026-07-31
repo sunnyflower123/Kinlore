@@ -18,6 +18,9 @@ final class TellViewModel {
         case transcribing
         case organizing
         case done
+        /// Kiintiö täynnä. Ääni on tallennettu, purku odottaa. Ei virhetila —
+        /// käyttäjä ei tehnyt mitään väärin eikä menettänyt mitään.
+        case savedWithoutTranscript
         case failed(String)
     }
 
@@ -103,8 +106,16 @@ final class TellViewModel {
             phase = .transcribing
             let text = try await transcription.transcribe(audioURL: url)
             await process(transcript: text, audioURL: url, duration: duration)
+        } catch let error as RemoteError where error.isQuota {
+            // Kiintiö ei saa hylätä nauhoitusta. Ääni on korvaamaton ja purku
+            // on korvattavissa: se tehdään kun minuutit uusiutuvat tai perhe
+            // ottaa maksullisen. Ks. docs/ARKKITEHTUURI.md §7.
+            saveAudioOnly(audioURL: url, duration: duration)
+            phase = .savedWithoutTranscript
         } catch {
-            phase = .failed("Puheen purku ei onnistunut. Ääni on tallessa, voit yrittää uudelleen.")
+            // Sama pätee verkkovirheeseen: ääni talteen, teksti myöhemmin.
+            saveAudioOnly(audioURL: url, duration: duration)
+            phase = .savedWithoutTranscript
         }
     }
 
@@ -143,6 +154,32 @@ final class TellViewModel {
         } catch {
             phase = .failed("Muiston järjestely ei onnistunut. Voit yrittää uudelleen.")
         }
+    }
+
+    /// Tallentaa pelkän äänen ilman purkua ja jäsennystä.
+    ///
+    /// Muisto kiinnittyy kohteeseen jos sellainen tiedetään, muuten omaan
+    /// tapahtumaansa. Teksti jää tyhjäksi, ja `isAwaitingTranscription`
+    /// kertoo käyttöliittymälle että purku on kesken.
+    private func saveAudioOnly(audioURL: URL, duration: TimeInterval) {
+        let home = target ?? {
+            let subject = Subject(kind: .event, title: "Kertomatta purettu muisto")
+            store.add(subject)
+            return subject
+        }()
+        placedSubject = home
+
+        let memory = Memory(
+            subjectID: home.id,
+            authorName: store.authorName,
+            body: "",
+            audioFilename: Self.persistAudio(from: audioURL),
+            audioDuration: duration,
+            source: .voice
+        )
+        store.add(memory)
+        savedAudioDuration = duration
+        savedMemoryID = memory.id
     }
 
     private func save(

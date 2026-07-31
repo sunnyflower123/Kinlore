@@ -118,6 +118,15 @@ struct Memory: Identifiable, Codable, Hashable {
     /// Muistossa mainitut kohteet. Tämä kudos on se mitä tekoäly "yhdistelee":
     /// sama henkilö esiintyy kymmenessä muistossa eri kuvien alla.
     var mentionedSubjectIDs: [String] = []
+
+    /// Ääni on tallessa mutta purkua ei ole tehty — kiintiö oli täynnä tai
+    /// verkko poikki. Johdettu kenttä, ei erillistä tilaa synkronoitavaksi.
+    ///
+    /// Tämä on säännön 3 näkyvä muoto: kiintiö ei koskaan hylkää nauhoitusta
+    /// vaan lykkää sen purkua. Isoäidin ääni on lopputuotetta.
+    var isAwaitingTranscription: Bool {
+        body.isEmpty && (audioFilename != nil || audioR2Key != nil)
+    }
 }
 
 // MARK: - Jatkokysymys

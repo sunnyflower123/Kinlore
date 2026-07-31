@@ -246,8 +246,14 @@ private struct MemoryRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(memory.body)
-                .elderBody()
+            if memory.isAwaitingTranscription {
+                Label("Ääni tallessa — teksti valmistuu myöhemmin", systemImage: "waveform")
+                    .elderBody()
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(memory.body)
+                    .elderBody()
+            }
 
             HStack(spacing: 10) {
                 Text(memory.authorName)

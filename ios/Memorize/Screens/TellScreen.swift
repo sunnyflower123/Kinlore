@@ -53,6 +53,8 @@ struct TellScreen: View {
                 ProcessingView(phase: model.phase)
             case .done:
                 ResultView(model: model)
+            case .savedWithoutTranscript:
+                AudioSavedView(model: model)
             case .failed(let message):
                 FailureView(message: message) { model.reset() }
             }
@@ -65,7 +67,7 @@ struct TellScreen: View {
 
     private func hidesTabBar(_ phase: TellViewModel.Phase) -> Bool {
         switch phase {
-        case .idle, .done, .failed: false
+        case .idle, .done, .savedWithoutTranscript, .failed: false
         case .recording, .writing, .transcribing, .organizing: true
         }
     }
@@ -518,6 +520,54 @@ private struct ProposalRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
         .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+// MARK: - Ääni tallessa, purku odottaa
+
+/// Kiintiö oli täynnä tai verkko poikki. Tämä ei ole virheruutu: käyttäjä ei
+/// tehnyt mitään väärin eikä menettänyt mitään.
+private struct AudioSavedView: View {
+    @Environment(\.dismiss) private var dismiss
+    let model: TellViewModel
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "waveform.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.tint)
+
+            Text("Äänesi on tallessa")
+                .font(.title.weight(.semibold))
+                .multilineTextAlignment(.center)
+
+            Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
+                .elderBody()
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Spacer()
+
+            VStack(spacing: 12) {
+                Button("Kirjoita se itse") { model.beginWriting() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
+
+                Button(model.target == nil ? "Selvä" : "Valmis") {
+                    if model.target == nil { model.reset() } else { dismiss() }
+                }
+                .controlSize(.large)
+                .frame(maxWidth: .infinity)
+                .elderTapTarget()
+            }
+
+            Spacer()
+        }
+        .padding(Elder.screenPadding)
     }
 }
 

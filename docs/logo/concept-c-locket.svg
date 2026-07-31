@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Medaljonki ja ääni">
+  <title>Medaljonki ja ääni</title>
+  <rect width="512" height="512" fill="#2E1D16"/>
+  <g transform="translate(256 256) scale(0.9) translate(-256 -256)">
+    <path d="M233.4 133.6 A32 32 0 1 1 278.6 133.6" fill="none" stroke="#FBF1E2" stroke-width="20" stroke-linecap="round"/>
+    <circle cx="256" cy="283" r="146" fill="none" stroke="#FBF1E2" stroke-width="28"/>
+    <g fill="#FBF1E2">
+      <rect x="197" y="251" width="26" height="64" rx="13"/>
+      <rect x="289" y="243" width="26" height="80" rx="13"/>
+    </g>
+    <rect x="243" y="223" width="26" height="120" rx="13" fill="#E8A33C"/>
+  </g>
+</svg>

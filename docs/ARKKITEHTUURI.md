@@ -18,7 +18,8 @@ Rehellinen inventaario, ei toivelista:
 | Synkronointi (`/sync` veto ja työntö) | **Valmis ja testattu** |
 | `relation`, `usage_counter`, `report`, `block` | **Skeemassa, ei käytössä** |
 | Media R2:een (`/media`) | **Valmis ja testattu** |
-| RevenueCat, kiintiöt, moderointi | Ei aloitettu |
+| Kiintiöt (`/usage`, rajat palvelimella) | **Valmis ja testattu** |
+| RevenueCat, moderointi | Ei aloitettu |
 
 Kriittinen polku on nyt auki: perhe ja synkronointi toimivat, joten media,
 kiintiöt ja moderointi voidaan rakentaa niiden päälle. Jäljellä oleva työ on
@@ -284,8 +285,19 @@ Kahden laitteen yhtäaikainen kutsu voi ylittää rajan hieman. Se on hyväksytt
 vaihtoehto olisi lukitus, joka maksaisi enemmän kuin muutama ylimääräinen
 sekunti puhetta.
 
-Kun raja tulee vastaan, sanelu estyy mutta **kirjoittaminen ei** — muuten
-maksumuuri estäisi kertomista, mikä on säännön 2 vastaista.
+Kun raja tulee vastaan, sanelun **purku** estyy mutta kirjoittaminen ei — muuten
+maksumuuri estäisi kertomista, mikä on säännön 2 vastaista. `/extract` on
+tarkoituksella mittaamaton: se on tekstiä ja maksaa murto-osan sentistä, ja sen
+rajoittaminen estäisi kirjoitetun muiston tallentamisen.
+
+**Kiintiö ei koskaan hylkää nauhoitusta.** Jos minuutit ovat lopussa, ääni
+tallennetaan silti ja purku jää odottamaan — `Memory.isAwaitingTranscription`.
+Ääni on korvaamaton ja purku korvattavissa: se tehdään kun minuutit uusiutuvat
+tai perhe ottaa maksullisen. Sama koskee verkkovirhettä.
+
+Tarkistus tehdään jo käytetyn määrän perusteella eikä käytetty+tuleva:
+aloitettua nauhoitusta ei katkaista sen takia että se sattui olemaan pitkä.
+Raja ylittyy hieman, ja se on halvempi kuin hylätty muisto.
 
 ### Moderointi
 
