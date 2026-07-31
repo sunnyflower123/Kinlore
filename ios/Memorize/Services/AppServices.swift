@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /// Mistä sovellus hakee puheen purun ja jäsennyksen.
@@ -75,6 +76,10 @@ struct RemoteTranscriptionService: TranscriptionService {
     private struct Request: Encodable {
         let audio: String
         let format: String
+        /// Nauhoituksen kesto. Backend hylkää purun jos siinä on enemmän sanoja
+        /// kuin tähän aikaan mahtuu — huonolla äänellä malli sepittää eikä
+        /// vaikene, ja keksitty muisto on pahempi kuin puuttuva.
+        let seconds: Double?
     }
 
     private struct Reply: Decodable {
@@ -88,7 +93,8 @@ struct RemoteTranscriptionService: TranscriptionService {
             baseURL: baseURL,
             body: Request(
                 audio: data.base64EncodedString(),
-                format: audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension
+                format: audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension,
+                seconds: Self.duration(of: audioURL)
             ),
             timeout: 180
         )
@@ -96,6 +102,13 @@ struct RemoteTranscriptionService: TranscriptionService {
             throw RemoteError.emptyResult
         }
         return reply.text
+    }
+
+    /// Luetaan tiedostosta eikä nauhoittimen kellosta: jos ääni tulee joskus
+    /// muualta kuin omasta nauhoituksesta, kesto on silti oikea.
+    private static func duration(of url: URL) -> Double? {
+        guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
+        return player.duration
     }
 }
 

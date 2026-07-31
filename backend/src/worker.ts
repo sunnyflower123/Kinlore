@@ -49,7 +49,7 @@ export default {
 
 		switch (url.pathname) {
 			case '/transcribe': {
-				let payload: { audio?: string; format?: string }
+				let payload: { audio?: string; format?: string; seconds?: number }
 				try {
 					payload = await request.json()
 				} catch {
@@ -63,7 +63,12 @@ export default {
 				}
 
 				try {
-					const text = await transcribe(env, payload.audio, payload.format ?? 'm4a')
+					const text = await transcribe(
+						env,
+						payload.audio,
+						payload.format ?? 'm4a',
+						payload.seconds,
+					)
 					return json({ text })
 				} catch (err) {
 					return failure(err, 'transcribe')

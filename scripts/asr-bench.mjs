@@ -23,6 +23,9 @@
 //          sukupuun rakentumista.
 
 import { readdir, readFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { readFileSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -84,18 +87,12 @@ const ENGINES = [
   // OpenRouterilla ei ole transcriptions-päätepistettä: ääni menee chat
   // completionsin osana base64:nä. Mukana koska sama avain hoitaa myös
   // jäsennyksen — jos tämä pärjää, koko sovellus tarvitsee yhden avaimen.
-  {
-    name: 'openrouter/gemini-2.5-flash',
-    key: 'OPENROUTER_API_KEY',
-    model: 'google/gemini-2.5-flash',
-    custom: openRouterTranscribe,
-  },
-  {
-    name: 'openrouter/gpt-4o-audio',
-    key: 'OPENROUTER_API_KEY',
-    model: 'openai/gpt-4o-audio-preview',
-    custom: openRouterTranscribe,
-  },
+  // Ehdokkaat MODEL_TRANSCRIBE-muuttujalle. Hinnat $/Mtok syötettä.
+  { name: 'voxtral-small (0,10)', key: 'OPENROUTER_API_KEY', model: 'mistralai/voxtral-small-24b-2507', custom: openRouterTranscribe, needsWav: true },
+  { name: 'gemini-2.5-flash (0,30)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-2.5-flash', custom: openRouterTranscribe },
+  { name: 'gemini-3.1-flash-lite (0,25)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-3.1-flash-lite', custom: openRouterTranscribe },
+  { name: 'gemini-3.6-flash (1,50)', key: 'OPENROUTER_API_KEY', model: 'google/gemini-3.6-flash', custom: openRouterTranscribe },
+  { name: 'gpt-audio-mini (0,60)', key: 'OPENROUTER_API_KEY', model: 'openai/gpt-audio-mini', custom: openRouterTranscribe, needsWav: true },
 ]
 
 async function openRouterTranscribe(engine, filePath, bytes) {
@@ -126,7 +123,7 @@ async function openRouterTranscribe(engine, filePath, bytes) {
               type: 'input_audio',
               input_audio: {
                 data: bytes.toString('base64'),
-                format: extname(filePath).slice(1).toLowerCase() || 'm4a',
+                format: engine.needsWav ? 'wav' : extname(filePath).slice(1).toLowerCase() || 'm4a',
               },
             },
           ],
@@ -139,8 +136,26 @@ async function openRouterTranscribe(engine, filePath, bytes) {
   return (json.choices?.[0]?.message?.content ?? '').trim()
 }
 
+// Osa malleista hyväksyy vain wav/mp3, ei m4a:ta. Muunnetaan lennossa, jotta
+// vertailu mittaa mallia eikä tämän skriptin rajoitetta. HUOM: sama rajoite
+// koskee sovellusta — se nauhoittaa m4a:ta, joten näiden käyttöönotto vaatisi
+// muunnoksen myös Workerissa, mikä ei ole siellä triviaalia.
+const WAV_CACHE = new Map()
+function asWav(filePath, bytes) {
+  if (extname(filePath).toLowerCase() === '.wav') return bytes
+  if (WAV_CACHE.has(filePath)) return WAV_CACHE.get(filePath)
+  const dir = mkdtempSync(join(tmpdir(), 'asr-'))
+  const out = join(dir, basename(filePath).replace(/\.[^.]+$/, '.wav'))
+  execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16@16000', '-c', '1', filePath, out])
+  const wavBytes = readFileSync(out)
+  WAV_CACHE.set(filePath, wavBytes)
+  return wavBytes
+}
+
 async function transcribe(engine, filePath, bytes) {
-  if (engine.custom) return engine.custom(engine, filePath, bytes)
+  if (engine.custom) {
+    return engine.custom(engine, filePath, engine.needsWav ? asWav(filePath, bytes) : bytes)
+  }
 
   const apiKey = process.env[engine.key]
   const form = new FormData()
@@ -244,7 +259,7 @@ if (samples.length === 0) {
 console.log(`Moottorit: ${active.map((e) => e.name).join(', ')}`)
 console.log(`Näytteet:  ${samples.length}\n`)
 
-const totals = new Map(active.map((e) => [e.name, { wer: [], name: [] }]))
+const totals = new Map(active.map((e) => [e.name, { werScores: [], nameScores: [] }]))
 
 for (const sample of samples) {
   const audioPath = join(dir, sample)
@@ -275,8 +290,8 @@ for (const sample of samples) {
     const w = wer(refWords, normalize(text))
     const names = nameRecall(reference, text)
 
-    totals.get(engine.name).wer.push(w)
-    if (names) totals.get(engine.name).name.push(names.recall)
+    totals.get(engine.name).werScores.push(w)
+    if (names) totals.get(engine.name).nameScores.push(names.recall)
 
     const nameStr = names
       ? `nimet ${(names.recall * 100).toFixed(0)}% (${names.total})` +
@@ -292,8 +307,8 @@ const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
 console.log('\n━━ YHTEENVETO')
 const ranked = active
   .map((e) => ({ name: e.name, ...totals.get(e.name) }))
-  .filter((r) => r.wer.length > 0)
-  .map((r) => ({ name: r.name, wer: avg(r.wer), names: avg(r.name) }))
+  .filter((r) => r.werScores.length > 0)
+  .map((r) => ({ name: r.name, wer: avg(r.werScores), names: avg(r.nameScores) }))
   .sort((a, b) => a.wer - b.wer)
 
 for (const r of ranked) {

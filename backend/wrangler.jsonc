@@ -32,15 +32,21 @@
 		"FREE_AI_SECONDS_PER_MONTH": "600",
 		"RC_ENTITLEMENT_ID": "archive",
 
-		// Jäsennys vaatii structured outputs -tuen. Purku vaatii äänisyötteen.
-		// Gemini Flash osaa molemmat, on halpa ja käsittelee suomea hyvin.
-		// Purkumalli on erillinen muuttuja, koska se voi vaihtua omistettuun
-		// ASR:ään jos scripts/asr-bench.mjs osoittaa sen paremmaksi.
-		"MODEL_EXTRACT": "google/gemini-2.5-flash",
+		// Mallit on VALITTU MITTAAMALLA, ei muistista: scripts/asr-bench.mjs,
+		// 3 tekstiä × 4 rappeutusporrasta × 5 mallia.
+		//
+		//   gemini-3.6-flash        WER 37,8 %   erisnimet 68 %   ← valittu
+		//   gemini-3.1-flash-lite   WER 43,9 %   erisnimet 49 %
+		//   gpt-audio-mini          WER 58,7 %   erisnimet 57 %   (ei ota m4a:ta)
+		//   gemini-2.5-flash        WER 13 530 % erisnimet 33 %   (sepittää)
+		//   voxtral-small           kaatuu äänisyötteeseen kokonaan
+		//
+		// Erisnimien osuvuus painaa enemmän kuin WER: sukupuu rakentuu nimistä.
+		"MODEL_EXTRACT": "google/gemini-3.6-flash",
 		// Kolmas yritys vaihtaa mallia: mitattu vika oli tarjoajassa
 		// (finish_reason=error), eikä sama malli uudelleen auta siihen.
 		"MODEL_EXTRACT_FALLBACK": "openai/gpt-4o-mini",
-		"MODEL_TRANSCRIBE": "google/gemini-2.5-flash"
+		"MODEL_TRANSCRIBE": "google/gemini-3.6-flash"
 	},
 
 	"observability": { "enabled": true }
