@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Locket and voice">
-  <title>Locket and voice</title>
-  <rect width="512" height="512" fill="#FBF1E2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Memorize">
+  <title>Memorize</title>
   <g transform="translate(256 256) scale(0.88) translate(-256 -255.5)">
     <circle cx="256" cy="94" r="34" fill="none" stroke="#241A14" stroke-width="22"/>
     <circle cx="256" cy="294" r="168" fill="#241A14"/>

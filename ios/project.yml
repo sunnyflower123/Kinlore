@@ -60,6 +60,8 @@ targets:
         # 80-year-old wait to admire a logo is the opposite of this app.
         UILaunchScreen:
           UIColorName: LaunchBackground
+          UIImageName: LaunchMark
+          UIImageRespectsSafeAreaInsets: true
         # Portrait only: the primary user holds the phone in one hand, and
         # landscape adds nothing for this content.
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]

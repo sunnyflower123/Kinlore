@@ -1,9 +1,10 @@
 // Rasterises an SVG to PNG while preserving transparency.
 //
 // Do not use `qlmanage -t` for this. Quick Look thumbnails composite onto
-// white, so a transparent SVG silently becomes an opaque white square. That
-// bug shipped twice: the tinted app icon was a white block instead of a
-// greyscale mark, and the launch screen showed the mark on a white card.
+// white, so a transparent SVG silently becomes an opaque white square. That is
+// how the tinted app icon shipped as a white block instead of a greyscale mark.
+// (The white card behind the launch screen mark looked like the same bug and
+// was not: that one was a stale launch snapshot, see docs/logo/README.md.)
 //
 //   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 //     xcrun swift scripts/render-svg.swift <in.svg> <out.png> <width> [height] [fill]

@@ -53,6 +53,7 @@ The primary user is 80 years old, and the mark is no exception to that rule.
 | File | What for |
 |---|---|
 | `concept-c-locket.svg` | The chosen mark, in icon form (512, full background) |
+| `mark.svg` | The same mark without the background — source of the launch screen PNGs |
 | `icon-tinted.svg` | Tinted variant for iOS 18+ (greyscale, transparent) |
 | `mark-mono.svg` | The mark alone, `currentColor` — README, favicon, UI |
 | `lockup.svg` | Mark + name, horizontal, for light surfaces |
@@ -70,6 +71,15 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/ren
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/icon-tinted.svg ios/Memorize/Assets.xcassets/AppIcon.appiconset/icon-1024-tinted.png 1024
 ```
 
+The launch screen mark comes from `mark.svg`, which is the locket without the
+parchment rectangle, at the three scales the asset catalog expects:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Memorize/Assets.xcassets/LaunchMark.imageset/mark.png 120
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Memorize/Assets.xcassets/LaunchMark.imageset/mark@2x.png 240
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Memorize/Assets.xcassets/LaunchMark.imageset/mark@3x.png 360
+```
+
 Do not use `qlmanage -t` for this. Quick Look composites onto white, so the
 tinted variant shipped as an opaque white square rather than a transparent
 greyscale mark. Every preview looked correct; the bug only surfaced when the
@@ -81,16 +91,36 @@ the default icon and the result is a grey blob.
 
 ## Launch screen
 
-The launch screen is parchment (`UILaunchScreen.UIColorName`, see
-`ios/project.yml`) and carries no image. The app used to open on a white flash,
-which is also how the demo video would have started.
+Parchment with the mark centred on it (`UILaunchScreen`, see `ios/project.yml`).
+The app used to open on a white flash, which is also how the demo video would
+have started.
 
-The mark was tried there and taken out again: iOS draws the launch image on an
-opaque white plate, so the mark arrived sitting on a white card. A transparent
-PNG and an opaque parchment one came out identically. A splash screen holding
-the mark for a moment was the other way to do it, and it was rejected on
-principle — making an 80-year-old wait to admire a logo is the opposite of what
-this app is for.
+This is not a splash screen. Nothing is held for effect: the frame appears only
+for as long as the app takes to draw, and making an 80-year-old wait to admire a
+logo would be the opposite of what this app is for.
+
+### The launch screen lies to you
+
+**iOS caches a snapshot of the launch screen and keeps serving it after the
+launch screen has changed.** The cache survives rebuilding, reinstalling, and
+even deleting the app — and it is why the mark first appeared to sit on a white
+card, and then, once restored, appeared not to render at all.
+
+The white card was blamed on iOS compositing the image onto an opaque plate.
+That is wrong. Measured on a cleared cache, a transparent PNG and an opaque
+parchment one render identically, and neither has a plate: the pixel beside the
+mark reads `(251, 241, 226)`, the background colour exactly.
+
+So the rule about looking at the icon on the home screen has a second half:
+
+```bash
+xcrun simctl shutdown <udid>
+find ~/Library/Developer/CoreSimulator/Devices/<udid>/data -type d -name SplashBoard -exec rm -rf {} +
+xcrun simctl boot <udid>
+```
+
+Purge, restart, *then* believe what you see. Deleting only the app's own
+`Library/SplashBoard` is not enough; the device keeps snapshots of its own.
 
 ## The wordmark
 
