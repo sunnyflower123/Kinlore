@@ -89,6 +89,18 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    to `console.error`: they can contain account details or echo back the memory
    the user just told. The app gets `{ error: "upstream_failed" }`.
 
+## Git — stage only what you changed yourself
+
+Several sessions often work in this worktree at once, on `main`, and a commit is
+pushed to the public repo within minutes. A commit here is published by default,
+not local.
+
+**Stage files by path, only the ones you changed yourself.** Never `git add -A`,
+`git add .` or `git commit -a`: they sweep up another session's half-finished
+work, and it has already happened — one piece of work ended up split across
+three commits whose messages were about something else entirely. If `git status`
+shows changes you did not make, leave them alone and say so.
+
 ## Commands
 
 ```bash
