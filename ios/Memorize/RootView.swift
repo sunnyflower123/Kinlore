@@ -308,7 +308,20 @@ struct SubjectDetailScreen: View {
 }
 
 private struct MemoryRow: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
     let memory: Memory
+
+    /// Who recognised the person from this story. The teller's half of the
+    /// guessing round: not a score, but the news that the family still knows who
+    /// she meant.
+    private var recognitionText: String? {
+        let names = store.recognisers(of: memory, excluding: session.identity.memberID)
+        guard let first = names.first else { return nil }
+        return names.count == 1
+            ? "\(first) tunnisti hänet"
+            : "\(names.count) perheenjäsentä tunnisti hänet"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -330,6 +343,13 @@ private struct MemoryRow: View {
                 if memory.audioFilename != nil || memory.audioR2Key != nil {
                     MemoryPlaybackButton(memory: memory)
                 }
+            }
+
+            if let recognitionText {
+                Label(recognitionText, systemImage: "checkmark.circle")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.vertical, 6)

@@ -99,6 +99,7 @@ xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
 | `-screen starter` | DEBUG | Opens the Tell screen on a photo nobody has spoken about yet, where the starter questions live. Otherwise that state is reachable only by picking a photo from the library by hand. |
 | `-screen person` | DEBUG | Opens the first person's card, relationships and all. |
 | `-screen family` | DEBUG | Opens the family view: members, usage, invite link. |
+| `-guess demo` | DEBUG | Builds guessing rounds from memories you told yourself. A round normally needs a second family member — a screenshot run and the demo phone both have one device. |
 
 These exist because some screens sit behind a tap, and two things that need to
 reach them have no hands: a screenshot run, and **filming the demo video**

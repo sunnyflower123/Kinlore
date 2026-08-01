@@ -71,7 +71,10 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    `memory.raw_transcript` are not intermediate steps; they are the product.
 4. **AI proposes, a human confirms.** A person or relationship inferred by the
    AI is created with `confirmed = 0`. Unconfirmed never appears in the family
-   tree as fact. A wrong relationship is worse than a missing one.
+   tree as fact. A wrong relationship is worse than a missing one. The strongest
+   confirmation the app collects is a *blind* one — a family member who was
+   never shown the name and arrives at it anyway. See the guessing round in
+   [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §13.
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
    `date_start`/`date_end` with precision `decade`. Do not force a date.
 6. **No login screen.** Identity is a UUID in the Keychain
@@ -125,6 +128,13 @@ cd backend && npx wrangler d1 execute memorize --local --file=schema.sql
 
 # ASR comparison
 node scripts/asr-bench.mjs samples/
+
+# Guessing-round name masking. Run this after ANY change to GuessRound.swift:
+# a round that leaks the hidden name still looks like a working round, so this
+# is the one part of the app that fails silently.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
+  ios/Memorize/Model/GuessRound.swift && /tmp/guess-mask-check
 ```
 
 ## Environment notes

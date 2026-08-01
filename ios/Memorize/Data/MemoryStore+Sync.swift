@@ -69,11 +69,25 @@ struct RelationDTO: Codable {
     var seq: Int?
 }
 
+struct GuessDTO: Codable {
+    var memory_id: String
+    /// Outgoing: our own member id. The server takes the guesser from the
+    /// session and ignores this, so that no device can manufacture agreement
+    /// from the rest of the family and confirm a person nobody recognised.
+    var member_id: String
+    /// Incoming only: derived on the server from `member.display_name`.
+    var member_name: String?
+    var subject_id: String
+    var created_at: Double
+    var seq: Int?
+}
+
 struct SyncPayload: Codable {
     var subjects: [SubjectDTO] = []
     var memories: [MemoryDTO] = []
     var questions: [QuestionDTO] = []
     var relations: [RelationDTO] = []
+    var guesses: [GuessDTO] = []
 }
 
 struct SyncPullReply: Codable {
@@ -84,6 +98,8 @@ struct SyncPullReply: Codable {
     var questions: [QuestionDTO]
     /// An older server does not send this, so a default is required.
     var relations: [RelationDTO] = []
+    /// Likewise.
+    var guesses: [GuessDTO] = []
 }
 
 // MARK: - Conversions
@@ -194,6 +210,33 @@ extension Relation {
             toSubjectID: dto.to_subject,
             kind: kind,
             confirmed: dto.confirmed == 1,
+            createdAt: Date(timeIntervalSince1970: dto.created_at)
+        )
+    }
+}
+
+extension Guess {
+    var dto: GuessDTO {
+        GuessDTO(
+            memory_id: memoryID,
+            member_id: memberID,
+            // Never sent: the server derives the name from the member record,
+            // so a renamed member is right everywhere at once.
+            member_name: nil,
+            subject_id: subjectID,
+            created_at: createdAt.timeIntervalSince1970,
+            seq: nil
+        )
+    }
+
+    init(dto: GuessDTO) {
+        self.init(
+            memoryID: dto.memory_id,
+            memberID: dto.member_id,
+            subjectID: dto.subject_id,
+            // The fallback is Finnish because it is shown in the UI, and it
+            // matches a memory's author for the same reason.
+            memberName: dto.member_name ?? "Perheenjäsen",
             createdAt: Date(timeIntervalSince1970: dto.created_at)
         )
     }

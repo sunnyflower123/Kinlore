@@ -590,3 +590,98 @@ explanation, and a second selection rule competing with this one.
 As a side effect this closes the open edge left in §10: the open-question list
 grows by three every round, and ordering plus the return of skipped questions is
 exactly the cap that was deferred to "the store".
+
+## 13. The guessing round
+
+*One person tells a story, the others guess who it was about.*
+
+Everything above this section is a **writing** loop: a question arrives, someone
+tells a memory, the memory generates more questions. It works, but it asks for
+effort from exactly the family members who have the least of it, and it gives
+nobody a reason to open a memory that is already written. Family archives do not
+usually die because nothing was recorded. They die because nothing is ever read
+again.
+
+The round is the reading loop. It costs one tap.
+
+### It is not authored, it is derived
+
+The obvious way to build this is to let someone compose a riddle. That is the
+wrong app: this one's primary user is 80, and asking her to tell a story while
+deliberately leaving the name out fights the entire extraction pipeline, which
+exists precisely because she says names.
+
+So nothing changes about how she tells. What changes is how the family reads.
+Extraction already produces `mention` rows; a memory that names exactly one
+person is already a question with an answer. Hiding the name turns it into a
+round, and there is no round table — the round is computed on the client from
+data that already exists. Storing rounds would mean deciding in advance which
+memories become questions, and that decision goes stale the moment a misheard
+name is corrected or two people are merged. Only the answers are stored, in
+`guess`, because only an answer is a fact about a human being rather than about
+the current state of the archive.
+
+### Why it earns its place: blind confirmation
+
+Rule 4 of the product is *AI proposes, a human confirms*. The weakest possible
+implementation of that rule is a card with the answer already written on it and
+a "Yes" button — people tap it without reading. It is a confirmation UI that
+manufactures confirmations.
+
+A guess cannot be tapped without reading, and the guesser was never shown the
+name. When someone who did not tell the story arrives at the same person the
+extraction did, that agreement is real evidence, and it is stronger evidence
+than the proposal card would ever have produced. So a correct guess confirms the
+person (`subject.confirmed = 1`). A wrong one confirms nothing, un-confirms
+nothing, and is still kept: a family that keeps naming the same wrong person is
+telling us the extraction picked the wrong name, which is worth more than a
+boolean.
+
+Relationships are deliberately left alone. A guess is about identity, not about
+who someone's mother was, and a wrong relationship is worse than a missing one.
+
+Two server rules protect that evidence, verified with curl against a local D1:
+
+- **The guesser is the session, never the payload.** A device that pushes a
+  guess in another member's name has it recorded under its own id instead —
+  otherwise one phone could manufacture family-wide agreement and confirm a
+  person nobody recognised.
+- **A guess is final.** `ON CONFLICT DO NOTHING`, because the answer is revealed
+  the instant it is given; a second push is someone answering a question they
+  already know.
+
+### The masking problem
+
+The round is only safe if the name is genuinely gone, and in Finnish a string
+replacement is not enough: it removes "Aino" and leaves "Ainolle" standing two
+words later. This is the same inflection problem the correction prompt solves in
+`extract.ts`, but it cannot be solved the same way — asking the model would cost
+an AI call and a quota per round.
+
+Matching is on the stem instead, guarded on both sides: the word must be
+capitalised **in the text**, which is how an inflected Finnish name is written
+and how "ainakin" survives, and it must not be much longer than the name, which
+keeps "ainoastaan" from vanishing because it starts the same way. Surnames in
+`-nen` get their own rule, because "Virtanen" → "Virtasen" already differs at
+the sixth character.
+
+It is a heuristic about a language, so it is checked against the language:
+`scripts/guess-mask-check.swift` compiles the real `GuessRound.swift` and runs
+Finnish cases through it. This is the one part of the feature that fails
+silently — a round that leaks the answer still looks like a working round.
+
+### What refuses to become a round
+
+A round is only built when it is both safe and fair, so most memories are not
+rounds. Two named people (the question is ambiguous), a memory told about the
+answer herself (her card is the subject), your own story, fewer than four people
+in the archive, a name that does not appear in the text, less than fifteen words
+left after masking, or a text that is more than a quarter gaps — each of these
+returns nothing. No photo is shown in the round for the same reason.
+
+### Tone
+
+No score, no streak, no timer, no leaderboard, and "En muista" is a first-class
+answer — for this app's user it is the most likely one. These are memories of
+people who have died. The reward is that grandmother's memory card says *"Ville
+tunnisti hänet"*: her sister was recognised. Nobody wins.

@@ -8,6 +8,7 @@ import SwiftUI
 /// it, not by reading a title.
 struct GalleryScreen: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -25,10 +26,16 @@ struct GalleryScreen: View {
     private var photos: [Subject] { store.subjects(of: .photo) }
     private var events: [Subject] { store.subjects(of: .event) }
 
+    /// A family whose memories are all on people has an empty grid but can still
+    /// have a round waiting, and "no photos yet" would hide it.
+    private var hasRound: Bool {
+        GuessRoundBuilder.nextRound(store: store, memberID: session.identity.memberID) != nil
+    }
+
     var body: some View {
         NavigationStack {
             Group {
-                if photos.isEmpty && events.isEmpty {
+                if photos.isEmpty && events.isEmpty && !hasRound {
                     emptyState
                 } else {
                     content
@@ -80,6 +87,12 @@ struct GalleryScreen: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
+                // The reading loop, above the grid because it expires: a round
+                // is only interesting until somebody has answered it. It shows
+                // itself only when one is waiting, so the screen does not grow a
+                // permanent section for a family that has none.
+                GuessSection()
+
                 if !photos.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         SectionHeading("Kuvat")

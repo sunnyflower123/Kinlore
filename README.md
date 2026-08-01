@@ -25,7 +25,7 @@ hackathon. Target category: **Next Gen Award** (student category).
 |-----------|----------|
 | `ios/` | SwiftUI app. The project is generated from `project.yml` with XcodeGen. |
 | `backend/` | Cloudflare Worker + D1 (metadata) + R2 (photos and audio). |
-| `scripts/` | `asr-bench.mjs` — Finnish speech recognition comparison. |
+| `scripts/` | `asr-bench.mjs` — Finnish speech recognition comparison. `guess-mask-check.swift` — checks the guessing round's name masking against Finnish inflection. |
 | `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `logo/` (the mark and why it looks like that). |
 
 ## Two languages, on purpose

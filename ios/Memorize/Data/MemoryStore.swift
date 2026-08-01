@@ -13,6 +13,7 @@ final class MemoryStore {
     private(set) var memories: [Memory] = []
     private(set) var questions: [FollowUpQuestion] = []
     private(set) var relations: [Relation] = []
+    private(set) var guesses: [Guess] = []
 
     /// The author's name. In a family this comes from the member record.
     var authorName = "Minä"
@@ -28,6 +29,7 @@ final class MemoryStore {
     private(set) var dirtyMemories: Set<String> = []
     private(set) var dirtyQuestions: Set<String> = []
     private(set) var dirtyRelations: Set<String> = []
+    private(set) var dirtyGuesses: Set<String> = []
 
     private let fileURL: URL
 
@@ -215,6 +217,59 @@ final class MemoryStore {
         save()
     }
 
+    // MARK: - Guessing
+
+    func guesses(for memoryID: String) -> [Guess] {
+        guesses.filter { $0.memoryID == memoryID }
+    }
+
+    func guess(on memoryID: String, by memberID: String) -> Guess? {
+        guesses.first { $0.memoryID == memoryID && $0.memberID == memberID }
+    }
+
+    /// The family members who named the right person for this memory.
+    ///
+    /// This is what the teller gets back. Not a score — the point of telling a
+    /// story about a dead sister is that somebody else still knows who she was.
+    ///
+    /// `reader` is left out of the list because it is their own screen: they
+    /// have just seen the reveal, and "Minä tunnisti hänet" is both pointless
+    /// and, in Finnish, the wrong person of the verb.
+    func recognisers(of memory: Memory, excluding reader: String) -> [String] {
+        let people = memory.mentionedSubjectIDs
+            .compactMap { subject(id: $0) }
+            .filter { $0.kind == .person && $0.mergedInto == nil }
+        guard people.count == 1, let answer = people.first else { return [] }
+        return guesses(for: memory.id)
+            .filter { $0.subjectID == answer.id && $0.memberID != reader }
+            .map(\.memberName)
+    }
+
+    /// Records one member's answer to a round.
+    ///
+    /// A correct answer confirms the person, and that is the whole reason this
+    /// feature earns its place. A proposal card with the name already on it gets
+    /// tapped "yes" without being read; someone who was not shown the name and
+    /// arrived at it anyway has genuinely recognised the person. It is the least
+    /// primed confirmation the app can collect — see rule 4 in CLAUDE.md.
+    ///
+    /// A wrong answer confirms nothing and un-confirms nothing. It is kept,
+    /// because a family that keeps naming the same wrong person is saying the
+    /// extraction picked the wrong name.
+    func record(_ guess: Guess, answer: Subject) {
+        // One guess per person per memory. The answer is revealed immediately,
+        // so a second attempt would be answering a question you already know.
+        guard self.guess(on: guess.memoryID, by: guess.memberID) == nil else { return }
+        guesses.append(guess)
+        dirtyGuesses.insert(guess.id)
+        if guess.subjectID == answer.id, !answer.confirmed {
+            // confirm() saves; this call only has to not save twice.
+            confirm(subjectID: answer.id)
+            return
+        }
+        save()
+    }
+
     // MARK: - Sync
     //
     // The mutations live here rather than in the extension, because they touch
@@ -227,13 +282,14 @@ final class MemoryStore {
             subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
             memories: memories.filter { dirtyMemories.contains($0.id) }.map(\.dto),
             questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto),
-            relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto)
+            relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto),
+            guesses: guesses.filter { dirtyGuesses.contains($0.id) }.map(\.dto)
         )
     }
 
     var hasPendingChanges: Bool {
         !dirtySubjects.isEmpty || !dirtyMemories.isEmpty || !dirtyQuestions.isEmpty
-            || !dirtyRelations.isEmpty
+            || !dirtyRelations.isEmpty || !dirtyGuesses.isEmpty
     }
 
     /// Acknowledges the rows that were pushed. Only the ones just sent: if the
@@ -244,6 +300,7 @@ final class MemoryStore {
         dirtyMemories.subtract(payload.memories.map(\.id))
         dirtyQuestions.subtract(payload.questions.map(\.id))
         dirtyRelations.subtract(payload.relations.map(\.id))
+        dirtyGuesses.subtract(payload.guesses.map { "\($0.memory_id)|\($0.member_id)" })
         save()
     }
 
@@ -288,6 +345,16 @@ final class MemoryStore {
                 relations[index] = incoming
             } else {
                 relations.append(incoming)
+            }
+        }
+
+        for dto in reply.guesses {
+            let incoming = Guess(dto: dto)
+            guard !dirtyGuesses.contains(incoming.id) else { continue }
+            if let index = guesses.firstIndex(where: { $0.id == incoming.id }) {
+                guesses[index] = incoming
+            } else {
+                guesses.append(incoming)
             }
         }
 
@@ -416,6 +483,8 @@ final class MemoryStore {
         var dirtyQuestions: Set<String> = []
         var relations: [Relation] = []
         var dirtyRelations: Set<String> = []
+        var guesses: [Guess] = []
+        var dirtyGuesses: Set<String> = []
     }
 
     private func load() {
@@ -433,6 +502,8 @@ final class MemoryStore {
         dirtyQuestions = snapshot.dirtyQuestions
         relations = snapshot.relations
         dirtyRelations = snapshot.dirtyRelations
+        guesses = snapshot.guesses
+        dirtyGuesses = snapshot.dirtyGuesses
     }
 
     func save() {
@@ -445,7 +516,9 @@ final class MemoryStore {
             dirtyMemories: dirtyMemories,
             dirtyQuestions: dirtyQuestions,
             relations: relations,
-            dirtyRelations: dirtyRelations
+            dirtyRelations: dirtyRelations,
+            guesses: guesses,
+            dirtyGuesses: dirtyGuesses
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: fileURL, options: .atomic)

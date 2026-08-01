@@ -71,11 +71,21 @@ export type RelationRow = {
 	seq: number
 }
 
+export type GuessRow = {
+	memory_id: string
+	member_id: string
+	member_name?: string
+	subject_id: string
+	created_at: number
+	seq: number
+}
+
 type PushPayload = {
 	subjects?: Partial<SubjectRow>[]
 	memories?: Partial<MemoryRow>[]
 	questions?: Partial<QuestionRow>[]
 	relations?: Partial<RelationRow>[]
+	guesses?: Partial<GuessRow>[]
 }
 
 const now = () => Math.floor(Date.now() / 1000)
@@ -160,11 +170,25 @@ export async function pull(env: Env, session: Session, since: number) {
 		.bind(family, since, MAX_ROWS)
 		.all<RelationRow>()
 
+	// The guesser's name travels with the guess, like a memory's author. It is
+	// what the teller actually wants to see: not "3 correct" but "Ville
+	// recognised her".
+	const guesses = await env.DB.prepare(
+		`SELECT g.memory_id, g.member_id, g.subject_id, g.created_at, g.seq,
+		        mem.display_name AS member_name
+		 FROM guess g
+		 LEFT JOIN member mem ON mem.id = g.member_id
+		 WHERE g.family_id = ? AND g.seq > ? ORDER BY g.seq LIMIT ?`,
+	)
+		.bind(family, since, MAX_ROWS)
+		.all<GuessRow>()
+
 	const rows = [
 		...(subjects.results ?? []),
 		...memoryRows,
 		...(questions.results ?? []),
 		...(relations.results ?? []),
+		...(guesses.results ?? []),
 	]
 	const highest = rows.reduce((max, row) => Math.max(max, row.seq), since)
 
@@ -175,11 +199,13 @@ export async function pull(env: Env, session: Session, since: number) {
 			(subjects.results?.length ?? 0) === MAX_ROWS ||
 			memoryRows.length === MAX_ROWS ||
 			(questions.results?.length ?? 0) === MAX_ROWS ||
-			(relations.results?.length ?? 0) === MAX_ROWS,
+			(relations.results?.length ?? 0) === MAX_ROWS ||
+			(guesses.results?.length ?? 0) === MAX_ROWS,
 		subjects: subjects.results ?? [],
 		memories: memoryRows,
 		questions: questions.results ?? [],
 		relations: relations.results ?? [],
+		guesses: guesses.results ?? [],
 	}
 }
 
@@ -340,6 +366,31 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				relation.confirmed ?? 0,
 				relation.created_at ?? timestamp,
 				relation.deleted_at ?? null,
+				seq,
+			),
+		)
+	}
+
+	for (const guess of (payload.guesses ?? []).slice(0, MAX_ROWS)) {
+		if (!guess.memory_id || !guess.subject_id) continue
+		statements.push(
+			env.DB.prepare(
+				`INSERT INTO guess (memory_id, family_id, member_id, subject_id, created_at, seq)
+				 VALUES (?, ?, ?, ?, ?, ?)
+				 -- A guess is final. There is no second attempt, so a re-push of
+				 -- the same row must not let anyone quietly change their answer
+				 -- after the reveal.
+				 ON CONFLICT(memory_id, member_id) DO NOTHING`,
+			).bind(
+				guess.memory_id,
+				family,
+				// The guesser is the session, never the payload — the same rule
+				// as a memory's author. Otherwise a device could manufacture
+				// agreement from the rest of the family and confirm a person
+				// nobody actually recognised.
+				session.memberID,
+				guess.subject_id,
+				guess.created_at ?? timestamp,
 				seq,
 			),
 		)
