@@ -22,6 +22,7 @@ An honest inventory, not a wish list:
 | Audio playback, open questions, relationships | **Done and tested** |
 | Paywall | Built — unverified, needs a RevenueCat key |
 | Interview loop (questions asked aloud) | **Done** |
+| Asked questions (a person asks, the name travels) | **Done** |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Not started — on the cut list, PLAN.md §5 |
 | Demo video | Remaining |
@@ -414,3 +415,33 @@ hurt, the cap belongs in the store, not here.
 The pairing required by "every addition requires a removal" (CLAUDE.md): the
 drawn family-tree graph, already last in line in §8, is now formally out of
 v1. The person-card lists carry the same information.
+
+## 11. Asked questions
+
+The other half of the open-question loop. Extraction has always generated
+questions; now a person can ask one too. "Kysy perheeltä" on a subject's card
+files the question into the same `prompt_question` flow: it waits on the
+family's Tell screen next to the machine's questions, and the answer comes
+back as an ordinary structured memory on the subject.
+
+What makes it different from an AI prompt is one field: the asker. "Ville
+kysyy" above a question turns a prompt into a request from a person — the
+strongest reason there is for an elderly user to press the button. The
+questions the machine generates stay unattributed on purpose: pretending the
+app is a person would be a lie in a warm font.
+
+The rules are borrowed from the memory's author, verified with curl against
+a local D1:
+
+- The server accepts an asker only for the session's own member id. A client
+  can claim itself or nobody — never another member. A spoofed id is nulled,
+  not rejected: the question is still worth keeping.
+- The display name is derived on read from `member.display_name`, so a
+  renamed member is right everywhere at once.
+- Authorship is sticky under sync: an older device re-pushing the same
+  question without the field cannot strip the name off it.
+
+`prompt_question.target_member` (aim a question at one person) has existed in
+the schema from the start and stays unused: routing to a specific member needs
+a picker and a visibility explanation, and the family-wide version already
+carries the emotional core.

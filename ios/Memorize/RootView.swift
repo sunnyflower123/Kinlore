@@ -44,14 +44,20 @@ struct RootView: View {
     }
 }
 
+/// Marks the family view as a navigation destination, so it can be pushed by
+/// value rather than only by tapping the toolbar button.
+private struct FamilyRoute: Hashable {}
+
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
 struct PeopleScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
 
+    @State private var path = NavigationPath()
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if store.subjects(of: .person).isEmpty {
                     ContentUnavailableView {
@@ -73,15 +79,16 @@ struct PeopleScreen: View {
             .navigationDestination(for: Subject.self) { subject in
                 SubjectDetailScreen(subject: subject)
             }
+            .navigationDestination(for: FamilyRoute.self) { _ in
+                FamilyScreen()
+            }
             .toolbar {
                 // The family belongs under People rather than as its own tab:
                 // three tabs is already the limit of what an 80-year-old holds
                 // in mind.
                 if session.mode != .local {
                     ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink {
-                            FamilyScreen()
-                        } label: {
+                        NavigationLink(value: FamilyRoute()) {
                             Image(systemName: "person.2.badge.gearshape")
                                 .elderTapTarget()
                         }
@@ -89,6 +96,26 @@ struct PeopleScreen: View {
                     }
                 }
             }
+            #if DEBUG
+            // Screenshot aid, alongside `-tab` and `-screen write`. These two
+            // screens sit behind a tap, and a screenshot run has no hands:
+            //
+            //   -screen person   the first person's card, relationships and all
+            //   -screen family   members, usage and the invite link
+            //
+            // Checking a screen at the largest text size means opening it, and
+            // this is how the two that were skipped stopped being skipped.
+            .task {
+                switch UserDefaults.standard.string(forKey: "screen") {
+                case "person":
+                    if let first = store.subjects(of: .person).first { path.append(first) }
+                case "family":
+                    path.append(FamilyRoute())
+                default:
+                    break
+                }
+            }
+            #endif
         }
     }
 }
@@ -146,6 +173,7 @@ struct SubjectDetailScreen: View {
 
     @State private var image: UIImage?
     @State private var isTelling = false
+    @State private var isAsking = false
 
     var body: some View {
         List {
@@ -202,10 +230,39 @@ struct SubjectDetailScreen: View {
             if !open.isEmpty {
                 Section("Avoimia kysymyksiä") {
                     ForEach(open) { question in
-                        Label(question.text, systemImage: "questionmark.circle")
-                            .elderBody()
+                        VStack(alignment: .leading, spacing: 4) {
+                            // A person's name on a question turns a prompt into
+                            // a request. AI questions stay unattributed.
+                            if let asker = question.authorName {
+                                Text("\(asker) kysyy")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.tint)
+                            }
+                            Label(question.text, systemImage: "questionmark.circle")
+                                .elderBody()
+                        }
+                        .padding(.vertical, 2)
                     }
                 }
+            }
+
+            Section {
+                Button {
+                    isAsking = true
+                } label: {
+                    Label("Kysy perheeltä", systemImage: "questionmark.bubble")
+                        .font(.body.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .buttonStyle(.bordered)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            } footer: {
+                // The person who knows is not the person who wonders: the
+                // grandchild asks here, and the question waits on the family's
+                // Tell screen where telling starts.
+                Text("Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.")
             }
         }
         .navigationTitle(subject.displayTitle)
@@ -228,6 +285,9 @@ struct SubjectDetailScreen: View {
                         }
                     }
             }
+        }
+        .sheet(isPresented: $isAsking) {
+            AskQuestionSheet(subject: subject)
         }
     }
 

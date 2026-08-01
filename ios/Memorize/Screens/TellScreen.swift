@@ -208,12 +208,22 @@ private struct IdleView: View {
 
                     ForEach(openQuestions) { question in
                         Button { answering = question } label: {
-                            HStack(spacing: 10) {
+                            HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "questionmark.circle.fill")
                                     .foregroundStyle(.tint)
-                                Text(question.text)
-                                    .elderBody()
-                                    .multilineTextAlignment(.leading)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    // "Ville kysyy" turns the prompt into a
+                                    // request from a person — the strongest
+                                    // reason there is to press the button.
+                                    if let asker = question.authorName {
+                                        Text("\(asker) kysyy")
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundStyle(.tint)
+                                    }
+                                    Text(question.text)
+                                        .elderBody()
+                                        .multilineTextAlignment(.leading)
+                                }
                                 Spacer(minLength: 0)
                             }
                             .padding(14)

@@ -46,6 +46,10 @@ export type MemoryRow = {
 export type QuestionRow = {
 	id: string
 	subject_id: string | null
+	// Who asked; null for questions the extraction generated. The name is
+	// derived on read from `member.display_name`, like a memory's author.
+	author_id: string | null
+	author_name?: string
 	text: string
 	status: string
 	created_at: number
@@ -115,8 +119,11 @@ export async function pull(env: Env, session: Session, since: number) {
 		.all<MemoryRow>()
 
 	const questions = await env.DB.prepare(
-		`SELECT id, subject_id, text, status, created_at, deleted_at, seq
-		 FROM prompt_question WHERE family_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
+		`SELECT q.id, q.subject_id, q.text, q.status, q.created_at,
+		        q.deleted_at, q.seq, q.author_id, mem.display_name AS author_name
+		 FROM prompt_question q
+		 LEFT JOIN member mem ON mem.id = q.author_id
+		 WHERE q.family_id = ? AND q.seq > ? ORDER BY q.seq LIMIT ?`,
 	)
 		.bind(family, since, MAX_ROWS)
 		.all<QuestionRow>()
@@ -271,11 +278,14 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		if (!question.id || !question.text) continue
 		statements.push(
 			env.DB.prepare(
-				`INSERT INTO prompt_question (id, family_id, subject_id, text, status,
+				`INSERT INTO prompt_question (id, family_id, subject_id, author_id, text, status,
 				                              created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   status = excluded.status,
+				   -- Authorship is sticky: an older device re-pushing the same
+				   -- question without an asker must not strip the name off it.
+				   author_id = COALESCE(prompt_question.author_id, excluded.author_id),
 				   deleted_at = COALESCE(excluded.deleted_at, prompt_question.deleted_at),
 				   seq = excluded.seq
 				 WHERE prompt_question.family_id = excluded.family_id`,
@@ -283,6 +293,10 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				question.id,
 				family,
 				question.subject_id ?? null,
+				// A client may claim itself as the asker, or nobody (a question
+				// the extraction generated) — never another member. The same
+				// rule as a memory's author, relaxed to allow the machine.
+				question.author_id === session.memberID ? session.memberID : null,
 				question.text,
 				question.status ?? 'open',
 				question.created_at ?? timestamp,

@@ -46,6 +46,12 @@ struct QuestionDTO: Codable {
     var created_at: Double
     var deleted_at: Double?
     var seq: Int?
+    /// Outgoing: the asker's own member id, or nil for an AI question. The
+    /// server accepts only the session's own id — the same rule as a memory's
+    /// author. Incoming: as stored.
+    var author_id: String?
+    /// Incoming only: derived on the server from `member.display_name`.
+    var author_name: String?
 }
 
 struct RelationDTO: Codable {
@@ -198,7 +204,11 @@ extension FollowUpQuestion {
             status: answered ? "answered" : "open",
             created_at: createdAt.timeIntervalSince1970,
             deleted_at: nil,
-            seq: nil
+            seq: nil,
+            author_id: authorID,
+            // Never sent: the server derives the name from the member record,
+            // so a renamed member is right everywhere at once.
+            author_name: nil
         )
     }
 
@@ -208,7 +218,9 @@ extension FollowUpQuestion {
             subjectID: dto.subject_id,
             text: dto.text,
             answered: dto.status != "open",
-            createdAt: Date(timeIntervalSince1970: dto.created_at)
+            createdAt: Date(timeIntervalSince1970: dto.created_at),
+            authorID: dto.author_id,
+            authorName: dto.author_name
         )
     }
 }

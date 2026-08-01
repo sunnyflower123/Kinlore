@@ -179,4 +179,9 @@ struct FollowUpQuestion: Identifiable, Codable, Hashable {
     var text: String
     var answered: Bool = false
     var createdAt: Date = .now
+    /// Who asked. Nil for questions the extraction generated — the difference
+    /// matters, because "Ville kysyy" carries a pull no machine question has.
+    /// Optional so stores written before the field existed still decode.
+    var authorID: String?
+    var authorName: String?
 }
