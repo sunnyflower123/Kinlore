@@ -779,6 +779,21 @@ in a family, and they are genuinely separate — so the screen names both:
   remaining member: an ownerless family could never invite anyone again. The
   last member cannot leave — there would be nothing to leave, and the archive
   would become unreachable rather than deleted.
+
+  **The member row is marked, never deleted** (`member.left_at`). The first
+  version of the route deleted it, and testing against a local D1 showed what
+  that means: `memory.author_id` references the row, so the delete failed on the
+  foreign key — only a member who had never told anything could leave. Had it
+  succeeded it would have been worse, because the name shown on a memory is read
+  from `display_name` on every pull: leaving would have quietly stripped the
+  teller's name off everything they ever told. Leaving ends a membership; it does
+  not unwrite the past. The same test caught the role: handing ownership on
+  without taking it off the leaver left two owners, and a founder invited back
+  walked in as one.
+
+  On the device, leaving keeps the local copy and resets only the sync cursor.
+  The counter is granted per family (§2.2), so a cursor carried into the next
+  family would ask for "anything above 412" and silently receive nothing.
 - **Tyhjennä tämä laite.** The store, the media, the ladder's state and the
   Keychain identity. Afterwards the app is a fresh install. In a family the
   memories are still on the server and rejoining brings them back; in a local

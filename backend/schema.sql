@@ -41,7 +41,17 @@ CREATE TABLE member (
   -- much as a dead relative is.
   person_subject_id TEXT REFERENCES subject(id),
   created_at    INTEGER NOT NULL,
-  last_seen_at  INTEGER
+  last_seen_at  INTEGER,
+  -- When they left the family, or NULL while they are in it.
+  --
+  -- The row is NEVER deleted, for two reasons that both point the same way:
+  -- `memory.author_id` references it, and the name shown on a memory is derived
+  -- from `display_name` on read. Deleting a departing member would either fail
+  -- on the foreign key or, worse, quietly strip the teller's name off
+  -- everything they ever told. Leaving ends the membership; it does not
+  -- unwrite the past. See docs/ARCHITECTURE.md §14.
+  --   ALTER TABLE member ADD COLUMN left_at INTEGER;
+  left_at       INTEGER
 );
 
 -- Invite links. Their own table rather than a column on family, because a link

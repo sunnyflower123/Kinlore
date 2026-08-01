@@ -45,7 +45,7 @@ export async function authenticate(request: Request, env: Env): Promise<Session 
 	if (!memberID || !secret) return null
 
 	const row = await env.DB.prepare(
-		'SELECT id, family_id, role, display_name, secret_hash FROM member WHERE id = ?',
+		'SELECT id, family_id, role, display_name, secret_hash, left_at FROM member WHERE id = ?',
 	)
 		.bind(memberID)
 		.first<{
@@ -54,9 +54,14 @@ export async function authenticate(request: Request, env: Env): Promise<Session 
 			role: string
 			display_name: string
 			secret_hash: string
+			left_at: number | null
 		}>()
 
 	if (!row) return null
+	// The row outlives the membership so that the names on their memories keep
+	// resolving, but a departed member is no longer in the family: no reads, no
+	// writes. See `leaveFamily`.
+	if (row.left_at) return null
 	if (!equals(row.secret_hash, await hashSecret(secret))) return null
 
 	return {

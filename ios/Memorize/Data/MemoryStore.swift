@@ -492,6 +492,17 @@ final class MemoryStore {
         save()
     }
 
+    /// Forgets where sync had got to, without touching a single row.
+    ///
+    /// The counter is granted per family (§2.2), so carrying a high one into the
+    /// next family would silently suppress everything in it: a pull asking for
+    /// "anything above 412" returns nothing at all from a family that has
+    /// reached 3. Leaving is the one moment that can happen.
+    func resetSyncCursor() {
+        syncSeq = 0
+        save()
+    }
+
     // MARK: - Wiping
 
     /// Empties the archive on this device: every row, every media file and the

@@ -82,17 +82,32 @@ export async function joinFamily(env: Env, input: JoinInput) {
 		return { error: 'invalid_invite' as const }
 	}
 
-	const existing = await env.DB.prepare('SELECT id, family_id FROM member WHERE id = ?')
+	const existing = await env.DB.prepare('SELECT id, family_id, left_at FROM member WHERE id = ?')
 		.bind(input.memberID)
-		.first<{ id: string; family_id: string }>()
+		.first<{ id: string; family_id: string; left_at: number | null }>()
 
 	if (existing) {
-		// The same device rejoining the same family: not an error but a
-		// reinstall or an iCloud restore. Let it through.
-		if (existing.family_id === invite.family_id) {
+		if (existing.family_id !== invite.family_id) return { error: 'member_exists' as const }
+
+		// Somebody who left and was invited back. The row was kept so that the
+		// names on their memories still resolve, so coming back is undoing the
+		// mark rather than creating anything — and the name they just typed
+		// wins, because they typed it.
+		if (existing.left_at) {
+			await env.DB.batch([
+				env.DB.prepare(
+					'UPDATE member SET left_at = NULL, display_name = ?, last_seen_at = ? WHERE id = ?',
+				).bind(input.displayName.trim() || DEFAULT_MEMBER_NAME, now(), input.memberID),
+				env.DB.prepare('UPDATE invite SET used_count = used_count + 1 WHERE code = ?').bind(
+					invite.code,
+				),
+			])
 			return { familyID: invite.family_id, role: 'member' as const }
 		}
-		return { error: 'member_exists' as const }
+
+		// The same device rejoining the same family: not an error but a
+		// reinstall or an iCloud restore. Let it through.
+		return { familyID: invite.family_id, role: 'member' as const }
 	}
 
 	const timestamp = now()
@@ -153,23 +168,35 @@ export async function revokeInvite(env: Env, session: Session, code: string) {
 ///     ownerless family could never invite anyone again.
 export async function leaveFamily(env: Env, session: Session) {
 	const remaining = await env.DB.prepare(
-		'SELECT id, role FROM member WHERE family_id = ? AND id != ? ORDER BY created_at LIMIT 1',
+		`SELECT id, role FROM member
+		 WHERE family_id = ? AND id != ? AND left_at IS NULL
+		 ORDER BY created_at LIMIT 1`,
 	)
 		.bind(session.familyID, session.memberID)
 		.first<{ id: string; role: string }>()
 
 	if (!remaining) return { error: 'last_member' as const }
 
+	const timestamp = now()
 	const statements = [
 		// Invites created by the departing member go with them: the link is the
 		// entire security boundary, and nobody left would know to revoke it.
 		env.DB.prepare(
 			'UPDATE invite SET revoked_at = ? WHERE created_by = ? AND revoked_at IS NULL',
-		).bind(now(), session.memberID),
-		env.DB.prepare('DELETE FROM member WHERE id = ? AND family_id = ?').bind(
-			session.memberID,
-			session.familyID,
-		),
+		).bind(timestamp, session.memberID),
+		// Marked, never deleted. `memory.author_id` references this row, and the
+		// name on every memory they told is read from it — a DELETE fails on the
+		// foreign key, and if it did not it would strip their name off their own
+		// memories. Verified against a local D1: the first version of this route
+		// deleted the row, and only a member who had never told anything could
+		// leave.
+		//
+		// The role goes with the membership. Handing ownership on without
+		// taking it off the leaver left the family with two owners, and an
+		// invited-back founder walked straight back in as one.
+		env.DB.prepare(
+			`UPDATE member SET left_at = ?, role = 'member' WHERE id = ? AND family_id = ?`,
+		).bind(timestamp, session.memberID, session.familyID),
 	]
 
 	if (session.role === 'owner') {
@@ -191,8 +218,12 @@ export async function getFamily(env: Env, session: Session) {
 
 	if (!family) return { error: 'not_found' as const }
 
+	// Only the people who are still here. A departed member's row stays behind so
+	// that the name on their memories keeps resolving, but the family view is a
+	// list of who is in the family — see `leaveFamily`.
 	const members = await env.DB.prepare(
-		'SELECT id, display_name, role, created_at FROM member WHERE family_id = ? ORDER BY created_at',
+		`SELECT id, display_name, role, created_at FROM member
+		 WHERE family_id = ? AND left_at IS NULL ORDER BY created_at`,
 	)
 		.bind(session.familyID)
 		.all<{ id: string; display_name: string; role: string; created_at: number }>()

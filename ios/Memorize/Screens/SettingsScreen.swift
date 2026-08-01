@@ -115,7 +115,14 @@ struct SettingsScreen: View {
             titleVisibility: .visible
         ) {
             Button("Poistu perheestä", role: .destructive) {
-                Task { _ = await session.leaveFamily() }
+                Task {
+                    guard await session.leaveFamily() else { return }
+                    // The memories stay on this device — leaving the family is
+                    // not losing your own copy. Only the sync cursor goes, so
+                    // that the next family is not read through this one's
+                    // numbering.
+                    store.resetSyncCursor()
+                }
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
