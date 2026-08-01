@@ -650,6 +650,25 @@ Two server rules protect that evidence, verified with curl against a local D1:
   the instant it is given; a second push is someone answering a question they
   already know.
 
+And one client rule that is easy to get wrong and fails silently: **a guess is
+compared to the answer through the merge chain, not by raw id.** The guess is
+stored against the subject as it stood when it was made, so a later merge
+(*Aune → Aino*) leaves it pointing at the tombstone. Comparing ids directly
+would make every correct guess made before the merge quietly stop counting —
+exactly the class of bug `merged_into` exists to prevent (§2.5).
+
+### "En muista" is an answer
+
+It reveals the answer like any other choice, and it is **stored**, with a NULL
+`subject_id`.
+
+Both halves matter. Revealing, because learning who it was is the entire payoff
+and the person who did not know is the one who most needs telling. Storing,
+because a round that is not answered is offered again — and since only one round
+is shown at a time, a single unanswerable memory would stand in front of every
+other one forever. It also records something true: nobody in this family
+remembered her.
+
 ### The masking problem
 
 The round is only safe if the name is genuinely gone, and in Finnish a string
@@ -679,12 +698,32 @@ in the archive, a name that does not appear in the text, less than fifteen words
 left after masking, or a text that is more than a quarter gaps — each of these
 returns nothing. No photo is shown in the round for the same reason.
 
+The three decoys are drawn from the people the family has **actually talked
+about**, and only then from the rest. A round between one real relative and three
+names nobody has ever said out loud is not a question: the answer is whichever
+name you recognise. Within each group the order comes from a stable hash of the
+memory and subject ids, so every family member sees the same four options in the
+same places — Swift's own `hashValue` is seeded per process, and "which option
+moved since last time" would itself be a clue.
+
+### Finding out that a round is waiting
+
+The app opens on Kerro, and nobody goes looking for a game in a photo gallery, so
+the Muistot tab carries a badge with the number of rounds waiting. It is the only
+signal, it appears only when there is something to do, and it disappears when
+there is not.
+
+The count is capped at nine, because it is not free: knowing whether a memory is
+a round means building the round, masking included. A family with eleven waiting
+and a family with nine are the same thing to the person looking at the badge.
+
 ### Tone
 
-No score, no streak, no timer, no leaderboard, and "En muista" is a first-class
-answer — for this app's user it is the most likely one. These are memories of
-people who have died. The reward is that grandmother's memory card says *"Ville
-tunnisti hänet"*: her sister was recognised. Nobody wins.
+No score, no streak, no timer, no leaderboard. A wrong answer is stated plainly
+and left alone — no "väärin", no red — because the person guessing may be the one
+whose own memory is going. These are memories of people who have died. The reward
+is that grandmother's memory card says *"Ville tunnisti hänet"*: her sister was
+recognised. Nobody wins.
 
 ## 14. Settings — taking the archive out, and leaving
 

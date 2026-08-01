@@ -225,7 +225,11 @@ CREATE TABLE guess (
   -- Who the guesser said it was. A wrong guess is kept rather than reduced to a
   -- boolean: a family that keeps naming the same wrong person is telling us the
   -- extraction picked the wrong name, and that is worth more than "incorrect".
-  subject_id    TEXT NOT NULL REFERENCES subject(id) ON DELETE CASCADE,
+  --
+  -- NULL means "En muista": they read the story and did not know. Nullable on
+  -- purpose — for this app's user that is the most likely answer, and it has to
+  -- be storable, or the round comes back forever and blocks every other one.
+  subject_id    TEXT REFERENCES subject(id) ON DELETE CASCADE,
   created_at    INTEGER NOT NULL,
   seq           INTEGER NOT NULL DEFAULT 0,
   -- One guess per person per memory. There is no second attempt, because the

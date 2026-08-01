@@ -77,7 +77,8 @@ struct GuessDTO: Codable {
     var member_id: String
     /// Incoming only: derived on the server from `member.display_name`.
     var member_name: String?
-    var subject_id: String
+    /// Nil = "En muista".
+    var subject_id: String?
     var created_at: Double
     var seq: Int?
 }

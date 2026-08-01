@@ -109,10 +109,11 @@ private struct GuessRoundSheet: View {
 
     let round: GuessRound
 
+    /// Answered and what with. `chosen` stays nil for "En muista", which is an
+    /// answer of its own — so the two have to be separate flags.
+    @State private var isRevealed = false
     @State private var chosen: Subject?
     @State private var isTelling = false
-
-    private var isRevealed: Bool { chosen != nil }
 
     var body: some View {
         NavigationStack {
@@ -135,8 +136,8 @@ private struct GuessRoundSheet: View {
                                 )
                         )
 
-                    if let chosen {
-                        reveal(chosen: chosen)
+                    if isRevealed {
+                        reveal
                     } else {
                         options
                     }
@@ -184,10 +185,12 @@ private struct GuessRoundSheet: View {
             }
 
             // Not knowing is an ordinary answer, and for the person this app is
-            // built for it is the most likely one. Without this button the only
-            // way out of the screen is a wrong answer.
+            // built for it is the most likely one. It reveals the answer like
+            // any other, because learning who it was is the whole payoff — and
+            // it is recorded, or this round would come back forever and stand in
+            // front of every other one.
             Button {
-                dismiss()
+                choose(nil)
             } label: {
                 Text("En muista")
                     .font(.body)
@@ -199,8 +202,8 @@ private struct GuessRoundSheet: View {
     }
 
     @ViewBuilder
-    private func reveal(chosen: Subject) -> some View {
-        let isCorrect = chosen.id == round.answer.id
+    private var reveal: some View {
+        let isCorrect = chosen.map { $0.id == round.answer.id } ?? false
 
         VStack(alignment: .leading, spacing: 16) {
             // Shape and word carry the result, not colour alone — the user of
@@ -215,7 +218,9 @@ private struct GuessRoundSheet: View {
 
             // A wrong guess is stated plainly and left alone. No "väärin", no
             // red: the person guessing may be the one whose memory is going.
-            if !isCorrect {
+            // "En muista" gets no line at all — there is nothing to report back
+            // to someone who already said they did not know.
+            if let chosen, !isCorrect {
                 Text("Sinä arvasit: \(chosen.displayTitle).")
                     .elderBody()
                     .foregroundStyle(.secondary)
@@ -243,23 +248,25 @@ private struct GuessRoundSheet: View {
     }
 
     /// "Ville tunnisti hänet myös." The teller's reward is not a score but
-    /// hearing that the family knew who she meant.
+    /// hearing that the family knew who she meant. The same rule as the memory
+    /// card uses, asked of the store rather than reimplemented here — a merged
+    /// person has to keep counting on both screens or on neither.
     private var othersText: String? {
-        let names = store.guesses(for: round.memory.id)
-            .filter { $0.memberID != session.identity.memberID && $0.subjectID == round.answer.id }
-            .map(\.memberName)
+        let names = store.recognisers(of: round.memory, excluding: session.identity.memberID)
         guard !names.isEmpty else { return nil }
         if names.count == 1 { return "\(names[0]) tunnisti hänet myös." }
         return "\(names.count) muuta perheenjäsentä tunnisti hänet."
     }
 
-    private func choose(_ option: Subject) {
+    /// `option` is nil for "En muista".
+    private func choose(_ option: Subject?) {
         chosen = option
+        isRevealed = true
         store.record(
             Guess(
                 memoryID: round.memory.id,
                 memberID: session.identity.memberID,
-                subjectID: option.id,
+                subjectID: option?.id,
                 memberName: store.authorName
             ),
             answer: round.answer

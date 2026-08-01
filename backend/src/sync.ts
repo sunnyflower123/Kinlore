@@ -75,7 +75,8 @@ export type GuessRow = {
 	memory_id: string
 	member_id: string
 	member_name?: string
-	subject_id: string
+	// null = "En muista": they read the story and did not know.
+	subject_id: string | null
 	created_at: number
 	seq: number
 }
@@ -372,7 +373,9 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 	}
 
 	for (const guess of (payload.guesses ?? []).slice(0, MAX_ROWS)) {
-		if (!guess.memory_id || !guess.subject_id) continue
+		// No subject is not a malformed row: it is "En muista", which has to be
+		// storable or the round comes back forever and blocks every other one.
+		if (!guess.memory_id) continue
 		statements.push(
 			env.DB.prepare(
 				`INSERT INTO guess (memory_id, family_id, member_id, subject_id, created_at, seq)
@@ -389,7 +392,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				// agreement from the rest of the family and confirm a person
 				// nobody actually recognised.
 				session.memberID,
-				guess.subject_id,
+				guess.subject_id ?? null,
 				guess.created_at ?? timestamp,
 				seq,
 			),

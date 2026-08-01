@@ -43,7 +43,8 @@ struct Guess: Identifiable, Hashable {
     var id: String { "\(memoryID)|\(memberID)" }
     var memoryID: String
     var memberID: String
-    var subjectID: String
+    /// Nil = "En muista".
+    var subjectID: String?
 }
 
 @MainActor
@@ -54,6 +55,15 @@ final class MemoryStore {
     func subject(id: String) -> Subject? { subjects.first { $0.id == id } }
     func subjects(of kind: SubjectKind) -> [Subject] {
         subjects.filter { $0.kind == kind && $0.mergedInto == nil }
+    }
+    func isEmpty(_ subject: Subject) -> Bool {
+        !memories.contains { $0.subjectID == subject.id }
+    }
+    func soleMentionedPerson(in memory: Memory) -> Subject? {
+        let people = memory.mentionedSubjectIDs
+            .compactMap { subject(id: $0) }
+            .filter { $0.kind == .person && $0.mergedInto == nil }
+        return people.count == 1 ? people.first : nil
     }
 }
 
@@ -236,6 +246,51 @@ func roundChecks() {
     } else {
         failures += 1
         print("  FAIL the answer is missing from the options")
+    }
+
+    // A round between one real relative and three names nobody has ever said
+    // out loud is not a question — the answer is whichever name you recognise.
+    print("— decoys —")
+    let ghost1 = Subject(kind: .person, title: "Tuntematon Yksi")
+    let ghost2 = Subject(kind: .person, title: "Tuntematon Kaksi")
+    let ghost3 = Subject(kind: .person, title: "Tuntematon Kolme")
+    store.subjects = [aino, eeva, kalle, sanni, ghost1, ghost2, ghost3, photo]
+    store.memories = [
+        Memory(subjectID: eeva.id, authorID: "mummo", body: "Eevasta kerrottiin."),
+        Memory(subjectID: kalle.id, authorID: "mummo", body: "Kallesta kerrottiin."),
+        Memory(subjectID: sanni.id, authorID: "mummo", body: "Sannista kerrottiin."),
+    ]
+    let withDecoys = GuessRoundBuilder.round(for: memory, store: store, memberID: "me")
+    let decoyTitles = (withDecoys?.options ?? []).filter { $0.id != aino.id }.map(\.title).sorted()
+    if decoyTitles == ["Eeva", "Kalle", "Sanni"] {
+        print("  ok   decoys are people the family has talked about")
+    } else {
+        failures += 1
+        print("  FAIL decoys were \(decoyTitles), expected the three with memories")
+    }
+
+    print("— waiting count —")
+    store.memories = (1 ... 12).map {
+        Memory(id: "m-\($0)", subjectID: photo.id, authorID: "mummo",
+               body: body, mentionedSubjectIDs: [aino.id])
+    }
+    let waiting = GuessRoundBuilder.roundsWaiting(store: store, memberID: "me", limit: 9)
+    if waiting == 9 {
+        print("  ok   the waiting count stops at its cap")
+    } else {
+        failures += 1
+        print("  FAIL waiting count was \(waiting), expected the cap of 9")
+    }
+
+    store.guesses = (1 ... 12).map {
+        Guess(memoryID: "m-\($0)", memberID: "me", subjectID: nil)
+    }
+    let afterSkips = GuessRoundBuilder.roundsWaiting(store: store, memberID: "me", limit: 9)
+    if afterSkips == 0, GuessRoundBuilder.nextRound(store: store, memberID: "me") == nil {
+        print("  ok   \"En muista\" retires a round instead of blocking the queue")
+    } else {
+        failures += 1
+        print("  FAIL a skipped round is still being offered")
     }
 }
 

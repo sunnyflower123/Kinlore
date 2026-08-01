@@ -25,12 +25,24 @@ struct RootView: View {
         }
     }
 
+    @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
+
     @State private var selection: Tab = Tab.initial
+
+    /// Rounds waiting to be guessed. The app opens on Kerro, so without this the
+    /// only way to find out that somebody is waiting for an answer is to go
+    /// looking — and nobody goes looking in a photo gallery. The badge appears
+    /// only when there is something to do and disappears when it is done.
+    private var waitingRounds: Int {
+        GuessRoundBuilder.roundsWaiting(store: store, memberID: session.identity.memberID)
+    }
 
     var body: some View {
         TabView(selection: $selection) {
             GalleryScreen()
                 .tabItem { Label("Muistot", systemImage: "photo.on.rectangle.angled") }
+                .badge(waitingRounds)
                 .tag(Tab.memories)
 
             TellScreen()

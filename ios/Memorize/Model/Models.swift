@@ -189,7 +189,11 @@ struct Guess: Identifiable, Codable, Hashable {
     /// Who the guesser said it was. A wrong guess is kept rather than reduced to
     /// a boolean: a family that keeps naming the same wrong person is saying the
     /// extraction picked the wrong name.
-    var subjectID: String
+    ///
+    /// Nil means "En muista" — the person looked at the story and did not know.
+    /// That is an answer, not a missing one, and for the user this app is built
+    /// for it is the most likely one.
+    var subjectID: String?
     var memberName: String
     var createdAt: Date = .now
 }

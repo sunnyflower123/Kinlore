@@ -55,6 +55,35 @@ enum GuessRoundBuilder {
     /// is found by building one round rather than all of them.
     @MainActor
     static func nextRound(store: MemoryStore, memberID: String) -> GuessRound? {
+        unanswered(store: store, memberID: memberID)
+            .compactMap { round(for: $0, store: store, memberID: memberID) }
+            .first
+    }
+
+    /// How many rounds are waiting, counted no higher than `limit`.
+    ///
+    /// The tab badge needs a number, and the honest number is not free: knowing
+    /// whether a memory is a round means building it. So the count stops at the
+    /// cap — a family with eleven rounds waiting and one with nine are the same
+    /// thing to the person looking at the badge.
+    @MainActor
+    static func roundsWaiting(store: MemoryStore, memberID: String, limit: Int = 9) -> Int {
+        var count = 0
+        for memory in unanswered(store: store, memberID: memberID) {
+            if round(for: memory, store: store, memberID: memberID) != nil {
+                count += 1
+                if count == limit { break }
+            }
+        }
+        return count
+    }
+
+    /// The memories this member has not answered yet, newest first. Lazy, so a
+    /// caller that only wants the first round does not mask all of them.
+    @MainActor
+    private static func unanswered(
+        store: MemoryStore, memberID: String
+    ) -> LazySequence<[Memory]> {
         let answered = Set(
             store.guesses.filter { $0.memberID == memberID }.map(\.memoryID)
         )
@@ -62,8 +91,6 @@ enum GuessRoundBuilder {
             .filter { !answered.contains($0.id) }
             .sorted { $0.createdAt > $1.createdAt }
             .lazy
-            .compactMap { round(for: $0, store: store, memberID: memberID) }
-            .first
     }
 
     /// Builds the round for one memory, or nothing if it does not make one.
@@ -84,10 +111,9 @@ enum GuessRoundBuilder {
 
         // Exactly one person. Two named people make the question ambiguous, and
         // an ambiguous question teaches the family the wrong answer.
-        let people = memory.mentionedSubjectIDs
-            .compactMap { store.subject(id: $0) }
-            .filter { $0.kind == .person && $0.mergedInto == nil }
-        guard people.count == 1, let answer = people.first, !answer.title.isEmpty else { return nil }
+        guard let answer = store.soleMentionedPerson(in: memory), !answer.title.isEmpty else {
+            return nil
+        }
 
         // A memory told *about* Aino answers itself: her card is the subject the
         // round would be reached from, and the title is on screen.
@@ -107,8 +133,17 @@ enum GuessRoundBuilder {
         // Fewer than three others is not a guess, it is a formality.
         guard others.count >= optionCount - 1 else { return nil }
 
+        // Decoys are drawn from the people the family has actually talked about,
+        // and only then from the rest. A round between one real relative and
+        // three names nobody has ever said out loud is not a question — the
+        // answer is whichever name you recognise. Within each group the order is
+        // the stable hash, so the choice is still the same on every device.
         let decoys = others
-            .sorted { stableHash(memory.id + ":" + $0.id) < stableHash(memory.id + ":" + $1.id) }
+            .sorted { first, second in
+                let firstKnown = !store.isEmpty(first), secondKnown = !store.isEmpty(second)
+                if firstKnown != secondKnown { return firstKnown }
+                return stableHash(memory.id + ":" + first.id) < stableHash(memory.id + ":" + second.id)
+            }
             .prefix(optionCount - 1)
         let options = ([answer] + decoys)
             .sorted { stableHash(memory.id + "#" + $0.id) < stableHash(memory.id + "#" + $1.id) }

@@ -227,6 +227,29 @@ final class MemoryStore {
         guesses.first { $0.memoryID == memoryID && $0.memberID == memberID }
     }
 
+    /// The person a memory's round is about: the single person it names, if it
+    /// names exactly one. The same rule `GuessRound` builds a round from, kept
+    /// here so the reading side cannot drift away from it.
+    func soleMentionedPerson(in memory: Memory) -> Subject? {
+        let people = memory.mentionedSubjectIDs
+            .compactMap { subject(id: $0) }
+            .filter { $0.kind == .person && $0.mergedInto == nil }
+        return people.count == 1 ? people.first : nil
+    }
+
+    /// Whether a stored guess names this person — after following the merge
+    /// chain on both sides.
+    ///
+    /// Comparing the raw ids is wrong and fails silently. A guess is stored
+    /// against the subject as it was when the guess was made, and a later merge
+    /// ("Aune" → "Aino") leaves it pointing at the tombstone. Every correct
+    /// guess made before the merge would quietly stop counting, which is exactly
+    /// the class of bug `merged_into` exists to prevent.
+    func guess(_ guess: Guess, names person: Subject) -> Bool {
+        guard let guessed = guess.subjectID.flatMap({ subject(id: $0) }) else { return false }
+        return guessed.id == subject(id: person.id)?.id
+    }
+
     /// The family members who named the right person for this memory.
     ///
     /// This is what the teller gets back. Not a score — the point of telling a
@@ -236,12 +259,9 @@ final class MemoryStore {
     /// have just seen the reveal, and "Minä tunnisti hänet" is both pointless
     /// and, in Finnish, the wrong person of the verb.
     func recognisers(of memory: Memory, excluding reader: String) -> [String] {
-        let people = memory.mentionedSubjectIDs
-            .compactMap { subject(id: $0) }
-            .filter { $0.kind == .person && $0.mergedInto == nil }
-        guard people.count == 1, let answer = people.first else { return [] }
+        guard let answer = soleMentionedPerson(in: memory) else { return [] }
         return guesses(for: memory.id)
-            .filter { $0.subjectID == answer.id && $0.memberID != reader }
+            .filter { $0.memberID != reader && guess($0, names: answer) }
             .map(\.memberName)
     }
 
@@ -253,16 +273,17 @@ final class MemoryStore {
     /// arrived at it anyway has genuinely recognised the person. It is the least
     /// primed confirmation the app can collect — see rule 4 in CLAUDE.md.
     ///
-    /// A wrong answer confirms nothing and un-confirms nothing. It is kept,
-    /// because a family that keeps naming the same wrong person is saying the
-    /// extraction picked the wrong name.
-    func record(_ guess: Guess, answer: Subject) {
+    /// A wrong answer, and "En muista" with no subject at all, confirm nothing
+    /// and un-confirm nothing. Both are kept: a family that keeps naming the
+    /// same wrong person is saying the extraction picked the wrong name, and a
+    /// stored "En muista" is what stops the round coming back forever.
+    func record(_ newGuess: Guess, answer: Subject) {
         // One guess per person per memory. The answer is revealed immediately,
         // so a second attempt would be answering a question you already know.
-        guard self.guess(on: guess.memoryID, by: guess.memberID) == nil else { return }
-        guesses.append(guess)
-        dirtyGuesses.insert(guess.id)
-        if guess.subjectID == answer.id, !answer.confirmed {
+        guard guess(on: newGuess.memoryID, by: newGuess.memberID) == nil else { return }
+        guesses.append(newGuess)
+        dirtyGuesses.insert(newGuess.id)
+        if guess(newGuess, names: answer), !answer.confirmed {
             // confirm() saves; this call only has to not save twice.
             confirm(subjectID: answer.id)
             return
