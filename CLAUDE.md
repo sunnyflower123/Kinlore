@@ -92,7 +92,11 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
 ## Commands
 
 ```bash
-# Generate the iOS project (always run after changing project.yml)
+# Generate the iOS project. Run this after changing project.yml — and also
+# after ADDING OR REMOVING A SOURCE FILE. XcodeGen globs the sources when it
+# generates, so a new .swift file is invisible to xcodebuild until this runs,
+# and the build fails with "cannot find X in scope" for a type that is plainly
+# there on disk. This has cost time twice.
 cd ios && xcodegen generate
 
 # iOS build. DEVELOPER_DIR is mandatory: this machine's xcode-select points at
