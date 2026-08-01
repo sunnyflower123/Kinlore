@@ -445,3 +445,148 @@ a local D1:
 the schema from the start and stays unused: routing to a specific member needs
 a picker and a visibility explanation, and the family-wide version already
 carries the emotional core.
+
+## 12. The question ladder
+
+Some people cannot start with "tell me about this photo". The first thing this
+app asks of a person has to be small enough that failing at it is impossible —
+and it has to grow as they get used to being asked.
+
+Today it does neither. Questions are not selected at all: `openQuestions` takes
+the three oldest unanswered ones and the interview loop takes
+`newQuestions.first`, whichever the model happened to emit first. Extraction
+aims its questions "at the gaps" (`extract.ts`), and a gap question is almost
+always *"Millainen ihminen Aino oli?"* — a three-sentence answer. Worst of all,
+a photo nobody has spoken about yet has **no questions at all**, so the first
+contact of the whole app is a blank button. That is the wall.
+
+### The levels
+
+Five, measured by **the shape of the answer** rather than the topic:
+
+| Level | Name | Answer | Example | Word floor |
+|---|---|---|---|---|
+| 1 | Naming | 1–3 words | "Kuka tässä kuvassa on?" | 1 |
+| 2 | Fact | a sentence | "Missä tämä on otettu?" | 2 |
+| 3 | Description | a few sentences | "Millainen ihminen Aino oli?" | 10 |
+| 4 | Episode | a story with a beginning | "Kerro siitä päivästä, kun muutitte Ouluun." | 20 |
+| 5 | Meaning | reflection | "Mitä toivoisit lastenlastesi tietävän isästäsi?" | 20 |
+
+Levels 1–2 have the property the whole design rests on: they can be answered
+with a three-second dictation or a typed word. That is a genuinely small
+experiment, and it needs no new UI — both paths already exist.
+
+**Starters** fill the blank-button gap. A subject with no memories offers two or
+three level-1 questions derived from its `kind`, with no LLM call, no network
+and no AI minutes. They are **not stored and not synced**: thirty imported
+photographs would otherwise put ninety rows into the family's open-question list
+and make the list worthless. A starter is a prompt, not a debt.
+
+### The algorithm: a staircase, not a model
+
+A **transformed up/down staircase** (Levitt 1971, psychophysical threshold
+tracking), plus one borrowed piece of Leitner. Both are existing methods, ~40
+lines together, and neither needs training data:
+
+```
+two consecutive fluent answers  →  comfort += 0.5
+one strained answer             →  comfort -= 1.0
+```
+
+Two-down/one-up is known to converge on roughly a 70 % success rate, which is
+about where the questions stay answerable without being trivial. The asymmetry
+is the point: **slow to climb, quick to drop.** For this user one wall costs
+more than a run of questions that were too easy.
+
+There is no right answer to "what was your father like", so the signal is not
+correctness but whether the person could answer at all. Everything it reads is
+already stored:
+
+| Observation | Source | Reading |
+|---|---|---|
+| Answered, word count ≥ the level's floor | `rawTranscript` | fluent |
+| Extraction yielded a mention or a date | `mentions`, `date` | fluent |
+| Answered under the floor | `rawTranscript` | strained |
+| Question skipped without an answer | "Riittää tältä erää" while asking, or a sub-second recording | strained |
+| Over 14 days since the last answer | `createdAt` | `comfort = max(1.5, comfort − 1)` |
+
+The last row matters as much as the staircase: **coming back is always a small
+step.** After three weeks away nobody is asked where they left off.
+
+Skipping is read as strain even when it is really fatigue at the end of a long
+interview. That is a knowing inaccuracy: it nudges the next session slightly
+easier, and for an 80-year-old that is the correct direction to be wrong in.
+
+**Selection is not compulsion.** The Tell screen already shows two open
+questions; they are picked by fit — nearest the current level, with a penalty
+for being above it rather than below — and the easiest is shown first. The
+person still chooses, and the choice is free calibration.
+
+A question asked by a *person* is pinned rather than ranked: "Ville kysyy" pulls
+harder than any machine prompt, and a grandchild's question going unseen for a
+fortnight is a worse failure than a question one level too high. Never more than
+one of them, and never the last slot — so a hard one always arrives beside an
+easy way out.
+
+### What was rejected
+
+| Alternative | Why not |
+|---|---|
+| IRT / Elo (adaptive testing) | Needs a right/wrong signal and a calibration corpus. A family produces tens of observations, not thousands. |
+| SM-2 / FSRS (spaced repetition) | Models forgetting; nothing here is being memorised. **One piece is borrowed:** a skipped question returns later instead of vanishing — the same principle as "gaps are shown". |
+| Bandits (Thompson, UCB) | Cold start would spend an elderly person's few sessions on exploration. |
+| A model of our own | No data, no time, and not explainable in a demo video. |
+
+Inventing nothing is an advantage here: the repo is judged on being readable.
+
+### Two things it deliberately does not do
+
+1. **The level is never shown.** No points, no badges, no "level 3".
+   Gamifying an old person's account of her own family would be condescending,
+   and it would wreck the tone the rest of the app is built in.
+2. **`comfort` does not sync.** It lives in `UserDefaults` on the device, not in
+   a column on `member`. The family has no business seeing a difficulty score
+   attached to a relative, and a device-local number cannot produce a sync
+   conflict. The phone belongs to one person; so does the number.
+
+### Built in this order
+
+| Step | Work | Touches |
+|---|---|---|
+| **0** | Starters for a subject with no memories | `QuestionLadder.swift` |
+| **1** | Level read off the question text, ladder ordering in `openQuestions` and in the interview loop, outcome recorded on save | `MemoryStore.swift`, `TellViewModel.swift`, `TellScreen.swift` |
+| **2** | `level` as a field of extraction's JSON schema (the model labels its own question, no extra call) and a `prompt_question.level` column | `extract.ts`, `schema.sql`, `sync.ts` |
+| **3** | Generation aimed at a level ("one at N−1, one at N, one at N+1") | `extract.ts`, `worker.ts` |
+
+The order matters because each step stands alone. Steps 0–1 are client-only: the
+level is **derived from the question text** by a Finnish opening-word classifier
+(`Kuka`/`Missä` → 1–2, `Millainen` → 3, `Kerro` → 4, `Miltä tuntui` → 5), so
+nothing is stored, nothing is migrated and sync is untouched.
+
+Step 2 makes the label the model's own — it knows what it meant by the question
+— and the classifier stays as the fallback for rows written before the column,
+for questions a person asked, and for a model that ignored the field. Three
+places tolerate a missing level rather than failing: the Worker stores it as
+null, sync keeps an existing level when an older device pushes the row back
+without one (the same `COALESCE` rule as authorship), and the app decodes a
+question that arrives as a plain string.
+
+Step 3 sends the teller's level with the transcript and asks for one question
+below it, one at it and one above. **It is the one part measurement has not
+caught up with**: it changes the Finnish extraction prompt, and re-validating
+that against real elderly speech costs credits (CLAUDE.md). It is built to
+degrade safely — if the model ignores the instruction, the questions are still
+labelled, still ordered and still chosen by fit; only the spread is lost. If
+that measurement ever contradicts it, this is the piece to revert, not the
+ladder.
+
+The pairing required by "every addition requires a removal" (CLAUDE.md):
+**`prompt_question.target_member` is formally out of v1**, and §11's note above
+becomes permanent. It has been unused in the schema from the start, and a ladder
+that picks questions for the person in front of it makes routing to a named
+member more tempting than it is worth — it would need a picker, a visibility
+explanation, and a second selection rule competing with this one.
+
+As a side effect this closes the open edge left in §10: the open-question list
+grows by three every round, and ordering plus the return of skipped questions is
+exactly the cap that was deferred to "the store".

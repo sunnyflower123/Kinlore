@@ -184,6 +184,12 @@ CREATE TABLE prompt_question (
   --   ALTER TABLE prompt_question ADD COLUMN author_id TEXT REFERENCES member(id);
   author_id     TEXT REFERENCES member(id),
   text          TEXT NOT NULL,
+  -- How much the question asks of the person answering it, 1–5: a name, a fact,
+  -- a description, a story, a reflection. Extraction labels its own questions;
+  -- NULL means nobody did, and the client reads the level off the wording
+  -- instead. See docs/ARCHITECTURE.md §12. For existing databases:
+  --   ALTER TABLE prompt_question ADD COLUMN level INTEGER;
+  level         INTEGER,
   status        TEXT NOT NULL DEFAULT 'open',  -- 'open'|'answered'|'dismissed'
   answered_memory_id TEXT REFERENCES memory(id),
   created_at    INTEGER NOT NULL,

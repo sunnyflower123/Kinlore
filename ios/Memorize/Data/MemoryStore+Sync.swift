@@ -42,6 +42,10 @@ struct QuestionDTO: Codable {
     var id: String
     var subject_id: String?
     var text: String
+    /// How much the question asks of the answerer, 1–5. Optional in both
+    /// directions: an older server does not send it, and a question nobody
+    /// labelled travels without it.
+    var level: Int?
     var status: String
     var created_at: Double
     var deleted_at: Double?
@@ -201,6 +205,7 @@ extension FollowUpQuestion {
             id: id,
             subject_id: subjectID,
             text: text,
+            level: storedLevel,
             status: answered ? "answered" : "open",
             created_at: createdAt.timeIntervalSince1970,
             deleted_at: nil,
@@ -217,6 +222,7 @@ extension FollowUpQuestion {
             id: dto.id,
             subjectID: dto.subject_id,
             text: dto.text,
+            storedLevel: dto.level,
             answered: dto.status != "open",
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             authorID: dto.author_id,

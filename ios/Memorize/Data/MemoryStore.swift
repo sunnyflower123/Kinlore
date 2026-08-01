@@ -64,8 +64,26 @@ final class MemoryStore {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
-    func openQuestions(limit: Int = 3) -> [FollowUpQuestion] {
-        Array(questions.filter { !$0.answered }.prefix(limit))
+    /// The questions worth putting in front of the teller right now.
+    ///
+    /// Chosen by the ladder rather than by age: the oldest three are as likely
+    /// as not to be the three hardest, and a person who cannot answer the first
+    /// question they are shown does not press the button again. Passing a
+    /// subject narrows it to that photo's or that person's own questions.
+    /// See docs/ARCHITECTURE.md §12.
+    func openQuestions(limit: Int = 3, for subjectID: String? = nil) -> [FollowUpQuestion] {
+        let open = questions.filter { question in
+            guard !question.answered else { return false }
+            return subjectID == nil || question.subjectID == subjectID
+        }
+        return QuestionLadder.select(open, comfort: QuestionLadder.comfort, limit: limit)
+    }
+
+    /// What to offer on a subject nobody has spoken about yet. These are
+    /// generated on the spot and never stored — see `QuestionLadder.starters`.
+    func starterQuestions(for subject: Subject, limit: Int = 2) -> [FollowUpQuestion] {
+        guard isEmpty(subject) else { return [] }
+        return Array(QuestionLadder.starters(for: subject).prefix(limit))
     }
 
     /// A subject that has no memories yet. These are not hidden but shown as an

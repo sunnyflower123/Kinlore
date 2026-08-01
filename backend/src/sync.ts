@@ -51,6 +51,9 @@ export type QuestionRow = {
 	author_id: string | null
 	author_name?: string
 	text: string
+	// How much the question asks of the answerer, 1–5. Null when nobody labelled
+	// it; the client then reads it off the wording. See docs/ARCHITECTURE.md §12.
+	level: number | null
 	status: string
 	created_at: number
 	deleted_at: number | null
@@ -119,7 +122,7 @@ export async function pull(env: Env, session: Session, since: number) {
 		.all<MemoryRow>()
 
 	const questions = await env.DB.prepare(
-		`SELECT q.id, q.subject_id, q.text, q.status, q.created_at,
+		`SELECT q.id, q.subject_id, q.text, q.level, q.status, q.created_at,
 		        q.deleted_at, q.seq, q.author_id, mem.display_name AS author_name
 		 FROM prompt_question q
 		 LEFT JOIN member mem ON mem.id = q.author_id
@@ -278,14 +281,17 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		if (!question.id || !question.text) continue
 		statements.push(
 			env.DB.prepare(
-				`INSERT INTO prompt_question (id, family_id, subject_id, author_id, text, status,
+				`INSERT INTO prompt_question (id, family_id, subject_id, author_id, text, level, status,
 				                              created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   status = excluded.status,
 				   -- Authorship is sticky: an older device re-pushing the same
 				   -- question without an asker must not strip the name off it.
 				   author_id = COALESCE(prompt_question.author_id, excluded.author_id),
+				   -- The level is sticky for the same reason, and because only
+				   -- the device that extracted the question ever knew it.
+				   level = COALESCE(prompt_question.level, excluded.level),
 				   deleted_at = COALESCE(excluded.deleted_at, prompt_question.deleted_at),
 				   seq = excluded.seq
 				 WHERE prompt_question.family_id = excluded.family_id`,
@@ -298,6 +304,11 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				// rule as a memory's author, relaxed to allow the machine.
 				question.author_id === session.memberID ? session.memberID : null,
 				question.text,
+				// Out of range or missing is stored as null rather than
+				// rejected: the level is an optimisation, the question is not.
+				typeof question.level === 'number' && question.level >= 1 && question.level <= 5
+					? Math.round(question.level)
+					: null,
 				question.status ?? 'open',
 				question.created_at ?? timestamp,
 				question.deleted_at ?? null,

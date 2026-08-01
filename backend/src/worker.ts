@@ -252,6 +252,7 @@ export default {
 				let payload: {
 					transcript?: string
 					corrections?: { from?: string; to?: string }[]
+					level?: number
 				}
 				try {
 					payload = await request.json()
@@ -268,8 +269,16 @@ export default {
 					.filter((c) => c.from && c.to && c.from !== c.to)
 					.slice(0, 20)
 
+				// Where the teller is on the question ladder. Nonsense is
+				// dropped rather than rejected: an unaimed question is still a
+				// question, and losing the memory over it would be absurd.
+				const level =
+					typeof payload.level === 'number' && payload.level >= 1 && payload.level <= 5
+						? Math.round(payload.level)
+						: undefined
+
 				try {
-					return json(await extract(env, transcript, corrections))
+					return json(await extract(env, transcript, corrections, level))
 				} catch (err) {
 					return failure(err, 'extract')
 				}

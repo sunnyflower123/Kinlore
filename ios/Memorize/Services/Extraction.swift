@@ -16,7 +16,17 @@ struct ExtractionResult: Equatable {
     var mentions: [MentionedEntity]
     var dateHint: DateHint?
     /// Three questions. More overwhelms, fewer do not carry the story forward.
-    var questions: [String]
+    var questions: [ExtractedQuestion]
+}
+
+/// A follow-up question and how much it asks of the teller, 1–5.
+///
+/// The level is the extraction's own label — it knows what it meant by the
+/// question. Nil when it did not label one, and the level is then read off the
+/// wording instead. See `QuestionLadder` and docs/ARCHITECTURE.md §12.
+struct ExtractedQuestion: Equatable, Hashable {
+    var text: String
+    var level: Int?
 }
 
 struct MentionedEntity: Equatable, Hashable {
@@ -35,12 +45,20 @@ struct NameCorrection: Equatable, Hashable {
 }
 
 protocol ExtractionService {
-    func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult
+    /// `level` is where the teller currently is on the question ladder, 1–5. It
+    /// aims the follow-up questions: without it they come out at level 3–4 every
+    /// time, because a question aimed at a gap is naturally a "tell me about"
+    /// question — a wall for somebody who has not answered anything yet.
+    func extract(
+        transcript: String,
+        corrections: [NameCorrection],
+        level: Int?
+    ) async throws -> ExtractionResult
 }
 
 extension ExtractionService {
-    func extract(transcript: String) async throws -> ExtractionResult {
-        try await extract(transcript: transcript, corrections: [])
+    func extract(transcript: String, level: Int?) async throws -> ExtractionResult {
+        try await extract(transcript: transcript, corrections: [], level: level)
     }
 }
 
@@ -74,7 +92,11 @@ struct StubExtractionService: ExtractionService {
     /// real conditions rather than as a flash.
     var simulatedDelay: Duration = .milliseconds(2200)
 
-    func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult {
+    func extract(
+        transcript: String,
+        corrections: [NameCorrection],
+        level: Int?
+    ) async throws -> ExtractionResult {
         try await Task.sleep(for: simulatedDelay)
 
         // The stub cannot inflect, so it only replaces the base form. The real
@@ -101,7 +123,7 @@ struct StubExtractionService: ExtractionService {
             body: Self.tidy(text),
             mentions: mentions,
             dateHint: Self.dateHint(in: text),
-            questions: Self.questions(for: mentions)
+            questions: Self.questions(for: mentions, level: level)
         )
     }
 
@@ -175,24 +197,45 @@ struct StubExtractionService: ExtractionService {
     /// questions like "Millainen ihminen Puumalassa oli?" — that destroys the
     /// credibility of the whole magic moment, because the user sees immediately
     /// that the program understands nothing.
-    static func questions(for mentions: [MentionedEntity]) -> [String] {
+    /// The spread across levels mirrors what the real prompt asks for — one
+    /// question below where the teller is, one at it, one above — so the ladder
+    /// can be developed and filmed without a backend.
+    static func questions(for mentions: [MentionedEntity], level: Int?) -> [ExtractedQuestion] {
         let people = mentions.filter { $0.kind == .person }.map(\.name)
         let places = mentions.filter { $0.kind == .place }.map(\.name)
 
-        var out: [String] = []
+        var pool = [
+            ExtractedQuestion(text: "Kuka muu oli paikalla?", level: 1),
+            ExtractedQuestion(text: "Minä vuonna tämä suunnilleen oli?", level: 2),
+            ExtractedQuestion(text: "Muistatko miltä siellä tuoksui tai kuulosti?", level: 4),
+            ExtractedQuestion(text: "Mitä toivoisit lastenlastesi tietävän tästä?", level: 5),
+        ]
         if let first = people.first {
-            out.append("Millainen ihminen \(first) oli?")
+            pool.append(ExtractedQuestion(text: "Millainen ihminen \(first) oli?", level: 3))
         }
         if people.count > 1 {
-            out.append("Miten \(people[0]) ja \(people[1]) tunsivat toisensa?")
+            pool.append(
+                ExtractedQuestion(text: "Miten \(people[0]) ja \(people[1]) tunsivat toisensa?", level: 3)
+            )
         }
         if let place = places.first {
             // In the speech a place name is already inflected ("Puumalassa"), so
             // the question is built to avoid inflecting it again.
-            out.append("\(place) — mitä muuta siellä tapahtui?")
+            pool.append(ExtractedQuestion(text: "\(place) — mitä muuta siellä tapahtui?", level: 4))
         }
-        out.append("Muistatko miltä siellä tuoksui tai kuulosti?")
-        out.append("Kuka muu oli paikalla?")
-        return Array(out.prefix(3))
+
+        let aim = level ?? 3
+        var chosen: [ExtractedQuestion] = []
+        for target in [aim - 1, aim, aim + 1] {
+            let wanted = min(5, max(1, target))
+            let remaining = pool.filter { candidate in
+                !chosen.contains { $0.text == candidate.text }
+            }
+            guard let pick = remaining.min(by: {
+                abs(($0.level ?? 3) - wanted) < abs(($1.level ?? 3) - wanted)
+            }) else { break }
+            chosen.append(pick)
+        }
+        return chosen
     }
 }

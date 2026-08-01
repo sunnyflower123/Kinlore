@@ -137,6 +137,10 @@ final class TellViewModel {
             // A recording under a second is an accident, not a memory. In the
             // interview loop it is also the natural "I have nothing to add":
             // land on the last result, not on the empty idle screen.
+            //
+            // It is the clearest signal the ladder ever gets, too: the question
+            // was put in front of somebody and nothing came back.
+            recordSkip()
             if isInterviewing {
                 leaveInterview()
                 phase = .done
@@ -179,10 +183,21 @@ final class TellViewModel {
     /// the name-correction moment needs a calm screen more than the loop needs
     /// one saved tap.
     func beginInterview() async {
-        guard phase == .done, let next = newQuestions.first else { return }
+        guard phase == .done, let next = nextQuestion else { return }
         isInterviewing = true
         await ask(next)
     }
+
+    /// Which of the fresh questions to ask next: the one that fits where the
+    /// teller currently is, not whichever the model happened to emit first.
+    /// See docs/ARCHITECTURE.md §12.
+    private var nextQuestion: FollowUpQuestion? {
+        QuestionLadder.select(newQuestions, comfort: QuestionLadder.comfort, limit: 1).first
+    }
+
+    /// The same position as a whole number, which is what extraction wants when
+    /// it aims the next three questions.
+    private var ladderLevel: Int { Int(QuestionLadder.comfort.rounded()) }
 
     private func ask(_ next: FollowUpQuestion) async {
         askedQuestion = next
@@ -216,6 +231,12 @@ final class TellViewModel {
     /// nobody answered.
     func endInterview() {
         voice.stop()
+        // Ending while the question is still on screen means it went
+        // unanswered. Ending after several rounds is more likely tiredness than
+        // difficulty, and reading that as strain is a knowing inaccuracy: it
+        // makes the next session slightly easier, which is the right direction
+        // to be wrong in for this user.
+        if phase == .asking { recordSkip() }
         leaveInterview()
         if phase == .asking { phase = .done }
     }
@@ -223,6 +244,24 @@ final class TellViewModel {
     private func leaveInterview() {
         isInterviewing = false
         askedQuestion = nil
+    }
+
+    // MARK: - Starters
+
+    /// One tap on a small question and the microphone is already running.
+    ///
+    /// A subject nobody has spoken about yet has no questions of its own —
+    /// extraction only makes them once there is a memory to make them from — so
+    /// the first contact with a photo used to be a blank button. A starter is
+    /// the smallest thing this app can ask: "Kuka tässä kuvassa on?" is three
+    /// seconds of speech and it cannot be got wrong.
+    ///
+    /// Used for the subject's own open questions too. The memory is going to the
+    /// same place either way, so there is nothing to present on top of this
+    /// screen — the microphone just starts.
+    func answer(_ chosen: FollowUpQuestion) async {
+        question = chosen
+        await startRecording()
     }
 
     // MARK: - Typing
@@ -253,11 +292,14 @@ final class TellViewModel {
         do {
             transcript = text
             phase = .organizing
-            let extracted = try await extraction.extract(transcript: text)
+            // The teller's own level travels with the request, so the questions
+            // that come back are ones they can actually answer. See
+            // docs/ARCHITECTURE.md §12.
+            let extracted = try await extraction.extract(transcript: text, level: ladderLevel)
             result = extracted
 
             save(extracted, transcript: text, audioURL: audioURL, duration: duration)
-            if isInterviewing, let next = newQuestions.first {
+            if isInterviewing, let next = nextQuestion {
                 // The loop feeds itself: this answer's extraction produced the
                 // next questions. No result screen between rounds — proposals
                 // pile up unconfirmed and are handled when the loop ends.
@@ -301,9 +343,32 @@ final class TellViewModel {
 
     /// The question is cleared only after saving. Audio saved without a
     /// transcript answers the question too — the text arrives later.
-    private func markQuestionAnswered() {
+    ///
+    /// This is also where the ladder learns. `answer` is nil when the audio was
+    /// saved without a transcript: that is a quota or a network outage, ours and
+    /// not the teller's, and it must never cost them a level.
+    private func markQuestionAnswered(answer: String? = nil, yieldedStructure: Bool = false) {
         guard let question else { return }
+        // A starter is not a stored row, so this finds nothing and does nothing
+        // — a starter is a prompt, not a debt. The ladder still learns from it.
         store.markAnswered(questionID: question.id)
+        guard let answer else { return }
+        QuestionLadder.record(
+            QuestionLadder.outcome(
+                forAnswer: answer,
+                at: question.level,
+                yieldedStructure: yieldedStructure
+            ),
+            at: question.level
+        )
+    }
+
+    /// A question that was put in front of somebody and got no answer. One of
+    /// these drops the ladder a whole level; climbing back takes two good
+    /// answers.
+    private func recordSkip() {
+        guard let question else { return }
+        QuestionLadder.record(.strained, at: question.level)
     }
 
     private func save(
@@ -359,11 +424,17 @@ final class TellViewModel {
         savedMemoryID = memory.id
 
         let questions = extracted.questions.map {
-            FollowUpQuestion(subjectID: home.id, text: $0)
+            FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level)
         }
         store.add(questions: questions)
         newQuestions = questions
-        markQuestionAnswered()
+        // Measured on the raw transcript rather than the cleaned body: what was
+        // actually said is the evidence, and the cleanup can lengthen a
+        // three-word answer into a sentence.
+        markQuestionAnswered(
+            answer: transcript,
+            yieldedStructure: !mentioned.isEmpty || extracted.dateHint != nil
+        )
     }
 
     /// Finds or creates the subject the memory belongs to.
@@ -450,7 +521,8 @@ final class TellViewModel {
         do {
             let corrected = try await extraction.extract(
                 transcript: transcript,
-                corrections: corrections
+                corrections: corrections,
+                level: ladderLevel
             )
             store.updateBody(memoryID: memoryID, body: corrected.body)
             result = corrected

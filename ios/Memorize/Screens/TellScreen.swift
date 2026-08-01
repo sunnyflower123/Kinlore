@@ -122,11 +122,19 @@ private struct IdleView: View {
             : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
 
-    /// Open questions appear only in free dictation. When telling about a photo
-    /// or a person the screen already has a subject, and it should not be
-    /// offered a competing one.
-    private var openQuestions: [FollowUpQuestion] {
-        model.target == nil ? store.openQuestions(limit: 2) : []
+    /// What is offered beside the big button, chosen by the ladder: easy enough
+    /// to be answerable, and never a competing subject.
+    ///
+    /// In free dictation these are the family's open questions. On a photo or a
+    /// person the screen already has a subject, so only that subject's own
+    /// questions appear — and when nobody has said anything about it yet, the
+    /// starters that stand in for the questions extraction has had no chance to
+    /// make. That case used to be a blank button, which is the hardest thing
+    /// this app ever put in front of anyone. See docs/ARCHITECTURE.md §12.
+    private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
+        guard let target = model.target else { return (store.openQuestions(limit: 2), false) }
+        let own = store.openQuestions(limit: 2, for: target.id)
+        return own.isEmpty ? (store.starterQuestions(for: target), true) : (own, false)
     }
 
     private var title: String {
@@ -198,16 +206,27 @@ private struct IdleView: View {
             // An open question is a reason to come back to the app. It is also
             // an easier start than a blank button: telling "something" is hard
             // for an elderly person, answering a question is easy.
-            if !openQuestions.isEmpty {
+            let offered = offer
+            if !offered.questions.isEmpty {
                 VStack(spacing: 10) {
-                    Text("Tai vastaa aiempaan kysymykseen")
+                    Text(offered.isStarter ? "Jos et tiedä mistä aloittaa" : "Tai vastaa aiempaan kysymykseen")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    ForEach(openQuestions) { question in
-                        Button { answering = question } label: {
+                    ForEach(offered.questions) { question in
+                        Button {
+                            // In free dictation the question belongs to some
+                            // other subject, so it opens its own screen. Here it
+                            // is already the right subject: no sheet on top of a
+                            // sheet, the microphone just starts.
+                            if model.target == nil {
+                                answering = question
+                            } else {
+                                Task { await model.answer(question) }
+                            }
+                        } label: {
                             HStack(alignment: .top, spacing: 10) {
                                 Image(systemName: "questionmark.circle.fill")
                                     .foregroundStyle(.tint)
@@ -348,11 +367,40 @@ private struct RecordingView: View {
     let model: TellViewModel
 
     var body: some View {
+        // The same scroll treatment as IdleView and AskingView: with a question
+        // on screen this stack is taller than the phone at the largest text
+        // size, and truncating the question somebody is answering right now
+        // would be absurd.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 28) {
-            Spacer()
+            Spacer(minLength: 0)
 
             Text("Kuuntelen")
                 .font(.largeTitle.weight(.semibold))
+
+            // The question stays visible while it is being answered. Vanishing
+            // the moment the button is pressed is how somebody loses the thread
+            // halfway through the first sentence — and it is the one question
+            // they have not had time to memorise, because they only just chose
+            // it.
+            if let question = model.question {
+                Text(question.text)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(Elder.lineSpacing)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             // The waveform is the only feedback that the device can hear.
             // Somebody speaking quietly has no other way to know whether the
@@ -367,7 +415,7 @@ private struct RecordingView: View {
                 .monospacedDigit()
                 .accessibilityLabel("Nauhoitettu \(Int(model.recorder.elapsed)) sekuntia")
 
-            Spacer()
+            Spacer(minLength: 0)
 
             RecordButton(isRecording: true) {
                 Task { await model.stopAndProcess() }
@@ -379,9 +427,8 @@ private struct RecordingView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding(Elder.screenPadding)
     }
 
     private static func timeText(_ interval: TimeInterval) -> String {

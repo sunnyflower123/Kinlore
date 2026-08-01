@@ -177,6 +177,11 @@ struct FollowUpQuestion: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var subjectID: String?
     var text: String
+    /// How much the question asks of the person answering it, 1–5, as labelled
+    /// by the extraction that produced it. Nil when nobody labelled it — a row
+    /// written before the field existed, or a question a person asked — and the
+    /// level is then read off the wording instead. See `QuestionLadder`.
+    var storedLevel: Int?
     var answered: Bool = false
     var createdAt: Date = .now
     /// Who asked. Nil for questions the extraction generated — the difference

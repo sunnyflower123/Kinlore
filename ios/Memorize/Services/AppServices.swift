@@ -153,6 +153,10 @@ struct RemoteExtractionService: ExtractionService {
     private struct Request: Encodable {
         let transcript: String
         let corrections: [Correction]
+        /// Where the teller is on the question ladder, 1–5. Omitted when the
+        /// caller does not track it — the Worker then leaves the follow-up
+        /// questions wherever the gaps lead.
+        let level: Int?
 
         struct Correction: Encodable {
             let from: String
@@ -176,19 +180,47 @@ struct RemoteExtractionService: ExtractionService {
             let precision: String
         }
 
+        /// The level arrived beside the question text only with the ladder
+        /// (docs/ARCHITECTURE.md §12). A Worker that has not been redeployed
+        /// still sends plain strings, and a question without a level is
+        /// perfectly usable — the level is then read off the wording. So both
+        /// shapes decode rather than one of them failing the whole extraction.
+        struct QuestionReply: Decodable {
+            let text: String
+            let level: Int?
+
+            private enum CodingKeys: String, CodingKey { case text, level }
+
+            init(from decoder: Decoder) throws {
+                if let plain = try? decoder.singleValueContainer().decode(String.self) {
+                    text = plain
+                    level = nil
+                    return
+                }
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                text = try container.decode(String.self, forKey: .text)
+                level = try container.decodeIfPresent(Int.self, forKey: .level)
+            }
+        }
+
         let body: String
         let mentions: [Mention]
         let date: DateReply
-        let questions: [String]
+        let questions: [QuestionReply]
     }
 
-    func extract(transcript: String, corrections: [NameCorrection]) async throws -> ExtractionResult {
+    func extract(
+        transcript: String,
+        corrections: [NameCorrection],
+        level: Int?
+    ) async throws -> ExtractionResult {
         let reply: Reply = try await post(
             "extract",
             baseURL: baseURL,
             body: Request(
                 transcript: transcript,
-                corrections: corrections.map { .init(from: $0.from, to: $0.to) }
+                corrections: corrections.map { .init(from: $0.from, to: $0.to) },
+                level: level
             ),
             timeout: 90
         )
@@ -206,7 +238,7 @@ struct RemoteExtractionService: ExtractionService {
                 )
             },
             dateHint: Self.dateHint(from: reply.date),
-            questions: reply.questions
+            questions: reply.questions.map { ExtractedQuestion(text: $0.text, level: $0.level) }
         )
     }
 

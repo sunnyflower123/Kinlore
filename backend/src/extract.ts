@@ -62,7 +62,25 @@ export const EXTRACTION_SCHEMA = {
 			questions: {
 				type: 'array',
 				description: 'Täsmälleen kolme jatkokysymystä jotka kohdistuvat aukkoihin.',
-				items: { type: 'string' },
+				items: {
+					type: 'object',
+					properties: {
+						text: { type: 'string' },
+						level: {
+							type: 'integer',
+							description:
+								'Kuinka paljon kysymys vaatii vastaajalta, 1–5. Arvioi vastauksen ' +
+								'MUOTOA, älä aihetta. ' +
+								'1 = vastaus on nimi tai yksi sana ("Kuka tässä kuvassa on?"). ' +
+								'2 = yksi tieto, paikka tai vuosi ("Missä tämä on otettu?"). ' +
+								'3 = muutama lause ihmisestä tai paikasta ("Millainen ihminen Aino oli?"). ' +
+								'4 = kertomus jolla on alku ja loppu ("Kerro päivästä jolloin muutitte Ouluun."). ' +
+								'5 = pohdinta merkityksestä tai tunteesta ("Mitä toivoisit lastenlastesi tietävän?").',
+						},
+					},
+					required: ['text', 'level'],
+					additionalProperties: false,
+				},
 			},
 		},
 		required: ['body', 'mentions', 'date', 'questions'],
@@ -76,7 +94,8 @@ export const EXTRACTION_SCHEMA = {
 /// of the memory; (3) proper nouns only, a common noun like "grandma's house"
 /// identifies nobody; (4) never invent, an invented relative is worse than a
 /// missing one; (5) preserve uncertainty, a decade stays a decade; (6) exactly
-/// three follow-up questions aimed at the gaps.
+/// three follow-up questions aimed at the gaps, each labelled with how much it
+/// asks of the answerer.
 const SYSTEM_PROMPT = `Autat suomalaista perhettä säilyttämään muistoja. Käyttäjä on usein iäkäs ja puhuu rönsyillen, keskeneräisin lausein ja epävarmoin ajankohdin. Se on normaalia, ei virhe.
 
 TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdottomasti:
@@ -91,7 +110,7 @@ TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdott
 
 5. SÄILYTÄ EPÄVARMUUS. "Joskus 50-luvulla" on precision "decade", start_year 1950, end_year 1959 — älä pakota tarkkaan vuoteen. Kaksinumeroinen vuosikymmen tarkoittaa 1900-lukua, koska puhe koskee vanhoja valokuvia.
 
-6. KOLME KYSYMYSTÄ. Kysy siitä mitä puheesta jäi puuttumaan: mainittu henkilö josta ei kerrottu mitään, paikka josta tiedetään vain nimi, tai aistimuisto. Kysy lämpimästi ja lyhyesti, yksi asia kerrallaan. Puhuttele suoraan ("Millainen ihminen Aino oli?"). Älä kysy asiaa johon puhe jo vastasi.
+6. KOLME KYSYMYSTÄ. Kysy siitä mitä puheesta jäi puuttumaan: mainittu henkilö josta ei kerrottu mitään, paikka josta tiedetään vain nimi, tai aistimuisto. Kysy lämpimästi ja lyhyesti, yksi asia kerrallaan. Puhuttele suoraan ("Millainen ihminen Aino oli?"). Älä kysy asiaa johon puhe jo vastasi. Merkitse jokaiseen kysymykseen level-arvo sen mukaan kuinka pitkän vastauksen se vaatii.
 
 Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan name-kenttä on perusmuodossa.`
 
@@ -119,7 +138,39 @@ Puheentunnistus kuuli nämä nimet väärin ja kertoja on korjannut ne. Korjauks
 Korjaa nimi myös muiston tekstiin, ja TAIVUTA SE OIKEIN asiayhteyteen. Jos teksti sanoo "Skotlannissa" ja korjaus on "Sotkamo", tekstiin tulee "Sotkamossa" — ei "Sotkamo" perusmuodossa keskelle lausetta. Tämä on koko korjauksen tarkoitus: pelkkä merkkijonon vaihto ei osu taivutettuun muotoon.`
 }
 
+/// Extra instruction for aiming the questions where the teller actually is.
+///
+/// Finnish by design — see the note at the top of this file. In English: one
+/// question just below the given level, one at it and one just above. The spread
+/// is deliberate. A single level makes a wrong estimate cost the whole round,
+/// and letting the person choose between three is the cheapest calibration
+/// there is — see docs/ARCHITECTURE.md §12.
+///
+/// Without this the questions come out at level 3–4 almost every time, because a
+/// question aimed at a gap is naturally a "tell me about" question. That is a
+/// wall for somebody who has not answered anything yet.
+function levelInstruction(level: number): string {
+	const below = Math.max(1, level - 1)
+	const above = Math.min(5, level + 1)
+	return `
+
+KYSYMYSTEN VAATIVUUS. Kertoja on tällä hetkellä tasolla ${level}. Anna kolme kysymystä eri tasoilta: yksi tasolta ${below}, yksi tasolta ${level} ja yksi tasolta ${above}. Taso kuvaa vastauksen MUOTOA, ei aihetta:
+
+1 = vastaus on nimi tai yksi sana ("Kuka tässä kuvassa on?")
+2 = yksi tieto, paikka tai vuosi ("Missä tämä on otettu?")
+3 = muutama lause ihmisestä tai paikasta ("Millainen ihminen Aino oli?")
+4 = kertomus jolla on alku ja loppu ("Kerro päivästä jolloin muutitte Ouluun.")
+5 = pohdinta merkityksestä tai tunteesta ("Mitä toivoisit lastenlastesi tietävän?")
+
+Jos kertoja on tasolla 1 tai 2, älä pyydä kertomusta tai pohdintaa. Helppo kysymys johon iäkäs ihminen osaa vastata heti on arvokkaampi kuin syvällinen kysymys johon hän ei uskalla tarttua.`
+}
+
 export type Correction = { from: string; to: string }
+
+/// A question and how much it asks of the answerer, 1–5. Null when the model
+/// did not label it; the client then reads the level off the wording, so an
+/// unlabelled question costs nothing.
+export type ExtractedQuestion = { text: string; level: number | null }
 
 export type ExtractionResult = {
 	body: string
@@ -129,7 +180,7 @@ export type ExtractionResult = {
 		end_year: number | null
 		precision: 'day' | 'month' | 'year' | 'decade' | 'unknown'
 	}
-	questions: string[]
+	questions: ExtractedQuestion[]
 }
 
 /// Defence against formatting deviations.
@@ -176,13 +227,39 @@ function parseStructured(raw: string): ExtractionResult {
 	throw new Error('Extraction returned invalid JSON')
 }
 
+/// Questions as the model actually returned them.
+///
+/// Two deviations are tolerated rather than fatal, because a question is worth
+/// more than its label: a plain string (a provider that ignored the object
+/// schema) and a `level` that is missing or out of range. Both become
+/// `level: null`, and the client falls back to reading the level off the
+/// wording.
+function normaliseQuestions(raw: unknown): ExtractedQuestion[] {
+	if (!Array.isArray(raw)) return []
+	return raw.flatMap((item): ExtractedQuestion[] => {
+		if (typeof item === 'string') {
+			return item.trim() ? [{ text: item, level: null }] : []
+		}
+		if (typeof item !== 'object' || item === null) return []
+		const { text, level } = item as { text?: unknown; level?: unknown }
+		if (typeof text !== 'string' || !text.trim()) return []
+		const rounded = Math.round(Number(level))
+		return [{ text, level: rounded >= 1 && rounded <= 5 ? rounded : null }]
+	})
+}
+
 export async function extract(
 	env: Env,
 	transcript: string,
 	corrections: Correction[] = [],
+	/// Where the teller is on the question ladder, 1–5. Omitted for a caller
+	/// that does not track it — the questions then come out wherever the gaps
+	/// happen to lead.
+	level?: number,
 ): Promise<ExtractionResult> {
-	const system =
-		corrections.length > 0 ? SYSTEM_PROMPT + correctionInstruction(corrections) : SYSTEM_PROMPT
+	let system = SYSTEM_PROMPT
+	if (level) system += levelInstruction(level)
+	if (corrections.length > 0) system += correctionInstruction(corrections)
 
 	const messages: Message[] = [
 		{ role: 'system', content: system },
@@ -212,7 +289,7 @@ export async function extract(
 			// The schema does not enforce the count, so the cap of three is
 			// applied here. Four questions overwhelm an elderly user, two do not
 			// carry the story forward.
-			parsed.questions = (parsed.questions ?? []).slice(0, 3)
+			parsed.questions = normaliseQuestions(parsed.questions).slice(0, 3)
 			parsed.mentions = parsed.mentions ?? []
 			return parsed
 		} catch (err) {
