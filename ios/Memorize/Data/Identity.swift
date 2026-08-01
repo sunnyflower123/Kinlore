@@ -33,6 +33,16 @@ struct Identity {
         return identity
     }
 
+    /// Throws the identity away. The next `loadOrCreate` makes a new one, which
+    /// is the whole point: after "Tyhjennä tämä laite" the device has to be a
+    /// stranger to the server, or the next sync would quietly pull the archive
+    /// back in. Keychain entries survive deleting the app on purpose (§4) — this
+    /// is the one place that is not what the user asked for.
+    static func forget() {
+        Keychain.delete(Keychain.memberIDKey)
+        Keychain.delete(Keychain.secretKey)
+    }
+
     /// 32 bytes of randomness as hex. This is not a password but a key, so
     /// length replaces memorability.
     private static func randomSecret() -> String {

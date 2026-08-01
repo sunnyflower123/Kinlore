@@ -83,6 +83,18 @@ struct FamilyClient {
         )
     }
 
+    /// Ends this device's membership. The memories stay with the family — see
+    /// docs/ARCHITECTURE.md §14.
+    func leave() async throws {
+        struct Reply: Decodable { let left: Bool }
+        let _: Reply = try await send(
+            "family/me",
+            method: "DELETE",
+            body: Optional<Int>.none,
+            authenticated: true
+        )
+    }
+
     // MARK: - Transport
 
     private func split(_ token: String) -> (id: String, secret: String) {
@@ -142,6 +154,8 @@ enum FamilyError: LocalizedError {
             return .message("Tämä laite kuuluu jo toiseen perheeseen.")
         case "unauthorized":
             return .message("Tunnistautuminen epäonnistui.")
+        case "last_member":
+            return .message("Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen.")
         default:
             return .message(status >= 500
                 ? "Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen."

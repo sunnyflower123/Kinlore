@@ -99,6 +99,8 @@ xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
 | `-screen starter` | DEBUG | Opens the Tell screen on a photo nobody has spoken about yet, where the starter questions live. Otherwise that state is reachable only by picking a photo from the library by hand. |
 | `-screen person` | DEBUG | Opens the first person's card, relationships and all. |
 | `-screen family` | DEBUG | Opens the family view: members, usage, invite link. |
+| `-screen settings` | DEBUG | Opens Settings: export, leaving the family, emptying the device. |
+| `-screen export` | DEBUG | Opens Settings and runs the export at once, logging where the zip landed. The export is the one output that leaves the app for good, so it is worth opening the real file. |
 | `-guess demo` | DEBUG | Builds guessing rounds from memories you told yourself. A round normally needs a second family member — a screenshot run and the demo phone both have one device. |
 
 These exist because some screens sit behind a tap, and two things that need to

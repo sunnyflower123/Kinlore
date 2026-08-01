@@ -46,7 +46,11 @@ struct RootView: View {
 
 /// Marks the family view as a navigation destination, so it can be pushed by
 /// value rather than only by tapping the toolbar button.
-private struct FamilyRoute: Hashable {}
+struct FamilyRoute: Hashable {}
+
+/// The same for Settings, which is where the family view now lives one step
+/// down. See docs/ARCHITECTURE.md §14.
+struct SettingsRoute: Hashable {}
 
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
@@ -82,26 +86,30 @@ struct PeopleScreen: View {
             .navigationDestination(for: FamilyRoute.self) { _ in
                 FamilyScreen()
             }
+            .navigationDestination(for: SettingsRoute.self) { _ in
+                SettingsScreen()
+            }
             .toolbar {
-                // The family belongs under People rather than as its own tab:
+                // Settings belongs under People rather than as its own tab:
                 // three tabs is already the limit of what an 80-year-old holds
-                // in mind.
-                if session.mode != .local {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink(value: FamilyRoute()) {
-                            Image(systemName: "person.2.badge.gearshape")
-                                .elderTapTarget()
-                        }
-                        .accessibilityLabel("Perheen asetukset")
+                // in mind. It is shown without a backend too — a single-device
+                // archive is exactly the one with no copy anywhere else, and it
+                // used to have no way to reach the export at all.
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(value: SettingsRoute()) {
+                        Image(systemName: "gearshape")
+                            .elderTapTarget()
                     }
+                    .accessibilityLabel("Asetukset")
                 }
             }
             #if DEBUG
             // Screenshot aid, alongside `-tab` and `-screen write`. These two
             // screens sit behind a tap, and a screenshot run has no hands:
             //
-            //   -screen person   the first person's card, relationships and all
-            //   -screen family   members, usage and the invite link
+            //   -screen person     the first person's card, relationships and all
+            //   -screen family     members, usage and the invite link
+            //   -screen settings   export, leaving, emptying the device
             //
             // Checking a screen at the largest text size means opening it, and
             // this is how the two that were skipped stopped being skipped.
@@ -111,6 +119,8 @@ struct PeopleScreen: View {
                     if let first = store.subjects(of: .person).first { path.append(first) }
                 case "family":
                     path.append(FamilyRoute())
+                case "settings", "export":
+                    path.append(SettingsRoute())
                 default:
                     break
                 }

@@ -685,3 +685,76 @@ No score, no streak, no timer, no leaderboard, and "En muista" is a first-class
 answer — for this app's user it is the most likely one. These are memories of
 people who have died. The reward is that grandmother's memory card says *"Ville
 tunnisti hänet"*: her sister was recognised. Nobody wins.
+
+## 14. Settings — taking the archive out, and leaving
+
+The honest remainder of §8's list. Two things belong here and one does not:
+export and leaving are built; reporting and blocking are formally out of v1
+(below).
+
+### Where it sits
+
+Not a fourth tab — three is the stated limit of what this user holds in mind.
+The People tab's toolbar button becomes a gear that opens Settings, and the
+family view moves one step down, behind a row in it.
+
+That also closes a gap nobody had noticed: the toolbar button only appeared when
+a backend was configured, so a **single-device archive had no toolbar entry at
+all** — and a local archive is precisely the one with no copy on any server, the
+one that needs an export most.
+
+### Export
+
+One zip through the share sheet:
+
+| In the zip | Why |
+|---|---|
+| `muistot.html` | Every memory under its subject, dates as they were told, photos inline, audio playable |
+| `kuvat/`, `aani/` | The originals, byte for byte — audio is never re-encoded, here least of all |
+| `arkisto.json` | The store exactly as it sits on disk |
+
+Four decisions:
+
+- **Media missing from the device are fetched first.** A phone that joined last
+  week holds R2 keys, not files. An export missing grandmother's voice would be
+  a lie about what the word means. It costs a progress bar.
+- **HTML rather than a list of text.** The point of an export is that the
+  archive outlives the app, and a browser is the one program every family
+  already has. The same file carries the photos and plays the audio without
+  Memorize installed.
+- **The raw JSON travels beside it.** If the readable version ever lags behind
+  the model, nothing has been lost.
+- **`NSFileCoordinator(.forUploading)` does the zipping**, so no dependency is
+  added for one archive format.
+
+### Leaving
+
+There is no account here, so "delete my account" would be a lie in two
+directions at once. There is a device identity in the Keychain and a membership
+in a family, and they are genuinely separate — so the screen names both:
+
+- **Poistu perheestä.** The membership ends. **The memories stay.** A family
+  archive exists so that what was told outlives the teller, and a member who
+  leaves taking grandmother's voice with them is the exact failure this app was
+  built against. An owner who leaves hands ownership to the longest-standing
+  remaining member: an ownerless family could never invite anyone again. The
+  last member cannot leave — there would be nothing to leave, and the archive
+  would become unreachable rather than deleted.
+- **Tyhjennä tämä laite.** The store, the media, the ladder's state and the
+  Keychain identity. Afterwards the app is a fresh install. In a family the
+  memories are still on the server and rejoining brings them back; in a local
+  archive they are gone for good, and the screen says exactly that in those
+  words rather than in a generic warning.
+
+**Deliberately not built: deleting your own memories out of the family.** Rule 3
+keeps the original audio because the speaker may no longer be around to ask, and
+a tap that erases a dead person's voice from everybody else's archive is not a
+feature this app should own. If it is ever needed, it belongs to the family
+owner and to a conversation, not to a member's settings screen.
+
+The pairing required by "every addition requires a removal" (CLAUDE.md):
+**moderation is formally out of v1.** `report` and `block` are in the schema for
+Apple's rule 1.2, and §7 already said they could be cut entirely if the release
+is never made. It is not being made (PLAN.md §2), this is a family's private
+channel rather than a public network, and the schema keeps the tables for the
+day that changes.

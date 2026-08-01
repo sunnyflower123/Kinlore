@@ -138,6 +138,50 @@ export async function revokeInvite(env: Env, session: Session, code: string) {
 	return { revoked: (result.meta.changes ?? 0) > 0 }
 }
 
+/// Ends a membership. **The memories stay.**
+///
+/// A family archive exists so that what was told outlives the teller, so leaving
+/// is not deletion: the rows keep their `author_id`, and the name on them still
+/// resolves through `member.display_name` for everybody who is still here — see
+/// docs/ARCHITECTURE.md §14.
+///
+/// Two rules make the family survive the departure:
+///
+///   - The last member cannot leave. There would be nothing to leave, and the
+///     archive would become unreachable rather than deleted.
+///   - An owner hands ownership to the longest-standing remaining member. An
+///     ownerless family could never invite anyone again.
+export async function leaveFamily(env: Env, session: Session) {
+	const remaining = await env.DB.prepare(
+		'SELECT id, role FROM member WHERE family_id = ? AND id != ? ORDER BY created_at LIMIT 1',
+	)
+		.bind(session.familyID, session.memberID)
+		.first<{ id: string; role: string }>()
+
+	if (!remaining) return { error: 'last_member' as const }
+
+	const statements = [
+		// Invites created by the departing member go with them: the link is the
+		// entire security boundary, and nobody left would know to revoke it.
+		env.DB.prepare(
+			'UPDATE invite SET revoked_at = ? WHERE created_by = ? AND revoked_at IS NULL',
+		).bind(now(), session.memberID),
+		env.DB.prepare('DELETE FROM member WHERE id = ? AND family_id = ?').bind(
+			session.memberID,
+			session.familyID,
+		),
+	]
+
+	if (session.role === 'owner') {
+		statements.push(
+			env.DB.prepare('UPDATE member SET role = ? WHERE id = ?').bind('owner', remaining.id),
+		)
+	}
+
+	await env.DB.batch(statements)
+	return { left: true as const, newOwner: session.role === 'owner' ? remaining.id : null }
+}
+
 export async function getFamily(env: Env, session: Session) {
 	const family = await env.DB.prepare(
 		'SELECT id, name, entitlement, sync_seq FROM family WHERE id = ?',

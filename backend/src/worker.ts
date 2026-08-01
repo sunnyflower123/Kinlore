@@ -5,7 +5,14 @@
 /// audio and text always travel through here.
 
 import { authenticate } from './auth'
-import { createFamily, createInvite, getFamily, joinFamily, revokeInvite } from './family'
+import {
+	createFamily,
+	createInvite,
+	getFamily,
+	joinFamily,
+	leaveFamily,
+	revokeInvite,
+} from './family'
 import { download, upload } from './media'
 import { extract } from './extract'
 import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement'
@@ -200,6 +207,16 @@ export default {
 			} catch (err) {
 				return failure(err, 'media-download')
 			}
+		}
+
+		// Leaving is not deletion: the memories stay with the family. The route
+		// is on /family/me rather than /member, because what ends is the
+		// membership and not the identity — that lives in the Keychain and is
+		// cleared on the device.
+		if (url.pathname === '/family/me' && request.method === 'DELETE') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const result = await leaveFamily(env, session)
+			return 'error' in result ? json(result, 409) : json(result)
 		}
 
 		if (url.pathname === '/family/invite' && request.method === 'DELETE') {

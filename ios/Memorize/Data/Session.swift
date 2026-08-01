@@ -54,7 +54,10 @@ final class Session {
     private(set) var isWorking = false
     private(set) var lastError: String?
 
-    let identity = Identity.loadOrCreate()
+    /// Not a `let`: "Tyhjennä tämä laite" replaces it, and the clients read it
+    /// on every call so the new token is in use immediately rather than after a
+    /// restart.
+    private(set) var identity = Identity.loadOrCreate()
 
     private let familyKey = "family_id"
     private var client: FamilyClient? {
@@ -140,6 +143,52 @@ final class Session {
         guard let client else { return }
         try? await client.revokeInvite(code: code)
         await refresh()
+    }
+
+    // MARK: - Leaving
+
+    /// Ends this device's membership. The memories stay with the family — see
+    /// docs/ARCHITECTURE.md §14.
+    ///
+    /// Returns false and leaves everything as it was if the server refused, so
+    /// the screen can say why. Local membership is only forgotten once the
+    /// server has actually let go: forgetting it first would leave a member row
+    /// nobody could ever reach again.
+    func leaveFamily() async -> Bool {
+        guard let client else {
+            lastError = "Backendin osoitetta ei ole määritetty."
+            return false
+        }
+        isWorking = true
+        lastError = nil
+        defer { isWorking = false }
+        do {
+            try await client.leave()
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
+        UserDefaults.standard.removeObject(forKey: familyKey)
+        mode = .needsFamily
+        family = nil
+        usage = nil
+        return true
+    }
+
+    /// The other half of "Tyhjennä tämä laite": forget the family and take a new
+    /// identity.
+    ///
+    /// The new identity is what makes the wipe stick. Keeping the old one would
+    /// leave this device a member on the server, and the next sync would pull
+    /// the whole archive back — a wipe that undoes itself in the background is
+    /// worse than no wipe at all.
+    func renewIdentity() {
+        Identity.forget()
+        identity = Identity.loadOrCreate()
+        UserDefaults.standard.removeObject(forKey: familyKey)
+        family = nil
+        usage = nil
+        mode = AppServices.apiBaseURL == nil ? .local : .needsFamily
     }
 
     // MARK: - Helpers

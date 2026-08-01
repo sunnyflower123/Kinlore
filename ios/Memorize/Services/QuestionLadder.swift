@@ -312,6 +312,15 @@ enum QuestionLadder {
         }
     }
 
+    /// Forgets where the person had got to. Part of "Tyhjennä tämä laite": the
+    /// ladder describes whoever holds the phone, so it leaves with them.
+    static func reset() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: comfortKey)
+        defaults.removeObject(forKey: streakKey)
+        defaults.removeObject(forKey: answeredKey)
+    }
+
     // MARK: - Storage
 
     // UserDefaults rather than the store's JSON file: this is device state, not

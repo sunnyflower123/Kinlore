@@ -471,6 +471,34 @@ final class MemoryStore {
         save()
     }
 
+    // MARK: - Wiping
+
+    /// Empties the archive on this device: every row, every media file and the
+    /// outbox with them.
+    ///
+    /// Only "Tyhjennä tämä laite" in Settings calls this, and the screen has
+    /// already said what it costs — in a family the memories are still on the
+    /// server, in a local archive they are gone. That sentence belongs there
+    /// rather than here, but this is the code it is describing.
+    func wipe() {
+        for filename in subjects.compactMap(\.imageFilename) {
+            MediaStore.delete(filename: filename)
+        }
+        for filename in memories.compactMap(\.audioFilename) {
+            MediaStore.delete(filename: filename)
+        }
+        subjects = []
+        memories = []
+        questions = []
+        relations = []
+        dirtySubjects = []
+        dirtyMemories = []
+        dirtyQuestions = []
+        dirtyRelations = []
+        syncSeq = 0
+        try? FileManager.default.removeItem(at: fileURL)
+    }
+
     // MARK: - Disk
 
     struct Snapshot: Codable {
@@ -507,7 +535,12 @@ final class MemoryStore {
     }
 
     func save() {
-        let snapshot = Snapshot(
+        guard let data = try? JSONEncoder().encode(snapshot()) else { return }
+        try? data.write(to: fileURL, options: .atomic)
+    }
+
+    private func snapshot() -> Snapshot {
+        Snapshot(
             subjects: subjects,
             memories: memories,
             questions: questions,
@@ -520,7 +553,18 @@ final class MemoryStore {
             guesses: guesses,
             dirtyGuesses: dirtyGuesses
         )
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+    }
+
+    /// The whole archive as JSON, for the export.
+    ///
+    /// Dates travel as ISO 8601 rather than in the on-disk form: this copy is
+    /// read by whatever the family has in twenty years, not by this app. If the
+    /// readable HTML ever lags behind the model, this is the file that lost
+    /// nothing. See docs/ARCHITECTURE.md §14.
+    func exportJSON() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(snapshot())
     }
 }
