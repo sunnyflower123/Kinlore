@@ -25,6 +25,16 @@ struct TellScreen: View {
         }
         .task {
             guard model == nil else { return }
+            #if DEBUG
+            // `-screen starter` opens on a photo nobody has spoken about yet —
+            // the state the starter questions exist for, and otherwise
+            // reachable only by picking a photo from the library by hand.
+            let opened = UserDefaults.standard.string(forKey: "screen") == "starter"
+                ? Self.emptyPhoto(in: store)
+                : target
+            #else
+            let opened = target
+            #endif
             // AppServices picks the stub or the real service depending on
             // whether a backend address is configured. The UI cannot tell the
             // difference, because it only knows the protocols.
@@ -32,7 +42,7 @@ struct TellScreen: View {
                 store: store,
                 transcription: AppServices.transcription(),
                 extraction: AppServices.extraction(),
-                target: target,
+                target: opened,
                 question: question
             )
             #if DEBUG
@@ -94,6 +104,19 @@ struct TellScreen: View {
         .toolbar(hidesTabBar(model.phase) ? .hidden : .visible, for: .tabBar)
     }
 
+    #if DEBUG
+    /// A photo with no memories on it, created if the archive has none. Reuses
+    /// an existing empty photo so repeated runs do not fill the gallery.
+    private static func emptyPhoto(in store: MemoryStore) -> Subject {
+        if let existing = store.subjects(of: .photo).first(where: { store.isEmpty($0) }) {
+            return existing
+        }
+        let subject = Subject(kind: .photo, title: "")
+        store.add(subject)
+        return subject
+    }
+    #endif
+
     private func hidesTabBar(_ phase: TellViewModel.Phase) -> Bool {
         switch phase {
         case .idle, .done, .savedWithoutTranscript, .failed: false
@@ -116,8 +139,14 @@ private struct IdleView: View {
     /// to five lines at the largest size and pushed the record button, the one
     /// thing this screen exists for, below the fold where it has to be found by
     /// scrolling. The first sentence carries the permission; the rest is detail.
-    private var intro: String {
-        typeSize.isAccessibilitySize
+    ///
+    /// It is shortened for starter questions too, and for the same reason from
+    /// the other end: two starters below the button are three lines the screen
+    /// does not have, and they pushed "Kirjoita sen sijaan" under the tab bar at
+    /// the ordinary text size. A starter says what to do more concretely than
+    /// the reassurance does — "Kuka tässä kuvassa on?" is the permission.
+    private func intro(withStarters: Bool) -> String {
+        typeSize.isAccessibilitySize || withStarters
             ? "Puhu ihan rauhassa ja vapaasti."
             : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
@@ -176,6 +205,10 @@ private struct IdleView: View {
 
     private var content: some View {
         VStack(spacing: 28) {
+            // Resolved once: what is offered at the bottom decides how long the
+            // reassurance at the top can afford to be.
+            let offered = offer
+
             Spacer(minLength: 0)
 
             Text(title)
@@ -183,7 +216,7 @@ private struct IdleView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(intro)
+            Text(intro(withStarters: offered.isStarter))
                 .elderBody()
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -206,7 +239,6 @@ private struct IdleView: View {
             // An open question is a reason to come back to the app. It is also
             // an easier start than a blank button: telling "something" is hard
             // for an elderly person, answering a question is easy.
-            let offered = offer
             if !offered.questions.isEmpty {
                 VStack(spacing: 10) {
                     Text(offered.isStarter ? "Jos et tiedä mistä aloittaa" : "Tai vastaa aiempaan kysymykseen")
