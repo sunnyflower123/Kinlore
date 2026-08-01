@@ -37,6 +37,10 @@ final class MemoryStore {
         let documents = URL.documentsDirectory
         fileURL = documents.appendingPathComponent(filename)
         load()
+        #if DEBUG
+        // Only with `-seed guess`, and it replaces what is on the device.
+        seedDemoArchiveIfRequested()
+        #endif
     }
 
     // MARK: - Queries
@@ -532,6 +536,71 @@ final class MemoryStore {
         syncSeq = 0
         try? FileManager.default.removeItem(at: fileURL)
     }
+
+    // MARK: - Fixture
+
+    #if DEBUG
+    /// A canned family, for the two things that have no hands: the UI tests and
+    /// the demo video.
+    ///
+    /// A guessing round needs a second family member, four people and a memory
+    /// that names exactly one of them. Producing that by tapping takes minutes
+    /// and comes out slightly different every time, which is no basis for an
+    /// accessibility test — the test has to fail because a label is missing, not
+    /// because today's archive came out different.
+    ///
+    /// Only with `-seed guess`, and it **replaces** what is on the device, which
+    /// is why it is behind an explicit argument and never runs by accident. It
+    /// lives here rather than in a file of its own because it writes the same
+    /// `private(set)` fields as every other mutation.
+    ///
+    /// The content is Finnish because it is shown in the app's own UI — the same
+    /// rule as the sample transcripts in `scripts/`. See CLAUDE.md.
+    func seedDemoArchiveIfRequested() {
+        guard UserDefaults.standard.string(forKey: "seed") == "guess" else { return }
+
+        let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
+        let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
+        let kalle = Subject(id: "demo-kalle", kind: .person, title: "Kalle")
+        let sanni = Subject(id: "demo-sanni", kind: .person, title: "Sanni")
+        let photo = Subject(id: "demo-photo", kind: .photo, title: "")
+
+        subjects = [aino, eeva, kalle, sanni, photo]
+        memories = [
+            Memory(
+                id: "demo-memory-aino",
+                subjectID: photo.id,
+                // Somebody else's story: you cannot guess your own.
+                authorID: "demo-mummo",
+                authorName: "Mummo",
+                body: "Aino tuli mökille joka kesä, ja Ainon kanssa soudettiin saareen "
+                    + "kalaan aamuvarhaisella. Kahvipannu oli aina mukana, ja rannassa "
+                    + "istuttiin pitkään puhumassa siitä, millaista sodan jälkeen oli ollut.",
+                source: .voice,
+                mentionedSubjectIDs: [aino.id]
+            ),
+            // The decoys need memories of their own, or they are bare names and
+            // the round answers itself.
+            Memory(id: "demo-memory-eeva", subjectID: eeva.id, authorID: "demo-mummo",
+                   authorName: "Mummo", body: "Eeva asui naapurissa.", source: .typed),
+            Memory(id: "demo-memory-kalle", subjectID: kalle.id, authorID: "demo-mummo",
+                   authorName: "Mummo", body: "Kalle ajoi puutavaraa.", source: .typed),
+            Memory(id: "demo-memory-sanni", subjectID: sanni.id, authorID: "demo-mummo",
+                   authorName: "Mummo", body: "Sanni hoiti kauppaa.", source: .typed),
+        ]
+        questions = []
+        relations = []
+        guesses = []
+        // Nothing is queued for the server: this archive is a fixture, and
+        // pushing it into a real family would be a genuine mess.
+        dirtySubjects = []
+        dirtyMemories = []
+        dirtyQuestions = []
+        dirtyRelations = []
+        dirtyGuesses = []
+        save()
+    }
+    #endif
 
     // MARK: - Disk
 

@@ -26,8 +26,13 @@ schemes:
     build:
       targets:
         Memorize: all
+        MemorizeUITests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - MemorizeUITests
     archive:
       config: Release
 
@@ -94,3 +99,26 @@ targets:
         # the assets is the app icon. Without this the icon slot stays empty.
         # The PNGs are generated from the SVGs in docs/logo/, see its README.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  # Accessibility is not a checklist item in this app, it is the product (rule 1
+  # in CLAUDE.md) — and it was the one rule with no way to check it. VoiceOver
+  # reads the accessibility tree, XCUITest queries the same tree, and
+  # performAccessibilityAudit() walks it for the failures that are invisible on a
+  # screenshot: an unlabelled control, a tap target under the minimum, text that
+  # clips instead of wrapping at the largest size.
+  MemorizeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: MemorizeUITests
+    dependencies:
+      - target: Memorize
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.memorize.MemorizeUITests
+        TEST_TARGET_NAME: Memorize
+        # The app's Info.plist is written out because of the URL scheme; a test
+        # bundle needs none of that, so it gets the generated one. Without this
+        # the build fails at code signing rather than at compile time, which
+        # reads like a certificate problem and is not one.
+        GENERATE_INFOPLIST_FILE: "YES"

@@ -67,9 +67,13 @@ struct GuessSection: View {
 
     private func card(for round: GuessRound) -> some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Not tinted. Blue on the card's grey passed the contrast audit only
+            // "nearly", and nearly is not a pass for an 80-year-old's eyes. The
+            // hierarchy is carried by weight and size instead, which is the same
+            // rule the person list already follows: meaning never rides on
+            // colour alone.
             Text("\(round.memory.authorName) kertoi tämän")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
 
             Text(round.maskedBody)
                 .elderBody()
@@ -77,9 +81,11 @@ struct GuessSection: View {
                 .multilineTextAlignment(.leading)
                 .foregroundStyle(.primary)
 
+            // The whole card is the button, so the call to action does not need
+            // to be blue to be tappable — and blue here failed the same contrast
+            // check as the line above.
             Label("Kuka hän oli?", systemImage: "person.crop.circle.badge.questionmark")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(.tint)
                 .padding(.top, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -121,7 +127,6 @@ private struct GuessRoundSheet: View {
                 VStack(alignment: .leading, spacing: 24) {
                     Text("\(round.memory.authorName) kertoi:")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.tint)
 
                     // The story is shown in full, masked before the answer and
                     // whole after it. Seeing the sentence complete is the reward,
@@ -179,9 +184,17 @@ private struct GuessRoundSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 16)
                         .elderTapTarget()
+                        .background(
+                            .quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 16)
+                        )
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                // Not `.bordered`. That style writes its label in the accent
+                // colour, and blue on its grey fill measured *below* the
+                // contrast minimum on all four options at once — on the primary
+                // controls of the screen, for the one user whose eyesight this
+                // app is built around. `.plain` leaves the label the primary
+                // colour and the fill still says "button".
+                .buttonStyle(.plain)
             }
 
             // Not knowing is an ordinary answer, and for the person this app is
@@ -189,14 +202,18 @@ private struct GuessRoundSheet: View {
             // any other, because learning who it was is the whole payoff — and
             // it is recorded, or this round would come back forever and stand in
             // front of every other one.
+            //
+            // No fill, so it does not compete with the four names, and no tint,
+            // for the same contrast reason as above.
             Button {
                 choose(nil)
             } label: {
                 Text("En muista")
-                    .font(.body)
+                    .font(.body.weight(.medium))
                     .frame(maxWidth: .infinity)
                     .elderTapTarget()
             }
+            .buttonStyle(.plain)
             .padding(.top, 4)
         }
     }

@@ -102,6 +102,7 @@ xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
 | `-screen settings` | DEBUG | Opens Settings: export, leaving the family, emptying the device. |
 | `-screen export` | DEBUG | Opens Settings and runs the export at once, logging where the zip landed. The export is the one output that leaves the app for good, so it is worth opening the real file. |
 | `-guess demo` | DEBUG | Builds guessing rounds from memories you told yourself. A round normally needs a second family member — a screenshot run and the demo phone both have one device. |
+| `-seed guess` | DEBUG | **Replaces** the archive with a canned family that has a guessing round waiting. What the UI tests launch with, and the fastest way to reach the round by hand. |
 
 These exist because some screens sit behind a tap, and two things that need to
 reach them have no hands: a screenshot run, and **filming the demo video**

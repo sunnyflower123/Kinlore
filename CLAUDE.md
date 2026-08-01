@@ -120,6 +120,14 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 
+# Accessibility tests. VoiceOver reads the accessibility tree and XCUITest
+# queries the same tree, so this is how rule 1 is checked rather than asserted.
+# performAccessibilityAudit() also catches contrast, clipping and tap targets —
+# it has already found real defects that screenshots did not.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+
 # Backend locally
 cd backend && npx wrangler dev
 

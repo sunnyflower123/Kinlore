@@ -717,6 +717,36 @@ The count is capped at nine, because it is not free: knowing whether a memory is
 a round means building the round, masking included. A family with eleven waiting
 and a family with nine are the same thing to the person looking at the badge.
 
+### What VoiceOver gets
+
+Rule 1 calls VoiceOver part of the product, and it was the one rule with no way
+to check it. VoiceOver reads the accessibility tree; XCUITest queries the same
+tree, so `MemorizeUITests` is the check: every answer is a named button, "En
+muista" exists and leads to the reveal, and the verdict is in words rather than
+in a colour or a checkmark alone.
+
+The round needs one thing the other screens do not. **Its content is
+deliberately incomplete** — the answer is a gap in a sentence — and a run of em
+dashes is read as punctuation or as nothing at all. Spoken, the story would
+simply sound as if the name had never been said, and the screen would ask
+nothing. The accessibility label puts a word in the hole instead: *"…kun joku
+tuli mökille…"*. The test asserts both halves — that the dashes never reach the
+label, and that the name never does either.
+
+`performAccessibilityAudit()` runs over the same screens at the default and at
+the largest text size, and it found what the screenshots did not: **all four
+answers failed the contrast minimum.** They were `.bordered` buttons, and that
+style writes its label in the accent colour — blue on its own grey fill. Four
+primary controls, below the minimum, on the screen for the one user whose
+eyesight this app is built around. They are now plain buttons with a filled
+background and a primary-coloured label; the fill still says "button".
+
+Three audit findings are decisions rather than defects and are listed by name in
+the test, each with its reason: the card's truncated preview (a teaser, with the
+whole text one tap away and all of it in the accessibility label), the photo
+tile's capped count badge, and the gallery heading that passes under the
+translucent tab bar at the largest size.
+
 ### Tone
 
 No score, no streak, no timer, no leaderboard. A wrong answer is stated plainly
