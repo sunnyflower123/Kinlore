@@ -491,10 +491,12 @@ final class MemoryStore {
         memories = []
         questions = []
         relations = []
+        guesses = []
         dirtySubjects = []
         dirtyMemories = []
         dirtyQuestions = []
         dirtyRelations = []
+        dirtyGuesses = []
         syncSeq = 0
         try? FileManager.default.removeItem(at: fileURL)
     }
