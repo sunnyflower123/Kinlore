@@ -78,6 +78,34 @@ back the memory the user just told.
 |-----|------|
 | RevenueCat **Test Store API key** | Designed for the client side, safe to embed. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling. Without a key, purchases are unavailable but the app works normally. |
 
+## Launch arguments
+
+Everything the app can be told from outside, in one place. In Xcode they go
+under Product → Scheme → Edit Scheme → Run → Arguments; from the command line,
+after the bundle id:
+
+```bash
+xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
+```
+
+| Argument | Build | What it does |
+|---|---|---|
+| `-api <url>` | any | Points the app at a backend. Without it the app runs on stubs — deliberately, so development does not stop when the Worker is broken. |
+| `-rcKey <key>` | any | The RevenueCat Test Store key. Without it purchases and the paywall do not exist, and the app works normally. |
+| `-tab memories` / `-tab people` | DEBUG | Opens on that tab instead of Tell. |
+| `-screen write` | DEBUG | Opens the typing view directly. |
+| `-screen interview` | DEBUG | Runs a canned memory through the stub pipeline and enters the interview loop, finishing the first spoken round by itself — the whole loop, hands-free. |
+| `-screen person` | DEBUG | Opens the first person's card, relationships and all. |
+| `-screen family` | DEBUG | Opens the family view: members, usage, invite link. |
+
+These exist because some screens sit behind a tap, and two things that need to
+reach them have no hands: a screenshot run, and **filming the demo video**
+(PLAN.md §3, phase F). They also make the accessibility sweep possible at all —
+checking a screen at the largest text size means being able to open it.
+
+Debug arguments are Finnish-free on purpose; they are a developer interface, so
+they follow the repo's language rule rather than the app's. See CLAUDE.md.
+
 ### Cloudflare
 
 No manual key. `npx wrangler login` handles it via OAuth.
