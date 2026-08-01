@@ -557,6 +557,22 @@ final class MemoryStore {
     /// The content is Finnish because it is shown in the app's own UI — the same
     /// rule as the sample transcripts in `scripts/`. See CLAUDE.md.
     func seedDemoArchiveIfRequested() {
+        // `-seed empty` is the other half: the empty states are a screen each,
+        // and on a device that has ever been used they are unreachable.
+        if UserDefaults.standard.string(forKey: "seed") == "empty" {
+            subjects = []
+            memories = []
+            questions = []
+            relations = []
+            guesses = []
+            dirtySubjects = []
+            dirtyMemories = []
+            dirtyQuestions = []
+            dirtyRelations = []
+            dirtyGuesses = []
+            save()
+            return
+        }
         guard UserDefaults.standard.string(forKey: "seed") == "guess" else { return }
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)

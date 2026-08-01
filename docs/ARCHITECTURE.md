@@ -842,3 +842,109 @@ Apple's rule 1.2, and §7 already said they could be cut entirely if the release
 is never made. It is not being made (PLAN.md §2), this is a family's private
 channel rather than a public network, and the schema keeps the tables for the
 day that changes.
+
+## 15. Contrast — the rule that was never measured
+
+Rule 1 of the product says the primary user is 80 years old. Dynamic Type,
+VoiceOver and tap targets were designed for from the start. **Contrast was not,
+because contrast is not something eyes can check** — a screen looks fine, and a
+screenshot looks fine, and the number is still 4.0 when the minimum is 4.5.
+
+The guessing round's accessibility audit found it by accident: all four answers
+below the minimum on a screen that had been looked at half a dozen times. So the
+audit was run over the screens that could be reached without a network or a
+purchase, at the default size and at the largest one
+(`MemorizeUITests/AccessibilitySweepTests`): onboarding, the memories grid and
+its empty state, Kerro and its typing view, the people list and its empty state,
+a person's card, a photo's card, the ask sheet and settings. It found the same
+class of problem in almost all of them, and nearly all of it came from three
+system defaults.
+
+Not covered, and honestly so: the paywall (needs a RevenueCat key), the family
+view (needs a backend), and Kerro's recording, processing and result states,
+which need a microphone and a live pipeline. The fixes below are app-wide
+constants, so those screens moved with the rest — but they have not been
+measured.
+
+### Three defaults, three fixes
+
+| Default | Measured | Replaced with |
+|---|---|---|
+| iOS blue `#007AFF` on white | **4.0:1** | `AccentColor` `#0B57D0` — **6.4:1** |
+| `.secondary` label | **≈4.2:1** | `Elder.supporting`, 75 % of primary — **≈6.6:1** |
+| iOS orange `#FF9500` on white | **2.2:1** | `Elder.proposal` `#C2410C` — **5.2:1** |
+
+Each is one place rather than thirty. The accent colour is an asset catalog
+entry, so every tinted button and every tinted line of text moved at once; the
+other two are constants in `Elder.swift` next to the tap target size, where the
+next person will find them.
+
+The orange one is worth naming. It marks *"the AI proposed this, nobody has
+confirmed it"* — the single label in the app whose entire job is to make someone
+stop and check — and it had the **lowest contrast of anything on screen**. The
+shape of the icon has always carried the same meaning, which is why the screen
+was still usable; that redundancy is what a colour fix should never be allowed
+to replace.
+
+A fourth default belongs with them: **iOS red measures 3.6:1**, and it labels
+*"Tyhjennä tämä laite"* — the one button in the app that destroys an archive.
+`Elder.destructive` `#B3261E` measures 6.5:1 and is unmistakably still a warning.
+
+### The rest
+
+- **List headers and footers** style themselves below the minimum, so the ones
+  that carry an instruction say their colour out loud.
+- **`ContentUnavailableView`'s description** does the same. These are not empty
+  states in this app but invitations (§6.5 of PLAN.md), and an invitation has to
+  be readable.
+- **The typing view's placeholder** was `.tertiary`, the faintest colour iOS
+  has. A placeholder conventionally is — but this one is the sentence that tells
+  her what to write.
+- **VoiceOver was reading the onboarding illustration aloud as "photo.stack"** —
+  the SF Symbol's own name, in English, on the first screen of a Finnish app. It
+  is decoration and is now hidden from the tree.
+
+### What is still accepted, and why
+
+Listed in `AccessibilityPolicy`, each with a reason, rather than by narrowing the
+audit — narrowing would also switch off the checks that catch real regressions in
+those same categories, which is how the contrast problem survived this long.
+
+- **Anything overlapping the floating tab bar.** iOS 26's tab bar is a
+  translucent capsule that content scrolls beneath by design, and the audit
+  samples the pixels it dims. Every contrast failure left at the largest text
+  size was this — `Kuvat`, `Paina ja ala puhua`, `Ehdotus — vahvista henkilö` —
+  the same colours that pass at every other size. Checked on screen: what fails
+  is the overlap, not the colour. The rule is contrast-only and requires a real
+  frame intersection, so it cannot quietly excuse a genuinely faint label.
+- The guessing round's truncated preview (§13): a teaser, whole text one tap
+  away, all of it in the accessibility label.
+- `Lisää sukulainen`, where a `Menu` reports a label frame smaller than the text
+  it draws. Verified on screen at both sizes.
+- The photo tile's memory count, capped at `accessibility2` on purpose.
+- `ContentUnavailableView`'s own Dynamic Type behaviour, which is the system
+  view's and not ours — listed string by string rather than by category, so that
+  our own Dynamic Type failures still fail.
+- Contrast findings the audit cannot attribute to **any element at all**, on
+  screens that have a tab bar. This one is a concession to the tool rather than
+  a judgement about the app: with no element there is no frame to test and
+  nothing to point a fix at. Every one seen was in the same band of pixels as
+  the attributable tab-bar cases above.
+
+Two findings turned out to be neither: three "element has no description" on the
+typing screen were the keyboard caught mid-animation, and they are gone once the
+test waits for it to arrive. Timing, not accessibility — but the only way to
+know that was to identify the elements, which is why the failure message prints
+type and frame as well as the label.
+
+**One wrong guess is worth recording.** The record button's resting glow was
+blamed for *"Paina ja ala puhua"* first, and reduced from radius 14 to 8 on that
+theory. A screenshot showed the caption sitting under the tab bar instead, and
+the glow change was reverted — a visual the designer chose should not be altered
+on a hypothesis that a screenshot could have tested in a minute.
+
+**Dark mode is not covered.** The app has never been designed for it — the
+launch screen is parchment, no asset has a dark variant, and the accent colour
+is deliberately one value for both appearances. Running the sweep in dark mode
+would find real problems and they would be the first dark-mode problems anybody
+has looked at, which is a different piece of work.

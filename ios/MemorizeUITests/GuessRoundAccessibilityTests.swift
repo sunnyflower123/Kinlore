@@ -18,17 +18,7 @@ final class GuessRoundAccessibilityTests: XCTestCase {
     /// `-seed guess` replaces the archive with a fixture, so the round is the
     /// same every run. See `MemoryStore.seedDemoArchiveIfRequested`.
     private func launchOnTheRound(textSize: String? = nil) -> XCUIApplication {
-        let app = XCUIApplication()
-        // `-api ""` pins the app to its local mode. Without it the test inherits
-        // whatever address the last hand-run left in UserDefaults, and a device
-        // that has been pointed at a Worker starts on the join screen instead —
-        // which is how this test first failed, with nothing wrong in the app.
-        app.launchArguments += ["-api", "", "-seed", "guess", "-tab", "memories"]
-        if let textSize {
-            app.launchArguments += ["-UIPreferredContentSizeCategoryName", textSize]
-        }
-        app.launch()
-        return app
+        launch(["-seed", "guess", "-tab", "memories"], textSize: textSize)
     }
 
     private func card(in app: XCUIApplication) -> XCUIElement {
@@ -139,65 +129,6 @@ final class GuessRoundAccessibilityTests: XCTestCase {
     }
 
     // MARK: - The audit
-
-    /// The three findings that are decisions rather than defects.
-    ///
-    /// Listed one by one with a reason each, because the alternative — narrowing
-    /// the audit to a few types — would also switch off the checks that catch
-    /// real regressions in the same categories.
-    private static func isDeliberate(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        let label = issue.element?.label ?? ""
-
-        // The card shows two to four lines of the story and truncates. It is a
-        // teaser: the whole text is one tap away, and the card's accessibility
-        // label carries all of it, so VoiceOver is not the one losing anything.
-        if issue.auditType == .textClipped, label.contains(GuessRoundAccessibilityTests.mask) {
-            return true
-        }
-
-        // The photo tile's memory count is capped at accessibility2 on purpose —
-        // past that the badge stops being a label and becomes the tile. The count
-        // is in the tile's accessibility label and on the detail screen, so it is
-        // not only available here. GalleryScreen says the same in a comment.
-        if issue.auditType == .dynamicType, label.count <= 5 {
-            return true
-        }
-
-        // "Kuvat" is the gallery's own section heading, and it fails only at the
-        // largest text size, where the scroll position happens to leave it under
-        // the translucent tab bar. Pre-existing and not this feature's; tracked
-        // separately rather than silently accepted forever.
-        if issue.auditType == .contrast, label == "Kuvat" {
-            return true
-        }
-
-        return false
-    }
-
-    /// Kept in the test rather than imported: if the app changes its mask, this
-    /// test should fail and be looked at, not follow along quietly.
-    private static let mask = "———"
-
-    /// Runs the audit and reports **every** issue at once.
-    ///
-    /// The bare `performAccessibilityAudit()` throws on the first one and names
-    /// only its type — "Contrast failed" with no element, which is a fact about
-    /// the screen and no help in finding it. Fixing one then rediscovering the
-    /// next costs a full test run each time.
-    private func audit(_ app: XCUIApplication, _ context: String) throws {
-        var found: [String] = []
-        try app.performAccessibilityAudit { issue in
-            if Self.isDeliberate(issue) { return true }
-            found.append("\(issue.auditType): \(issue.compactDescription) — \(issue.element?.label ?? "no element")")
-            // Collected rather than thrown, so the run reaches the end of the
-            // list.
-            return true
-        }
-        XCTAssertTrue(
-            found.isEmpty,
-            "\(context): \(found.count) accessibility issue(s)\n  " + found.joined(separator: "\n  ")
-        )
-    }
 
     func testTheRoundPassesTheAccessibilityAudit() throws {
         let app = launchOnTheRound()

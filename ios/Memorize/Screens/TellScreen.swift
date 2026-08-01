@@ -218,7 +218,7 @@ private struct IdleView: View {
 
             Text(intro(withStarters: offered.isStarter))
                 .elderBody()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
 
             Spacer(minLength: 0)
@@ -232,7 +232,7 @@ private struct IdleView: View {
             // instruction is worse than a longer screen.
             Text("Paina ja ala puhua")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -243,7 +243,7 @@ private struct IdleView: View {
                 VStack(spacing: 10) {
                     Text(offered.isStarter ? "Jos et tiedä mistä aloittaa" : "Tai vastaa aiempaan kysymykseen")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Elder.supporting)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
@@ -373,7 +373,10 @@ private struct WritingView: View {
                 if model.draft.isEmpty {
                     Text("Kirjoita ihan vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.")
                         .elderBody()
-                        .foregroundStyle(.tertiary)
+                        // Not `.tertiary`. A placeholder is conventionally the
+                        // faintest thing on screen, and this one is the sentence
+                        // that tells her what to write.
+                        .foregroundStyle(Elder.supporting)
                         .padding(.top, 10)
                         .padding(.horizontal, 6)
                         .allowsHitTesting(false)
@@ -428,7 +431,7 @@ private struct RecordingView: View {
             if let question = model.question {
                 Text(question.text)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
                     .multilineTextAlignment(.center)
                     .lineSpacing(Elder.lineSpacing)
                     .fixedSize(horizontal: false, vertical: true)
@@ -443,7 +446,7 @@ private struct RecordingView: View {
 
             Text(Self.timeText(model.recorder.elapsed))
                 .font(.system(.title2, design: .monospaced))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .monospacedDigit()
                 .accessibilityLabel("Nauhoitettu \(Int(model.recorder.elapsed)) sekuntia")
 
@@ -455,7 +458,7 @@ private struct RecordingView: View {
 
             Text("Paina kun olet valmis")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -533,7 +536,7 @@ private struct ProcessingView: View {
 
             Text(detail)
                 .elderBody()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
 
             Spacer()
@@ -605,7 +608,7 @@ private struct AskingView: View {
 
             Text(hint)
                 .elderBody()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
 
             Spacer(minLength: 0)
@@ -616,7 +619,7 @@ private struct AskingView: View {
 
             Text(buttonCaption)
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -702,7 +705,7 @@ private struct ResultView: View {
                         : "Lisäsin sen kohteeseen **\(placed.displayTitle)**"
                 )
                 .elderBody()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
             }
         }
     }
@@ -717,7 +720,7 @@ private struct ResultView: View {
             // they said.
             Text("Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .fixedSize(horizontal: false, vertical: true)
 
             ForEach(model.proposals) { subject in
@@ -788,7 +791,7 @@ private struct ResultView: View {
 
             Text("Kysyn nämä ääneen, ja voit vastata puhumalla.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -819,12 +822,12 @@ private struct UpsellCard: View {
             if let minutes = minutesLeft, let photos = usage.photos.remaining {
                 Text("Kertomista tässä kuussa jäljellä noin \(minutes) minuuttia, ja kuville tilaa \(photos).")
                     .elderBody()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
 
             Text("Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle.")
                 .elderBody()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
 
             if canPurchase {
                 Button {
@@ -884,7 +887,7 @@ private struct ProposalRow: View {
         HStack(spacing: 14) {
             Image(systemName: subject.kind.symbolName)
                 .font(.title2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -907,7 +910,7 @@ private struct ProposalRow: View {
             Button(action: onReject) {
                 Image(systemName: "xmark")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
                     .elderTapTarget()
             }
             .buttonStyle(.plain)
@@ -950,7 +953,7 @@ private struct AudioSavedView: View {
 
             Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
                 .elderBody()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
 
             Spacer()
@@ -987,7 +990,7 @@ private struct FailureView: View {
             Spacer()
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 56))
-                .foregroundStyle(.orange)
+                .foregroundStyle(Elder.proposal)
             Text(message)
                 .elderBody()
                 .multilineTextAlignment(.center)

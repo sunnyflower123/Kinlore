@@ -94,10 +94,10 @@ struct FamilyScreen: View {
                     // The family details are not a precondition for use:
                     // membership is local state and the app works offline.
                     Label("Perheen tietoja ei saatu haettua", systemImage: "wifi.slash")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Elder.supporting)
                     Text("Voit silti kertoa muistoja. Ne synkronoituvat kun yhteys palaa.")
                         .elderBody()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Elder.supporting)
                 }
             }
         }
@@ -139,14 +139,14 @@ private struct MemberRow: View {
         HStack(spacing: 12) {
             Image(systemName: member.role == "owner" ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
                 .font(.title2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(isYou ? "\(member.displayName) (sinä)" : member.displayName)
                     .font(.body.weight(.medium))
                 Text(member.role == "owner" ? "Perustaja" : "Jäsen")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
         }
         .padding(.vertical, 4)
@@ -172,7 +172,7 @@ private struct InviteRow: View {
                     .font(.body)
                 Text(expiryText)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
 
             Spacer()

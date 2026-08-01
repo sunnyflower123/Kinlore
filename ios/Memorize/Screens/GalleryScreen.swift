@@ -75,6 +75,7 @@ struct GalleryScreen: View {
         } description: {
             Text("Lisää vanha valokuva, niin koko perhe voi kertoa siitä omat muistonsa.")
                 .elderBody()
+                .foregroundStyle(Elder.supporting)
         } actions: {
             PhotosPicker(selection: $picked, matching: .images, photoLibrary: .shared()) {
                 Text("Valitse kuvia")
@@ -222,7 +223,7 @@ private struct EventRow: View {
         HStack(spacing: 14) {
             Image(systemName: "calendar")
                 .font(.title2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Elder.supporting)
                 .frame(width: 34)
 
             VStack(alignment: .leading, spacing: 3) {
@@ -231,7 +232,7 @@ private struct EventRow: View {
                     .foregroundStyle(.primary)
                 Text(memoryCountText)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
 
             Spacer()

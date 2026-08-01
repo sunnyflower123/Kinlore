@@ -42,7 +42,7 @@ struct SettingsScreen: View {
                         HStack(spacing: 12) {
                             ProgressView()
                             Text(exportStatus ?? "Kootaan arkistoa")
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Elder.supporting)
                         }
                     } else {
                         Label("Vie arkisto", systemImage: "square.and.arrow.up")
@@ -52,11 +52,16 @@ struct SettingsScreen: View {
                 }
                 .disabled(isExporting)
             } header: {
+                // A List styles its own headers and footers below the contrast
+                // minimum. Saying the colour out loud is the only way to raise
+                // it.
                 Text("Arkisto")
+                    .foregroundStyle(Elder.supporting)
             } footer: {
                 // Say what comes out, in the words of somebody who will open it
                 // on a computer years from now.
                 Text("Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.")
+                    .foregroundStyle(Elder.supporting)
             }
 
             if case .inFamily = session.mode {
@@ -77,7 +82,7 @@ struct SettingsScreen: View {
                         isConfirmingLeave = true
                     } label: {
                         Label("Poistu perheestä", systemImage: "person.badge.minus")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Elder.destructive)
                             .elderTapTarget()
                     }
                 }
@@ -86,7 +91,7 @@ struct SettingsScreen: View {
                     isConfirmingWipe = true
                 } label: {
                     Label("Tyhjennä tämä laite", systemImage: "trash")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Elder.destructive)
                         .elderTapTarget()
                 }
             } footer: {
@@ -95,6 +100,7 @@ struct SettingsScreen: View {
                 Text(canLeave
                     ? "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään."
                     : "Kertomasi muistot ovat vain tässä laitteessa.")
+                    .foregroundStyle(Elder.supporting)
             }
         }
         .navigationTitle("Asetukset")

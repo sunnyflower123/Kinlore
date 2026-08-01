@@ -240,13 +240,13 @@ private struct GuessRoundSheet: View {
             if let chosen, !isCorrect {
                 Text("Sinä arvasit: \(chosen.displayTitle).")
                     .elderBody()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
 
             if let others = othersText {
                 Text(others)
                     .elderBody()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
 
             // The point of the whole round: the person is now on screen and

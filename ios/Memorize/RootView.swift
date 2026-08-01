@@ -81,6 +81,7 @@ struct PeopleScreen: View {
                     } description: {
                         Text("Suvun henkilöt kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.")
                             .elderBody()
+                            .foregroundStyle(Elder.supporting)
                     }
                 } else {
                     List(store.subjects(of: .person)) { person in
@@ -155,7 +156,7 @@ private struct PersonRow: View {
                 ? "person.crop.circle"
                 : "person.crop.circle.badge.questionmark")
                 .font(.title2)
-                .foregroundStyle(subject.confirmed ? Color.secondary : Color.orange)
+                .foregroundStyle(subject.confirmed ? Color.secondary : Elder.proposal)
                 .frame(width: 34)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -167,7 +168,7 @@ private struct PersonRow: View {
                 if !subject.confirmed {
                     Text("Ehdotus — vahvista henkilö")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Elder.proposal)
                 } else if store.memories(for: subject.id).isEmpty {
                     // A gap is not hidden but shown as an invitation.
                     Label("Kerro hänestä", systemImage: "mic.fill")
@@ -177,7 +178,7 @@ private struct PersonRow: View {
                     let count = store.memories(for: subject.id).count
                     Text(count == 1 ? "1 muisto" : "\(count) muistoa")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Elder.supporting)
                 }
             }
         }
@@ -210,7 +211,7 @@ struct SubjectDetailScreen: View {
             if let hint = subject.dateHint, hint.precision != .unknown {
                 Section {
                     Label(hint.displayText, systemImage: "calendar")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Elder.supporting)
                 }
             }
 
@@ -238,19 +239,25 @@ struct SubjectDetailScreen: View {
                 Section {
                     Text("Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.")
                         .elderBody()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Elder.supporting)
                 }
             } else {
-                Section(memories.count == 1 ? "1 muisto" : "\(memories.count) muistoa") {
+                Section {
                     ForEach(memories) { memory in
                         MemoryRow(memory: memory)
                     }
+                } header: {
+                    // A List styles its own headers and footers below the
+                    // contrast minimum. Saying the colour out loud is the only
+                    // way to raise it.
+                    Text(memories.count == 1 ? "1 muisto" : "\(memories.count) muistoa")
+                        .foregroundStyle(Elder.supporting)
                 }
             }
 
             let open = store.questions.filter { $0.subjectID == subject.id && !$0.answered }
             if !open.isEmpty {
-                Section("Avoimia kysymyksiä") {
+                Section {
                     ForEach(open) { question in
                         VStack(alignment: .leading, spacing: 4) {
                             // A person's name on a question turns a prompt into
@@ -265,6 +272,9 @@ struct SubjectDetailScreen: View {
                         }
                         .padding(.vertical, 2)
                     }
+                } header: {
+                    Text("Avoimia kysymyksiä")
+                        .foregroundStyle(Elder.supporting)
                 }
             }
 
@@ -285,6 +295,7 @@ struct SubjectDetailScreen: View {
                 // grandchild asks here, and the question waits on the family's
                 // Tell screen where telling starts.
                 Text("Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.")
+                    .foregroundStyle(Elder.supporting)
             }
         }
         .navigationTitle(subject.displayTitle)
@@ -350,7 +361,7 @@ private struct MemoryRow: View {
             if memory.isAwaitingTranscription {
                 Label("Ääni tallessa — teksti valmistuu myöhemmin", systemImage: "waveform")
                     .elderBody()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             } else {
                 Text(memory.body)
                     .elderBody()
@@ -359,7 +370,7 @@ private struct MemoryRow: View {
             HStack(spacing: 12) {
                 Text(memory.authorName)
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
 
                 // The original audio is part of the product, not a step towards it.
                 if memory.audioFilename != nil || memory.audioR2Key != nil {
@@ -370,7 +381,7 @@ private struct MemoryRow: View {
             if let recognitionText {
                 Label(recognitionText, systemImage: "checkmark.circle")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

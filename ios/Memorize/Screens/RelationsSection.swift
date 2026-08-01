@@ -26,13 +26,19 @@ struct RelationsSection: View {
             } label: {
                 Label("Lisää sukulainen", systemImage: "person.badge.plus")
                     .font(.body.weight(.medium))
+                    // A Menu's label truncates before it wraps, and half of
+                    // "Lisää sukulainen" is not a thing anybody can act on.
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
                     .elderTapTarget()
             }
         } header: {
             Text("Suku")
+                .foregroundStyle(Elder.supporting)
         } footer: {
             if hasUnconfirmed {
                 Text("Oranssilla merkityt ovat tekoälyn ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.")
+                    .foregroundStyle(Elder.supporting)
             }
         }
         .sheet(item: $adding) { kind in
@@ -80,14 +86,14 @@ private struct RelativeRow: View {
                 ? "person.crop.circle"
                 : "person.crop.circle.badge.questionmark")
                 .font(.title3)
-                .foregroundStyle(relation?.confirmed == true ? Color.secondary : Color.orange)
+                .foregroundStyle(relation?.confirmed == true ? Color.secondary : Elder.proposal)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(relative.displayTitle)
                     .font(.body.weight(.medium))
                 Text(groupTitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
             }
 
             Spacer()
@@ -135,6 +141,7 @@ private struct RelationPicker: View {
                     } description: {
                         Text("Henkilöt syntyvät kertomisesta. Kerro ensin muisto jossa mainitset heidät.")
                             .elderBody()
+                            .foregroundStyle(Elder.supporting)
                     }
                 } else {
                     List(candidates) { person in

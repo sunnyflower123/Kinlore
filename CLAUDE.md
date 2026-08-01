@@ -64,6 +64,11 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
 1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver,
    large tap targets. If a new screen does not work at the largest text size, it
    is not done. This is not a compliance checklist; it is the product.
+   **Colours come from `Elder.swift` and the accent colour asset, never from
+   `.secondary`, `.tertiary`, `.orange`, `.red` or the system blue** — every one
+   of them measures below the contrast minimum, and contrast is the one rule
+   eyes cannot check. Run the accessibility tests after touching any screen; see
+   [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §15.
 2. **Telling is never paywalled.** The paywall limits photos and AI minutes, not
    the act of writing or dictating a memory.
 3. **The original audio and the raw transcript are always kept.** The speaker

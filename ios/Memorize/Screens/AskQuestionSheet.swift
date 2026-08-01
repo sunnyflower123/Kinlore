@@ -43,7 +43,7 @@ struct AskQuestionSheet: View {
 
                 Text("Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
                     .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()

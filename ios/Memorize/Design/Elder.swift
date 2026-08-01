@@ -19,6 +19,39 @@ enum Elder {
     static let lineSpacing: CGFloat = 6
 
     static let screenPadding: CGFloat = 24
+
+    /// Text that is quieter than the main line but still meant to be read.
+    ///
+    /// Not `.secondary`. iOS's secondary label is 60 % of a label that is itself
+    /// 85 % black, which lands at about 4.2:1 against white — under the 4.5:1
+    /// minimum, and the accessibility audit flagged it on nearly every
+    /// instruction in the app. These are not decorative captions: "Puhu ihan
+    /// rauhassa ja vapaasti" is the sentence that makes an 80-year-old willing
+    /// to start talking, and it was the faintest text on the screen.
+    ///
+    /// 75 % of the primary colour measures about 6.6:1 and still reads as a
+    /// second voice rather than the first.
+    static let supporting = Color.primary.opacity(0.75)
+
+    /// The colour of "the AI proposed this, a human has not confirmed it".
+    ///
+    /// Not `.orange`. iOS's own orange measures 2.2:1 against white — the
+    /// *lowest* contrast anywhere in the app, on the one label that asks the
+    /// family to check something. #C2410C measures 5.2:1 and is still plainly
+    /// orange next to the grey of a confirmed row.
+    ///
+    /// The shape of the icon carries the same meaning, and it always will:
+    /// encoding a state in colour alone is an accessibility failure, and this
+    /// app's user is precisely the one who suffers from it.
+    static let proposal = Color(red: 0.761, green: 0.255, blue: 0.047)
+
+    /// Emptying the device, leaving the family — the actions that cannot be
+    /// undone.
+    ///
+    /// Not `.red`. iOS's red measures 3.6:1 against white, and these are the
+    /// labels a person most needs to read correctly before tapping. #B3261E
+    /// measures 6.5:1 and is unmistakably still a warning.
+    static let destructive = Color(red: 0.702, green: 0.149, blue: 0.118)
 }
 
 extension View {

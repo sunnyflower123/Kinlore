@@ -74,6 +74,10 @@ struct OnboardingScreen: View {
                 Image(systemName: "photo.stack")
                     .font(.system(size: 72))
                     .foregroundStyle(.tint)
+                    // Decoration, and VoiceOver was reading it out as
+                    // "photo.stack" — the symbol's own name, in English, on the
+                    // first screen of a Finnish app.
+                    .accessibilityHidden(true)
             }
 
             VStack(spacing: 14) {
@@ -84,7 +88,7 @@ struct OnboardingScreen: View {
 
                 Text(intro)
                     .elderBody()
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Elder.supporting)
                     .multilineTextAlignment(.center)
             }
 
@@ -247,7 +251,7 @@ private struct ErrorNote: View {
 
     var body: some View {
         Label(text, systemImage: "exclamationmark.triangle.fill")
-            .foregroundStyle(.orange)
+            .foregroundStyle(Elder.proposal)
             .elderBody()
     }
 }
