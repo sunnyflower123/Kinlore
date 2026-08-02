@@ -88,7 +88,14 @@ struct Subject: Identifiable, Codable, Hashable {
     /// thirty scanned photographs. The name arrives when someone talks about it.
     var displayTitle: String {
         if !title.isEmpty { return title }
-        return kind == .photo ? "Valokuva" : kind.label
+        switch kind {
+        case .photo: return "Valokuva"
+        // An event goes untitled only while its memory is waiting for its text:
+        // the name comes from the place and the time in what was said, and
+        // nothing has read that yet. Until then it is exactly what it says.
+        case .event: return "Kerrottu muisto"
+        default: return kind.label
+        }
     }
 }
 
@@ -128,8 +135,26 @@ struct Memory: Identifiable, Codable, Hashable {
     ///
     /// This is the visible form of rule 3: a quota never rejects a recording, it
     /// defers its transcription. Grandmother's voice is the product.
+    ///
+    /// It is a waiting state and not a resting one: `PendingTranscription`
+    /// finishes these as soon as the minutes or the network come back.
     var isAwaitingTranscription: Bool {
         body.isEmpty && (audioFilename != nil || audioR2Key != nil)
+    }
+
+    /// Whether the server can store this row yet.
+    ///
+    /// A memory with neither text nor an uploaded recording is nothing anybody
+    /// else could see, and the server refuses it. It must not be *offered* for
+    /// push either: everything in a pushed payload is cleared from the outbox
+    /// whether the server kept it or not, so this row would be forgotten while
+    /// it still existed on one device alone. That is precisely how a recording
+    /// made at a cottage with no signal used to disappear from the family.
+    ///
+    /// It becomes pushable the moment its audio reaches R2 — normally in the
+    /// same sync round, because media is uploaded before the push.
+    var isPushable: Bool {
+        !body.isEmpty || audioR2Key != nil
     }
 }
 

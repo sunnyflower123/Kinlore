@@ -21,6 +21,25 @@ enum AppServices {
 
     static var isRemote: Bool { apiBaseURL != nil }
 
+    #if DEBUG
+    /// `-defer once`: the first recording of the run is saved as audio without a
+    /// transcript, as though the month's AI minutes had just run out.
+    ///
+    /// The deferred memory (docs/ARCHITECTURE.md §16) is otherwise reachable
+    /// only by arranging a real outage — being out of minutes, or out of signal,
+    /// at the exact moment somebody is talking. Neither a screenshot run nor the
+    /// demo video can arrange that, and this is the one path in the app whose
+    /// whole point is what happens afterwards.
+    ///
+    /// Only the Tell screen honours it. The catch-up is deliberately left with a
+    /// working transcriber, because it is the half being demonstrated: an
+    /// argument that broke both ends would show the waiting and never the
+    /// finishing.
+    static var defersNextTranscription: Bool {
+        UserDefaults.standard.string(forKey: "defer") == "once"
+    }
+    #endif
+
     /// The token comes from the caller's `Session` and is read on every call,
     /// not captured once: "Tyhjennä tämä laite" replaces the identity, and a
     /// service created before that must not keep authenticating as the old one.

@@ -51,7 +51,7 @@ final class SyncEngine {
 
             // 1. Push our own work.
             let payload = store.pendingPayload()
-            if store.hasPendingChanges {
+            if !payload.isEmpty {
                 let result = try await client.push(payload)
                 store.clearPending(payload)
                 store.advance(seq: result.seq)

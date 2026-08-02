@@ -202,6 +202,48 @@ final class MemoryStore {
         save()
     }
 
+    /// Memories whose audio is saved but whose text never arrived.
+    ///
+    /// Only our own. The server accepts a body only from the memory's author,
+    /// so another member's device transcribing this would spend the family's AI
+    /// minutes on an update that is then refused. A memory that has never been
+    /// pushed has no author id yet and is ours by definition.
+    ///
+    /// Oldest first: the one that has waited longest is the one closest to
+    /// being forgotten.
+    func memoriesAwaitingTranscription(author memberID: String) -> [Memory] {
+        memories
+            .filter { $0.isAwaitingTranscription }
+            .filter { $0.authorID == nil || $0.authorID == memberID }
+            .sorted { $0.createdAt < $1.createdAt }
+    }
+
+    /// Fills in a memory whose audio was saved before its text.
+    ///
+    /// This is the write that turns a waiting memory into an ordinary one. From
+    /// here it is a memory like any other: it names people, it can carry a
+    /// guessing round, and it reads as itself in the export.
+    ///
+    /// Unlike `updateBody` this does set `rawTranscript`, because it is the
+    /// memory's *first* transcript rather than a correction of one. It refuses
+    /// a memory that already has text, which makes it safe to call twice — two
+    /// completions of the same recording must not race into a double write.
+    func complete(
+        memoryID: String,
+        body: String,
+        rawTranscript: String,
+        mentionedSubjectIDs: [String]
+    ) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }),
+              memories[index].body.isEmpty
+        else { return }
+        memories[index].body = body
+        memories[index].rawTranscript = rawTranscript
+        memories[index].mentionedSubjectIDs = mentionedSubjectIDs
+        dirtyMemories.insert(memoryID)
+        save()
+    }
+
     func confirm(subjectID: String) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].confirmed = true
@@ -302,19 +344,18 @@ final class MemoryStore {
     // in MemoryStore+Sync.swift: those are the contract with the server.
 
     /// The rows to push. An empty payload means there is nothing to send.
+    ///
+    /// A memory the server would refuse is deliberately left out rather than
+    /// sent and dropped: see `Memory.isPushable`. It stays in the outbox and
+    /// goes on the next round, once its audio has a key.
     func pendingPayload() -> SyncPayload {
         SyncPayload(
             subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
-            memories: memories.filter { dirtyMemories.contains($0.id) }.map(\.dto),
+            memories: memories.filter { dirtyMemories.contains($0.id) && $0.isPushable }.map(\.dto),
             questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto),
             relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto),
             guesses: guesses.filter { dirtyGuesses.contains($0.id) }.map(\.dto)
         )
-    }
-
-    var hasPendingChanges: Bool {
-        !dirtySubjects.isEmpty || !dirtyMemories.isEmpty || !dirtyQuestions.isEmpty
-            || !dirtyRelations.isEmpty || !dirtyGuesses.isEmpty
     }
 
     /// Acknowledges the rows that were pushed. Only the ones just sent: if the

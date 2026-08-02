@@ -89,6 +89,15 @@ struct SyncPayload: Codable {
     var questions: [QuestionDTO] = []
     var relations: [RelationDTO] = []
     var guesses: [GuessDTO] = []
+
+    /// Whether there is anything to send. Read off the payload itself rather
+    /// than off the outbox: a row that is queued but not yet sendable — an
+    /// untranscribed memory whose audio has not reached R2 — is still waiting,
+    /// and a push containing nothing else would be a wasted request.
+    var isEmpty: Bool {
+        subjects.isEmpty && memories.isEmpty && questions.isEmpty
+            && relations.isEmpty && guesses.isEmpty
+    }
 }
 
 struct SyncPullReply: Codable {

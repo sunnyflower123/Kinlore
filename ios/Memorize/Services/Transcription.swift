@@ -52,3 +52,28 @@ private extension FileManager {
         return (attributes?[.size] as? Int64) ?? 0
     }
 }
+
+#if DEBUG
+/// Fails the run's first transcription as though the AI minutes had run out,
+/// then gets out of the way and lets the real service through.
+///
+/// Switched on with `-defer once`. One failure rather than every failure,
+/// because the interesting half is what happens next: the audio is saved, the
+/// catch-up finds it, and the memory finishes itself.
+struct DeferringTranscriptionService: TranscriptionService {
+    let wrapped: TranscriptionService
+
+    @MainActor private static var hasFired = false
+
+    func transcribe(audioURL: URL) async throws -> String {
+        let isFirst = await MainActor.run {
+            defer { Self.hasFired = true }
+            return !Self.hasFired
+        }
+        if isFirst {
+            throw RemoteError.quotaExceeded(kind: "ai_seconds", used: 600, limit: 600)
+        }
+        return try await wrapped.transcribe(audioURL: audioURL)
+    }
+}
+#endif

@@ -18,6 +18,7 @@ An honest inventory, not a wish list:
 | Sync (`/sync` pull and push) | **Done and tested** |
 | Media to R2 (`/media`) | **Done and tested** |
 | Quotas (`/usage`, limits on the server) | **Done and tested** |
+| Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
 | RevenueCat, shared family entitlement | **Done and tested** |
 | Audio playback, open questions, relationships | **Done and tested** |
 | Paywall | Built — unverified, needs a RevenueCat key |
@@ -296,7 +297,8 @@ and limiting it would prevent a typed memory from being saved at all.
 **A quota never rejects a recording.** If the minutes are gone, the audio is
 saved anyway and transcription waits — `Memory.isAwaitingTranscription`. The
 audio is irreplaceable and the transcription is replaceable: it is done when the
-minutes reset or the family goes paid. The same applies to a network error.
+minutes reset or the family goes paid. The same applies to a network error. What
+does the doing, and what it cost that nothing did for a while, is **§16**.
 
 The check uses the amount already consumed rather than consumed + incoming: a
 recording that has started is not cut off because it happened to be long. The
@@ -948,3 +950,99 @@ launch screen is parchment, no asset has a dark variant, and the accent colour
 is deliberately one value for both appearances. Running the sweep in dark mode
 would find real problems and they would be the first dark-mode problems anybody
 has looked at, which is a different piece of work.
+
+## 16. The memory that was interrupted
+
+§7 says that a quota never rejects a recording: the audio is saved and the
+transcription waits, because the audio is irreplaceable and the transcript is
+not. Half of that was true. The audio was saved. **Nothing was ever coming for
+it.**
+
+This section is not a feature; it is the other half of a promise the app was
+already making out loud. The result screen says *"Teksti valmistuu myöhemmin"*
+and the memory card says *"Ääni tallessa — teksti valmistuu myöhemmin"*, and
+both were describing an intention rather than any code.
+
+### What it actually cost
+
+Three separate failures, pointing the same way.
+
+| # | What happened | Why it mattered |
+|---|---|---|
+| 1 | Nothing re-read `isAwaitingTranscription`. It was displayed in three places and acted on in none | The recording stayed a blank card for good. No body means no mentions, no date, no follow-up questions, no person cards, no guessing round — one moment without signal cost that memory *everything the pipeline makes of a memory*, permanently |
+| 2 | `sync.ts` refused any memory whose `body` was empty, and the client cleared the whole pushed payload from its outbox regardless | The row never reached the server and was never retried. The recording lived on **one phone**. Its audio did reach R2 and sat there orphaned, referenced by nothing |
+| 3 | "Kirjoita se itse" wrote a *second* memory beside the first | One telling became a silent recording next to a voice-less text, and neither looked like the whole thing |
+
+Failure 2 is the one worth remembering. It was silent in both directions: the
+push returned 200, the client believed it, and the only evidence was a memory
+that quietly existed nowhere else. A family's archive is not supposed to be able
+to lose a memory to a successful request.
+
+### The rules
+
+- **The row is stored without text.** A memory with audio and no body is a
+  legitimate state and now says so in the schema's terms. A row with neither
+  text nor audio is still nothing, and is refused.
+- **An empty body never overwrites a real one.** The Keychain identity syncs
+  across the user's devices, so their other phone pushes as the same author and
+  the author check would not have stopped it from unwriting the transcript.
+  `raw_transcript` is sticky for the same reason and for rule 3's.
+- **A row the server would refuse is not offered for push.** It stays in the
+  outbox instead of being sent and forgotten, and goes on the next round once
+  its audio has a key — normally the same round, because media is uploaded
+  before the push.
+- **Only the author's device finishes its own recordings.** The server accepts a
+  body only from the memory's author, so any other member transcribing it would
+  spend the family's AI minutes on an update that is then refused.
+- **The ladder is read, never written.** An outage is ours and not the teller's,
+  and it must not cost them a level (§12).
+- **Never with stubs.** The stub transcriber returns a canned sample of Finnish
+  speech, which is right to develop a UI against and would be a forgery in an
+  archive.
+
+### Where it runs
+
+On launch, on returning to the foreground, and when the family's entitlement
+changes. Those are the three moments the two things that stop a transcription —
+no network and no minutes — are most likely to have changed. The last one is
+also the point of §9's model made concrete: **the memory the quota interrupted
+is usually the exact reason somebody bought**, and it should not have to wait
+for the next launch.
+
+A round stops at the first transcription failure. The next memory would fail for
+the same reason, and nothing is lost by waiting.
+
+### What degrades, and what does not
+
+If transcription succeeds but extraction does not, **the memory lands in the
+teller's own words** rather than being thrown away and re-transcribed later.
+Transcription costs the family real minutes; extraction is text, a fraction of a
+cent, and deliberately unmetered (§7). So a transcript that has been paid for is
+never discarded because the cheap half failed. Structure is what degrades — not
+the telling.
+
+The memory's home subject is not re-chosen when the text arrives, only
+described. It has been sitting in the archive under that subject and somebody
+may have been looking at it; `describe` fills empty fields only, so a title
+written by hand in the meantime survives. That is also why the subject is
+created **untitled**: a placeholder written before anything had been read would
+have been filled in by nothing, and become permanent.
+
+### Verified
+
+The upsert rules against real SQLite on `schema.sql`: an audio-only row is
+stored, a late transcript fills in both `body` and `raw_transcript`, a stale
+push from the author's other device cannot unwrite either, and another member
+still cannot edit what somebody else told. End to end in the simulator with
+`-defer once` (docs/SETUP.md): the recording is saved without text, the next
+launch finishes it, and the memory comes back with its own audio intact, the
+person it names, a dated subject and three follow-up questions.
+
+### No removal is owed
+
+CLAUDE.md requires a removal for every addition. Nothing was added to the
+product: §7 specified this behaviour before any of it was written, and what
+existed was half of it. The one genuinely new thing is a DEBUG launch argument,
+which is developer scaffolding rather than scope — and it exists because this is
+the only path in the app whose whole point is what happens *after* an outage
+nobody can schedule.

@@ -45,6 +45,14 @@ final class TellViewModel {
     private(set) var savedAudioDuration: TimeInterval?
     private(set) var savedMemoryID: String?
 
+    /// A memory whose audio is already saved and whose text is being typed now.
+    ///
+    /// Set only by "Kirjoita se itse", and cleared the moment writing ends. Two
+    /// rows for one telling — a silent recording and a voice-less text — would
+    /// be the archive quietly splitting a memory in half, and it is the audio
+    /// that would end up looking like the empty one.
+    private var completingMemoryID: String?
+
     /// The saved memory itself. The result screen needs it for playback, not
     /// just the duration.
     var savedMemory: Memory? {
@@ -266,13 +274,23 @@ final class TellViewModel {
 
     // MARK: - Typing
 
-    func beginWriting() {
+    /// `completing` is the memory whose audio is already saved: what is typed
+    /// finishes that recording rather than starting a second memory beside it.
+    /// Nil — the default — for an ordinary typed memory, which is also what
+    /// makes any other route into writing safe: the pending id cannot be picked
+    /// up by a telling it does not belong to.
+    func beginWriting(completing memoryID: String? = nil) {
         draft = ""
+        completingMemoryID = memoryID
         phase = .writing
     }
 
     func cancelWriting() {
         draft = ""
+        // Set on entry to writing, cleared on every exit. The memory itself is
+        // not abandoned by this — it goes back into the catch-up's care and its
+        // text arrives when the network or the minutes do.
+        completingMemoryID = nil
         phase = .idle
     }
 
@@ -321,7 +339,12 @@ final class TellViewModel {
     /// `isAwaitingTranscription` tells the UI that transcription is pending.
     private func saveAudioOnly(audioURL: URL, duration: TimeInterval) {
         let home = target ?? {
-            let subject = Subject(kind: .event, title: "Kertomatta purettu muisto")
+            // Untitled on purpose. The title comes from the place and the time
+            // in what was said, and nothing has read the speech yet — a
+            // placeholder written now would never be replaced, because
+            // `describe` fills empty fields only. So the subject waits with the
+            // memory, and the two are named together when the text arrives.
+            let subject = Subject(kind: .event, title: "")
             store.add(subject)
             return subject
         }()
@@ -377,6 +400,18 @@ final class TellViewModel {
         audioURL: URL?,
         duration: TimeInterval?
     ) {
+        // The audio of this same telling is already in the archive, so the text
+        // completes that memory instead of starting a second one beside it.
+        //
+        // If it has been completed in the meantime — the catch-up reached it
+        // first — this falls through and the typed text becomes a memory of its
+        // own. A duplicate is a small harm; throwing away what somebody has
+        // just typed is not.
+        if let completingMemoryID,
+           completeAudioMemory(completingMemoryID, extracted, transcript: transcript) {
+            return
+        }
+
         // Mentioned people and places are created as unconfirmed proposals.
         // Unconfirmed never appears in the family tree as fact — a wrong
         // relationship is worse than a missing one.
@@ -437,9 +472,50 @@ final class TellViewModel {
         )
     }
 
+    /// Fills in the memory whose audio was saved without a transcript, using the
+    /// text the teller has just typed for it.
+    ///
+    /// The same work the catch-up does in the background, and the same code:
+    /// the memory keeps its recording, its home subject gets the name and the
+    /// date, the people it names appear as proposals, and the follow-up
+    /// questions are stored. From here the result screen cannot tell that the
+    /// text took the long way round — which is the point.
+    ///
+    /// Returns false if the memory was no longer waiting.
+    private func completeAudioMemory(
+        _ memoryID: String,
+        _ extracted: ExtractionResult,
+        transcript: String
+    ) -> Bool {
+        guard let completion = DeferredMemory.fillIn(
+            memoryID: memoryID,
+            transcript: transcript,
+            extracted: extracted,
+            store: store
+        ) else { return false }
+
+        completingMemoryID = nil
+        proposals = completion.proposals
+        placedSubject = completion.home
+        newQuestions = completion.questions
+        savedMemoryID = memoryID
+        // Kept from the recording rather than from this pass, which had no
+        // audio of its own: the result screen still offers her voice.
+        savedAudioDuration = store.memories.first { $0.id == memoryID }?.audioDuration
+
+        // The question was already marked answered when the audio was saved, but
+        // the ladder was deliberately not told — an outage must not cost a
+        // level. Now there is a real answer to learn from.
+        markQuestionAnswered(
+            answer: transcript,
+            yieldedStructure: !completion.mentioned.isEmpty || extracted.dateHint != nil
+        )
+        return true
+    }
+
     /// Finds or creates the subject the memory belongs to.
     private func placeSubject(for extracted: ExtractionResult, mentioned: [Subject]) -> Subject {
-        let suggested = Self.suggestedTitle(for: extracted, mentioned: mentioned)
+        let suggested = extracted.suggestedTitle(mentioned: mentioned)
 
         // A memory told about a photo belongs to that photo — no guessing. The
         // photo also gets its name and date from what was told about it: exactly
@@ -459,23 +535,6 @@ final class TellViewModel {
         let subject = Subject(kind: .event, title: title, dateHint: extracted.dateHint)
         store.add(subject)
         return subject
-    }
-
-    /// A title from the place and the time: "Puumalassa, 1950-luku".
-    /// Nil if neither came out of the speech — then it is more honest to leave
-    /// it unnamed than to invent a title out of nothing.
-    private static func suggestedTitle(
-        for extracted: ExtractionResult,
-        mentioned: [Subject]
-    ) -> String? {
-        var parts: [String] = []
-        if let place = mentioned.first(where: { $0.kind == .place }) {
-            parts.append(place.title)
-        }
-        if let hint = extracted.dateHint, hint.precision != .unknown {
-            parts.append(hint.displayText)
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
     /// Moves the audio out of the temporary directory into a permanent one.
@@ -568,6 +627,7 @@ final class TellViewModel {
         newQuestions = []
         savedAudioDuration = nil
         savedMemoryID = nil
+        completingMemoryID = nil
         editedNames = [:]
     }
 }

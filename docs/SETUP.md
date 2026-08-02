@@ -104,6 +104,7 @@ xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
 | `-guess demo` | DEBUG | Builds guessing rounds from memories you told yourself. A round normally needs a second family member — a screenshot run and the demo phone both have one device. |
 | `-seed guess` | DEBUG | **Replaces** the archive with a canned family that has a guessing round waiting. What the UI tests launch with, and the fastest way to reach the round by hand. |
 | `-seed empty` | DEBUG | **Empties** the archive. The empty states are a screen each, and on a device that has ever been used they are otherwise unreachable. |
+| `-defer once` | DEBUG | Records a couple of seconds and has the transcription fail as though the month's AI minutes had just run out, leaving the memory waiting for its text. The next launch runs the catch-up and finishes it, so the two together are one filmable sequence. The real trigger is an outage nobody can schedule. See ARCHITECTURE.md §16. |
 
 These exist because some screens sit behind a tap, and two things that need to
 reach them have no hands: a screenshot run, and **filming the demo video**

@@ -39,9 +39,20 @@ struct TellScreen: View {
             // AppServices picks the stub or the real service depending on
             // whether a backend address is configured. The UI cannot tell the
             // difference, because it only knows the protocols.
+            let transcriber = AppServices.transcription { session.identity.token }
+            #if DEBUG
+            // `-defer once` wraps it here rather than in AppServices, so the
+            // catch-up keeps a transcriber that works: the argument exists to
+            // show a memory being finished, not only being interrupted.
+            let transcription: TranscriptionService = AppServices.defersNextTranscription
+                ? DeferringTranscriptionService(wrapped: transcriber)
+                : transcriber
+            #else
+            let transcription = transcriber
+            #endif
             let created = TellViewModel(
                 store: store,
-                transcription: AppServices.transcription { session.identity.token },
+                transcription: transcription,
                 extraction: AppServices.extraction { session.identity.token },
                 target: opened,
                 question: question
@@ -67,6 +78,25 @@ struct TellScreen: View {
                     // then finish the round so the loop visibly reaches its
                     // second question.
                     try? await Task.sleep(for: .seconds(3))
+                    if created.phase == .recording {
+                        await created.stopAndProcess()
+                    }
+                }
+            }
+            // Demo and screenshot aid: `-defer once` records a few seconds and
+            // has the transcription fail as though the month's minutes had just
+            // run out, leaving the memory waiting for its text.
+            //
+            // The other half happens on its own: returning to the foreground
+            // runs the catch-up, and the memory finishes. The two together are
+            // one filmable sequence, and there is no other way to film it —
+            // the real trigger is an outage nobody can schedule.
+            if AppServices.defersNextTranscription {
+                Task {
+                    await created.startRecording()
+                    // A recording under a second is read as an accident rather
+                    // than a memory, and the point here is a memory.
+                    try? await Task.sleep(for: .seconds(2))
                     if created.phase == .recording {
                         await created.stopAndProcess()
                     }
@@ -960,7 +990,11 @@ private struct AudioSavedView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                Button("Kirjoita se itse") { model.beginWriting() }
+                // The text lands in the memory whose audio is already saved,
+                // rather than beside it. What she just told is one telling, and
+                // the archive must not hold it as a silent recording next to a
+                // voice-less text.
+                Button("Kirjoita se itse") { model.beginWriting(completing: model.savedMemoryID) }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)

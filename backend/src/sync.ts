@@ -261,14 +261,35 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 	}
 
 	for (const memory of (payload.memories ?? []).slice(0, MAX_ROWS)) {
-		if (!memory.id || !memory.subject_id || !memory.body) continue
+		if (!memory.id || !memory.subject_id) continue
+		// A memory with no text is not an empty memory. When the quota or the
+		// network gives out, the audio is saved and the text follows later — the
+		// audio is the product and the transcript is the replaceable part. See
+		// docs/ARCHITECTURE.md §16.
+		//
+		// Refusing the row here was the quiet half of that bug: the client
+		// cleared it from the outbox all the same, so the recording stayed on
+		// one device and the family never saw it at all.
+		//
+		// A row with neither text nor audio really is nothing, and is skipped —
+		// which is also why it must not be offered for push in the first place.
+		if (!memory.body && !memory.audio_r2_key) continue
 		statements.push(
 			env.DB.prepare(
 				`INSERT INTO memory (id, family_id, subject_id, author_id, body, raw_transcript,
 				                     audio_r2_key, audio_seconds, source, created_at, deleted_at, seq)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
-				   body = excluded.body,
+				   -- An empty body never overwrites a real one. The transcript
+				   -- arrives after the audio, and the author's other device may
+				   -- still hold the untranscribed version — the Keychain
+				   -- identity syncs, so that device pushes as the same author
+				   -- and would otherwise unwrite the text.
+				   body = CASE WHEN excluded.body <> '' THEN excluded.body ELSE memory.body END,
+				   -- Sticky for the same reason, and because rule 3 says the raw
+				   -- transcript is always kept: it arrives with the late
+				   -- completion, and nothing may strip it afterwards.
+				   raw_transcript = COALESCE(excluded.raw_transcript, memory.raw_transcript),
 				   audio_r2_key = COALESCE(excluded.audio_r2_key, memory.audio_r2_key),
 				   deleted_at = COALESCE(excluded.deleted_at, memory.deleted_at),
 				   seq = excluded.seq

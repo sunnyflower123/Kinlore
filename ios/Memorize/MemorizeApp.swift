@@ -8,6 +8,9 @@ struct MemorizeApp: App {
     /// One player for the whole app: two simultaneous sounds would be confusing.
     @State private var player = AudioPlayer()
     @State private var sync: SyncEngine?
+    /// Finishes the memories whose text never arrived. Driven from here for the
+    /// same reason as sync: they both run on the app's lifecycle, not on a tap.
+    @State private var catchUp: TranscriptionCatchUp?
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -22,17 +25,41 @@ struct MemorizeApp: App {
                 .environment(player)
                 .task {
                     // The engine needs both, so it is created here.
-                    if sync == nil { sync = SyncEngine(store: store, session: session) }
+                    if sync == nil {
+                        let engine = SyncEngine(store: store, session: session)
+                        sync = engine
+                        catchUp = TranscriptionCatchUp(
+                            store: store, session: session, sync: engine
+                        )
+                    }
                     RevenueCatPurchases.configure(memberID: session.identity.memberID)
                     await sync?.sync()
+                    // Before the catch-up, not after: if this device is carrying
+                    // a purchase the server has not heard about, the minutes it
+                    // needs are one call away.
                     await syncEntitlementIfPurchased()
+                    await catchUp?.run()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     // Coming back to the foreground: the family may have told
                     // memories in the meantime, and our own queue may be
                     // undrained.
                     guard phase == .active else { return }
-                    Task { await sync?.sync() }
+                    Task {
+                        await sync?.sync()
+                        // The network is the usual reason a transcription was
+                        // deferred, and being opened again is the best evidence
+                        // there is that it came back.
+                        await catchUp?.run()
+                    }
+                }
+                .onChange(of: session.family?.entitlement) { _, _ in
+                    // The family has just gone paid — or a webhook says it no
+                    // longer is. The upgrade is the case that matters: the
+                    // memory the quota interrupted is usually the very reason
+                    // somebody bought, and it should not have to wait for the
+                    // next launch to be written.
+                    Task { await catchUp?.run() }
                 }
                 .onOpenURL { url in
                     guard let code = Self.inviteCode(from: url) else { return }

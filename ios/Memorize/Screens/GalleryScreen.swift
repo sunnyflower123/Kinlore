@@ -227,7 +227,9 @@ private struct EventRow: View {
                 .frame(width: 34)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(subject.title)
+                // An event whose memory is still waiting for its text has no
+                // title yet, and a blank row would look like a broken one.
+                Text(subject.displayTitle)
                     .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
                 Text(memoryCountText)

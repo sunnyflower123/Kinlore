@@ -17,6 +17,36 @@ struct ExtractionResult: Equatable {
     var dateHint: DateHint?
     /// Three questions. More overwhelms, fewer do not carry the story forward.
     var questions: [ExtractedQuestion]
+
+    /// The transcript as its own result: the words, and no structure claimed
+    /// around them.
+    ///
+    /// Used when a transcript exists but extraction could not be had — see
+    /// `TranscriptionCatchUp`. It is not a lesser memory in the way that
+    /// matters: what was said is all there, only unorganised.
+    static func verbatim(_ transcript: String) -> ExtractionResult {
+        ExtractionResult(body: transcript, mentions: [], dateHint: nil, questions: [])
+    }
+
+    /// A title from the place and the time: "Puumalassa, 1950-luku".
+    ///
+    /// Nil if the speech yielded neither, because leaving a subject unnamed is
+    /// more honest than inventing a title out of nothing — and an untitled
+    /// subject is filled in by the next thing said about it.
+    ///
+    /// It lives on the result rather than in the Tell screen because naming a
+    /// subject after an extraction is the same rule wherever it happens: a
+    /// memory told just now, and one whose text arrived a week late.
+    func suggestedTitle(mentioned: [Subject]) -> String? {
+        var parts: [String] = []
+        if let place = mentioned.first(where: { $0.kind == .place }) {
+            parts.append(place.title)
+        }
+        if let dateHint, dateHint.precision != .unknown {
+            parts.append(dateHint.displayText)
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
 }
 
 /// A follow-up question and how much it asks of the teller, 1–5.
