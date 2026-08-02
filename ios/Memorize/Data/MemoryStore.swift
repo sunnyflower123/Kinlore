@@ -621,8 +621,14 @@ final class MemoryStore {
         let kalle = Subject(id: "demo-kalle", kind: .person, title: "Kalle")
         let sanni = Subject(id: "demo-sanni", kind: .person, title: "Sanni")
         let photo = Subject(id: "demo-photo", kind: .photo, title: "")
+        // A place with nothing said about it yet, which is the ordinary state of
+        // a place: it is named inside somebody's memory and gets a card of its
+        // own. It is here so the accessibility sweep actually covers the Paikat
+        // section and its invitation — an empty subject is the row with the
+        // colour on it, and colour is the thing eyes cannot check.
+        let puumala = Subject(id: "demo-puumala", kind: .place, title: "Puumala")
 
-        subjects = [aino, eeva, kalle, sanni, photo]
+        subjects = [aino, eeva, kalle, sanni, photo, puumala]
         memories = [
             Memory(
                 id: "demo-memory-aino",

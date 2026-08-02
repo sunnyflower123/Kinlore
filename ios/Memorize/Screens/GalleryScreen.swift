@@ -25,6 +25,14 @@ struct GalleryScreen: View {
 
     private var photos: [Subject] { store.subjects(of: .photo) }
     private var events: [Subject] { store.subjects(of: .event) }
+    /// Places the family has spoken about.
+    ///
+    /// They arrive the same way people do — named inside a memory, created as a
+    /// subject — and until this section existed nothing listed them, so a place
+    /// card could not be opened at all. Its memories were invisible, its starter
+    /// questions could never be asked, and "Kysy perheeltä" could not be used on
+    /// it. A subject nobody can reach is not part of the archive.
+    private var places: [Subject] { store.subjects(of: .place) }
 
     /// A family whose memories are all on people has an empty grid but can still
     /// have a round waiting, and "no photos yet" would hide it.
@@ -35,7 +43,7 @@ struct GalleryScreen: View {
     var body: some View {
         NavigationStack {
             Group {
-                if photos.isEmpty && events.isEmpty && !hasRound {
+                if photos.isEmpty && events.isEmpty && places.isEmpty && !hasRound {
                     emptyState
                 } else {
                     content
@@ -109,18 +117,36 @@ struct GalleryScreen: View {
                 }
 
                 if !events.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeading("Kerrotut hetket")
-                        ForEach(events) { event in
-                            NavigationLink(value: event) {
-                                EventRow(subject: event)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
+                    listSection("Kerrotut hetket", of: events)
+                }
+
+                // Below the moments, because a place is usually a way into a
+                // memory rather than the memory itself: most of these have
+                // nothing on them yet, and an empty card here is an invitation
+                // exactly as it is on the person list.
+                if !places.isEmpty {
+                    listSection("Paikat", of: places)
                 }
             }
             .padding(Elder.screenPadding)
+        }
+    }
+
+    /// One section, one row type, whatever kind of subject is in it.
+    ///
+    /// Moments and places are listed by exactly the same code, because they are
+    /// the same row of the same table — the point the whole `subject` design
+    /// rests on. A second row type for places would have been the beginning of
+    /// the parallel implementations CLAUDE.md forbids.
+    private func listSection(_ title: String, of subjects: [Subject]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeading(title)
+            ForEach(subjects) { subject in
+                NavigationLink(value: subject) {
+                    SubjectRow(subject: subject)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -215,13 +241,15 @@ private struct PhotoTile: View {
     }
 }
 
-private struct EventRow: View {
+/// A moment or a place, listed. The icon is the only difference between them,
+/// and it comes from the kind rather than from a row written per kind.
+private struct SubjectRow: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: "calendar")
+            Image(systemName: subject.kind.symbolName)
                 .font(.title2)
                 .foregroundStyle(Elder.supporting)
                 .frame(width: 34)
@@ -232,9 +260,7 @@ private struct EventRow: View {
                 Text(subject.displayTitle)
                     .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
-                Text(memoryCountText)
-                    .font(.subheadline)
-                    .foregroundStyle(Elder.supporting)
+                subtitle
             }
 
             Spacer()
@@ -246,11 +272,28 @@ private struct EventRow: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
         .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
     }
 
-    private var memoryCountText: String {
+    /// A subject nobody has said anything about yet is shown as an invitation
+    /// rather than as a zero — the same way an empty person is on the people
+    /// list, and worded the same. For a place that is the common case, because a
+    /// place is usually named inside a memory rather than being the memory.
+    /// PLAN.md §6.5: gaps are shown.
+    @ViewBuilder
+    private var subtitle: some View {
         let count = store.memories(for: subject.id).count
-        return count == 1 ? "1 muisto" : "\(count) muistoa"
+        if count == 0 {
+            // The microphone says what to do, so the meaning does not rest on
+            // the colour alone.
+            Label("Kerro tästä", systemImage: "mic.fill")
+                .font(.subheadline)
+                .foregroundStyle(.tint)
+        } else {
+            Text(count == 1 ? "1 muisto" : "\(count) muistoa")
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+        }
     }
 }
 

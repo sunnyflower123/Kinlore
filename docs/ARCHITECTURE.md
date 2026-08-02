@@ -341,14 +341,35 @@ Built, in the order they were built:
    **Closing the paywall is not the end of the purchase**: `syncPurchase` is
    what turns one person's subscription into the family's entitlement (§6).
 
+7. **Settings** — export, leaving the family, emptying the device. Written out
+   in §14; moderation, which this list once expected to sit beside them, is
+   formally out.
+8. **Places** — a *"Paikat"* section on Muistot, and the section that should
+   have existed from the first day the extraction could produce a place.
+
+   `subject.kind` has covered photo, person, place and event from the beginning,
+   and three of the four were listed somewhere. A place was created when a
+   memory named one, synced, counted in the export and given its own starter
+   questions — and **no screen listed it**, so its card could not be opened at
+   all. Nothing failed; it was simply unreachable, which is the failure mode a
+   single table invites and the one worth naming here. A row nobody can reach is
+   not part of the archive.
+
+   Most places have nothing on them, because a place is usually named *inside* a
+   memory rather than being the memory. That is why the row says *"Kerro tästä"*
+   rather than *"0 muistoa"* — the same invitation an empty person card carries,
+   for the same reason (§6.5 of PLAN.md).
+
+   The pairing required by "every addition requires a removal" (CLAUDE.md): the
+   event-only row is gone. Moments and places are listed by one row that takes
+   its icon from `kind`, which is what the `subject` design claims and what a
+   second row type would have quietly started to contradict.
+
 Not built:
 
-7. **Settings** — export, account deletion, reporting and blocking. The
-   moderation half is on the cut list (§7); export and deletion are not, and
-   they are the honest remainder of this list.
-8. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
+9. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
    person card: the same information, works at the largest text size and is
-   readable with VoiceOver. The graph gets built only if everything else is done.
+   readable with VoiceOver. Formally out of v1 since §10.
 
 ## 9. Build order
 
