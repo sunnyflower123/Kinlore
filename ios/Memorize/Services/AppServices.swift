@@ -21,9 +21,15 @@ enum AppServices {
 
     static var isRemote: Bool { apiBaseURL != nil }
 
-    static func transcription() -> TranscriptionService {
+    /// The token comes from the caller's `Session` and is read on every call,
+    /// not captured once: "Tyhjennä tämä laite" replaces the identity, and a
+    /// service created before that must not keep authenticating as the old one.
+    /// Reading the Keychain here directly would be worse still — `loadOrCreate`
+    /// mints a fresh identity on any failed read, and a token the server has
+    /// never seen turns every request into a 401.
+    static func transcription(token: @escaping () -> String) -> TranscriptionService {
         guard let base = apiBaseURL else { return StubTranscriptionService() }
-        return RemoteTranscriptionService(baseURL: base)
+        return RemoteTranscriptionService(baseURL: base, token: token)
     }
 
     static func purchases() -> PurchaseService {
@@ -32,9 +38,9 @@ enum AppServices {
             : RevenueCatPurchases()
     }
 
-    static func extraction() -> ExtractionService {
+    static func extraction(token: @escaping () -> String) -> ExtractionService {
         guard let base = apiBaseURL else { return StubExtractionService() }
-        return RemoteExtractionService(baseURL: base)
+        return RemoteExtractionService(baseURL: base, token: token)
     }
 }
 
@@ -77,11 +83,13 @@ private struct QuotaDenial: Decodable {
 private func post<Response: Decodable>(
     _ path: String,
     baseURL: URL,
+    token: String,
     body: some Encodable,
     timeout: TimeInterval
 ) async throws -> Response {
     var request = URLRequest(url: baseURL.appendingPathComponent(path))
     request.httpMethod = "POST"
+    request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try JSONEncoder().encode(body)
     // An elderly user may talk for a long time, and transcription takes as long
@@ -104,6 +112,7 @@ private func post<Response: Decodable>(
 
 struct RemoteTranscriptionService: TranscriptionService {
     let baseURL: URL
+    let token: () -> String
 
     private struct Request: Encodable {
         let audio: String
@@ -124,6 +133,7 @@ struct RemoteTranscriptionService: TranscriptionService {
         let reply: Reply = try await post(
             "transcribe",
             baseURL: baseURL,
+            token: token(),
             body: Request(
                 audio: data.base64EncodedString(),
                 format: audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension,
@@ -149,6 +159,7 @@ struct RemoteTranscriptionService: TranscriptionService {
 
 struct RemoteExtractionService: ExtractionService {
     let baseURL: URL
+    let token: () -> String
 
     private struct Request: Encodable {
         let transcript: String
@@ -217,6 +228,7 @@ struct RemoteExtractionService: ExtractionService {
         let reply: Reply = try await post(
             "extract",
             baseURL: baseURL,
+            token: token(),
             body: Request(
                 transcript: transcript,
                 corrections: corrections.map { .init(from: $0.from, to: $0.to) },

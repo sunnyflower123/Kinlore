@@ -4,6 +4,7 @@ import UIKit
 /// The app's most important screen. One button, no menus, no settings.
 struct TellScreen: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
 
     /// When the screen is opened from a photo or a person, the memory attaches
     /// to it. Nil = free dictation, in which case the subject is inferred from
@@ -40,8 +41,8 @@ struct TellScreen: View {
             // difference, because it only knows the protocols.
             let created = TellViewModel(
                 store: store,
-                transcription: AppServices.transcription(),
-                extraction: AppServices.extraction(),
+                transcription: AppServices.transcription { session.identity.token },
+                extraction: AppServices.extraction { session.identity.token },
                 target: opened,
                 question: question
             )
