@@ -121,6 +121,22 @@ final class AccessibilitySweepTests: XCTestCase {
 
     /// Asking is the other half of the question loop, and it is a sheet with a
     /// text field — the one control type nothing else here covers.
+    /// The way out of a misheard name. A sheet with a text field on it is the
+    /// shape most likely to stop working at the largest size, and this one has
+    /// to keep working: it is the only correction the archive offers once the
+    /// telling is over.
+    func testCorrectNameSheet() throws {
+        try sweep("Korjaa nimi", arguments: ["-seed", "guess", "-tab", "people"]) { app in
+            let person = app.cells.firstMatch
+            guard person.waitForExistence(timeout: 10) else { return }
+            person.tap()
+            let correct = app.buttons["Korjaa nimi"]
+            guard correct.waitForExistence(timeout: 10) else { return }
+            correct.tap()
+            _ = app.buttons["Tallenna"].waitForExistence(timeout: 10)
+        }
+    }
+
     func testAskQuestionSheet() throws {
         try sweep("Kysy perheeltä", arguments: ["-seed", "guess", "-tab", "memories"]) { app in
             let tile = app.images.firstMatch

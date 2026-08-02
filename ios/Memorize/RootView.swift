@@ -194,9 +194,28 @@ struct SubjectDetailScreen: View {
     @Environment(Session.self) private var session
     let subject: Subject
 
+    @Environment(\.dismiss) private var dismiss
+
     @State private var image: UIImage?
     @State private var isTelling = false
     @State private var isAsking = false
+    @State private var isCorrectingName = false
+
+    /// The subject as the store has it now, rather than as it was when this
+    /// screen was pushed. A name corrected here has to be visible here, and the
+    /// screen is handed a value rather than an id.
+    private var current: Subject { store.subject(id: subject.id) ?? subject }
+
+    /// Names that came out of speech, and only those.
+    ///
+    /// A photo's or an event's title is written by the app out of a place and a
+    /// year; a person's and a place's is a proper noun the recognition heard,
+    /// and it is wrong about one time in three (`wrangler.jsonc`: 68 % on proper
+    /// nouns, which is the measurement the whole name-correction step exists
+    /// for). Those are the two that need a second chance.
+    private var nameCameFromSpeech: Bool {
+        current.kind == .person || current.kind == .place
+    }
 
     var body: some View {
         List {
@@ -298,8 +317,21 @@ struct SubjectDetailScreen: View {
                     .foregroundStyle(Elder.supporting)
             }
         }
-        .navigationTitle(subject.displayTitle)
+        .navigationTitle(current.displayTitle)
         .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            if nameCameFromSpeech {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isCorrectingName = true
+                    } label: {
+                        Image(systemName: "pencil")
+                            .elderTapTarget()
+                    }
+                    .accessibilityLabel("Korjaa nimi")
+                }
+            }
+        }
         .task {
             guard image == nil else { return }
             guard let filename = await MediaLoader.imageFilename(
@@ -321,6 +353,14 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isAsking) {
             AskQuestionSheet(subject: subject)
+        }
+        .sheet(isPresented: $isCorrectingName) {
+            CorrectNameSheet(subject: current) { merged in
+                // The correction turned out to name somebody the family already
+                // had, so this card is now a tombstone pointing at theirs. There
+                // is nothing left to look at here — the memories have moved.
+                if merged { dismiss() }
+            }
         }
     }
 

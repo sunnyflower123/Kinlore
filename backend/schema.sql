@@ -85,7 +85,6 @@ CREATE TABLE subject (
 
   -- kind = 'photo'
   r2_key        TEXT,
-  blurhash      TEXT,                 -- placeholder while the photo loads
 
   -- Uncertain dating is the rule, not the exception. "Sometime in the fifties"
   -- is stored as the range [1950, 1959] with precision 'decade' — neither

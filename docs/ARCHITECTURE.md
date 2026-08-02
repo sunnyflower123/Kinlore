@@ -1139,3 +1139,66 @@ existed was half of it. The one genuinely new thing is a DEBUG launch argument,
 which is developer scaffolding rather than scope — and it exists because this is
 the only path in the app whose whole point is what happens *after* an outage
 nobody can schedule.
+
+## 17. The name that was heard wrong
+
+The measurement this app was built on says the recognition gets **68 % of proper
+nouns right** (`backend/wrangler.jsonc`, chosen by `scripts/asr-bench.mjs`). One
+name in three arrives wrong, and the family tree is built out of names.
+
+That was known and answered: the Tell screen asks the teller to check the names
+while they still remember what they said, and a correction there re-runs
+extraction so the memory's text is corrected too — Finnish inflection means a
+string replacement never matches "Skotlannissa". It is the right moment and the
+answer is good.
+
+**It was also the only moment.** The correction screen goes past in seconds, an
+interview loop deliberately stacks its proposals up until the loop ends, and the
+person most likely to notice that *Sotkamo* has become *Skotlanti* is a
+grandchild who is not in the room. A name missed there was permanent: a wrong
+person on the people list, in the export, and in the tree.
+
+Worse, it could become *fact*. A correct guess in a round confirms the person
+(§13), and a family member who knows perfectly well who was meant will happily
+recognise them under a misheard name. The archive would then hold a confirmed
+wrong person, which is precisely the failure rule 4 exists to prevent — and it
+had no way back out.
+
+### What it is
+
+A pencil on the person's and the place's card, and a sheet with the name in it.
+Nothing else: photos and events are titled by the app out of a place and a year,
+so their names were never heard by anybody.
+
+The write is `MemoryStore.rename`, unchanged and already carrying the hard part
+— if the corrected name is one the family already has, the two cards merge, and
+the merged one stays as a tombstone with a forwarding address so that nothing
+anywhere points at nothing (§2.5). The sheet says so before the tap rather than
+after it, because a merge that arrives as a surprise looks like data loss.
+
+**The memories' text is left alone**, and the sheet says that too. Re-writing
+every memory that names the person would need the model and the family's
+minutes, and the right name on the card matters more than the wording inside a
+story — the same trade the correction at telling time already makes when
+re-extraction fails.
+
+This is not new machinery. Sync has had a conflict rule for *"a subject renamed
+on two devices"* since §3 was written; until now the app could not produce that
+situation outside those few seconds.
+
+### The pairing
+
+**`subject.blurhash` is out.** It has been in the schema from the first day as a
+placeholder colour while a photo loads, and nothing has ever written it or read
+it. The grid shows a grey rectangle instead, which is what it has always shown.
+A column carrying an intention nothing implements is the same species of thing
+as a sentence promising a rate limit that was never written — and this document
+has spent enough of today on those.
+
+### Verified
+
+By pressing the buttons, in `NameCorrectionTests`: the card opens, the sheet
+opens with the name already in it, what is typed reaches the card's title, and
+Tallenna stays disabled while there is nothing to save. The audit covers the
+sheet at the default size and at the largest one, which is what a text field on
+a sheet most needs.
