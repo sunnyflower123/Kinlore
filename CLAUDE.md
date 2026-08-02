@@ -129,9 +129,26 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # queries the same tree, so this is how rule 1 is checked rather than asserted.
 # performAccessibilityAudit() also catches contrast, clipping and tap targets —
 # it has already found real defects that screenshots did not.
+#
+# GIVE THE RUN A SIMULATOR OF ITS OWN, by id and not by name. Several sessions
+# work in this worktree at once, every one of them targets "iPhone 17 Pro", and
+# a UI test does not survive another session launching the app on the same
+# device: the audit's target process disappears mid-run.
+#
+# It does not fail honestly either. Most of it arrives as "Invalid target app
+# <pid>", but some of it arrives as ACCESSIBILITY FAILURES THAT ARE NOT REAL —
+# one shared run reported ten contrast and clipping issues on a screen that
+# passes on its own. Measured: 15 failures on the shared device, 0/17 failures
+# on a private one, same commit, minutes apart. Do not chase a red audit before
+# checking which device it ran on.
+#
+#   xcrun simctl create memorize-tests \
+#     com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
+#     com.apple.CoreSimulator.SimRuntime.iOS-26-5
+#
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+  -destination "platform=iOS Simulator,id=$MEMORIZE_TEST_SIM" test
 
 # Backend locally
 cd backend && npx wrangler dev
@@ -155,6 +172,17 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 - **`sudo` is not available.** Do not suggest `xcode-select -s` — use the
   `DEVELOPER_DIR` variable as in the command above. Xcode 26.6, iOS 26.5
   simulator SDK.
+- **The simulator is shared; the UI tests must not be.** Building on the shared
+  device is fine — a build touches no device. Running the app and running the
+  tests are not: they install, launch and terminate one bundle id, and two
+  sessions doing that at once take turns killing each other's process. Use a
+  device of your own and **never shut down or reboot a booted one you did not
+  create** — somebody else is very likely mid-run on it.
+- `xcrun simctl` is not on the path xcodebuild hands to its own child processes,
+  so a test run ends with `unable to find utility "simctl"` while collecting
+  diagnostics. It is noise from a run that had already failed, not the failure.
+  Prepending `/Applications/Xcode.app/Contents/Developer/usr/bin` to `PATH`
+  silences it.
 - The app name and bundle ID are still provisional (`app.memorize.Memorize`),
   see PLAN.md §10.
 - Purchases go through the **RevenueCat Test Store**, not App Store Connect
