@@ -105,6 +105,7 @@ xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
 | `-seed guess` | DEBUG | **Replaces** the archive with a canned family that has a guessing round waiting. What the UI tests launch with, and the fastest way to reach the round by hand. |
 | `-seed empty` | DEBUG | **Empties** the archive. The empty states are a screen each, and on a device that has ever been used they are otherwise unreachable. |
 | `-defer once` | DEBUG | Records a couple of seconds and has the transcription fail as though the month's AI minutes had just run out, leaving the memory waiting for its text. The next launch runs the catch-up and finishes it, so the two together are one filmable sequence. The real trigger is an outage nobody can schedule. See ARCHITECTURE.md §16. |
+| `-defer silence` | DEBUG | The same recording, but **every** transcription in the run fails the way a recording with nothing said into it fails. The catch-up is meant to count it, move on to the next recording rather than stopping, and stop asking after three — which is only visible across four launches, and only with a failure that never relents. Launch once plainly, then with `-tab memories` so the Tell screen does not record a second one. |
 
 These exist because some screens sit behind a tap, and two things that need to
 reach them have no hands: a screenshot run, and **filming the demo video**

@@ -81,11 +81,71 @@ enum DeferredMemory {
         }
         store.add(questions: questions)
 
+        // Whatever this recording cost in failed attempts, it is finished now
+        // and the tally is of no further use. Typing the text by hand clears it
+        // too, which is the point of clearing it here rather than in the
+        // catch-up: this is the one place a memory stops waiting.
+        TranscriptionAttempts.clear(memoryID)
+
         return Completion(
             home: store.subject(id: home.id) ?? home,
             mentioned: mentioned,
             questions: questions
         )
+    }
+}
+
+// MARK: - Giving up on one recording
+
+/// How often this device has tried and failed to make text out of one
+/// recording.
+///
+/// Device-local, in `UserDefaults`, for the same reason the ladder's comfort is
+/// (§12): it describes this phone's attempts rather than a fact about the
+/// family's archive. A count that synced would let one phone's bad afternoon
+/// stop another phone from ever trying.
+@MainActor
+enum TranscriptionAttempts {
+    /// Three, and then the app stops asking about that recording.
+    ///
+    /// Every attempt uploads the whole recording and is paid for whether or not
+    /// any words come back, so audio that cannot be transcribed — silence, or
+    /// speech the hallucination guard refuses — would otherwise cost the family
+    /// minutes on every launch for as long as the memory exists. Three is
+    /// forgiving enough that a provider having a bad hour does not lose a
+    /// transcript, and small enough that nothing is paid for indefinitely.
+    static let limit = 3
+
+    private static let key = "transcription-failures"
+
+    static func failures(for memoryID: String) -> Int {
+        (UserDefaults.standard.dictionary(forKey: key)?[memoryID] as? Int) ?? 0
+    }
+
+    /// The app has stopped trying. The audio is still kept and still exported —
+    /// giving up on the text is not giving up on the recording.
+    static func hasGivenUp(on memoryID: String) -> Bool {
+        failures(for: memoryID) >= limit
+    }
+
+    static func recordFailure(_ memoryID: String) {
+        var all = UserDefaults.standard.dictionary(forKey: key) ?? [:]
+        all[memoryID] = failures(for: memoryID) + 1
+        UserDefaults.standard.set(all, forKey: key)
+    }
+
+    static func clear(_ memoryID: String) {
+        guard var all = UserDefaults.standard.dictionary(forKey: key),
+              all[memoryID] != nil
+        else { return }
+        all.removeValue(forKey: memoryID)
+        UserDefaults.standard.set(all, forKey: key)
+    }
+
+    /// Part of "Tyhjennä tämä laite", like the ladder's own reset: this counts
+    /// attempts made by whoever holds the phone, and it leaves with them.
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: key)
     }
 }
 
@@ -125,6 +185,31 @@ final class TranscriptionCatchUp {
         return AppServices.isRemote
     }
 
+    /// Whether a failure says something about this moment rather than about
+    /// this recording. A moment changes on its own; a recording does not.
+    ///
+    /// The distinction decides two things at once — whether the rest of the
+    /// queue is worth trying now, and whether this recording has used up one of
+    /// its attempts. Getting it wrong in one direction starves every memory
+    /// behind a hopeless one; getting it wrong in the other abandons a perfectly
+    /// good recording because the cottage had no signal for a week.
+    private static func isAboutTheMoment(_ error: Error) -> Bool {
+        if error is URLError { return true }
+        guard let remote = error as? RemoteError else { return false }
+        switch remote {
+        case .quotaExceeded:
+            return true
+        case .badStatus(let code):
+            // Not authenticated, or knocking too often. Both pass.
+            return code == 401 || code == 429
+        case .emptyResult:
+            // The server answered and there were no words in it. That is a fact
+            // about the seconds that were recorded, and it will be just as true
+            // tomorrow.
+            return false
+        }
+    }
+
     /// One round. Safe to call often — overlapping calls are ignored, as in the
     /// sync engine.
     func run() async {
@@ -144,6 +229,10 @@ final class TranscriptionCatchUp {
         var completedAny = false
 
         for memory in store.memoriesAwaitingTranscription(author: session.identity.memberID) {
+            // Asked three times and refused three times. The audio is kept and
+            // exported exactly as before; what stops is the asking.
+            guard !TranscriptionAttempts.hasGivenUp(on: memory.id) else { continue }
+
             // A phone that joined last week holds the key and not the file, so
             // this may fetch from R2. Audio that is on neither is skipped rather
             // than abandoned: another memory's may well be here.
@@ -156,11 +245,28 @@ final class TranscriptionCatchUp {
                 text = try await transcription.transcribe(
                     audioURL: MediaStore.url(for: filename)
                 )
-            } catch {
-                // The minutes are still gone, or the network still is. The next
-                // memory would fail for the same reason, so the round ends here
-                // and the recordings stay exactly as safe as they were.
+            } catch where Self.isAboutTheMoment(error) {
+                // The minutes are gone, or the network is, or this device is not
+                // authenticated. Every other recording would meet the same wall,
+                // so the round ends — and nothing is counted against any of
+                // them, because none of this was their fault.
                 break
+            } catch {
+                // Something about this recording rather than about this moment:
+                // audio the server will not take, or seconds the model found no
+                // words in. The next memory may be perfectly fine, so the round
+                // goes on without it — and this one is counted, because asking
+                // again costs the family the same minutes for the same silence.
+                //
+                // A 5xx is counted here too, which is the debatable part: a
+                // Worker that is genuinely broken spends three attempts before
+                // the app gives up on a transcript it might later have got. It
+                // sits on this side because the one 5xx this app produces on
+                // purpose — the hallucination guard — is permanent for that
+                // audio, and an uncounted permanent failure is the loop this
+                // whole change exists to close.
+                TranscriptionAttempts.recordFailure(memory.id)
+                continue
             }
 
             // Transcription has now cost the family real minutes, and extraction

@@ -1060,8 +1060,45 @@ also the point of §9's model made concrete: **the memory the quota interrupted
 is usually the exact reason somebody bought**, and it should not have to wait
 for the next launch.
 
-A round stops at the first transcription failure. The next memory would fail for
-the same reason, and nothing is lost by waiting.
+### When the recording is the problem
+
+The first version of this retried everything, forever, and stopped the whole
+round at the first failure. Both halves were wrong, and in the same way: they
+assumed a failure says something about the *moment*.
+
+Two failures say something about the **recording** instead, and neither is
+hypothetical. A button pressed with nothing said produces a transcript with no
+words in it. Audio the hallucination guard refuses (§7 of the transcribe path)
+produces an error every time it is sent. Neither will ever succeed, and each
+attempt is charged for whether or not any words come back.
+
+Retrying those forever cost two things. **Money**, on every launch, for as long
+as the memory existed. And worse, **the memories behind it**: the queue is
+oldest first, so one recording that could never be transcribed stood in front of
+every later one and none of them was ever reached.
+
+So a failure is classified once and the answer decides both questions:
+
+| The failure is about | Examples | The round | The recording's tally |
+|---|---|---|---|
+| the moment | no network, 401, quota, 429 | stops — everything else meets the same wall | untouched; none of it was its fault |
+| the recording | no words in the answer, audio refused, 5xx | goes on to the next one | counted |
+
+**Three counted failures and the app stops asking.** The count is device-local
+in `UserDefaults`, for the same reason `comfort` is (§12): it describes this
+phone's attempts, not a fact about the family's archive, and a count that synced
+would let one phone's bad afternoon stop another phone from ever trying.
+
+Giving up on the text is not giving up on the recording. The audio is kept,
+uploaded and exported exactly as before — and the memory card stops saying
+*"teksti valmistuu myöhemmin"*, because after the app has stopped trying that
+sentence is the same false promise this whole section exists to remove.
+
+Counting a 5xx as the recording's fault is the debatable line, and it is drawn
+there on purpose: a Worker that is genuinely broken spends three attempts before
+the app gives up on a transcript it might later have got, whereas the one 5xx
+this app raises deliberately is permanent for that audio. An uncounted permanent
+failure is the loop being closed here.
 
 ### What degrades, and what does not
 
@@ -1088,6 +1125,11 @@ still cannot edit what somebody else told. End to end in the simulator with
 `-defer once` (docs/SETUP.md): the recording is saved without text, the next
 launch finishes it, and the memory comes back with its own audio intact, the
 person it names, a dated subject and three follow-up questions.
+
+The giving-up half with `-defer silence`, which fails every attempt the way an
+empty transcript does. Across four launches the tally reads 1, 2, 3 — and then 3
+again: the fourth launch does not touch it, because by then the app has stopped
+asking.
 
 ### No removal is owed
 

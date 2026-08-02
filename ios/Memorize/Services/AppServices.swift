@@ -36,7 +36,20 @@ enum AppServices {
     /// argument that broke both ends would show the waiting and never the
     /// finishing.
     static var defersNextTranscription: Bool {
-        UserDefaults.standard.string(forKey: "defer") == "once"
+        ["once", "silence"].contains(UserDefaults.standard.string(forKey: "defer") ?? "")
+    }
+
+    /// `-defer silence`: **every** transcription in the run fails the way a
+    /// recording with no words in it fails.
+    ///
+    /// That is the realistic permanent failure — a button pressed and nothing
+    /// said — and it is the one the catch-up has to stop asking about, because
+    /// every attempt is paid for and none of them can ever succeed. Unlike
+    /// `-defer once` it is wired into `transcription()` itself so the catch-up
+    /// meets it too: here the interesting part *is* the second, third and fourth
+    /// try.
+    static var simulatesSilentRecording: Bool {
+        UserDefaults.standard.string(forKey: "defer") == "silence"
     }
     #endif
 
@@ -47,6 +60,9 @@ enum AppServices {
     /// mints a fresh identity on any failed read, and a token the server has
     /// never seen turns every request into a 401.
     static func transcription(token: @escaping () -> String) -> TranscriptionService {
+        #if DEBUG
+        if simulatesSilentRecording { return SilentRecordingTranscriptionService() }
+        #endif
         guard let base = apiBaseURL else { return StubTranscriptionService() }
         return RemoteTranscriptionService(baseURL: base, token: token)
     }

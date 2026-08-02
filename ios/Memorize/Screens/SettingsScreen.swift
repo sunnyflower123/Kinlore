@@ -191,8 +191,12 @@ struct SettingsScreen: View {
             _ = await session.leaveFamily()
         }
         store.wipe()
-        // The ladder describes whoever holds the phone, so it goes too.
+        // The ladder describes whoever holds the phone, so it goes too — and so
+        // does the tally of recordings this device gave up on transcribing.
+        // Both are counts about the person and the phone, not about the family,
+        // and both would otherwise outlive the archive they refer to.
         QuestionLadder.reset()
+        TranscriptionAttempts.reset()
         // Last, because it is what makes the wipe stick: with the old identity
         // the next sync would pull the whole archive straight back.
         session.renewIdentity()

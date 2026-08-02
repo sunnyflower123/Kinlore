@@ -359,9 +359,18 @@ private struct MemoryRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if memory.isAwaitingTranscription {
-                Label("Ääni tallessa — teksti valmistuu myöhemmin", systemImage: "waveform")
-                    .elderBody()
-                    .foregroundStyle(Elder.supporting)
+                // Two different truths, and the app must not tell the first one
+                // after it has stopped trying. "Teksti valmistuu myöhemmin" was
+                // a promise nothing kept for a while (§16); it must not become
+                // one again on the recordings the catch-up has given up on.
+                Label(
+                    TranscriptionAttempts.hasGivenUp(on: memory.id)
+                        ? "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
+                        : "Ääni tallessa — teksti valmistuu myöhemmin",
+                    systemImage: "waveform"
+                )
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
             } else {
                 Text(memory.body)
                     .elderBody()

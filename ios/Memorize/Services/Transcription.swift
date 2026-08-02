@@ -60,6 +60,19 @@ private extension FileManager {
 /// Switched on with `-defer once`. One failure rather than every failure,
 /// because the interesting half is what happens next: the audio is saved, the
 /// catch-up finds it, and the memory finishes itself.
+/// Fails the way a recording with nothing said into it fails: the server answers
+/// and there are no words in the answer.
+///
+/// Switched on with `-defer silence`, and it never stops failing — which is the
+/// point. This is the shape of a permanent failure, and what matters is that the
+/// catch-up counts it, moves on to the next recording rather than stopping, and
+/// eventually stops asking. See docs/ARCHITECTURE.md §16.
+struct SilentRecordingTranscriptionService: TranscriptionService {
+    func transcribe(audioURL: URL) async throws -> String {
+        throw RemoteError.emptyResult
+    }
+}
+
 struct DeferringTranscriptionService: TranscriptionService {
     let wrapped: TranscriptionService
 
