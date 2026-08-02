@@ -33,6 +33,10 @@ export interface Env {
 	FREE_PHOTO_LIMIT: string
 	FREE_AI_SECONDS_PER_MONTH: string
 	RC_ENTITLEMENT_ID: string
+	/// The two unauthenticated writes, metered. Optional on purpose — see
+	/// `withinRateLimit`.
+	FAMILY_JOIN_LIMIT?: RateLimit
+	FAMILY_CREATE_LIMIT?: RateLimit
 }
 
 const json = (data: unknown, status = 200) =>
@@ -61,6 +65,38 @@ async function readJSON<T>(request: Request): Promise<T | null> {
 /// from sending a gigabyte.
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
+/// Meters the two routes that write without a member identity.
+///
+/// Every other route in this Worker needs one, so creating a family and joining
+/// one are the only doors somebody who was never invited can knock on — and both
+/// of them insert rows. The invite code carries 128 bits of entropy and is the
+/// real protection against guessing (docs/ARCHITECTURE.md §4); this is the layer
+/// above it, and it is aimed at the unmetered database write rather than at the
+/// guess.
+///
+/// **A missing binding allows the request, loudly.** That is a deliberate choice
+/// and the arguable one: failing closed would mean a single configuration
+/// mistake stops every new family from being created, and the app is
+/// deliberately vague about causes (rule 9 in CLAUDE.md) so nobody would ever
+/// diagnose it from the phone. A rate limit that is off and says so beats an
+/// archive nobody can join.
+async function withinRateLimit(
+	limiter: RateLimit | undefined,
+	request: Request,
+	what: string,
+): Promise<boolean> {
+	if (!limiter) {
+		console.warn(`[ratelimit] no binding for ${what} — allowing the request unmetered`)
+		return true
+	}
+	// Behind a home router the whole family shares one address, which is exactly
+	// the case the limits are set generously enough for: a grandchild and a
+	// grandmother joining from the same sofa are two of ten.
+	const key = request.headers.get('CF-Connecting-IP') ?? 'unknown'
+	const { success } = await limiter.limit({ key })
+	return success
+}
+
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url)
@@ -75,6 +111,9 @@ export default {
 		// the point where a member is created: the caller has no id yet.
 
 		if (url.pathname === '/family' && request.method === 'POST') {
+			if (!(await withinRateLimit(env.FAMILY_CREATE_LIMIT, request, 'family creation'))) {
+				return json({ error: 'too_many_requests' }, 429)
+			}
 			const body = await readJSON<{
 				memberID?: string
 				secret?: string
@@ -94,6 +133,12 @@ export default {
 		}
 
 		if (url.pathname === '/family/join' && request.method === 'POST') {
+			// Metered before the code is even read: the point is to stop the
+			// database being written to by somebody who is guessing, and a guess
+			// that gets as far as the lookup has already cost a query.
+			if (!(await withinRateLimit(env.FAMILY_JOIN_LIMIT, request, 'joining a family'))) {
+				return json({ error: 'too_many_requests' }, 429)
+			}
 			const body = await readJSON<{
 				memberID?: string
 				secret?: string

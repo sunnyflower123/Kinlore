@@ -119,8 +119,23 @@ would go on showing the deleted row forever.
 
 ### The client's outbox
 
-Local changes are recorded in an `outbox` queue: operation, target id and
-payload. The queue is drained in the background with exponential backoff.
+Local changes are recorded in an outbox: a set of changed row ids per table, and
+the rows themselves are read from the store when the payload is built. Ids
+rather than queued operations, because every operation here is an upsert of a
+whole row — a row changed twice before a push should travel once, in its final
+state.
+
+**The queue is drained when the app is opened and when it comes back to the
+foreground**, not on a timer and not with backoff. An earlier version of this
+document promised backoff; it never existed, and it should not. iOS suspends a
+backgrounded app, so a retry timer is a thing that mostly does not fire, and the
+one moment worth retrying at — the phone being in someone's hand again — is a
+lifecycle event the system already delivers. A failed sync leaves everything
+queued and says nothing to the user, because a network error is not her problem.
+
+The one row the outbox deliberately holds back is a memory whose audio has not
+reached R2 yet: the server would refuse it, and a refused row is cleared from
+the outbox exactly as a stored one is. See §16.
 
 Operations are **idempotent**: everything is an upsert keyed by a client
 generated UUID. The same operation twice breaks nothing, which makes retrying
@@ -179,10 +194,25 @@ DELETE /family/invite/:id → revoke a link
 **The invite link is the entire security boundary.** Anyone who receives the
 link sees all of the family's memories. Therefore:
 
-- The code is long and random, not meant to be read by a human
+- The code is long and random, not meant to be read by a human — 16 random
+  bytes, 128 bits, base64url. Guessing it is not a threat model
 - It expires, and the owner can revoke it at any time
-- Join attempts are rate limited (Cloudflare `ratelimits`, as in Hetkio)
+- **Creating a family and joining one are rate limited**, per IP, with
+  Cloudflare's `ratelimits` binding: 5 and 10 a minute. They are the only two
+  routes in the Worker that write without a member identity, so they are the
+  only doors an uninvited caller can knock on — and both insert rows. The limit
+  is aimed at that unmetered write rather than at the guess, which the entropy
+  above already answers
 - The family view shows who has joined and when
+
+**A missing binding allows the request and logs a warning**, which is the
+arguable half. Failing closed would mean one configuration mistake stops every
+new family from being created, and the app is deliberately vague about causes
+(rule 9), so nobody would ever diagnose it from the phone. Verified against a
+local `wrangler dev`: ten joins pass and the eleventh is 429, five families pass
+and the sixth is 429, the window resets, create → invite → join still works end
+to end, and with the binding removed the request goes through with
+`[ratelimit] no binding … allowing the request unmetered` in the log.
 
 This is a point where simplicity and security genuinely conflict, and the choice
 is deliberate: ease wins, because a login wall would drive away exactly the user
