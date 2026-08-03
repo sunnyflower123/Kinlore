@@ -75,7 +75,7 @@ struct MemorizeApp: App {
     private var content: some View {
         switch session.mode {
         case .needsFamily:
-            OnboardingScreen(prefilledCode: invitedCode)
+            OnboardingScreen(prefilledCode: $invitedCode)
         case .local, .inFamily:
             // Without a backend the app is a single-device archive and no join
             // screen is shown at all. That keeps development and demoing going

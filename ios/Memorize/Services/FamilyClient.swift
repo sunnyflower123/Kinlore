@@ -154,6 +154,13 @@ enum FamilyError: LocalizedError {
             return .message("Tämä laite kuuluu jo toiseen perheeseen.")
         case "unauthorized":
             return .message("Tunnistautuminen epäonnistui.")
+        // Creating a family and joining one are metered per address
+        // (docs/ARCHITECTURE.md §4), so this is the one refusal the app can now
+        // meet that the generic wording actively misleads about: "yritä
+        // uudelleen" is exactly what will not work, and a person who has just
+        // been told to try again will tap the button until it does.
+        case "too_many_requests":
+            return .message("Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen.")
         case "last_member":
             return .message("Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen.")
         default:

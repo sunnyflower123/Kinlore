@@ -9,8 +9,23 @@ struct OnboardingScreen: View {
     @Environment(Session.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
 
-    /// When opened from an invite link, the code arrives pre-filled.
-    var prefilledCode: String?
+    /// The code from an invite link, or nil.
+    ///
+    /// A binding rather than a value, and read on change rather than on appear.
+    /// Both halves were wrong before, and the first one is the flow this whole
+    /// no-login design exists for:
+    ///
+    /// **Tapping the link usually does not launch the app.** It is already
+    /// running — a person opens a new app before they use the link, or reads the
+    /// message with the app in the background — so iOS shows "Open in Memorize?"
+    /// and returns to a screen that appeared minutes ago. `onAppear` fires once,
+    /// so the code was dropped and grandmother was looking at the same two
+    /// buttons as before, with nothing filled in and no clue why. On a cold
+    /// launch it worked, which is exactly the kind of half that gets tested.
+    ///
+    /// Cleared once it has been used, so that a code from a family she has since
+    /// left cannot fill itself in over a fresh invitation.
+    @Binding var prefilledCode: String?
 
     @State private var route: Route?
     @State private var name = ""
@@ -57,11 +72,22 @@ struct OnboardingScreen: View {
                 }
             }
         }
-        .onAppear {
-            guard let prefilledCode, code.isEmpty else { return }
-            code = prefilledCode
-            route = .join
-        }
+        .onAppear { useInvite() }
+        // The link arriving while this screen is already open is the ordinary
+        // case, not the exception.
+        .onChange(of: prefilledCode) { _, _ in useInvite() }
+    }
+
+    /// Takes the code out of the link and puts the join form in front of her.
+    ///
+    /// A link is a deliberate act and the most recent one, so it wins over
+    /// whatever is in the field — somebody who taps a fresh invitation while a
+    /// stale code is half-typed meant the fresh one.
+    private func useInvite() {
+        guard let invite = prefilledCode, !invite.isEmpty else { return }
+        code = invite
+        route = .join
+        prefilledCode = nil
     }
 
     private var content: some View {
@@ -257,6 +283,6 @@ private struct ErrorNote: View {
 }
 
 #Preview {
-    OnboardingScreen()
+    OnboardingScreen(prefilledCode: .constant(nil))
         .environment(Session())
 }

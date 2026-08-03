@@ -144,12 +144,30 @@ private struct MemberRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(isYou ? "\(member.displayName) (sinä)" : member.displayName)
                     .font(.body.weight(.medium))
-                Text(member.role == "owner" ? "Perustaja" : "Jäsen")
+                // The date is half of what this list is for. §4 calls the invite
+                // link the entire security boundary and names four things that
+                // hold it up, one of them being that the family can see who has
+                // joined **and when** — the server has always sent it and the
+                // row has always decoded it, and nothing showed it. A stranger
+                // in the list is a question; a stranger who arrived last Tuesday
+                // is an answer about which link went astray and when.
+                Text("\(member.role == "owner" ? "Perustaja" : "Jäsen") · \(Self.joined(member.joinedAt))")
                     .font(.caption)
                     .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.vertical, 4)
+    }
+
+    /// A plain Finnish date. Not "2 viikkoa sitten": the question this answers
+    /// is which day somebody appeared, and a relative phrase makes the reader do
+    /// the arithmetic.
+    private static func joined(_ timestamp: Double) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fi_FI")
+        formatter.dateFormat = "d.M.yyyy"
+        return formatter.string(from: Date(timeIntervalSince1970: timestamp))
     }
 }
 

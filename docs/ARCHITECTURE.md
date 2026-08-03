@@ -245,7 +245,10 @@ link sees all of the family's memories. Therefore:
   only doors an uninvited caller can knock on — and both insert rows. The limit
   is aimed at that unmetered write rather than at the guess, which the entropy
   above already answers
-- The family view shows who has joined and when
+- The family view shows who has joined **and when**. The date was decoded from
+  the server and never drawn until it was looked for: a stranger in the list is
+  a question, and a stranger who arrived last Tuesday is an answer about which
+  link went astray. Invites show how many times each has been used beside it
 
 **A missing binding allows the request and logs a warning**, which is the
 arguable half. Failing closed would mean one configuration mistake stops every
@@ -273,6 +276,25 @@ The mitigation is already in place: the shared text contains **both the link and
 the code**, and the join form has a paste field. Grandmother gets into the
 family even if the link never opens at all. If a domain is ever acquired, this
 is the first thing worth changing.
+
+**And the dialog had a second cost that took longer to see.** Because tapping
+the link goes through a prompt rather than straight into the app, the app is
+usually *already running* when the code finally arrives — she opened it to look
+before using the link, or the message was read with the app in the background.
+The onboarding screen read the code in `onAppear`, which fires once, so in that
+case the code was dropped: she tapped Open, watched the app come to the front,
+and found the same two buttons with nothing filled in. Cold launch worked, which
+is why it looked fine.
+
+It is read on change now, and cleared once used so that a code from a family she
+has since left cannot fill itself in over a fresh invitation. A link is a
+deliberate act and the most recent one, so it wins over whatever is in the
+field.
+
+Both halves of the delivery were checked on a simulator — the scheme is
+registered, and `memorize://join?code=…` reaches the app cold and warm. The tap
+on the system dialog itself could not be automated here, so what happens after
+Open rests on the code rather than on a run.
 
 ### The identity survives deleting the app
 
