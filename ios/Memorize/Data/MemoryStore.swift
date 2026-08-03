@@ -173,9 +173,14 @@ final class MemoryStore {
         else { return }
 
         let kind = subjects[index].kind
+        // Not into a tombstone. Correcting a name onto somebody the family
+        // rejected would move this subject's memories into a card nothing can
+        // open — the merge is a forwarding address, and there has to be somebody
+        // at the other end of it.
         if let existing = subjects.first(where: {
-            $0.id != subjectID && $0.kind == kind && $0.mergedInto == nil &&
-                $0.title.compare(trimmed, options: .caseInsensitive) == .orderedSame
+            $0.id != subjectID && $0.kind == kind
+                && $0.mergedInto == nil && $0.deletedAt == nil
+                && $0.title.compare(trimmed, options: .caseInsensitive) == .orderedSame
         }) {
             // References move immediately, so the local view stays coherent...
             for i in memories.indices where memories[i].subjectID == subjectID {
@@ -474,6 +479,28 @@ final class MemoryStore {
             }
             guard let otherID else { return nil }
             return subject(id: otherID)
+        }
+    }
+
+    /// The live relationship between two people, whatever kind it is.
+    ///
+    /// Here rather than in the view that wants it. A view reaching into
+    /// `relations` reaches past the tombstones too, and then a relationship
+    /// somebody took back goes on colouring the row it was removed from.
+    func relation(between a: String, and b: String) -> Relation? {
+        relations.first {
+            $0.deletedAt == nil
+                && (($0.fromSubjectID == a && $0.toSubjectID == b)
+                    || ($0.fromSubjectID == b && $0.toSubjectID == a))
+        }
+    }
+
+    /// Whether this person has a relationship somebody still has to confirm.
+    /// Removed ones do not count — they are not waiting for anything.
+    func hasUnconfirmedRelation(for subjectID: String) -> Bool {
+        relations.contains {
+            !$0.confirmed && $0.deletedAt == nil
+                && ($0.fromSubjectID == subjectID || $0.toSubjectID == subjectID)
         }
     }
 

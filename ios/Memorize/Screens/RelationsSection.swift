@@ -52,9 +52,7 @@ struct RelationsSection: View {
     @State private var isAddingChild = false
 
     private var hasUnconfirmed: Bool {
-        store.relations.contains {
-            !$0.confirmed && ($0.fromSubjectID == subject.id || $0.toSubjectID == subject.id)
-        }
+        store.hasUnconfirmedRelation(for: subject.id)
     }
 
     @ViewBuilder
@@ -74,10 +72,7 @@ private struct RelativeRow: View {
     let groupTitle: String
 
     private var relation: Relation? {
-        store.relations.first {
-            ($0.fromSubjectID == subject.id && $0.toSubjectID == relative.id)
-                || ($0.fromSubjectID == relative.id && $0.toSubjectID == subject.id)
-        }
+        store.relation(between: subject.id, and: relative.id)
     }
 
     var body: some View {
