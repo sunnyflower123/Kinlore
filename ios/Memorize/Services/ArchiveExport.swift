@@ -38,7 +38,7 @@ enum ArchiveExport {
         var audioNames: [String: String] = [:]
 
         let subjectsWithPhotos = store.subjects.filter {
-            $0.imageFilename != nil || $0.r2Key != nil
+            $0.deletedAt == nil && ($0.imageFilename != nil || $0.r2Key != nil)
         }
         for (index, subject) in subjectsWithPhotos.enumerated() {
             progress("Kootaan kuvia \(index + 1)/\(subjectsWithPhotos.count)")
@@ -128,8 +128,12 @@ enum ArchiveExport {
         // Ordered the way the app lists them, and only subjects somebody has
         // actually spoken about. The empty ones are named at the end rather than
         // dropped: a gap is shown, not hidden.
+        // Neither a merged subject nor a rejected one. The rejected half is the
+        // one worth naming: the archive is the copy that outlives the app, and
+        // writing somebody the family threw out into it as though they were a
+        // relative is the one place that mistake could never be taken back.
         let subjects = store.subjects
-            .filter { $0.mergedInto == nil }
+            .filter { $0.mergedInto == nil && $0.deletedAt == nil }
             .sorted { ($0.kind.sortOrder, $0.title) < ($1.kind.sortOrder, $1.title) }
 
         var out = """
