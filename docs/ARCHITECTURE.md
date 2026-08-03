@@ -22,19 +22,37 @@ An honest inventory, not a wish list:
 | RevenueCat, shared family entitlement | **Done and tested** |
 | Audio playback, open questions, relationships | **Done and tested** |
 | Paywall | Built — unverified, needs a RevenueCat key |
-| Interview loop (questions asked aloud) | **Done** |
+| Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
+| Places, reachable rather than only stored | **Done and tested**, see §8 |
+| Correcting a misheard name afterwards | **Done and tested**, see §17 |
+| Soft deletion — a rejection that is final | **Done and tested**, see §3 |
+| Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
+| Accessibility sweep over every screen | **Done** — 21 checks, and they audit the screen they are named after |
 | Repo in English | **Done** |
-| Moderation (`report`, `block`) | Not started — on the cut list, PLAN.md §5 |
+| Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
 
-The critical path is open: family and sync work, so media, quotas and moderation
-can be built on top of them. The remaining work is parallel and cuttable.
+The critical path is open: family and sync work, so everything else stands on
+them. What is left is either cuttable or somebody's to record — see PLAN.md §8
+for the one measurement that has not been taken.
 
 **Verified rules.** Confirmation is one-way, merges are sticky, only the author
 edits their own, and another family can neither see nor write. The outbox
 survives the app being closed, and a locally changed row is not lost underneath
-the remote version.
+the remote version. A rejection travels and cannot be revived by a device that
+missed it. An audio-only memory is stored rather than dropped, and an empty body
+never overwrites a real one.
+
+**And a warning that is worth more than the list above.** Nearly every item here
+was written as done long before it was true, and each one looked done from the
+outside: the transcription that waited for a text nothing was bringing, the
+deletion the client never sent, the rate limit that existed only in this
+document, the audit that measured the wrong screen and passed. They were found
+by reading a promise and then checking the code that was supposed to keep it —
+not by using the app, which behaved perfectly in every one of those cases. That
+is the failure mode this project has, and the reason to distrust this table is
+that it has been wrong in exactly this way before.
 
 ## 2. Five decisions that determine the rest
 
