@@ -51,23 +51,37 @@ struct AskQuestionSheet: View {
                 Button {
                     send()
                 } label: {
+                    // Allowed to wrap. The audit's clipping check asks whether
+                    // the text could still be read if it grew, and a label
+                    // pinned to one line inside a fixed-height button cannot.
                     Text("Lähetä kysymys")
                         .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
-                        .elderTapTarget()
                 }
+                // The 60 pt minimum belongs to the **button**, not to the text
+                // inside it. Applied to the label it fought the button style
+                // over the box the text goes in, and the audit reported "Lähetä
+                // kysymys" as clipped at the ordinary text size — on the one
+                // screen nothing had ever actually opened, so nothing had ever
+                // measured it. Constrain the control; let the label be a label.
                 .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .elderTapTarget()
                 .disabled(trimmed.isEmpty)
+
+                // A row rather than a toolbar button. A toolbar button's text
+                // barely grows with Dynamic Type — the audit calls it
+                // "partially unsupported", and it is right — which put the way
+                // out of this screen in the smallest text on it. The audit only
+                // saw it once the test started actually opening this sheet.
+                Button("Peruuta") { dismiss() }
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
             }
             .padding(Elder.screenPadding)
             .navigationTitle(subject.displayTitle)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Peruuta") { dismiss() }
-                }
-            }
             .onAppear { isFocused = true }
         }
     }
