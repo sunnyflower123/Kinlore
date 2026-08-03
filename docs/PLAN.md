@@ -166,11 +166,51 @@ memory.body           mentioned subjects      follow-up questions
 
 | # | Risk | Action |
 |---|------|--------|
-| 2 | **Finnish ASR on elderly speech.** The whole app rests on this. | `node scripts/asr-bench.mjs samples/` before any other code. Below ~80 % on proper nouns → rethink the concept. |
+| 2 | **Finnish ASR on elderly speech.** The whole app rests on this. | **Half done — see below.** The engine was chosen by measurement; the go/no-go was never actually run. |
 | 3 | **The student email only arrives when school starts** | The domain can be checked already: `./scripts/check-swot.sh <domain>`. Upper secondary school domains are on the list under municipality directories. |
 | 4 | **School takes more time than expected** | The cut order in §5 is decided in advance. The heaviest work is in the holiday. |
 | 5 | **The demo video is left to the last evening** | It has its own phase (F). The video is a deliverable, not an afterthought. |
-| 6 | **The repo stays in Finnish** | Phase E. Directly scored, and an easy thing to skimp on. |
+| 6 | ~~**The repo stays in Finnish**~~ | **Done.** Translated, and the boundary is written down in CLAUDE.md so it stays. |
+
+### Risk 2, honestly
+
+This is the one the plan called risk #1 and told itself to close *before any
+other code*. What actually happened is worth writing down, because the two
+halves are easy to mistake for each other.
+
+**What was measured.** `scripts/asr-bench.mjs` was run over
+`scripts/make-synthetic-samples.py` output: three Finnish texts at four
+degradation steps, five engines. That chose `gemini-3.6-flash`, and the numbers
+are in `backend/wrangler.jsonc` beside the setting they justify. As an engine
+comparison this is sound — relative ranking is exactly what the generator says
+it is good for.
+
+**What was not.** The samples are text-to-speech. The generator says so in its
+own header: *"TTS does not produce dialect, stammering, self-correction,
+overlapping speech, or a sentence trailing off. A real elderly speaker does all
+of that. These figures are therefore optimistic."* The tripwire — *below ~80 %
+on proper nouns, rethink the concept* — is about absolute quality on real
+speech, and no real speech has been through it. `samples/LUEMINUT.txt` has said
+what is needed from the beginning: three recordings of an actual elderly voice.
+
+**And the optimistic number already missed both bars.** 68 % on proper nouns
+against a tripwire of 80 %, and a word error rate of 37.8 % against the bench's
+own *"above 30 % is not usable"*. On audio that is kinder than the real thing.
+
+**Why the concept was not dropped anyway**, which is a decision and should read
+like one: the app is built for exactly this. The original audio is kept forever
+and is playable, so nothing rests on the transcript being right. The raw
+transcript is kept beside the cleaned text. Names are checked by the teller in
+the seconds after telling, which is the only moment anybody still knows what was
+said — and, since [ARCHITECTURE.md §17](ARCHITECTURE.md), can be corrected from
+the person's card long afterwards. One proper noun in three being wrong is the
+premise the name-correction step was written for, not a surprise.
+
+**What is still open.** Whether an 80-year-old's real voice, in a real kitchen,
+comes back well enough that the family recognises what she said. Three
+recordings answer it, the phase E test with a grandparent is where they come
+from, and until then this row is a measurement that has not been taken rather
+than a risk that has been retired.
 
 ## 9. The core of monetisation
 
