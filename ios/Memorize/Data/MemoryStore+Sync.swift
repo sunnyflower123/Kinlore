@@ -127,7 +127,9 @@ extension Subject {
             confirmed: confirmed ? 1 : 0,
             merged_into: mergedInto,
             created_at: createdAt.timeIntervalSince1970,
-            deleted_at: nil,
+            // The one field the client used to hardcode to nil, which is why a
+            // rejection never left the device. See docs/ARCHITECTURE.md §3.
+            deleted_at: deletedAt?.timeIntervalSince1970,
             seq: nil
         )
     }
@@ -142,7 +144,8 @@ extension Subject {
             dateHint: Self.hint(from: dto),
             confirmed: dto.confirmed == 1,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
-            mergedInto: dto.merged_into
+            mergedInto: dto.merged_into,
+            deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
 
@@ -207,7 +210,7 @@ extension Relation {
             kind: kind.rawValue,
             confirmed: confirmed ? 1 : 0,
             created_at: createdAt.timeIntervalSince1970,
-            deleted_at: nil,
+            deleted_at: deletedAt?.timeIntervalSince1970,
             seq: nil
         )
     }
@@ -220,7 +223,8 @@ extension Relation {
             toSubjectID: dto.to_subject,
             kind: kind,
             confirmed: dto.confirmed == 1,
-            createdAt: Date(timeIntervalSince1970: dto.created_at)
+            createdAt: Date(timeIntervalSince1970: dto.created_at),
+            deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
 }

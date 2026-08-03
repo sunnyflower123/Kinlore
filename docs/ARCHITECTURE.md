@@ -117,6 +117,30 @@ deleted_at  INTEGER            -- soft delete, so deletion propagates
 Soft deletion is mandatory: a hard delete never reaches the other device, which
 would go on showing the deleted row forever.
 
+**The client did not do it.** The column was in the schema, the server stored it
+and made it sticky, and the pull carried it — and every row the app sent set
+`deleted_at` to nil, while every row it received had the field ignored. So
+deletion worked in neither direction, and the app's one deletion is the one that
+matters most: **rejecting a person the extraction proposed.**
+
+What happened was that the subject was taken off the device, stayed on the
+server, and came back on the next pull as an unconfirmed proposal — with
+*"Ehdotus — vahvista henkilö"* on it, and no way to reject it a second time,
+because rejecting is only offered in the seconds after telling. A person who
+says no once should not have to say it again, least of all to somebody they
+already said no to. Removing a relationship had the same hole.
+
+Both are tombstones now. The row stays with `deletedAt` set and travels like any
+other change; every list and lookup skips it, and `findOrCreateSubject` will not
+hand a buried subject back when the same name is heard again — hearing it again
+earns a fresh proposal, which can be rejected again.
+
+Verified against SQLite on the schema: the rejection stores, a stale device
+pushing the pre-rejection row back cannot revive it, and the pull carries the
+tombstone rather than hiding it, which is what makes the deletion travel at all.
+The other end — that a kept row is not a shown row — is a case in the demo
+archive and a test over it.
+
 ### The client's outbox
 
 Local changes are recorded in an outbox: a set of changed row ids per table, and

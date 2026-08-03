@@ -83,6 +83,15 @@ struct Subject: Identifiable, Codable, Hashable {
     /// The forwarding address of a merge. When this is set, the subject is no
     /// longer its own person but redirects to another — see `MemoryStore.rename`.
     var mergedInto: String?
+    /// When somebody rejected this, or nil while it stands.
+    ///
+    /// A tombstone rather than a removal, and for the reason soft deletion
+    /// exists at all (docs/ARCHITECTURE.md §3): a row taken off one device is a
+    /// row the other devices never hear about, and the next pull hands it
+    /// straight back. That is what used to happen to a rejected proposal — and
+    /// rejecting is only offered in the seconds after telling, so what came back
+    /// could never be got rid of again.
+    var deletedAt: Date?
 
     /// A photo is imported without a title on purpose, because nobody will name
     /// thirty scanned photographs. The name arrives when someone talks about it.
@@ -192,6 +201,11 @@ struct Relation: Identifiable, Codable, Hashable {
     /// than a missing one, because later nobody knows it was a guess.
     var confirmed: Bool = false
     var createdAt: Date = .now
+    /// When it was taken back. Same reasoning as `Subject.deletedAt`: a removed
+    /// relationship that never leaves the device is one the other devices go on
+    /// showing, and this is the half of the family tree a person is most likely
+    /// to want undone.
+    var deletedAt: Date?
 }
 
 // MARK: - Guess

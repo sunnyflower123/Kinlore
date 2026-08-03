@@ -53,8 +53,12 @@ final class MemoryStore {
 
     /// Follows the merge chain. A reference to a merged subject always resolves
     /// to the survivor, so nothing points at nothing.
+    ///
+    /// A rejected subject resolves to nothing at all, which is the point of
+    /// rejecting it: a memory may still list it among the names it mentioned,
+    /// and that mention must stop producing a person.
     func subject(id: String) -> Subject? {
-        var current = subjects.first { $0.id == id }
+        var current = subjects.first { $0.id == id && $0.deletedAt == nil }
         // Cycle guard: broken data must not hang the UI.
         for _ in 0 ..< 8 {
             guard let target = current?.mergedInto else { return current }
@@ -64,9 +68,10 @@ final class MemoryStore {
     }
 
     /// Merged subjects are no longer their own, so they do not appear in lists.
+    /// Neither do rejected ones — they are kept only so the rejection travels.
     func subjects(of kind: SubjectKind) -> [Subject] {
         subjects
-            .filter { $0.kind == kind && $0.mergedInto == nil }
+            .filter { $0.kind == kind && $0.mergedInto == nil && $0.deletedAt == nil }
             .sorted { $0.createdAt > $1.createdAt }
     }
 
@@ -103,8 +108,12 @@ final class MemoryStore {
     /// Finds a subject with the same name or creates a new one. This is the
     /// point where the same person from different memories becomes one card.
     func findOrCreateSubject(named name: String, kind: SubjectKind, confirmed: Bool) -> Subject {
+        // A rejected subject is not "existing". Somebody said this was not a
+        // person, and the answer to hearing the name again is a fresh proposal
+        // they can reject again — not the quiet return of the one they buried.
         if let existing = subjects.first(where: {
-            $0.kind == kind && $0.title.compare(name, options: .caseInsensitive) == .orderedSame
+            $0.kind == kind && $0.deletedAt == nil
+                && $0.title.compare(name, options: .caseInsensitive) == .orderedSame
         }) {
             return existing
         }
@@ -251,8 +260,19 @@ final class MemoryStore {
         save()
     }
 
+    /// Rejects a subject: a tombstone, not a removal.
+    ///
+    /// The row stays with `deletedAt` set and goes to the server like any other
+    /// change. Taking it off the device was the bug: the server still had it,
+    /// the next pull handed it back, and it came back as an unconfirmed
+    /// proposal — which the people list shows with "vahvista henkilö" on it and
+    /// offers no way to reject a second time, because rejecting only exists in
+    /// the seconds after telling. A person who said no once should not have to
+    /// say it again, least of all to somebody they said no to.
     func remove(subjectID: String) {
-        subjects.removeAll { $0.id == subjectID }
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].deletedAt = .now
+        dirtySubjects.insert(subjectID)
         save()
     }
 
@@ -441,7 +461,7 @@ final class MemoryStore {
     /// directed: the same row means a parent to one side and a child to the other.
     func relatives(of subjectID: String, kind: RelationKind, asParent: Bool = false) -> [Subject] {
         relations.compactMap { relation -> Subject? in
-            guard relation.kind == kind else { return nil }
+            guard relation.kind == kind, relation.deletedAt == nil else { return nil }
             let otherID: String?
             if kind.isSymmetric {
                 otherID = relation.fromSubjectID == subjectID ? relation.toSubjectID
@@ -459,7 +479,7 @@ final class MemoryStore {
 
     func relation(between a: String, and b: String, kind: RelationKind) -> Relation? {
         relations.first { relation in
-            guard relation.kind == kind else { return false }
+            guard relation.kind == kind, relation.deletedAt == nil else { return false }
             if kind.isSymmetric {
                 return (relation.fromSubjectID == a && relation.toSubjectID == b)
                     || (relation.fromSubjectID == b && relation.toSubjectID == a)
@@ -490,9 +510,13 @@ final class MemoryStore {
         save()
     }
 
+    /// The same tombstone as a rejected subject, for the same reason: a
+    /// relationship taken off this device and nowhere else is one every other
+    /// device goes on showing as fact.
     func removeRelation(id: String) {
-        relations.removeAll { $0.id == id }
-        dirtyRelations.remove(id)
+        guard let index = relations.firstIndex(where: { $0.id == id }) else { return }
+        relations[index].deletedAt = .now
+        dirtyRelations.insert(id)
         save()
     }
 
@@ -627,8 +651,19 @@ final class MemoryStore {
         // section and its invitation — an empty subject is the row with the
         // colour on it, and colour is the thing eyes cannot check.
         let puumala = Subject(id: "demo-puumala", kind: .place, title: "Puumala")
+        // Somebody the extraction proposed and a human rejected. The row is kept
+        // so the rejection can travel to the rest of the family, and it must
+        // never be shown again — which is the half of soft deletion that can go
+        // wrong quietly, so the fixture carries a case of it.
+        let rejected = Subject(
+            id: "demo-rejected",
+            kind: .person,
+            title: "Skotlanti",
+            confirmed: false,
+            deletedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
 
-        subjects = [aino, eeva, kalle, sanni, photo, puumala]
+        subjects = [aino, eeva, kalle, sanni, photo, puumala, rejected]
         memories = [
             Memory(
                 id: "demo-memory-aino",
