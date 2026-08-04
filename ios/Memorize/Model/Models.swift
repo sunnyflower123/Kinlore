@@ -63,6 +63,27 @@ struct DateHint: Codable, Hashable {
     }
 }
 
+/// How precisely a looked-up location places a memory.
+///
+/// The same idea as `DatePrecision`, for the same reason: "Karjala" is an answer
+/// and it is not a point. A map that draws it as a pin claims a metre of
+/// accuracy nobody ever had — rule 5, uncertainty is stored, not rounded.
+enum GeoPrecision: String, Codable {
+    case exact, town, region, unknown
+}
+
+/// Where a place is, once its name has been looked up.
+///
+/// Never entered by a person: a place subject is a name somebody said out loud,
+/// and this is a cache of what a gazetteer made of that name. Nil until
+/// something resolves it, nil again the moment the name is corrected, and nil
+/// forever for a village that no longer exists.
+struct PlaceHint: Codable, Hashable {
+    var latitude: Double
+    var longitude: Double
+    var precision: GeoPrecision
+}
+
 struct Subject: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var kind: SubjectKind
@@ -75,6 +96,9 @@ struct Subject: Identifiable, Codable, Hashable {
     /// but the same key.
     var r2Key: String?
     var dateHint: DateHint?
+    /// Where a `place` lives on the map. Set by `PlaceResolver` from the title,
+    /// nil on every other kind of subject and on any name nothing recognised.
+    var place: PlaceHint?
     /// A subject proposed by the AI is created unconfirmed. Unconfirmed never
     /// appears in the family tree as fact — a wrong relationship is worse than a
     /// missing one.

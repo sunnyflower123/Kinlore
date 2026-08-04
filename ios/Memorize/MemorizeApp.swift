@@ -11,6 +11,9 @@ struct MemorizeApp: App {
     /// Finishes the memories whose text never arrived. Driven from here for the
     /// same reason as sync: they both run on the app's lifecycle, not on a tap.
     @State private var catchUp: TranscriptionCatchUp?
+    /// One resolver for the whole app, so that its record of names nothing
+    /// recognised survives from screen to screen.
+    @State private var places = PlaceResolver()
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -39,6 +42,11 @@ struct MemorizeApp: App {
                     // needs are one call away.
                     await syncEntitlementIfPurchased()
                     await catchUp?.run()
+                    // Last, and after sync: a place another device has already
+                    // looked up arrives with the pull, and looking it up again
+                    // here would be work for an answer we now have. Nothing on
+                    // screen waits for it.
+                    await places.resolvePending(in: store)
                 }
                 .onChange(of: scenePhase) { _, phase in
                     // Coming back to the foreground: the family may have told
@@ -51,6 +59,8 @@ struct MemorizeApp: App {
                         // deferred, and being opened again is the best evidence
                         // there is that it came back.
                         await catchUp?.run()
+                        // Places told about since the last sweep.
+                        await places.resolvePending(in: store)
                     }
                 }
                 .onChange(of: session.family?.entitlement) { _, _ in

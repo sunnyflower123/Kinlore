@@ -119,11 +119,21 @@ shows changes you did not make, leave them alone and say so.
 # there on disk. This has cost time twice.
 cd ios && xcodegen generate
 
+# A simulator for BUILDING, by UDID. `name=iPhone 17 Pro` does not resolve on
+# this machine at all: four simulators carry that name, two of them on the same
+# runtime, and an ambiguous name fails as "Unable to find a device matching the
+# provided destination specifier" — which reads like a missing simulator and is
+# not one. A build touches no device, so sharing this one is fine; the UI tests
+# are the case that is not, and they use $MEMORIZE_TEST_SIM below.
+SIM=$(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list \
+  devices available | grep -m1 'iPhone 17 Pro (' \
+  | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+
 # iOS build. DEVELOPER_DIR is mandatory: this machine's xcode-select points at
 # CommandLineTools, and changing it would need sudo. This overrides it.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+  -destination "id=$SIM" build
 
 # Accessibility tests. VoiceOver reads the accessibility tree and XCUITest
 # queries the same tree, so this is how rule 1 is checked rather than asserted.
@@ -144,7 +154,12 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 #
 #   xcrun simctl create memorize-tests \
 #     com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
-#     com.apple.CoreSimulator.SimRuntime.iOS-26-5
+#     com.apple.CoreSimulator.SimRuntime.iOS-26-2
+#
+# The runtime is 26-2 and not 26-5: this machine has iOS 18.6, 26.1 and 26.2
+# installed and nothing newer. Check with `xcrun simctl list runtimes` before
+# copying a runtime id out of a document — a wrong one fails as "Invalid
+# runtime", which reads like a broken Xcode.
 #
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
@@ -170,8 +185,9 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 ## Environment notes
 
 - **`sudo` is not available.** Do not suggest `xcode-select -s` — use the
-  `DEVELOPER_DIR` variable as in the command above. Xcode 26.6, iOS 26.5
-  simulator SDK.
+  `DEVELOPER_DIR` variable as in the command above. Xcode 26.2, iOS 26.2
+  simulator SDK — measured with `xcodebuild -version` and `-showsdks`. This
+  file said 26.6 / 26.5 for a while; neither has ever been on this machine.
 - **The simulator is shared; the UI tests must not be.** Building on the shared
   device is fine — a build touches no device. Running the app and running the
   tests are not: they install, launch and terminate one bundle id, and two

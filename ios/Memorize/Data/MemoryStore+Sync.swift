@@ -12,6 +12,11 @@ struct SubjectDTO: Codable {
     var kind: String
     var title: String?
     var r2_key: String?
+    /// A place's coordinates. Optional in both directions: a server that has not
+    /// been redeployed does not send them, and most subjects are not places.
+    var lat: Double?
+    var lon: Double?
+    var geo_precision: String?
     var date_start: Double?
     var date_end: Double?
     var date_precision: String?
@@ -121,6 +126,9 @@ extension Subject {
             kind: kind.rawValue,
             title: title,
             r2_key: r2Key,
+            lat: place?.latitude,
+            lon: place?.longitude,
+            geo_precision: place?.precision.rawValue,
             date_start: dateHint?.start?.timeIntervalSince1970,
             date_end: dateHint?.end?.timeIntervalSince1970,
             date_precision: dateHint?.precision.rawValue,
@@ -142,6 +150,7 @@ extension Subject {
             title: dto.title ?? "",
             r2Key: dto.r2_key,
             dateHint: Self.hint(from: dto),
+            place: Self.place(from: dto),
             confirmed: dto.confirmed == 1,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             mergedInto: dto.merged_into,
@@ -158,6 +167,18 @@ extension Subject {
             start: dto.date_start.map { Date(timeIntervalSince1970: $0) },
             end: dto.date_end.map { Date(timeIntervalSince1970: $0) },
             precision: precision
+        )
+    }
+
+    /// Both halves or neither: a latitude without a longitude is not half a
+    /// location. An unrecognised precision degrades to `.unknown` rather than
+    /// dropping the point — where it is matters more than how exactly.
+    private static func place(from dto: SubjectDTO) -> PlaceHint? {
+        guard let lat = dto.lat, let lon = dto.lon else { return nil }
+        return PlaceHint(
+            latitude: lat,
+            longitude: lon,
+            precision: dto.geo_precision.flatMap(GeoPrecision.init(rawValue:)) ?? .unknown
         )
     }
 }

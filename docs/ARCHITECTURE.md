@@ -25,6 +25,7 @@ An honest inventory, not a wish list:
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
 | Places, reachable rather than only stored | **Done and tested**, see §8 |
+| Coordinates for places — stored, nothing drawn yet | **Done**, see §18 |
 | Correcting a misheard name afterwards | **Done and tested**, see §17 |
 | Soft deletion — a rejection that is final | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
@@ -1266,3 +1267,85 @@ opens with the name already in it, what is typed reaches the card's title, and
 Tallenna stays disabled while there is nothing to save. The audit covers the
 sheet at the default size and at the largest one, which is what a text field on
 a sheet most needs.
+---
+
+## 18. Places on a map — the three columns and what they cannot promise
+
+A place subject has always been a name somebody said out loud: `subject` has had
+`kind = 'place'` from the first schema, extraction has emitted place mentions
+from the first prompt, and rule 3 of that prompt already says a place belongs in
+the list only *"if it could be pointed to on a map by name"*. What was missing
+was the point itself.
+
+`subject` now carries three more columns — `lat`, `lon`, `geo_precision` — filled
+in by `PlaceResolver` on the device. **There is no map screen yet, and that is
+deliberate**: the columns and the lookup cost an hour, a map costs a phase (see
+PLAN.md §5), and the archive that is being recorded this week is the one a map
+would eventually draw. Data first, so that the family's places accumulate while
+the decision is still open. A place is already openable like any other subject
+(§8); what it does not have is a position on anything.
+
+### Why the device and not the Worker
+
+`MKLocalSearch`, biased at a box covering Finland and Karelia. No API key, no
+quota to meter, no Worker round trip, and **no location permission** — looking up
+a name is not asking where the phone is, so `Info.plist` gains nothing and the
+80-year-old is asked nothing. What leaves the device is the place name and
+nothing else: not the memory, not the transcript, not who told it.
+
+### Why the precision column
+
+The same reason `date_precision` exists. The lookup answers at wildly different
+scales for the same kind of query, and flattening that would be inventing
+accuracy:
+
+| Told | Resolved | Precision |
+|------|----------|-----------|
+| `Puumala` | Puumala, Etelä-Savo | `town` |
+| `Sortavala` | Sortavala, Karelia, **Russia** | `town` |
+| `Viipuri` | Vyborg, Leningrad Oblast | `town` |
+| `Lappi` | Lapland, the whole province | `region` |
+| `Mannerheimintie 1, Helsinki` | the address | `exact` |
+
+Karelian places resolve correctly and across the border, which matters for this
+audience more than anything else on the list.
+
+### What it cannot promise, measured
+
+The lookup **always answers**, and a confident wrong answer is indistinguishable
+from a right one:
+
+| Told | Resolved | Why it is wrong |
+|------|----------|-----------------|
+| `Karjala` | a village in Mynämäki, 60.838, 22.000 | Karelia the region is what a grandmother means; the village is a real place with the same name, returned as a single unambiguous result |
+| `mummola` | Mummola, Kodavere, **Estonia** | a real hamlet. The extraction's proper-noun rule keeps generic words out of mentions — this is what happens when one slips through |
+
+No cheap rule separates these from the good ones. Result count does not: every
+name above returned exactly one result. Name equality does not either — it would
+accept `Mummola` and reject `Viipuri → Vyborg`, which is the one answer on the
+list that is most worth having.
+
+So a stored coordinate is **a proposal, not a fact** — rule 4, applied to a
+machine lookup instead of a machine-heard name. Today nothing in the app
+confirms one, because nothing displays one. **When a map is built, an
+unconfirmed place must not be drawn as a pin that reads like a record**, and the
+confirmation has to come from a human who knows which Karjala it was. Anything
+else buries a guess in the archive as fact, which is the failure mode this whole
+architecture is built to avoid.
+
+### When it runs
+
+At launch and on every return to the foreground, after sync — a place another
+device has already resolved arrives with the pull, and looking it up again would
+be work for an answer we now have. A place told *during* a session is therefore
+resolved on the next sweep rather than immediately, which costs nothing while
+nothing displays a coordinate. Telling must never wait on a lookup.
+
+### Sync
+
+The coordinates follow the title, because they are the answer to it. A device
+that has not looked a name up sends null and cannot wipe what another device
+resolved; a device that *corrects* the title clears them on both sides, and the
+next sweep looks the new name up. A merge tombstone is never resolved — it is no
+longer its own place. See the `CASE` in `push()` in `backend/src/sync.ts`, and
+`MemoryStore.rename` for the same rule on the client.

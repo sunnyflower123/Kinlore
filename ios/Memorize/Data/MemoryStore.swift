@@ -202,6 +202,11 @@ final class MemoryStore {
             )
         } else {
             subjects[index].title = trimmed
+            // The coordinates were the answer to the old name. "Sortavala"
+            // corrected from "Sortala" is a different point on the map, and a
+            // stale one is worse than none: a wrong place looks like a fact.
+            // `PlaceResolver` looks the new name up on the next sweep.
+            subjects[index].place = nil
         }
         dirtySubjects.insert(subjectID)
         save()
@@ -255,6 +260,33 @@ final class MemoryStore {
         memories[index].rawTranscript = rawTranscript
         memories[index].mentionedSubjectIDs = mentionedSubjectIDs
         dirtyMemories.insert(memoryID)
+        save()
+    }
+
+    // MARK: - Places
+
+    /// Named places whose location nobody has looked up yet.
+    ///
+    /// A tombstone is skipped, whether it was left by a merge or by a
+    /// rejection: neither is its own place any more, and resolving one would
+    /// spend a lookup on a name the family has already taken back. See
+    /// docs/ARCHITECTURE.md §18.
+    func placesAwaitingCoordinates() -> [Subject] {
+        subjects.filter {
+            $0.kind == .place && $0.mergedInto == nil && $0.deletedAt == nil
+                && $0.place == nil && !$0.title.isEmpty
+        }
+    }
+
+    /// Records a looked-up location.
+    ///
+    /// Queued for the server, unlike a downloaded photo's filename: the answer
+    /// to "where is Puumala" is the same on every phone in the family, so it is
+    /// worth looking up once rather than once per device.
+    func setPlace(subjectID: String, place: PlaceHint) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].place = place
+        dirtySubjects.insert(subjectID)
         save()
     }
 

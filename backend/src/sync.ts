@@ -17,6 +17,11 @@ export type SubjectRow = {
 	kind: string
 	title: string | null
 	r2_key: string | null
+	// Where a place is, once its name has been looked up on a device. Null until
+	// something resolved it, and null again when the name is corrected.
+	lat: number | null
+	lon: number | null
+	geo_precision: string | null
 	date_start: number | null
 	date_end: number | null
 	date_precision: string | null
@@ -91,6 +96,22 @@ type PushPayload = {
 
 const now = () => Math.floor(Date.now() / 1000)
 
+/// A coordinate as the client sent it, or null.
+///
+/// Checked rather than trusted: this value is eventually drawn on a map, and a
+/// NaN or an out-of-range number would put a family's summer cottage in the sea
+/// with nothing on the screen to say where it came from.
+function coordinate(value: unknown, max: number): number | null {
+	return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= max
+		? value
+		: null
+}
+
+/// An unrecognised precision is stored as null rather than rejected, the same
+/// rule as a question's level: the qualifier is an optimisation, the point is
+/// not. See docs/ARCHITECTURE.md §18.
+const GEO_PRECISIONS = new Set(['exact', 'town', 'region', 'unknown'])
+
 /// Reserves one ordering number for the family.
 ///
 /// D1 has no long transactions, so the reservation is made with a conditional
@@ -114,7 +135,8 @@ export async function pull(env: Env, session: Session, since: number) {
 	const family = session.familyID
 
 	const subjects = await env.DB.prepare(
-		`SELECT id, kind, title, r2_key, date_start, date_end, date_precision,
+		`SELECT id, kind, title, r2_key, lat, lon, geo_precision,
+		        date_start, date_end, date_precision,
 		        confirmed, merged_into, created_at, deleted_at, seq
 		 FROM subject WHERE family_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
 	)
@@ -220,15 +242,33 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 
 	for (const subject of (payload.subjects ?? []).slice(0, MAX_ROWS)) {
 		if (!subject.id || !subject.kind) continue
+		// Both halves or neither. A lone latitude is not half a location, it is a
+		// point off the coast of Ghana.
+		const lat = coordinate(subject.lat, 90)
+		const lon = coordinate(subject.lon, 180)
+		const hasPoint = lat !== null && lon !== null
 		statements.push(
 			env.DB.prepare(
-				`INSERT INTO subject (id, family_id, kind, title, r2_key, date_start, date_end,
+				`INSERT INTO subject (id, family_id, kind, title, r2_key, lat, lon, geo_precision,
+				                      date_start, date_end,
 				                      date_precision, confirmed, merged_into, created_by,
 				                      created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   title = excluded.title,
 				   r2_key = COALESCE(excluded.r2_key, subject.r2_key),
+				   -- The coordinates answer the title, so they follow it. A device
+				   -- that has not looked the name up sends null and must not wipe
+				   -- what another one resolved — but when the title itself changes,
+				   -- the old point stops being the answer to anything, and keeping
+				   -- it would turn a corrected name into a wrong place on the map.
+				   lat = CASE WHEN excluded.title IS NOT subject.title
+				              THEN excluded.lat ELSE COALESCE(excluded.lat, subject.lat) END,
+				   lon = CASE WHEN excluded.title IS NOT subject.title
+				              THEN excluded.lon ELSE COALESCE(excluded.lon, subject.lon) END,
+				   geo_precision = CASE WHEN excluded.title IS NOT subject.title
+				                        THEN excluded.geo_precision
+				                        ELSE COALESCE(excluded.geo_precision, subject.geo_precision) END,
 				   date_start = excluded.date_start,
 				   date_end = excluded.date_end,
 				   date_precision = excluded.date_precision,
@@ -247,6 +287,11 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				subject.kind,
 				subject.title ?? null,
 				subject.r2_key ?? null,
+				hasPoint ? lat : null,
+				hasPoint ? lon : null,
+				hasPoint && subject.geo_precision && GEO_PRECISIONS.has(subject.geo_precision)
+					? subject.geo_precision
+					: null,
 				subject.date_start ?? null,
 				subject.date_end ?? null,
 				subject.date_precision ?? null,

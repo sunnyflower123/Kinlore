@@ -86,6 +86,25 @@ CREATE TABLE subject (
   -- kind = 'photo'
   r2_key        TEXT,
 
+  -- kind = 'place'
+  --
+  -- Where the place is, once its name has been looked up. A place is born as a
+  -- name somebody said out loud ("Puumala", "Sortavala") and stays that way:
+  -- these two columns are a cache of a lookup, never something the family
+  -- provided. NULL means nobody has looked it up yet, or no gazetteer knew the
+  -- name — a village that no longer exists is a real case here.
+  lat           REAL,
+  lon           REAL,
+  -- How precisely the coordinates locate the memory, in the same spirit as
+  -- date_precision: 'exact' is a street address, 'town' a municipality,
+  -- 'region' a province or a country. "Karjala" is a region, and drawing it as
+  -- a pin would claim a metre of accuracy nobody ever had. Rule 5: uncertainty
+  -- is stored, not rounded. For existing databases:
+  --   ALTER TABLE subject ADD COLUMN lat REAL;
+  --   ALTER TABLE subject ADD COLUMN lon REAL;
+  --   ALTER TABLE subject ADD COLUMN geo_precision TEXT;
+  geo_precision TEXT,                 -- 'exact'|'town'|'region'|'unknown'
+
   -- Uncertain dating is the rule, not the exception. "Sometime in the fifties"
   -- is stored as the range [1950, 1959] with precision 'decade' — neither
   -- forced into a false date nor thrown away.
