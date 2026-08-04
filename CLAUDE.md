@@ -181,6 +181,12 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
   ios/Memorize/Model/GuessRound.swift && /tmp/guess-mask-check
 
+# Place coordinates through sync. Checks the four rules that are silent when
+# broken: a resolved point round-trips, a device that has not looked the name up
+# cannot wipe it, correcting the title clears it, and rubbish is refused. Costs
+# nothing — no AI call — but needs `npx wrangler dev` running.
+node scripts/place-sync-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after

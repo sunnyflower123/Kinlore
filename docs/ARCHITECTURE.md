@@ -1364,3 +1364,10 @@ left by a merge or by a rejection (§3) — neither is its own place any more, a
 looking one up would spend a request on a name the family has taken back. See
 the `CASE` in `push()` in `backend/src/sync.ts`, and `MemoryStore.rename` for the
 same rule on the client.
+
+Every one of those rules is silent when broken: memories still sync, places
+still open, and the only evidence would be a point on a map nobody has built
+yet. So they are checked through the running Worker rather than asserted —
+`scripts/place-sync-check.mjs`, five cases, no AI call and no credits spent.
+The check was itself checked: with the `CASE` replaced by a plain `COALESCE`,
+case 3 fails and the script exits non-zero.
