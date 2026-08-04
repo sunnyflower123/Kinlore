@@ -180,6 +180,14 @@ node scripts/asr-bench.mjs samples/
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
   ios/Memorize/Model/GuessRound.swift && /tmp/guess-mask-check
+
+# Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
+# MapKit answers — they are claims about somebody else's gazetteer, and they can
+# stop being true without this repo changing. Needs a network; run it after
+# touching PlaceLookup.swift, and before believing §18.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/geo-check scripts/geo-check.swift \
+  ios/Memorize/Services/PlaceLookup.swift && /tmp/geo-check
 ```
 
 ## Environment notes

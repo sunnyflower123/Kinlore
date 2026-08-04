@@ -1293,6 +1293,19 @@ a name is not asking where the phone is, so `Info.plist` gains nothing and the
 80-year-old is asked nothing. What leaves the device is the place name and
 nothing else: not the memory, not the transcript, not who told it.
 
+The lookup lives in `PlaceLookup`, apart from the resolver that walks the
+archive, so that both tables below can be re-measured against the shipping code:
+
+```
+scripts/geo-check.swift          # the command is in CLAUDE.md
+```
+
+Every claim in this section is a claim about somebody else's gazetteer. It can
+stop being true without a line of this repo changing, and a document that cannot
+be caught being wrong goes on being believed — the failure mode §1 warns about.
+Both tables below were produced by that script, and it exits non-zero when one
+of them stops holding.
+
 ### Why the precision column
 
 The same reason `date_precision` exists. The lookup answers at wildly different
@@ -1346,6 +1359,8 @@ nothing displays a coordinate. Telling must never wait on a lookup.
 The coordinates follow the title, because they are the answer to it. A device
 that has not looked a name up sends null and cannot wipe what another device
 resolved; a device that *corrects* the title clears them on both sides, and the
-next sweep looks the new name up. A merge tombstone is never resolved — it is no
-longer its own place. See the `CASE` in `push()` in `backend/src/sync.ts`, and
-`MemoryStore.rename` for the same rule on the client.
+next sweep looks the new name up. A tombstone is never resolved, whether it was
+left by a merge or by a rejection (§3) — neither is its own place any more, and
+looking one up would spend a request on a name the family has taken back. See
+the `CASE` in `push()` in `backend/src/sync.ts`, and `MemoryStore.rename` for the
+same rule on the client.
