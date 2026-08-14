@@ -14,6 +14,10 @@ struct GalleryScreen: View {
 
     @State private var picked: [PhotosPickerItem] = []
     @State private var isImporting = false
+    /// How many of the chosen photos did not make it, and whether that has been
+    /// said out loud yet.
+    @State private var skipped = 0
+    @State private var isReportingSkipped = false
 
     /// Bigger tiles when the text is bigger. The memory-count badge scales with
     /// Dynamic Type, and at accessibility sizes it was clipped by a 110 pt tile —
@@ -73,6 +77,17 @@ struct GalleryScreen: View {
                         .padding(24)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
                 }
+            }
+            // A photo that would not load used to be skipped in silence: you
+            // chose ten, eight arrived, and nothing said which or why. Counting
+            // your own photographs to find that out is not a thing to ask of
+            // anybody, least of all of somebody who scanned them.
+            .alert("Kaikkia kuvia ei saatu tuotua", isPresented: $isReportingSkipped) {
+                Button("Selvä") { isReportingSkipped = false }
+            } message: {
+                Text(skipped == 1
+                    ? "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen."
+                    : "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen.")
             }
         }
     }
@@ -156,15 +171,22 @@ struct GalleryScreen: View {
 
     private func importPhotos(_ items: [PhotosPickerItem]) async {
         isImporting = true
+        skipped = 0
         defer {
             isImporting = false
             picked = []
+            // Only when something actually went missing. An import that worked
+            // needs no announcement — the photographs are on the screen.
+            isReportingSkipped = skipped > 0
         }
 
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self),
                   let filename = MediaStore.save(imageData: data)
-            else { continue }
+            else {
+                skipped += 1
+                continue
+            }
 
             // The title is left empty on purpose: nobody will name thirty
             // scanned photographs. The name arrives when someone talks about

@@ -1151,6 +1151,14 @@ test waits for it to arrive. Timing, not accessibility — but the only way to
 know that was to identify the elements, which is why the failure message prints
 type and frame as well as the label.
 
+**A second guess worth recording, because it was wrong.** When the reveal's
+`Valmis` turned out to be a toolbar button that barely grows, the obvious
+conclusion was that the app's other three toolbar `Sulje` buttons — the Tell
+screen presented as a sheet — were the same defect waiting to be found. They are
+not: the telling sheet is audited now, at both sizes, and it passes with the
+toolbar button on it. The shape is not automatically the bug. Measure the screen
+rather than the pattern.
+
 **One wrong guess is worth recording.** The record button's resting glow was
 blamed for *"Paina ja ala puhua"* first, and reduced from radius 14 to 8 on that
 theory. A screenshot showed the caption sitting under the tab bar instead, and

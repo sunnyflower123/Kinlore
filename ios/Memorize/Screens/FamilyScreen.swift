@@ -34,8 +34,13 @@ struct FamilyScreen: View {
 
                 if let usage = session.usage {
                     Section("Käyttö") {
+                        // Not "AI-minuutit". The same quota is called "kertomista
+                        // tässä kuussa jäljellä" where somebody actually meets
+                        // it — on the card after a telling — and one of the two
+                        // names is jargon aimed at the person least able to
+                        // decode it. The app should have one word for one thing.
                         LabeledContent(
-                            "AI-minuutit",
+                            "Kertominen tässä kuussa",
                             value: usage.aiSeconds.limit == nil
                                 ? "rajaton"
                                 : "\(usage.aiSeconds.used / 60) / \(usage.aiSeconds.limit! / 60) min"

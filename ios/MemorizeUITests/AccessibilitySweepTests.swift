@@ -278,6 +278,19 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// Telling about a photo: the Tell screen as a sheet on top of the photo's
+    /// card. Nothing had audited this presentation, and it is the one whose way
+    /// out is a toolbar button — the shape this app has already had to abandon
+    /// three times for barely growing with Dynamic Type. Measured here rather
+    /// than assumed.
+    func testTellAboutAPhoto() throws {
+        try sweep("Kerro kuvasta", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Kerro tästä muisto"], in: app, "the photo's card").tap()
+            require(app.staticTexts["Paina ja ala puhua"], "the telling sheet")
+        }
+    }
+
     /// The help page. Six sections of plain text and the only place in the app
     /// that says the recording leaves the phone — which makes it the one screen
     /// here whose whole content is text, and text at XXXL is what this sweep
