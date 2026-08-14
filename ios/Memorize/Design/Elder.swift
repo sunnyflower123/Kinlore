@@ -70,6 +70,17 @@ enum Elder {
     /// app's user is precisely the one who suffers from it.
     static let proposal = Color(red: 0.761, green: 0.255, blue: 0.047)
 
+    /// "This went right": a memory saved, a person recognised, a name confirmed.
+    ///
+    /// Not `.green`. iOS's green measures about 1.8:1 against white — worse than
+    /// the orange that started the whole contrast measurement (§15), and it was
+    /// carrying *"Muisto tallennettu"*, the line that tells somebody their
+    /// telling is safe. #1E7A3A measures 5.4:1 and is unmistakably still green.
+    ///
+    /// As everywhere else here, the shape says it too: the checkmark is a
+    /// checkmark whatever the colour does.
+    static let affirmative = Color(red: 0.118, green: 0.478, blue: 0.227)
+
     /// Emptying the device, leaving the family — the actions that cannot be
     /// undone.
     ///

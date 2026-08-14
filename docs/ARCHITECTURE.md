@@ -28,6 +28,7 @@ An honest inventory, not a wish list:
 | Coordinates for places — stored, nothing drawn yet | **Done**, see §18 |
 | Correcting a misheard name afterwards | **Done and tested**, see §17 |
 | Soft deletion — a rejection that is final | **Done and tested**, see §3 |
+| A telling taken back — mid-recording, or after it is saved | **Done and tested**, see §19 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
 | Accessibility sweep over every screen | **Done** — 21 checks, and they audit the screen they are named after |
 | Repo in English | **Done** |
@@ -183,6 +184,34 @@ the outbox exactly as a stored one is. See §16.
 Operations are **idempotent**: everything is an upsert keyed by a client
 generated UUID. The same operation twice breaks nothing, which makes retrying
 safe without coordination.
+
+### Whether it got through
+
+A sync failure is a waiting state and not an error: the memories are safe on the
+device, the queue drains by itself, and a network error is not an 80-year-old's
+problem. That decision stands and nothing here shows an error.
+
+But it had been read as *say nothing at all*, and the two are not the same. The
+engine has carried `state` and `lastSyncedAt` from the day it was written, it was
+never put in the environment, and no view ever asked — so a memory told at a
+cottage with no signal looked exactly like one the whole family had already read.
+That difference is the app's entire promise, and it was the one thing on screen
+with no way to tell.
+
+Muistot now carries a line while, and only while, something is waiting: *"Yksi
+muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko
+palaa."* It asks for nothing — the queue drains on its own, so instructing
+somebody to fix the network would be inventing a job for them — and it disappears
+when the last telling is through, because this is a waiting state and not a
+permanent piece of furniture. Nothing is shown at all without a family and a
+backend: a single-device archive has nowhere to send anything.
+
+The count is of **memories**, from the outbox. Nobody has ever wondered whether a
+relationship row reached their family; the question being answered is "did what I
+told get through". The family view says the same thing where somebody goes to
+check rather than to be told — with a time on it, and with *"kaikki lähetetty"*
+when there is nothing waiting, because that is an answer rather than the absence
+of one.
 
 ### Conflict rules
 
@@ -441,6 +470,14 @@ Built, in the order they were built:
 2. **Family** — members, sharing the invite link, usage.
 3. **Audio playback** — the memory card's "Listen in her own voice". Emotionally
    the product's strongest detail and small to implement.
+
+   It answered both of its failures with nothing at all: audio that could not be
+   fetched from R2 returned early, a file that would not open was caught and
+   swallowed, and either way the tap changed nothing on screen. On the control
+   that plays a dead person's voice, "nothing happened" is indistinguishable
+   from a phone on silent or a finger that missed — so the button says it now,
+   in its own label and in two different sentences, because one is worth
+   retrying and the other never will be.
 4. **Open questions** — surfaced on the Tell screen rather than in a view of
    their own. This is the retention engine: an open question is a reason to come
    back, and it is also an easier start than a blank button.
@@ -479,9 +516,40 @@ Built, in the order they were built:
    its icon from `kind`, which is what the `subject` design claims and what a
    second row type would have quietly started to contradict.
 
+9. **The refused microphone** — a screen of its own rather than a message.
+
+   It had been a `failed` state whose text read *"Salli mikrofoni asetuksista"*
+   and whose only button retried the same refused permission, for ever. The
+   instruction is also the one this audience is least able to follow: four taps
+   into a settings tree, in a list of apps, under a switch.
+
+   So the screen opens that place itself, and offers the keyboard beside it —
+   which needs no permission from anybody, and produces the same kind of memory
+   through the same extraction. Rule 2 says telling is never paywalled; a
+   microphone the phone refuses must not become the thing that blocks it either.
+
+   Reachable in a test run through `-mic denied` (docs/SETUP.md), because the
+   real way in is answering a system prompt with "Älä salli" and then digging
+   the app back out of iOS Settings by hand — which is why nothing had ever
+   looked at this screen, and why the audit had never measured it.
+
+10. **"Näin tämä toimii"** — the help page, behind the gear.
+
+    The app explains each step where the step happens, which is the right order
+    and was the whole of it. Three things are true of the app rather than of any
+    screen, and one of them a person cannot discover by using it at all: **the
+    recording leaves the phone.** It goes to our Worker, which sends it on to be
+    turned into text. Nothing anywhere said so — the microphone prompt talked
+    only about keeping the voice for the family, and it says both things now.
+
+    The other two are what somebody asks before trusting an app with their
+    family: who can see this, and can I get it back out. Six short sections, no
+    disclosure triangles — a person who opened a help page is already looking
+    for the answer, and making them hunt twice is how help becomes decoration.
+
 Not built:
 
-9. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
+11. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
    person card: the same information, works at the largest text size and is
    readable with VoiceOver. Formally out of v1 since §10.
 
@@ -1059,6 +1127,15 @@ those same categories, which is how the contrast problem survived this long.
 - `Lisää sukulainen`, where a `Menu` reports a label frame smaller than the text
   it draws. Verified on screen at both sizes.
 - The photo tile's memory count, capped at `accessibility2` on purpose.
+- Settings' own footer, *"Kertomasi muistot ovat vain tässä laitteessa."* — and
+  this one is worth the sentence it costs. It passed for as long as it did, and
+  the moment a row was added above it the audit called the same unchanged
+  sentence "partially unsupported", at the ordinary text size only. A finding
+  that appears when the list grows is exactly what real clipping looks like, so
+  it was screenshotted at both sizes with the new row in place: one line at the
+  ordinary size, and the footers around it wrap and grow properly at XXXL.
+  Giving it an explicit Dynamic Type font changed nothing, which is the other
+  half of the evidence — the metrics are the List's, not our typography's.
 - `ContentUnavailableView`'s own Dynamic Type behaviour, which is the system
   view's and not ours — listed string by string rather than by category, so that
   our own Dynamic Type failures still fail.
@@ -1079,6 +1156,37 @@ blamed for *"Paina ja ala puhua"* first, and reduced from radius 14 to 8 on that
 theory. A screenshot showed the caption sitting under the tab bar instead, and
 the glow change was reverted — a visual the designer chose should not be altered
 on a hypothesis that a screenshot could have tested in a minute.
+
+### The seven that were left
+
+The measurement produced tokens, the tokens were used on the screens being fixed,
+and seven places went on using iOS's own colours — because nothing failed. Rule 1
+names `.secondary` and `.tertiary` explicitly, and both survived: on the
+confirmed-person icon, on the confirmed-relative icon, on the "Henkilö · korjattu"
+caption under a proposal, and on the gallery's chevrons. They are `Elder`
+tokens now.
+
+The other three were `.green`, which the rule does not name and which is worse
+than the orange that started all of this: **1.8:1** against white, carrying
+*"Muisto tallennettu"* — the line that tells somebody their telling is safe — the
+confirm tick on a proposal, and *"Oikein. Hän oli Aino."* at the end of a round.
+`Elder.affirmative` is #1E7A3A at **5.4:1**, still unmistakably green.
+
+None of the three was ever measured, and the reason is worth more than the fix:
+**the audit had never opened those screens.** The result screen had no sweep case
+at all, and the guessing round's audit stopped at the question and never answered
+it. Both are covered now — and the reveal's first audit immediately found a
+`Valmis` toolbar button whose text barely grows with Dynamic Type, which is the
+third time this app has moved an action out of a toolbar and into a row for
+exactly that reason. A colour nobody looks at is a colour nobody measures.
+
+**A disabled control is not a contrast failure.** `Tallenna` on the correction
+sheet is dim because it is switched off — the sheet opens with the name already
+in the field — and the audit was measuring iOS's own dimming. The contrast
+minimum exempts inactive components, so the policy does too: contrast only, and
+only where the element really is disabled. What keeps the disabling honest is
+`NameCorrectionTests`, which asserts the button stays off until something
+changes, rather than this exemption.
 
 **Dark mode is not covered.** The app has never been designed for it — the
 launch screen is parchment, no asset has a dark variant, and the accent colour
@@ -1193,6 +1301,17 @@ cent, and deliberately unmetered (§7). So a transcript that has been paid for i
 never discarded because the cheap half failed. Structure is what degrades — not
 the telling.
 
+The same rule holds where the telling actually happens, which it did not for a
+while. The Tell screen answered a failed extraction with `.failed`, so neither
+`save` nor `saveAudioOnly` ran: the recording was left in the temporary
+directory with `persistAudio` never called, and "Voit yrittää uudelleen" meant
+saying the whole memory over again. Rule 3 says the original audio is always
+kept, and this was the one branch that did not keep it — while the quota and the
+network, which fail far more often, both already did. It takes the verbatim
+result now, and the result screen says out loud that the organising did not
+happen: without that, a memory with no names and no questions on it reads as one
+the model read and found nobody in, which is a different and untrue thing.
+
 The memory's home subject is not re-chosen when the text arrives, only
 described. It has been sitting in the archive under that subject and somebody
 may have been looking at it; `describe` fills empty fields only, so a title
@@ -1209,6 +1328,13 @@ still cannot edit what somebody else told. End to end in the simulator with
 `-defer once` (docs/SETUP.md): the recording is saved without text, the next
 launch finishes it, and the memory comes back with its own audio intact, the
 person it names, a dated subject and three follow-up questions.
+
+The live path's version of the same failure with `-defer structure`, where
+transcription works and every extraction fails. `OrganisingFailureTests` checks
+what the archive holds afterwards rather than how a screen looks: the telling is
+on the result screen and the memory is in the gallery. It was run against the
+old behaviour first and fails there on all four of its assertions — a test that
+would have passed either way proves nothing.
 
 The giving-up half with `-defer silence`, which fails every attempt the way an
 empty transcript does. Across four launches the tally reads 1, 2, 3 — and then 3
@@ -1390,3 +1516,88 @@ yet. So they are checked through the running Worker rather than asserted —
 `scripts/place-sync-check.mjs`, five cases, no AI call and no credits spent.
 The check was itself checked: with the `CASE` replaced by a plain `COALESCE`,
 case 3 fails and the script exits non-zero.
+
+## 19. The telling that was not meant
+
+Two ways out were missing, and they are the same one seen from either side of the
+save.
+
+**While recording.** The recording screen had one button and it both stopped and
+saved. A false start, the wrong story, somebody walking into the room — the only
+answer the app had was to finish the telling, wait for it to be transcribed, and
+then live with it. There is now a quiet second action beside the big button, and
+it asks before it does anything. The recorder keeps running while it asks: saying
+no has to be the cheap answer, because it is the one somebody who tapped by
+mistake will choose.
+
+**After saving.** Nothing in the app removed a memory. The result screen — the one
+moment when the app knows for certain whose telling it is looking at — now offers
+it, behind a confirmation. It takes with it what only that telling explains: the
+people it proposed, when nobody confirmed them and no other memory names them,
+and the subject free dictation created to hold it, when the telling was all it
+ever held. Never a photo or a person the family already had. The question it
+answered goes back to being open, because it was answered by something that is no
+longer there.
+
+### Rule 3 is not bent
+
+"The original audio and the raw transcript are always kept" is about the
+**pipeline**: a quota, an outage or a failed extraction must never decide that
+something told is worth throwing away. It was never a promise that a person could
+be held to words they did not mean to give — and an archive that cannot be
+corrected by the person who filled it is a harder promise than the rule makes.
+
+The removal is a tombstone, exactly like a rejected person (§3): `deletedAt` is
+set, the row stays so the removal reaches the family, and nothing reads it. The
+audio file stays on the device and in R2 the same way. What changes is that
+nothing anywhere shows it — not the subject's card, not the gallery, not a
+guessing round, not the export.
+
+Only the teller's own, and the server is what makes that true rather than the
+app's good manners: the memory upsert matches on `author_id`, so a tombstone for
+somebody else's memory is refused. Nobody gets to tidy away what grandmother
+said. She is the one person who may.
+
+### What it costs
+
+This is an addition, and CLAUDE.md asks for a removal to pay for it. Nothing is
+removed. The argument for making an exception is that an emergency exit is not a
+feature but the absence of a trap: the app asks an 80-year-old to press a big red
+button and start talking, and until now that button could not be un-pressed. If
+the trade is refused, the half to cut is the taking-back after saving — the
+recording screen's way out is three lines and answers the more likely mistake.
+
+### Verified
+
+`TakingBackTests`, by pressing the buttons: a saved memory is taken back and the
+gallery is empty afterwards rather than merely missing a row, and a recording
+abandoned mid-telling leaves nothing behind at all. The second one really records
+and answers the microphone prompt rather than working around it. The first was
+also run with the orphaned-subject cleanup switched off, where it fails on the
+gallery — the assertion that matters is the one about what is left, and it had to
+be shown to be load-bearing.
+
+## 20. Two sentences and a question
+
+Small things, and each one is a promise the app was not keeping.
+
+**A merge now asks.** Correcting a name onto somebody the family already has is
+not a rename: the two cards become one, this one's memories move across, and a
+tombstone with a forwarding address is left behind (§2.5). It happened on the
+same tap as an ordinary rename, warned about by a footer — and a footer is read
+by somebody who is already looking for it. A rename can be undone by renaming
+back; nothing in the app undoes a merge. So the heavier of the two acts asks
+first, and the lighter one still does not.
+
+**"Backendin osoitetta ei ole määritetty."** was written for whoever configured
+the build and shown to the person holding the phone, who can do nothing with the
+word *backend* except conclude that they broke something. It says that the
+family service cannot be reached and that the memories are safe on the device,
+which is what is actually true. `"Palvelin vastasi virheellä 500"` went the same
+way: the code moved to `RemoteError.debugText`, English, for the console.
+
+**And Settings said nothing at all when leaving a family failed.** `leaveFamily`
+returns false and puts the reason in `session.lastError`; the screen read
+neither, so the dialog closed and the family stayed. A refusal that looks like
+nothing happening is the worst possible answer to a deliberate act — it is now
+an alert with its own title, beside the export's.

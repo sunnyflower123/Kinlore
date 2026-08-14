@@ -81,7 +81,7 @@ private struct RelativeRow: View {
                 ? "person.crop.circle"
                 : "person.crop.circle.badge.questionmark")
                 .font(.title3)
-                .foregroundStyle(relation?.confirmed == true ? Color.secondary : Elder.proposal)
+                .foregroundStyle(relation?.confirmed == true ? Elder.supporting : Elder.proposal)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(relative.displayTitle)

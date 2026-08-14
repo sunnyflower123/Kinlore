@@ -156,7 +156,11 @@ final class Session {
     /// nobody could ever reach again.
     func leaveFamily() async -> Bool {
         guard let client else {
-            lastError = "Backendin osoitetta ei ole määritetty."
+            // Not "Backendin osoitetta ei ole määritetty". That sentence is
+            // written for whoever configured the build, and it was shown to the
+            // person holding the phone — who can do nothing with the word
+            // "backend" except conclude that they broke something.
+            lastError = "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa."
             return false
         }
         isWorking = true
@@ -200,7 +204,11 @@ final class Session {
 
     private func perform(_ work: (FamilyClient) async throws -> Void) async {
         guard let client else {
-            lastError = "Backendin osoitetta ei ole määritetty."
+            // Not "Backendin osoitetta ei ole määritetty". That sentence is
+            // written for whoever configured the build, and it was shown to the
+            // person holding the phone — who can do nothing with the word
+            // "backend" except conclude that they broke something.
+            lastError = "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa."
             return
         }
         isWorking = true

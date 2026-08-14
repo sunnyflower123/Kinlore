@@ -24,7 +24,15 @@ final class AudioRecorder {
     private let maxLevels = 48
 
     func requestPermission() async -> Bool {
-        await withCheckedContinuation { continuation in
+        #if DEBUG
+        // `-mic denied`: refused without touching the device's own permission.
+        // The screen behind a refusal is otherwise reachable only by answering a
+        // system prompt with "Älä salli" and then digging the app back out of
+        // iOS Settings by hand — which no test run and no screenshot run can do,
+        // and which is why nothing had ever looked at it.
+        if UserDefaults.standard.string(forKey: "mic") == "denied" { return false }
+        #endif
+        return await withCheckedContinuation { continuation in
             AVAudioApplication.requestRecordPermission { granted in
                 continuation.resume(returning: granted)
             }

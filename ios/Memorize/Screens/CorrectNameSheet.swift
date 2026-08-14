@@ -26,6 +26,7 @@ struct CorrectNameSheet: View {
 
     @State private var name: String = ""
     @FocusState private var isFocused: Bool
+    @State private var isConfirmingMerge = false
 
     private var trimmed: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -75,7 +76,15 @@ struct CorrectNameSheet: View {
                 // on this screen that would put the way out of a mistake in the
                 // smallest text on it. Rows grow, and they are 60 pt targets.
                 Section {
-                    Button("Tallenna") { save() }
+                    // Two different acts behind one button, so only the heavier
+                    // one asks. A rename can be undone by renaming back; a merge
+                    // moves another person's memories onto this card and leaves
+                    // a tombstone behind, and nothing in the app undoes that.
+                    // The footer says so beforehand, but a footer is read by
+                    // somebody who is already looking for it.
+                    Button("Tallenna") {
+                        if existing == nil { save() } else { isConfirmingMerge = true }
+                    }
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
@@ -96,6 +105,16 @@ struct CorrectNameSheet: View {
             // thing to look at first, and the keyboard arrives when it is
             // wanted.
             .onAppear { name = subject.title }
+            .confirmationDialog(
+                "Yhdistetäänkö kortit?",
+                isPresented: $isConfirmingMerge,
+                titleVisibility: .visible
+            ) {
+                Button("Yhdistä", role: .destructive) { save() }
+                Button("Peruuta", role: .cancel) {}
+            } message: {
+                Text("Perheessä on jo \(existing?.displayTitle ?? ""). Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua.")
+            }
         }
     }
 

@@ -36,6 +36,10 @@ struct Memory: Identifiable, Hashable {
     var body: String
     var createdAt = Date()
     var mentionedSubjectIDs: [String] = []
+    /// Taken back by the teller (§19). Here so that `told` below can be the same
+    /// filter the app applies — a round built on a withdrawn telling is exactly
+    /// the kind of thing this script exists to catch.
+    var deletedAt: Date?
     var isAwaitingTranscription: Bool { body.isEmpty }
 }
 
@@ -51,6 +55,7 @@ struct Guess: Identifiable, Hashable {
 final class MemoryStore {
     var subjects: [Subject] = []
     var memories: [Memory] = []
+    var told: [Memory] { memories.filter { $0.deletedAt == nil } }
     var guesses: [Guess] = []
     func subject(id: String) -> Subject? { subjects.first { $0.id == id } }
     func subjects(of kind: SubjectKind) -> [Subject] {
@@ -204,6 +209,15 @@ func roundChecks() {
 
     check("memory told about the answer herself", Memory(
         subjectID: aino.id, authorID: "mummo", body: body, mentionedSubjectIDs: [aino.id]
+    ), false)
+
+    // A telling the teller took back (§19). It is an ordinary memory in every
+    // other respect, which is the point: nothing about the round itself says no,
+    // only the tombstone does — and a round built on a withdrawn story would put
+    // it in front of the whole family.
+    check("a telling that was taken back", Memory(
+        subjectID: photo.id, authorID: "mummo", body: body,
+        mentionedSubjectIDs: [aino.id], deletedAt: Date()
     ), false)
 
     check("audio not yet transcribed", Memory(

@@ -46,7 +46,10 @@ enum DeferredMemory {
         extracted: ExtractionResult,
         store: MemoryStore
     ) -> Completion? {
-        guard let memory = store.memories.first(where: { $0.id == memoryID }),
+        // `told`: a recording the teller took back before its text arrived is
+        // not finished afterwards. It would come back with a body, and a body is
+        // the one thing that makes a memory look like it was meant.
+        guard let memory = store.told.first(where: { $0.id == memoryID }),
               memory.body.isEmpty,
               let home = store.subject(id: memory.subjectID)
         else { return nil }

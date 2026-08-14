@@ -64,6 +64,9 @@ struct FamilyRoute: Hashable {}
 /// down. See docs/ARCHITECTURE.md §14.
 struct SettingsRoute: Hashable {}
 
+/// And for the help page, one step below Settings.
+struct HelpRoute: Hashable {}
+
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
 struct PeopleScreen: View {
@@ -101,6 +104,9 @@ struct PeopleScreen: View {
             }
             .navigationDestination(for: SettingsRoute.self) { _ in
                 SettingsScreen()
+            }
+            .navigationDestination(for: HelpRoute.self) { _ in
+                HelpScreen()
             }
             .toolbar {
                 // Settings belongs under People rather than as its own tab:
@@ -156,7 +162,7 @@ private struct PersonRow: View {
                 ? "person.crop.circle"
                 : "person.crop.circle.badge.questionmark")
                 .font(.title2)
-                .foregroundStyle(subject.confirmed ? Color.secondary : Elder.proposal)
+                .foregroundStyle(subject.confirmed ? Elder.supporting : Elder.proposal)
                 .frame(width: 34)
 
             VStack(alignment: .leading, spacing: 4) {

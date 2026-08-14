@@ -96,6 +96,10 @@ struct GalleryScreen: View {
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
+                // Whether what she told has actually reached the family. The
+                // engine has known this from the beginning and nothing asked it.
+                SyncNote()
+
                 // The reading loop, above the grid because it expires: a round
                 // is only interesting until somebody has answered it. It shows
                 // itself only when one is waiting, so the screen does not grow a
@@ -167,6 +171,50 @@ struct GalleryScreen: View {
             // the photo, and it is not needed before that.
             store.add(Subject(kind: .photo, title: "", imageFilename: filename))
         }
+    }
+}
+
+/// "Is this still only on my phone?"
+///
+/// The one question the app could not answer. A memory told at a cottage with no
+/// signal looked exactly like one the whole family had already read, and the
+/// difference is the entire promise of the app — `SyncEngine` has carried the
+/// state since it was written and no view ever read it.
+///
+/// It says nothing at all when everything is through, which is nearly always:
+/// this is a waiting state and not a permanent piece of furniture. It asks for
+/// nothing either. The queue drains by itself, so telling somebody to do
+/// something about the network would be inventing a job for them — the words say
+/// what is true and that it fixes itself.
+private struct SyncNote: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
+
+    var body: some View {
+        // Nothing without a family and a backend: a single-device archive has
+        // nowhere to send anything, and "odottaa lähetystä" would be a worry
+        // about a thing that is not going to happen.
+        if let sync, sync.isEnabled, store.waitingToBeSent > 0 {
+            Label(text(waiting: store.waitingToBeSent, state: sync.state), systemImage: symbol(sync.state))
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        }
+    }
+
+    private func text(waiting: Int, state: SyncEngine.State) -> String {
+        if state == .syncing { return "Lähetetään perheelle…" }
+        return waiting == 1
+            ? "Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa."
+            : "\(waiting) muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa."
+    }
+
+    /// The shape carries the same meaning as the words, as everywhere else in
+    /// this app: a phone on its own, or something on its way up.
+    private func symbol(_ state: SyncEngine.State) -> String {
+        state == .syncing ? "arrow.up.circle" : "iphone"
     }
 }
 
@@ -267,7 +315,7 @@ private struct SubjectRow: View {
 
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Elder.supporting)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)

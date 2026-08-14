@@ -14,6 +14,15 @@ struct MemoryPlaybackButton: View {
 
     @State private var isLoading = false
 
+    /// What went wrong on the last tap, or nil.
+    ///
+    /// The button used to answer both failures with nothing at all: no state
+    /// changed, no sound came, and the tap was indistinguishable from a phone on
+    /// silent or a finger that missed. This is the control that plays a dead
+    /// person's voice — it is the last one in the app that should leave somebody
+    /// wondering whether they pressed it.
+    @State private var failure: String?
+
     private var isPlaying: Bool { player.isPlaying(memory.id) }
 
     var body: some View {
@@ -24,25 +33,40 @@ struct MemoryPlaybackButton: View {
                 if isLoading {
                     ProgressView().controlSize(.small)
                 } else {
-                    Image(systemName: isPlaying ? "stop.circle.fill" : "play.circle.fill")
+                    // The shape says which of the three states this is, not the
+                    // colour: play, stop, or something that did not work.
+                    Image(systemName: symbol)
                         .font(.title3)
                         .contentTransition(.symbolEffect(.replace))
                 }
 
                 Text(label)
                     .font(.subheadline.weight(.medium))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(.tint)
+            .foregroundStyle(failure == nil ? AnyShapeStyle(.tint) : AnyShapeStyle(Elder.supporting))
             .elderTapTarget()
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isPlaying ? "Lopeta kuuntelu" : "Kuuntele omalla äänellä")
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var symbol: String {
+        if failure != nil { return "exclamationmark.triangle" }
+        return isPlaying ? "stop.circle.fill" : "play.circle.fill"
     }
 
     private var label: String {
+        if let failure { return failure }
         if isPlaying { return "Soi…" }
         guard let seconds = memory.audioDuration else { return "Kuuntele omalla äänellä" }
         return "Kuuntele omalla äänellä · \(Int(seconds)) s"
+    }
+
+    private var accessibilityLabel: String {
+        if let failure { return failure }
+        return isPlaying ? "Lopeta kuuntelu" : "Kuuntele omalla äänellä"
     }
 
     private func toggle() async {
@@ -51,11 +75,22 @@ struct MemoryPlaybackButton: View {
             return
         }
         isLoading = true
+        failure = nil
         defer { isLoading = false }
 
         guard let filename = await MediaLoader.audioFilename(
             for: memory, store: store, session: session
-        ) else { return }
-        player.toggle(memoryID: memory.id, fileURL: MediaStore.url(for: filename))
+        ) else {
+            // The recording is not lost — it is in R2 and this phone could not
+            // reach it. Saying "yritä uudelleen" matters more than saying why:
+            // the next tap on a working connection simply works.
+            failure = "Ääntä ei saatu haettua — yritä uudelleen"
+            return
+        }
+        if !player.toggle(memoryID: memory.id, fileURL: MediaStore.url(for: filename)) {
+            // A different thing entirely, and a retry will not help: the file is
+            // here and it will not play.
+            failure = "Tätä äänitystä ei saatu soimaan"
+        }
     }
 }

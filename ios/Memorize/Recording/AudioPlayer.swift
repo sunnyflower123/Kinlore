@@ -23,10 +23,17 @@ final class AudioPlayer: NSObject {
         playingMemoryID == memoryID
     }
 
-    func toggle(memoryID: String, fileURL: URL) {
+    /// Starts or stops playback. Returns false if the file would not play.
+    ///
+    /// The result is not decoration: "the tap simply does nothing" was this
+    /// button's entire behaviour on a broken or missing file, and a control that
+    /// does nothing is indistinguishable from a phone whose sound is off. The
+    /// caller says so instead — quietly, in the button's own label.
+    @discardableResult
+    func toggle(memoryID: String, fileURL: URL) -> Bool {
         if playingMemoryID == memoryID {
             stop()
-            return
+            return true
         }
         stop()
 
@@ -48,10 +55,12 @@ final class AudioPlayer: NSObject {
             ticker = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.tick() }
             }
+            return true
         } catch {
-            // A broken or missing file does not deserve an error screen: the tap
-            // simply does nothing, and the text is still readable.
+            // A broken file still does not deserve an error screen — the text is
+            // there and the archive is unharmed. It deserves a sentence.
             stop()
+            return false
         }
     }
 

@@ -157,11 +157,60 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The note that says a telling has not left the phone.
+    ///
+    /// It cannot be seeded: the demo archive is canned as already sent, so the
+    /// waiting telling is made here — an address with nothing behind it, a
+    /// family id, and one memory told into that. See `SyncVisibilityTests`.
+    func testMemoriesWaitingToBeSent() throws {
+        try sweep(
+            "Muistot, odottaa lähetystä",
+            arguments: ["-seed", "empty", "-defer", "structure", "-screen", "interview", "-family_id", "demo"],
+            api: "http://127.0.0.1:9"
+        ) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "a telling to be waiting for")
+            app.tabBars.buttons["Muistot"].tap()
+            require(
+                app.staticTexts
+                    .containing(NSPredicate(format: "label CONTAINS %@", "vain tässä puhelimessa"))
+                    .firstMatch,
+                "the waiting note"
+            )
+        }
+    }
+
     /// An empty state is not a blank screen in this app — it is an invitation,
     /// with a button on it. PLAN.md §6.5.
     func testMemoriesEmpty() throws {
         try sweep("Muistot, empty", arguments: ["-seed", "empty", "-tab", "memories"]) { app, _ in
             require(app.buttons.firstMatch, "the invitation on the empty gallery")
+        }
+    }
+
+    /// Where a telling ends: the saved line, the memory itself, and the two ways
+    /// on from it. Nothing had ever audited this screen, and it carries the one
+    /// green thing in the app — *"Muisto tallennettu"*.
+    ///
+    /// `-defer structure` is what holds it still: with no follow-up questions
+    /// there is no interview to carry the run onwards. The proposal rows are not
+    /// on it for the same reason, and nothing measures those yet.
+    func testResult() throws {
+        try sweep(
+            "Tulos",
+            arguments: ["-seed", "empty", "-defer", "structure", "-screen", "interview"]
+        ) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "the result screen")
+        }
+    }
+
+    /// The screen behind a refused microphone. Two buttons and a paragraph, and
+    /// nothing had ever looked at it — reaching it by hand means answering a
+    /// system prompt with "Älä salli" and then digging the app out of iOS
+    /// Settings again.
+    func testMicrophoneDenied() throws {
+        try sweep("Mikrofoni kielletty", arguments: ["-seed", "empty", "-mic", "denied"]) { app, _ in
+            require(app.buttons["Aloita kertominen"], "the record button").tap()
+            require(app.staticTexts["Mikrofoni ei ole käytössä"], "the refusal screen")
         }
     }
 
@@ -226,6 +275,20 @@ final class AccessibilitySweepTests: XCTestCase {
             arguments: ["-seed", "guess", "-tab", "people", "-screen", "settings"]
         ) { app, _ in
             require(app.buttons.firstMatch, "a row in Settings")
+        }
+    }
+
+    /// The help page. Six sections of plain text and the only place in the app
+    /// that says the recording leaves the phone — which makes it the one screen
+    /// here whose whole content is text, and text at XXXL is what this sweep
+    /// exists for.
+    func testHelp() throws {
+        try sweep(
+            "Näin tämä toimii",
+            arguments: ["-seed", "guess", "-tab", "people", "-screen", "settings"]
+        ) { app, _ in
+            reach(app.buttons["Näin tämä toimii"], in: app, "the help row").tap()
+            require(app.navigationBars["Näin tämä toimii"], "the help page")
         }
     }
 

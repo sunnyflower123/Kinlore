@@ -73,9 +73,13 @@ targets:
         # Dictation is the app's core function — the justification is shown to
         # the user when the system asks for permission, so it is written in plain
         # language. Finnish, because the user reads it.
+        # Says where the recording goes, not only that there is one. This is the
+        # only moment iOS gives us before the first recording, and until now the
+        # app never told anybody — anywhere — that the audio leaves the phone.
         NSMicrophoneUsageDescription: >-
           Memorize tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
-          voi kuunnella ne myöhemmin.
+          voi kuunnella ne myöhemmin. Äänitys lähetetään palveluumme, jossa
+          puheesta kirjoitetaan teksti.
         NSPhotoLibraryUsageDescription: >-
           Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.
         # Invite link: memorize://join?code=...

@@ -8,6 +8,8 @@ import SwiftUI
 /// boundary.
 struct FamilyScreen: View {
     @Environment(Session.self) private var session
+    @Environment(MemoryStore.self) private var store
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
 
     @State private var freshCode: String?
     @State private var isSharing = false
@@ -22,6 +24,12 @@ struct FamilyScreen: View {
                         "Tila",
                         value: family.entitlement == "archive" ? "Maksullinen" : "Ilmainen"
                     )
+                    // The same fact as the note on Muistot, in the place
+                    // somebody comes to when they want to check rather than to
+                    // be told: with a time on it, and shown even when there is
+                    // nothing waiting — "kaikki lähetetty" is the answer to the
+                    // question, not the absence of one.
+                    LabeledContent("Lähetys", value: syncText)
                 }
 
                 if let usage = session.usage {
@@ -95,7 +103,11 @@ struct FamilyScreen: View {
                     // membership is local state and the app works offline.
                     Label("Perheen tietoja ei saatu haettua", systemImage: "wifi.slash")
                         .foregroundStyle(Elder.supporting)
-                    Text("Voit silti kertoa muistoja. Ne synkronoituvat kun yhteys palaa.")
+                    // Concrete when there is something concrete to say. This is
+                    // the screen somebody opens *because* they are worried, and
+                    // the general reassurance was the only thing here — while
+                    // the app knew exactly how many tellings were still waiting.
+                    Text(offlineText)
                         .elderBody()
                         .foregroundStyle(Elder.supporting)
                 }
@@ -114,6 +126,37 @@ struct FamilyScreen: View {
                 .padding(Elder.screenPadding)
             }
         }
+    }
+
+    /// What the sync has actually managed, in one line.
+    ///
+    /// The waiting case wins over the clock: a time from an hour ago beside
+    /// three memories that never left would be a true sentence answering the
+    /// wrong question.
+    private var syncText: String {
+        let waiting = store.waitingToBeSent
+        if sync?.state == .syncing { return "lähetetään…" }
+        if waiting > 0 { return waiting == 1 ? "1 odottaa verkkoa" : "\(waiting) odottaa verkkoa" }
+        guard let at = sync?.lastSyncedAt else { return "kaikki lähetetty" }
+        return "kaikki lähetetty \(Self.moment(at))"
+    }
+
+    /// The same thing said where the family details could not be fetched at all.
+    private var offlineText: String {
+        switch store.waitingToBeSent {
+        case 0: "Voit silti kertoa muistoja. Ne synkronoituvat kun yhteys palaa."
+        case 1: "Yksi kertomasi muisto odottaa lähetystä. Se lähtee itsestään kun yhteys palaa."
+        case let waiting: "\(waiting) kertomaasi muistoa odottaa lähetystä. Ne lähtevät itsestään kun yhteys palaa."
+        }
+    }
+
+    /// A time of day for today and a date for anything older. Nobody needs the
+    /// year of a sync, and "12.8. klo 9.05" is read at a glance.
+    private static func moment(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "fi_FI")
+        formatter.dateFormat = Calendar.current.isDateInToday(date) ? "'klo' H.mm" : "d.M. 'klo' H.mm"
+        return formatter.string(from: date)
     }
 
     /// The shared text contains both the link and the code. The link is quick,
@@ -205,6 +248,8 @@ private struct InviteRow: View {
 
 #Preview {
     NavigationStack {
-        FamilyScreen().environment(Session())
+        FamilyScreen()
+            .environment(Session())
+            .environment(MemoryStore(filename: "preview-store.json"))
     }
 }

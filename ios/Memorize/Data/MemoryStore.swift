@@ -45,8 +45,18 @@ final class MemoryStore {
 
     // MARK: - Queries
 
+    /// Everything still in the archive.
+    ///
+    /// `memories` itself keeps the tombstones, because a taking-back travels to
+    /// the family like any other change and has to survive on the device until
+    /// it does. Nothing outside sync and persistence should read that array —
+    /// read this instead, or one of the queries built on it.
+    var told: [Memory] {
+        memories.filter { $0.deletedAt == nil }
+    }
+
     func memories(for subjectID: String) -> [Memory] {
-        memories
+        told
             .filter { $0.subjectID == subjectID }
             .sorted { $0.createdAt > $1.createdAt }
     }
@@ -85,6 +95,12 @@ final class MemoryStore {
     func openQuestions(limit: Int = 3, for subjectID: String? = nil) -> [FollowUpQuestion] {
         let open = questions.filter { question in
             guard !question.answered else { return false }
+            // A question whose subject is no longer there has nothing left to be
+            // answered about: the person was rejected, or the telling that
+            // created the subject was taken back. It would otherwise keep being
+            // offered on the Tell screen, where the subject's own card is not
+            // there to make the emptiness visible.
+            if let id = question.subjectID, subject(id: id) == nil { return false }
             return subjectID == nil || question.subjectID == subjectID
         }
         return QuestionLadder.select(open, comfort: QuestionLadder.comfort, limit: limit)
@@ -107,13 +123,36 @@ final class MemoryStore {
     /// questions: once anything has been told there are real questions to answer,
     /// and a generic one would compete with them for the same two slots.
     func openingQuestions() -> [FollowUpQuestion] {
-        memories.isEmpty ? QuestionLadder.opening : []
+        told.isEmpty ? QuestionLadder.opening : []
     }
 
     /// A subject that has no memories yet. These are not hidden but shown as an
     /// invitation: "nobody has said anything about Aino yet".
     func isEmpty(_ subject: Subject) -> Bool {
-        !memories.contains { $0.subjectID == subject.id }
+        !told.contains { $0.subjectID == subject.id }
+    }
+
+    /// Tellings the family cannot see yet: told on this device, not yet accepted
+    /// by the server.
+    ///
+    /// Memories only. The outbox also carries subjects, questions, guesses and
+    /// relationships, and nobody has ever wondered whether a relationship row
+    /// reached their family — the question this answers is "did what I told get
+    /// through", and it is asked about tellings.
+    var waitingToBeSent: Int {
+        told.filter { dirtyMemories.contains($0.id) }.count
+    }
+
+    /// Whether anything in the archive still refers to this subject.
+    ///
+    /// Both directions count: a memory filed under it, and a memory that merely
+    /// names it. A person who is only *mentioned* has no memory of their own,
+    /// so asking "has it any memories" would call them orphaned while ten
+    /// stories still say their name.
+    func isOrphaned(subjectID: String) -> Bool {
+        !told.contains {
+            $0.subjectID == subjectID || $0.mentionedSubjectIDs.contains(subjectID)
+        }
     }
 
     // MARK: - Writes
@@ -244,7 +283,7 @@ final class MemoryStore {
     /// Oldest first: the one that has waited longest is the one closest to
     /// being forgotten.
     func memoriesAwaitingTranscription(author memberID: String) -> [Memory] {
-        memories
+        told
             .filter { $0.isAwaitingTranscription }
             .filter { $0.authorID == nil || $0.authorID == memberID }
             .sorted { $0.createdAt < $1.createdAt }
@@ -283,7 +322,7 @@ final class MemoryStore {
     /// A tombstone is skipped, whether it was left by a merge or by a
     /// rejection: neither is its own place any more, and resolving one would
     /// spend a lookup on a name the family has already taken back. See
-    /// docs/ARCHITECTURE.md §18.
+    /// docs/ARCHITECTURE.md §19.
     func placesAwaitingCoordinates() -> [Subject] {
         subjects.filter {
             $0.kind == .place && $0.mergedInto == nil && $0.deletedAt == nil
@@ -326,9 +365,43 @@ final class MemoryStore {
         save()
     }
 
+    /// The teller takes back what they just told: a tombstone, like a rejected
+    /// subject.
+    ///
+    /// Rule 3 says the original audio and the raw transcript are always kept,
+    /// and this does not bend it. That rule is about the *pipeline*: a quota, an
+    /// outage or a failed extraction must never decide that something told is
+    /// worth discarding. It was never about holding somebody to a telling they
+    /// did not mean to give — and until now the app had no way to take one back
+    /// at all, which is a heavier promise than the rule ever made.
+    ///
+    /// Only the teller's own, and only the server can enforce that: the memory
+    /// upsert matches on `author_id`, so a tombstone for somebody else's memory
+    /// is refused. The audio file stays on the device and in R2 exactly as a
+    /// rejected person's row stays — nothing reads either.
+    func remove(memoryID: String) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
+        memories[index].deletedAt = .now
+        dirtyMemories.insert(memoryID)
+        save()
+    }
+
     func markAnswered(questionID: String) {
         guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
         questions[index].answered = true
+        dirtyQuestions.insert(questionID)
+        save()
+    }
+
+    /// Puts a question back on the open list.
+    ///
+    /// One case only: the answer was taken back. A question marked answered by a
+    /// telling that is no longer in the archive has not been answered, and an
+    /// open question is a reason to come back to the app — losing one quietly is
+    /// losing exactly that.
+    func reopen(questionID: String) {
+        guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
+        questions[index].answered = false
         dirtyQuestions.insert(questionID)
         save()
     }
@@ -602,7 +675,10 @@ final class MemoryStore {
     /// Memories whose audio is still only local. The original audio is always
     /// uploaded, free tier included — it is the core of the product.
     func memoriesAwaitingUpload() -> [Memory] {
-        memories.filter { $0.audioFilename != nil && $0.audioR2Key == nil }
+        // Taken-back recordings are not uploaded. The tombstone still travels —
+        // it is a row, not a file — but there is no reason to spend the family's
+        // bandwidth putting audio into R2 that nothing will ever play.
+        told.filter { $0.audioFilename != nil && $0.audioR2Key == nil }
     }
 
     func setR2Key(subjectID: String, key: String) {
@@ -746,6 +822,14 @@ final class MemoryStore {
                 body: "Aino tuli mökille joka kesä, ja Ainon kanssa soudettiin saareen "
                     + "kalaan aamuvarhaisella. Kahvipannu oli aina mukana, ja rannassa "
                     + "istuttiin pitkään puhumassa siitä, millaista sodan jälkeen oli ollut.",
+                // A key with nothing behind it, on purpose. A voice memory with
+                // no audio at all was a fixture telling a small lie — and the
+                // playback button, which is only drawn when there is audio to
+                // play, was unreachable in the one archive every test uses. With
+                // a dead address this is also the failing download, which is
+                // exactly the case that used to do nothing at all.
+                audioR2Key: "demo-audio-that-is-not-there",
+                audioDuration: 42,
                 source: .voice,
                 mentionedSubjectIDs: [aino.id]
             ),
@@ -838,6 +922,13 @@ final class MemoryStore {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        return try encoder.encode(snapshot())
+        var archive = snapshot()
+        // A telling the teller took back is not in the copy the family keeps.
+        // Rejected *subjects* still are, and the difference is the point: a
+        // rejected proposal is a note about what the machine got wrong, while a
+        // taken-back memory is content somebody withdrew. Keeping the second one
+        // in a file that outlives the app would make the taking-back a gesture.
+        archive.memories = told
+        return try encoder.encode(archive)
     }
 }

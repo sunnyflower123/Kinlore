@@ -51,6 +51,17 @@ enum AppServices {
     static var simulatesSilentRecording: Bool {
         UserDefaults.standard.string(forKey: "defer") == "silence"
     }
+
+    /// `-defer structure`: **every** extraction in the run fails, the way a
+    /// Worker that answers `transcribe` and refuses `extract` fails.
+    ///
+    /// This is the branch that used to lose the recording outright, and it is
+    /// unreachable by hand: it needs the expensive half of the pipeline to
+    /// succeed and the cheap half to fail at the same moment. What is worth
+    /// looking at is what the archive holds afterwards.
+    static var simulatesFailedOrganising: Bool {
+        UserDefaults.standard.string(forKey: "defer") == "structure"
+    }
     #endif
 
     /// The token comes from the caller's `Session` and is read on every call,
@@ -74,6 +85,9 @@ enum AppServices {
     }
 
     static func extraction(token: @escaping () -> String) -> ExtractionService {
+        #if DEBUG
+        if simulatesFailedOrganising { return FailingExtractionService() }
+        #endif
         guard let base = apiBaseURL else { return StubExtractionService() }
         return RemoteExtractionService(baseURL: base, token: token)
     }
@@ -95,14 +109,30 @@ enum RemoteError: LocalizedError {
     }
 
     /// Finnish: these strings are shown to the user.
+    ///
+    /// No status codes. "Palvelin vastasi virheellä 500" is a fact about our
+    /// server told to somebody who has no server — an error message is supposed
+    /// to say what happened and what to do, and a number does neither. The code
+    /// is still available to whoever is debugging, in `debugText` below.
     var errorDescription: String? {
         switch self {
-        case .badStatus(let code): "Palvelin vastasi virheellä \(code)."
-        case .emptyResult: "Palvelin ei palauttanut tulosta."
+        case .badStatus: "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen."
+        case .emptyResult: "Puheesta ei saatu sanoja."
         case .quotaExceeded(let kind, _, let limit):
             kind == "photos"
                 ? "Ilmaisessa arkistossa on tilaa \(limit) kuvalle."
                 : "Tämän kuukauden AI-minuutit on käytetty."
+        }
+    }
+
+    /// English, for the console. The status code belongs here rather than in
+    /// anything a user reads — it is the first thing a developer wants and the
+    /// last thing an 80-year-old needs.
+    var debugText: String {
+        switch self {
+        case .badStatus(let code): "HTTP \(code)"
+        case .emptyResult: "no words in the reply"
+        case .quotaExceeded(let kind, let used, let limit): "quota \(kind) \(used)/\(limit)"
         }
     }
 }

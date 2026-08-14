@@ -146,16 +146,24 @@ private struct GuessRoundSheet: View {
                     } else {
                         options
                     }
+
+                    // A row rather than a toolbar button, which is the third
+                    // time this app has had to make that move (AskQuestionSheet,
+                    // CorrectNameSheet). A toolbar button's text barely grows
+                    // with Dynamic Type — the audit calls it "partially
+                    // unsupported" and it is right — so the way out of the
+                    // screen was the smallest text on it. Nothing had measured
+                    // this one: the audit stopped at the question and never
+                    // opened the answer.
+                    Button(isRevealed ? "Valmis" : "Sulje") { dismiss() }
+                        .font(.body.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
                 }
                 .padding(Elder.screenPadding)
             }
             .navigationTitle("Kuka hän oli?")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(isRevealed ? "Valmis" : "Sulje") { dismiss() }
-                }
-            }
             .sheet(isPresented: $isTelling) {
                 NavigationStack {
                     TellScreen(target: round.answer)
@@ -230,7 +238,7 @@ private struct GuessRoundSheet: View {
                 systemImage: isCorrect ? "checkmark.circle.fill" : "person.crop.circle"
             )
             .font(.title3.weight(.semibold))
-            .foregroundStyle(isCorrect ? Color.green : Color.primary)
+            .foregroundStyle(isCorrect ? Elder.affirmative : Color.primary)
             .fixedSize(horizontal: false, vertical: true)
 
             // A wrong guess is stated plainly and left alone. No "väärin", no

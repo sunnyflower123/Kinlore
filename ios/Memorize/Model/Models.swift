@@ -163,6 +163,16 @@ struct Memory: Identifiable, Codable, Hashable {
     /// same person appears in ten memories under different photos.
     var mentionedSubjectIDs: [String] = []
 
+    /// Taken back by the teller. A tombstone, not a removal — the same shape as
+    /// a rejected subject, and for the same reason: the row has to stay so that
+    /// the taking-back reaches the family instead of stopping at one device.
+    ///
+    /// Only the author can set it. The server enforces that on its side
+    /// (`backend/src/sync.ts`: the memory upsert matches on `author_id`), which
+    /// is what keeps rule 3 intact — nobody gets to tidy away what grandmother
+    /// said, and she is the one person who may.
+    var deletedAt: Date?
+
     /// The audio is saved but not yet transcribed — the quota was full or the
     /// network was down. A derived property, not a separate state to sync.
     ///

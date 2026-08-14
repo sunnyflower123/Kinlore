@@ -87,7 +87,9 @@ enum GuessRoundBuilder {
         let answered = Set(
             store.guesses.filter { $0.memberID == memberID }.map(\.memoryID)
         )
-        return store.memories
+        // `told`, not `memories`: a telling that has been taken back must not
+        // come back as a question the family is asked to answer.
+        return store.told
             .filter { !answered.contains($0.id) }
             .sorted { $0.createdAt > $1.createdAt }
             .lazy
@@ -101,6 +103,13 @@ enum GuessRoundBuilder {
     @MainActor
     static func round(for memory: Memory, store: MemoryStore, memberID: String) -> GuessRound? {
         guard !memory.isAwaitingTranscription, !memory.body.isEmpty else { return nil }
+
+        // A telling the teller took back (§19). `unanswered` already skips these
+        // and this guard is the belt to that pair of braces: a round is the one
+        // place in the app that puts a story in front of the whole family, so
+        // eligibility is decided here rather than trusted to every caller that
+        // might one day hand a memory in from somewhere else.
+        guard memory.deletedAt == nil else { return nil }
 
         // You cannot guess your own story. An unknown author means we wrote it
         // ourselves before the first sync — a single-device archive has nobody

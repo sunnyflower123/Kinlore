@@ -48,7 +48,10 @@ enum ArchiveExport {
             if copy(filename, into: photos) { photoNames[subject.id] = filename }
         }
 
-        let memoriesWithAudio = store.memories.filter {
+        // `told`: the export is what the family opens in twenty years, not a
+        // dump of the table. A recording the teller took back does not travel
+        // into it.
+        let memoriesWithAudio = store.told.filter {
             $0.audioFilename != nil || $0.audioR2Key != nil
         }
         for (index, memory) in memoriesWithAudio.enumerated() {

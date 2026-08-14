@@ -115,6 +115,11 @@ enum AccessibilityPolicy {
     /// genuinely truncated on screen is a defect, and no list makes it not one.
     private static let listFooterText: Set<String> = [
         "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.",
+        // Reached from the other direction as well, and worth keeping: this one
+        // began failing the moment a row was added *above* it, and giving it an
+        // explicit Dynamic Type font changed the finding not at all. Both facts
+        // say the same thing as the y-coordinate above — the metrics are the
+        // List's, not our typography's.
         "Kertomasi muistot ovat vain tässä laitteessa.",
     ]
 
@@ -133,6 +138,21 @@ enum AccessibilityPolicy {
         // element really is underneath.
         if issue.auditType == .contrast, !keyboard.isNull,
            let frame = issue.element?.frame, frame.intersects(keyboard) {
+            return true
+        }
+
+        // **A control that is switched off.** iOS draws a disabled control dim
+        // on purpose — that is what "not yet" looks like — and the contrast
+        // minimum exempts inactive components for exactly that reason. The
+        // correction sheet opens with the name already in the field, so
+        // "Tallenna" is disabled until something changes, and the audit was
+        // measuring the dimming rather than a colour anybody chose.
+        //
+        // Narrow on purpose: contrast only, and only where the element really
+        // is disabled. What keeps the disabling itself honest is a functional
+        // test rather than this exemption — `NameCorrectionTests` asserts that
+        // Tallenna stays disabled while there is nothing to save.
+        if issue.auditType == .contrast, issue.element?.isEnabled == false {
             return true
         }
 

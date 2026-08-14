@@ -125,6 +125,8 @@ struct TellScreen: View {
                 ResultView(model: model)
             case .savedWithoutTranscript:
                 AudioSavedView(model: model)
+            case .needsMicrophone:
+                MicrophoneDeniedView(model: model)
             case .failed(let message):
                 FailureView(message: message) { model.reset() }
             }
@@ -150,7 +152,10 @@ struct TellScreen: View {
 
     private func hidesTabBar(_ phase: TellViewModel.Phase) -> Bool {
         switch phase {
-        case .idle, .done, .savedWithoutTranscript, .failed: false
+        // The refused microphone keeps the bar: it is a dead end for telling by
+        // voice, and somebody who does not want to go to Settings has to be able
+        // to walk away from it.
+        case .idle, .done, .savedWithoutTranscript, .needsMicrophone, .failed: false
         case .recording, .writing, .transcribing, .organizing, .asking: true
         }
     }
@@ -449,6 +454,8 @@ private struct WritingView: View {
 private struct RecordingView: View {
     let model: TellViewModel
 
+    @State private var isConfirmingDiscard = false
+
     var body: some View {
         // The same scroll treatment as IdleView and AskingView: with a question
         // on screen this stack is taller than the phone at the largest text
@@ -461,6 +468,20 @@ private struct RecordingView: View {
                     .frame(maxWidth: .infinity, minHeight: proxy.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
+        }
+        // The recorder keeps running while this is on screen, so saying no to it
+        // costs nothing: the telling carries on where it left off. Stopping
+        // first and asking afterwards would make the safe answer the expensive
+        // one.
+        .confirmationDialog(
+            "Hylätäänkö tämä kertominen?",
+            isPresented: $isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Hylkää", role: .destructive) { model.discardRecording() }
+            Button("Jatka kertomista", role: .cancel) {}
+        } message: {
+            Text("Nauhoitusta ei tallenneta. Voit aloittaa alusta heti.")
         }
     }
 
@@ -509,6 +530,17 @@ private struct RecordingView: View {
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // The way out. A false start, the wrong story, somebody coming into
+            // the room — until this existed the only button here both stopped
+            // and saved, so a telling begun by accident had to be finished and
+            // then lived with. Quiet and below the big button: it is the rare
+            // choice, and it must never be the easy one to hit by mistake.
+            Button("Älä tallenna tätä") { isConfirmingDiscard = true }
+                .font(.body.weight(.medium))
+                .foregroundStyle(Elder.destructive)
+                .controlSize(.large)
+                .elderTapTarget()
 
             Spacer(minLength: 0)
         }
@@ -687,6 +719,8 @@ private struct ResultView: View {
     @Environment(Session.self) private var session
     let model: TellViewModel
 
+    @State private var isConfirmingDiscard = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -731,9 +765,36 @@ private struct ResultView: View {
                             .frame(maxWidth: .infinity)
                             .elderTapTarget()
                     }
+
+                    // Last and quietest on the screen. It is the rarest thing
+                    // anybody does here, and the one that must never be hit by
+                    // mistake — but before this there was no way at all to take
+                    // back a telling, and "I did not mean to say that" is not a
+                    // rare thought about one's own family.
+                    Button("Poista tämä muisto") { isConfirmingDiscard = true }
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(Elder.destructive)
+                        .controlSize(.large)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
                 }
             }
             .padding(Elder.screenPadding)
+        }
+        .confirmationDialog(
+            "Poistetaanko tämä muisto?",
+            isPresented: $isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Poista", role: .destructive) {
+                model.discardSavedMemory()
+                // Told about a photo or a person, this screen is a sheet on top
+                // of that card, and there is nothing left here to return to.
+                if model.initialTarget != nil { dismiss() }
+            }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.")
         }
     }
 
@@ -741,7 +802,7 @@ private struct ResultView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Muisto tallennettu", systemImage: "checkmark.circle.fill")
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(.green)
+                .foregroundStyle(Elder.affirmative)
 
             if let placed = model.placedSubject {
                 // The most important piece of the result: where the AI filed
@@ -751,6 +812,20 @@ private struct ResultView: View {
                     model.target == nil
                         ? "Sijoitin sen kohteeseen **\(placed.displayTitle)**"
                         : "Lisäsin sen kohteeseen **\(placed.displayTitle)**"
+                )
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+            }
+
+            // Said out loud rather than left to be inferred. Without it a
+            // memory that could not be organised looks exactly like one the AI
+            // read and found nobody in: no names to check, no questions, no
+            // reason given. The telling itself is safe, and that is the first
+            // thing the sentence says.
+            if !model.wasOrganised {
+                Label(
+                    "En saanut järjesteltyä sitä juuri nyt. Kertomasi on tallessa omilla sanoillasi.",
+                    systemImage: "text.quote"
                 )
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
@@ -950,7 +1025,7 @@ private struct ProposalRow: View {
 
                 Text(isEdited ? "\(subject.kind.label) · korjattu" : subject.kind.label)
                     .font(.caption)
-                    .foregroundStyle(isEdited ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(isEdited ? Color.accentColor : Elder.supporting)
             }
 
             Spacer()
@@ -967,7 +1042,7 @@ private struct ProposalRow: View {
             Button(action: onConfirm) {
                 Image(systemName: "checkmark")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Elder.affirmative)
                     .elderTapTarget()
             }
             .buttonStyle(.plain)
@@ -986,6 +1061,8 @@ private struct ProposalRow: View {
 private struct AudioSavedView: View {
     @Environment(\.dismiss) private var dismiss
     let model: TellViewModel
+
+    @State private var isConfirmingDiscard = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -1023,11 +1100,117 @@ private struct AudioSavedView: View {
                 .controlSize(.large)
                 .frame(maxWidth: .infinity)
                 .elderTapTarget()
+
+                // The same way out as on the result screen. A telling somebody
+                // did not mean to keep is not any more meant once the quota
+                // happened to interrupt it — and here the memory is a recording
+                // with no text, which is the hardest kind to find and remove
+                // afterwards.
+                Button("Poista tämä muisto") { isConfirmingDiscard = true }
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Elder.destructive)
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
             }
 
             Spacer()
         }
         .padding(Elder.screenPadding)
+        .confirmationDialog(
+            "Poistetaanko tämä muisto?",
+            isPresented: $isConfirmingDiscard,
+            titleVisibility: .visible
+        ) {
+            Button("Poista", role: .destructive) {
+                model.discardSavedMemory()
+                if model.initialTarget != nil { dismiss() }
+            }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Äänitys poistuu eikä sitä voi palauttaa.")
+        }
+    }
+}
+
+// MARK: - The microphone was refused
+
+/// The one failure the app cannot fix, and it used to be handed a retry button.
+///
+/// "Salli mikrofoni asetuksista" is an instruction, and the person it is written
+/// for is the least likely of anybody to be able to follow it: four taps into an
+/// iOS settings tree, in a list of apps, under a switch. So the screen opens the
+/// place itself — and offers the keyboard, which needs no permission from
+/// anybody. Telling is never blocked (rule 2); a refused microphone must not
+/// become the thing that blocks it.
+private struct MicrophoneDeniedView: View {
+    @Environment(\.openURL) private var openURL
+    let model: TellViewModel
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "mic.slash")
+                .font(.system(size: 56))
+                .foregroundStyle(Elder.supporting)
+                .accessibilityHidden(true)
+
+            Text("Mikrofoni ei ole käytössä")
+                .font(.title.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("Puhuminen tarvitsee luvan mikrofoniin. Voit antaa sen puhelimen asetuksista — tai kirjoittaa muiston nyt.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 12) {
+                Button {
+                    guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                    openURL(url)
+                } label: {
+                    Text("Avaa asetukset")
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                // Not a consolation prize: a written memory goes through the
+                // same extraction and ends up the same kind of memory.
+                Button {
+                    model.beginWriting()
+                } label: {
+                    Label("Kirjoita sen sijaan", systemImage: "keyboard")
+                        .font(.body.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .controlSize(.large)
+            }
+
+            Spacer(minLength: 0)
+        }
     }
 }
 

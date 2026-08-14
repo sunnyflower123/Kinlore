@@ -25,6 +25,13 @@ final class TellViewModel {
         /// Quota full. The audio is saved, transcription is pending. Not an
         /// error state — the user did nothing wrong and lost nothing.
         case savedWithoutTranscript
+        /// The microphone was refused.
+        ///
+        /// Its own phase rather than a `failed` message, because it is the one
+        /// failure the app cannot answer: "Yritä uudelleen" tries the same
+        /// refused permission and fails again, for ever. The way out is iOS
+        /// Settings — or the keyboard, which needs no permission at all.
+        case needsMicrophone
         case failed(String)
     }
 
@@ -34,6 +41,12 @@ final class TellViewModel {
     var draft = ""
     private(set) var transcript: String?
     private(set) var result: ExtractionResult?
+    /// Whether the last telling was actually organised, or only kept.
+    ///
+    /// False means the words are all there and nothing was made of them: no
+    /// people, no year, no follow-up questions. The result screen says so rather
+    /// than letting an empty result read as "the AI found nobody in it".
+    private(set) var wasOrganised = true
     /// The subject the memory was filed under — the most important part of the
     /// result.
     private(set) var placedSubject: Subject?
@@ -57,7 +70,7 @@ final class TellViewModel {
     /// just the duration.
     var savedMemory: Memory? {
         guard let savedMemoryID else { return nil }
-        return store.memories.first { $0.id == savedMemoryID }
+        return store.told.first { $0.id == savedMemoryID }
     }
 
     /// Names as written by the teller, keyed by subject id.
@@ -129,7 +142,12 @@ final class TellViewModel {
 
     func startRecording() async {
         guard await recorder.requestPermission() else {
-            phase = .failed("Mikrofonia ei saatu käyttöön. Salli mikrofoni asetuksista.")
+            // Not a `failed` message. The old one said "salli mikrofoni
+            // asetuksista" and gave a button that retried the refusal instead —
+            // an instruction the person it is for cannot follow, in front of the
+            // one screen this app exists for.
+            leaveInterview()
+            phase = .needsMicrophone
             return
         }
         do {
@@ -177,6 +195,72 @@ final class TellViewModel {
             saveAudioOnly(audioURL: url, duration: duration)
             phase = .savedWithoutTranscript
         }
+    }
+
+    /// Stops a recording and keeps nothing.
+    ///
+    /// The way out of a telling that went wrong from the first sentence — a
+    /// false start, the wrong story, somebody walking into the room. Until this
+    /// existed the only button on the recording screen both stopped **and**
+    /// saved, so a telling begun by accident could not be abandoned: it had to
+    /// be finished, transcribed and then lived with.
+    ///
+    /// This is not the pipeline discarding audio (rule 3). Nothing has been
+    /// saved yet, the file is still the recorder's own, and the person who made
+    /// it is the one asking for it gone.
+    func discardRecording() {
+        let url = recorder.stop()
+        // Under a second the recorder deletes it itself; over a second it is
+        // ours to delete, and it goes now rather than waiting for the system to
+        // empty the temporary directory whenever it feels like it.
+        if let url { try? FileManager.default.removeItem(at: url) }
+        // The ladder learns nothing from this. A question that was skipped tells
+        // it something about difficulty; a telling somebody chose to throw away
+        // tells it nothing at all.
+        //
+        // Mid-interview it lands on the last result rather than on the empty
+        // idle screen — the same answer `stopAndProcess` gives when a round
+        // produces nothing, and for the same reason: the rounds already saved
+        // are the thing to come back to.
+        if isInterviewing {
+            leaveInterview()
+            phase = .done
+        } else {
+            phase = .idle
+        }
+    }
+
+    /// Takes back the memory that was just saved.
+    ///
+    /// Offered where the telling ends, which is the moment somebody knows they
+    /// did not mean it — and the only moment the app can be sure whose telling
+    /// it is looking at.
+    ///
+    /// The people this telling proposed go with it when nothing else refers to
+    /// them: they came out of these words, they were never confirmed, and a
+    /// person left behind by a withdrawn story is a stranger in the family list
+    /// with nothing to explain them. Anyone already confirmed, or named in some
+    /// other memory, stays.
+    func discardSavedMemory() {
+        guard let savedMemoryID else { return }
+        store.remove(memoryID: savedMemoryID)
+
+        for subject in proposals where !subject.confirmed && store.isOrphaned(subjectID: subject.id) {
+            store.remove(subjectID: subject.id)
+        }
+        // The subject this telling created for itself goes too, when the telling
+        // was all it ever held. Never a photo or a person the family already
+        // had: `initialTarget` is nil exactly when the home was made here.
+        if initialTarget == nil, let home = placedSubject,
+           home.kind == .event, store.isOrphaned(subjectID: home.id) {
+            store.remove(subjectID: home.id)
+        }
+
+        // The question it answered is open again. Saving marked it answered, and
+        // it was answered — by this telling, which no longer exists.
+        if let question { store.reopen(questionID: question.id) }
+
+        reset()
     }
 
     // MARK: - Interview loop
@@ -307,28 +391,51 @@ final class TellViewModel {
     // MARK: - Pipeline
 
     private func process(transcript text: String, audioURL: URL?, duration: TimeInterval?) async {
-        do {
-            transcript = text
-            phase = .organizing
-            // The teller's own level travels with the request, so the questions
-            // that come back are ones they can actually answer. See
-            // docs/ARCHITECTURE.md §12.
-            let extracted = try await extraction.extract(transcript: text, level: ladderLevel)
-            result = extracted
+        transcript = text
+        phase = .organizing
 
-            save(extracted, transcript: text, audioURL: audioURL, duration: duration)
-            if isInterviewing, let next = nextQuestion {
-                // The loop feeds itself: this answer's extraction produced the
-                // next questions. No result screen between rounds — proposals
-                // pile up unconfirmed and are handled when the loop ends.
-                await ask(next)
-            } else {
-                leaveInterview()
-                phase = .done
-            }
+        // The teller's own level travels with the request, so the questions that
+        // come back are ones they can actually answer. See
+        // docs/ARCHITECTURE.md §12.
+        //
+        // A failure here ends nothing. It used to end everything: the phase went
+        // to `.failed`, so neither `save` nor `saveAudioOnly` ran, the recording
+        // was left in the temporary directory with `persistAudio` never called,
+        // and "Voit yrittää uudelleen" meant telling the whole memory again from
+        // the beginning. Rule 3 says the original audio is always kept, and this
+        // was the one branch that did not keep it — while the quota and the
+        // network, which fail far more often, both already did.
+        //
+        // The catch-up settled what to do instead (§16): a transcript that has
+        // been paid for is never thrown away because the cheap half failed, and
+        // the memory lands in the teller's own words. Same rule here, and now
+        // the same code — structure is what degrades, not the telling.
+        let extracted: ExtractionResult
+        do {
+            extracted = try await extraction.extract(transcript: text, level: ladderLevel)
+            wasOrganised = true
         } catch {
+            // The developer's half of the same failure: the user's sentence says
+            // what happened to their telling, this one says what the server did.
+            let detail = (error as? RemoteError)?.debugText ?? error.localizedDescription
+            print("[tell] organising failed, keeping the telling verbatim: \(detail)")
+            extracted = .verbatim(text)
+            wasOrganised = false
+        }
+        result = extracted
+
+        save(extracted, transcript: text, audioURL: audioURL, duration: duration)
+        // A verbatim result carries no questions, so an interview ends here of
+        // its own accord — with the answer saved, which is the part that
+        // matters.
+        if isInterviewing, let next = nextQuestion {
+            // The loop feeds itself: this answer's extraction produced the next
+            // questions. No result screen between rounds — proposals pile up
+            // unconfirmed and are handled when the loop ends.
+            await ask(next)
+        } else {
             leaveInterview()
-            phase = .failed("Muiston järjestely ei onnistunut. Voit yrittää uudelleen.")
+            phase = .done
         }
     }
 
@@ -501,7 +608,7 @@ final class TellViewModel {
         savedMemoryID = memoryID
         // Kept from the recording rather than from this pass, which had no
         // audio of its own: the result screen still offers her voice.
-        savedAudioDuration = store.memories.first { $0.id == memoryID }?.audioDuration
+        savedAudioDuration = store.told.first { $0.id == memoryID }?.audioDuration
 
         // The question was already marked answered when the audio was saved, but
         // the ladder was deliberately not told — an outage must not cost a
@@ -622,6 +729,7 @@ final class TellViewModel {
         draft = ""
         transcript = nil
         result = nil
+        wasOrganised = true
         placedSubject = nil
         proposals = []
         newQuestions = []

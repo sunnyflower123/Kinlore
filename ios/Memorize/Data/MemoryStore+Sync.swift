@@ -197,7 +197,11 @@ extension Memory {
             source: source.rawValue,
             mentions: mentionedSubjectIDs,
             created_at: createdAt.timeIntervalSince1970,
-            deleted_at: nil,
+            // Hardcoded to nil until a memory could be taken back at all. The
+            // same field on a subject was hardcoded the same way once, and a
+            // rejection never left the device (§3) — this one is sent for the
+            // same reason: a removal that stops here is not a removal.
+            deleted_at: deletedAt?.timeIntervalSince1970,
             seq: nil
         )
     }
@@ -217,7 +221,8 @@ extension Memory {
             audioDuration: dto.audio_seconds,
             source: MemorySource(rawValue: dto.source) ?? .typed,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
-            mentionedSubjectIDs: dto.mentions ?? []
+            mentionedSubjectIDs: dto.mentions ?? [],
+            deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
 }

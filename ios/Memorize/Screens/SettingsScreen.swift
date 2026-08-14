@@ -12,7 +12,18 @@ struct SettingsScreen: View {
     @State private var exportStatus: String?
     @State private var isExporting = false
     @State private var isSharing = false
-    @State private var failure: String?
+    /// What went wrong, and which thing it was.
+    ///
+    /// A title of its own because there are two failures on this screen now, and
+    /// the export's title on a family that could not be left is a wrong sentence
+    /// in a confident voice.
+    private struct Failure: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
+
+    @State private var failure: Failure?
 
     @State private var isConfirmingLeave = false
     @State private var isConfirmingWipe = false
@@ -81,6 +92,17 @@ struct SettingsScreen: View {
                     .foregroundStyle(Elder.supporting)
             }
 
+            // First, and without a header. It is the only row here that answers
+            // a question rather than doing something, and the questions it
+            // answers — where does my voice go, who can hear it — are the ones
+            // somebody has before they are willing to use the rest.
+            Section {
+                NavigationLink(value: HelpRoute()) {
+                    Label("Näin tämä toimii", systemImage: "questionmark.circle")
+                        .elderTapTarget()
+                }
+            }
+
             if case .inFamily = session.mode {
                 Section("Perhe") {
                     NavigationLink(value: FamilyRoute()) {
@@ -139,7 +161,19 @@ struct SettingsScreen: View {
         ) {
             Button("Poistu perheestä", role: .destructive) {
                 Task {
-                    guard await session.leaveFamily() else { return }
+                    guard await session.leaveFamily() else {
+                        // It used to return here and say nothing at all: the
+                        // dialog closed, the family stayed, and the reason sat
+                        // in `session.lastError` where no screen read it. A
+                        // refusal that looks like nothing happening is the
+                        // worst possible answer to a deliberate act.
+                        failure = Failure(
+                            title: "Perheestä ei voitu poistua",
+                            message: session.lastError
+                                ?? "Yritä uudelleen, kun verkkoyhteys toimii."
+                        )
+                        return
+                    }
                     // The memories stay on this device — leaving the family is
                     // not losing your own copy. Only the sync cursor goes, so
                     // that the next family is not read through this one's
@@ -174,10 +208,12 @@ struct SettingsScreen: View {
                 .padding(Elder.screenPadding)
             }
         }
-        .alert("Arkiston vienti ei onnistunut", isPresented: .constant(failure != nil)) {
-            Button("Selvä") { failure = nil }
-        } message: {
-            Text(failure ?? "")
+        .alert(item: $failure) { failure in
+            Alert(
+                title: Text(failure.title),
+                message: Text(failure.message),
+                dismissButton: .default(Text("Selvä"))
+            )
         }
     }
 
@@ -196,7 +232,10 @@ struct SettingsScreen: View {
             print("[export] wrote \(url.path) (\(size) bytes)")
             #endif
         } catch {
-            failure = "Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa."
+            failure = Failure(
+                title: "Arkiston vienti ei onnistunut",
+                message: "Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa."
+            )
         }
     }
 

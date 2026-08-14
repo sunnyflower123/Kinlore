@@ -269,3 +269,21 @@ struct StubExtractionService: ExtractionService {
         return chosen
     }
 }
+
+#if DEBUG
+/// Extraction that always fails, for `-defer structure`.
+///
+/// The transcription beside it is left working on purpose: the situation being
+/// reproduced is the one where the words have already been paid for and only the
+/// organising is gone. What the app must do then is keep the telling verbatim —
+/// see `TellViewModel.process` and docs/ARCHITECTURE.md §16.
+struct FailingExtractionService: ExtractionService {
+    func extract(
+        transcript: String,
+        corrections: [NameCorrection],
+        level: Int?
+    ) async throws -> ExtractionResult {
+        throw RemoteError.badStatus(503)
+    }
+}
+#endif

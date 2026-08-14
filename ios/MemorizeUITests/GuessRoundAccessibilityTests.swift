@@ -140,6 +140,16 @@ final class GuessRoundAccessibilityTests: XCTestCase {
         card.tap()
         XCTAssertTrue(app.buttons["Aino"].waitForExistence(timeout: 5))
         try audit(app, "The round itself")
+
+        // And the reveal, which is a different screen with different colours on
+        // it — the audit stopped at the question and never saw the answer.
+        app.buttons["Aino"].tap()
+        XCTAssertTrue(
+            app.staticTexts.matching(
+                NSPredicate(format: "label CONTAINS[c] %@", "Hän oli Aino")
+            ).firstMatch.waitForExistence(timeout: 5)
+        )
+        try audit(app, "The reveal")
     }
 
     /// Rule 1: if a screen does not work at the largest text size, it is not
@@ -155,5 +165,13 @@ final class GuessRoundAccessibilityTests: XCTestCase {
         card.tap()
         XCTAssertTrue(app.buttons["Aino"].waitForExistence(timeout: 10))
         try audit(app, "The round itself at the largest text size")
+
+        app.buttons["Aino"].tap()
+        XCTAssertTrue(
+            app.staticTexts.matching(
+                NSPredicate(format: "label CONTAINS[c] %@", "Hän oli Aino")
+            ).firstMatch.waitForExistence(timeout: 10)
+        )
+        try audit(app, "The reveal at the largest text size")
     }
 }

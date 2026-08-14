@@ -36,6 +36,11 @@ struct MemorizeApp: App {
                 .environment(store)
                 .environment(session)
                 .environment(player)
+                // Nil until the first `task` runs, which is why the readers take
+                // it as an optional. Before it exists nothing has been sent and
+                // nothing has failed, and a screen with no engine to ask says
+                // nothing — which is the correct answer for that instant.
+                .environment(sync)
                 .task {
                     // The engine needs both, so it is created here.
                     if sync == nil {
