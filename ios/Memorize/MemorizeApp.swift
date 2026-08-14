@@ -20,9 +20,19 @@ struct MemorizeApp: App {
     /// The code picked out of an invite link, if the app was opened from one.
     @State private var invitedCode: String?
 
+    /// Set once during setup, on the phone that is being handed over. See
+    /// `Elder.largerTextKey`.
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+
     var body: some Scene {
         WindowGroup {
             content
+                // A floor, applied to the whole app rather than screen by
+                // screen: the person it is for does not know which screen she is
+                // on, and a size that changed between them would read as the app
+                // being broken. `.xSmall...` is the same as no floor at all —
+                // xSmall is the bottom of the scale.
+                .dynamicTypeSize(largerText ? Elder.textFloor... : DynamicTypeSize.xSmall...)
                 .environment(store)
                 .environment(session)
                 .environment(player)

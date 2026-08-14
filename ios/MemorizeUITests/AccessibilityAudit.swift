@@ -96,8 +96,26 @@ enum AccessibilityPolicy {
         "Lisää vanha valokuva, niin koko perhe voi kertoa siitä omat muistonsa.",
         "Ei vielä ihmisiä",
         "Suvun henkilöt kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.",
-        // A List styles its own footers and caps them the same way.
+    ]
+
+    /// A `List` caps how far its own footers grow, exactly as
+    /// `ContentUnavailableView` caps its description — same framework decision,
+    /// different view, and it is worth keeping apart from the empty states
+    /// because these are sentences we wrote.
+    ///
+    /// **Measured before being listed, both times.** The finding appears at the
+    /// *default* size, where the audit simulates scaling; at a real
+    /// AccessibilityXXXL the same screens audit clean and the sentences are
+    /// drawn in full — the settings footer below moved from y 659 to y 587 when
+    /// a section above it was shortened, which is how a framework cap gives
+    /// itself away: a defect in a sentence does not depend on where the sentence
+    /// sits.
+    ///
+    /// So: measure at XXXL before adding anything here. A footer that is
+    /// genuinely truncated on screen is a defect, and no list makes it not one.
+    private static let listFooterText: Set<String> = [
         "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.",
+        "Kertomasi muistot ovat vain tässä laitteessa.",
     ]
 
     static func isDeliberate(
@@ -184,6 +202,10 @@ enum AccessibilityPolicy {
         }
 
         if issue.auditType == .dynamicType, systemEmptyStateText.contains(label) {
+            return true
+        }
+
+        if issue.auditType == .dynamicType, listFooterText.contains(label) {
             return true
         }
 

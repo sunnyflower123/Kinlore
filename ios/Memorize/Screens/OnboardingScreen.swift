@@ -29,7 +29,6 @@ struct OnboardingScreen: View {
 
     @State private var route: Route?
     @State private var name = ""
-    @State private var familyName = ""
     @State private var code = ""
 
     private enum Route: Hashable { case create, join }
@@ -66,7 +65,7 @@ struct OnboardingScreen: View {
             .navigationDestination(item: $route) { destination in
                 switch destination {
                 case .create:
-                    CreateFamilyForm(name: $name, familyName: $familyName)
+                    CreateFamilyForm(name: $name)
                 case .join:
                     JoinFamilyForm(name: $name, code: $code)
                 }
@@ -157,40 +156,80 @@ struct OnboardingScreen: View {
 
 // MARK: - Creating a family
 
+/// The one screen in this app that a 30-year-old fills in.
+///
+/// Which is the reason it asks who the phone is for. Setting up takes a few
+/// minutes and is done by a grandchild; the using is done for years by somebody
+/// who has never opened iOS Settings and will not be told to. The question is
+/// therefore asked in the only moment where the person who *can* answer it is
+/// already answering questions — and it is asked plainly, because a "make text
+/// larger" switch reads as an admission and "kenen puhelin tämä on" does not.
 private struct CreateFamilyForm: View {
     @Environment(Session.self) private var session
     @Binding var name: String
-    @Binding var familyName: String
+
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+
+    /// Set by pressing the button with the form not filled in. See `missing`.
+    @State private var wasPressedEmpty = false
 
     private var isReady: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    /// What is still missing, said in words, instead of a button gone grey.
+    ///
+    /// The button used to be `.disabled` until the field had something in it,
+    /// and a disabled prominent button is drawn grey on grey — the one contrast
+    /// failure left on this screen once the headers were fixed, and measured as
+    /// such. That is the wrong half of the problem to solve, though: the colour
+    /// is only how it fails. A control that goes quiet gives no reason, and the
+    /// reason is the whole content of "you have not typed your name yet".
+    ///
+    /// The same trade as the refused microphone in ARCHITECTURE §8.9: the dead
+    /// end is replaced by the way out of it, rather than being made prettier.
+    private var missing: String? {
+        isReady ? nil : "Kirjoita ensin nimesi."
+    }
+
     var body: some View {
         Form {
-            Section {
-                TextField("Esimerkiksi Virtaset", text: $familyName)
-                    .textInputAutocapitalization(.words)
-            } header: {
-                Text("Suvun nimi")
-            } footer: {
-                Text("Voit jättää tyhjäksi ja päättää myöhemmin.")
-            }
-
             Section {
                 TextField("Nimesi", text: $name)
                     .textInputAutocapitalization(.words)
             } header: {
                 Text("Kuka sinä olet")
+                    .foregroundStyle(Elder.supporting)
             } footer: {
                 Text("Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi.")
+                    .foregroundStyle(Elder.supporting)
+            }
+
+            Section {
+                // Inline rather than a menu: both answers are visible without a
+                // tap, which is the difference between a question and a control
+                // somebody has to discover.
+                Picker("Kenen puhelin tämä on", selection: $largerText) {
+                    Text("Isovanhemman").tag(true)
+                    Text("Minun").tag(false)
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Kenen puhelin tämä on")
+                    .foregroundStyle(Elder.supporting)
+            } footer: {
+                Text("Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.")
+                    .foregroundStyle(Elder.supporting)
             }
 
             Section {
                 Button {
-                    Task {
-                        await session.createFamily(named: familyName, displayName: name)
+                    guard missing != nil else {
+                        wasPressedEmpty = false
+                        return start()
                     }
+                    wasPressedEmpty = true
                 } label: {
                     if session.isWorking {
                         ProgressView().frame(maxWidth: .infinity)
@@ -200,8 +239,16 @@ private struct CreateFamilyForm: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .disabled(!isReady || session.isWorking)
+                // Only while the request is in flight, when the label is a
+                // spinner and there is nothing to read anyway.
+                .disabled(session.isWorking)
                 .elderTapTarget()
+            } footer: {
+                if wasPressedEmpty, let missing {
+                    Label(missing, systemImage: "arrow.up")
+                        .foregroundStyle(Elder.proposal)
+                        .elderBody()
+                }
             }
 
             if let error = session.lastError {
@@ -209,6 +256,15 @@ private struct CreateFamilyForm: View {
             }
         }
         .navigationTitle("Uusi arkisto")
+    }
+
+    /// No family name is asked for any more, and the server's own default fills
+    /// it in. It was one text field on the first form in the app, in exchange
+    /// for a row reading "Nimi — Perhe" on a screen most families open once:
+    /// nothing renames a family later, so the field's own footer — *"voit
+    /// päättää myöhemmin"* — was a promise nothing in the app kept.
+    private func start() {
+        Task { await session.createFamily(named: "", displayName: name) }
     }
 }
 
@@ -219,9 +275,21 @@ private struct JoinFamilyForm: View {
     @Binding var name: String
     @Binding var code: String
 
-    private var isReady: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
-            !code.trimmingCharacters(in: .whitespaces).isEmpty
+    @State private var wasPressedEmpty = false
+
+    /// The same as `CreateFamilyForm.missing`, and it has more to say here:
+    /// this form has two fields, and "grey" cannot tell somebody which of them
+    /// it is waiting for. This is also the screen an 80-year-old reaches on her
+    /// own, from a link, with nobody beside her.
+    private var missing: String? {
+        let hasName = !name.trimmingCharacters(in: .whitespaces).isEmpty
+        let hasCode = !code.trimmingCharacters(in: .whitespaces).isEmpty
+        switch (hasName, hasCode) {
+        case (true, true): return nil
+        case (false, true): return "Kirjoita ensin nimesi."
+        case (true, false): return "Liitä vielä saamasi kutsukoodi."
+        case (false, false): return "Kirjoita nimesi ja liitä saamasi kutsukoodi."
+        }
     }
 
     var body: some View {
@@ -231,26 +299,41 @@ private struct JoinFamilyForm: View {
                     .textInputAutocapitalization(.words)
             } header: {
                 Text("Kuka sinä olet")
+                    .foregroundStyle(Elder.supporting)
             } footer: {
                 Text("Tämä näkyy muistojesi vieressä.")
+                    .foregroundStyle(Elder.supporting)
             }
 
             Section {
                 // The invite code is not meant to be read, so autocorrection and
                 // capitalisation would only break it.
-                TextField("Liitä kutsukoodi", text: $code)
+                //
+                // One word, because a placeholder is not allowed to wrap: it was
+                // "Liitä kutsukoodi", which fits at the ordinary size and is cut
+                // off at the largest one — the field is 338 pt wide whatever the
+                // text does. The audit caught it the first time this screen was
+                // ever measured. The instruction it used to carry is in the
+                // footer below, where it can wrap.
+                TextField("Kutsukoodi", text: $code)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.system(.body, design: .monospaced))
             } header: {
                 Text("Kutsu")
+                    .foregroundStyle(Elder.supporting)
             } footer: {
                 Text("Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän.")
+                    .foregroundStyle(Elder.supporting)
             }
 
             Section {
                 Button {
-                    Task { await session.join(code: code, displayName: name) }
+                    guard missing != nil else {
+                        wasPressedEmpty = false
+                        return join()
+                    }
+                    wasPressedEmpty = true
                 } label: {
                     if session.isWorking {
                         ProgressView().frame(maxWidth: .infinity)
@@ -260,8 +343,14 @@ private struct JoinFamilyForm: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .disabled(!isReady || session.isWorking)
+                .disabled(session.isWorking)
                 .elderTapTarget()
+            } footer: {
+                if wasPressedEmpty, let missing {
+                    Label(missing, systemImage: "arrow.up")
+                        .foregroundStyle(Elder.proposal)
+                        .elderBody()
+                }
             }
 
             if let error = session.lastError {
@@ -269,6 +358,10 @@ private struct JoinFamilyForm: View {
             }
         }
         .navigationTitle("Liity perheeseen")
+    }
+
+    private func join() {
+        Task { await session.join(code: code, displayName: name) }
     }
 }
 

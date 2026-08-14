@@ -17,6 +17,8 @@ struct SettingsScreen: View {
     @State private var isConfirmingLeave = false
     @State private var isConfirmingWipe = false
 
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+
     /// Leaving is only offered when there is somebody to leave it to. The last
     /// member leaving would not delete the archive, it would strand it.
     private var canLeave: Bool {
@@ -34,6 +36,21 @@ struct SettingsScreen: View {
 
     var body: some View {
         List {
+            // First, and the only thing here that is neither rare nor
+            // irreversible. It is the answer to the setup question in
+            // `CreateFamilyForm`, kept where it can be changed: the phone may be
+            // handed over later than it was set up, or handed back.
+            Section {
+                Toggle(isOn: $largerText) {
+                    Text("Isompi teksti")
+                        .font(.body.weight(.medium))
+                }
+                .elderTapTarget()
+            } footer: {
+                Text("Puhelimen oma tekstikoko on tätä vahvempi.")
+                    .foregroundStyle(Elder.supporting)
+            }
+
             Section {
                 Button {
                     Task { await export() }

@@ -114,6 +114,29 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The two forms behind the onboarding buttons. Nothing had ever measured
+    /// either of them — `testOnboarding` stops at the two buttons in front — and
+    /// the blank form audited at six issues the first time it was looked at.
+    ///
+    /// Audited blank, which is how they are met and the state that used to grey
+    /// the button out. Setup is also where the phone's owner is now asked about,
+    /// and a question nobody can read sets up the wrong phone.
+    func testCreateFamilyForm() throws {
+        try sweep("Uusi arkisto", arguments: [], api: "http://127.0.0.1:9") { app, _ in
+            require(app.buttons["Aloita perheen arkisto"], "the way into setup").tap()
+            require(app.staticTexts["Kenen puhelin tämä on"], "the setup form")
+        }
+    }
+
+    /// The one an 80-year-old reaches on her own, from a link, with nobody
+    /// beside her.
+    func testJoinFamilyForm() throws {
+        try sweep("Liity perheeseen", arguments: [], api: "http://127.0.0.1:9") { app, _ in
+            require(app.buttons["Liity kutsulinkillä"], "the way into joining").tap()
+            require(app.staticTexts["Kutsu"], "the join form")
+        }
+    }
+
     func testMemoriesWithContent() throws {
         try sweep("Muistot", arguments: ["-seed", "guess", "-tab", "memories"]) { app, isLargest in
             require(app.navigationBars["Muistot"], "the gallery")

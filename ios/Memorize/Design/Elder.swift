@@ -18,6 +18,31 @@ enum Elder {
     /// eyesight keep their place on the line.
     static let lineSpacing: CGFloat = 6
 
+    /// "This phone belongs to the person this app was designed for."
+    ///
+    /// Read straight out of `UserDefaults` by `@AppStorage`, so it is device
+    /// state and never family data — like the question ladder's comfort, and for
+    /// the same reason: it describes whoever is holding the phone.
+    ///
+    /// Apple's advice is to take the system text size as given, and that advice
+    /// assumes the person holding the phone is the person who set it up. Here
+    /// they are usually two different people: the setting up is done by a
+    /// grandchild in a few minutes, and the one who cannot read the screen is
+    /// the one who has never opened iOS Settings. So the app asks, once, in the
+    /// only place where the grandchild is already answering questions.
+    static let largerTextKey = "elder.largerText"
+
+    /// The smallest text the app will draw once that question is answered
+    /// "grandmother's".
+    ///
+    /// A floor and never a ceiling: iOS's own setting stays in charge above it,
+    /// so somebody who has already enlarged their text keeps the size they
+    /// chose. One notch and not three — every screen is audited to XXXL, so
+    /// bigger would be *safe*, but each notch is a line less of the memory or
+    /// the question on screen, and taking that away from somebody who did not
+    /// ask for it is its own kind of failure.
+    static let textFloor: DynamicTypeSize = .xLarge
+
     static let screenPadding: CGFloat = 24
 
     /// Text that is quieter than the main line but still meant to be read.

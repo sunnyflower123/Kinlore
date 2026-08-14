@@ -419,6 +419,25 @@ Built, in the order they were built:
 
 1. **Onboarding** — two options: "Start the family archive" or "Join with a
    link". Nothing else. One screen.
+
+   The form behind the first one asks two things, and the second one is not
+   about the family: **whose phone is this.** Setting up takes a grandchild a
+   few minutes; the using is done for years by somebody who has never opened
+   iOS Settings and will not be told to, and the answer sets the smallest text
+   the app will draw (`Elder.textFloor`, a floor and never a ceiling — iOS's
+   own size still wins above it). It is changeable afterwards in Settings,
+   because a phone can be handed over later than it was set up, or handed back.
+
+   The pairing that bought it: the *family name* field is gone. It was
+   optional, its own footer promised the name could be "decided later", and
+   nothing in the app renames a family — the server's `'Perhe'` default fills
+   it in, and it is read in one place.
+
+   Nothing had ever audited either form. Blank, they measured six accessibility
+   issues each: `Form` styles its own headers and footers below the contrast
+   minimum, exactly as `List` does, and the disabled primary button is drawn
+   grey on grey. The button is no longer disabled — it says what is still
+   missing instead, the same trade as the refused microphone in §9 below.
 2. **Family** — members, sharing the invite link, usage.
 3. **Audio playback** — the memory card's "Listen in her own voice". Emotionally
    the product's strongest detail and small to implement.
