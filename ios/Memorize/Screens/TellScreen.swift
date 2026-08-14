@@ -83,6 +83,23 @@ struct TellScreen: View {
                     }
                 }
             }
+            // `-screen result` stops where the interview begins: a canned
+            // memory through the stub pipeline, and then nothing.
+            //
+            // The result screen with its **name proposals** on it is the one
+            // place a wrong name is caught before it becomes a person (rule 4),
+            // and it was unreachable without hands: `-screen interview` starts
+            // talking a second later, and `-defer structure` reaches the screen
+            // with no proposals on it at all. So the rows that carry the accent
+            // colour, the confirm tick and a text field each had never been
+            // measured by anything.
+            if UserDefaults.standard.string(forKey: "screen") == "result" {
+                Task {
+                    created.beginWriting()
+                    created.draft = StubTranscriptionService.samples[0]
+                    await created.submitTyped()
+                }
+            }
             // Demo and screenshot aid: `-defer once` records a few seconds and
             // has the transcription fail as though the month's minutes had just
             // run out, leaving the memory waiting for its text.
@@ -1022,13 +1039,23 @@ private struct ProposalRow: View {
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled()
                     .submitLabel(.done)
+                    // The placeholder is not a name for this field: it is only
+                    // drawn while the field is empty, and this one arrives with
+                    // the heard name already in it — so VoiceOver had a text
+                    // field with no label at all on the screen where a wrong
+                    // name is caught.
+                    .accessibilityLabel("Nimi")
 
                 Text(isEdited ? "\(subject.kind.label) · korjattu" : subject.kind.label)
                     .font(.caption)
                     .foregroundStyle(isEdited ? Color.accentColor : Elder.supporting)
             }
-
-            Spacer()
+            // The field takes the room, not a Spacer. With one beside it the
+            // field sized itself to the name it happened to arrive with — 110
+            // points, measured — and a longer one scrolled inside a box the
+            // width of a short one. This is the field a wrong name is corrected
+            // in; it should be the widest thing in the row.
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Button(action: onReject) {
                 Image(systemName: "xmark")

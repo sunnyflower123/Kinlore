@@ -1201,6 +1201,16 @@ test waits for it to arrive. Timing, not accessibility — but the only way to
 know that was to identify the elements, which is why the failure message prints
 type and frame as well as the label.
 
+**The name field nobody had measured.** The proposal rows — where a misheard
+name is corrected before it becomes a person (rule 4) — could not be held still
+by any launch argument, so no audit had ever opened them. `-screen result` stops
+the pipeline exactly there, and the first run found two things at once: the name
+field was **110 points wide**, because a `Spacer()` beside it took the room and
+the field sized itself to whichever name it happened to arrive with; and it had
+no accessibility label at all, because a placeholder is only drawn while a field
+is empty and this one always arrives full. The field takes the row now, and it
+is called *"Nimi"* whether or not it is empty.
+
 **A second guess worth recording, because it was wrong.** When the reveal's
 `Valmis` turned out to be a toolbar button that barely grows, the obvious
 conclusion was that the app's other three toolbar `Sulje` buttons — the Tell
@@ -1635,9 +1645,9 @@ also run with the orphaned-subject cleanup switched off, where it fails on the
 gallery — the assertion that matters is the one about what is left, and it had to
 be shown to be load-bearing.
 
-## 20. Two sentences and a question
+## 20. Small promises the app was not keeping
 
-Small things, and each one is a promise the app was not keeping.
+Each of these is one line of code and one thing the app said it did.
 
 **A merge now asks.** Correcting a name onto somebody the family already has is
 not a rename: the two cards become one, this one's memories move across, and a
@@ -1659,3 +1669,15 @@ returns false and puts the reason in `session.lastError`; the screen read
 neither, so the dialog closed and the family stayed. A refusal that looks like
 nothing happening is the worst possible answer to a deliberate act — it is now
 an alert with its own title, beside the export's.
+
+**And a swipe deleted a relationship on the spot.** A swipe is easy to make by
+accident, `swipeActions` is invisible until it happens, and what it removed was
+a fact somebody had confirmed about their own family. It asks now — and the
+dialog says the relationship can be added back from the same card, because the
+recovery exists and is not obvious.
+
+The other half of that finding is left alone on purpose: the gesture is still
+the only way to reach the removal. Relationships arrive as proposals from the
+extraction and are added from a picker, both of which are the grandchild's end
+of this app rather than grandmother's. If that stops being true, the answer is a
+visible affordance and not a wider gesture.

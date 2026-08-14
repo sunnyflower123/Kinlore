@@ -71,6 +71,8 @@ private struct RelativeRow: View {
     let relative: Subject
     let groupTitle: String
 
+    @State private var isConfirmingRemoval = false
+
     private var relation: Relation? {
         store.relation(between: subject.id, and: relative.id)
     }
@@ -102,9 +104,25 @@ private struct RelativeRow: View {
         }
         .padding(.vertical, 4)
         .swipeActions {
-            if let relation {
-                Button("Poista", role: .destructive) { store.removeRelation(id: relation.id) }
+            if relation != nil {
+                Button("Poista", role: .destructive) { isConfirmingRemoval = true }
             }
+        }
+        // A swipe is easy to make by accident and this one used to delete on the
+        // spot. The relationship can be added back from the same card, which is
+        // why the dialog says so — the recovery is not obvious, and telling
+        // somebody about it costs one sentence.
+        .confirmationDialog(
+            "Poistetaanko sukulaisuus?",
+            isPresented: $isConfirmingRemoval,
+            titleVisibility: .visible
+        ) {
+            Button("Poista", role: .destructive) {
+                if let relation { store.removeRelation(id: relation.id) }
+            }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("\(relative.displayTitle) ei enää näy tämän henkilön suvussa. Voit lisätä sukulaisuuden myöhemmin uudelleen.")
         }
     }
 }

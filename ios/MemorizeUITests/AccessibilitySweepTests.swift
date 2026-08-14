@@ -217,6 +217,23 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The result screen **with its name proposals on it**, which is where a
+    /// misheard name is caught before it becomes a person (rule 4).
+    ///
+    /// Nothing had measured these rows: a text field, a caption that turns the
+    /// accent colour when it is edited, and two icon buttons. `-screen result`
+    /// exists because the screen could not be held still otherwise — the
+    /// interview starts talking a second later, and the verbatim path reaches
+    /// the same screen with no proposals on it at all.
+    func testResultWithProposals() throws {
+        try sweep(
+            "Tulos, nimiehdotukset",
+            arguments: ["-seed", "empty", "-screen", "result"]
+        ) { app, _ in
+            require(app.staticTexts["Kuulinko nimet oikein?"], "the proposals")
+        }
+    }
+
     /// The screen behind a refused microphone. Two buttons and a paragraph, and
     /// nothing had ever looked at it — reaching it by hand means answering a
     /// system prompt with "Älä salli" and then digging the app out of iOS
