@@ -190,6 +190,18 @@ struct SettingsScreen: View {
             isPresented: $isConfirmingWipe,
             titleVisibility: .visible
         ) {
+            // The way out, above the way through. The warning has always told
+            // somebody with no other copy to export first, and then offered
+            // them one button that empties the device — an instruction to go
+            // and do something else, in a dialog whose only action is the
+            // irreversible one. Prevention beats a well-worded warning, and on
+            // a single-device archive this is the tap that ends the archive.
+            if !canLeave {
+                Button("Vie arkisto ensin") {
+                    Task { await export() }
+                }
+            }
+
             Button("Tyhjennä", role: .destructive) {
                 Task { await wipe() }
             }

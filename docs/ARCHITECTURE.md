@@ -1035,6 +1035,12 @@ in a family, and they are genuinely separate — so the screen names both:
   archive they are gone for good, and the screen says exactly that in those
   words rather than in a generic warning.
 
+  It also **offers the export from inside the dialog** when nobody else has a
+  copy. Saying "vie arkisto ensin" and then presenting one button, the
+  irreversible one, is an instruction to go and do something else at the moment
+  somebody has already decided to act. The warning was right and it was not
+  prevention.
+
 **Deliberately not built: deleting your own memories out of the family.** Rule 3
 keeps the original audio because the speaker may no longer be around to ask, and
 a tap that erases a dead person's voice from everybody else's archive is not a
