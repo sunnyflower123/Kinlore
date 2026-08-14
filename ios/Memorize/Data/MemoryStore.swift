@@ -85,6 +85,28 @@ final class MemoryStore {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// Subjects of a kind that match what somebody typed.
+    ///
+    /// The words of the memories count, not only the title. A photograph has no
+    /// title until somebody says something about it, and what a person is
+    /// looking for is "the one about the cottage" rather than a name nobody ever
+    /// gave it — searching titles alone would find least on exactly the archive
+    /// that most needs finding.
+    ///
+    /// An empty query is not a filter: everything comes back, so the screen does
+    /// not have to know whether a search is running.
+    func subjects(of kind: SubjectKind, matching query: String) -> [Subject] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let all = subjects(of: kind)
+        guard !needle.isEmpty else { return all }
+        return all.filter { subject in
+            subject.displayTitle.localizedCaseInsensitiveContains(needle)
+                || memories(for: subject.id).contains {
+                    $0.body.localizedCaseInsensitiveContains(needle)
+                }
+        }
+    }
+
     /// The questions worth putting in front of the teller right now.
     ///
     /// Chosen by the ladder rather than by age: the oldest three are as likely

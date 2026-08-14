@@ -179,6 +179,20 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The dead end at the end of a fruitless search. A search field, a keyboard
+    /// and an empty state at once — three things that each cost a screen, on the
+    /// screen that has the least room to spare.
+    func testMemoriesSearching() throws {
+        try sweep("Muistot, haku", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+            require(app.navigationBars["Muistot"], "the gallery")
+            let field = app.searchFields.firstMatch
+            for _ in 0 ..< 3 where !field.exists { app.swipeDown() }
+            require(field, "the search field").tap()
+            field.typeText("traktori")
+            require(app.staticTexts["Ei osumia"], "the fruitless search")
+        }
+    }
+
     /// An empty state is not a blank screen in this app — it is an invitation,
     /// with a button on it. PLAN.md §6.5.
     func testMemoriesEmpty() throws {

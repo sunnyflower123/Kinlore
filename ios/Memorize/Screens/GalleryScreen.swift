@@ -27,8 +27,8 @@ struct GalleryScreen: View {
         [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 170 : 110), spacing: 10)]
     }
 
-    private var photos: [Subject] { store.subjects(of: .photo) }
-    private var events: [Subject] { store.subjects(of: .event) }
+    private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
+    private var events: [Subject] { store.subjects(of: .event, matching: query) }
     /// Places the family has spoken about.
     ///
     /// They arrive the same way people do — named inside a memory, created as a
@@ -36,7 +36,18 @@ struct GalleryScreen: View {
     /// card could not be opened at all. Its memories were invisible, its starter
     /// questions could never be asked, and "Kysy perheeltä" could not be used on
     /// it. A subject nobody can reach is not part of the archive.
-    private var places: [Subject] { store.subjects(of: .place) }
+    private var places: [Subject] { store.subjects(of: .place, matching: query) }
+
+    /// What is typed in the search field.
+    @State private var query = ""
+
+    private var isSearching: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private var nothingMatches: Bool {
+        photos.isEmpty && events.isEmpty && places.isEmpty
+    }
 
     /// A family whose memories are all on people has an empty grid but can still
     /// have a round waiting, and "no photos yet" would hide it.
@@ -47,13 +58,24 @@ struct GalleryScreen: View {
     var body: some View {
         NavigationStack {
             Group {
-                if photos.isEmpty && events.isEmpty && places.isEmpty && !hasRound {
+                // Three states, and the search has to be asked about first. A
+                // waiting round keeps the screen out of the empty state — which
+                // is right when there is nothing in the archive and wrong the
+                // moment somebody is searching: the round is not a search
+                // result, so a fruitless search looked like a blank screen.
+                if isSearching {
+                    // An archive with nothing in it is an invitation; a search
+                    // that found nothing is a dead end, and offering "lisää
+                    // kuvia" there would answer a question nobody asked.
+                    if nothingMatches { noResults } else { content }
+                } else if nothingMatches && !hasRound {
                     emptyState
                 } else {
                     content
                 }
             }
             .navigationTitle("Muistot")
+            .searchable(text: $query, prompt: "Etsi")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     PhotosPicker(selection: $picked, matching: .images, photoLibrary: .shared()) {
@@ -108,18 +130,35 @@ struct GalleryScreen: View {
         }
     }
 
+    private var noResults: some View {
+        ContentUnavailableView {
+            Label("Ei osumia", systemImage: "magnifyingglass")
+        } description: {
+            Text("Mikään ei löytynyt haulla \"\(query)\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+        }
+    }
+
     private var content: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                // Whether what she told has actually reached the family. The
-                // engine has known this from the beginning and nothing asked it.
-                SyncNote()
+                // Neither of these belongs in a search result: one says
+                // something about the whole archive, the other is a question
+                // waiting to be answered. Somebody looking for a memory is not
+                // looking for either.
+                if !isSearching {
+                    // Whether what she told has actually reached the family. The
+                    // engine has known this from the beginning and nothing asked it.
+                    SyncNote()
 
-                // The reading loop, above the grid because it expires: a round
-                // is only interesting until somebody has answered it. It shows
-                // itself only when one is waiting, so the screen does not grow a
-                // permanent section for a family that has none.
-                GuessSection()
+                    // The reading loop, above the grid because it expires: a
+                    // round is only interesting until somebody has answered it.
+                    // It shows itself only when one is waiting, so the screen
+                    // does not grow a permanent section for a family that has
+                    // none.
+                    GuessSection()
+                }
 
                 if !photos.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {

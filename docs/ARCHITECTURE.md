@@ -29,6 +29,8 @@ An honest inventory, not a wish list:
 | Correcting a misheard name afterwards | **Done and tested**, see §17 |
 | Soft deletion — a rejection that is final | **Done and tested**, see §3 |
 | A telling taken back — mid-recording, or after it is saved | **Done and tested**, see §19 |
+| Search over what was told, not only over titles | **Done and tested**, see §8 |
+| Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
 | Accessibility sweep over every screen | **Done** — 21 checks, and they audit the screen they are named after |
 | Repo in English | **Done** |
@@ -547,9 +549,35 @@ Built, in the order they were built:
     disclosure triangles — a person who opened a help page is already looking
     for the answer, and making them hunt twice is how help becomes decoration.
 
+11. **Search**, on Muistot and Ihmiset.
+
+    It searches **what was told**, not only titles. A photograph has no title
+    until somebody says something about it, so a search over titles would find
+    least on exactly the archive that most needs finding — and what a person is
+    looking for is "the one about the cottage", never a name nobody gave it. One
+    query runs over the subject's own title and the text of every memory on it,
+    in `MemoryStore.subjects(of:matching:)`, so both screens ask the same
+    question of the same rule.
+
+    Out of the way by design: `.searchable` keeps the field above the list until
+    somebody pulls down. The grandchild looking for one name in forty finds it;
+    grandmother never meets it. A fruitless search gets its own dead end rather
+    than the empty archive's invitation — offering *"lisää kuvia"* to somebody
+    who searched for a word answers a question nobody asked.
+
+    **A round is not a search result.** The waiting guessing round kept the
+    gallery out of its empty state, which is right when the archive is empty and
+    wrong the moment somebody is searching: the first version of this showed a
+    blank screen for a search that matched nothing. The test that caught it is
+    `SearchTests`, on the second run.
+
+    The pairing "every addition requires a removal" asks for is **not paid**.
+    Nothing was removed for this one; it is an addition, and the decision to
+    take it was made deliberately rather than by forgetting the rule.
+
 Not built:
 
-11. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
+12. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
    person card: the same information, works at the largest text size and is
    readable with VoiceOver. Formally out of v1 since §10.
 
@@ -1133,6 +1161,22 @@ those same categories, which is how the contrast problem survived this long.
 - `Lisää sukulainen`, where a `Menu` reports a label frame smaller than the text
   it draws. Verified on screen at both sizes.
 - The photo tile's memory count, capped at `accessibility2` on purpose.
+- **Anything in the fade under the navigation bar**, which is the tab bar's rule
+  from the other end. iOS 26 fades content into the bar and its search field as
+  it scrolls beneath. *"Muistatko kuka?"* — the primary colour at
+  `.title3.weight(.semibold)`, the strongest text in the app — began failing at
+  the largest size the day a search field appeared above it, and a screenshot at
+  that size shows black on white. Same 24 pt margin as the bar below, same
+  warning: measure before widening it.
+- **`.searchable`'s own field and its clear button.** The field keeps a fixed
+  44 pt box while the text in it grows, and the audit reads that as clipping —
+  shortening the prompt from twenty-seven characters to four changed the finding
+  not at all, which is the evidence that it is the box and not our words. The
+  clear button is 19 × 19 pt and has no API to make it bigger. Accepted rather
+  than answered, and it can be because nothing depends on hitting it: the
+  keyboard's delete key clears the field and "Peruuta" beside it is a full-size
+  target. If search ever stops being the grandchild's tool, the answer is our
+  own field rather than a wider exemption.
 - Settings' own footer, *"Kertomasi muistot ovat vain tässä laitteessa."* — and
   this one is worth the sentence it costs. It passed for as long as it did, and
   the moment a row was added above it the audit called the same unchanged

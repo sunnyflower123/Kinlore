@@ -74,6 +74,12 @@ struct PeopleScreen: View {
     @Environment(Session.self) private var session
 
     @State private var path = NavigationPath()
+    /// What is typed in the search field. Empty means no search is running, and
+    /// `subjects(of:matching:)` hands back everything for an empty query — so
+    /// there is one code path rather than two.
+    @State private var query = ""
+
+    private var people: [Subject] { store.subjects(of: .person, matching: query) }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -86,8 +92,19 @@ struct PeopleScreen: View {
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
                     }
+                } else if people.isEmpty {
+                    // A search that found nobody is a different emptiness from
+                    // a family nobody has spoken about yet, and it says so in
+                    // its own words rather than in the invitation's.
+                    ContentUnavailableView {
+                        Label("Ei osumia", systemImage: "magnifyingglass")
+                    } description: {
+                        Text("Kukaan ei löytynyt haulla \"\(query)\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu.")
+                            .elderBody()
+                            .foregroundStyle(Elder.supporting)
+                    }
                 } else {
-                    List(store.subjects(of: .person)) { person in
+                    List(people) { person in
                         NavigationLink(value: person) {
                             PersonRow(subject: person)
                         }
@@ -96,6 +113,16 @@ struct PeopleScreen: View {
                 }
             }
             .navigationTitle("Ihmiset")
+            // Out of the way until it is wanted: iOS keeps the field hidden
+            // above the list until somebody pulls down, which is the right
+            // bargain here. The grandchild looking for one name in forty finds
+            // it; grandmother never meets it.
+            // "Etsi" and nothing more. The field keeps its width while the text
+            // in it grows, so a prompt of any length is a prompt that will be
+            // cut in half at the largest size — and what the search actually
+            // covers is spelled out where it matters, on the screen that comes
+            // back with nothing.
+            .searchable(text: $query, prompt: "Etsi")
             .navigationDestination(for: Subject.self) { subject in
                 SubjectDetailScreen(subject: subject)
             }

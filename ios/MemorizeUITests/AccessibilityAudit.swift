@@ -23,10 +23,23 @@ extension XCTestCase {
         // pixels it finds there.
         let keyboard = app.keyboards.firstMatch
         let keyboardFrame = keyboard.exists ? keyboard.frame : .null
+        // The chrome at the top, which is the tab bar's problem from the other
+        // end: content fades into it as it scrolls underneath. The search field
+        // is part of it when it is showing and absent from the tree when it is
+        // not, so the navigation bar is the anchor and the field only ever
+        // extends it downwards.
+        let navBar = app.navigationBars.firstMatch
+        var topFrame = navBar.exists ? navBar.frame : .null
+        let searchField = app.searchFields.firstMatch
+        if searchField.exists {
+            topFrame = topFrame.isNull ? searchField.frame : topFrame.union(searchField.frame)
+        }
 
         var found: [String] = []
         try app.performAccessibilityAudit { issue in
-            if AccessibilityPolicy.isDeliberate(issue, tabBar: tabBarFrame, keyboard: keyboardFrame) || extra(issue) {
+            if AccessibilityPolicy.isDeliberate(
+                issue, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame
+            ) || extra(issue) {
                 return true
             }
             // Type and frame as well as the label: an issue whose label is empty
@@ -46,7 +59,11 @@ extension XCTestCase {
                 // this app turn on how close to it something sits, and reading
                 // that off a screenshot is guesswork.
                 + " [tab bar \(tabBarFrame.isNull ? "none" : NSCoder.string(for: tabBarFrame))"
-                + " keyboard \(keyboardFrame.isNull ? "none" : NSCoder.string(for: keyboardFrame))]"
+                + " keyboard \(keyboardFrame.isNull ? "none" : NSCoder.string(for: keyboardFrame))"
+                // The top chrome for the same reason as the bar's own frame: a
+                // finding a few points under it is a fade rather than a colour,
+                // and reading that off a screenshot is guesswork.
+                + " top \(topFrame.isNull ? "none" : NSCoder.string(for: topFrame))]"
                 + "\n  " + found.joined(separator: "\n  "),
             file: file,
             line: line
@@ -126,9 +143,27 @@ enum AccessibilityPolicy {
     static func isDeliberate(
         _ issue: XCUIAccessibilityAuditIssue,
         tabBar: CGRect,
-        keyboard: CGRect
+        keyboard: CGRect,
+        topChrome: CGRect = .null
     ) -> Bool {
         let label = issue.element?.label ?? ""
+
+        // **Just under the navigation bar.** The tab bar's case from the other
+        // end: iOS 26 fades content into the bar and its search field as it
+        // scrolls beneath, and the audit samples the dimmed pixels.
+        //
+        // Measured before it was written. "Muistatko kuka?" is the primary
+        // colour at `.title3.weight(.semibold)` — the strongest text in the app
+        // — and it began failing at the largest size the day a search field was
+        // added above it, a few points below the chrome. Screenshotted at that
+        // size: black on white, perfectly readable. The same 24 pt margin as
+        // the tab bar, and the same warning with it: if something ever fails
+        // further down than this, measure it before widening the band.
+        if issue.auditType == .contrast, !topChrome.isNull,
+           let frame = issue.element?.frame,
+           frame.minY <= topChrome.maxY + 24 {
+            return true
+        }
 
         // **Behind the keyboard.** A sheet with a text field on it raises the
         // keys over its own lower third, and what the audit measures there is
@@ -197,6 +232,31 @@ enum AccessibilityPolicy {
             // screen. Accepting it is a concession to the tool: with no element
             // there is no frame to test and nothing to point a fix at.
             if issue.element == nil { return true }
+        }
+
+        // **The search field's own text.** iOS gives `.searchable` a fixed 44 pt
+        // box with its own metrics, and the audit reads that as clipping. The
+        // evidence that it is the box and not our words: shortening the prompt
+        // from twenty-seven characters to four changed nothing at all. What is
+        // ours on that screen grows — the empty state under it is `elderBody`
+        // and wraps at every size.
+        if issue.auditType == .textClipped, issue.element?.elementType == .searchField {
+            return true
+        }
+
+        // **The search field's own clear button.** `.searchable` draws it at
+        // 19 × 19 pt and there is no API to make it bigger — it belongs to
+        // UIKit's search field, like `ContentUnavailableView`'s type sizes
+        // belong to that view. Ours are 60 pt everywhere and stay so.
+        //
+        // Accepted rather than answered, and the reason it can be: nothing
+        // depends on hitting it. The keyboard's delete key clears the field,
+        // "Peruuta" beside it is a full-size target that clears it as well, and
+        // search is the one part of this app aimed at the grandchild rather
+        // than at the person whose hands shake. If that ever stops being true,
+        // the answer is our own field rather than a wider exemption.
+        if issue.auditType == .hitRegion, label == "Clear text" {
+            return true
         }
 
         // The round's card shows two to four lines of the story and truncates.
