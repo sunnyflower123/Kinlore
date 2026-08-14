@@ -97,6 +97,19 @@ final class MemoryStore {
         return Array(QuestionLadder.starters(for: subject).prefix(limit))
     }
 
+    /// What to offer in free dictation when the archive is empty.
+    ///
+    /// The counterpart of `starterQuestions(for:)` for the case where there is no
+    /// subject yet — the first launch, which is the one screen this audience is
+    /// least able to get past on its own. See `QuestionLadder.opening`.
+    ///
+    /// Gated on the archive being empty rather than on there being no open
+    /// questions: once anything has been told there are real questions to answer,
+    /// and a generic one would compete with them for the same two slots.
+    func openingQuestions() -> [FollowUpQuestion] {
+        memories.isEmpty ? QuestionLadder.opening : []
+    }
+
     /// A subject that has no memories yet. These are not hidden but shown as an
     /// invitation: "nobody has said anything about Aino yet".
     func isEmpty(_ subject: Subject) -> Bool {

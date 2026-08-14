@@ -312,6 +312,34 @@ enum QuestionLadder {
         }
     }
 
+    /// What the app opens with when there is nothing in the archive at all.
+    ///
+    /// `starters(for:)` covers a subject nobody has spoken about yet; this covers
+    /// the moment before there is a subject. Free dictation offers the family's
+    /// open questions, and on the first day there are none — so the first Tell
+    /// screen anybody ever sees was the big button and nothing beside it. That is
+    /// the blank button this whole file exists to remove, left standing on the one
+    /// screen where it costs most: the first one an 80-year-old is handed.
+    ///
+    /// No subject, because there is not one to name yet. The answer is filed by
+    /// extraction out of the speech itself, exactly as any other free dictation
+    /// is. Not stored and not synced, for the same reason as the subject
+    /// starters — a prompt is not a debt.
+    ///
+    /// Both are at the bottom of the ladder and the naming question comes first,
+    /// because this is the first question the app ever asks anybody.
+    static let opening: [FollowUpQuestion] = [
+        ("Kuka on vanhin ihminen, jonka muistat?", QuestionLevel.naming),
+        ("Missä asuit lapsena?", QuestionLevel.fact),
+    ].enumerated().map { index, starter in
+        FollowUpQuestion(
+            id: "opening-\(index)",
+            subjectID: nil,
+            text: starter.0,
+            storedLevel: starter.1.rawValue
+        )
+    }
+
     /// Forgets where the person had got to. Part of "Tyhjennä tämä laite": the
     /// ladder describes whoever holds the phone, so it leaves with them.
     static func reset() {

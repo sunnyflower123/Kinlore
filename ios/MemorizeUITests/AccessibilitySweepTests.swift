@@ -149,6 +149,21 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same screen on the first launch, which is a different screen: no
+    /// memories means no open questions, so the two opening starters are on it
+    /// instead. They are two cards below a 200 pt button on the app's most
+    /// vertically crowded screen — exactly the shape of thing that pushes
+    /// "Kirjoita sen sijaan" under the tab bar at the largest text size, and it
+    /// is the one Tell screen an 80-year-old is handed cold.
+    func testTellFirstLaunch() throws {
+        try sweep("Kerro, first launch", arguments: ["-seed", "empty"]) { app, _ in
+            require(
+                app.staticTexts["Kuka on vanhin ihminen, jonka muistat?"],
+                "the opening starter"
+            )
+        }
+    }
+
     func testTellByTyping() throws {
         try sweep("Kerro, typing", arguments: ["-seed", "guess", "-screen", "write"]) { app, _ in
             require(app.textViews.firstMatch, "the typing field")

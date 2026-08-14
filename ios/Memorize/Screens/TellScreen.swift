@@ -191,8 +191,18 @@ private struct IdleView: View {
     /// starters that stand in for the questions extraction has had no chance to
     /// make. That case used to be a blank button, which is the hardest thing
     /// this app ever put in front of anyone. See docs/ARCHITECTURE.md §12.
+    ///
+    /// The same emptiness had been left standing on the screen where it costs
+    /// most. Free dictation with a fresh archive has no open questions either —
+    /// extraction has had nothing to make them from — so the first Tell screen an
+    /// 80-year-old is ever handed offered nothing at all beside the button. The
+    /// ladder had its bottom rung built for a photo and missing for the first
+    /// launch; `openingQuestions()` is that rung.
     private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
-        guard let target = model.target else { return (store.openQuestions(limit: 2), false) }
+        guard let target = model.target else {
+            let open = store.openQuestions(limit: 2)
+            return open.isEmpty ? (store.openingQuestions(), true) : (open, false)
+        }
         let own = store.openQuestions(limit: 2, for: target.id)
         return own.isEmpty ? (store.starterQuestions(for: target), true) : (own, false)
     }
@@ -280,11 +290,18 @@ private struct IdleView: View {
 
                     ForEach(offered.questions) { question in
                         Button {
-                            // In free dictation the question belongs to some
-                            // other subject, so it opens its own screen. Here it
-                            // is already the right subject: no sheet on top of a
-                            // sheet, the microphone just starts.
-                            if model.target == nil {
+                            // A question about some other subject opens that
+                            // subject's own screen. When this screen is already
+                            // the right subject the microphone just starts: no
+                            // sheet on top of a sheet.
+                            //
+                            // Routed by the question rather than by the screen,
+                            // because an opening starter has no subject at all —
+                            // asking it to open "its own" screen would push an
+                            // identical, emptier copy of this one in front of
+                            // somebody who has not yet said a word.
+                            if let subjectID = question.subjectID,
+                               model.target?.id != subjectID {
                                 answering = question
                             } else {
                                 Task { await model.answer(question) }
