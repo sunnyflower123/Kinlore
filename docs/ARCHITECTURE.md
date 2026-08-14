@@ -32,7 +32,7 @@ An honest inventory, not a wish list:
 | Search over what was told, not only over titles | **Done and tested**, see §8 |
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 21 checks, and they audit the screen they are named after |
+| Accessibility sweep over every screen | **Done** — 20 screens at both text sizes, out of 41 UI tests, and they audit the screen they are named after |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
