@@ -630,6 +630,14 @@ Built, in the order they were built:
       `Text` and an `Image` in an `HStack` passes at both sizes. Four runs for
       one fact, and it is written down so the fifth is not needed.
 
+    **And once for a whole import.** Thirty scanned photographs are almost
+    always one album and one era, and asking thirty times is asking nobody: the
+    import offers the same sheet once for everything it just brought in. Two or
+    more only — a single photograph is opened and looked at, and its own card
+    already carries the row. It is offered rather than imposed: the photos are
+    in the archive before the sheet appears, and swiping it away leaves them
+    exactly as an import used to leave them.
+
     `MemoryStore.setDateHint` **overwrites**, unlike `describe` beside it, and
     the difference is the point: `describe` speaks for the extraction and a
     machine's guess must not walk over a person's knowledge. This one is the

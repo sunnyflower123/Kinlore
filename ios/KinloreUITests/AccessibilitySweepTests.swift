@@ -431,6 +431,18 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The question an import asks about a whole pile of photographs at once.
+    /// `-import 3` stands in for the system photo picker, which a test run
+    /// cannot drive — see `ImportTests`.
+    func testImportedPhotosDate() throws {
+        try sweep(
+            "Tuonnin ajankohta",
+            arguments: ["-seed", "empty", "-tab", "memories", "-import", "3"]
+        ) { app, _ in
+            require(app.staticTexts["Milloin nämä olivat?"], "the import's date sheet")
+        }
+    }
+
     /// The help page. Six sections of plain text and the only place in the app
     /// that says the recording leaves the phone — which makes it the one screen
     /// here whose whole content is text, and text at XXXL is what this sweep

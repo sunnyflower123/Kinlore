@@ -18,6 +18,12 @@ struct GalleryScreen: View {
     /// said out loud yet.
     @State private var skipped = 0
     @State private var isReportingSkipped = false
+    /// What the last import brought in. Held so the date can be asked once for
+    /// the whole pile rather than thirty times, or not at all.
+    @State private var justImported: [Subject] = []
+    #if DEBUG
+    @State private var didSeedImport = false
+    #endif
 
     /// Bigger tiles when the text is bigger. The memory-count badge scales with
     /// Dynamic Type, and at accessibility sizes it was clipped by a 110 pt tile —
@@ -104,6 +110,37 @@ struct GalleryScreen: View {
             // chose ten, eight arrived, and nothing said which or why. Counting
             // your own photographs to find that out is not a thing to ask of
             // anybody, least of all of somebody who scanned them.
+            // Offered, not imposed: the sheet can be swiped away and the photos
+            // are already in the archive. Nothing here is a step in an import
+            // that would otherwise be unfinished.
+            .sheet(isPresented: Binding(
+                get: { !justImported.isEmpty },
+                set: { if !$0 { justImported = [] } }
+            )) {
+                DateSheet(subjects: justImported)
+            }
+            #if DEBUG
+            // `-import 3`: the question an import asks, without the system photo
+            // picker in front of it. A test run cannot drive that picker, so the
+            // one screen the bulk path exists for was unreachable — the same
+            // hole `-mic denied` and `-screen result` were written for.
+            .task {
+                // Once per launch. A `task` runs again when the view comes back
+                // — returning from a photo's card is enough — and a second
+                // helping would put three more photographs in the archive and
+                // the sheet back over the grid.
+                guard !didSeedImport,
+                      let count = UserDefaults.standard.string(forKey: "import").flatMap(Int.init),
+                      count > 1
+                else { return }
+                didSeedImport = true
+                justImported = (0 ..< count).map { _ in
+                    let subject = Subject(kind: .photo, title: "")
+                    store.add(subject)
+                    return subject
+                }
+            }
+            #endif
             .alert("Kaikkia kuvia ei saatu tuotua", isPresented: $isReportingSkipped) {
                 Button("Selvä") { isReportingSkipped = false }
             } message: {
@@ -219,6 +256,7 @@ struct GalleryScreen: View {
             isReportingSkipped = skipped > 0
         }
 
+        var arrived: [Subject] = []
         for item in items {
             guard let data = try? await item.loadTransferable(type: Data.self),
                   let filename = MediaStore.save(imageData: data)
@@ -230,8 +268,19 @@ struct GalleryScreen: View {
             // The title is left empty on purpose: nobody will name thirty
             // scanned photographs. The name arrives when someone talks about
             // the photo, and it is not needed before that.
-            store.add(Subject(kind: .photo, title: "", imageFilename: filename))
+            //
+            // The *date* is a different matter, and it is the one thing thirty
+            // photographs usually share. It is asked once below.
+            let subject = Subject(kind: .photo, title: "", imageFilename: filename)
+            store.add(subject)
+            arrived.append(subject)
         }
+
+        // Asked for two or more, and never for one: a single photograph is
+        // opened and looked at, and its own card already carries the row. A
+        // pile is the case with no such moment — thirty cards nobody will open
+        // thirty times.
+        justImported = arrived.count > 1 ? arrived : []
     }
 }
 

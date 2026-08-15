@@ -1,12 +1,19 @@
 import SwiftUI
 
-/// Putting a date on a photo or a moment by hand.
+/// Putting a date on a photo or a moment by hand — or on a whole import of
+/// them at once.
 ///
 /// `date_start`, `date_end` and `date_precision` have been in the schema from the
 /// first day, and rule 5 — uncertainty is stored, never rounded — is one of the
 /// things this app is built on. Only the extraction could ever write them. So a
 /// granddaughter who knows the summer was 1957, looking at a photograph the model
 /// dated to nothing at all, had nowhere to put what she knew.
+///
+/// **One sheet, one or many subjects.** Thirty scanned photographs are almost
+/// always one album and one era, and asking thirty times is asking nobody: the
+/// import offers this once for everything it just brought in. The same rows, the
+/// same three answers, and "en tiedä" is still there for the pile that really is
+/// a jumble.
 ///
 /// The precision is **chosen, not inferred**. That is the whole design: the
 /// screen asks how sure you are before it asks what the answer is, so "joskus
@@ -17,7 +24,14 @@ struct DateSheet: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
-    let subject: Subject
+    /// What is being dated. One from a subject's own card, many straight after
+    /// an import.
+    let subjects: [Subject]
+
+    init(subject: Subject) { self.subjects = [subject] }
+    init(subjects: [Subject]) { self.subjects = subjects }
+
+    private var single: Subject? { subjects.count == 1 ? subjects.first : nil }
 
     /// How sure the person is.
     ///
@@ -84,7 +98,9 @@ struct DateSheet: View {
                     Text("Kuinka tarkkaan tiedät?")
                         .foregroundStyle(Elder.supporting)
                 } footer: {
-                    Text("Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.")
+                    Text(single == nil
+                        ? "Vastaus koskee kaikkia \(subjects.count) kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta."
+                        : "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.")
                         .foregroundStyle(Elder.supporting)
                 }
 
@@ -123,7 +139,7 @@ struct DateSheet: View {
                         .foregroundStyle(Elder.supporting)
                 }
             }
-            .navigationTitle("Milloin tämä oli?")
+            .navigationTitle(single == nil ? "Milloin nämä olivat?" : "Milloin tämä oli?")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { load() }
         }
@@ -148,8 +164,13 @@ struct DateSheet: View {
         .buttonStyle(.plain)
     }
 
+    /// Only when a single subject is being dated: with many, "the stored one"
+    /// is a question with several answers, and a tick that means "some of them"
+    /// says less than no tick at all.
     private func isStored(_ precision: DatePrecision, _ value: Int) -> Bool {
-        guard let hint = subject.dateHint, hint.precision == precision, let start = hint.start else {
+        guard let subject = single,
+              let hint = subject.dateHint, hint.precision == precision, let start = hint.start
+        else {
             return false
         }
         let storedYear = Self.calendar.component(.year, from: start)
@@ -159,7 +180,7 @@ struct DateSheet: View {
     /// Opens on what is already stored, so a small correction is a small
     /// gesture rather than a re-entry.
     private func load() {
-        guard let hint = subject.dateHint, hint.start != nil else { return }
+        guard let subject = single, let hint = subject.dateHint, hint.start != nil else { return }
         switch hint.precision {
         case .decade:
             sureness = .decade
@@ -177,7 +198,10 @@ struct DateSheet: View {
     }
 
     private func save(decade: Int? = nil, year: Int? = nil, nothing: Bool = false) {
-        store.setDateHint(subjectID: subject.id, hint: nothing ? nil : hint(decade: decade, year: year))
+        let answer = nothing ? nil : hint(decade: decade, year: year)
+        for subject in subjects {
+            store.setDateHint(subjectID: subject.id, hint: answer)
+        }
         dismiss()
     }
 
