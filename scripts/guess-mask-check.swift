@@ -2,7 +2,7 @@
 //
 //   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 //     -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
-//     ios/Memorize/Model/GuessRound.swift && /tmp/guess-mask-check
+//     ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
 //
 // This is the one part of the feature that fails silently. A round that leaks
 // the answer still looks like a working round — nobody notices until a family
@@ -13,7 +13,7 @@
 // translating them would test something else. Everything around them is
 // English, as the repo requires. See CLAUDE.md.
 //
-// It compiles the REAL ios/Memorize/Model/GuessRound.swift. The types below are
+// It compiles the REAL ios/Kinlore/Model/GuessRound.swift. The types below are
 // the minimum stubs that file needs — the point is to exercise the shipping
 // code, not a copy of it that can drift.
 

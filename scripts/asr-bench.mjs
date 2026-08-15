@@ -100,7 +100,7 @@ async function openRouterTranscribe(engine, filePath, bytes) {
     headers: {
       Authorization: `Bearer ${process.env[engine.key]}`,
       'Content-Type': 'application/json',
-      'X-Title': 'Memorize ASR bench',
+      'X-Title': 'Kinlore ASR bench',
     },
     body: JSON.stringify({
       model: engine.model,

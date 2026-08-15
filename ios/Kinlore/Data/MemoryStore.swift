@@ -33,7 +33,7 @@ final class MemoryStore {
 
     private let fileURL: URL
 
-    init(filename: String = "memorize-store.json") {
+    init(filename: String = "kinlore-store.json") {
         let documents = URL.documentsDirectory
         fileURL = documents.appendingPathComponent(filename)
         load()

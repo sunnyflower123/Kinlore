@@ -1,4 +1,4 @@
-# Memorize
+# Kinlore
 
 A family's shared memory archive. An old person rambles; the AI gives it
 structure. Side project for RevenueCat Shipaton 2026.
@@ -132,7 +132,7 @@ cd ios && xcodegen generate
 # runtime, and an ambiguous name fails as "Unable to find a device matching the
 # provided destination specifier" — which reads like a missing simulator and is
 # not one. A build touches no device, so sharing this one is fine; the UI tests
-# are the case that is not, and they use $MEMORIZE_TEST_SIM below.
+# are the case that is not, and they use $KINLORE_TEST_SIM below.
 SIM=$(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list \
   devices available | grep -m1 'iPhone 17 Pro (' \
   | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
@@ -140,7 +140,7 @@ SIM=$(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list
 # iOS build. DEVELOPER_DIR is mandatory: this machine's xcode-select points at
 # CommandLineTools, and changing it would need sudo. This overrides it.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
-  -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
+  -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
   -destination "id=$SIM" build
 
 # Accessibility tests. VoiceOver reads the accessibility tree and XCUITest
@@ -160,7 +160,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # on a private one, same commit, minutes apart. Do not chase a red audit before
 # checking which device it ran on.
 #
-#   xcrun simctl create memorize-tests \
+#   xcrun simctl create kinlore-tests \
 #     com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
 #     com.apple.CoreSimulator.SimRuntime.iOS-26-2
 #
@@ -170,8 +170,8 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # runtime", which reads like a broken Xcode.
 #
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
-  -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator \
-  -destination "platform=iOS Simulator,id=$MEMORIZE_TEST_SIM" test
+  -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
+  -destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" test
 
 # Backend locally
 cd backend && npx wrangler dev
@@ -187,7 +187,7 @@ node scripts/asr-bench.mjs samples/
 # is the one part of the app that fails silently.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
-  ios/Memorize/Model/GuessRound.swift && /tmp/guess-mask-check
+  ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
 
 # Place coordinates through sync. Checks the four rules that are silent when
 # broken: a resolved point round-trips, a device that has not looked the name up
@@ -201,7 +201,7 @@ node scripts/place-sync-check.mjs
 # touching PlaceLookup.swift, and before believing §18.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -parse-as-library -o /tmp/geo-check scripts/geo-check.swift \
-  ios/Memorize/Services/PlaceLookup.swift && /tmp/geo-check
+  ios/Kinlore/Services/PlaceLookup.swift && /tmp/geo-check
 ```
 
 ## Environment notes
@@ -221,9 +221,12 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   diagnostics. It is noise from a run that had already failed, not the failure.
   Prepending `/Applications/Xcode.app/Contents/Developer/usr/bin` to `PATH`
   silences it.
-- The name is **Kinlore** (decided 15 Aug 2026, PLAN.md §10). The bundle ID is
-  still `app.memorize.Memorize` and is meant to become `com.kinlore.app` — but
-  `project.yml` and the RevenueCat dashboard are keyed to it together, so
-  neither moves alone.
+- The name is **Kinlore** and the bundle ID is `com.kinlore.app` (renamed
+  15 Aug 2026, PLAN.md §10). The backend's Cloudflare resources are deliberately
+  still called `memorize`: renaming an R2 bucket means making an empty new one,
+  and rule 3 lives in that bucket.
 - Purchases go through the **RevenueCat Test Store**, not App Store Connect
-  products. No paid Apple Developer account is needed.
+  products. No paid Apple Developer account is needed — and **the Test Store has
+  no bundle-id field**, so the rename needed nothing there. It is keyed by its
+  API key. A bundle id becomes a RevenueCat setting only when an App Store app
+  config is added, which is a §2.1 decision and not a current one.

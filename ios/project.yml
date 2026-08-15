@@ -1,8 +1,8 @@
-name: Memorize
+name: Kinlore
 attributes:
   LastUpgradeCheck: "9999"
 options:
-  bundleIdPrefix: app.memorize
+  bundleIdPrefix: com.kinlore
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -22,26 +22,26 @@ packages:
     from: "5.0.0"
 
 schemes:
-  Memorize:
+  Kinlore:
     build:
       targets:
-        Memorize: all
-        MemorizeUITests: [test]
+        Kinlore: all
+        KinloreUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - MemorizeUITests
+        - KinloreUITests
     archive:
       config: Release
 
 targets:
-  Memorize:
+  Kinlore:
     type: application
     platform: iOS
     sources:
-      - path: Memorize
+      - path: Kinlore
         # Every CLAUDE.md would be copied to the bundle root and produce a
         # "Multiple commands produce ..." error. The same trap as in Hetkio.
         excludes:
@@ -51,9 +51,9 @@ targets:
     # an array of dictionaries and cannot be set with INFOPLIST_KEY_ variables.
     # The file is derived from project.yml, so it is in .gitignore.
     info:
-      path: Memorize/Info.plist
+      path: Kinlore/Info.plist
       properties:
-        CFBundleDisplayName: Memorize
+        CFBundleDisplayName: Kinlore
         # An empty launch screen meant the app opened on a white flash. Parchment
         # makes the first frame belong to the app — it is also the first frame of
         # the demo video.
@@ -77,18 +77,18 @@ targets:
         # only moment iOS gives us before the first recording, and until now the
         # app never told anybody — anywhere — that the audio leaves the phone.
         NSMicrophoneUsageDescription: >-
-          Memorize tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
+          Kinlore tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
           voi kuunnella ne myöhemmin. Äänitys lähetetään palveluumme, jossa
           puheesta kirjoitetaan teksti.
         NSPhotoLibraryUsageDescription: >-
           Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.
-        # Invite link: memorize://join?code=...
+        # Invite link: kinlore://join?code=...
         # A universal link would be better, but it requires a domain and an AASA
         # file. The shared text also contains the code, so joining works even if
         # the scheme does not open in the messaging app.
         CFBundleURLTypes:
-          - CFBundleURLName: app.memorize.invite
-            CFBundleURLSchemes: [memorize]
+          - CFBundleURLName: com.kinlore.invite
+            CFBundleURLSchemes: [kinlore]
     dependencies:
       - package: RevenueCat
         product: RevenueCat
@@ -98,7 +98,7 @@ targets:
         product: RevenueCatUI
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.memorize.Memorize
+        PRODUCT_BUNDLE_IDENTIFIER: com.kinlore.app
         # XcodeGen finds Assets.xcassets from sources, but does not know which of
         # the assets is the app icon. Without this the icon slot stays empty.
         # The PNGs are generated from the SVGs in docs/logo/, see its README.
@@ -115,17 +115,17 @@ targets:
   # performAccessibilityAudit() walks it for the failures that are invisible on a
   # screenshot: an unlabelled control, a tap target under the minimum, text that
   # clips instead of wrapping at the largest size.
-  MemorizeUITests:
+  KinloreUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: MemorizeUITests
+      - path: KinloreUITests
     dependencies:
-      - target: Memorize
+      - target: Kinlore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.memorize.MemorizeUITests
-        TEST_TARGET_NAME: Memorize
+        PRODUCT_BUNDLE_IDENTIFIER: com.kinlore.app.uitests
+        TEST_TARGET_NAME: Kinlore
         # The app's Info.plist is written out because of the URL scheme; a test
         # bundle needs none of that, so it gets the generated one. Without this
         # the build fails at code signing rather than at compile time, which

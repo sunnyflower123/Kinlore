@@ -1,4 +1,4 @@
--- Memorize — D1 schema
+-- Kinlore — D1 schema
 --
 -- The core insight: a photo, a person, a place and an event are all a `subject`.
 -- A memory attaches to any subject. That is why "write a memory about this

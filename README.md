@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lockup-dark.svg">
-    <img src="docs/logo/lockup.svg" alt="Memorize" width="340">
+    <img src="docs/logo/lockup.svg" alt="Kinlore" width="340">
   </picture>
 </p>
 
@@ -40,7 +40,7 @@ source on purpose — the boundary and its exceptions are spelled out in
 
 ```bash
 # iOS
-cd ios && xcodegen generate && open Memorize.xcodeproj
+cd ios && xcodegen generate && open Kinlore.xcodeproj
 
 # Backend
 cd backend && npm install
@@ -52,7 +52,7 @@ When building from the command line, `DEVELOPER_DIR` is mandatory because this
 machine's `xcode-select` points at CommandLineTools:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/Memorize.xcodeproj -scheme Memorize -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
 Before the first cloud deploy, create the resources and update `database_id` in

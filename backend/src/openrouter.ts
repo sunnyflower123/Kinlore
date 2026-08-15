@@ -76,8 +76,8 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 		headers: {
 			Authorization: `Bearer ${key}`,
 			'Content-Type': 'application/json',
-			'HTTP-Referer': 'https://github.com/memorize-app',
-			'X-Title': 'Memorize',
+			'HTTP-Referer': 'https://github.com/sunnyflower123/Kinlore',
+			'X-Title': 'Kinlore',
 		},
 		body: JSON.stringify(body),
 	})

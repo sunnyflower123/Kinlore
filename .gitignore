@@ -8,7 +8,7 @@ node_modules/
 
 # XcodeGen generates these from project.yml — not under version control.
 ios/*.xcodeproj
-ios/Memorize/Info.plist
+ios/Kinlore/Info.plist
 ios/*.xcworkspace
 xcuserdata/
 DerivedData/

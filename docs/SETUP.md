@@ -85,7 +85,7 @@ under Product → Scheme → Edit Scheme → Run → Arguments; from the command
 after the bundle id:
 
 ```bash
-xcrun simctl launch <device> app.memorize.Memorize -tab people -screen person
+xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 ```
 
 | Argument | Build | What it does |

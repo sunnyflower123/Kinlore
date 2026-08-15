@@ -199,7 +199,7 @@ struct FamilyScreen: View {
     private static func inviteText(code: String) -> String {
         """
         Liity perheen muistoarkistoon:
-        memorize://join?code=\(code)
+        kinlore://join?code=\(code)
 
         Tai avaa sovellus ja liitä tämä koodi:
         \(code)

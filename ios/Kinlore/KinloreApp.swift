@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MemorizeApp: App {
+struct KinloreApp: App {
     /// One shared store for the whole app.
     @State private var store = MemoryStore()
     @State private var session = Session()
@@ -117,9 +117,9 @@ struct MemorizeApp: App {
         await session.syncPurchase(customerID: id)
     }
 
-    /// `memorize://join?code=...`
+    /// `kinlore://join?code=...`
     private static func inviteCode(from url: URL) -> String? {
-        guard url.scheme == "memorize", url.host == "join" else { return nil }
+        guard url.scheme == "kinlore", url.host == "join" else { return nil }
         return URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?
             .first { $0.name == "code" }?
@@ -135,10 +135,10 @@ struct MemorizeApp: App {
         // working, this changes on every launch — and the user would silently
         // lose their family, which is nearly impossible to notice without this
         // one line.
-        print("[memorize] member \(session.identity.memberID.prefix(8))… mode \(session.mode)")
+        print("[kinlore] member \(session.identity.memberID.prefix(8))… mode \(session.mode)")
 
         guard let base = AppServices.apiBaseURL else {
-            print("[memorize] backend: not configured — using stubs")
+            print("[kinlore] backend: not configured — using stubs")
             return
         }
         do {
@@ -147,9 +147,9 @@ struct MemorizeApp: App {
             )
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
             let body = String(data: data, encoding: .utf8) ?? ""
-            print("[memorize] backend \(base.absoluteString) → HTTP \(code) \(body)")
+            print("[kinlore] backend \(base.absoluteString) → HTTP \(code) \(body)")
         } catch {
-            print("[memorize] backend \(base.absoluteString) → ERROR: \(error.localizedDescription)")
+            print("[kinlore] backend \(base.absoluteString) → ERROR: \(error.localizedDescription)")
         }
     }
     #endif

@@ -2,7 +2,7 @@
 //
 //   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 //     -parse-as-library -o /tmp/geo-check scripts/geo-check.swift \
-//     ios/Memorize/Services/PlaceLookup.swift && /tmp/geo-check
+//     ios/Kinlore/Services/PlaceLookup.swift && /tmp/geo-check
 //
 // §18 says three things that are not about this app at all: that a Finnish
 // municipality resolves to itself, that Karelian places resolve across the
@@ -12,7 +12,7 @@
 // without a line of this repo changing — which is the failure mode a document
 // has: it goes on being believed.
 //
-// It compiles the REAL ios/Memorize/Services/PlaceLookup.swift. The two types
+// It compiles the REAL ios/Kinlore/Services/PlaceLookup.swift. The two types
 // below are the minimum stubs that file needs, copied from Models.swift — the
 // point is to exercise the shipping lookup, not a copy of it that can drift.
 //

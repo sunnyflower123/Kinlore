@@ -17,7 +17,7 @@ struct OnboardingScreen: View {
     ///
     /// **Tapping the link usually does not launch the app.** It is already
     /// running — a person opens a new app before they use the link, or reads the
-    /// message with the app in the background — so iOS shows "Open in Memorize?"
+    /// message with the app in the background — so iOS shows "Open in Kinlore?"
     /// and returns to a screen that appeared minutes ago. `onAppear` fires once,
     /// so the code was dropped and grandmother was looking at the same two
     /// buttons as before, with nothing filled in and no clue why. On a cold

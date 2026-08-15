@@ -1,4 +1,4 @@
-/// Memorize — Cloudflare Worker.
+/// Kinlore — Cloudflare Worker.
 ///
 /// The Worker exists to keep the API key out of the app. Unpacking an IPA is
 /// trivial, and a leaked key is a real bill on a student budget. That is why

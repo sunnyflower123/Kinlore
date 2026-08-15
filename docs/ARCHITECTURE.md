@@ -298,8 +298,8 @@ the app exists for.
 
 ### The shape of the invite link — a known shortcoming
 
-The link is `memorize://join?code=...`. **iOS shows a confirmation dialog for
-custom URL schemes** ("Open in Memorize?"), which is in English and is one extra
+The link is `kinlore://join?code=...`. **iOS shows a confirmation dialog for
+custom URL schemes** ("Open in Kinlore?"), which is in English and is one extra
 step for precisely the user who is most easily confused.
 
 A universal link (`https://…`) would open directly without a dialog, but it
@@ -325,7 +325,7 @@ deliberate act and the most recent one, so it wins over whatever is in the
 field.
 
 Both halves of the delivery were checked on a simulator — the scheme is
-registered, and `memorize://join?code=…` reaches the app cold and warm. The tap
+registered, and `kinlore://join?code=…` reaches the app cold and warm. The tap
 on the system dialog itself could not be automated here, so what happens after
 Open rests on the code rather than on a run.
 
@@ -1014,7 +1014,7 @@ and a family with nine are the same thing to the person looking at the badge.
 
 Rule 1 calls VoiceOver part of the product, and it was the one rule with no way
 to check it. VoiceOver reads the accessibility tree; XCUITest queries the same
-tree, so `MemorizeUITests` is the check: every answer is a named button, "En
+tree, so `KinloreUITests` is the check: every answer is a named button, "En
 muista" exists and leads to the reveal, and the verdict is in words rather than
 in a colour or a checkmark alone.
 
@@ -1083,7 +1083,7 @@ Four decisions:
 - **HTML rather than a list of text.** The point of an export is that the
   archive outlives the app, and a browser is the one program every family
   already has. The same file carries the photos and plays the audio without
-  Memorize installed.
+  Kinlore installed.
 - **The raw JSON travels beside it.** If the readable version ever lags behind
   the model, nothing has been lost.
 - **`NSFileCoordinator(.forUploading)` does the zipping**, so no dependency is
@@ -1153,7 +1153,7 @@ The guessing round's accessibility audit found it by accident: all four answers
 below the minimum on a screen that had been looked at half a dozen times. So the
 audit was run over the screens that could be reached without a network or a
 purchase, at the default size and at the largest one
-(`MemorizeUITests/AccessibilitySweepTests`): onboarding, the memories grid and
+(`KinloreUITests/AccessibilitySweepTests`): onboarding, the memories grid and
 its empty state, Kerro and its typing view, the people list and its empty state,
 a person's card, a photo's card, the ask sheet and settings. It found the same
 class of problem in almost all of them, and nearly all of it came from three

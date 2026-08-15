@@ -1,6 +1,6 @@
 # Plan — Shipaton 2026 / Next Gen
 
-Working title: **Memorize**
+Name: **Kinlore** (decided 15 Aug 2026, §10)
 Contest: RevenueCat Shipaton 2026, 1 Aug – 30 Sep 2026
 **Target category: Next Gen Award** (student category, $15,000). The store route
 is a conditional option decided on 10 Sep, not a second target — see §2.1.
@@ -51,7 +51,7 @@ exist:
 - The Apple account being used already has an **active Paid Applications
   Agreement** with current bank and tax details. The week of paperwork is gone.
   What is left is the DAC7 compliance form, and for this app it is a single
-  **No** — the personal-services question ends the flow, because Memorize sells
+  **No** — the personal-services question ends the flow, because Kinlore sells
   a software subscription and not anyone's labour.
 - The **Peace Prize does not judge scale.** Its criteria are Impact and
   Feasibility, and adoption appears only as *"any early evidence of
@@ -282,9 +282,20 @@ finished.**
   by being told rather than written, which is §1's claim in one word, and *kin*
   scopes it to the family without promising genealogy — so row 7 of §5 can be
   cut without the name turning into a lie. Backups, in order: *Lorehouse*,
-  *Long Ago*. Bundle ID `com.kinlore.app`, **not yet changed**: `project.yml`
-  and the RevenueCat dashboard are both keyed to `app.memorize.Memorize` and
-  have to move together, so do it in one sitting before the store route starts.
+  *Long Ago*. Bundle ID `com.kinlore.app`, changed in `project.yml`
+  on 15 Aug together with the target, scheme, source directories and the
+  `kinlore://` invite scheme. **RevenueCat needed nothing**, which is worth
+  writing down because the opposite was assumed first: a Test Store app is
+  identified by its API key and has no bundle-id field at all — *"Test Store
+  works automatically with the RevenueCat SDK, no additional configuration is
+  required beyond using your Test Store API key."* The bundle id becomes a
+  RevenueCat field only when an **App Store** app config is added, which happens
+  only if the store route opens (§2.1), and by then the new id is the one that
+  gets typed in. So the rename cost nothing here at all.
+
+  The Cloudflare worker, D1 database and R2 bucket keep the name `memorize` on
+  purpose: a bucket cannot be renamed, only recreated empty, and rule 3 of
+  CLAUDE.md lives in that bucket.
 
   Two of the five names this list used to carry — *Heirloom* and *Kinfolk* —
   are taken outright, by apps doing this same thing (*Heirloom4Life: Voice

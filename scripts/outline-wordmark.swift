@@ -14,7 +14,7 @@
 // to run again when the name changes.
 //
 //   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
-//     xcrun swift scripts/outline-wordmark.swift Memorize Charter 0.4 92 -1 178 132
+//     xcrun swift scripts/outline-wordmark.swift Kinlore Charter 0.4 92 -1 178 132
 //
 // Arguments: <text> <family> <weight> <size> <kerning> <baseline-x> <baseline-y>
 // Writes the path data to stdout and the resolved font and bounding box to

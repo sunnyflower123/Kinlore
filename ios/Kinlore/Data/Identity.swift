@@ -63,7 +63,7 @@ enum Keychain {
     static let memberIDKey = "member_id"
     static let secretKey = "device_secret"
 
-    private static let service = "app.memorize.identity"
+    private static let service = "com.kinlore.identity"
 
     private static func query(_ key: String) -> [String: Any] {
         [
