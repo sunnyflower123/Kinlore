@@ -255,6 +255,7 @@ private struct MemberRow: View {
 }
 
 private struct InviteRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let invite: Session.Invite
     let onRevoke: () -> Void
 
@@ -264,20 +265,46 @@ private struct InviteRow: View {
         return days == 1 ? "vanhenee huomenna" : "vanhenee \(days) päivän päästä"
     }
 
+    /// Side by side normally, stacked at accessibility sizes.
+    ///
+    /// The button keeps a third of the row's width whatever the text does, so at
+    /// XXXL what is left for the words is a column about six characters wide:
+    /// *"Käytet-"* / *"ty 2"* / *"kertaa"*, hyphenated down the side of a lone
+    /// *"Poista"*. Nothing clipped and the audit was content — it measures
+    /// contrast, growth and targets, not whether a sentence has been shredded —
+    /// so this one had to be looked at.
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(invite.usedCount == 0
-                    ? "Avoin kutsu"
-                    : "Käytetty \(invite.usedCount) kertaa")
-                    .font(.body)
-                Text(expiryText)
-                    .font(.caption)
-                    .foregroundStyle(Elder.supporting)
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) {
+                description
+                button
             }
+            .padding(.vertical, 4)
+        } else {
+            HStack(spacing: 12) {
+                description
+                Spacer()
+                button
+            }
+            .padding(.vertical, 4)
+        }
+    }
 
-            Spacer()
+    private var description: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(invite.usedCount == 0
+                ? "Avoin kutsu"
+                : "Käytetty \(invite.usedCount) kertaa")
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(expiryText)
+                .font(.caption)
+                .foregroundStyle(Elder.supporting)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
 
+    private var button: some View {
             // "Poista", not "Mitätöi". The app has one word for taking a thing
             // away and it is this one — "Poista tämä muisto", "Poista Aino",
             // "Poistetaanko sukulaisuus?" — and *mitätöidä* is the register of
@@ -299,8 +326,6 @@ private struct InviteRow: View {
                 // the audit as much as about the button.
                 .foregroundStyle(Elder.destructive)
                 .elderTapTarget()
-        }
-        .padding(.vertical, 4)
     }
 }
 
