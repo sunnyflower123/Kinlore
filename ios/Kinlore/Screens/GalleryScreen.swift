@@ -395,9 +395,16 @@ private struct SubjectRow: View {
         if count == 0 {
             // The microphone says what to do, so the meaning does not rest on
             // the colour alone.
+            // Not tinted, for the third time in this app and for the reason
+            // the guessing round's card recorded once already (§13): blue on
+            // this grey passes the contrast check only *nearly*, and nearly is
+            // not a pass for an 80-year-old's eyes. It failed outright at 24.4
+            // points above the tab bar — inside the fade, just outside the
+            // forgiveness band, which makes it a coin toss rather than a
+            // colour. Weight carries the invitation now, and the microphone
+            // carries the meaning as it always did.
             Label("Kerro tästä", systemImage: "mic.fill")
-                .font(.subheadline)
-                .foregroundStyle(.tint)
+                .font(.subheadline.weight(.semibold))
         } else {
             Text(count == 1 ? "1 muisto" : "\(count) muistoa")
                 .font(.subheadline)

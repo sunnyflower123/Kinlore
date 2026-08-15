@@ -211,9 +211,12 @@ private struct PersonRow: View {
                         .foregroundStyle(Elder.proposal)
                 } else if store.memories(for: subject.id).isEmpty {
                     // A gap is not hidden but shown as an invitation.
+                    // Not tinted — the same call as the gallery's row and the
+                    // guessing round's card: blue on this grey only nearly
+                    // passes, and it fails outright inside the tab bar's fade.
+                    // Weight invites; the microphone says what to do.
                     Label("Kerro hänestä", systemImage: "mic.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(.tint)
+                        .font(.subheadline.weight(.semibold))
                 } else {
                     let count = store.memories(for: subject.id).count
                     Text(count == 1 ? "1 muisto" : "\(count) muistoa")
