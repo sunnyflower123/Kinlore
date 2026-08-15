@@ -2,7 +2,8 @@
 
 Working title: **Memorize**
 Contest: RevenueCat Shipaton 2026, 1 Aug – 30 Sep 2026
-**Target category: Next Gen Award** (student category, $15,000). No others.
+**Target category: Next Gen Award** (student category, $15,000). The store route
+is a conditional option decided on 10 Sep, not a second target — see §2.1.
 
 ---
 
@@ -41,6 +42,48 @@ What this saves:
 
 Roughly **two weeks of work removed and ten days added.** The name does not even
 have to be locked in advance, because no App Store Connect record is created.
+
+## 2.1 The store route, reopened as an option — 15 Aug 2026
+
+§2 remains the default, but two of the things it priced in turned out not to
+exist:
+
+- The Apple account being used already has an **active Paid Applications
+  Agreement** with current bank and tax details. The week of paperwork is gone.
+  What is left is the DAC7 compliance form, and for this app it is a single
+  **No** — the personal-services question ends the flow, because Memorize sells
+  a software subscription and not anyone's labour.
+- The **Peace Prize does not judge scale.** Its criteria are Impact and
+  Feasibility, and adoption appears only as *"any early evidence of
+  usefulness"*. Few users is not a disqualifier; no store release is.
+
+So the store route now costs roughly **6–8 September evenings**, not two weeks:
+Apple 1.2 reporting and blocking (cut item 6 of §5 comes back), real StoreKit
+products in place of the Test Store, a privacy policy and the App Privacy
+answers, and screenshots and metadata.
+
+**The rule that decides it:**
+
+> **On 10 Sep, look at the Next Gen submission. If it is in a state you would
+> send as it stands — the app demo-able, the repo clean — then the rest of
+> September may go to the store route. If it is not, the store route is
+> dropped, and it is not discussed again.**
+
+The order is the point: the safe thing is finished before the optional thing is
+started. Shipping does not threaten Next Gen *eligibility* — it is additive, and
+the Apple account holder is not a member of the submitting team — but it does
+threaten Next Gen *quality*, and Next Gen judges *"technical care in
+presentation"*. The prize money is the same and the field is far smaller, so
+Next Gen is the target and the Peace Prize is the option, never the other way
+round.
+
+If the rule opens the route, the dates are fixed: **17 Sep** is the last day to
+submit to App Review — it leaves room for exactly one rejection, not two — and
+the app is live by **25 Sep**. Phase F in §3 is unchanged.
+
+Keeping the option open until 10 Sep costs one DAC7 click and locking the app
+name and bundle ID before an App Store Connect record exists (§10). Nothing
+else, and nothing in August.
 
 ## 3. The schedule is built around school
 

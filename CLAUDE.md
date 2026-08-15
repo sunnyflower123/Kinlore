@@ -5,8 +5,16 @@ structure. Side project for RevenueCat Shipaton 2026.
 
 **Target category: Next Gen** (student category). **No App Store release** — it
 was dropped because upper secondary school starts around 11 Aug and there is no
-time for App Store Connect. Deadline: Devpost submission 28 Sep 2026. Purchases
-run on the RevenueCat Test Store.
+time for App Store Connect. Purchases run on the RevenueCat Test Store.
+
+The official Devpost deadline is **30 Sep 2026, 23:45 PDT** (= 1 Oct, 09:45
+Finnish time); **28 Sep is an internal buffer**, not the real limit. One
+eligibility question is settled, confirmed by RevenueCat staff in Aug 2026 —
+do not re-research it:
+
+- **A non-qualifying school email domain is not a bar.** Student status is
+  verified at submission; a student ID or letter of enrolment is accepted when
+  the domain is not on the JetBrains/swot list.
 
 **The schedule is built around school:** the heaviest work (backbone + magic
 moment) happens 4–10 Aug during the holiday, not alongside school. When time
