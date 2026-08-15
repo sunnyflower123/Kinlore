@@ -23,6 +23,27 @@ final class AudioRecorder {
     /// dropped, so memory use does not grow during a long recording.
     private let maxLevels = 48
 
+    /// Whether the phone has not put the microphone question to this person yet.
+    ///
+    /// **Read, never requested.** Asking is what raises the system prompt, and
+    /// the whole point of this property is to say something *before* that
+    /// happens — a value that triggered the thing it describes would be useless
+    /// on the one screen that needs it.
+    ///
+    /// `-mic unasked` forces it, for the same reason `-mic denied` exists: the
+    /// state is real for exactly one press per install, and neither a test run
+    /// nor a screenshot run can get back to it once it is gone.
+    static var isPermissionUnasked: Bool {
+        #if DEBUG
+        switch UserDefaults.standard.string(forKey: "mic") {
+        case "unasked": return true
+        case "denied": return false
+        default: break
+        }
+        #endif
+        return AVAudioApplication.shared.recordPermission == .undetermined
+    }
+
     func requestPermission() async -> Bool {
         #if DEBUG
         // `-mic denied`: refused without touching the device's own permission.

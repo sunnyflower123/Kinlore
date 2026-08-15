@@ -267,6 +267,50 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The tightest this screen ever gets, and the only version of it a person
+    /// sees more than once by accident: an empty archive puts two starters below
+    /// the button, and the microphone has not been asked about yet, so the
+    /// sentence above it is the one about the permission.
+    ///
+    /// Both of those arrived from opposite ends and land on the same screen —
+    /// which is why it is measured rather than reasoned about.
+    func testTellPermissionUnasked() throws {
+        try sweep(
+            "Kerro, lupaa ei ole kysytty",
+            arguments: ["-seed", "empty", "-mic", "unasked"]
+        ) { app, isLargest in
+            require(
+                app.staticTexts
+                    .containing(NSPredicate(format: "label BEGINSWITH %@", "Puhelin kysyy ensin"))
+                    .firstMatch,
+                "the sentence before the system prompt"
+            )
+            require(app.staticTexts["Paina ja ala puhua"], "the record button's caption")
+            let typing = require(app.buttons["Kirjoita sen sijaan"], "the way that needs no permission")
+
+            // Not merely present — *above the bar*. Existing is not the same as
+            // reachable here: this screen is a ScrollView, so everything on it
+            // exists whether or not anybody can see it, and the audit is told to
+            // forgive contrast underneath the floating tab bar. Between them,
+            // the one thing an added sentence actually does to this screen is
+            // the one thing nothing was measuring — and it happened while this
+            // very test was being written: two lines instead of one put the
+            // keyboard way out under the bar.
+            //
+            // At the largest size the screen is taller than the phone on
+            // purpose and scrolling is the design, so this is asked at the size
+            // where it is a promise.
+            if !isLargest {
+                let bar = app.tabBars.firstMatch
+                XCTAssertTrue(
+                    bar.exists && typing.frame.maxY <= bar.frame.minY,
+                    "\"Kirjoita sen sijaan\" is under the tab bar: "
+                        + "\(NSCoder.string(for: typing.frame)) against \(NSCoder.string(for: bar.frame))"
+                )
+            }
+        }
+    }
+
     func testTellByTyping() throws {
         try sweep("Kerro, typing", arguments: ["-seed", "guess", "-screen", "write"]) { app, _ in
             require(app.textViews.firstMatch, "the typing field")

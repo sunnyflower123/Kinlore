@@ -198,8 +198,38 @@ private struct IdleView: View {
     /// does not have, and they pushed "Kirjoita sen sijaan" under the tab bar at
     /// the ordinary text size. A starter says what to do more concretely than
     /// the reassurance does — "Kuka tässä kuvassa on?" is the permission.
+    ///
+    /// Once per install it says something else entirely. The first press does
+    /// not start a recording, it raises iOS's permission prompt — a dialog
+    /// nobody chose to open, over a screen that has just been read, with a
+    /// refusal one tap away. Answered wrongly it is not recoverable by this
+    /// user: the way back is four taps into a settings tree, under a switch, in
+    /// a list of apps, which is why the screen behind a refusal had to be built
+    /// at all (ARCHITECTURE §8.9).
+    ///
+    /// So the app says it first, and the sentence **replaces** the reassurance
+    /// rather than joining it. Nothing is lost by the swap: a starter question
+    /// says what to do more concretely than the reassurance does, and the
+    /// reassurance is there for every press after this one.
+    ///
+    /// It names no button. The affirmative label on that prompt is Apple's and
+    /// has changed between iOS versions; sending an 80-year-old to look for a
+    /// word that is not there would be worse than saying nothing.
     private func intro(withStarters: Bool) -> String {
-        typeSize.isAccessibilitySize || withStarters
+        if AudioRecorder.isPermissionUnasked {
+            // Shortened by the same rule as the reassurance below, and it was
+            // measured the hard way: the two-line version at the *ordinary* text
+            // size put "Kirjoita sen sijaan" underneath the floating tab bar —
+            // the one way on from this screen that needs no permission at all,
+            // hidden by the sentence about permission. On a first launch the
+            // starters are always there, so the short one is what ships; the
+            // long one is for somebody who joined a family that has already been
+            // told about.
+            return typeSize.isAccessibilitySize || withStarters
+                ? "Puhelin kysyy ensin luvan mikrofoniin."
+                : "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua."
+        }
+        return typeSize.isAccessibilitySize || withStarters
             ? "Puhu ihan rauhassa ja vapaasti."
             : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
