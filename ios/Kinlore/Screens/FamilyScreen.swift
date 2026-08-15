@@ -118,7 +118,14 @@ struct FamilyScreen: View {
                         .elderBody()
                         .foregroundStyle(Elder.supporting)
                 } header: {
+                    // Said out loud, like every other header in Settings. A
+                    // `List` styles its own headers below the contrast minimum,
+                    // and this one was the last bare `Text` left on the screen —
+                    // the audit had it at "nearly passed", which is a fail with
+                    // a kind word. It sits directly above the row that explains
+                    // who can see the family's memories.
                     Text("Kutsut")
+                        .foregroundStyle(Elder.supporting)
                 }
             } else {
                 Section {
