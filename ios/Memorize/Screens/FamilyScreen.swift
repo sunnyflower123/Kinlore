@@ -243,7 +243,13 @@ private struct InviteRow: View {
 
             Spacer()
 
-            Button("Mitätöi", role: .destructive, action: onRevoke)
+            // "Poista", not "Mitätöi". The app has one word for taking a thing
+            // away and it is this one — "Poista tämä muisto", "Poista Aino",
+            // "Poistetaanko sukulaisuus?" — and *mitätöidä* is the register of
+            // an authority annulling a document, which is not the register of
+            // anything else this app says. The row beside it already says what
+            // is being removed. See docs/ARCHITECTURE.md §21.
+            Button("Poista", role: .destructive, action: onRevoke)
                 .font(.subheadline.weight(.medium))
                 .elderTapTarget()
         }

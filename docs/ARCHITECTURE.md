@@ -1681,3 +1681,68 @@ the only way to reach the removal. Relationships arrive as proposals from the
 extraction and are added from a picker, both of which are the grandchild's end
 of this app rather than grandmother's. If that stops being true, the answer is a
 visible affordance and not a wider gesture.
+
+---
+
+## 21. The words
+
+Three sessions have added buttons to this app, and the words held up better than
+they had any right to. This section is why they should keep holding: for an
+80-year-old a **new word is a new thing**. Somebody who has learnt that "Valmis"
+ends a screen has not learnt that "Selvä" does, and finding out costs her a tap
+she is afraid to take.
+
+So: **a new word requires a new act.** Not a new screen, not a new author — a new
+act. What follows is the vocabulary as it stands, arrived at by reading every
+`Button` and `Label` in the app rather than by taste.
+
+| The act | The word | Where |
+|---------|----------|-------|
+| Leave, having done the thing | **Valmis** | The result screen, the guessing card after the reveal |
+| Leave, without doing it | **Sulje** | A sheet's toolbar, the guessing card before the reveal |
+| I have read this notice | **Selvä** | The export alert, the skipped-photo note, the saved-audio screen in free dictation |
+| Back out of a dialog | **Peruuta** | Every confirmation |
+| Take a thing away | **Poista** | A memory, a person, a relationship, an invite |
+| Throw away what was never saved | **Hylkää** / **Älä tallenna tätä** | The recording in progress |
+| Speak | **Kerro …** | Everywhere it starts: *Kerro tästä muisto*, *Kerro hänestä*, *Kerro toinen muisto* |
+| Type instead of speaking | **Kirjoita sen sijaan** | The Tell screen, the refused microphone |
+| Supply the text that never arrived | **Kirjoita se itse** | The saved-audio screen |
+| Accept what the AI proposed | **Vahvista** | Person rows, relationship rows |
+
+Two distinctions in that table are load-bearing and easy to flatten by accident.
+
+**Valmis / Sulje / Selvä are three acts, not three moods.** The first says the
+work is finished, the second that it never started, the third that nothing was
+being asked of her at all. The saved-audio screen chooses between the first and
+the third by whether it was opened as a sheet — which looks like a wobble in the
+code and is the right word in both cases.
+
+**Perhe is not suku.** *Perhe* is the people who use this app together: who can
+see the memories, who gets the invite link, whose entitlement is shared. *Suku*
+is the web of relations the archive describes, and most of it is dead. They are
+different sets, they are different words, and neither should be used for the
+other. **Ihmiset** is a third thing again — the list of person subjects, which is
+what the tab is called, so the empty state under that tab now says *ihmiset* too
+rather than answering in a word the person did not tap.
+
+What the survey changed, in full: *"Mitätöi"* on an invite became *"Poista"* —
+the register of an authority annulling a document, in an app whose every other
+removal is *poista* — and the People empty state stopped calling its own list
+*suvun henkilöt*. Everything else was already consistent.
+
+What it deliberately left alone:
+
+- **"Riittää tältä erää"** ends the interview loop. It is a unique act — *stop
+  asking me things* — and the one sentence in the app that sounds like a person
+  rather than a product. A unique act may have a unique word.
+- **"Tallenna tai lähetä arkisto"** on the share sheet, beside *"Vie arkisto"* on
+  the row that opens it. Two steps of one act, and the second names the choice
+  iOS is about to offer rather than repeating the first.
+- **"Kirjoita se itse"** beside *"Kirjoita sen sijaan"*. Instead of speaking is
+  not the same as instead of the transcription that never came.
+
+One coupling worth knowing before changing any of this: the empty states are
+duplicated as strings in `AccessibilityPolicy.systemEmptyStateText`, because a
+`ContentUnavailableView` caps its own description and the exemption is matched on
+the label. Change the sentence on the screen and that list changes with it, or
+`testPeopleEmpty` goes red. That is the coupling working.

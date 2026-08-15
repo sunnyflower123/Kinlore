@@ -88,7 +88,14 @@ struct PeopleScreen: View {
                     ContentUnavailableView {
                         Label("Ei vielä ihmisiä", systemImage: "person.2")
                     } description: {
-                        Text("Suvun henkilöt kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.")
+                        // "Ihmiset", not "suvun henkilöt": the tab is called
+                        // Ihmiset and so is this screen, and a person who has
+                        // just tapped one word should not be answered in
+                        // another. The distinction the app does keep is one
+                        // level down — *suku* is the web of relations on a
+                        // person's card, and it is a different thing from the
+                        // list. See docs/ARCHITECTURE.md §21.
+                        Text("Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.")
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
                     }

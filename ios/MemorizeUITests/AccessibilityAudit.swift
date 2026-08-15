@@ -112,7 +112,12 @@ enum AccessibilityPolicy {
         "Valitse kuvia",
         "Lisää vanha valokuva, niin koko perhe voi kertoa siitä omat muistonsa.",
         "Ei vielä ihmisiä",
-        "Suvun henkilöt kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.",
+        // Copied from the screen, and it has to be: a `ContentUnavailableView`
+        // caps its own description, and the exemption is matched on the label.
+        // Change the sentence in RootView and this line changes with it or
+        // `testPeopleEmpty` goes red — which is the coupling working, not
+        // failing.
+        "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.",
     ]
 
     /// A `List` caps how far its own footers grow, exactly as
