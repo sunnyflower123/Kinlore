@@ -1,0 +1,204 @@
+import SwiftUI
+
+/// Putting a date on a photo or a moment by hand.
+///
+/// `date_start`, `date_end` and `date_precision` have been in the schema from the
+/// first day, and rule 5 — uncertainty is stored, never rounded — is one of the
+/// things this app is built on. Only the extraction could ever write them. So a
+/// granddaughter who knows the summer was 1957, looking at a photograph the model
+/// dated to nothing at all, had nowhere to put what she knew.
+///
+/// The precision is **chosen, not inferred**. That is the whole design: the
+/// screen asks how sure you are before it asks what the answer is, so "joskus
+/// viisikymmentäluvulla" is two taps rather than a compromise. A screen that
+/// only offered a year would force everybody into a precision they do not have,
+/// which is precisely what rule 5 exists to prevent.
+struct DateSheet: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    let subject: Subject
+
+    /// How sure the person is.
+    ///
+    /// Three choices, and the two that are missing are missing for different
+    /// reasons. A **month** is the one nobody remembers without remembering the
+    /// year anyway. An **exact day** was offered and then taken out: the only
+    /// controls iOS has for it are a wheel and a graphical calendar, and neither
+    /// one's text grows with Dynamic Type — measured, three findings on that
+    /// state alone. A control this app's user cannot read is not a capability.
+    ///
+    /// The precision itself stays in the model: extraction still writes `.day`
+    /// when somebody says a date out loud, and this screen shows it as the year
+    /// it falls in rather than pretending it is not there.
+    private enum Sureness: String, CaseIterable, Identifiable {
+        case decade, year, unknown
+        var id: String { rawValue }
+
+        var label: String {
+            switch self {
+            case .decade: "Vuosikymmen"
+            case .year: "Vuosi"
+            case .unknown: "En tiedä"
+            }
+        }
+    }
+
+    @State private var sureness: Sureness = .year
+
+    private static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Helsinki") ?? .current
+        return calendar
+    }()
+
+    /// This century back to the 1900s. An archive of a family's memories does
+    /// not need the nineteenth, and a shorter column is a faster one.
+    private static let decades: [Int] = Array(stride(from: 1900, through: 2020, by: 10))
+    private static let years: [Int] = Array(1900 ... Self.calendar.component(.year, from: .now))
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Picker("Kuinka tarkkaan tiedät?", selection: $sureness) {
+                        ForEach(Sureness.allCases) { choice in
+                            Text(choice.label).tag(choice)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+
+                    // The way out lives here, above the answers, because the
+                    // answers can be a hundred and twenty-six rows long. A
+                    // toolbar button would be the usual place and its text
+                    // barely grows with Dynamic Type; a row at the bottom would
+                    // have to be scrolled to; a pinned bar was tried and it dims
+                    // whatever scrolls under it, which the audit reads as a
+                    // contrast failure and an eye reads as a covered row.
+                    Button("Peruuta") { dismiss() }
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                } header: {
+                    // A List styles its own headers below the contrast minimum.
+                    Text("Kuinka tarkkaan tiedät?")
+                        .foregroundStyle(Elder.supporting)
+                } footer: {
+                    Text("Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.")
+                        .foregroundStyle(Elder.supporting)
+                }
+
+                // **Choosing is answering.** There is no save button: tapping a
+                // year stores it and closes the sheet, which is the pattern
+                // `RelationPicker` already uses for the same shape of question.
+                // One tap instead of two, and nothing that has to stay on screen
+                // while a long list scrolls past it.
+                //
+                // Lists rather than wheels: a wheel's text does not grow with
+                // Dynamic Type — measured on this very screen — and an inline
+                // picker is a column of full-width rows that scale like
+                // everything else.
+                Section {
+                    switch sureness {
+                    case .decade:
+                        ForEach(Self.decades, id: \.self) { start in
+                            choice("\(String(start))-luku", isCurrent: isStored(.decade, start)) {
+                                save(decade: start)
+                            }
+                        }
+                    case .year:
+                        // `String(year)` rather than the number: SwiftUI formats
+                        // an Int with the locale's thousands separator, and
+                        // "1 957" is not a year.
+                        ForEach(Self.years, id: \.self) { value in
+                            choice(String(value), isCurrent: isStored(.year, value)) {
+                                save(year: value)
+                            }
+                        }
+                    case .unknown:
+                        choice("Poista ajankohta", isCurrent: false) { save(nothing: true) }
+                    }
+                } header: {
+                    Text(sureness == .unknown ? "" : "Valitse")
+                        .foregroundStyle(Elder.supporting)
+                }
+            }
+            .navigationTitle("Milloin tämä oli?")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear { load() }
+        }
+    }
+
+    /// One answer. The stored one is ticked — the shape says which it is, not a
+    /// colour, and it is how somebody sees what the photo already claims.
+    private func choice(_ label: String, isCurrent: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(label)
+                    .font(.body.weight(isCurrent ? .semibold : .regular))
+                Spacer()
+                if isCurrent {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Elder.affirmative)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .elderTapTarget()
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func isStored(_ precision: DatePrecision, _ value: Int) -> Bool {
+        guard let hint = subject.dateHint, hint.precision == precision, let start = hint.start else {
+            return false
+        }
+        let storedYear = Self.calendar.component(.year, from: start)
+        return precision == .decade ? storedYear / 10 * 10 == value : storedYear == value
+    }
+
+    /// Opens on what is already stored, so a small correction is a small
+    /// gesture rather than a re-entry.
+    private func load() {
+        guard let hint = subject.dateHint, hint.start != nil else { return }
+        switch hint.precision {
+        case .decade:
+            sureness = .decade
+        case .year:
+            sureness = .year
+        case .day, .month:
+            // A date the extraction heard in full. Shown as its year, because
+            // that is the finest thing this screen can ask for — and saving
+            // then coarsens it deliberately, which is the person's call and not
+            // a silent one: the row behind the sheet says what is stored now.
+            sureness = .year
+        case .unknown:
+            sureness = .unknown
+        }
+    }
+
+    private func save(decade: Int? = nil, year: Int? = nil, nothing: Bool = false) {
+        store.setDateHint(subjectID: subject.id, hint: nothing ? nil : hint(decade: decade, year: year))
+        dismiss()
+    }
+
+    /// The span the answer really covers. A decade is ten years wide and is
+    /// stored that way — writing 1 January 1950 alone would turn "joskus
+    /// viisikymmentäluvulla" into a day nobody claimed.
+    private func hint(decade: Int?, year: Int?) -> DateHint? {
+        if let decade {
+            return DateHint(
+                start: Self.calendar.date(from: DateComponents(year: decade, month: 1, day: 1)),
+                end: Self.calendar.date(from: DateComponents(year: decade + 9, month: 12, day: 31)),
+                precision: .decade
+            )
+        }
+        if let year {
+            return DateHint(
+                start: Self.calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
+                end: Self.calendar.date(from: DateComponents(year: year, month: 12, day: 31)),
+                precision: .year
+            )
+        }
+        return nil
+    }
+}

@@ -233,6 +233,24 @@ final class MemoryStore {
         save()
     }
 
+    /// A date somebody typed in, or cleared.
+    ///
+    /// Unlike `describe`, this **overwrites**. That one fills empty fields only,
+    /// because it speaks for the extraction and a machine's guess must not walk
+    /// over a person's knowledge. This one is the person: a granddaughter who
+    /// knows the summer was 1957 outranks anything the model heard, and rule 5
+    /// was only ever about not *rounding* uncertainty — not about refusing an
+    /// answer from somebody who has one.
+    ///
+    /// Nil clears it, which is an answer too: a date that turned out to be wrong
+    /// is worse than no date, and until now there was no way to say so.
+    func setDateHint(subjectID: String, hint: DateHint?) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].dateHint = hint
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
     /// Renames a subject. Used when the teller corrects a name that speech
     /// recognition misheard — that is the only moment the error can still be
     /// fixed, because later nobody knows what was said on the recording.

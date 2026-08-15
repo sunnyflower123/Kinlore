@@ -30,6 +30,7 @@ An honest inventory, not a wish list:
 | Soft deletion — a rejection that is final | **Done and tested**, see §3 |
 | A telling taken back — mid-recording, or after it is saved | **Done and tested**, see §19 |
 | Search over what was told, not only over titles | **Done and tested**, see §8 |
+| A date given by hand, at the precision somebody actually has | **Done and tested**, see §8 |
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
 | Accessibility sweep over every screen | **Done** — 20 screens at both text sizes, out of 41 UI tests, and they audit the screen they are named after |
@@ -591,9 +592,52 @@ Built, in the order they were built:
     Nothing was removed for this one; it is an addition, and the decision to
     take it was made deliberately rather than by forgetting the rule.
 
+12. **A date by hand**, on a photograph or a moment.
+
+    The three date columns have been in the schema from the first day and rule 5
+    — uncertainty is stored, never rounded — is one of the things this app rests
+    on. Only the extraction could ever write them, so a granddaughter who knows
+    the summer was 1957, looking at a photograph the model heard no year for, had
+    nowhere to put what she knew.
+
+    The screen asks **how sure you are before it asks what you know**: a decade,
+    a year, or "en tiedä" which clears it. Choosing is answering — tapping a
+    decade stores it and closes the sheet, the pattern `RelationPicker` already
+    uses — so there is no save button to keep on screen while a hundred rows
+    scroll past. People and places are left out: `dateHint` means "when this
+    happened", and a person's date would have to mean birth or death, which the
+    column does not say and the app must not guess.
+
+    Three things were built and taken out again, each by measurement rather than
+    taste, and they are worth more than the feature:
+
+    - **A wheel picker.** Its text does not grow with Dynamic Type. On an app
+      built around rule 1 that is a defect and not a tool's opinion.
+    - **An exact-day answer.** The only controls iOS offers are that wheel and a
+      graphical calendar; the calendar audited at three findings on its own. A
+      control this user cannot read is not a capability. Extraction still writes
+      `.day` when somebody says a date out loud, and the sheet shows it as its
+      year rather than pretending it is not there.
+    - **A pinned bar** holding the actions. Content scrolls under it, and the
+      audit read a year dimmed to below the contrast minimum — the same fade the
+      system's bars are forgiven for, except this one was mine to not build.
+    - **A `Label` for the date row** on the photo's card. The audit called its
+      text clipped in every shape it was tried in — as a button's label, as a
+      plain row, with the tap target on the label, with the tap target on the
+      button, with an explicit Dynamic Type font, with `fixedSize` — and it
+      pushed a second finding onto the memory underneath, so the symptom
+      followed the layout rather than the words. The same row built from a
+      `Text` and an `Image` in an `HStack` passes at both sizes. Four runs for
+      one fact, and it is written down so the fifth is not needed.
+
+    `MemoryStore.setDateHint` **overwrites**, unlike `describe` beside it, and
+    the difference is the point: `describe` speaks for the extraction and a
+    machine's guess must not walk over a person's knowledge. This one is the
+    person.
+
 Not built:
 
-12. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
+13. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
    person card: the same information, works at the largest text size and is
    readable with VoiceOver. Formally out of v1 since §10.
 

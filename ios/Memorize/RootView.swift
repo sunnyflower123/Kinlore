@@ -240,6 +240,7 @@ struct SubjectDetailScreen: View {
     @State private var isTelling = false
     @State private var isAsking = false
     @State private var isCorrectingName = false
+    @State private var isDating = false
 
     /// The subject as the store has it now, rather than as it was when this
     /// screen was pushed. A name corrected here has to be visible here, and the
@@ -257,6 +258,11 @@ struct SubjectDetailScreen: View {
         current.kind == .person || current.kind == .place
     }
 
+    /// Whether "when did this happen" is a question this subject can answer.
+    private var datable: Bool {
+        current.kind == .photo || current.kind == .event
+    }
+
     var body: some View {
         List {
             if subject.kind == .photo {
@@ -267,10 +273,41 @@ struct SubjectDetailScreen: View {
                 }
             }
 
-            if let hint = subject.dateHint, hint.precision != .unknown {
+            // The date, and the way to put one there. It used to be a label that
+            // appeared only when the extraction had heard a year — so a
+            // photograph nobody had dated said nothing, and the granddaughter
+            // who knows the summer was 1957 had nowhere to put it. Rule 5 stores
+            // uncertainty; until now only the machine could write any.
+            //
+            // People and places are left out on purpose: `dateHint` means "when
+            // this happened", and a person's date would have to mean birth or
+            // death, which the column does not say and the app must not guess.
+            // When it happened, and the way to say so. It used to be a label
+            // that appeared only when the extraction had heard a year, so a
+            // photograph nobody had dated said nothing at all.
+            //
+            // A `Text` and an `Image` rather than a `Label`, and that is not a
+            // style preference: as a `Label` the audit reported this row's text
+            // as clipped in every shape it was tried in — as a button's label,
+            // as a plain row, with the tap target moved, with an explicit font —
+            // and it pushed a second finding onto the memory underneath. Split
+            // into two views the same row passes at both sizes. Four runs to
+            // learn one fact, which is why it is written here.
+            if datable {
                 Section {
-                    Label(hint.displayText, systemImage: "calendar")
+                    Button {
+                        isDating = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "calendar")
+                            Text(current.dateHint?.displayText ?? "Lisää ajankohta")
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         .foregroundStyle(Elder.supporting)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .elderTapTarget()
+                    }
                 }
             }
 
@@ -393,6 +430,9 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isAsking) {
             AskQuestionSheet(subject: subject)
+        }
+        .sheet(isPresented: $isDating) {
+            DateSheet(subject: current)
         }
         .sheet(isPresented: $isCorrectingName) {
             CorrectNameSheet(subject: current) { merged in

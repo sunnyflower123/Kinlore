@@ -421,6 +421,16 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The date sheet: a wheel, a graphical date picker and four choices, on the
+    /// screen that asks how sure somebody is before it asks what they know.
+    func testDateSheet() throws {
+        try sweep("Ajankohta", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Lisää ajankohta"], in: app, "the date row").tap()
+            require(app.staticTexts["Kuinka tarkkaan tiedät?"], "the date sheet")
+        }
+    }
+
     /// The help page. Six sections of plain text and the only place in the app
     /// that says the recording leaves the phone — which makes it the one screen
     /// here whose whole content is text, and text at XXXL is what this sweep
