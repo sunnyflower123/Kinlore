@@ -470,6 +470,22 @@ Built, in the order they were built:
    grey on grey. The button is no longer disabled — it says what is still
    missing instead, the same trade as the refused microphone in §9 below.
 2. **Family** — members, sharing the invite link, usage.
+
+   **The screen nothing could measure.** Every row on it is drawn from what the
+   Worker sends, so a device without a backend reaches the offline note instead
+   — which meant no test and no screenshot run had ever rendered the invite
+   rows, and a button on one of them was renamed (§21) without anything drawing
+   it once. `-seed family` (DEBUG) gives `Session` a canned family with no
+   network: three members, one used invite and one open one, a part-spent free
+   quota. Same hole as `-mic denied` and `-screen result`, same shape of answer.
+
+   The first audit that reached it found three defects, and the worst was the
+   sentence that carries §4's whole security boundary: *"kuka tahansa linkin
+   saanut näkee perheen kaikki muistot"*, drawn as a `List` footer — the
+   framework's grey at about 4.2:1, capped so it could not grow with Dynamic
+   Type at all, its last line under the floating tab bar with nothing left to
+   scroll. It is an ordinary row now. The member icon was reading its own SF
+   Symbol name aloud in English, and the list has bottom room for the bar.
 3. **Audio playback** — the memory card's "Listen in her own voice". Emotionally
    the product's strongest detail and small to implement.
 

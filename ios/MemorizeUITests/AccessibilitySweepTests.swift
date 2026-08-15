@@ -80,6 +80,30 @@ final class AccessibilitySweepTests: XCTestCase {
         return require(element, what)
     }
 
+    /// Waits until an element has stopped moving.
+    ///
+    /// `reach` leaves a list mid-scroll, and an audit that samples a moving view
+    /// reports colours nothing ever drew — that is what happened when the
+    /// gallery's tiles were scrolled to, and it is why scrolling before an audit
+    /// is otherwise avoided here. Polling the frame is deterministic where a
+    /// sleep is a guess: two identical reads a beat apart mean the scroll is
+    /// over, and a screen that never stops moving is a failure worth being told
+    /// about rather than measuring anyway.
+    private func settle(
+        _ element: XCUIElement,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        var previous = element.frame
+        for _ in 0 ..< 30 {
+            Thread.sleep(forTimeInterval: 0.1)
+            let current = element.frame
+            if current == previous, current != .zero { return }
+            previous = current
+        }
+        XCTFail("never stopped moving: \(element)", file: file, line: line)
+    }
+
     private func reachPhotoTile(in app: XCUIApplication) -> XCUIElement {
         reach(photoTile(in: app), in: app, "the photo tile")
     }
@@ -134,6 +158,37 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep("Liity perheeseen", arguments: [], api: "http://127.0.0.1:9") { app, _ in
             require(app.buttons["Liity kutsulinkillä"], "the way into joining").tap()
             require(app.staticTexts["Kutsu"], "the join form")
+        }
+    }
+
+    /// Members, usage and the invite rows.
+    ///
+    /// Nothing had ever measured this screen, and nothing could: the rows come
+    /// from what the Worker sends, so every run without a backend reached the
+    /// offline note instead. `-seed family` is the missing half — the same hole
+    /// `-mic denied` and `-screen result` were written to close, and this one had
+    /// already let a button be renamed without being drawn.
+    ///
+    /// Both invite rows are asked for by name. They read *"Avoin kutsu"* and
+    /// *"Käytetty 2 kertaa"* beside the same button, which is the length that
+    /// matters at the largest text size.
+    ///
+    /// The rows are below the fold at both sizes — three sections sit above them
+    /// — so this scrolls, waits for the scroll to end, and audits there. What
+    /// that costs is named rather than hidden, the same way the gallery names
+    /// its own gap: nothing measures the members and the usage rows above, and
+    /// they are ordinary `LabeledContent` of the kind the audit meets on every
+    /// other screen. The invites are the part that had never been drawn at all.
+    func testFamily() throws {
+        try sweep(
+            "Perhe",
+            arguments: ["-seed", "family", "-tab", "people", "-screen", "family"]
+        ) { app, _ in
+            require(app.navigationBars["Perhe"], "the family screen")
+            let open = reach(app.staticTexts["Avoin kutsu"], in: app, "the invite nobody has used")
+            reach(app.staticTexts["Käytetty 2 kertaa"], in: app, "the invite somebody has")
+            reach(app.buttons["Poista"].firstMatch, in: app, "the way to take an invite back")
+            settle(open)
         }
     }
 

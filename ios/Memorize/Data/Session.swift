@@ -73,6 +73,12 @@ final class Session {
     var isPaid: Bool { usage?.isPaid ?? false }
 
     init() {
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "seed") == "family" {
+            seedDemoFamily()
+            return
+        }
+        #endif
         guard AppServices.apiBaseURL != nil else {
             mode = .local
             return
@@ -196,6 +202,59 @@ final class Session {
     }
 
     // MARK: - Helpers
+
+    #if DEBUG
+    /// A family with no server behind it, for `-seed family`.
+    ///
+    /// The invite rows are the one part of this app nothing could ever look at.
+    /// They are drawn entirely from what the Worker sends, so a device without a
+    /// backend shows the offline note instead — which is how the button on that
+    /// row was renamed from *"Mitätöi"* to *"Poista"* (§21) without any test or
+    /// any screenshot run ever drawing it once. Same hole as the refused
+    /// microphone and the result screen, and the same shape of answer.
+    ///
+    /// **Two invites on purpose.** The row reads *"Avoin kutsu"* or *"Käytetty
+    /// n kertaa"* and those are different lengths beside the same button, so
+    /// both are on screen at once or the audit only ever measures the short one.
+    /// Three members for the same reason: one of them is you, and that row draws
+    /// differently.
+    ///
+    /// The times are relative to the launch rather than fixed. An invite that
+    /// expired last week is a screen about something else, and a fixture that
+    /// rots into one is worse than no fixture.
+    ///
+    /// `refresh()` cannot overwrite this: it returns early without a client, and
+    /// there is no client without an address. So the seed survives the screen's
+    /// own `.task`, which is the only thing that would otherwise take it away.
+    private func seedDemoFamily() {
+        let now = Date.now.timeIntervalSince1970
+        let day: Double = 24 * 60 * 60
+        mode = .inFamily(id: "demo-family")
+        family = Family(
+            id: "demo-family",
+            name: "Virtaset",
+            entitlement: "free",
+            you: Family.You(id: "demo-you", role: "owner", displayName: "Minä"),
+            members: [
+                Member(id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day),
+                Member(id: "demo-aino", displayName: "Aino", role: "member", joinedAt: now - 12 * day),
+                Member(id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day),
+            ],
+            invites: [
+                Invite(code: "demo-avoin", expiresAt: now + 6 * day, usedCount: 0),
+                Invite(code: "demo-kaytetty", expiresAt: now + 2 * day, usedCount: 2),
+            ]
+        )
+        // A free family with the month partly spent: the usage rows say a
+        // fraction rather than "rajaton", which is the version with numbers in
+        // it and the one that can overflow a row.
+        usage = EntitlementClient.Usage(
+            entitlement: "free",
+            aiSeconds: .init(used: 7 * 60, limit: 10 * 60),
+            photos: .init(used: 12, limit: 20)
+        )
+    }
+    #endif
 
     private func store(familyID: String) {
         UserDefaults.standard.set(familyID, forKey: familyKey)

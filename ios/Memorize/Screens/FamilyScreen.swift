@@ -97,10 +97,28 @@ struct FamilyScreen: View {
                             Task { await session.revokeInvite(code: invite.code) }
                         }
                     }
+
+                    // A row rather than a footer — the fourth time this app has
+                    // had to make that move, after two toolbar buttons and the
+                    // guessing card's way out.
+                    //
+                    // §4 calls the invite link the entire security boundary, and
+                    // this is the sentence that says so. As a `List` footer it
+                    // was drawn in the framework's own grey, which measures
+                    // about 4.2:1 and is under the minimum; it was capped so it
+                    // could not grow with Dynamic Type at all — "unsupported",
+                    // not "partially"; and it was clipped. Three findings on one
+                    // sentence, on the first run that could reach this screen.
+                    //
+                    // As an ordinary row it is `Elder.supporting` at 6.6:1 and
+                    // scales like any other body text. The sentence that decides
+                    // who sees a family's memories should not be the faintest,
+                    // smallest, most truncated thing on the screen.
+                    Text("Kutsu on voimassa viikon. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain niille joille se kuuluu.")
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
                 } header: {
                     Text("Kutsut")
-                } footer: {
-                    Text("Kutsu on voimassa viikon. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain niille joille se kuuluu.")
                 }
             } else {
                 Section {
@@ -119,6 +137,16 @@ struct FamilyScreen: View {
             }
         }
         .navigationTitle("Perhe")
+        // Room under the last row for the floating tab bar.
+        //
+        // iOS 26's bar is a capsule that content scrolls beneath, and at the
+        // bottom of a list there is nothing left to scroll: the final line of
+        // the invite footer — *"…joten jaa se vain niille joille se kuuluu"*,
+        // which is the sentence that explains the whole security boundary —
+        // ended underneath it with no way to bring it out. Measured at 61.7 pt
+        // of text whose frame stopped exactly at the bar's edge, on the first
+        // run that could reach this screen at all.
+        .contentMargins(.bottom, Elder.minTapTarget, for: .scrollContent)
         .task { await session.refresh() }
         .refreshable { await session.refresh() }
         .paywallSheet(isPresented: $isShowingPaywall)
@@ -185,9 +213,16 @@ private struct MemberRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            // Decoration: the row says "Perustaja" or "Jäsen" in words right
+            // beside it. Left visible to VoiceOver it read out
+            // "person.crop.circle.badge.checkmark" — the symbol's own name, in
+            // English, in the middle of a Finnish family list, which is the same
+            // defect the onboarding mark had. Nothing had ever caught this one
+            // because nothing could reach this screen (`-seed family`).
             Image(systemName: member.role == "owner" ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
                 .font(.title2)
                 .foregroundStyle(Elder.supporting)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(isYou ? "\(member.displayName) (sinä)" : member.displayName)
@@ -251,6 +286,18 @@ private struct InviteRow: View {
             // is being removed. See docs/ARCHITECTURE.md §21.
             Button("Poista", role: .destructive, action: onRevoke)
                 .font(.subheadline.weight(.medium))
+                // `role: .destructive` draws the label in iOS's own red, and
+                // **measured off this screen it is rgb(255, 56, 60) — 3.57:1
+                // against the row, under the 4.5:1 minimum**. That is the number
+                // `Elder.destructive` exists to replace, and this is the app's
+                // only inline destructive label that was still the system's:
+                // everywhere else the role appears it is inside a swipe action
+                // or a system dialog, which iOS draws and we do not.
+                //
+                // The audit does not catch it. It passed this screen twice
+                // before the pixels were counted, which is worth knowing about
+                // the audit as much as about the button.
+                .foregroundStyle(Elder.destructive)
                 .elderTapTarget()
         }
         .padding(.vertical, 4)
