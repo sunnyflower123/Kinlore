@@ -1,4 +1,100 @@
+import UIKit
 import XCTest
+
+/// Counts the pixels a contrast finding is actually made of.
+///
+/// The audit reports a colour it computed from the view tree; near the floating
+/// tab bar it computes one nobody ever saw, because iOS 26 fades content into
+/// the bar and the audit reads the fade as the text's own colour. That produced
+/// a real afternoon's chase over "Kerro tästä" — which measures 5.40:1 on
+/// screen, against a 4.5:1 minimum.
+///
+/// The obvious answer was to widen the band of forgiveness around the bar, and
+/// it is the wrong one: a band excuses *everything* that lands in it, so the
+/// next real failure 30 pt above the bar would be silent — and contrast is
+/// precisely the thing rule 1 says eyes cannot check. So the strip is forgiven
+/// by measurement rather than by distance. One screenshot per audit, cropped to
+/// the element the audit is complaining about.
+struct ContrastMeter {
+    /// WCAG's minimum for body text. The same number the audit uses.
+    static let minimum = 4.5
+
+    private let image: CGImage
+    private let pixelsPerPoint: CGFloat
+
+    init?(app: XCUIApplication) {
+        let bounds = app.frame
+        guard bounds.width > 0, let cgImage = app.screenshot().image.cgImage else { return nil }
+        image = cgImage
+        pixelsPerPoint = CGFloat(cgImage.width) / bounds.width
+    }
+
+    /// The contrast between the darkest and the lightest thing inside a frame.
+    ///
+    /// Percentiles rather than the extremes: a glyph's edge pixels are
+    /// anti-aliased into the background, and one stray pixel of either would
+    /// decide the answer. The 5th and 95th are the ink and the paper of an
+    /// ordinary label.
+    ///
+    /// **Nil is not a pass.** It means the frame could not be measured — off the
+    /// screenshot, or too small to hold a glyph — and the caller reports the
+    /// finding rather than forgiving it. Every uncertainty here has to fall on
+    /// the side of somebody looking at it.
+    func ratio(in frame: CGRect) -> Double? {
+        let rect = CGRect(
+            x: frame.minX * pixelsPerPoint,
+            y: frame.minY * pixelsPerPoint,
+            width: frame.width * pixelsPerPoint,
+            height: frame.height * pixelsPerPoint
+        ).integral.intersection(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        guard rect.width >= 4, rect.height >= 4, let crop = image.cropping(to: rect) else { return nil }
+
+        let width = crop.width
+        let height = crop.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        // `withUnsafeMutableBytes` rather than `&pixels`: a context built on the
+        // second one outlives the pointer it was handed, and the test runner
+        // exits without a message rather than failing — which reads exactly like
+        // a flaky simulator and cost a run to tell apart.
+        let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+            guard let base = buffer.baseAddress,
+                  let context = CGContext(
+                      data: base,
+                      width: width,
+                      height: height,
+                      bitsPerComponent: 8,
+                      bytesPerRow: width * 4,
+                      space: CGColorSpaceCreateDeviceRGB(),
+                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  )
+            else { return false }
+            context.draw(crop, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drawn else { return nil }
+
+        var luminances: [Double] = []
+        luminances.reserveCapacity(width * height)
+        for index in stride(from: 0, to: pixels.count, by: 4) {
+            luminances.append(Self.luminance(
+                red: pixels[index], green: pixels[index + 1], blue: pixels[index + 2]
+            ))
+        }
+        guard luminances.count >= 16 else { return nil }
+        luminances.sort()
+        let dark = luminances[luminances.count / 20]
+        let light = luminances[luminances.count - 1 - luminances.count / 20]
+        return (light + 0.05) / (dark + 0.05)
+    }
+
+    private static func luminance(red: UInt8, green: UInt8, blue: UInt8) -> Double {
+        func channel(_ value: UInt8) -> Double {
+            let v = Double(value) / 255
+            return v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+    }
+}
 
 /// The shared accessibility check.
 ///
@@ -36,6 +132,17 @@ extension XCTestCase {
         }
 
         var found: [String] = []
+        // Contrast findings in the fade above the tab bar, held back until the
+        // audit has finished so their pixels can be counted.
+        //
+        // **Not measured inside the handler.** A screenshot taken while
+        // `performAccessibilityAudit` is running kills the runner outright —
+        // signal kill, no assertion, no message, indistinguishable from a flaky
+        // simulator. It cost two runs to find, so it is written down here: the
+        // audit holds the accessibility channel, and asking the same channel for
+        // a picture in the middle of it is not a thing to retry.
+        var deferred: [(line: String, frame: CGRect)] = []
+
         try app.performAccessibilityAudit { issue in
             if AccessibilityPolicy.isDeliberate(
                 issue, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame
@@ -48,9 +155,37 @@ extension XCTestCase {
             let element = issue.element
             let label = element?.label ?? "no element"
             let where_ = element.map { "\($0.elementType.rawValue)@\(NSCoder.string(for: $0.frame))" } ?? "-"
-            found.append("\(issue.compactDescription) — \"\(label)\" [\(where_)]")
+            let line = "\(issue.compactDescription) — \"\(label)\" [\(where_)]"
+
+            // The fade above the tab bar is decided by counting pixels, once the
+            // audit has let go of the channel.
+            if issue.auditType == .contrast, !tabBarFrame.isNull, let frame = element?.frame,
+               !frame.intersects(tabBarFrame),
+               frame.maxY >= tabBarFrame.minY - AccessibilityPolicy.fadeReach {
+                deferred.append((line, frame))
+                return true
+            }
+
+            found.append(line)
             // Collected rather than thrown, so the run reaches the end.
             return true
+        }
+
+        // Now that the audit is finished, one screenshot answers all of them.
+        //
+        // The measured ratio travels with whatever is still reported, so the
+        // next person does not crop a screenshot by hand to learn whether the
+        // audit is describing a colour or a fade. A finding that cannot be
+        // measured is reported rather than forgiven: the point of measuring is
+        // to keep the net tight, and an uncertainty resolved in the app's favour
+        // is the net with a hole in it.
+        if !deferred.isEmpty {
+            let meter = ContrastMeter(app: app)
+            for (line, frame) in deferred {
+                let ratio = meter?.ratio(in: frame)
+                if let ratio, ratio >= ContrastMeter.minimum { continue }
+                found.append(line + (ratio.map { String(format: " measured %.2f:1", $0) } ?? " unmeasurable"))
+            }
         }
         XCTAssertTrue(
             found.isEmpty,
@@ -98,6 +233,18 @@ extension XCTestCase {
 /// in those same categories — which is how the contrast problem survived this
 /// long in the first place.
 enum AccessibilityPolicy {
+    /// How far above the floating tab bar its scroll-edge effect still dims
+    /// what is underneath it.
+    ///
+    /// Not a forgiveness margin any more — it is the strip where a contrast
+    /// finding is answered by counting pixels rather than by trusting either
+    /// side. 40 pt because that is the outer limit the earlier note here named
+    /// as worth thinking about, and two samples sit inside it: `Elder.supporting`
+    /// 9 pt above the bar, and the gallery's "Kerro tästä" at 24.37 pt, which
+    /// measures 5.40:1 on screen against a 4.5:1 minimum and had been failing a
+    /// test for it.
+    static let fadeReach: CGFloat = 40
+
     /// The guessing round's gap. Kept here rather than imported from the app: if
     /// the app changes its mask, the test should fail and be looked at.
     static let mask = "———"
@@ -225,26 +372,24 @@ enum AccessibilityPolicy {
             // on the person card near the top of the screen and fails on the
             // photo's card at y 767–782, with the bar at y 791. Same view, same
             // colour, same run: nine points of fade is the whole difference.
-            // The margin was set at 24 because the effect is a gradient and one
-            // sample does not give its length; the instruction left here was to
-            // measure before widening it again if something failed between 24
-            // and 40 points above the bar.
+            // **Underneath the bar: forgiven by geometry.** Content scrolls
+            // beneath the capsule by design and nobody is expected to read it
+            // there, so there is nothing to measure and nothing to fix.
+            if let frame = issue.element?.frame, frame.intersects(tabBar) { return true }
+
+            // **In the fade above it: not decided here at all.**
             //
-            // **Something did, and it was measured.** The gallery's *"Kerro
-            // tästä"* on the Paikat row is reported as a contrast failure at
-            // y 748.6–766.6 with the bar at 791 — 24.37 pt above it, four
-            // tenths of a point outside the old band. Counted off the
-            // screenshot, that label is rgb(22, 94, 210) on the row's
-            // rgb(245, 245, 245): **5.40:1**, comfortably over the 4.5:1
-            // minimum, and legible in the picture. The finding is the fade, not
-            // the colour.
+            // This used to be a band — 24 pt, then briefly 32 — and a band is a
+            // blanket: it excuses whatever lands in the strip, so a real failure
+            // 30 pt above the bar would be silent, on the one property rule 1
+            // says eyes cannot check. The fade is a tool artefact, and the
+            // answer to an artefact is to measure the thing itself, so anything
+            // within `fadeReach` of the bar is held back by `audit(_:_:)` and
+            // answered by counting its pixels once the audit has finished.
             //
-            // So the band is 32: past the 24.37 that was measured, and short of
-            // the 40 where the previous instruction said to stop and think
-            // again. That instruction still stands at the new number — two
-            // samples (9 pt and 24.37 pt) give the gradient's direction, not its
-            // end.
-            if let frame = issue.element?.frame, frame.maxY >= tabBar.minY - 32 { return true }
+            // Nothing to do here: falling through reports it, which is what
+            // happens to a finding that is neither under the bar nor close
+            // enough for the fade to explain it.
             // The audit sometimes reports a contrast failure it cannot attribute
             // to any element at all. Every one of those seen here was on a
             // tab-bar screen at the largest text size, in the same band of
