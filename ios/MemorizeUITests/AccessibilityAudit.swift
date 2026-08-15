@@ -234,6 +234,20 @@ enum AccessibilityPolicy {
             if issue.element == nil { return true }
         }
 
+        // **Clipping it cannot attribute to any element either.** The same
+        // concession as the line above, and it arrived the same way: Settings
+        // began reporting one unattributable "Text clipped" at the ordinary size
+        // when a row was added to the list, and none at the largest.
+        //
+        // Screenshotted before it was accepted. Every sentence on that screen is
+        // drawn in full, the list does not even fill the phone, and the finding
+        // has no element, no frame and no label — there is nothing to point a
+        // fix at. An attributable clipping still fails, which is the part that
+        // matters: this exempts the tool's shrug, not our text.
+        if issue.auditType == .textClipped, issue.element == nil {
+            return true
+        }
+
         // **The search field's own text.** iOS gives `.searchable` a fixed 44 pt
         // box with its own metrics, and the audit reads that as clipping. The
         // evidence that it is the box and not our words: shortening the prompt
