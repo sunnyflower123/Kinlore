@@ -162,12 +162,14 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 #
 #   xcrun simctl create kinlore-tests \
 #     com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
-#     com.apple.CoreSimulator.SimRuntime.iOS-26-2
+#     com.apple.CoreSimulator.SimRuntime.iOS-26-5
 #
-# The runtime is 26-2 and not 26-5: this machine has iOS 18.6, 26.1 and 26.2
-# installed and nothing newer. Check with `xcrun simctl list runtimes` before
-# copying a runtime id out of a document — a wrong one fails as "Invalid
-# runtime", which reads like a broken Xcode.
+# iOS-26-5 is the ONLY runtime installed — measured 15 Aug 2026 with
+# `xcrun simctl list runtimes`, which prints exactly one line. This file
+# previously said 26-2 and claimed 18.6, 26.1 and 26.2 were installed; none of
+# the three exists here, and following it fails as "Invalid runtime", which
+# reads like a broken Xcode and is not one. Run the list before copying a
+# runtime id out of any document, including this one.
 #
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
@@ -207,9 +209,16 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 ## Environment notes
 
 - **`sudo` is not available.** Do not suggest `xcode-select -s` — use the
-  `DEVELOPER_DIR` variable as in the command above. Xcode 26.2, iOS 26.2
-  simulator SDK — measured with `xcodebuild -version` and `-showsdks`. This
-  file said 26.6 / 26.5 for a while; neither has ever been on this machine.
+  `DEVELOPER_DIR` variable as in the command above. **Xcode 26.6, iOS 26.5
+  simulator SDK, one runtime (`iOS-26-5`)** — measured 15 Aug 2026 with
+  `xcodebuild -version`, `-showsdks` and `simctl list runtimes`.
+
+  This entry said "Xcode 26.2, iOS 26.2" and asserted that *"this file said
+  26.6 / 26.5 for a while; neither has ever been on this machine"* — which was
+  exactly backwards, since 26.6 and 26.5 are what is installed and 26.2 is not.
+  A correction was made in the wrong direction and then stated with confidence,
+  which is worse than leaving a version out. **Measure before editing this
+  line**, and paste the command output rather than a remembered number.
 - **The simulator is shared; the UI tests must not be.** Building on the shared
   device is fine — a build touches no device. Running the app and running the
   tests are not: they install, launch and terminate one bundle id, and two
