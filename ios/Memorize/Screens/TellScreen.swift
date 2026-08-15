@@ -793,10 +793,21 @@ private struct ResultView: View {
                 }
 
                 VStack(spacing: 12) {
+                    // Prominent only when nothing above it already is.
+                    //
+                    // With follow-up questions on the screen the blue button is
+                    // "Jatketaan jutellen" — carrying on about the memory she
+                    // has just told is worth more than starting a second one,
+                    // and it is the loop this app was built around (§10). With
+                    // no questions there is nothing above to defer to, and
+                    // telling another is the whole of what is left to do.
+                    //
+                    // Chosen rather than accumulated: see docs/ARCHITECTURE.md
+                    // §22.
                     Button("Kerro toinen muisto") {
                         model.reset()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .elderPrimary(model.newQuestions.isEmpty)
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)
                     .elderTapTarget()
@@ -920,7 +931,11 @@ private struct ResultView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                // Bordered, not prominent. It confirms something already typed
+                // into the row above it, which is not what this screen is for —
+                // and it used to be one of four blue buttons down one scroll.
+                // See docs/ARCHITECTURE.md §22.
+                .buttonStyle(.bordered)
                 .controlSize(.large)
                 .disabled(model.isCorrecting)
                 .elderTapTarget()

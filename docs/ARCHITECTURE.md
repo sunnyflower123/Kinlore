@@ -1746,3 +1746,58 @@ duplicated as strings in `AccessibilityPolicy.systemEmptyStateText`, because a
 `ContentUnavailableView` caps its own description and the exemption is matched on
 the label. Change the sentence on the screen and that list changes with it, or
 `testPeopleEmpty` goes red. That is the coupling working.
+
+---
+
+## 22. The one blue button
+
+The same problem as §21, one layer up. A word teaches a thing; a **prominent
+button teaches "this is what you do here"**, and a screen with four of them has
+taught nothing. For a user who is slow to trust a phone, the blue button has to
+mean one thing.
+
+The survey was mechanical: every `.buttonStyle(.borderedProminent)` in the app,
+mapped to the view that owns it rather than to the file. Every screen had exactly
+one — the gallery, the person card, the guessing sheet, the ask sheet, the
+onboarding, the refused microphone, the failure screen, the saved-audio screen.
+
+**Except the result screen, which had three**, and four on a free archive:
+*"Korjaa nimet myös muistoon"*, *"Jatketaan jutellen"*, *"Avaa koko arkisto"* in
+the upsell card, and *"Kerro toinen muisto"* at the bottom — four full-width blue
+buttons down one scroll, on the screen that ends the magic moment and is most of
+the demo video.
+
+Two of them are now quieter:
+
+- **The name correction** confirms something typed into the row above it. It is
+  the row's own button, not the screen's purpose.
+- **"Kerro toinen muisto" is prominent only when nothing above it already is.**
+  With follow-up questions on screen the blue button is *"Jatketaan jutellen"* —
+  carrying on about the memory she has just told is worth more than starting a
+  second one, and it is the loop this app was built around (§10). With no
+  questions, there is nothing above to defer to and telling another is all that
+  is left. `View.elderPrimary(_:)` in `Elder.swift` is where that condition
+  lives, so the next person to add a button finds the choice already made rather
+  than making it again.
+
+**The framed exception is the upsell card.** It keeps its prominent button
+because it is not competing for the same act: it sits inside its own tinted card,
+it is an offer rather than a step, and its position is deliberate — the moment a
+memory finishes is where perceived value peaks (§8.6). A card is its own
+decision. If a second card ever appears on one screen, this exception is the
+thing to re-open.
+
+Two things this rule is **not**. It is not "one button per screen": the result
+screen still offers *Valmis* and *Poista tämä muisto*, quietly, because a screen
+that hides its way out is worse than one that ranks its actions. And it is not a
+shared vertical position across screens — that is held constant only through
+idle → recording → asking, where the record button must not move because those
+three states are one act with one control, and the comment in `AskingView` says
+so.
+
+Measured: `testResult` and `testResultWithProposals`, both text sizes, green —
+which is what checks the new `.bordered` labels against the contrast minimum,
+the one thing eyes cannot check (§15). The no-questions branch was also read off
+the screen: one blue button, the quiet removal beneath it. The other branch's
+buttons sit below the fold on a phone-sized screen and were verified by the
+audit rather than by eye.

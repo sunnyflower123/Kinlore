@@ -91,6 +91,23 @@ enum Elder {
 }
 
 extension View {
+    /// The screen's one blue button — or the quieter version of the same
+    /// control, when something else on the screen has already claimed it.
+    ///
+    /// Exists so that "which of these is the primary action" is written as a
+    /// condition in one place instead of being decided a second time by
+    /// whoever adds the next button. Every screen in this app has exactly one
+    /// prominent button; the reasoning, and the one framed exception, are in
+    /// docs/ARCHITECTURE.md §22.
+    @ViewBuilder
+    func elderPrimary(_ isPrimary: Bool) -> some View {
+        if isPrimary {
+            buttonStyle(.borderedProminent)
+        } else {
+            buttonStyle(.bordered)
+        }
+    }
+
     /// Ensures a control is large enough regardless of the size of its content.
     func elderTapTarget() -> some View {
         frame(minWidth: Elder.minTapTarget, minHeight: Elder.minTapTarget)
