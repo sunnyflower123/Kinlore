@@ -278,9 +278,39 @@ finished.**
   deliberately leaves a store release open for v1.1 (see `SETUP.md`). The
   protection AGPL buys matters for server software; here the moat is in the
   product decisions, not the code.
-- **Name.** No longer urgent without App Store Connect. `Memorize` is full of
-  flashcard apps in App Store search; candidates: *Heirloom*, *Kinfolk*,
-  *Storykeeper*, *Rootline*, *Perennial*.
+- ~~**Name.**~~ **Decided 15 Aug 2026: Kinlore.** *Lore* is knowledge that moves
+  by being told rather than written, which is §1's claim in one word, and *kin*
+  scopes it to the family without promising genealogy — so row 7 of §5 can be
+  cut without the name turning into a lie. Backups, in order: *Lorehouse*,
+  *Long Ago*. Bundle ID `com.kinlore.app`, **not yet changed**: `project.yml`
+  and the RevenueCat dashboard are both keyed to `app.memorize.Memorize` and
+  have to move together, so do it in one sitting before the store route starts.
+
+  Two of the five names this list used to carry — *Heirloom* and *Kinfolk* —
+  are taken outright, by apps doing this same thing (*Heirloom4Life: Voice
+  Keeper*, *Kinfolk – Connect with family*). They had never been checked.
+
+  **How to check a name**, because it is cheap and was skipped for a year:
+  `itunes.apple.com/search?term=<name>&entity=software&country=<cc>` returns a
+  storefront's apps as JSON, and an exact `trackName` match means the name is
+  gone. It has two blind spots, and both of them bit during this exercise:
+
+  1. **Reservations are invisible.** A name reserved in App Store Connect and
+     never shipped does not appear in search — likely for any short, desirable
+     word.
+  2. **The API sees only the App Store.** *Saga* looked free in seven
+     storefronts, while Saga plc sells insurance, cruises and personal alarms to
+     2.7 million over-50s in the UK — the same demographic as this app. *Vellum*
+     looked free while being well-known book-formatting software sold outside
+     the store.
+
+  So search availability is a filter, never a clearance. The authoritative check
+  happens once, when the record is created and the name is reserved — which is
+  why all three names travel to that moment (§2.1, 10 Sep) rather than one.
+
+  And the name does not have to explain the product. The App Store subtitle and
+  the Devpost tagline do that, and the demo video explains more in ten seconds
+  than any name can.
 - **ASR implementation.** Resolved by the phase A test.
 - **A map of the places.** The data half exists: `subject` carries `lat`, `lon`
   and `geo_precision`, and place names are looked up on the device as they are

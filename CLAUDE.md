@@ -221,7 +221,9 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   diagnostics. It is noise from a run that had already failed, not the failure.
   Prepending `/Applications/Xcode.app/Contents/Developer/usr/bin` to `PATH`
   silences it.
-- The app name and bundle ID are still provisional (`app.memorize.Memorize`),
-  see PLAN.md §10.
+- The name is **Kinlore** (decided 15 Aug 2026, PLAN.md §10). The bundle ID is
+  still `app.memorize.Memorize` and is meant to become `com.kinlore.app` — but
+  `project.yml` and the RevenueCat dashboard are keyed to it together, so
+  neither moves alone.
 - Purchases go through the **RevenueCat Test Store**, not App Store Connect
   products. No paid Apple Developer account is needed.
