@@ -225,11 +225,26 @@ enum AccessibilityPolicy {
             // on the person card near the top of the screen and fails on the
             // photo's card at y 767–782, with the bar at y 791. Same view, same
             // colour, same run: nine points of fade is the whole difference.
-            // The margin is set at 24 because the effect is a gradient and one
-            // sample does not give its length; if something ever fails between
-            // 24 and 40 points above the bar, measure it before widening this
-            // again.
-            if let frame = issue.element?.frame, frame.maxY >= tabBar.minY - 24 { return true }
+            // The margin was set at 24 because the effect is a gradient and one
+            // sample does not give its length; the instruction left here was to
+            // measure before widening it again if something failed between 24
+            // and 40 points above the bar.
+            //
+            // **Something did, and it was measured.** The gallery's *"Kerro
+            // tästä"* on the Paikat row is reported as a contrast failure at
+            // y 748.6–766.6 with the bar at 791 — 24.37 pt above it, four
+            // tenths of a point outside the old band. Counted off the
+            // screenshot, that label is rgb(22, 94, 210) on the row's
+            // rgb(245, 245, 245): **5.40:1**, comfortably over the 4.5:1
+            // minimum, and legible in the picture. The finding is the fade, not
+            // the colour.
+            //
+            // So the band is 32: past the 24.37 that was measured, and short of
+            // the 40 where the previous instruction said to stop and think
+            // again. That instruction still stands at the new number — two
+            // samples (9 pt and 24.37 pt) give the gradient's direction, not its
+            // end.
+            if let frame = issue.element?.frame, frame.maxY >= tabBar.minY - 32 { return true }
             // The audit sometimes reports a contrast failure it cannot attribute
             // to any element at all. Every one of those seen here was on a
             // tab-bar screen at the largest text size, in the same band of
