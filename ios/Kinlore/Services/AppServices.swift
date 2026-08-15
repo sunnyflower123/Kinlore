@@ -121,7 +121,17 @@ enum RemoteError: LocalizedError {
         case .quotaExceeded(let kind, _, let limit):
             kind == "photos"
                 ? "Ilmaisessa arkistossa on tilaa \(limit) kuvalle."
-                : "Tämän kuukauden AI-minuutit on käytetty."
+                // Not "AI-minuutit", which is the one place that name survived
+                // after the family screen dropped it — and the worst place for
+                // it to survive, because this is the sentence somebody meets at
+                // the moment the limit stops them. The same quota is
+                // "kertominen tässä kuussa" everywhere else it is named
+                // (docs/ARCHITECTURE.md §21).
+                //
+                // What is *not* said here matters as much: the telling itself
+                // is safe. Rule 2 is that telling is never paywalled, and a
+                // quota stops the writing-down rather than the voice.
+                : "Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa."
         }
     }
 

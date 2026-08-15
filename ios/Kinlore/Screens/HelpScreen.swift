@@ -47,7 +47,25 @@ struct HelpScreen: View {
             section(
                 "Mikä maksaa",
                 "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan.",
-                "Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisten AI-minuuttien rajat. Yksi maksaja avaa sen koko perheelle."
+                // "Kertomisaika", not "AI-minuutit". The same quota is called
+                // "kertominen tässä kuussa" on the family screen and "kertomista
+                // tässä kuussa jäljellä" on the card after a telling, and this
+                // page was the last place still using the jargon name for it.
+                // See docs/ARCHITECTURE.md §21.
+                "Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle."
+            )
+
+            // The one thing on this page that is addressed to the person
+            // holding the phone rather than to the person using it. Setting up
+            // takes a grandchild a few minutes; the reading is done for years by
+            // somebody who has never opened iOS Settings — and the question is
+            // asked once during setup, where it is easy to answer "minun" out of
+            // habit and never think about it again. This is where they find it
+            // afterwards.
+            section(
+                "Isompi teksti",
+                "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista.",
+                "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy."
             )
 
             section(
