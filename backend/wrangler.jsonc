@@ -56,7 +56,7 @@
 		"RC_ENTITLEMENT_ID": "archive",
 		// The project identifier from the RevenueCat dashboard. Not a secret,
 		// unlike RC_SECRET_KEY and RC_WEBHOOK_SECRET.
-		"RC_PROJECT_ID": "TODO-revenuecat-project-id",
+		"RC_PROJECT_ID": "proj087f04ef",
 
 		// The models were CHOSEN BY MEASUREMENT, not from memory:
 		// scripts/asr-bench.mjs, 3 texts × 4 degradation steps × 5 models.
