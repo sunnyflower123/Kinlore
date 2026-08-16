@@ -102,11 +102,39 @@ began — that was backwards.
 | — | **~11 Aug** | **School starts** | |
 | **C** | 11–31 Aug | Person cards + relationships. ~~Confirmation UI for proposals~~ — replaced by the guessing round, see §4.1. | evenings |
 | **D** | 1–14 Sep | RevenueCat Test Store + paywall. Craft: animations, waveform, empty states, accessibility. | evenings |
-| **E** | 15–24 Sep | Testing with a real grandparent (TestFlight). Fixes. **Repo in English.** | evenings |
+| **E** | 15–24 Sep | Testing with a real grandparent — **installed from Xcode on a visit**, see below. Fixes. **Repo in English.** | evenings |
 | **F** | 25–28 Sep | **Demo video** and Devpost submission. | weekend |
 
 If phase B succeeds, the rest is downhill. If it does not, everything else is
 pointless — which is why it sits in the holiday and not alongside school.
+
+### Phase E does not go through TestFlight
+
+This row said "TestFlight" and contradicted the first paragraph of CLAUDE.md,
+which drops App Store Connect for want of time. **TestFlight *is* App Store
+Connect** — there is no route to one without the other — and it costs more than
+the app record. A grandmother is not a member of the developer team, so she is
+an *external* tester, and the first build of every version then waits for Beta
+App Review. Making her an internal tester avoids the review but means giving a
+family member a role on the developer account, which is more access than testing
+needs. (Checked against Apple's own documentation on 16 Aug, not from memory.)
+
+None of it is necessary, because of what this test is for. §8 says the open
+question is whether an 80-year-old's real voice, in a real kitchen, comes back
+well enough to be recognised, and that the three recordings which answer it come
+from here. A real kitchen means being in the room — **and in the room, Xcode
+installs the build onto her phone directly.** No App Store Connect, no review,
+and on the paid account the build keeps working for about a year rather than the
+seven days a free account allows.
+
+What it costs instead, so that it is not a surprise on the day: her phone has to
+be paired to this Mac once, over a cable, and **Developer Mode has to be turned
+on in her Settings** — which takes her passcode and a restart of her phone. That
+is done with her, once, before anything is installed.
+
+The fallback, if a visit turns out to be impossible, is TestFlight with her as an
+external tester and a day or two of review built into the schedule. It is written
+down here so that the choice is made now rather than on 15 September.
 
 ## 4. The magic moment — the one thing
 
