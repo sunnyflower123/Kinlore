@@ -856,6 +856,12 @@ Built, in the order they were built:
     blank screen for a search that matched nothing. The test that caught it is
     `SearchTests`, on the second run.
 
+    The round has since been cut (§13), so the thing that used to hide this is
+    gone — but the dead end it forced into existence is not, and neither is the
+    test. Kept as it happened rather than rewritten as though the search had
+    always known better: the reason this dead end exists is that something else
+    was standing in front of the bug.
+
     The pairing "every addition requires a removal" asks for is **not paid**.
     Nothing was removed for this one; it is an addition, and the decision to
     take it was made deliberately rather than by forgetting the rule.
