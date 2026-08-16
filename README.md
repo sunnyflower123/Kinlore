@@ -117,11 +117,15 @@ are wrong. Each one has a check of its own rather than a promise:
 ./scripts/verify.sh
 ```
 
-That runs everything below that costs nothing, says what it skipped and why, and
-is the same script CI runs — so it cannot drift from the one people actually
-use. What it deliberately leaves out is argued in its header: nothing that
-spends model credit, because a script you run twenty times a day must not cost
-money.
+That runs everything below that costs nothing and says what it skipped and why.
+What it deliberately leaves out is argued in its header: nothing that spends
+model credit, because a script you run twenty times a day must not cost money.
+
+CI runs that same script rather than a reimplementation of it, so the two cannot
+drift apart — but on pull requests and on request, not on every push. The Swift
+checks in it need macOS, a macOS minute is metered at ten while this repository
+is private, and every push getting one is how you find out in four seconds that
+the meter said no. Every push still gets the backend type check, on Linux.
 
 | Claim | Command |
 |---|---|

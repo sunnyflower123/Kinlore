@@ -1,15 +1,15 @@
 # The checks a stranger can trust without taking anybody's word for it.
 #
-# `verify` runs `scripts/verify.sh` — the same command the README gives a human,
-# rather than a CI-only reimplementation of it that can drift from the one
-# people actually run. What that script deliberately leaves out (anything that
-# spends model credit, and the UI tests, which need a simulator of their own) is
-# argued in its header.
+# Split by runner cost rather than by taste. Actions is free on public
+# repositories and metered on private ones, and a macOS minute counts as ten
+# there — the first version of this file put everything on macOS and every run
+# died in four seconds without ever being given a runner, which is what a quota
+# refusal looks like from the outside. It reads like a broken build and is not
+# one.
 #
-# `build` compiles the app for a generic simulator. No device is named on
-# purpose: the destination this repo needs locally is a UDID, because four
-# simulators here share the name "iPhone 17 Pro" — a runner has that problem in
-# reverse, having no such device at all.
+# So the check that runs on every push is the one that needs nothing but Linux,
+# and everything that needs Xcode runs on pull requests and on request. Put the
+# macOS jobs back on push when the repository goes public and the meter stops.
 
 name: CI
 
@@ -20,9 +20,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify:
-    name: Invariants and types
+  # Every push. Ubuntu, one minute, no Xcode involved.
+  types:
+    name: Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+        working-directory: backend
+
+      - run: npm run typecheck
+        working-directory: backend
+
+  # The silent-failure checks: the guessing round's name masking and the upsell
+  # rhythm. Both compile a source file of the app against a checking harness, so
+  # both need a Swift toolchain, so both need macOS here.
+  #
+  # This runs `scripts/verify.sh` — the same command the README gives a human,
+  # rather than a CI-only reimplementation of it that can drift from the one
+  # people actually run. What that script deliberately leaves out (anything that
+  # spends model credit, and the UI tests, which need a simulator of their own)
+  # is argued in its header.
+  invariants:
+    name: Invariants
     runs-on: macos-latest
+    if: github.event_name != 'push'
     steps:
       - uses: actions/checkout@v4
 
@@ -37,19 +66,10 @@ jobs:
 
       - run: ./scripts/verify.sh
 
-  # Not on every push, and the reason is a quota rather than taste. Actions is
-  # free on public repositories and metered on private ones, where a macOS
-  # minute counts as ten — so the free allowance is worth about 200 minutes of
-  # this runner. Several sessions push to main daily, and this job resolves a
-  # Swift package before it compiles anything.
-  #
-  # Running out does not fail the build; it stops the runs. The badge would
-  # then keep showing the last green tick, which is this repo's favourite kind
-  # of bug: a check that has quietly stopped checking. So the expensive half
-  # runs on pull requests and on request, and `verify` — two minutes, and the
-  # one that catches silent breakage — stays on every push.
-  #
-  # Put this back on push when the repository goes public.
+  # Compiles the app from a clean checkout. No device is named on purpose: the
+  # destination this repo needs locally is a UDID, because four simulators here
+  # share the name "iPhone 17 Pro" — a runner has that problem in reverse,
+  # having no such device at all.
   build:
     name: iOS build
     runs-on: macos-latest
