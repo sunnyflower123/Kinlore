@@ -247,17 +247,29 @@ final class AccessibilitySweepTests: XCTestCase {
     func testMemoriesWithContent() throws {
         try sweep("Muistot", arguments: ["-seed", "guess", "-tab", "memories"]) { app, isLargest in
             require(app.navigationBars["Muistot"], "the gallery")
-            // At the largest text size the round's card fills the screen on its
-            // own and the grid falls below the fold — and a LazyVGrid does not
-            // build rows nobody can see, so the tiles are not off-screen, they
-            // do not exist. Scrolling to them was tried and made the audit
-            // worse: it measured mid-scroll and reported text as low-contrast
-            // that was perfectly readable once the view stopped.
+            // At the largest text size the round's card fills the screen on
+            // its own and the grid falls below the fold — and a LazyVGrid does
+            // not build rows nobody can see, so the tiles are not off-screen,
+            // they do not exist. They would have to be scrolled to.
             //
-            // So each size is audited for what it actually shows — the round at
-            // the largest, the tiles at the ordinary one. The gap is real and
-            // named here rather than hidden: nothing measures a photo tile at
-            // XXXL.
+            // **Scrolling and then auditing does not work, and `hasStoppedDrawing`
+            // does not fix it.** Tried again the day that helper arrived, which
+            // was the obvious second chance: scroll to the tile, wait until two
+            // screenshots come back identical, audit. The screen was still and
+            // the audit still reported three contrast failures on the round's
+            // card — "Mummo kertoi tämän", the masked story, "Kuka hän oli?" —
+            // all of them primary-coloured text on a light card, which cannot
+            // be a real contrast failure at any size.
+            //
+            // So the cause is not motion, which is what the first attempt
+            // concluded. It looks like the accessibility tree keeping the
+            // frames it had before the scroll: the audit then samples pixels
+            // where those elements are not, and reads whatever is there. A
+            // waiting helper cannot mend that.
+            //
+            // The gap stays open and named rather than papered over with three
+            // exemptions that would each be a lie about a colour. Nothing
+            // measures a photo tile at XXXL.
             if !isLargest {
                 require(photoTile(in: app), "the photo in the demo archive")
             }
