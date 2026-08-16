@@ -537,10 +537,39 @@ finished.**
        is the honest version, and it is not built.
      - **It does not encrypt anything.** What stays on the phone stays because
        nothing sends it, not because anything is unreadable. That is lever 3.
-  3. **Encryption at rest under a family key.** Several evenings, and §5 says
-     every addition takes a removal. This is the real answer to "everything is
-     in the cloud" and it is compatible with the app as built — which is why it
-     is named in the Devpost as the v1.1 direction if it does not fit September.
+  3. ~~**Encryption at rest under a family key.**~~ **Built 16 Aug 2026**
+     (`eec08b6`, `6469de2`). `FamilyKey` makes a 256-bit key when a family is
+     created and carries it to everyone else inside the invitation; `body`,
+     `raw_transcript`, subject titles, question text and the R2 objects are
+     sealed on the device. The store on disk stays plaintext — it is behind the
+     device passcode and it is what the export is written from — because a
+     breach dumps the database and not the phone. Titles seal deterministically
+     so that `sync.ts` can still tell a rename from a re-push without a schema
+     change; what that leaks is exactly what the comparison already needed.
+
+     **It is not end-to-end, and it must not be called that where a user can
+     read it.** Two things stay outside it, both by necessity:
+
+     - **Transcription still sends the recording in clear.** Rule 7 puts the
+       model key in the Worker and a model cannot write down speech it cannot
+       hear. What lever 3 changes is what is *left behind* — the rows and the
+       objects, which is what a dump contains.
+     - **The invitation carries the key**, so whatever app delivered that
+       message has it. The server does not, which is the design; that is a
+       smaller claim than end-to-end and `FamilyScreen` states it where the
+       invite text is built.
+
+     **Still to do before this can be called finished:** it has never made a
+     round trip through a real Worker. The checks cover the crypto and the
+     payload — 33 of them, including that none of the words appear in what is
+     sent — but no two devices have yet exchanged a sealed memory, because R2
+     is not enabled and nothing is deployed. That is the test to run the day it
+     is, and until then this row is a thing that is built rather than a thing
+     that is working.
+
+     The timing was luck worth naming: there is **no production data**, so this
+     needed no migration. Landing it in v1.1 would have meant re-encrypting a
+     live archive.
 
   **Two alternatives were raised on 16 Aug and are recorded here rather than
   built.** Both were attempts at the same instinct, and both trade worse:
