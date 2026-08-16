@@ -441,9 +441,14 @@ finished.**
      Cloudflare's own 2FA sits behind it rather than in front. The same account
      owns the repository, which makes it paths 1 and 2 in one place. Minutes,
      not evenings, and the only lever that touches either path.
-  1. **Say it in onboarding**, where the archive is created. One evening. For an
-     80-year-old this is a dignity question as much as a privacy one — informed
-     consent rather than a fact discovered later.
+  1. ~~**Say it in onboarding.**~~ **Done 16 Aug 2026** (`a047273`).
+     `WhereMemoriesGo` sits on both paths, creating and joining, and says that
+     the recording is sent for transcription and that the original audio is
+     kept. It repeats the microphone prompt's own sentence rather than
+     paraphrasing it, and it says what happens rather than what does not — for
+     an 80-year-old this is a dignity question as much as a privacy one, and
+     informed consent is the whole of it. `testOnboarding`,
+     `testCreateFamilyForm` and `testJoinFamilyForm` pass at both text sizes.
   2. **A third option: "Vain minulle, tälle puhelimelle."** Sets `mode = .local`
      and sync never runs. One to two evenings, since the machinery exists. It
      must say plainly that audio *still* travels for transcription — fixing the
