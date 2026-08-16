@@ -83,11 +83,14 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	})
 
 	if (!res.ok) {
-		// The body goes to the LOG ONLY: it can contain the account balance or
-		// model output echoing back the memory the user just told. The caller
-		// gets nothing but the status.
-		const text = await res.text().catch(() => '')
-		console.error(`[openrouter] ${opts.model} HTTP ${res.status}: ${text.slice(0, 300)}`)
+		// Not the body, in either direction. It was going to the log only, so
+		// nothing leaked to the client — but it can carry the account balance,
+		// and on several provider errors it quotes the request back, which here
+		// is the audio or the memory that was just told. Workers Logs is a store
+		// beside D1 and R2 (PLAN.md §10), so the log gets the status and the
+		// provider's own error code and stops there.
+		const code = await errorCode(res)
+		console.error(`[openrouter] ${opts.model} HTTP ${res.status}${code ? ` ${code}` : ''}`)
 		throw new UpstreamError(res.status)
 	}
 
@@ -110,4 +113,20 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	}
 
 	return content
+}
+
+/// The provider's own error code, when the body is the documented error shape.
+///
+/// The code is a fixed vocabulary and says what went wrong; the `message` beside
+/// it is free text and is the field that quotes the request back, so it is read
+/// past rather than logged. A body that is not that shape yields nothing at all,
+/// because the status alone is a truer signal than a guess at what is in it.
+async function errorCode(res: Response): Promise<string | null> {
+	try {
+		const body = (await res.json()) as { error?: { code?: unknown; type?: unknown } }
+		const code = body.error?.code ?? body.error?.type
+		return typeof code === 'string' || typeof code === 'number' ? String(code) : null
+	} catch {
+		return null
+	}
 }

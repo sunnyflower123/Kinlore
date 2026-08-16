@@ -46,9 +46,18 @@ const json = (data: unknown, status = 200) =>
 	})
 
 /// Errors never leak the model's or OpenRouter's text to the client: it can
-/// contain account details or echo back the memory the user just told.
+/// contain account details or echo back the memory that was just told.
+///
+/// The log gets the name and the message rather than the whole error, and that
+/// puts a rule on the messages themselves: AN ERROR MESSAGE MUST NOT
+/// INTERPOLATE CONTENT — not a title, not a transcript, not a name. `message`
+/// is the one field of a thrown error that reaches Workers Logs, and that is a
+/// store beside D1 and R2 (PLAN.md §10). Upstream messages are the exception
+/// that proves it: D1 and fetch describe schemas and connections, never what
+/// anybody said.
 function failure(err: unknown, route: string): Response {
-	console.error(`[${route}]`, err)
+	const detail = err instanceof Error ? `${err.name}: ${err.message}` : typeof err
+	console.error(`[${route}] ${detail}`)
 	return json({ error: 'upstream_failed' }, 502)
 }
 

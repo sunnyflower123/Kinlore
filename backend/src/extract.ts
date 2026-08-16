@@ -221,9 +221,24 @@ function parseStructured(raw: string): ExtractionResult {
 		}
 	}
 
-	// Log the beginning so a new deviation can be diagnosed. Log only: the
-	// content can echo back the memory the user just told.
-	console.error(`[extract] invalid JSON, starts with: ${raw.slice(0, 300)}`)
+	// The shape, never the text. `raw` is the model's account of the memory that
+	// was just told, and Workers Logs is a store like D1 and R2 — one no export
+	// carries and no "Tyhjennä tämä laite" reaches (PLAN.md §10). A new
+	// deviation announces itself in the structure, and this is the structure:
+	// what the reply looks like, how long it is, and where the braces the
+	// repairs above went looking for actually were.
+	const shape =
+		raw.length === 0
+			? 'empty'
+			: /^\s*[{[]/.test(raw)
+				? 'json-ish'
+				: /^\s*```/.test(raw)
+					? 'fenced'
+					: 'prose'
+	console.error(
+		`[extract] invalid JSON: ${shape}, ${raw.length} chars, ` +
+			`braces at ${raw.indexOf('{')}/${raw.lastIndexOf('}')}`,
+	)
 	throw new Error('Extraction returned invalid JSON')
 }
 
