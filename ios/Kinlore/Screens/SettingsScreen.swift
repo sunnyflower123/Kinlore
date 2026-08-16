@@ -104,11 +104,20 @@ struct SettingsScreen: View {
             }
 
             if case .inFamily = session.mode {
-                Section("Perhe") {
+                // A bare `Section("Perhe")` header is the framework's own grey —
+                // the finding the first audit of the family screen's top
+                // reported on "Käyttö" and "Jäsenet". This one has never been
+                // measured at all: the sweep's Settings run has no family, so
+                // the section is not on its screen. Fixed by the same move as
+                // every measured header rather than left for the audit to find.
+                Section {
                     NavigationLink(value: FamilyRoute()) {
                         Label("Perheen jäsenet ja kutsut", systemImage: "person.2")
                             .elderTapTarget()
                     }
+                } header: {
+                    Text("Perhe")
+                        .foregroundStyle(Elder.supporting)
                 }
             }
 

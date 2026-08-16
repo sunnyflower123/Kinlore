@@ -18,39 +18,63 @@ struct FamilyScreen: View {
     var body: some View {
         List {
             if let family = session.family {
-                Section("Perhe") {
-                    LabeledContent("Nimi", value: family.name)
-                    LabeledContent(
-                        "Tila",
-                        value: family.entitlement == "archive" ? "Maksullinen" : "Ilmainen"
-                    )
+                // Every header on this screen says its colour out loud. The
+                // "Kutsut" header below learned this first and its comment
+                // believed it was the last bare one — it was only the last
+                // *measured* one. The first audit of this screen's top reported
+                // "Käyttö" and "Jäsenet" at once; "Perhe" survives today only
+                // because it sits inside the navigation bar's forgiveness band,
+                // which is a place, not a colour.
+                Section {
+                    // The values are written out rather than handed to
+                    // `LabeledContent(_:value:)`: that initialiser draws them in
+                    // the framework's own grey, which measured 3.44:1 on this
+                    // screen at the largest text size — under the minimum, on
+                    // the rows people come here to read. The same framework
+                    // default rule 1 already bans as `.secondary`; the audit
+                    // never met these rows because the family test scrolls past
+                    // them to the invites.
+                    LabeledContent("Nimi") {
+                        Text(family.name)
+                            .foregroundStyle(Elder.supporting)
+                    }
+                    LabeledContent("Tila") {
+                        Text(family.entitlement == "archive" ? "Maksullinen" : "Ilmainen")
+                            .foregroundStyle(Elder.supporting)
+                    }
                     // The same fact as the note on Muistot, in the place
                     // somebody comes to when they want to check rather than to
                     // be told: with a time on it, and shown even when there is
                     // nothing waiting — "kaikki lähetetty" is the answer to the
                     // question, not the absence of one.
-                    LabeledContent("Lähetys", value: syncText)
+                    LabeledContent("Lähetys") {
+                        Text(syncText)
+                            .foregroundStyle(Elder.supporting)
+                    }
+                } header: {
+                    Text("Perhe")
+                        .foregroundStyle(Elder.supporting)
                 }
 
                 if let usage = session.usage {
-                    Section("Käyttö") {
+                    Section {
                         // Not "AI-minuutit". The same quota is called "kertomista
                         // tässä kuussa jäljellä" where somebody actually meets
                         // it — on the card after a telling — and one of the two
                         // names is jargon aimed at the person least able to
                         // decode it. The app should have one word for one thing.
-                        LabeledContent(
-                            "Kertominen tässä kuussa",
-                            value: usage.aiSeconds.limit == nil
+                        LabeledContent("Kertominen tässä kuussa") {
+                            Text(usage.aiSeconds.limit == nil
                                 ? "rajaton"
-                                : "\(usage.aiSeconds.used / 60) / \(usage.aiSeconds.limit! / 60) min"
-                        )
-                        LabeledContent(
-                            "Kuvat",
-                            value: usage.photos.limit == nil
+                                : "\(usage.aiSeconds.used / 60) / \(usage.aiSeconds.limit! / 60) min")
+                                .foregroundStyle(Elder.supporting)
+                        }
+                        LabeledContent("Kuvat") {
+                            Text(usage.photos.limit == nil
                                 ? "rajaton"
-                                : "\(usage.photos.used) / \(usage.photos.limit!)"
-                        )
+                                : "\(usage.photos.used) / \(usage.photos.limit!)")
+                                .foregroundStyle(Elder.supporting)
+                        }
 
                         // The second way in. The first is the moment a memory
                         // finishes, which is where value peaks — but a
@@ -65,13 +89,19 @@ struct FamilyScreen: View {
                                     .elderTapTarget()
                             }
                         }
+                    } header: {
+                        Text("Käyttö")
+                            .foregroundStyle(Elder.supporting)
                     }
                 }
 
-                Section("Jäsenet") {
+                Section {
                     ForEach(family.members) { member in
                         MemberRow(member: member, isYou: member.id == family.you.id)
                     }
+                } header: {
+                    Text("Jäsenet")
+                        .foregroundStyle(Elder.supporting)
                 }
 
                 Section {
