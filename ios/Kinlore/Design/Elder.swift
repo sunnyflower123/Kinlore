@@ -88,6 +88,15 @@ enum Elder {
     /// labels a person most needs to read correctly before tapping. #B3261E
     /// measures 6.5:1 and is unmistakably still a warning.
     static let destructive = Color(red: 0.702, green: 0.149, blue: 0.118)
+
+    /// The record button's fill, and the waveform's. The one place iOS's own
+    /// red is allowed, and the reason is the shape it is on: a 200 pt disc with
+    /// a white glyph is a graphic, judged by the 3:1 non-text minimum rather
+    /// than text's 4.5:1, and white on this red measures about 3.5:1. The same
+    /// red under a *label* fails — that case is `destructive` above. Red is
+    /// also the one colour every recorder ever made has taught this user, and
+    /// the glyph — mic or stop — carries the meaning whatever the colour does.
+    static let recording = Color.red
 }
 
 extension View {

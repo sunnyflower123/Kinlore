@@ -613,7 +613,7 @@ private struct Waveform: View {
                 ForEach(0 ..< count, id: \.self) { index in
                     let level = level(at: index, of: count)
                     Capsule()
-                        .fill(.red.gradient)
+                        .fill(Elder.recording.gradient)
                         .frame(
                             width: width,
                             height: max(3, CGFloat(level) * geometry.size.height)
@@ -1139,58 +1139,21 @@ private struct AudioSavedView: View {
     @State private var isConfirmingDiscard = false
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            Image(systemName: "waveform.circle.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(.tint)
-
-            Text("Äänesi on tallessa")
-                .font(.title.weight(.semibold))
-                .multilineTextAlignment(.center)
-
-            Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
-                .elderBody()
-                .foregroundStyle(Elder.supporting)
-                .multilineTextAlignment(.center)
-
-            Spacer()
-
-            VStack(spacing: 12) {
-                // The text lands in the memory whose audio is already saved,
-                // rather than beside it. What she just told is one telling, and
-                // the archive must not hold it as a silent recording next to a
-                // voice-less text.
-                Button("Kirjoita se itse") { model.beginWriting(completing: model.savedMemoryID) }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                    .elderTapTarget()
-
-                Button(model.target == nil ? "Selvä" : "Valmis") {
-                    if model.target == nil { model.reset() } else { dismiss() }
-                }
-                .controlSize(.large)
-                .frame(maxWidth: .infinity)
-                .elderTapTarget()
-
-                // The same way out as on the result screen. A telling somebody
-                // did not mean to keep is not any more meant once the quota
-                // happened to interrupt it — and here the memory is a recording
-                // with no text, which is the hardest kind to find and remove
-                // afterwards.
-                Button("Poista tämä muisto") { isConfirmingDiscard = true }
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Elder.destructive)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                    .elderTapTarget()
+        // The same scroll treatment as IdleView and the refused microphone. As a
+        // plain stack this screen was the one that had never been measured, and
+        // at the largest text size it failed worst of anything seen: the title
+        // clipped off the top, "Kirjoita se itse" truncated to one line, and
+        // "Selvä" and "Poista tämä muisto" were below the bottom edge with no
+        // way to reach them — on the screen that tells somebody their telling is
+        // safe, in the state a dead cottage connection produces.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
             }
-
-            Spacer()
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .padding(Elder.screenPadding)
         .confirmationDialog(
             "Poistetaanko tämä muisto?",
             isPresented: $isConfirmingDiscard,
@@ -1203,6 +1166,85 @@ private struct AudioSavedView: View {
             Button("Peruuta", role: .cancel) {}
         } message: {
             Text("Äänitys poistuu eikä sitä voi palauttaa.")
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "waveform.circle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(.tint)
+                // Decoration: the title beside it says the same thing in words.
+                // Left visible, VoiceOver reads out the symbol's own name — the
+                // defect the onboarding mark and the member rows had already.
+                .accessibilityHidden(true)
+
+            Text("Äänesi on tallessa")
+                .font(.title.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 12) {
+                // The text lands in the memory whose audio is already saved,
+                // rather than beside it. What she just told is one telling, and
+                // the archive must not hold it as a silent recording next to a
+                // voice-less text.
+                Button {
+                    model.beginWriting(completing: model.savedMemoryID)
+                } label: {
+                    // fixedSize on every label here, as on the idle screen:
+                    // under vertical pressure SwiftUI truncates a Text before it
+                    // shrinks anything else, and this one was measured doing it.
+                    Text("Kirjoita se itse")
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button {
+                    if model.target == nil { model.reset() } else { dismiss() }
+                } label: {
+                    Text(model.target == nil ? "Selvä" : "Valmis")
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .controlSize(.large)
+
+                // The same way out as on the result screen. A telling somebody
+                // did not mean to keep is not any more meant once the quota
+                // happened to interrupt it — and here the memory is a recording
+                // with no text, which is the hardest kind to find and remove
+                // afterwards.
+                Button {
+                    isConfirmingDiscard = true
+                } label: {
+                    Text("Poista tämä muisto")
+                        .font(.body.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .foregroundStyle(Elder.destructive)
+                .controlSize(.large)
+            }
+
+            Spacer(minLength: 0)
         }
     }
 }
@@ -1295,11 +1337,27 @@ private struct FailureView: View {
     let onRetry: () -> Void
 
     var body: some View {
+        // The same scroll treatment as the audio-saved screen, and for the same
+        // reason: a plain stack clips from both ends at the largest text size,
+        // and this one holds a message whose length nobody controls here.
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 24) {
-            Spacer()
+            Spacer(minLength: 0)
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 56))
                 .foregroundStyle(Elder.proposal)
+                // Decoration: the message is the content.
+                .accessibilityHidden(true)
             Text(message)
                 .elderBody()
                 .multilineTextAlignment(.center)
@@ -1307,9 +1365,8 @@ private struct FailureView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .elderTapTarget()
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding(Elder.screenPadding)
     }
 }
 
@@ -1327,8 +1384,11 @@ private struct RecordButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(.red.gradient)
-                    .shadow(color: .red.opacity(isRecording ? 0.5 : 0.25), radius: isRecording ? 28 : 14)
+                    .fill(Elder.recording.gradient)
+                    .shadow(
+                        color: Elder.recording.opacity(isRecording ? 0.5 : 0.25),
+                        radius: isRecording ? 28 : 14
+                    )
 
                 Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                     .font(.system(size: isRecording ? 60 : 72))

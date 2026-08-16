@@ -51,6 +51,13 @@ final class AudioRecorder {
         // system prompt with "Älä salli" and then digging the app back out of
         // iOS Settings by hand — which no test run and no screenshot run can do,
         // and which is why nothing had ever looked at it.
+        //
+        // There is deliberately no `-mic granted` beside it. It was tried, for
+        // the test that records for real: returning true here skips the
+        // *question* but not the *need*, and the system raises the same prompt
+        // from `record()` itself a moment later — at a moment nothing controls.
+        // A test that needs the grant answers the prompt instead; see
+        // `AccessibilitySweepTests.testAudioSaved`.
         if UserDefaults.standard.string(forKey: "mic") == "denied" { return false }
         #endif
         return await withCheckedContinuation { continuation in
