@@ -367,6 +367,22 @@ and the sixth is 429, the window resets, create → invite → join still works 
 to end, and with the binding removed the request goes through with
 `[ratelimit] no binding … allowing the request unmetered` in the log.
 
+That was a hand-run, which is not a check: it does not happen again when
+somebody edits `wrangler.jsonc`. `scripts/rate-limit-check.mjs` is the same
+measurement made repeatable, plus the two properties a hand-run could not easily
+reach. **The limit is per address** — keyed on anything constant, one busy
+household locks every other family in the world out of ever being created, and
+rule 9 means nobody could diagnose that from the phone. **And the two doors keep
+separate buckets**: sharing a namespace id would mean a family that has just
+been created cannot be joined from the same sofa, which is exactly the moment it
+is joined. It also asserts the other half of rule 2 — a session that has used
+its five creations can still tell the archive something.
+
+**Shown to be load-bearing**, twice, in a throwaway worktree with its own Worker
+and database. Keying the limiter on a constant reddened only the per-address
+case; giving the join door the create door's namespace id reddened only the
+two-doors case.
+
 This is a point where simplicity and security genuinely conflict, and the choice
 is deliberate: ease wins, because a login wall would drive away exactly the user
 the app exists for.
