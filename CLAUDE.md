@@ -269,6 +269,20 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 # nothing — no AI call — but needs `npx wrangler dev` running.
 node scripts/place-sync-check.mjs
 
+# The invite link, which §4 calls the entire security boundary. Four rules that
+# are silent when broken: a code expires, a code can be revoked, a code belongs
+# to one family, and a wrong code answers exactly like an expired or revoked one
+# — a different answer would tell a guesser they had found a real family.
+# Needs `npx wrangler dev`; leaves two throwaway families behind.
+node scripts/invite-boundary-check.mjs
+
+# One purchase, one family. Loads the real schema.sql into an in-memory SQLite
+# and asks it: the same customer id cannot unlock two families, a refund finds
+# exactly one payer, and a restore inside the family still works. Costs nothing
+# — no Worker, no D1, no RevenueCat — and the guard it backs up cannot be run
+# on this machine at all. After touching the member table or entitlement.ts.
+node scripts/entitlement-binding-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after
@@ -297,6 +311,24 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   sessions doing that at once take turns killing each other's process. Use a
   device of your own and **never shut down or reboot a booted one you did not
   create** — somebody else is very likely mid-run on it.
+- **A device of your own is the rule; a device left booted is the cost.** Eight
+  were booted here at once on 16 Aug — three sessions of this project, another
+  project's two, and a stray — and a run of the UI suite died with
+
+      IDELaunchReport: Finished with error: The operation couldn't be
+      completed. (Mach error -308 - (ipc/mig) server died)
+
+  before a single test executed. **A starved machine does not only kill runs, it
+  invents findings.** The next attempt crawled through in two hours instead of
+  fourteen minutes and reported two failures: one audit that timed out after
+  33 minutes, and one Dynamic Type finding on a sheet's *"Peruuta"*. That sheet
+  then passed three times in a row on a quiet machine, same commit, 36–47
+  seconds each. Nothing was wrong with it.
+
+  So: `xcrun simctl list devices | grep -c "(Booted)"` before believing either a
+  dead run or a surprising finding, and delete your own device when you are
+  finished rather than leaving it booted for the next session to inherit. Two
+  sessions keeping one each is fine; six is the error above.
 - `xcrun simctl` is not on the path xcodebuild hands to its own child processes,
   so a test run ends with `unable to find utility "simctl"` while collecting
   diagnostics. It is noise from a run that had already failed, not the failure.
