@@ -37,7 +37,13 @@ struct RelationsSection: View {
                 .foregroundStyle(Elder.supporting)
         } footer: {
             if hasUnconfirmed {
-                Text("Oranssilla merkityt ovat tekoälyn ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.")
+                // "Sovelluksen", not "tekoälyn". The help page says "Sovellus
+                // arvaa puheesta nimiä ja sukulaisuuksia" and its heading is
+                // "Sovellus ehdottaa, ihminen päättää"; this was the one screen
+                // still naming the same thing differently, and it is the screen
+                // where somebody decides whether to believe a proposal. Rule 4
+                // is about who confirms, not about advertising what guessed.
+                Text("Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.")
                     .foregroundStyle(Elder.supporting)
             }
         }

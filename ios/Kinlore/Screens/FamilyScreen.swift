@@ -184,7 +184,13 @@ struct FamilyScreen: View {
     /// The same thing said where the family details could not be fetched at all.
     private var offlineText: String {
         switch store.waitingToBeSent {
-        case 0: "Voit silti kertoa muistoja. Ne synkronoituvat kun yhteys palaa."
+        // "Lähtevät itsestään", not "synkronoituvat" — the two branches below
+        // this one have said it plainly all along, in the same property, and
+        // the app has one word for this everywhere else it comes up: the
+        // Lähetys row, "kaikki lähetetty", "odottaa lähetystä". A person who
+        // has just been told the connection is gone should not have to decode
+        // a verb from someone else's trade. See docs/ARCHITECTURE.md §21.
+        case 0: "Voit silti kertoa muistoja. Ne lähtevät itsestään kun yhteys palaa."
         case 1: "Yksi kertomasi muisto odottaa lähetystä. Se lähtee itsestään kun yhteys palaa."
         case let waiting: "\(waiting) kertomaasi muistoa odottaa lähetystä. Ne lähtevät itsestään kun yhteys palaa."
         }
