@@ -49,9 +49,9 @@ memory.body           mentioned subjects      follow-up questions
 (cleaned text)        (confirmed = 0)         (prompt_question)
 ```
 
-| <img src="docs/media/01-tell.png" alt="The Tell screen: a large red microphone button under the heading Kerro mitä muistat, with Paina ja ala puhua below it and a link offering to type instead."> | <img src="docs/media/02-result.png" alt="The result screen: Muisto tallennettu, the memory placed at Puumalassa 1950-luku, the spoken text kept as it was said, and three proposed subjects each with a cross and a tick."> | <img src="docs/media/03-guess.png" alt="The memories screen: a guessing round headed Muistatko kuka, showing a story with the name replaced by a long dash, and the question Kuka hän oli."> |
-|---|---|---|
-| **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. | **The reading loop.** The same memory with the name taken out — the only part of the app that asks nothing of the 80-year-old. |
+| <img src="docs/media/01-tell.png" alt="The Tell screen: a large red microphone button under the heading Kerro mitä muistat, with Paina ja ala puhua below it and a link offering to type instead."> | <img src="docs/media/02-result.png" alt="The result screen: Muisto tallennettu, the memory placed at Puumalassa 1950-luku, the spoken text kept as it was said, and three proposed subjects each with a cross and a tick."> |
+|---|---|
+| **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. |
 
 Everything else in the app exists to make that loop worth repeating. What is
 built and what is not is inventoried, honestly, in
@@ -129,7 +129,6 @@ the meter said no. Every push still gets the backend type check, on Linux.
 | Claim | Command |
 |---|---|
 | Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 49 UI tests, 26 of them an accessibility sweep at both text sizes |
-| The guessing round never leaks the name it is hiding — in any Finnish inflection | `swiftc … scripts/guess-mask-check.swift` |
 | The paid archive is offered on a rhythm, and never beside a name a human is being asked to confirm | `swiftc … scripts/upsell-rhythm-check.swift` |
 | A place's coordinates follow its title through sync, and rubbish is refused | `node scripts/place-sync-check.mjs` |
 | Extraction gets Finnish names, dates and relations out of a transcript | `node scripts/extract-tests.mjs` |
