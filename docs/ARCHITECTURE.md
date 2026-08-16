@@ -375,6 +375,30 @@ id across three launches, including after deletion and reinstallation.
 That is the correct behaviour for this audience. Accidentally deleting the app
 must not mean losing the family.
 
+### The boundary, pressed on
+
+Reading the join path is not the same as trying it, and this is the one place
+where the difference is not academic: there is no login, so whoever holds a code
+sees a family's memories of their dead relatives.
+
+`scripts/invite-boundary-check.mjs` presses on it against a running Worker. An
+invited member gets in; a made-up code, a revoked code and an expired code are
+all refused **in the same words**, because a different answer for a real-but-
+late code tells a guesser they have found a family; a member of another family
+cannot be pulled across; and a stranger cannot revoke somebody else's invite,
+nor does the attempt damage it.
+
+Ageing a code past its expiry has no route and should not have one, so that case
+reaches into the local D1 directly — which is also where the check taught its
+author something. Pointed at a second Worker on another port it aged the
+*first* one's database and the expiry case passed for the wrong reason: a green
+check measuring nothing, the exact failure this repo keeps finding. It takes
+`KINLORE_WORKER_DIR` now.
+
+**Shown to be load-bearing.** The revocation check was deleted in a throwaway
+worktree, with the mutated Worker on its own port and its own database so no
+other session's was touched, and the run came back red on exactly that case.
+
 ## 5. Media
 
 Photos and audio go to R2, metadata to D1.

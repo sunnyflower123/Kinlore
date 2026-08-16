@@ -235,6 +235,13 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
   ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
 
+# The invite link, which §4 calls the entire security boundary. Four rules that
+# are silent when broken: a code expires, a code can be revoked, a code belongs
+# to one family, and a wrong code answers exactly like an expired or revoked one
+# — a different answer would tell a guesser they had found a real family.
+# Needs `npx wrangler dev`; leaves two throwaway families behind.
+node scripts/invite-boundary-check.mjs
+
 # One purchase, one family. Loads the real schema.sql into an in-memory SQLite
 # and asks it: the same customer id cannot unlock two families, a refund finds
 # exactly one payer, and a restore inside the family still works. Costs nothing
