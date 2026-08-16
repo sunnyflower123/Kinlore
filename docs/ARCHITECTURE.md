@@ -27,7 +27,6 @@ and what found it.
 [10. The interview loop](#10-the-interview-loop) ·
 [11. Asked questions](#11-asked-questions) ·
 [12. The question ladder](#12-the-question-ladder) ·
-[13. The guessing round](#13-the-guessing-round) ·
 [14. Settings — taking the archive out, and leaving](#14-settings--taking-the-archive-out-and-leaving) ·
 [21. The words](#21-the-words) ·
 [22. The one blue button](#22-the-one-blue-button)
@@ -38,7 +37,8 @@ and what found it.
 [17. The name that was heard wrong](#17-the-name-that-was-heard-wrong) ·
 [18. Places on a map — what they cannot promise](#18-places-on-a-map--the-three-columns-and-what-they-cannot-promise) ·
 [19. The telling that was not meant](#19-the-telling-that-was-not-meant) ·
-[20. Small promises the app was not keeping](#20-small-promises-the-app-was-not-keeping)
+[20. Small promises the app was not keeping](#20-small-promises-the-app-was-not-keeping) ·
+[13. The guessing round — built, then cut](#13-the-guessing-round--built-then-cut)
 
 ---
 
@@ -70,7 +70,7 @@ An honest inventory, not a wish list:
 | A date given by hand, at the precision somebody actually has | **Done and tested**, see §8 |
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 26 sweep tests, each auditing one screen at the default text size and again at the largest, out of 49 UI tests, and they audit the screen they are named after |
+| Accessibility sweep over every screen | **Done** — 28 sweep tests, each auditing one screen at the default text size and again at the largest, out of 47 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |

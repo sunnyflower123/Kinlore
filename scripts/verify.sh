@@ -93,6 +93,60 @@ echo "Invariants"
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "one purchase unlocks one family" entitlement_binding
 
+# --- What the documents say about the code ----------------------------------
+
+# ARCHITECTURE.md §1 has twice carried a number that was simply wrong: 41 UI
+# tests when there were 49, and "20 screens" that no file in this repository
+# produces. Neither was caught by reading, and neither could be — a plausible
+# number reads exactly like a true one, and that is the whole difficulty. Both
+# survived until somebody counted, months after they stopped being true.
+#
+# This checks nothing about the prose. It counts the two claims that can be
+# counted, and it fails if the sentence they live in was reworded away, because
+# a check that has quietly stopped checking is the thing this file exists for.
+# Both documents state the counts, in different words, and README.md was already
+# a version behind ARCHITECTURE.md when this was written. So both are checked:
+# one file carrying the truth is exactly how the other one gets to keep lying.
+doc_counts() {
+	local bad=0 seen_tests=0 seen_sweeps=0
+	local tests sweeps doc said
+
+	tests=$(grep -rhE '^[[:space:]]+func test' ios/KinloreUITests/*.swift | wc -l | tr -d ' ')
+	sweeps=$(grep -cE 'try sweep\(' ios/KinloreUITests/AccessibilitySweepTests.swift)
+
+	for doc in docs/ARCHITECTURE.md README.md; do
+		said=$(grep -oE '[0-9]+ UI tests' "$doc" | head -1 | grep -oE '^[0-9]+')
+		if [ -n "$said" ]; then
+			seen_tests=1
+			[ "$said" = "$tests" ] || {
+				echo "$doc says $said UI tests. Counted in ios/KinloreUITests: $tests"
+				bad=1
+			}
+		fi
+
+		said=$(grep -oE '[0-9]+ (of them an accessibility sweep|sweep tests)' "$doc" \
+			| head -1 | grep -oE '^[0-9]+')
+		if [ -n "$said" ]; then
+			seen_sweeps=1
+			[ "$said" = "$sweeps" ] || {
+				echo "$doc says $said sweep tests. Counted sweep() calls: $sweeps"
+				bad=1
+			}
+		fi
+	done
+
+	# Silence is the failure this is really guarding against: if both sentences
+	# were reworded away, everything above passes while checking nothing.
+	[ "$seen_tests" = 1 ] || { echo "no document states a UI test count any more"; bad=1; }
+	[ "$seen_sweeps" = 1 ] || { echo "no document states a sweep count any more"; bad=1; }
+
+	return $bad
+}
+
+echo
+echo "Docs"
+run "the test counts the documents state" doc_counts
+
 # --- The backend ------------------------------------------------------------
 
 echo
