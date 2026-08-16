@@ -104,6 +104,38 @@ final class AccessibilitySweepTests: XCTestCase {
         XCTFail("never stopped moving: \(element)", file: file, line: line)
     }
 
+    /// Waits until the screen has stopped **being drawn**, which is not the same
+    /// as `settle(_:)` above waiting until one element has stopped moving.
+    ///
+    /// A frame comes to rest before the drawing does: a scroll's deceleration,
+    /// the tab bar's blur, a fade still compositing. That gap is what
+    /// *"Potentially inaccessible text"* is made of — element detection compares
+    /// the rendered image against the accessibility tree, so it is the one
+    /// finding that can appear and vanish on identical code, with no element and
+    /// no frame to point at. Two screenshots that come back byte for byte
+    /// identical are the only honest way to say the screen is done.
+    ///
+    /// **Never on a screen that animates by design.** Four in this app cannot
+    /// ever settle and would spend the whole deadline proving it: the record
+    /// button pulsing `repeatForever`, the waveform redrawing from the
+    /// recorder's levels every 50 ms, the asking screen's speaker symbol under
+    /// `.symbolEffect`, and every `ProgressView` — the processing screens, the
+    /// import overlay, the playback button's loading state.
+    ///
+    /// Returns whether it settled, and **the caller must not ignore the
+    /// answer.** Auditing a screen that never stopped is measuring a moving
+    /// view; proceeding quietly is the failure `require` was written against.
+    private func hasStoppedDrawing(_ app: XCUIApplication, tries: Int = 20) -> Bool {
+        var previous: Data?
+        for _ in 0 ..< tries {
+            let drawn = app.screenshot().pngRepresentation
+            if drawn == previous { return true }
+            previous = drawn
+            Thread.sleep(forTimeInterval: 0.15)
+        }
+        return false
+    }
+
     private func reachPhotoTile(in app: XCUIApplication) -> XCUIElement {
         reach(photoTile(in: app), in: app, "the photo tile")
     }
@@ -189,6 +221,19 @@ final class AccessibilitySweepTests: XCTestCase {
             reach(app.staticTexts["Käytetty 2 kertaa"], in: app, "the invite somebody has")
             reach(app.buttons["Poista"].firstMatch, in: app, "the way to take an invite back")
             settle(open)
+            // And then wait for the drawing, not only for the frame. This screen
+            // reported "Potentially inaccessible text" once at the largest size
+            // and not on the runs either side of it, on identical code — element
+            // detection reads the rendered image, so a scroll that has stopped
+            // moving but not stopped compositing is exactly what it catches.
+            //
+            // Asserted rather than merely waited on: the Perhe screen has no
+            // animation of its own, so a screen still being drawn three seconds
+            // later is news rather than weather.
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the Perhe screen was still being drawn when the audit ran"
+            )
         }
     }
 
