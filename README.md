@@ -29,6 +29,12 @@ hackathon. Target category: **Next Gen Award** (student category).
 > cards for the relatives mentioned, year and place information — and three
 > follow-up questions back.
 
+<p align="center">
+  <img src="docs/media/demo.gif" alt="The app launching, showing Järjestelen muistoa while it works, and arriving at a saved memory placed at Puumalassa in the 1950s with three proposed subjects waiting to be confirmed." width="320">
+</p>
+
+<p align="center"><sub>Simulator, stub pipeline — the waiting is real, the model call is canned.<br>Reproduce it with <code>-screen result</code> and <code>scripts/frames-to-gif.swift</code>.</sub></p>
+
 ```
 audio → ASR (Finnish) → raw_transcript (kept verbatim)
                              ↓
