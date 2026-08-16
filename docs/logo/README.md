@@ -3,9 +3,9 @@
 The chosen mark is **C — the locket**. A closed disc with a waveform inside and
 a bail on top.
 
-The mark is deliberately *nameless*: `Memorize` is a working title (PLAN.md §10),
-and a locket still works after the name changes. Only the lockup files carry the
-name.
+The mark is deliberately *nameless*, and it earned that on 15 Aug 2026 when
+`Memorize` became **Kinlore** (PLAN.md §10): the locket needed no redrawing at
+all, and only the two lockup files carried the name.
 
 ## Why a locket
 
@@ -23,7 +23,7 @@ for two reasons:
 
 1. **Collision.** The ConnectFul and Hetkio icons are both a broken ring with a
    centre point. Growth rings were the same idea with inverted colours, and
-   Memorize did not read as its own app on the same screen.
+   the app did not read as its own on the same screen.
 2. **Liquid Glass.** iOS 26 draws a reflection over the icon that darkens and
    muddies a dark background. Espresso went almost black and parchment dimmed to
    grey. A light background survives the same treatment brightly.
@@ -65,21 +65,21 @@ The primary user is 80 years old, and the mark is no exception to that rule.
 
 ## Export
 
-The icon is wired up: `ios/Memorize/Assets.xcassets/AppIcon.appiconset`.
+The icon is wired up: `ios/Kinlore/Assets.xcassets/AppIcon.appiconset`.
 When the SVG changes, regenerate the PNGs:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/concept-c-locket.svg ios/Memorize/Assets.xcassets/AppIcon.appiconset/icon-1024.png 1024
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/icon-tinted.svg ios/Memorize/Assets.xcassets/AppIcon.appiconset/icon-1024-tinted.png 1024
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/concept-c-locket.svg ios/Kinlore/Assets.xcassets/AppIcon.appiconset/icon-1024.png 1024
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/icon-tinted.svg ios/Kinlore/Assets.xcassets/AppIcon.appiconset/icon-1024-tinted.png 1024
 ```
 
 The launch screen mark comes from `mark.svg`, which is the locket without the
 parchment rectangle, at the three scales the asset catalog expects:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Memorize/Assets.xcassets/LaunchMark.imageset/mark.png 120
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Memorize/Assets.xcassets/LaunchMark.imageset/mark@2x.png 240
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Memorize/Assets.xcassets/LaunchMark.imageset/mark@3x.png 360
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Kinlore/Assets.xcassets/LaunchMark.imageset/mark.png 120
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Kinlore/Assets.xcassets/LaunchMark.imageset/mark@2x.png 240
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/render-svg.swift docs/logo/mark.svg ios/Kinlore/Assets.xcassets/LaunchMark.imageset/mark@3x.png 360
 ```
 
 Do not use `qlmanage -t` for this. Quick Look composites onto white, so the
@@ -141,10 +141,12 @@ Charter rather than New York because Bitstream Charter's licence allows its
 letterforms to be used this way, while Apple's fonts are licensed for user
 interface mock-ups.
 
-`Memorize` is still a working title, so the wordmark will need regenerating:
+The wordmark was regenerated for **Kinlore** on 16 Aug 2026. Both lockups carry
+the new outline, and the viewBox went from 614 to 501 — the name is shorter, and
+the width is its right edge plus the same 20.78 margin the old one had:
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/outline-wordmark.swift Memorize Charter 0.4 92 -1 178 132
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/outline-wordmark.swift Kinlore Charter 0.4 92 -1 178 132
 ```
 
 The script prints the bounding box to stderr. The viewBox has to be wide enough

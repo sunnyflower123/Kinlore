@@ -10,8 +10,9 @@
 // allows its letterforms to be used this way, whereas Apple's fonts are
 // licensed for user interface mock-ups only.
 //
-// The app name is still a working title (docs/PLAN.md §10), so this will need
-// to run again when the name changes.
+// Run this again if the name ever changes. It was last run for Kinlore on
+// 16 Aug 2026; the viewBox in the lockups is the bounding box's right edge
+// plus a 20.78 margin, which is what the previous name used.
 //
 //   DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
 //     xcrun swift scripts/outline-wordmark.swift Kinlore Charter 0.4 92 -1 178 132
