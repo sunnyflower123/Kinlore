@@ -332,6 +332,24 @@ finished.**
   fact.
 - **Prices.** Free: 1 family / ~20 photos / ~10 AI minutes per month. Paid:
   ~€9.99/month or €59.99/year. Nominal on the Test Store, but considered.
+
+  **Two products, and a third was removed on 16 Aug 2026.** The Test Store had
+  `monthly`, `yearly` *and* `lifetime` in its `default` offering — the trio
+  RevenueCat proposes when a project is created, so `lifetime` arrived as a
+  default rather than as a decision. Nothing was broken by it: `entitlement.ts`
+  already reads a null `expires_at` as perpetual, deliberately. It was removed
+  because an undecided price is worse than a decided one, and because in *this*
+  product a single payment would open the archive for a whole family forever,
+  which is a promise that deserves an argument rather than a template.
+
+  The paywall is in the demo video. Three options, one of them unplanned, reads
+  as pricing left at its defaults — on a submission judged partly on *"technical
+  care in presentation"*.
+
+  The case for bringing it back is real and is emotional rather than commercial:
+  *"this is forever"* suits an archive better than a monthly bill does. If that
+  wins later, **price it here first.** Do not let it return as a default a second
+  time.
 - **The cloud as an adoption barrier.** Raised 15 Aug 2026, undecided. Who hands
   a dead parent's voice to somebody's server? For this product that is not a
   passing worry — it is the trust question, and the answer is currently *"we
