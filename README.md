@@ -54,6 +54,23 @@ built and what is not is inventoried, honestly, in
 [`ARCHITECTURE.md` §1](docs/ARCHITECTURE.md#1-where-things-stand) — including a
 warning about why that inventory has been wrong before.
 
+### And then it asks
+
+The follow-up questions are not a list to read. The app speaks one, listens for
+the answer, organises what it heard, and asks the next — round after round,
+without a tap. That matters because the person it is for should not have to
+operate anything while she is remembering:
+
+<p align="center">
+  <img src="docs/media/demo-interview.gif" alt="The app organising a memory, then asking Kuka muu oli paikalla and listening with a live waveform, then organising again and asking Minä vuonna tämä suunnilleen oli — two full rounds with no tap in between." width="320">
+</p>
+
+<p align="center"><sub>Two rounds, hands-free. The 1:14 on the timer is real waiting, not a cut.<br>Reproduce it with <code>-screen interview</code>.</sub></p>
+
+How the questions are chosen, and why they get more personal only as the
+answers earn it, is the question ladder in
+[`ARCHITECTURE.md` §12](docs/ARCHITECTURE.md#12-the-question-ladder).
+
 ## Six rules that do not bend
 
 1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver,
