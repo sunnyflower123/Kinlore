@@ -78,8 +78,29 @@ async function fetchActiveEntitlements(env: Env, customerID: string): Promise<Ac
 	})
 
 	if (!res.ok) {
-		const text = await res.text().catch(() => '')
-		console.error(`[entitlement] RevenueCat HTTP ${res.status}: ${text.slice(0, 200)}`)
+		// Status and RevenueCat's own error code, never the body.
+		//
+		// This was the fourth site logging an upstream response verbatim, and it
+		// outlived the sweep that closed the other three (`extract.ts`,
+		// `openrouter.ts`, `worker.ts`) because it is not a memory — it is the
+		// payer's account. PLAN.md §10 says what makes that matter anyway: the
+		// log is the one place a family cannot export, cannot empty with
+		// "Tyhjennä tämä laite", and never agreed to. A subscriber's identifiers
+		// do not belong in it either, and rule 9 does not have a second tier for
+		// data that is only somebody's payment details.
+		//
+		// The code is the part worth having: RevenueCat answers `{"code": 7638,
+		// "message": …}`, and the number says what went wrong without quoting
+		// anything back.
+		const body = await res.text().catch(() => '')
+		let code: number | string = 'none'
+		try {
+			const parsed = JSON.parse(body) as { code?: number }
+			if (typeof parsed.code === 'number') code = parsed.code
+		} catch {
+			code = `unparsed ${body.length} chars`
+		}
+		console.error(`[entitlement] RevenueCat HTTP ${res.status}, code ${code}`)
 		throw new Error(`RevenueCat HTTP ${res.status}`)
 	}
 
