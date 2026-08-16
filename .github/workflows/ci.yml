@@ -1,15 +1,24 @@
 # The checks a stranger can trust without taking anybody's word for it.
 #
-# Split by runner cost rather than by taste. Actions is free on public
-# repositories and metered on private ones, and a macOS minute counts as ten
-# there — the first version of this file put everything on macOS and every run
-# died in four seconds without ever being given a runner, which is what a quota
-# refusal looks like from the outside. It reads like a broken build and is not
-# one.
+# NOTHING HERE RUNS AT THE MOMENT, and the reason is not in this file. The
+# account's included Actions minutes are spent, so every run is refused before
+# a runner is allocated and dies in four to five seconds. That looks exactly
+# like a broken build from the outside — a red tick, no output — and it is not
+# one: no step ever executed. Measured on the billing page rather than guessed.
 #
-# So the check that runs on every push is the one that needs nothing but Linux,
-# and everything that needs Xcode runs on pull requests and on request. Put the
-# macOS jobs back on push when the repository goes public and the meter stops.
+# It comes back by itself when the month rolls over, and it stops mattering the
+# day this repository goes public, because Actions is free and unmetered there.
+#
+# The split below is still the right shape and was worth making. Actions is
+# metered on private repositories and a macOS minute counts as ten, so the check
+# that runs on every push is the one that needs nothing but Linux, and
+# everything that needs Xcode runs on pull requests and on request. Put the
+# macOS jobs back on push when the repository goes public.
+#
+# One correction worth keeping, because the wrong version was committed first:
+# the four-second failures were blamed on the macOS multiplier, and moving the
+# push check to Ubuntu did not fix them. Ubuntu cannot start in four seconds
+# either. The multiplier was real and the diagnosis was still wrong.
 
 name: CI
 

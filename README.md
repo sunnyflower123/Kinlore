@@ -6,7 +6,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sunnyflower123/Kinlore/actions/workflows/ci.yml"><img src="https://github.com/sunnyflower123/Kinlore/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-blue.svg" alt="MIT licence"></a>
 </p>
 
