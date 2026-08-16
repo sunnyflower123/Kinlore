@@ -125,10 +125,24 @@ final class Session {
 
     /// Reports a purchase to the server. The server verifies it with RevenueCat —
     /// this is a hint, not a claim.
-    func syncPurchase(customerID: String) async {
-        guard let entitlements else { return }
-        _ = try? await entitlements.sync(customerID: customerID)
+    ///
+    /// **Returns whether the family actually has the archive now**, which is not
+    /// the same as whether the call succeeded and matters more. Somebody has
+    /// just paid: the one question worth answering is whether the thing they
+    /// paid for exists yet. It was thrown away here — `try?`, then a dismissal —
+    /// so a purchase made while the Worker was unreachable closed the sheet,
+    /// left the family view saying *"Ilmainen"*, and said nothing at all to the
+    /// person who had just been charged.
+    ///
+    /// The recovery has always been there: `syncEntitlementIfPurchased` reports
+    /// it again on the app's own schedule, so nothing is lost and nobody needs
+    /// to pay twice. What was missing is anyone saying so.
+    @discardableResult
+    func syncPurchase(customerID: String) async -> Bool {
+        guard let entitlements else { return false }
+        let reported = (try? await entitlements.sync(customerID: customerID)) != nil
         await refresh()
+        return reported && isPaid
     }
 
     func createInvite() async -> String? {

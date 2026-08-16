@@ -20,6 +20,10 @@ struct PaywallSheet: View {
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
 
+    /// Set when the money went through and the archive did not — see
+    /// `spreadToFamily`.
+    @State private var isWaitingForTheFamily = false
+
     var body: some View {
         PaywallView(displayCloseButton: true)
             // Restore matters more here than in most apps: the person who pays
@@ -32,11 +36,25 @@ struct PaywallSheet: View {
                 Task { await spreadToFamily(info) }
             }
             .onRequestedDismissal { dismiss() }
+            // The one moment in this app where somebody has parted with money,
+            // and it used to end in a sheet closing over an unchanged screen.
+            .alert("Kiitos — maksu meni läpi", isPresented: $isWaitingForTheFamily) {
+                Button("Selvä") { dismiss() }
+            } message: {
+                Text("Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa.")
+            }
     }
 
+    /// The purchase belongs to the buyer; the archive belongs to the family, and
+    /// the second one is what they think they bought (§6). So the sheet closes
+    /// on the family having it, and says so plainly when it does not — the
+    /// alternative is a person who paid, saw nothing change, and pays again.
     private func spreadToFamily(_ info: CustomerInfo) async {
-        await session.syncPurchase(customerID: info.originalAppUserId)
-        dismiss()
+        if await session.syncPurchase(customerID: info.originalAppUserId) {
+            dismiss()
+        } else {
+            isWaitingForTheFamily = true
+        }
     }
 }
 

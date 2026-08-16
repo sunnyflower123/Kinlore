@@ -397,6 +397,41 @@ it current without the app having to be opened.
 The rule **"downgrade never deletes"** is absolute. A family that loses memories
 when the payment ends never comes back, and that is not a product worth building.
 
+### After the money
+
+The purchase belongs to the buyer and the archive belongs to the family, and the
+second one is what they think they bought. Everything between the two is ours,
+and it is the part that can be reasoned about without a RevenueCat key — which
+is what was done, because the key is still missing and the screen itself is
+still unverified.
+
+Two things were wrong in it.
+
+**A failed handoff was silent.** `syncPurchase` threw the result away — `try?`,
+then `refresh`, then the sheet dismissed itself regardless. A purchase made
+while the Worker was unreachable therefore closed the sheet over a family view
+still reading *"Ilmainen"*, having said nothing whatever to somebody who had
+just been charged. The person who does that twice is not being careless. The
+call now answers **whether the family actually has the archive** — not whether
+the request succeeded, which is a different and less interesting question — and
+the sheet stays open to say so: *"Kiitos — maksu meni läpi. Perheen arkisto ei
+vielä ehtinyt avautua… eikä sinun tarvitse maksaa toista kertaa."* That last
+clause is the one that matters.
+
+**The recovery ran at launch only.** `syncEntitlementIfPurchased` reports an
+unreported purchase again, which is why nothing was ever lost — but it fired in
+`task`, once, at a cold start. A phone that is never quit is most phones, and it
+could carry a paid-for archive the family did not have for days. It runs on
+returning to the foreground too now; the guard is a cached RevenueCat lookup and
+answers false on every device that has bought nothing.
+
+**Still unverified, and honestly so:** the paywall screen itself. It is
+RevenueCat's own view, it requires the SDK to be configured, and without a key
+`paywallSheet` deliberately renders nothing at all. When a Test Store key
+exists, `-rcKey <key>` is enough to see it — and the first thing to check is not
+that it looks right but that a purchase reaches `family.entitlement`, with the
+Worker deliberately stopped once to see the sentence above.
+
 ### Where the paywall goes
 
 Right after the first AI-structured memory is finished. That is when perceived

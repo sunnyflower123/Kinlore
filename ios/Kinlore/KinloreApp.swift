@@ -76,6 +76,13 @@ struct KinloreApp: App {
                         await catchUp?.run()
                         // Places told about since the last sweep.
                         await places.resolvePending(in: store)
+                        // And a purchase the server never heard about. This ran
+                        // at launch only, so a phone that is never quit — which
+                        // is most phones — could carry a paid-for archive the
+                        // family did not have for days. The guard costs a cached
+                        // lookup and answers false on every device that has
+                        // bought nothing.
+                        await syncEntitlementIfPurchased()
                     }
                 }
                 .onChange(of: session.family?.entitlement) { _, _ in
