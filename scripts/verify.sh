@@ -99,9 +99,10 @@ fi
 
 # Free, but it needs a Worker: it drives /sync rather than reimplementing it.
 if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
+	run "two phones end up in one family" node scripts/family-sync-check.mjs
 	run "a place's coordinates follow its title" node scripts/place-sync-check.mjs
 else
-	printf '  %-46s%s\n' "place coordinates through sync" \
+	printf '  %-46s%s\n' "the family path and place coordinates" \
 		"skipped — no Worker (cd backend && npm run dev)"
 fi
 
