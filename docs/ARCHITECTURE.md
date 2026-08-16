@@ -51,7 +51,7 @@ An honest inventory, not a wish list:
 | Dictation, typing, extraction, name correction | **Done and tested** |
 | Photo import, gallery, person cards | **Done** |
 | `subject`, `memory`, `mention`, `prompt_question` | In use |
-| Identity, family, invite links | **Done and tested** |
+| Identity, family, invite links | **Done and tested** — the door in §4, and the session after it, including the member who has left |
 | Sync (`/sync` pull and push) | **Done and tested** |
 | Media to R2 (`/media`) | **Done and checked**, see §5 — the round trip and the isolation, against wrangler's local bucket |
 | Quotas (`/usage`, limits on the server) | **Done and checked**, see §7 — the counting and rule 2; not the transcription path itself |
@@ -398,6 +398,27 @@ check measuring nothing, the exact failure this repo keeps finding. It takes
 **Shown to be load-bearing.** The revocation check was deleted in a throwaway
 worktree, with the mutated Worker on its own port and its own database so no
 other session's was touched, and the run came back red on exactly that case.
+
+### The session afterwards
+
+The invite is the door; `authenticate` in `backend/src/auth.ts` is everything
+after it. `scripts/session-boundary-check.mjs` presses on that: a right member
+with a wrong secret, a member who does not exist and a token with no shape are
+all refused alike; one family reads nothing of another's, and a write aimed at
+another family's row does not land on it. What is stored is a SHA-256, not the
+secret — read out of the database rather than taken on trust — so a leak of D1
+is not a set of keys.
+
+The rule worth having a check for is **the member who has left**. Their row is
+kept on purpose, so the names on the memories they recorded still resolve, which
+makes "in the database" and "in the family" two different things separated by
+one column. Nothing else in the suite covers it, and it is silent when broken: a
+departed member who can still read looks exactly like a working app to everybody
+except the family who asked them to go.
+
+**Shown to be load-bearing.** `if (row.left_at) return null` was deleted in a
+throwaway worktree, Worker and database of its own. The departed member's read
+came back `200` and that one case went red; the other eight stayed green.
 
 ## 5. Media
 

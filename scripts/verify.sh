@@ -120,6 +120,11 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# The photographs and the voices, and who can reach them. Locally R2 is
 	# simulated by wrangler, so this touches no real storage.
 	run "media comes back, and only to its family" node scripts/media-check.mjs
+	# There is no login, so `authenticate` is the whole of it — and the rule
+	# nothing else covers is the departed member: the row is kept so the names
+	# on their memories still resolve, which makes "in the database" and "in the
+	# family" two different things.
+	run "a session ends when the member leaves" node scripts/session-boundary-check.mjs
 else
 	printf '  %-46s%s\n' "the family path, places and the invite boundary" \
 		"skipped — no Worker (cd backend && npm run dev)"
