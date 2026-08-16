@@ -106,6 +106,29 @@ console.log('— exporting —')
 launch(udid, ['-seed', 'none', '-tab', 'people', '-screen', 'export', '-api', ''])
 waitFor(14)
 
+// What is installed, not what is on disk. This check reads whatever build the
+// simulator happens to hold, and a stale one answers every question happily
+// with last week's behaviour: the key-set assertion below failed for a whole
+// run against an app built before the guessing round was cut, naming a field
+// that no longer exists in any source file. Say the age out loud rather than
+// guard against it — reinstalling from here would race the very sessions the
+// device rule exists to keep apart.
+{
+	const bundle = simctl('get_app_container', udid, BUNDLE, 'app')
+	const installed = statSync(bundle).mtimeMs
+	const newest = execFileSync('git', ['ls-files', '-z', 'ios/Kinlore'], { encoding: 'utf8' })
+		.split('\0')
+		.filter(Boolean)
+		.reduce((max, file) => Math.max(max, statSync(file).mtimeMs), 0)
+	if (newest > installed) {
+		const hours = Math.round((newest - installed) / 36e5 * 10) / 10
+		console.log(
+			`  note the installed app is older than the sources by ${hours} h — build first,\n` +
+				'       or this measures a version of the app nobody is looking at',
+		)
+	}
+}
+
 const container = simctl('get_app_container', udid, BUNDLE, 'data')
 const zip = join(container, 'tmp', 'Muistoarkisto.zip')
 check('the export wrote a file', existsSync(zip), zip)
@@ -149,9 +172,13 @@ check('there is a machine-readable copy', existsSync(jsonPath))
 if (existsSync(jsonPath)) {
 	const archive = JSON.parse(readFileSync(jsonPath, 'utf8'))
 	const keys = Object.keys(archive).sort()
+	// `guesses` was in this list until the guessing round was cut on
+	// 16 Aug 2026 (PLAN.md §5, row 8). Spelled out rather than loosened to a
+	// subset test: the point of the assertion is that nothing new drifts into
+	// the file a family opens in twenty years, and a subset test would let it.
 	check(
 		'holding the archive and nothing else',
-		keys.join(',') === 'guesses,memories,questions,relations,subjects',
+		keys.join(',') === 'memories,questions,relations,subjects',
 		keys.join(','),
 	)
 	// The outbox and the server's cursor used to travel in here: facts about one
