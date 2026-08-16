@@ -35,6 +35,20 @@ XCODE=/Applications/Xcode.app/Contents/Developer
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
 
+# What is on disk is what gets measured, and in this worktree what is on disk is
+# not always yours. A run against somebody else's half-finished edit reports
+# their intermediate state under your name: it happened with a `VStack` in a
+# footer that stopped its text scaling, was reported as two failing onboarding
+# screens, and passed on the same commit an hour later because they had already
+# fixed it. Said out loud rather than guarded against — a dirty tree is the
+# normal way to work, and the only thing missing was knowing it.
+dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+if [ "${dirty:-0}" != "0" ]; then
+	echo "Note: $dirty file(s) uncommitted — this measures the working tree, including"
+	echo "      anything another session is in the middle of. git status to see whose."
+	echo
+fi
+
 pass=0
 fail=0
 
@@ -97,9 +111,21 @@ echo
 echo "Screens"
 if [ -n "${KINLORE_TEST_SIM:-}" ]; then
 	ui_tests() {
+		# A build directory of its own, for the same reason the simulator is
+		# already one: two sessions work in this worktree at once. Sharing the
+		# default DerivedData with somebody else's build fails as
+		#
+		#   error: unable to attach DB: … build.db: database is locked
+		#   Possibly there are two concurrent builds running in the same
+		#   filesystem location.
+		#
+		# which reads like a broken build and is not one — the same shape as the
+		# accessibility failures CLAUDE.md warns about on a shared device. Keyed
+		# by the simulator, so two people running this at once get one each.
 		PATH="$XCODE/usr/bin:$PATH" DEVELOPER_DIR=$XCODE xcodebuild \
 			-project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
-			-destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" test
+			-destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" \
+			-derivedDataPath "$OUT/DerivedData-$KINLORE_TEST_SIM" test
 	}
 	run "49 UI tests, 26 of them accessibility" ui_tests
 else
