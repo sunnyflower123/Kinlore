@@ -114,6 +114,9 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# entire security boundary, and a revoked code that still works looks
 	# exactly like a working app.
 	run "a taken-back invite stays taken back" node scripts/invite-boundary-check.mjs
+	# Rule 2 is the shortest rule this app has, and nothing checked it: the
+	# quota limits photographs and minutes, never the act of saying something.
+	run "the quota never stops a telling" node scripts/quota-check.mjs
 else
 	printf '  %-46s%s\n' "the family path, places and the invite boundary" \
 		"skipped — no Worker (cd backend && npm run dev)"

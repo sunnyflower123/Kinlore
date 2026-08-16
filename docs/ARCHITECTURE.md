@@ -53,10 +53,10 @@ An honest inventory, not a wish list:
 | `subject`, `memory`, `mention`, `prompt_question` | In use |
 | Identity, family, invite links | **Done and tested** |
 | Sync (`/sync` pull and push) | **Done and tested** |
-| Media to R2 (`/media`) | **Done and tested** |
-| Quotas (`/usage`, limits on the server) | **Done and tested** |
+| Media to R2 (`/media`) | **Built and in use — nothing checks the round trip.** The export check reads media off the device, not out of R2 |
+| Quotas (`/usage`, limits on the server) | **Done and checked**, see §7 — the counting and rule 2; not the transcription path itself |
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
-| RevenueCat, shared family entitlement | **Done and tested** |
+| RevenueCat, shared family entitlement | **Built** — the binding rule is checked (§6); the REST verification and the webhook need keys and are unrun |
 | Audio playback, open questions, relationships | **Done and tested** |
 | Paywall | Built — unverified, needs a RevenueCat key |
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
@@ -589,6 +589,31 @@ an app containing user content. The implementation is small:
 abuse risk is small and the solution matches: no notification centre and no
 moderation queue, only the required minimum. If the release is never made, this
 can be cut entirely (PLAN.md §5, item 6).
+
+### What is checked, and what is not
+
+`scripts/quota-check.mjs` presses on the counting against a running Worker: a new
+family starts at nothing, three photographs count as three, **a deleted one gives
+its slot back** — the count is derived from the table rather than kept beside it,
+which is the reason that works — a spent month is reported as spent, paying takes
+the ceiling away, and what was used stays counted after it does.
+
+The one that matters most is the one nobody had ever checked: **with the month's
+minutes gone, a typed memory still syncs.** Rule 2 in one assertion. The minutes
+are put where they need to be with a direct D1 write rather than by spending
+them, because buying a real quota failure would cost ten minutes of
+transcription and prove the same thing.
+
+**Not checked:** the transcription path itself. `checkAISeconds` is called by
+`/transcribe`, which calls OpenRouter and costs money on every run, so nothing
+here exercises the refusal in place — what is exercised is the counter it reads
+and the promise it must not break.
+
+**And an edge worth naming rather than fixing quietly.** A family whose
+subscription lapses mid-month keeps the minutes it spent while paying, so it can
+be over the free limit the moment it lands there. Rule 2 still holds — the audio
+is kept, typing works, nothing is refused that was ever promised — but the first
+free month is short, and that is a decision about money rather than a defect.
 
 ## 8. The screens
 
