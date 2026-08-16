@@ -122,14 +122,33 @@ struct FamilyClient {
             request.httpBody = try JSONEncoder().encode(body)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // Everything thrown out of here is a `FamilyError` carrying a Finnish
+        // sentence. `Session` shows `localizedDescription` straight to the
+        // person, and a `URLError`'s own text arrives in English on this
+        // bundle — there are no localisation files, so Foundation never speaks
+        // Finnish. The screen this lands on is the join form, the one an
+        // 80-year-old reaches alone from a link, and a dead cottage connection
+        // is its most ordinary failure.
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch let error as URLError {
+            throw FamilyError.transport(error)
+        }
         guard let http = response as? HTTPURLResponse else {
             throw FamilyError.message("Palvelin ei vastannut.")
         }
         guard (200 ..< 300).contains(http.statusCode) else {
             throw FamilyError.forStatus(http.statusCode, data: data)
         }
-        return try JSONDecoder().decode(Response.self, from: data)
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        } catch {
+            // The server answered something the app could not read. The person
+            // can do nothing differently, so the sentence promises nothing.
+            throw FamilyError.message("Jotain meni pieleen. Yritä uudelleen.")
+        }
     }
 }
 
@@ -167,6 +186,24 @@ enum FamilyError: LocalizedError {
             return .message(status >= 500
                 ? "Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen."
                 : "Jotain meni pieleen. Yritä uudelleen.")
+        }
+    }
+
+    /// The connection itself failed — nothing was refused, nothing arrived.
+    ///
+    /// Said in the words the rest of the app already uses for a missing
+    /// network: "kun yhteys palaa", the phrasing of the offline note and the
+    /// Lähetys row. The two named cases are the ones whose advice differs;
+    /// everything else collapses into one sentence, because "NSURLErrorDomain
+    /// -1005" has no Finnish and no advice in it.
+    static func transport(_ error: URLError) -> FamilyError {
+        switch error.code {
+        case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+            return .message("Verkkoyhteyttä ei juuri nyt ole. Yritä uudelleen kun yhteys palaa.")
+        case .timedOut:
+            return .message("Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen.")
+        default:
+            return .message("Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen.")
         }
     }
 }
