@@ -37,9 +37,23 @@ jobs:
 
       - run: ./scripts/verify.sh
 
+  # Not on every push, and the reason is a quota rather than taste. Actions is
+  # free on public repositories and metered on private ones, where a macOS
+  # minute counts as ten — so the free allowance is worth about 200 minutes of
+  # this runner. Several sessions push to main daily, and this job resolves a
+  # Swift package before it compiles anything.
+  #
+  # Running out does not fail the build; it stops the runs. The badge would
+  # then keep showing the last green tick, which is this repo's favourite kind
+  # of bug: a check that has quietly stopped checking. So the expensive half
+  # runs on pull requests and on request, and `verify` — two minutes, and the
+  # one that catches silent breakage — stays on every push.
+  #
+  # Put this back on push when the repository goes public.
   build:
     name: iOS build
     runs-on: macos-latest
+    if: github.event_name != 'push'
     steps:
       - uses: actions/checkout@v4
 
