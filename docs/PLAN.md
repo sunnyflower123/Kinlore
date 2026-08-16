@@ -451,6 +451,21 @@ finished.**
     to. All three sites now log shape, status and codes; `worker.ts` logs the
     error's name and message, which puts a standing rule on the messages —
     an error message must not interpolate content.
+
+    A standing rule kept by reading is kept until somebody stops reading, and
+    the leak was one interpolation. `scripts/leak-check.mjs` now drives the
+    failure itself: a Worker of its own with **no key**, so `complete()` throws
+    before it touches the network — no request, no credits — through exactly the
+    same `failure()` a real upstream error takes. It asserts that the app is
+    told `upstream_failed` and nothing else, that the failure did reach the log
+    at all (an absence in an empty log is not evidence), and that a transcript,
+    a name being corrected and the audio appear in neither place.
+
+    Load-bearing, twice. Putting the 16 Aug line back — 300 characters of the
+    telling into `console.error` — reddened the log half and left the client
+    half green, which is exactly how the original bug presented: the app never
+    saw it. Handing the cause to the client instead reddened the client half
+    alone.
   - **A local mode already exists.** `Session.mode` has `.local`, and sync is
     gated on `.inFamily` (`Session.swift`). The machinery for "nothing leaves"
     is built.

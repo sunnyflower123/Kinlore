@@ -136,6 +136,12 @@ else
 		"skipped — no Worker (cd backend && npm run dev)"
 fi
 
+# Rule 9, in both halves — and this one needs no Worker running, because it
+# brings its own: reading a log means owning the process that writes it. That
+# Worker is started with no key, so the upstream call throws before it reaches
+# the network and the check costs nothing.
+run "a failure tells the app and the log nothing" node scripts/leak-check.mjs
+
 # --- The screens ------------------------------------------------------------
 
 echo
