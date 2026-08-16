@@ -38,9 +38,19 @@ struct OnboardingScreen: View {
     /// and a first screen whose only two actions have to be found by scrolling
     /// is a first screen this user does not get past. The first sentence is the
     /// promise; the second is how it is kept, and the buttons say that anyway.
-    private var intro: String {
+    /// Nil at accessibility sizes, where it is dropped rather than shortened.
+    ///
+    /// Shortening was tried and was not enough: one sentence is still four lines
+    /// at XXXL, and *"Liity kutsulinkillä"* was below the fold again — the exact
+    /// failure the paragraph above describes as fixed. Measured on screen rather
+    /// than reasoned about, because that is the only way this particular
+    /// promise can be kept honest.
+    ///
+    /// The title says what the app is and the two buttons say what can be done.
+    /// A promise nobody can reach the buttons past is not a promise.
+    private var intro: String? {
         typeSize.isAccessibilitySize
-            ? "Kerätkää talteen se mitä isovanhemmat muistavat."
+            ? nil
             : "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme."
     }
 
@@ -111,10 +121,12 @@ struct OnboardingScreen: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(intro)
-                    .elderBody()
-                    .foregroundStyle(Elder.supporting)
-                    .multilineTextAlignment(.center)
+                if let intro {
+                    Text(intro)
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
+                        .multilineTextAlignment(.center)
+                }
             }
 
             Spacer(minLength: 0)
