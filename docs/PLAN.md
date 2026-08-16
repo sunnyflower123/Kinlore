@@ -332,3 +332,42 @@ finished.**
   fact.
 - **Prices.** Free: 1 family / ~20 photos / ~10 AI minutes per month. Paid:
   ~€9.99/month or €59.99/year. Nominal on the Test Store, but considered.
+- **The cloud as an adoption barrier.** Raised 15 Aug 2026, undecided. Who hands
+  a dead parent's voice to somebody's server? For this product that is not a
+  passing worry — it is the trust question, and the answer is currently *"we
+  never say"*.
+
+  What is actually true today, measured rather than assumed:
+
+  - `memory.body` and `memory.raw_transcript` are D1 columns, so the words of
+    every memory are on a server the moment sync runs. R2 holds only the files.
+  - The audio leaves the device even with R2 off, because transcription happens
+    in the Worker. Rule 7 puts the model key there and nowhere else.
+  - **A local mode already exists.** `Session.mode` has `.local`, and sync is
+    gated on `.inFamily` (`Session.swift`). The machinery for "nothing leaves"
+    is built.
+  - But onboarding offers **two** choices, *Aloita perheen arkisto* and *Liity
+    kutsulinkillä*, and nothing else. The only place the user is ever told the
+    audio leaves the phone is the microphone permission prompt — which comes
+    *after* the archive has been created.
+
+  So the barrier is the order, not the architecture: the choice is asked before
+  the consequence is explained.
+
+  Three levers, in rising cost:
+
+  1. **Say it in onboarding**, where the archive is created. One evening. For an
+     80-year-old this is a dignity question as much as a privacy one — informed
+     consent rather than a fact discovered later.
+  2. **A third option: "Vain minulle, tälle puhelimelle."** Sets `mode = .local`
+     and sync never runs. One to two evenings, since the machinery exists. It
+     must say plainly that audio *still* travels for transcription — fixing the
+     barrier with a promise that is not kept would be worse than the barrier.
+  3. **End-to-end encryption.** The only real answer to "everything is in the
+     cloud", and **incompatible with server-side transcription**: the model
+     cannot write down speech it cannot hear. Not September, not close. Worth
+     naming as a v1.1 direction, because a judge or a user will ask.
+
+  Decide with the rest on 10 Sep. Lever 1 is cheap enough to be worth doing
+  regardless; 2 competes for September evenings and §5 says every addition takes
+  a removal.
