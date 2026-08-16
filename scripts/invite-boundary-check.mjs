@@ -112,19 +112,36 @@ async function join(who, code) {
 /// Moves an invite's expiry into the past. There is no route for this on
 /// purpose: an endpoint that ages a code is an endpoint that can un-age one.
 function age(code) {
-	execFileSync(
-		'npx',
-		[
+	let out = ''
+	const wrongDatabase = () =>
+		new Error(
+			`the invite could not be aged in ${backend}: that is not the database ` +
+				`this Worker is using. Set KINLORE_WORKER_DIR to the backend it runs from.`,
+		)
+	try {
+		out = execFileSync('npx', [
 			'wrangler',
 			'd1',
 			'execute',
 			'memorize',
 			'--local',
+			'--json',
 			'--command',
-			`UPDATE invite SET expires_at = 1 WHERE code = '${code}'`,
+			`UPDATE invite SET expires_at = 1 WHERE code = '${code}' RETURNING code`,
 		],
-		{ cwd: backend, stdio: ['ignore', 'pipe', 'pipe'] },
-	)
+			{ cwd: backend, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+		)
+	} catch {
+		// The tables are not even there. Same cause, same answer.
+		throw wrongDatabase()
+	}
+	// It has to have aged *something*. Run from another checkout — a throwaway
+	// worktree, a second Worker on another port — this reaches a different
+	// `--local` database, one that may not even have the tables, and the expiry
+	// case would then fail as though the app had let an expired code through.
+	// A check that blames the app for its own wrong address is worse than no
+	// check.
+	if (!out.includes(code)) throw wrongDatabase()
 }
 
 try {

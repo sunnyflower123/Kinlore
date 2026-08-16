@@ -82,10 +82,19 @@ upsell_rhythm() {
 		&& "$OUT/upsell-rhythm-check"
 }
 
+# Hermetic in a different way: it loads the shipping schema.sql into an
+# in-memory SQLite and asks the database itself. No Worker, no D1, no
+# RevenueCat — and the TypeScript guard it backs up cannot be run on this
+# machine at all, which is why the rule underneath it is worth checking.
+entitlement_binding() {
+	node scripts/entitlement-binding-check.mjs
+}
+
 echo
 echo "Invariants"
 run "the hidden name stays hidden" guess_mask
 run "the paid archive is offered on a rhythm" upsell_rhythm
+run "one purchase unlocks one family" entitlement_binding
 
 # --- The backend ------------------------------------------------------------
 
@@ -101,8 +110,12 @@ fi
 if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	run "two phones end up in one family" node scripts/family-sync-check.mjs
 	run "a place's coordinates follow its title" node scripts/place-sync-check.mjs
+	# The refusals rather than the happy path: §4 calls the invite link the
+	# entire security boundary, and a revoked code that still works looks
+	# exactly like a working app.
+	run "a taken-back invite stays taken back" node scripts/invite-boundary-check.mjs
 else
-	printf '  %-46s%s\n' "the family path and place coordinates" \
+	printf '  %-46s%s\n' "the family path, places and the invite boundary" \
 		"skipped — no Worker (cd backend && npm run dev)"
 fi
 
@@ -110,7 +123,13 @@ fi
 
 echo
 echo "Screens"
-if [ -n "${KINLORE_TEST_SIM:-}" ]; then
+if [ ! -e ios/Kinlore.xcodeproj ]; then
+	# XcodeGen writes it and it is not in the repository, so a fresh checkout
+	# has none. Said plainly here: xcodebuild's own answer is "does not exist",
+	# which reads like a broken project rather than an ungenerated one.
+	printf '  %-46s%s\n' "accessibility and behaviour" \
+		"skipped — cd ios && xcodegen generate"
+elif [ -n "${KINLORE_TEST_SIM:-}" ]; then
 	ui_tests() {
 		# A build directory of its own, for the same reason the simulator is
 		# already one: two sessions work in this worktree at once. Sharing the
@@ -129,6 +148,10 @@ if [ -n "${KINLORE_TEST_SIM:-}" ]; then
 			-derivedDataPath "$OUT/DerivedData-$KINLORE_TEST_SIM" test
 	}
 	run "49 UI tests, 26 of them accessibility" ui_tests
+	# After the tests, because it needs the app installed and they install it.
+	# XCUITest cannot do this one: the zip lands in the app's container and the
+	# test runner is not allowed to look inside it.
+	run "the export opens on any computer" node scripts/export-check.mjs
 else
 	printf '  %-46s%s\n' "accessibility and behaviour" \
 		"skipped — set KINLORE_TEST_SIM to a simulator of your own"
