@@ -213,6 +213,14 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
   ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
 
+# The export, opened. The one output that leaves the app for good, and its
+# promise — "avautuu millä tahansa koneella ilman tätä sovellusta" — is not
+# something XCUITest can check: the file lands in the app's container and the
+# test runner may not look inside it. Records a memory first, because the demo
+# archive has no media and an export of it looks complete while carrying none.
+# Needs a booted simulator with the app installed; set KINLORE_TEST_SIM.
+node scripts/export-check.mjs
+
 # When the paid archive is offered. Four lines of arithmetic over one
 # UserDefaults key, and every way they can go wrong is silent: an offer after
 # every story, or none ever, or one landing beside the names rule 4 asks a human

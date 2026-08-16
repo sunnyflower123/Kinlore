@@ -1,0 +1,175 @@
+#!/usr/bin/env node
+// Opens the exported archive and checks that it is what it promises to be.
+//
+// The export is the one output that leaves the app for good. Its promise is in
+// Settings, in the help page and in ARCHITECTURE.md §14: "sen voi avata millä
+// tahansa koneella ilman tätä sovellusta". Nothing tested it — XCUITest cannot,
+// because the file lands in the app's container and the test runner is not
+// allowed to look inside it.
+//
+// So this runs the app, exports, pulls the zip out of the container and reads
+// it. Costs nothing: no AI calls, no network, about a minute.
+//
+// **The trap it exists to avoid.** The demo archive has no local media, so an
+// export of it contains a page and a JSON and looks complete. The half that
+// matters — the original audio, which is rule 3's whole point — is only tested
+// by an archive with a real recording in it. That is why this script records
+// one first with `-defer once` instead of exporting the fixture.
+//
+//   node scripts/export-check.mjs
+//
+// Needs: a booted simulator with the app installed (any build or test run does
+// that), and DEVELOPER_DIR pointing at the full Xcode as everywhere else here.
+
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, existsSync, statSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+const BUNDLE = 'com.kinlore.app'
+const DEVELOPER_DIR = process.env.DEVELOPER_DIR ?? '/Applications/Xcode.app/Contents/Developer'
+
+let failures = 0
+
+function check(label, condition, detail = '') {
+	if (condition) {
+		console.log(`  ok   ${label}`)
+	} else {
+		failures += 1
+		console.log(`  FAIL ${label}${detail ? `: ${detail}` : ''}`)
+	}
+}
+
+function simctl(...args) {
+	return execFileSync('xcrun', ['simctl', ...args], {
+		encoding: 'utf8',
+		env: { ...process.env, DEVELOPER_DIR },
+		// Captured rather than inherited: terminating an app that is not running
+		// is the ordinary first step here, and it prints four lines of failure
+		// that mean nothing. A script whose clean run is full of red text
+		// teaches people to skim it.
+		stdio: ['ignore', 'pipe', 'pipe'],
+	}).trim()
+}
+
+/// The device this session is allowed to use. Never "whichever is booted":
+/// several sessions work in this worktree at once and installing, launching and
+/// terminating one bundle id is exactly what they must not do to each other —
+/// CLAUDE.md, the same rule the UI tests follow.
+function device() {
+	const named = process.env.KINLORE_TEST_SIM
+	if (named) return named
+	const booted = simctl('list', 'devices', 'booted')
+		.split('\n')
+		.map((line) => line.match(/\(([0-9A-F-]{36})\) \(Booted\)/))
+		.filter(Boolean)
+	if (booted.length === 1) return booted[0][1]
+	console.error(
+		booted.length === 0
+			? 'No booted simulator. Boot your own device and set KINLORE_TEST_SIM.'
+			: 'Several booted simulators — set KINLORE_TEST_SIM so this does not\n' +
+					'interrupt another session mid-run.',
+	)
+	process.exit(2)
+}
+
+function launch(udid, args) {
+	try {
+		simctl('terminate', udid, BUNDLE)
+	} catch {
+		// Not running. Fine.
+	}
+	simctl('launch', udid, BUNDLE, ...args)
+}
+
+/// Long enough for a two-second recording, its transcription attempt and the
+/// zip to be written. Polled rather than assumed where possible.
+function waitFor(seconds) {
+	execFileSync('sleep', [String(seconds)])
+}
+
+const udid = device()
+
+console.log('— recording something worth exporting —')
+try {
+	// Otherwise the first launch meets the system's microphone prompt and the
+	// recording never happens, which would leave the audio half untested while
+	// everything else passed.
+	simctl('privacy', udid, 'grant', 'microphone', BUNDLE)
+} catch {
+	console.log('  (could not grant the microphone; carrying on)')
+}
+launch(udid, ['-seed', 'empty', '-defer', 'once', '-api', ''])
+waitFor(14)
+
+console.log('— exporting —')
+launch(udid, ['-seed', 'none', '-tab', 'people', '-screen', 'export', '-api', ''])
+waitFor(14)
+
+const container = simctl('get_app_container', udid, BUNDLE, 'data')
+const zip = join(container, 'tmp', 'Muistoarkisto.zip')
+check('the export wrote a file', existsSync(zip), zip)
+if (!existsSync(zip)) process.exit(1)
+
+const out = mkdtempSync(join(tmpdir(), 'kinlore-export-'))
+execFileSync('unzip', ['-q', zip, '-d', out])
+const root = join(out, 'Muistoarkisto')
+
+console.log('— what a family opens —')
+const pagePath = join(root, 'muistot.html')
+check('there is a readable page', existsSync(pagePath))
+const page = existsSync(pagePath) ? readFileSync(pagePath, 'utf8') : ''
+
+// The audio is the product, not a step towards it (rule 3), and a page that
+// mentions it without carrying it would pass a shallower check than this.
+const audio = page.match(/<audio[^>]*src="([^"]+)"/)
+check('the page offers the original audio', audio !== null)
+if (audio) {
+	const src = audio[1]
+	check('by a relative path, so the folder can be moved', !/^([a-z]+:|\/)/i.test(src), src)
+	const file = join(root, src)
+	check('and the file it points at is in the zip', existsSync(file), src)
+	if (existsSync(file)) {
+		const bytes = readFileSync(file)
+		check('with something in it', bytes.length > 1024, `${bytes.length} bytes`)
+		// `file` reads the header rather than the extension: an .m4a that is not
+		// one plays on nothing, and that is the failure this whole archive is
+		// insurance against.
+		check(
+			'and it really is audio',
+			bytes.subarray(4, 8).toString('ascii') === 'ftyp',
+			bytes.subarray(0, 12).toString('hex'),
+		)
+	}
+}
+
+console.log('— what a program reads —')
+const jsonPath = join(root, 'arkisto.json')
+check('there is a machine-readable copy', existsSync(jsonPath))
+if (existsSync(jsonPath)) {
+	const archive = JSON.parse(readFileSync(jsonPath, 'utf8'))
+	const keys = Object.keys(archive).sort()
+	check(
+		'holding the archive and nothing else',
+		keys.join(',') === 'guesses,memories,questions,relations,subjects',
+		keys.join(','),
+	)
+	// The outbox and the server's cursor used to travel in here: facts about one
+	// phone's sync on one afternoon, in the file a family opens in twenty years.
+	check(
+		'and none of this phone\'s sync bookkeeping',
+		!keys.some((key) => key.startsWith('dirty') || key === 'syncSeq'),
+		keys.filter((key) => key.startsWith('dirty') || key === 'syncSeq').join(','),
+	)
+	check('with the telling in it', archive.memories.length > 0, `${archive.memories.length} memories`)
+	// An audio-only memory is a memory: the text arrives later, or never, and
+	// the recording is what was promised.
+	const withAudio = archive.memories.filter((memory) => memory.audioFilename || memory.audioR2Key)
+	check('and the telling knows about its recording', withAudio.length > 0)
+}
+
+console.log('— size —')
+check('the zip is not empty', statSync(zip).size > 2048, `${statSync(zip).size} bytes`)
+
+console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
+process.exit(failures === 0 ? 0 : 1)
