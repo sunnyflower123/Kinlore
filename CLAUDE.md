@@ -178,7 +178,29 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # Backend locally
 cd backend && npx wrangler dev
 
-# D1 schema into the local database
+# D1 schema into the local database. FIRST TIME ONLY — this creates the tables,
+# it does not migrate them. On a database that already exists it stops on the
+# first statement with "table family already exists" and changes nothing, which
+# reads like it ran.
+#
+# That is how a local database ends up several changes behind while looking
+# fine. Measured 15 Aug 2026: `subject` was missing `lat`, `lon` and
+# `geo_precision` and still carried a `blurhash` the schema had dropped, so
+# `place-sync-check.mjs` failed with a 502 whose real cause was
+# "D1_ERROR: table subject has no column named lat" in the Worker log — three
+# levels away from anything the script prints.
+#
+# To bring an existing local database forward, run the ALTER statements that
+# schema.sql keeps beside the columns they add:
+#
+#   npx wrangler d1 execute memorize --local --command \
+#     "ALTER TABLE subject ADD COLUMN lat REAL;"
+#
+# Compare first, so you alter what is actually missing:
+#
+#   npx wrangler d1 execute memorize --local \
+#     --command "PRAGMA table_info(subject);"
+#
 cd backend && npx wrangler d1 execute memorize --local --file=schema.sql
 
 # ASR comparison
