@@ -24,7 +24,7 @@ final class RejectionTests: XCTestCase {
     }
 
     func testARejectedPersonIsNotOnThePeopleList() throws {
-        let app = launch(["-seed", "guess", "-tab", "people"])
+        let app = launch(["-seed", "archive", "-tab", "people"])
 
         XCTAssertTrue(
             app.staticTexts["Aino"].waitForExistence(timeout: 10),

@@ -15,7 +15,7 @@ final class NameCorrectionTests: XCTestCase {
     }
 
     func testACorrectedNameShowsOnTheCard() throws {
-        let app = launch(["-seed", "guess", "-tab", "people"])
+        let app = launch(["-seed", "archive", "-tab", "people"])
 
         let person = app.cells.firstMatch
         XCTAssertTrue(person.waitForExistence(timeout: 10), "the people list")
@@ -51,7 +51,7 @@ final class NameCorrectionTests: XCTestCase {
     /// happen on the same tap as an ordinary rename, warned about only by a
     /// footer — and unlike a rename, nothing in the app undoes it.
     func testAMergeAsksBeforeItHappens() throws {
-        let app = launch(["-seed", "guess", "-tab", "people"])
+        let app = launch(["-seed", "archive", "-tab", "people"])
 
         // Eeva by name rather than by position: the merge needs a *second*
         // person to land on, and which of them is first in the list is the
@@ -92,7 +92,7 @@ final class NameCorrectionTests: XCTestCase {
     /// write the name it already had, which is a no-op that still marks the row
     /// for sync and confuses the ordering counter for no reason.
     func testSavingIsRefusedUntilSomethingChanges() throws {
-        let app = launch(["-seed", "guess", "-tab", "people"])
+        let app = launch(["-seed", "archive", "-tab", "people"])
 
         let person = app.cells.firstMatch
         XCTAssertTrue(person.waitForExistence(timeout: 10))

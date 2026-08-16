@@ -294,7 +294,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testMemoriesWithContent() throws {
-        try sweep("Muistot", arguments: ["-seed", "guess", "-tab", "memories"]) { app, isLargest in
+        try sweep("Muistot", arguments: ["-seed", "archive", "-tab", "memories"]) { app, isLargest in
             require(app.navigationBars["Muistot"], "the gallery")
             // The gap that used to be here is closed. The guessing round's
             // card filled the screen at the largest text size and pushed the
@@ -334,7 +334,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// and an empty state at once — three things that each cost a screen, on the
     /// screen that has the least room to spare.
     func testMemoriesSearching() throws {
-        try sweep("Muistot, haku", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+        try sweep("Muistot, haku", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             require(app.navigationBars["Muistot"], "the gallery")
             let field = app.searchFields.firstMatch
             for _ in 0 ..< 3 where !field.exists { app.swipeDown() }
@@ -435,7 +435,7 @@ final class AccessibilitySweepTests: XCTestCase {
 
     /// The screen the app opens on and the one it exists for.
     func testTell() throws {
-        try sweep("Kerro", arguments: ["-seed", "guess"]) { app, _ in
+        try sweep("Kerro", arguments: ["-seed", "archive"]) { app, _ in
             require(app.staticTexts["Paina ja ala puhua"], "the record button's caption")
         }
     }
@@ -500,7 +500,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testTellByTyping() throws {
-        try sweep("Kerro, typing", arguments: ["-seed", "guess", "-screen", "write"]) { app, _ in
+        try sweep("Kerro, typing", arguments: ["-seed", "archive", "-screen", "write"]) { app, _ in
             require(app.textViews.firstMatch, "the typing field")
             // The keyboard comes up with the screen, and auditing mid-animation
             // reported three elements with no description that were gone a
@@ -510,7 +510,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testPeople() throws {
-        try sweep("Ihmiset", arguments: ["-seed", "guess", "-tab", "people"]) { app, _ in
+        try sweep("Ihmiset", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
             require(app.staticTexts["Aino"], "a person in the demo archive")
         }
     }
@@ -526,7 +526,7 @@ final class AccessibilitySweepTests: XCTestCase {
     func testPersonCard() throws {
         try sweep(
             "Person card",
-            arguments: ["-seed", "guess", "-tab", "people", "-screen", "person"]
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "person"]
         ) { app, _ in
             require(app.buttons["Kerro tästä muisto"], "the person card")
         }
@@ -535,7 +535,7 @@ final class AccessibilitySweepTests: XCTestCase {
     func testSettings() throws {
         try sweep(
             "Asetukset",
-            arguments: ["-seed", "guess", "-tab", "people", "-screen", "settings"]
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "settings"]
         ) { app, _ in
             require(app.buttons.firstMatch, "a row in Settings")
         }
@@ -578,7 +578,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// three times for barely growing with Dynamic Type. Measured here rather
     /// than assumed.
     func testTellAboutAPhoto() throws {
-        try sweep("Kerro kuvasta", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+        try sweep("Kerro kuvasta", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             reach(app.buttons["Kerro tästä muisto"], in: app, "the photo's card").tap()
             require(app.staticTexts["Paina ja ala puhua"], "the telling sheet")
@@ -588,7 +588,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// The date sheet: a wheel, a graphical date picker and four choices, on the
     /// screen that asks how sure somebody is before it asks what they know.
     func testDateSheet() throws {
-        try sweep("Ajankohta", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+        try sweep("Ajankohta", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             reach(app.buttons["Lisää ajankohta"], in: app, "the date row").tap()
             require(app.staticTexts["Kuinka tarkkaan tiedät?"], "the date sheet")
@@ -614,7 +614,7 @@ final class AccessibilitySweepTests: XCTestCase {
     func testHelp() throws {
         try sweep(
             "Näin tämä toimii",
-            arguments: ["-seed", "guess", "-tab", "people", "-screen", "settings"]
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "settings"]
         ) { app, _ in
             reach(app.buttons["Näin tämä toimii"], in: app, "the help row").tap()
             require(app.navigationBars["Näin tämä toimii"], "the help page")
@@ -624,7 +624,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// The photo's own screen: the memory list, the recognition line and the
     /// two things you can do to a subject.
     func testPhotoDetail() throws {
-        try sweep("Photo detail", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+        try sweep("Photo detail", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             require(app.buttons["Kerro tästä muisto"], "the photo's own screen")
         }
@@ -635,7 +635,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// to keep working: it is the only correction the archive offers once the
     /// telling is over.
     func testCorrectNameSheet() throws {
-        try sweep("Korjaa nimi", arguments: ["-seed", "guess", "-tab", "people"]) { app, _ in
+        try sweep("Korjaa nimi", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
             require(app.cells.firstMatch, "a person in the list").tap()
             reach(app.buttons["Korjaa nimi"], in: app, "the correction button").tap()
             require(app.buttons["Tallenna"], "the correction sheet")
@@ -658,7 +658,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// Asking is the other half of the question loop, and it is a sheet with a
     /// text field — the one control type nothing else here covers.
     func testAskQuestionSheet() throws {
-        try sweep("Kysy perheeltä", arguments: ["-seed", "guess", "-tab", "memories"]) { app, _ in
+        try sweep("Kysy perheeltä", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             reach(app.buttons["Kysy perheeltä"], in: app, "the ask button").tap()
             let field = require(app.textFields.firstMatch, "the question field")

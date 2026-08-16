@@ -37,7 +37,7 @@ final class SilentFailureTests: XCTestCase {
     /// The demo archive's recording is a key with nothing behind it, so this is
     /// the real failing fetch rather than a simulated one.
     func testAnAudioThatCannotBeFetchedSaysSo() {
-        let app = launch(["-seed", "guess", "-tab", "memories"])
+        let app = launch(["-seed", "archive", "-tab", "memories"])
 
         let photo = app.buttons.matching(
             NSPredicate(format: "label BEGINSWITH %@", "Valokuva")

@@ -12,7 +12,7 @@ final class WipeTests: XCTestCase {
     }
 
     func testEmptyingOffersTheExportBeforeTheEmptying() {
-        let app = launch(["-seed", "guess", "-tab", "people", "-screen", "settings"])
+        let app = launch(["-seed", "archive", "-tab", "people", "-screen", "settings"])
 
         let wipe = app.buttons["Tyhjennä tämä laite"]
         XCTAssertTrue(wipe.waitForExistence(timeout: 10), "never arrived: Settings")

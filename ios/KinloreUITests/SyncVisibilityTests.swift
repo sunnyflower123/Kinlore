@@ -37,7 +37,7 @@ final class SyncVisibilityTests: XCTestCase {
     /// bar about the network would be furniture on the screen of somebody who
     /// has no use for it — the note is a waiting state, not a decoration.
     func testAnArchiveThatIsThroughSaysNothing() {
-        let app = launch(["-seed", "guess", "-tab", "memories", "-family_id", "demo"], api: "http://127.0.0.1:9")
+        let app = launch(["-seed", "archive", "-tab", "memories", "-family_id", "demo"], api: "http://127.0.0.1:9")
 
         XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "never arrived: the gallery")
         XCTAssertFalse(

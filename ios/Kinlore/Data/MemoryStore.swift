@@ -36,7 +36,7 @@ final class MemoryStore {
         fileURL = documents.appendingPathComponent(filename)
         load()
         #if DEBUG
-        // Only with `-seed guess`, and it replaces what is on the device.
+        // Only with `-seed archive`, and it replaces what is on the device.
         seedDemoArchiveIfRequested()
         #endif
     }
@@ -706,13 +706,19 @@ final class MemoryStore {
     /// A canned family, for the two things that have no hands: the UI tests and
     /// the demo video.
     ///
-    /// A guessing round needs a second family member, four people and a memory
-    /// that names exactly one of them. Producing that by tapping takes minutes
-    /// and comes out slightly different every time, which is no basis for an
-    /// accessibility test — the test has to fail because a label is missing, not
-    /// because today's archive came out different.
+    /// An archive with something in it: a second family member, four people, a
+    /// photograph and memories about them. Producing that by tapping takes
+    /// minutes and comes out slightly different every time, which is no basis
+    /// for an accessibility test — the test has to fail because a label is
+    /// missing, not because today's archive came out different.
     ///
-    /// Only with `-seed guess`, and it **replaces** what is on the device, which
+    /// **It was called `-seed guess` until 16 Aug 2026**, after the one feature
+    /// it was first built to reach. That feature was cut (PLAN.md §5) and the
+    /// name outlived it by a few hours: a fixture named after something the app
+    /// no longer has is a small lie that nine test files repeat. `archive` says
+    /// what it is, and it is the opposite of `empty` below.
+    ///
+    /// Only with `-seed archive`, and it **replaces** what is on the device, which
     /// is why it is behind an explicit argument and never runs by accident. It
     /// lives here rather than in a file of its own because it writes the same
     /// `private(set)` fields as every other mutation.
@@ -734,7 +740,7 @@ final class MemoryStore {
             save()
             return
         }
-        guard UserDefaults.standard.string(forKey: "seed") == "guess" else { return }
+        guard UserDefaults.standard.string(forKey: "seed") == "archive" else { return }
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
         let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")

@@ -16,7 +16,7 @@ final class DateTests: XCTestCase {
     }
 
     func testADecadeCanBeGivenAndIsKeptAsADecade() {
-        let app = launch(["-seed", "guess", "-tab", "memories"])
+        let app = launch(["-seed", "archive", "-tab", "memories"])
 
         let photo = app.buttons.matching(
             NSPredicate(format: "label BEGINSWITH %@", "Valokuva")

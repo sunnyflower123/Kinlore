@@ -22,7 +22,7 @@ final class SearchTests: XCTestCase {
     }
 
     func testAPersonIsFoundByWhatWasToldAboutThem() {
-        let app = launch(["-seed", "guess", "-tab", "people"])
+        let app = launch(["-seed", "archive", "-tab", "people"])
         XCTAssertTrue(app.staticTexts["Eeva"].waitForExistence(timeout: 10), "the people list")
 
         // A word from Eeva's memory and from nobody else's. Her name is not in
@@ -34,7 +34,7 @@ final class SearchTests: XCTestCase {
     }
 
     func testTheGalleryFindsAPhotoByItsStory() {
-        let app = launch(["-seed", "guess", "-tab", "memories"])
+        let app = launch(["-seed", "archive", "-tab", "memories"])
         XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "the gallery")
 
         search("soudettiin", in: app)
@@ -52,7 +52,7 @@ final class SearchTests: XCTestCase {
     /// nobody has filled, and it must not offer the invitation meant for the
     /// second one.
     func testNothingFoundSaysSoInItsOwnWords() {
-        let app = launch(["-seed", "guess", "-tab", "memories"])
+        let app = launch(["-seed", "archive", "-tab", "memories"])
         XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "the gallery")
 
         search("traktori", in: app)
