@@ -75,26 +75,11 @@ struct RelationDTO: Codable {
     var seq: Int?
 }
 
-struct GuessDTO: Codable {
-    var memory_id: String
-    /// Outgoing: our own member id. The server takes the guesser from the
-    /// session and ignores this, so that no device can manufacture agreement
-    /// from the rest of the family and confirm a person nobody recognised.
-    var member_id: String
-    /// Incoming only: derived on the server from `member.display_name`.
-    var member_name: String?
-    /// Nil = "En muista".
-    var subject_id: String?
-    var created_at: Double
-    var seq: Int?
-}
-
 struct SyncPayload: Codable {
     var subjects: [SubjectDTO] = []
     var memories: [MemoryDTO] = []
     var questions: [QuestionDTO] = []
     var relations: [RelationDTO] = []
-    var guesses: [GuessDTO] = []
 
     /// Whether there is anything to send. Read off the payload itself rather
     /// than off the outbox: a row that is queued but not yet sendable — an
@@ -102,7 +87,7 @@ struct SyncPayload: Codable {
     /// and a push containing nothing else would be a wasted request.
     var isEmpty: Bool {
         subjects.isEmpty && memories.isEmpty && questions.isEmpty
-            && relations.isEmpty && guesses.isEmpty
+            && relations.isEmpty
     }
 }
 
@@ -114,8 +99,6 @@ struct SyncPullReply: Codable {
     var questions: [QuestionDTO]
     /// An older server does not send this, so a default is required.
     var relations: [RelationDTO] = []
-    /// Likewise.
-    var guesses: [GuessDTO] = []
 }
 
 // MARK: - Encryption at rest
@@ -133,9 +116,9 @@ struct SyncPullReply: Codable {
 /// the server can see. Threading a key through every DTO conversion was the
 /// other option and would have put the question in nine places.
 ///
-/// **Relations and guesses are not sealed and do not need to be**: they are
-/// UUIDs pointing at other UUIDs. What they leak is the shape of a family
-/// tree, which the row count leaks anyway.
+/// **Relations are not sealed and do not need to be**: they are UUIDs pointing
+/// at other UUIDs. What they leak is the shape of a family tree, which the row
+/// count leaks anyway.
 extension SyncPayload {
     func sealed(with key: SymmetricKey) -> SyncPayload {
         var copy = self
@@ -337,33 +320,6 @@ extension Relation {
             confirmed: dto.confirmed == 1,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
-        )
-    }
-}
-
-extension Guess {
-    var dto: GuessDTO {
-        GuessDTO(
-            memory_id: memoryID,
-            member_id: memberID,
-            // Never sent: the server derives the name from the member record,
-            // so a renamed member is right everywhere at once.
-            member_name: nil,
-            subject_id: subjectID,
-            created_at: createdAt.timeIntervalSince1970,
-            seq: nil
-        )
-    }
-
-    init(dto: GuessDTO) {
-        self.init(
-            memoryID: dto.memory_id,
-            memberID: dto.member_id,
-            subjectID: dto.subject_id,
-            // The fallback is Finnish because it is shown in the UI, and it
-            // matches a memory's author for the same reason.
-            memberName: dto.member_name ?? "Perheenjäsen",
-            createdAt: Date(timeIntervalSince1970: dto.created_at)
         )
     }
 }

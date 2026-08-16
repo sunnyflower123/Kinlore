@@ -13,7 +13,6 @@ final class MemoryStore {
     private(set) var memories: [Memory] = []
     private(set) var questions: [FollowUpQuestion] = []
     private(set) var relations: [Relation] = []
-    private(set) var guesses: [Guess] = []
 
     /// The author's name. In a family this comes from the member record.
     var authorName = "Minä"
@@ -29,7 +28,6 @@ final class MemoryStore {
     private(set) var dirtyMemories: Set<String> = []
     private(set) var dirtyQuestions: Set<String> = []
     private(set) var dirtyRelations: Set<String> = []
-    private(set) var dirtyGuesses: Set<String> = []
 
     private let fileURL: URL
 
@@ -157,7 +155,7 @@ final class MemoryStore {
     /// Tellings the family cannot see yet: told on this device, not yet accepted
     /// by the server.
     ///
-    /// Memories only. The outbox also carries subjects, questions, guesses and
+    /// Memories only. The outbox also carries subjects, questions and
     /// relationships, and nobody has ever wondered whether a relationship row
     /// reached their family — the question this answers is "did what I told get
     /// through", and it is asked about tellings.
@@ -446,80 +444,6 @@ final class MemoryStore {
         save()
     }
 
-    // MARK: - Guessing
-
-    func guesses(for memoryID: String) -> [Guess] {
-        guesses.filter { $0.memoryID == memoryID }
-    }
-
-    func guess(on memoryID: String, by memberID: String) -> Guess? {
-        guesses.first { $0.memoryID == memoryID && $0.memberID == memberID }
-    }
-
-    /// The person a memory's round is about: the single person it names, if it
-    /// names exactly one. The same rule `GuessRound` builds a round from, kept
-    /// here so the reading side cannot drift away from it.
-    func soleMentionedPerson(in memory: Memory) -> Subject? {
-        let people = memory.mentionedSubjectIDs
-            .compactMap { subject(id: $0) }
-            .filter { $0.kind == .person && $0.mergedInto == nil }
-        return people.count == 1 ? people.first : nil
-    }
-
-    /// Whether a stored guess names this person — after following the merge
-    /// chain on both sides.
-    ///
-    /// Comparing the raw ids is wrong and fails silently. A guess is stored
-    /// against the subject as it was when the guess was made, and a later merge
-    /// ("Aune" → "Aino") leaves it pointing at the tombstone. Every correct
-    /// guess made before the merge would quietly stop counting, which is exactly
-    /// the class of bug `merged_into` exists to prevent.
-    func guess(_ guess: Guess, names person: Subject) -> Bool {
-        guard let guessed = guess.subjectID.flatMap({ subject(id: $0) }) else { return false }
-        return guessed.id == subject(id: person.id)?.id
-    }
-
-    /// The family members who named the right person for this memory.
-    ///
-    /// This is what the teller gets back. Not a score — the point of telling a
-    /// story about a dead sister is that somebody else still knows who she was.
-    ///
-    /// `reader` is left out of the list because it is their own screen: they
-    /// have just seen the reveal, and "Minä tunnisti hänet" is both pointless
-    /// and, in Finnish, the wrong person of the verb.
-    func recognisers(of memory: Memory, excluding reader: String) -> [String] {
-        guard let answer = soleMentionedPerson(in: memory) else { return [] }
-        return guesses(for: memory.id)
-            .filter { $0.memberID != reader && guess($0, names: answer) }
-            .map(\.memberName)
-    }
-
-    /// Records one member's answer to a round.
-    ///
-    /// A correct answer confirms the person, and that is the whole reason this
-    /// feature earns its place. A proposal card with the name already on it gets
-    /// tapped "yes" without being read; someone who was not shown the name and
-    /// arrived at it anyway has genuinely recognised the person. It is the least
-    /// primed confirmation the app can collect — see rule 4 in CLAUDE.md.
-    ///
-    /// A wrong answer, and "En muista" with no subject at all, confirm nothing
-    /// and un-confirm nothing. Both are kept: a family that keeps naming the
-    /// same wrong person is saying the extraction picked the wrong name, and a
-    /// stored "En muista" is what stops the round coming back forever.
-    func record(_ newGuess: Guess, answer: Subject) {
-        // One guess per person per memory. The answer is revealed immediately,
-        // so a second attempt would be answering a question you already know.
-        guard guess(on: newGuess.memoryID, by: newGuess.memberID) == nil else { return }
-        guesses.append(newGuess)
-        dirtyGuesses.insert(newGuess.id)
-        if guess(newGuess, names: answer), !answer.confirmed {
-            // confirm() saves; this call only has to not save twice.
-            confirm(subjectID: answer.id)
-            return
-        }
-        save()
-    }
-
     // MARK: - Sync
     //
     // The mutations live here rather than in the extension, because they touch
@@ -536,8 +460,7 @@ final class MemoryStore {
             subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
             memories: memories.filter { dirtyMemories.contains($0.id) && $0.isPushable }.map(\.dto),
             questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto),
-            relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto),
-            guesses: guesses.filter { dirtyGuesses.contains($0.id) }.map(\.dto)
+            relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto)
         )
     }
 
@@ -549,7 +472,6 @@ final class MemoryStore {
         dirtyMemories.subtract(payload.memories.map(\.id))
         dirtyQuestions.subtract(payload.questions.map(\.id))
         dirtyRelations.subtract(payload.relations.map(\.id))
-        dirtyGuesses.subtract(payload.guesses.map { "\($0.memory_id)|\($0.member_id)" })
         save()
     }
 
@@ -594,16 +516,6 @@ final class MemoryStore {
                 relations[index] = incoming
             } else {
                 relations.append(incoming)
-            }
-        }
-
-        for dto in reply.guesses {
-            let incoming = Guess(dto: dto)
-            guard !dirtyGuesses.contains(incoming.id) else { continue }
-            if let index = guesses.firstIndex(where: { $0.id == incoming.id }) {
-                guesses[index] = incoming
-            } else {
-                guesses.append(incoming)
             }
         }
 
@@ -780,12 +692,10 @@ final class MemoryStore {
         memories = []
         questions = []
         relations = []
-        guesses = []
         dirtySubjects = []
         dirtyMemories = []
         dirtyQuestions = []
         dirtyRelations = []
-        dirtyGuesses = []
         syncSeq = 0
         try? FileManager.default.removeItem(at: fileURL)
     }
@@ -817,12 +727,10 @@ final class MemoryStore {
             memories = []
             questions = []
             relations = []
-            guesses = []
             dirtySubjects = []
             dirtyMemories = []
             dirtyQuestions = []
             dirtyRelations = []
-            dirtyGuesses = []
             save()
             return
         }
@@ -884,14 +792,12 @@ final class MemoryStore {
         ]
         questions = []
         relations = []
-        guesses = []
         // Nothing is queued for the server: this archive is a fixture, and
         // pushing it into a real family would be a genuine mess.
         dirtySubjects = []
         dirtyMemories = []
         dirtyQuestions = []
         dirtyRelations = []
-        dirtyGuesses = []
         save()
     }
     #endif
@@ -908,8 +814,6 @@ final class MemoryStore {
         var dirtyQuestions: Set<String> = []
         var relations: [Relation] = []
         var dirtyRelations: Set<String> = []
-        var guesses: [Guess] = []
-        var dirtyGuesses: Set<String> = []
     }
 
     private func load() {
@@ -927,8 +831,6 @@ final class MemoryStore {
         dirtyQuestions = snapshot.dirtyQuestions
         relations = snapshot.relations
         dirtyRelations = snapshot.dirtyRelations
-        guesses = snapshot.guesses
-        dirtyGuesses = snapshot.dirtyGuesses
     }
 
     func save() {
@@ -946,9 +848,7 @@ final class MemoryStore {
             dirtyMemories: dirtyMemories,
             dirtyQuestions: dirtyQuestions,
             relations: relations,
-            dirtyRelations: dirtyRelations,
-            guesses: guesses,
-            dirtyGuesses: dirtyGuesses
+            dirtyRelations: dirtyRelations
         )
     }
 
@@ -962,7 +862,7 @@ final class MemoryStore {
     /// **Its own shape, not the on-disk snapshot.** The snapshot carries the
     /// outbox — which rows this phone has not pushed yet — and the server's
     /// ordering cursor, and both were travelling into the family's permanent
-    /// copy: opened in twenty years it said `dirtyGuesses` at somebody. They
+    /// copy: opened in twenty years it said `dirtyMemories` at somebody. They
     /// are facts about one phone's sync on one afternoon, not about anything
     /// anybody told. What is left is the archive: what was said, who was
     /// spoken about, what was asked, and how people are related.
@@ -971,7 +871,6 @@ final class MemoryStore {
         var memories: [Memory]
         var questions: [FollowUpQuestion]
         var relations: [Relation]
-        var guesses: [Guess]
     }
 
     func exportJSON() throws -> Data {
@@ -988,8 +887,7 @@ final class MemoryStore {
                 // somebody withdrew.
                 memories: told,
                 questions: questions,
-                relations: relations,
-                guesses: guesses
+                relations: relations
             )
         )
     }

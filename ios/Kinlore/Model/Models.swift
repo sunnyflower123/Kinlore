@@ -242,35 +242,6 @@ struct Relation: Identifiable, Codable, Hashable {
     var deletedAt: Date?
 }
 
-// MARK: - Guess
-
-/// One family member's answer to "who was this story about?".
-///
-/// The round itself is never stored — it is derived from a memory that names
-/// exactly one person, see `GuessRound`. Only the answer is kept, because only
-/// the answer is a fact about a human being rather than about the current state
-/// of the archive.
-///
-/// A guess is also this app's strongest form of confirmation. A proposal card
-/// with the name already on it gets tapped "yes" without being read; a blind
-/// guess cannot be. See rule 4 in CLAUDE.md.
-struct Guess: Identifiable, Codable, Hashable {
-    /// Composite: one guess per person per memory, and no second attempt.
-    var id: String { "\(memoryID)|\(memberID)" }
-    var memoryID: String
-    var memberID: String
-    /// Who the guesser said it was. A wrong guess is kept rather than reduced to
-    /// a boolean: a family that keeps naming the same wrong person is saying the
-    /// extraction picked the wrong name.
-    ///
-    /// Nil means "En muista" — the person looked at the story and did not know.
-    /// That is an answer, not a missing one, and for the user this app is built
-    /// for it is the most likely one.
-    var subjectID: String?
-    var memberName: String
-    var createdAt: Date = .now
-}
-
 // MARK: - Follow-up question
 
 /// Both the tail of the magic moment and the retention engine: an open question

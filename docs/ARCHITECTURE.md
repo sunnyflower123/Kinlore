@@ -1160,169 +1160,76 @@ As a side effect this closes the open edge left in §10: the open-question list
 grows by three every round, and ordering plus the return of skipped questions is
 exactly the cap that was deferred to "the store".
 
-## 13. The guessing round
+## 13. The guessing round — built, then cut
 
-*One person tells a story, the others guess who it was about.*
+**Cut on 16 Aug 2026** (PLAN.md §5, row 8). The code is gone: `GuessRound.swift`,
+`GuessRoundCard.swift`, the `guess` table, the sync rows in both directions, the
+mask check and the round's own test file. This section is what is kept, because
+the argument in it is still the best answer this project has to a problem it
+still has.
 
-Everything above this section is a **writing** loop: a question arrives, someone
-tells a memory, the memory generates more questions. It works, but it asks for
-effort from exactly the family members who have the least of it, and it gives
-nobody a reason to open a memory that is already written. Family archives do not
-usually die because nothing was recorded. They die because nothing is ever read
-again.
+### What it was
 
-The round is the reading loop. It costs one tap.
+A memory that named exactly one person was shown to the rest of the family with
+the name taken out and four person cards to choose from. It was **derived, never
+authored** — nothing was stored but the answer, because only the answer is a
+fact about a human being rather than about the current state of the archive. The
+teller asked nothing extra: she told the story the way she always does, and the
+round fell out of it.
 
-### It is not authored, it is derived
+### Why it earned its place, and what the cut costs
 
-The obvious way to build this is to let someone compose a riddle. That is the
-wrong app: this one's primary user is 80, and asking her to tell a story while
-deliberately leaving the name out fights the entire extraction pipeline, which
-exists precisely because she says names.
+Two things, and they are separable.
 
-So nothing changes about how she tells. What changes is how the family reads.
-Extraction already produces `mention` rows; a memory that names exactly one
-person is already a question with an answer. Hiding the name turns it into a
-round, and there is no round table — the round is computed on the client from
-data that already exists. Storing rounds would mean deciding in advance which
-memories become questions, and that decision goes stale the moment a misheard
-name is corrected or two people are merged. Only the answers are stored, in
-`guess`, because only an answer is a fact about a human being rather than about
-the current state of the archive.
+**The reading loop.** Everything in the magic moment is a *writing* loop, and
+nothing gave the family a reason to open a memory that was already written. That
+is how family archives actually die — not unrecorded, unread. The round cost one
+tap and was the only part of the app that asked nothing of the 80-year-old. That
+problem is now unsolved again, and nothing else in the app addresses it.
 
-### Why it earns its place: blind confirmation
+**Blind confirmation, which is the larger loss.** Rule 4 says AI proposes and a
+human confirms. A proposal card with the name already written on it gets tapped
+"yes" without being read; somebody who was never shown the name and arrived at it
+anyway has genuinely recognised the person. The round was therefore not just a
+game on top of the confirmation UI — it *was* the confirmation UI, and it
+replaced the standalone "confirm this proposal" screen that was consequently
+never built. What is left is the orange proposal row: the weaker instrument the
+round was chosen over. CLAUDE.md rule 4 now says so instead of implying
+otherwise.
 
-Rule 4 of the product is *AI proposes, a human confirms*. The weakest possible
-implementation of that rule is a card with the answer already written on it and
-a "Yes" button — people tap it without reading. It is a confirmation UI that
-manufactures confirmations.
+### The parts worth having back
 
-A guess cannot be tapped without reading, and the guesser was never shown the
-name. When someone who did not tell the story arrives at the same person the
-extraction did, that agreement is real evidence, and it is stronger evidence
-than the proposal card would ever have produced. So a correct guess confirms the
-person (`subject.confirmed = 1`). A wrong one confirms nothing, un-confirms
-nothing, and is still kept: a family that keeps naming the same wrong person is
-telling us the extraction picked the wrong name, which is worth more than a
-boolean.
+If confirmation is ever strengthened, these are the pieces that were expensive to
+get right and are recorded here rather than rediscovered:
 
-Relationships are deliberately left alone. A guess is about identity, not about
-who someone's mother was, and a wrong relationship is worse than a missing one.
+- **The mask has to be a word, not a gap.** An em dash run reads to VoiceOver as
+  nothing at all or as punctuation, so the sentence is spoken as though the name
+  had simply not been said, and the card asks nothing. The accessibility label
+  put a word in the hole. A round that leaks the hidden name still looks like a
+  working round, which is why the masking had a check script of its own — that
+  whole class of bug is silent.
+- **"En muista" is an answer.** Stored with no subject, it confirms nothing and
+  un-confirms nothing, and it is what stops the round coming back forever. For
+  this app's user it is also the likeliest answer, and treating it as a
+  non-response would have been designing for somebody else.
+- **A wrong guess is kept rather than reduced to a boolean.** A family that keeps
+  naming the same wrong person is telling you the extraction picked the wrong
+  name.
+- **One guess per person per memory.** The answer is revealed immediately, so a
+  second attempt is answering a question you already know.
+- **A correct guess had to survive a merge.** Confirmation compared through
+  `merged_into`, or every correct guess made before a merge would quietly stop
+  counting.
 
-Two server rules protect that evidence, verified with curl against a local D1:
+### One measurement it leaves behind
 
-- **The guesser is the session, never the payload.** A device that pushes a
-  guess in another member's name has it recorded under its own id instead —
-  otherwise one phone could manufacture family-wide agreement and confirm a
-  person nobody recognised.
-- **A guess is final.** `ON CONFLICT DO NOTHING`, because the answer is revealed
-  the instant it is given; a second push is someone answering a question they
-  already know.
-
-And one client rule that is easy to get wrong and fails silently: **a guess is
-compared to the answer through the merge chain, not by raw id.** The guess is
-stored against the subject as it stood when it was made, so a later merge
-(*Aune → Aino*) leaves it pointing at the tombstone. Comparing ids directly
-would make every correct guess made before the merge quietly stop counting —
-exactly the class of bug `merged_into` exists to prevent (§2.5).
-
-### "En muista" is an answer
-
-It reveals the answer like any other choice, and it is **stored**, with a NULL
-`subject_id`.
-
-Both halves matter. Revealing, because learning who it was is the entire payoff
-and the person who did not know is the one who most needs telling. Storing,
-because a round that is not answered is offered again — and since only one round
-is shown at a time, a single unanswerable memory would stand in front of every
-other one forever. It also records something true: nobody in this family
-remembered her.
-
-### The masking problem
-
-The round is only safe if the name is genuinely gone, and in Finnish a string
-replacement is not enough: it removes "Aino" and leaves "Ainolle" standing two
-words later. This is the same inflection problem the correction prompt solves in
-`extract.ts`, but it cannot be solved the same way — asking the model would cost
-an AI call and a quota per round.
-
-Matching is on the stem instead, guarded on both sides: the word must be
-capitalised **in the text**, which is how an inflected Finnish name is written
-and how "ainakin" survives, and it must not be much longer than the name, which
-keeps "ainoastaan" from vanishing because it starts the same way. Surnames in
-`-nen` get their own rule, because "Virtanen" → "Virtasen" already differs at
-the sixth character.
-
-It is a heuristic about a language, so it is checked against the language:
-`scripts/guess-mask-check.swift` compiles the real `GuessRound.swift` and runs
-Finnish cases through it. This is the one part of the feature that fails
-silently — a round that leaks the answer still looks like a working round.
-
-### What refuses to become a round
-
-A round is only built when it is both safe and fair, so most memories are not
-rounds. Two named people (the question is ambiguous), a memory told about the
-answer herself (her card is the subject), your own story, fewer than four people
-in the archive, a name that does not appear in the text, less than fifteen words
-left after masking, or a text that is more than a quarter gaps — each of these
-returns nothing. No photo is shown in the round for the same reason.
-
-The three decoys are drawn from the people the family has **actually talked
-about**, and only then from the rest. A round between one real relative and three
-names nobody has ever said out loud is not a question: the answer is whichever
-name you recognise. Within each group the order comes from a stable hash of the
-memory and subject ids, so every family member sees the same four options in the
-same places — Swift's own `hashValue` is seeded per process, and "which option
-moved since last time" would itself be a clue.
-
-### Finding out that a round is waiting
-
-The app opens on Kerro, and nobody goes looking for a game in a photo gallery, so
-the Muistot tab carries a badge with the number of rounds waiting. It is the only
-signal, it appears only when there is something to do, and it disappears when
-there is not.
-
-The count is capped at nine, because it is not free: knowing whether a memory is
-a round means building the round, masking included. A family with eleven waiting
-and a family with nine are the same thing to the person looking at the badge.
-
-### What VoiceOver gets
-
-Rule 1 calls VoiceOver part of the product, and it was the one rule with no way
-to check it. VoiceOver reads the accessibility tree; XCUITest queries the same
-tree, so `KinloreUITests` is the check: every answer is a named button, "En
-muista" exists and leads to the reveal, and the verdict is in words rather than
-in a colour or a checkmark alone.
-
-The round needs one thing the other screens do not. **Its content is
-deliberately incomplete** — the answer is a gap in a sentence — and a run of em
-dashes is read as punctuation or as nothing at all. Spoken, the story would
-simply sound as if the name had never been said, and the screen would ask
-nothing. The accessibility label puts a word in the hole instead: *"…kun joku
-tuli mökille…"*. The test asserts both halves — that the dashes never reach the
-label, and that the name never does either.
-
-`performAccessibilityAudit()` runs over the same screens at the default and at
-the largest text size, and it found what the screenshots did not: **all four
-answers failed the contrast minimum.** They were `.bordered` buttons, and that
-style writes its label in the accent colour — blue on its own grey fill. Four
-primary controls, below the minimum, on the screen for the one user whose
-eyesight this app is built around. They are now plain buttons with a filled
-background and a primary-coloured label; the fill still says "button".
-
-Three audit findings are decisions rather than defects and are listed by name in
-the test, each with its reason: the card's truncated preview (a teaser, with the
-whole text one tap away and all of it in the accessibility label), the photo
-tile's capped count badge, and the gallery heading that passes under the
-translucent tab bar at the largest size.
-
-### Tone
-
-No score, no streak, no timer, no leaderboard. A wrong answer is stated plainly
-and left alone — no "väärin", no red — because the person guessing may be the one
-whose own memory is going. These are memories of people who have died. The reward
-is that grandmother's memory card says *"Ville tunnisti hänet"*: her sister was
-recognised. Nobody wins.
+The round's card filled the screen at AccessibilityXXXL and pushed the photo grid
+below the fold — and a `LazyVGrid` does not build rows nobody can see, so nothing
+measured a photo tile at the largest text size. Two attempts to scroll first and
+audit after reported contrast failures on elements the accessibility tree still
+held at their pre-scroll frames. §15 recorded that as an open gap. **Cutting the
+round closed it**, which is the one place where this removal made the app easier
+to check rather than harder.
 
 ## 14. Settings — taking the archive out, and leaving
 

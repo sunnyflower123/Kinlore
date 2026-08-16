@@ -173,15 +173,17 @@ final class AccessibilitySweepTests: XCTestCase {
         _ name: String,
         arguments: [String],
         api: String = "",
-        settle: (XCUIApplication, Bool) -> Void = { _, _ in }
+        settle: (XCUIApplication, Bool) throws -> Void = { _, _ in }
     ) throws {
         for size in [nil, Self.largest] {
             let app = launch(arguments, api: api, textSize: size)
             // The closure is told which size it is in, because a screen does not
             // hold the same things at both: at the largest size a list that fits
             // in one screenful no longer does, and what is worth waiting for
-            // changes with it.
-            settle(app, size != nil)
+            // changes with it. It may also audit on its own — a screen whose
+            // top and bottom cannot be on screen together has to be measured
+            // twice, and only the closure knows where its landmarks are.
+            try settle(app, size != nil)
             let at = size == nil ? "default text size" : "largest text size"
             try audit(app, "\(name), \(at)")
             app.terminate()
@@ -238,17 +240,39 @@ final class AccessibilitySweepTests: XCTestCase {
     /// matters at the largest text size.
     ///
     /// The rows are below the fold at both sizes — three sections sit above them
-    /// — so this scrolls, waits for the scroll to end, and audits there. What
-    /// that costs is named rather than hidden, the same way the gallery names
-    /// its own gap: nothing measures the members and the usage rows above, and
-    /// they are ordinary `LabeledContent` of the kind the audit meets on every
-    /// other screen. The invites are the part that had never been drawn at all.
+    /// — so this audits twice: the top as it opens, and the invites after a
+    /// scroll. The top used to be a named gap — "nothing measures the members
+    /// and the usage rows above" — and the gap was hiding a real failure for as
+    /// long as it stood open: `LabeledContent` draws its values in the
+    /// framework's own grey, which measured 3.44:1 on these rows. The colour is
+    /// now said out loud in `FamilyScreen`, and this is what keeps it said.
     func testFamily() throws {
         try sweep(
             "Perhe",
             arguments: ["-seed", "family", "-tab", "people", "-screen", "family"]
-        ) { app, _ in
+        ) { app, isLargest in
             require(app.navigationBars["Perhe"], "the family screen")
+            // By label *or* value: `LabeledContent` folds the row into one
+            // element whose label is "Nimi" and whose value is the name, so
+            // `staticTexts["Virtaset"]` matches nothing — measured here, the
+            // first time this landmark was asked for.
+            require(
+                app.descendants(matching: .any)
+                    .matching(NSPredicate(
+                        format: "label CONTAINS %@ OR value CONTAINS %@",
+                        "Virtaset", "Virtaset"
+                    ))
+                    .firstMatch,
+                "the family's name row"
+            )
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the top of the Perhe screen was still being drawn when the audit ran"
+            )
+            try audit(
+                app,
+                "Perhe ylälaita, \(isLargest ? "largest text size" : "default text size")"
+            )
             let open = reach(app.staticTexts["Avoin kutsu"], in: app, "the invite nobody has used")
             reach(app.staticTexts["Käytetty 2 kertaa"], in: app, "the invite somebody has")
             reach(app.buttons["Poista"].firstMatch, in: app, "the way to take an invite back")
@@ -272,32 +296,15 @@ final class AccessibilitySweepTests: XCTestCase {
     func testMemoriesWithContent() throws {
         try sweep("Muistot", arguments: ["-seed", "guess", "-tab", "memories"]) { app, isLargest in
             require(app.navigationBars["Muistot"], "the gallery")
-            // At the largest text size the round's card fills the screen on
-            // its own and the grid falls below the fold — and a LazyVGrid does
-            // not build rows nobody can see, so the tiles are not off-screen,
-            // they do not exist. They would have to be scrolled to.
-            //
-            // **Scrolling and then auditing does not work, and `hasStoppedDrawing`
-            // does not fix it.** Tried again the day that helper arrived, which
-            // was the obvious second chance: scroll to the tile, wait until two
-            // screenshots come back identical, audit. The screen was still and
-            // the audit still reported three contrast failures on the round's
-            // card — "Mummo kertoi tämän", the masked story, "Kuka hän oli?" —
-            // all of them primary-coloured text on a light card, which cannot
-            // be a real contrast failure at any size.
-            //
-            // So the cause is not motion, which is what the first attempt
-            // concluded. It looks like the accessibility tree keeping the
-            // frames it had before the scroll: the audit then samples pixels
-            // where those elements are not, and reads whatever is there. A
-            // waiting helper cannot mend that.
-            //
-            // The gap stays open and named rather than papered over with three
-            // exemptions that would each be a lie about a colour. Nothing
-            // measures a photo tile at XXXL.
-            if !isLargest {
-                require(photoTile(in: app), "the photo in the demo archive")
-            }
+            // The gap that used to be here is closed. The guessing round's
+            // card filled the screen at the largest text size and pushed the
+            // grid below the fold, and a LazyVGrid does not build rows nobody
+            // can see — so nothing measured a photo tile at XXXL, and two
+            // attempts at scrolling first reported contrast failures on
+            // elements the tree had at their pre-scroll frames. Cutting the
+            // round (PLAN.md §5) took the card away, and the tiles are on
+            // screen at both sizes again.
+            require(photoTile(in: app), "the photo in the demo archive")
         }
     }
 
@@ -375,6 +382,43 @@ final class AccessibilitySweepTests: XCTestCase {
             arguments: ["-seed", "empty", "-screen", "result"]
         ) { app, _ in
             require(app.staticTexts["Kuulinko nimet oikein?"], "the proposals")
+        }
+    }
+
+    /// Where a telling lands when the text could not be made: the audio is
+    /// safe, and three buttons lead on. Nothing had ever measured this screen —
+    /// its real trigger is a spent quota or a dead connection, neither of which
+    /// a run can schedule — and unmeasured it had failed worse than anything
+    /// else seen at the largest size: the title clipped off the top, "Kirjoita
+    /// se itse" truncated to one line, and the other two buttons sat below the
+    /// bottom edge of a screen that could not scroll.
+    ///
+    /// `-defer once` records the couple of seconds by itself, so the run stays
+    /// hands-free — except for the system's microphone prompt, which is real on
+    /// a fresh device and pauses the recording under it. A `-mic granted` stub
+    /// was tried instead and does not work: skipping the question skips nothing,
+    /// because `record()` raises the same prompt itself a moment later. So the
+    /// test answers the prompt the one way anything can — by tapping it. The
+    /// grant sticks to the device, and the second size's run meets no prompt.
+    func testAudioSaved() throws {
+        try sweep(
+            "Ääni tallessa",
+            arguments: ["-seed", "empty", "-defer", "once"]
+        ) { app, _ in
+            // The alert belongs to SpringBoard, not to the app, and only a
+            // device that has never been asked shows it. "Allow" is the
+            // simulator's own locale — English on every device the CLAUDE.md
+            // instructions create.
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["Äänesi on tallessa"], "the audio-saved screen")
+            // No animation of its own once the recording has stopped, so still
+            // being drawn is news — the same claim testFamily makes.
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the audio-saved screen was still being drawn when the audit ran"
+            )
         }
     }
 

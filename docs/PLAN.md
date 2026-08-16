@@ -100,7 +100,7 @@ began — that was backwards.
 | **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. Swot check. RevenueCat account + Test Store. GitHub public + licence. | holiday |
 | **B** | 4–10 Aug | **Backbone + magic moment.** Photo picking, memories, dictation → transcription → extraction → follow-up questions. The last week of the holiday goes to the hardest part. | holiday, full |
 | — | **~11 Aug** | **School starts** | |
-| **C** | 11–31 Aug | Person cards + relationships. ~~Confirmation UI for proposals~~ — replaced by the guessing round, see §4.1. | evenings |
+| **C** | 11–31 Aug | Person cards + relationships. Confirmation UI for proposals was dropped in favour of the guessing round, which was then cut itself — see §4.1. | evenings |
 | **D** | 1–14 Sep | RevenueCat Test Store + paywall. Craft: animations, waveform, empty states, accessibility. | evenings |
 | **E** | 15–24 Sep | Testing with a real grandparent — **installed from Xcode on a visit**, see below. Fixes. **Repo in English.** | evenings |
 | **F** | 25–28 Sep | **Demo video** and Devpost submission. | weekend |
@@ -150,28 +150,32 @@ narrow and excellent beats broad and half-finished.
 **The original audio is always kept and is playable from the memory card.**
 Grandmother's voice is itself the inheritance, not a step on the way to text.
 
-## 4.1 The guessing round — and what it cost
+## 4.1 The guessing round — built, then cut
 
-*One person tells a story, the others guess who it was about.* A memory that
-names exactly one person is shown to the rest of the family with the name taken
-out, and four person cards to choose from. Details in
-[`ARCHITECTURE.md` §13](ARCHITECTURE.md#13-the-guessing-round).
+*One person tells a story, the others guess who it was about.* A memory naming
+exactly one person was shown to the rest of the family with the name taken out,
+and four person cards to choose from.
 
-Everything in §4 is a **writing** loop, and it has a hole: nothing gives the
-family a reason to open a memory that is already written. That is how family
-archives actually die — not unrecorded, unread. Guessing costs one tap, and it
-is the only part of this app that asks nothing of the 80-year-old: the round is
-derived from an ordinary memory, so she tells the story the way she always does.
+**It was cut on 16 Aug 2026**, as §5 row 8 said it would be. What it was for and
+why it worked is kept in [`ARCHITECTURE.md` §13](ARCHITECTURE.md#13-the-guessing-round-built-then-cut);
+this section records the hole it leaves, because the hole is not where it looks.
 
-**What it removes, because every addition removes something:** the standalone
-*"confirm this proposal"* screen that phase C was going to grow. It is not
-needed, and it was never going to work — a card with the answer already written
-on it gets tapped "Yes" without being read. A blind guess cannot be. The
-guessing round *is* the confirmation UI, and it is a better one; what stays of
-the old plan is the orange proposal row that already exists on the person list
-and in the Tell result.
+It was built to answer a real problem: everything in §4 is a **writing** loop,
+and nothing gave the family a reason to open a memory that was already written.
+That problem is still there. Cutting the round does not solve it; it postpones
+it, and a family archive dies unread more often than unrecorded.
 
-Net effect on the schedule: roughly even. Net effect on rule 4 of §6: better.
+**And it took the confirmation mechanism with it.** §4.1 used to say the round
+*was* the confirmation UI and a better one — a card with the name already on it
+gets tapped "yes" without being read, a blind guess cannot be. That argument was
+right, and it was the reason the standalone "confirm this proposal" screen was
+never built. So confirmation is now the orange proposal row and nothing else,
+which is the weaker instrument the old section rejected. Rule 4 in CLAUDE.md
+says so plainly rather than inheriting the old sentence.
+
+Why it went anyway: §5 fixed the order in advance so nobody has to choose while
+exhausted, and levers 2 and 3 of §10 are two additions that owed a removal. This
+is that removal.
 
 ## 5. Cut order for when time runs out
 
@@ -187,7 +191,7 @@ It will. This is decided in advance so that nobody has to choose while exhausted
 
 | # | Target | How |
 |---|--------|-----|
-| 8 | **Guessing round** | **First out.** It is the reading loop, not the magic moment, and it is one section on one screen plus one table — delete `GuessSection()` from the gallery and it is gone without touching anything else. That isolation is the reason it was built the way it was |
+| 8 | ~~**Guessing round**~~ | **Cut 16 Aug 2026.** The isolation claim was half true: the two call sites really were one line each, but the round also owned two files, a model, a table, sync rows in both directions, a check script, a test file and 165 lines of §13 — about 1 100 lines in all. Budget a session, not a line |
 | 7 | Family tree / relationships | Person cards without edges |
 | 6 | Reporting and blocking | No longer mandatory without App Review |
 | 5 | **Real invite link and join flow** | **First thing to simplify.** Deep links and join screens are an expensive part. The data model already supports multiple members (`memory.author_id`), so **a demo family can be seeded** — the video shows several relatives' memories on the same photo without the join flow being built |

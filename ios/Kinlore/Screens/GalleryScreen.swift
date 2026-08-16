@@ -55,26 +55,16 @@ struct GalleryScreen: View {
         photos.isEmpty && events.isEmpty && places.isEmpty
     }
 
-    /// A family whose memories are all on people has an empty grid but can still
-    /// have a round waiting, and "no photos yet" would hide it.
-    private var hasRound: Bool {
-        GuessRoundBuilder.nextRound(store: store, memberID: session.identity.memberID) != nil
-    }
-
     var body: some View {
         NavigationStack {
             Group {
-                // Three states, and the search has to be asked about first. A
-                // waiting round keeps the screen out of the empty state — which
-                // is right when there is nothing in the archive and wrong the
-                // moment somebody is searching: the round is not a search
-                // result, so a fruitless search looked like a blank screen.
+                // Three states, and the search has to be asked about first.
                 if isSearching {
                     // An archive with nothing in it is an invitation; a search
                     // that found nothing is a dead end, and offering "lisää
                     // kuvia" there would answer a question nobody asked.
                     if nothingMatches { noResults } else { content }
-                } else if nothingMatches && !hasRound {
+                } else if nothingMatches {
                     emptyState
                 } else {
                     content
@@ -188,13 +178,6 @@ struct GalleryScreen: View {
                     // Whether what she told has actually reached the family. The
                     // engine has known this from the beginning and nothing asked it.
                     SyncNote()
-
-                    // The reading loop, above the grid because it expires: a
-                    // round is only interesting until somebody has answered it.
-                    // It shows itself only when one is waiting, so the screen
-                    // does not grow a permanent section for a family that has
-                    // none.
-                    GuessSection()
                 }
 
                 if !photos.isEmpty {

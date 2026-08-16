@@ -245,10 +245,6 @@ enum AccessibilityPolicy {
     /// test for it.
     static let fadeReach: CGFloat = 40
 
-    /// The guessing round's gap. Kept here rather than imported from the app: if
-    /// the app changes its mask, the test should fail and be looked at.
-    static let mask = "———"
-
     /// `ContentUnavailableView` sizes its own title and description, and it caps
     /// their growth. These are its labels, not ours. The empty states matter in
     /// this app — they are invitations rather than blanks — so if the system
@@ -453,13 +449,6 @@ enum AccessibilityPolicy {
         // than at the person whose hands shake. If that ever stops being true,
         // the answer is our own field rather than a wider exemption.
         if issue.auditType == .hitRegion, label == "Clear text" {
-            return true
-        }
-
-        // The round's card shows two to four lines of the story and truncates.
-        // It is a teaser: the whole text is one tap away, and the card's
-        // accessibility label carries all of it, so VoiceOver loses nothing.
-        if issue.auditType == .textClipped, label.contains(mask) {
             return true
         }
 

@@ -248,45 +248,6 @@ CREATE TABLE prompt_question (
 CREATE INDEX idx_question_open ON prompt_question(family_id, status);
 CREATE INDEX idx_question_seq  ON prompt_question(family_id, seq);
 
--- ---------------------------------------------------------------- guessing
-
--- "Someone tells a story and the others guess who it was about."
---
--- There is no round table, and that is deliberate. A round is derived: any
--- memory that names exactly one person is a round for everyone who did not tell
--- it. Storing rounds would mean deciding in advance which memories become
--- questions, and that decision goes stale the moment a misheard name is
--- corrected or two people are merged into one.
---
--- A guess is also the strongest human confirmation this app can collect. A
--- proposal card with the answer already filled in gets tapped "yes" without
--- being read; a blind guess cannot be. When someone who did not tell the story
--- names the same person the extraction did, that agreement is evidence — see
--- rule 4 in CLAUDE.md.
---
--- For existing databases this is a plain new table:
---   (run the CREATE TABLE and CREATE INDEX below as they are)
-CREATE TABLE guess (
-  memory_id     TEXT NOT NULL REFERENCES memory(id) ON DELETE CASCADE,
-  family_id     TEXT NOT NULL REFERENCES family(id) ON DELETE CASCADE,
-  member_id     TEXT NOT NULL REFERENCES member(id) ON DELETE CASCADE,
-  -- Who the guesser said it was. A wrong guess is kept rather than reduced to a
-  -- boolean: a family that keeps naming the same wrong person is telling us the
-  -- extraction picked the wrong name, and that is worth more than "incorrect".
-  --
-  -- NULL means "En muista": they read the story and did not know. Nullable on
-  -- purpose — for this app's user that is the most likely answer, and it has to
-  -- be storable, or the round comes back forever and blocks every other one.
-  subject_id    TEXT REFERENCES subject(id) ON DELETE CASCADE,
-  created_at    INTEGER NOT NULL,
-  seq           INTEGER NOT NULL DEFAULT 0,
-  -- One guess per person per memory. There is no second attempt, because the
-  -- answer is revealed the moment the first one is given.
-  PRIMARY KEY (memory_id, member_id)
-);
-
-CREATE INDEX idx_guess_family_seq ON guess(family_id, seq);
-CREATE INDEX idx_guess_memory     ON guess(memory_id);
 
 -- ---------------------------------------------------------------- quotas
 

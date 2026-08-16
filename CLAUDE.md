@@ -98,10 +98,16 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    `memory.raw_transcript` are not intermediate steps; they are the product.
 4. **AI proposes, a human confirms.** A person or relationship inferred by the
    AI is created with `confirmed = 0`. Unconfirmed never appears in the family
-   tree as fact. A wrong relationship is worse than a missing one. The strongest
-   confirmation the app collects is a *blind* one — a family member who was
-   never shown the name and arrives at it anyway. See the guessing round in
-   [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) §13.
+   tree as fact. A wrong relationship is worse than a missing one.
+
+   This rule used to name a *blind* confirmation as the strongest kind the app
+   collects — somebody who was never shown the name and arrived at it anyway —
+   and pointed at the guessing round. **The round was cut on 16 Aug 2026**
+   (PLAN.md §5, row 8), so what is left is the orange proposal row on the person
+   list and in the Tell result: a card with the name already on it. That is a
+   weaker instrument and the rule should say so rather than quietly inherit the
+   old sentence. If confirmation ever needs strengthening again, ARCHITECTURE
+   §13 records what blind confirmation was and why it worked.
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
    `date_start`/`date_end` with precision `decade`. Do not force a date.
 6. **No login screen.** Identity is a UUID in the Keychain
@@ -228,27 +234,6 @@ cd backend && npx wrangler d1 execute memorize --local --file=schema.sql
 # ASR comparison
 node scripts/asr-bench.mjs samples/
 
-# Guessing-round name masking. Run this after ANY change to GuessRound.swift:
-# a round that leaks the hidden name still looks like a working round, so this
-# is the one part of the app that fails silently.
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
-  -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
-  ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
-
-# The invite link, which §4 calls the entire security boundary. Four rules that
-# are silent when broken: a code expires, a code can be revoked, a code belongs
-# to one family, and a wrong code answers exactly like an expired or revoked one
-# — a different answer would tell a guesser they had found a real family.
-# Needs `npx wrangler dev`; leaves two throwaway families behind.
-node scripts/invite-boundary-check.mjs
-
-# One purchase, one family. Loads the real schema.sql into an in-memory SQLite
-# and asks it: the same customer id cannot unlock two families, a refund finds
-# exactly one payer, and a restore inside the family still works. Costs nothing
-# — no Worker, no D1, no RevenueCat — and the guard it backs up cannot be run
-# on this machine at all. After touching the member table or entitlement.ts.
-node scripts/entitlement-binding-check.mjs
-
 # The export, opened. The one output that leaves the app for good, and its
 # promise — "avautuu millä tahansa koneella ilman tätä sovellusta" — is not
 # something XCUITest can check: the file lands in the app's container and the
@@ -312,23 +297,6 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   sessions doing that at once take turns killing each other's process. Use a
   device of your own and **never shut down or reboot a booted one you did not
   create** — somebody else is very likely mid-run on it.
-- **A device of your own is the rule; a device left booted is the cost.** The
-  rule above solves correctness and nothing else: eight simulators were booted
-  on this machine at once on 16 Aug — three sessions of this project, another
-  project's two, and a stray — and a test run died with
-
-      IDELaunchReport: Finished with error: The operation couldn't be
-      completed. (Mach error -308 - (ipc/mig) server died)
-
-  before a single test executed. That is CoreSimulator giving up under load, and
-  it reads like a broken build: no failing test, no assertion, just a run that
-  ends. **`xcrun simctl list devices | grep -c "(Booted)"` before believing
-  it** — if the answer is more than three or four, the machine is the finding.
-
-  So delete your own device when the run is over rather than leaving it booted
-  for the next one, and shut down nobody else's. Two sessions each keeping one
-  is fine; six sessions each keeping one is the failure above, and the session
-  that meets it is never the session that caused it.
 - `xcrun simctl` is not on the path xcodebuild hands to its own child processes,
   so a test run ends with `unable to find utility "simctl"` while collecting
   diagnostics. It is noise from a run that had already failed, not the failure.
