@@ -266,6 +266,18 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/upsell-rhythm-check.swift ios/Kinlore/Services/UpsellRhythm.swift \
   && /tmp/upsell-rhythm-check
 
+# Encryption at rest. The one place in this app where being wrong is silent
+# AND permanent: a memory sealed under the wrong key still syncs, still draws a
+# row, and is simply unreadable — and by then the plaintext is gone. Also
+# asserts the claim lever 3 actually makes, that none of the words cross to the
+# Worker. Run it after touching FamilyCrypto.swift or the sealing in
+# MemoryStore+Sync.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/family-crypto-check \
+  scripts/family-crypto-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
+  ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
+  && /tmp/family-crypto-check
+
 # Place coordinates through sync. Checks the four rules that are silent when
 # broken: a resolved point round-trips, a device that has not looked the name up
 # cannot wipe it, correcting the title clears it, and rubbish is refused. Costs

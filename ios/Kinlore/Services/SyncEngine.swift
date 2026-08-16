@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// The sync driver: push first, then pull.
@@ -49,10 +50,16 @@ final class SyncEngine {
             //    next round.
             await uploadPendingMedia(base: base)
 
-            // 1. Push our own work.
+            // 1. Push our own work, sealed. PLAN.md §10 lever 3.
+            //
+            // `clearPending` is given the payload as it was built rather than
+            // as it was sent: it clears the outbox by row id, and the sealed
+            // copy carries the same ids — but reading the plaintext one here
+            // keeps it obvious that nothing downstream of the seal is expected
+            // to be readable.
             let payload = store.pendingPayload()
             if !payload.isEmpty {
-                let result = try await client.push(payload)
+                let result = try await client.push(sealing(payload))
                 store.clearPending(payload)
                 store.advance(seq: result.seq)
             }
@@ -63,7 +70,7 @@ final class SyncEngine {
             var rounds = 0
             while rounds < 20 {
                 let reply = try await client.pull(since: store.syncSeq)
-                store.applyRemote(reply)
+                store.applyRemote(opening(reply))
                 rounds += 1
                 if !reply.more { break }
             }
@@ -77,16 +84,44 @@ final class SyncEngine {
         }
     }
 
+    // MARK: - Encryption at rest
+
+    /// PLAN.md §10 lever 3. Without a key nothing is sealed and the payload
+    /// travels as it always did.
+    ///
+    /// That fallback is the honest one rather than the safe-looking one. The
+    /// alternative — refusing to sync without a key — turns a missing Keychain
+    /// entry into an archive that silently stops leaving the phone, which is
+    /// the failure this app is least able to notice. A family created before
+    /// lever 3 has no key and keeps working; one created after always has one,
+    /// because `createFamily` makes it before the first row can exist.
+    private func sealing(_ payload: SyncPayload) -> SyncPayload {
+        guard let key = FamilyKey.current() else { return payload }
+        return payload.sealed(with: key)
+    }
+
+    private func opening(_ reply: SyncPullReply) -> SyncPullReply {
+        guard let key = FamilyKey.current() else { return reply }
+        return reply.opened(with: key)
+    }
+
     /// Uploads pending photos and audio. One failed file does not block the
     /// others: a photo may be broken, but the memory still has to get through.
+    ///
+    /// The bytes are sealed before they leave. R2 is where rule 3 lives — the
+    /// original audio is the product — and it is the one store where the thing
+    /// a breach hands out and the thing the family came for are the same file.
+    /// Sealing is not re-encoding: what is uploaded is the recorded bytes
+    /// inside an envelope, and `MediaLoader` takes them back out.
     private func uploadPendingMedia(base: URL) async {
         let media = MediaClient(baseURL: base, token: session.identity.token)
+        let familyKey = FamilyKey.current()
 
         for subject in store.subjectsAwaitingUpload() {
             guard let filename = subject.imageFilename,
                   let data = try? Data(contentsOf: MediaStore.url(for: filename))
             else { continue }
-            if let key = try? await media.upload(data: data, kind: .photo) {
+            if let key = try? await media.upload(data: seal(data, familyKey), kind: .photo) {
                 store.setR2Key(subjectID: subject.id, key: key)
             }
         }
@@ -95,10 +130,19 @@ final class SyncEngine {
             guard let filename = memory.audioFilename,
                   let data = try? Data(contentsOf: MediaStore.url(for: filename))
             else { continue }
-            if let key = try? await media.upload(data: data, kind: .audio) {
+            if let key = try? await media.upload(data: seal(data, familyKey), kind: .audio) {
                 store.setAudioR2Key(memoryID: memory.id, key: key)
             }
         }
+    }
+
+    /// Sealing that cannot lose the file. If the seal fails there is nothing
+    /// useful to do with a photograph except send it as it is — the row is
+    /// already queued, and dropping it would leave a memory pointing at a
+    /// recording that never arrives.
+    private func seal(_ data: Data, _ key: SymmetricKey?) -> Data {
+        guard let key else { return data }
+        return FamilyCrypto.seal(data, with: key) ?? data
     }
 }
 

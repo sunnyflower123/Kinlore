@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Security
 
@@ -56,12 +57,98 @@ struct Identity {
     }
 }
 
+/// The family's encryption key. PLAN.md §10 lever 3.
+///
+/// One key per family, made by whoever creates it and carried to everyone else
+/// in the invitation. The server never sees it: it is not in the invite the
+/// Worker issues, only in the text a person sends to their grandmother.
+///
+/// **This key is the archive.** Lose it on every device at once and every
+/// memory is ciphertext nobody can open — which fails rule 3 more completely
+/// than never encrypting would, since rule 3 keeps the original audio precisely
+/// because the speaker may not be there to ask again. Three things stand
+/// between here and that:
+///
+/// - it lives in the Keychain with `kSecAttrSynchronizable`, so it follows an
+///   Apple account to the next phone, which ARCHITECTURE §4 has verified
+///   survives deleting the app;
+/// - every member of the family holds the same key, so one lost phone loses
+///   nothing;
+/// - the export is written on a device that has the key, so what leaves the app
+///   leaves readable.
+///
+/// It is deliberately not derived from the member secret. That secret is
+/// per-device and is rotated by "Tyhjennä tämä laite"; a key derived from it
+/// would take the archive with it.
+enum FamilyKey {
+    /// Base64 of 32 bytes, as it travels in an invitation and rests in the
+    /// Keychain. A string rather than `Data` because both of those places take
+    /// strings.
+    static func create() -> SymmetricKey {
+        let key = SymmetricKey(size: .bits256)
+        store(key)
+        return key
+    }
+
+    static func current() -> SymmetricKey? {
+        guard let raw = Keychain.read(Keychain.familyKeyKey),
+              let data = Data(base64Encoded: raw),
+              data.count == 32
+        else { return nil }
+        return SymmetricKey(data: data)
+    }
+
+    static func store(_ key: SymmetricKey) {
+        let raw = key.withUnsafeBytes { Data($0) }.base64EncodedString()
+        Keychain.write(raw, for: Keychain.familyKeyKey)
+    }
+
+    /// Takes a key out of an invitation. Returns false rather than storing
+    /// something the wrong length: a key that is nearly right is a family whose
+    /// memories all fail to open, one at a time, long after joining.
+    @discardableResult
+    static func adopt(_ shared: String) -> Bool {
+        guard let data = Data(base64Encoded: standardBase64(from: shared)), data.count == 32
+        else { return false }
+        Keychain.write(data.base64EncodedString(), for: Keychain.familyKeyKey)
+        return true
+    }
+
+    /// As it is written into an invitation: base64url, so that it survives being
+    /// a query parameter without percent-encoding and survives being read off a
+    /// message and pasted by hand. Ordinary base64 carries `+`, `/` and `=`, and
+    /// every one of those is a way for an invitation to arrive subtly wrong.
+    static func shareable() -> String? {
+        guard let raw = Keychain.read(Keychain.familyKeyKey) else { return nil }
+        return raw
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    private static func standardBase64(from shared: String) -> String {
+        var value = shared
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while value.count % 4 != 0 { value += "=" }
+        return value
+    }
+
+    /// Leaving a family, or emptying the device. The key belongs to the family
+    /// rather than to this phone, and a phone that is no longer in the family
+    /// has no business keeping the means to read it.
+    static func forget() {
+        Keychain.delete(Keychain.familyKeyKey)
+    }
+}
+
 /// A thin Keychain wrapper. The entries are synchronizable so that the identity
 /// follows the user from device to device and there is no need to rejoin the
 /// family when changing phones.
 enum Keychain {
     static let memberIDKey = "member_id"
     static let secretKey = "device_secret"
+    static let familyKeyKey = "family_key"
 
     private static let service = "com.kinlore.identity"
 

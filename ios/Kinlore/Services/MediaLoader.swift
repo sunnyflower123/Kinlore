@@ -45,9 +45,19 @@ enum MediaLoader {
         return filename
     }
 
+    /// Fetches and unseals. PLAN.md §10 lever 3.
+    ///
+    /// Bytes that were never sealed pass through, so a family from before lever
+    /// 3 still gets its photographs. Bytes that *are* sealed and will not open
+    /// return nil rather than the envelope — the caller writes what it gets
+    /// into the media store under a `.jpg` or `.m4a` name, and an envelope
+    /// saved under those names is a file that fails to draw or play once, now,
+    /// and every time afterwards from the local cache.
     private static func fetch(key: String, session: Session) async -> Data? {
         guard let base = AppServices.apiBaseURL else { return nil }
         let client = MediaClient(baseURL: base, token: session.identity.token)
-        return try? await client.download(key: key)
+        guard let data = try? await client.download(key: key) else { return nil }
+        guard let familyKey = FamilyKey.current() else { return data }
+        return FamilyCrypto.open(data, with: familyKey)
     }
 }

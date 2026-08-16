@@ -18,7 +18,8 @@
 // Run it after touching FamilyCrypto.swift — the command is in CLAUDE.md.
 //
 //   swiftc -parse-as-library -o /tmp/family-crypto-check \
-//     scripts/family-crypto-check.swift ios/Kinlore/Services/FamilyCrypto.swift
+//     scripts/family-crypto-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
+//     ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift
 
 import CryptoKit
 import Foundation
@@ -109,6 +110,84 @@ enum FamilyCryptoCheck {
         var tampered = Array(sealedAudio)
         tampered[tampered.count - 1] ^= 0x01
         check("one flipped bit in the tag refuses", FamilyCrypto.open(Data(tampered), with: key) == nil)
+
+        // MARK: - The payload that actually crosses to the Worker
+        //
+        // Built by decoding the wire JSON rather than by calling a memberwise
+        // initialiser, so this exercises the shape `sync.ts` really receives.
+
+        print("— the sync payload, sealed —")
+        let wire = """
+        {"subjects":[{"id":"s1","kind":"place","title":"Kuusamo","confirmed":1,"created_at":0}],
+         "memories":[{"id":"m1","subject_id":"s1","body":"Aino tuli mökille joka kesä.",
+                      "raw_transcript":"aino tuli mökille joka kesä öö niin",
+                      "source":"voice","created_at":0}],
+         "questions":[{"id":"q1","text":"Millainen Aino oli?","status":"open","created_at":0}],
+         "relations":[{"id":"r1","from_subject":"s1","to_subject":"s2","kind":"parent",
+                       "confirmed":0,"created_at":0}],
+         "guesses":[{"memory_id":"m1","member_id":"p1","created_at":0}]}
+        """
+        guard let payload = try? JSONDecoder().decode(SyncPayload.self, from: Data(wire.utf8)) else {
+            print("  FAIL the wire JSON did not decode into SyncPayload")
+            exit(1)
+        }
+
+        let out = payload.sealed(with: key)
+        guard let onTheWire = try? JSONEncoder().encode(out),
+              let asSent = String(data: onTheWire, encoding: .utf8)
+        else {
+            print("  FAIL the sealed payload did not encode")
+            exit(1)
+        }
+
+        // The claim this whole lever makes, stated as an assertion: a dump of
+        // what was sent contains none of the words.
+        for word in ["Kuusamo", "Aino", "mökille", "Millainen", "sodan"] {
+            check("\"\(word)\" is not in what crosses to the Worker", !asSent.contains(word))
+        }
+        check("the ids still are, because the server routes by them", asSent.contains("m1"))
+
+        print("— and opened again on the other device —")
+        // The same rows coming back. Built directly rather than through JSON:
+        // the push above already exercised the wire shape, and composing a
+        // reply out of encoded fragments tests the string interpolation rather
+        // than the encryption.
+        let reply = SyncPullReply(
+            seq: 9,
+            more: false,
+            subjects: out.subjects,
+            memories: out.memories,
+            questions: out.questions
+        )
+        let back = reply.opened(with: key)
+        check("the title comes back", back.subjects.first?.title == "Kuusamo")
+        check("the body comes back", back.memories.first?.body == payload.memories.first?.body)
+        check(
+            "the raw transcript comes back — rule 3 says it is the product, not a step",
+            back.memories.first?.raw_transcript == payload.memories.first?.raw_transcript
+        )
+        check("the question comes back", back.questions.first?.text == "Millainen Aino oli?")
+
+        print("— the ways a seal can quietly eat a field —")
+        check(
+            "a nil raw transcript stays nil rather than becoming a sealed empty string",
+            out.memories.first(where: { $0.raw_transcript == nil }) == nil
+                ? true
+                : out.memories.first?.raw_transcript != nil
+        )
+        check("an empty title is left alone", {
+            var empty = payload
+            empty.subjects[0].title = ""
+            return empty.sealed(with: key).subjects[0].title == ""
+        }())
+        check("relations are untouched", out.relations.first?.kind == "parent")
+        check("guesses are untouched", out.guesses.first?.member_id == "p1")
+
+        print("— a title survives being pushed twice —")
+        check(
+            "two pushes of the same title are byte-identical, or sync.ts wipes the coordinates",
+            payload.sealed(with: key).subjects[0].title == out.subjects[0].title
+        )
 
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)

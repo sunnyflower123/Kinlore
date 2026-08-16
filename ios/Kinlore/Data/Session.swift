@@ -121,15 +121,46 @@ final class Session {
                 familyName: familyName,
                 displayName: displayName
             )
+            // Made here, before the family id is stored and therefore before
+            // any row can be pushed. PLAN.md §10 lever 3: a family whose first
+            // memories went up in clear and whose later ones did not would be
+            // the worst of both — unreadable to a new device, and readable to a
+            // dump.
+            FamilyKey.create()
             self.store(familyID: result.familyID)
         }
     }
 
+    /// Joins a family. The `code` is what was shared, which since lever 3 is the
+    /// server's invite code and the family's key separated by `#`.
+    ///
+    /// The key is adopted **before** the request, so that a device cannot end up
+    /// a member of a family it has no way to read. Adoption is also the reason
+    /// the two travel together in one string rather than in two fields: an
+    /// invitation that can be half-copied is an invitation that produces exactly
+    /// that device.
+    ///
+    /// A code with no key still joins. That is a family from before lever 3,
+    /// and refusing it would be refusing the archives this was built to protect.
     func join(code: String, displayName: String) async {
+        let parts = Self.split(shared: code)
         await perform { client in
-            let result = try await client.join(code: code, displayName: displayName)
+            if let key = parts.key { FamilyKey.adopt(key) }
+            let result = try await client.join(code: parts.code, displayName: displayName)
             self.store(familyID: result.familyID)
         }
+    }
+
+    /// Splits `<code>#<key>` into its halves, tolerating either alone.
+    ///
+    /// Whitespace goes first: this string is read off a message and pasted, and
+    /// a trailing newline from a chat app is the likeliest way for a correct
+    /// invitation to be refused.
+    static func split(shared: String) -> (code: String, key: String?) {
+        let trimmed = shared.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let hash = trimmed.firstIndex(of: "#") else { return (trimmed, nil) }
+        let key = String(trimmed[trimmed.index(after: hash)...])
+        return (String(trimmed[..<hash]), key.isEmpty ? nil : key)
     }
 
     /// Keeps the archive to this phone. PLAN.md §10 lever 2.
@@ -240,6 +271,11 @@ final class Session {
             return false
         }
         UserDefaults.standard.removeObject(forKey: familyKey)
+        // The key belongs to the family, not to this phone. Leaving keeps the
+        // local copy — which is plaintext, so nothing on this device becomes
+        // unreadable — but the means to read the family's rows goes with the
+        // membership. Rejoining brings it back in the next invitation.
+        FamilyKey.forget()
         mode = .needsFamily
         family = nil
         usage = nil
@@ -255,6 +291,10 @@ final class Session {
     /// worse than no wipe at all.
     func renewIdentity() {
         Identity.forget()
+        // The family key goes too. "Tyhjennä tämä laite" says the memories are
+        // gone for good on a device nobody else shares, and leaving the key
+        // behind would be the one part of the archive that survived a wipe.
+        FamilyKey.forget()
         identity = Identity.loadOrCreate()
         UserDefaults.standard.removeObject(forKey: familyKey)
         // And the answer to "keiden kesken", because afterwards the app is a

@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// The sync transfer types and the conversions to and from them.
@@ -115,6 +116,91 @@ struct SyncPullReply: Codable {
     var relations: [RelationDTO] = []
     /// Likewise.
     var guesses: [GuessDTO] = []
+}
+
+// MARK: - Encryption at rest
+
+/// PLAN.md §10 lever 3, applied in exactly two places.
+///
+/// **The boundary is the payload, not the model.** The store on disk stays
+/// plaintext: it is inside the app's container, protected by the device
+/// passcode, and it is what the export is written from. What is sealed is what
+/// crosses to the Worker, because a breach dumps the database and not this
+/// phone. Doing it any deeper would mean decrypting to draw every screen and
+/// encrypting to save a draft, for no gain against the threat this is about.
+///
+/// One transform each way, so that there is one place to read when asking what
+/// the server can see. Threading a key through every DTO conversion was the
+/// other option and would have put the question in nine places.
+///
+/// **Relations and guesses are not sealed and do not need to be**: they are
+/// UUIDs pointing at other UUIDs. What they leak is the shape of a family
+/// tree, which the row count leaks anyway.
+extension SyncPayload {
+    func sealed(with key: SymmetricKey) -> SyncPayload {
+        var copy = self
+        // Every one of these falls back to the plaintext rather than to nil.
+        //
+        // `flatMap` was the obvious spelling and it is a data-loss bug: sealing
+        // returns an optional, so a failure would replace a title or a raw
+        // transcript with *nothing* and push that — and rule 3 says the raw
+        // transcript is not an intermediate step, it is the product. Sending a
+        // row in clear because the seal failed is a bad day; sending an empty
+        // one is the memory gone from every other device in the family.
+        copy.subjects = subjects.map { subject in
+            var row = subject
+            // Deterministic, because the server compares this field to decide
+            // whether a rename should drop the coordinates. See FamilyCrypto.
+            row.title = subject.title.map { title in
+                title.isEmpty ? title : (FamilyCrypto.sealDeterministically(title, with: key) ?? title)
+            }
+            return row
+        }
+        copy.memories = memories.map { memory in
+            var row = memory
+            row.body = memory.body.isEmpty
+                ? memory.body
+                : (FamilyCrypto.seal(memory.body, with: key) ?? memory.body)
+            row.raw_transcript = memory.raw_transcript.map {
+                FamilyCrypto.seal($0, with: key) ?? $0
+            }
+            return row
+        }
+        copy.questions = questions.map { question in
+            var row = question
+            row.text = FamilyCrypto.seal(question.text, with: key) ?? question.text
+            return row
+        }
+        return copy
+    }
+}
+
+extension SyncPullReply {
+    /// The mirror. A row that will not open keeps whatever came back, and every
+    /// screen then shows the sealed string rather than nothing — which is ugly
+    /// and is the point. The case means the wrong key, and an archive that
+    /// silently draws unreadable memories as empty ones would be the app
+    /// claiming grandmother said nothing.
+    func opened(with key: SymmetricKey) -> SyncPullReply {
+        var copy = self
+        copy.subjects = subjects.map { subject in
+            var row = subject
+            row.title = subject.title.map { FamilyCrypto.open($0, with: key) ?? $0 }
+            return row
+        }
+        copy.memories = memories.map { memory in
+            var row = memory
+            row.body = FamilyCrypto.open(memory.body, with: key) ?? memory.body
+            row.raw_transcript = memory.raw_transcript.map { FamilyCrypto.open($0, with: key) ?? $0 }
+            return row
+        }
+        copy.questions = questions.map { question in
+            var row = question
+            row.text = FamilyCrypto.open(question.text, with: key) ?? question.text
+            return row
+        }
+        return copy
+    }
 }
 
 // MARK: - Conversions
