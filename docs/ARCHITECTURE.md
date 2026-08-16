@@ -3,6 +3,43 @@
 This document designs what had not been built yet. The finished part is
 described in [PLAN.md](PLAN.md) §7 and in the code.
 
+**If you read one section, read [§1](#1-where-things-stand)** — an inventory of
+what is built and what is not, ending in a warning about why that inventory has
+been wrong before. Sections 15 to 20 are each one bug: what it was, how it hid,
+and what found it.
+
+## Contents
+
+**What it is**
+[1. Where things stand](#1-where-things-stand) ·
+[2. Five decisions that determine the rest](#2-five-decisions-that-determine-the-rest) ·
+[9. Build order](#9-build-order)
+
+**The machinery underneath**
+[3. Sync](#3-sync) ·
+[4. Identity and family](#4-identity-and-family) ·
+[5. Media](#5-media) ·
+[6. Money](#6-money) ·
+[7. Quotas and moderation](#7-quotas-and-moderation)
+
+**What it is like to use**
+[8. The screens](#8-the-screens) ·
+[10. The interview loop](#10-the-interview-loop) ·
+[11. Asked questions](#11-asked-questions) ·
+[12. The question ladder](#12-the-question-ladder) ·
+[13. The guessing round](#13-the-guessing-round) ·
+[14. Settings — taking the archive out, and leaving](#14-settings--taking-the-archive-out-and-leaving) ·
+[21. The words](#21-the-words) ·
+[22. The one blue button](#22-the-one-blue-button)
+
+**Things that were wrong, and what it took to find them**
+[15. Contrast — the rule that was never measured](#15-contrast--the-rule-that-was-never-measured) ·
+[16. The memory that was interrupted](#16-the-memory-that-was-interrupted) ·
+[17. The name that was heard wrong](#17-the-name-that-was-heard-wrong) ·
+[18. Places on a map — what they cannot promise](#18-places-on-a-map--the-three-columns-and-what-they-cannot-promise) ·
+[19. The telling that was not meant](#19-the-telling-that-was-not-meant) ·
+[20. Small promises the app was not keeping](#20-small-promises-the-app-was-not-keeping)
+
 ---
 
 ## 1. Where things stand
@@ -33,7 +70,7 @@ An honest inventory, not a wish list:
 | A date given by hand, at the precision somebody actually has | **Done and tested**, see §8 |
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 20 screens at both text sizes, out of 49 UI tests, and they audit the screen they are named after |
+| Accessibility sweep over every screen | **Done** — 26 sweep tests, each auditing one screen at the default text size and again at the largest, out of 49 UI tests, and they audit the screen they are named after |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
