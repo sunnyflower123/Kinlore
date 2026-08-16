@@ -213,6 +213,15 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
   ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
 
+# When the paid archive is offered. Four lines of arithmetic over one
+# UserDefaults key, and every way they can go wrong is silent: an offer after
+# every story, or none ever, or one landing beside the names rule 4 asks a human
+# to check. Run it after touching UpsellRhythm.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/upsell-rhythm-check \
+  scripts/upsell-rhythm-check.swift ios/Kinlore/Services/UpsellRhythm.swift \
+  && /tmp/upsell-rhythm-check
+
 # Place coordinates through sync. Checks the four rules that are silent when
 # broken: a resolved point round-trips, a device that has not looked the name up
 # cannot wipe it, correcting the title clears it, and rubbish is refused. Costs

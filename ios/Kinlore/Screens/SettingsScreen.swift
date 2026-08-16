@@ -264,6 +264,7 @@ struct SettingsScreen: View {
         // Both are counts about the person and the phone, not about the family,
         // and both would otherwise outlive the archive they refer to.
         QuestionLadder.reset()
+        UpsellRhythm.reset()
         TranscriptionAttempts.reset()
         // Last, because it is what makes the wipe stick: with the old identity
         // the next sync would pull the whole archive straight back.

@@ -788,7 +788,9 @@ private struct ResultView: View {
                 // The paywall goes exactly here: perceived value peaks when the
                 // memory is finished. Not in onboarding, not in settings — and
                 // not as an obstacle, because the memory is already saved.
-                if let usage = session.usage, !usage.isPaid {
+                // Not every time, and never on a screen that is also asking
+                // whether the names were heard right: see `UpsellRhythm`.
+                if model.showsUpsell, let usage = session.usage, !usage.isPaid {
                     UpsellCard(usage: usage)
                 }
 

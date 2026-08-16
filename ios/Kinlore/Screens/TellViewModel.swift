@@ -53,6 +53,12 @@ final class TellViewModel {
     /// People and places proposed by the AI. The user confirms or rejects.
     private(set) var proposals: [Subject] = []
     private(set) var newQuestions: [FollowUpQuestion] = []
+    /// Whether this result screen carries the offer of the paid archive.
+    ///
+    /// Decided once, when the telling lands, rather than read in the view body:
+    /// the rhythm counts tellings, and a body that is evaluated three times
+    /// would count three.
+    private(set) var showsUpsell = false
     /// The saved memory's duration, or nil if it was typed. The result screen
     /// shows playback only when there is audio.
     private(set) var savedAudioDuration: TimeInterval?
@@ -435,6 +441,7 @@ final class TellViewModel {
             await ask(next)
         } else {
             leaveInterview()
+            showsUpsell = UpsellRhythm.shouldShow(hasProposals: !proposals.isEmpty)
             phase = .done
         }
     }
@@ -733,6 +740,7 @@ final class TellViewModel {
         placedSubject = nil
         proposals = []
         newQuestions = []
+        showsUpsell = false
         savedAudioDuration = nil
         savedMemoryID = nil
         completingMemoryID = nil

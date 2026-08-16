@@ -405,6 +405,25 @@ value peaks. Not in onboarding, not in settings.
 **Telling is never paywalled.** The limits apply to the photo count and AI
 minutes.
 
+**But not after every telling, and never beside a name.** The moment is right
+and it stays; what was wrong is that the card appeared every single time, on the
+screen somebody reaches when they are most tired, between the names they have to
+check and the way out. `UpsellRhythm` puts two rules on it:
+
+- **Never against a proposal.** A name waiting to be confirmed is rule 4's whole
+  mechanism — a wrong person becomes a fact if nobody looks — and an offer to buy
+  something is the worst possible neighbour for it. That telling shows no card at
+  all, however long it has been.
+- **One in three.** Counted on the device in `UserDefaults`, never synced, for
+  the same reason the question ladder's comfort is not (§12): it describes the
+  person holding the phone, and a family has no business seeing how often
+  somebody has been asked to pay. "Tyhjennä tämä laite" clears it.
+
+The count keeps running even when the card is withheld, so a family whose every
+telling names somebody does not stall the rhythm — the next quiet one carries the
+offer. Four lines of arithmetic, every failure of them silent, so they are
+checked by `scripts/upsell-rhythm-check.swift` rather than by looking.
+
 ## 7. Quotas and moderation
 
 ### Quotas on the server
