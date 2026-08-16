@@ -122,6 +122,13 @@ final class AccessibilitySweepTests: XCTestCase {
     /// `.symbolEffect`, and every `ProgressView` — the processing screens, the
     /// import overlay, the playback button's loading state.
     ///
+    /// **And a fifth that is on no list of animations: a focused text field
+    /// blinks.** `AskQuestionSheet` focuses itself on appear and the typing view
+    /// is focused by the test, so both draw a caret about once a second for as
+    /// long as they are open. `CorrectNameSheet` does not focus itself, which is
+    /// the whole reason it can be waited for. Before using this on a screen, ask
+    /// what is still moving on it — the answer is often a cursor.
+    ///
     /// Returns whether it settled, and **the caller must not ignore the
     /// answer.** Auditing a screen that never stopped is measuring a moving
     /// view; proceeding quietly is the failure `require` was written against.
@@ -520,6 +527,19 @@ final class AccessibilitySweepTests: XCTestCase {
             require(app.cells.firstMatch, "a person in the list").tap()
             reach(app.buttons["Korjaa nimi"], in: app, "the correction button").tap()
             require(app.buttons["Tallenna"], "the correction sheet")
+            // A sheet is presented with an animation, and this one failed inside
+            // a full suite with two Dynamic Type findings and then passed three
+            // times in isolation on the same build — the second test to show
+            // that shape in a day. Under a suite's load the presentation takes
+            // longer, and the audit read the sheet on its way in.
+            //
+            // Safe to wait for because this sheet does not focus its field: the
+            // caret would blink for ever and the wait would time out. See
+            // `hasStoppedDrawing(_:)`.
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the correction sheet was still being drawn when the audit ran"
+            )
         }
     }
 
