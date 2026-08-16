@@ -312,6 +312,23 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   sessions doing that at once take turns killing each other's process. Use a
   device of your own and **never shut down or reboot a booted one you did not
   create** — somebody else is very likely mid-run on it.
+- **A device of your own is the rule; a device left booted is the cost.** The
+  rule above solves correctness and nothing else: eight simulators were booted
+  on this machine at once on 16 Aug — three sessions of this project, another
+  project's two, and a stray — and a test run died with
+
+      IDELaunchReport: Finished with error: The operation couldn't be
+      completed. (Mach error -308 - (ipc/mig) server died)
+
+  before a single test executed. That is CoreSimulator giving up under load, and
+  it reads like a broken build: no failing test, no assertion, just a run that
+  ends. **`xcrun simctl list devices | grep -c "(Booted)"` before believing
+  it** — if the answer is more than three or four, the machine is the finding.
+
+  So delete your own device when the run is over rather than leaving it booted
+  for the next one, and shut down nobody else's. Two sessions each keeping one
+  is fine; six sessions each keeping one is the failure above, and the session
+  that meets it is never the session that caused it.
 - `xcrun simctl` is not on the path xcodebuild hands to its own child processes,
   so a test run ends with `unable to find utility "simctl"` while collecting
   diagnostics. It is noise from a run that had already failed, not the failure.
