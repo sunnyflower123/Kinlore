@@ -53,7 +53,7 @@ An honest inventory, not a wish list:
 | `subject`, `memory`, `mention`, `prompt_question` | In use |
 | Identity, family, invite links | **Done and tested** |
 | Sync (`/sync` pull and push) | **Done and tested** |
-| Media to R2 (`/media`) | **Built and in use — nothing checks the round trip.** The export check reads media off the device, not out of R2 |
+| Media to R2 (`/media`) | **Done and checked**, see §5 — the round trip and the isolation, against wrangler's local bucket |
 | Quotas (`/usage`, limits on the server) | **Done and checked**, see §7 — the counting and rule 2; not the transcription path itself |
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
 | RevenueCat, shared family entitlement | **Built** — the binding rule is checked (§6); the REST verification and the webhook need keys and are unrun |
@@ -428,6 +428,29 @@ members see it when sync catches up. A photo added offline is not lost.
 
 **The original audio is always uploaded**, including on the free tier. It is the
 core of the product, not an extra.
+
+### Checked
+
+`scripts/media-check.mjs` presses on the two directions and the boundary between
+them. A photograph goes up and comes back **byte for byte** — a corrupted one is
+corrupted invisibly until somebody looks at it years later, which is the whole
+failure this archive exists to prevent. Audio is accepted on the free tier with
+no reference to the photo ceiling, which is rule 3 written as an assertion: a
+family out of photograph slots must still be able to keep a voice.
+
+And the one that matters most: **another family gets nothing.** The key carries
+the family id and the prefix is checked before the bucket is touched, so a
+guessed key does not even cause a lookup, and the answer is `404` rather than
+`403` — it does not say whether the guess was close. Somebody with no identity
+at all gets `401`.
+
+**Shown to be load-bearing.** The prefix check was deleted in a throwaway
+worktree with its own Worker on its own port, and the run came back red on
+exactly that case: status 200, a stranger holding another family's photograph.
+
+Locally `wrangler dev` gives R2 a simulated bucket, so none of this touches real
+storage — which also means it is the shape of the round trip that is checked,
+not Cloudflare's.
 
 ## 6. Money
 

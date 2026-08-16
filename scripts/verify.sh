@@ -117,6 +117,9 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# Rule 2 is the shortest rule this app has, and nothing checked it: the
 	# quota limits photographs and minutes, never the act of saying something.
 	run "the quota never stops a telling" node scripts/quota-check.mjs
+	# The photographs and the voices, and who can reach them. Locally R2 is
+	# simulated by wrangler, so this touches no real storage.
+	run "media comes back, and only to its family" node scripts/media-check.mjs
 else
 	printf '  %-46s%s\n' "the family path, places and the invite boundary" \
 		"skipped — no Worker (cd backend && npm run dev)"
