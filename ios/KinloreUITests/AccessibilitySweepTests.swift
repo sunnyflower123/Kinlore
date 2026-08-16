@@ -11,6 +11,26 @@ import XCTest
 /// The `-screen` and `-tab` launch arguments exist for exactly this: some of
 /// these screens sit behind several taps, and a test run has no hands. See
 /// docs/SETUP.md.
+///
+/// **`testMemoriesWithContent` has failed once in a whole-suite run and passed
+/// alone.** Measured 16 Aug 2026: 49 tests, 1170 seconds, that one red; the same
+/// test, alone, on the same simulator and the same commit minutes later, green
+/// in 27 seconds.
+///
+/// It was **not** the shared device. CLAUDE.md's usual explanation for a phantom
+/// audit failure is two sessions on one simulator, and this run had a simulator
+/// created for it and used by nothing else. So that explanation is spent here,
+/// and the cause is unknown — which is why this note stops at what was measured
+/// instead of naming one. The nearest suspicion, recorded as a suspicion: this
+/// is the audit that ends in a screenshot through `ContrastMeter`, and a grid
+/// still loading its content is a plausible place for `hasStoppedDrawing` to
+/// answer a frame early. Nobody has shown that.
+///
+/// It is written down because of what a flaky audit costs rather than what it
+/// broke. This suite is the only check on a rule the eye cannot apply, and a
+/// test that is green alone and red in company is one whose red gets explained
+/// away. The next person to see this failure should reproduce it before
+/// believing it, and should also not shrug at it twice.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 
