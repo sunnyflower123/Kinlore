@@ -154,6 +154,48 @@ struct OnboardingScreen: View {
     }
 }
 
+// MARK: - What happens to a recording
+
+/// Said where the archive is chosen, rather than after it exists.
+///
+/// The app already tells this once, in `NSMicrophoneUsageDescription` — but that
+/// prompt arrives only when the first recording starts, which is after the
+/// family has been created. The choice was being asked before the consequence
+/// was explained, and that order is the whole of the trust problem: not that the
+/// audio leaves the phone, but that nobody was told before deciding. See
+/// PLAN.md §10.
+///
+/// The wording deliberately repeats the permission prompt's own sentence rather
+/// than paraphrasing it. Hearing the same words twice reads as one consistent
+/// statement; a second phrasing reads as a second, slightly different claim.
+///
+/// It says what happens, never what does not. "We do not use it for anything
+/// else" would be a promise this screen cannot keep on its own, and fixing a
+/// trust barrier with an unkept promise is worse than the barrier.
+/// A section of its own, whose only content is its footer.
+///
+/// It was first written into the button's existing footer, wrapped in a `VStack`
+/// beside the missing-name hint. That failed the audit on both screens as
+/// **"Dynamic Type font sizes are partially unsupported"**, and the length was
+/// not the reason: `SettingsScreen`'s export footer is longer, carries nothing
+/// but `foregroundStyle`, and passes. The `VStack` was the reason — a footer
+/// holding a stack rather than a `Text` stops scaling with the type size.
+///
+/// So this matches the shape that already passes everywhere else in the app: a
+/// plain `Text` alone in a `footer:`, styled and nothing more. The lesson is
+/// worth more than the fix — a wrapper in a footer is invisible on screen and
+/// visible only to the audit.
+private struct WhereMemoriesGo: View {
+    var body: some View {
+        Section {
+        } footer: {
+            Text("Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, "
+                + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.")
+                .foregroundStyle(Elder.supporting)
+        }
+    }
+}
+
 // MARK: - Creating a family
 
 /// The one screen in this app that a 30-year-old fills in.
@@ -250,6 +292,8 @@ private struct CreateFamilyForm: View {
                         .elderBody()
                 }
             }
+
+            WhereMemoriesGo()
 
             if let error = session.lastError {
                 Section { ErrorNote(text: error) }
@@ -352,6 +396,8 @@ private struct JoinFamilyForm: View {
                         .elderBody()
                 }
             }
+
+            WhereMemoriesGo()
 
             if let error = session.lastError {
                 Section { ErrorNote(text: error) }
