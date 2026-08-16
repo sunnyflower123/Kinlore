@@ -115,9 +115,17 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
 8. **`provider: { data_collection: "deny" }` is unconditional**, never a
    per-call flag. The content is a family's memories of dead relatives. As a
    flag it would be forgotten on some call.
-9. **The cause of an error never leaks to the client.** Upstream bodies go only
-   to `console.error`: they can contain account details or echo back the memory
-   the user just told. The app gets `{ error: "upstream_failed" }`.
+9. **The cause of an error never leaks to the client — and the log is not
+   somewhere to leak it instead.** The app gets `{ error: "upstream_failed" }`.
+   Upstream bodies and model output stay out of `console.error` as well:
+   `observability` is on in `wrangler.jsonc`, so Workers Logs is a store beside
+   D1 and R2 — and it is the one store a family cannot export, cannot clear with
+   *"Tyhjennä tämä laite"*, and never agreed to. This rule used to send them
+   there on purpose, and it cost 300 characters of the just-told memory on every
+   extraction failure until 16 Aug 2026 (PLAN.md §10). Log shape, length,
+   counts, status and the provider's own error codes. **An error message must
+   not interpolate content** — not a title, not a transcript, not a name —
+   because `message` is the one field of a thrown error that reaches the log.
 
 ## Git — stage only what you changed yourself
 

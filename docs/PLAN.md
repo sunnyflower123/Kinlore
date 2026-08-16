@@ -350,30 +350,93 @@ finished.**
   *"this is forever"* suits an archive better than a monthly bill does. If that
   wins later, **price it here first.** Do not let it return as a default a second
   time.
-- **The cloud as an adoption barrier.** Raised 15 Aug 2026, undecided. Who hands
-  a dead parent's voice to somebody's server? For this product that is not a
-  passing worry — it is the trust question, and the answer is currently *"we
-  never say"*.
+- **The cloud — custody, not only adoption.** Raised 15 Aug 2026 as a question
+  about whether anyone would join: who hands a dead parent's voice to somebody's
+  server? **Reopened 16 Aug 2026 as the larger half of the same question** —
+  not whether they will hand it over, but what happens when what they handed
+  over is taken. A breach here does not spill email addresses. It spills a
+  family's memories of dead relatives, in their own words and in their own
+  voice, and the person who could consent to that is often the one who has died.
+  Undecided; decided on 10 Sep with the rest.
 
-  What is actually true today, measured rather than assumed:
+  **What is in the cloud today**, measured rather than assumed:
 
   - `memory.body` and `memory.raw_transcript` are D1 columns, so the words of
-    every memory are on a server the moment sync runs. R2 holds only the files.
+    every memory are on a server the moment sync runs. R2 holds the files.
   - The audio leaves the device even with R2 off, because transcription happens
-    in the Worker. Rule 7 puts the model key there and nowhere else.
+    in the Worker — it goes as a base64 `input_audio` part (`transcribe.ts`).
+    Rule 7 puts the model key there and nowhere else. **No arrangement of the
+    storage changes this**, which is the fact that rules out most of the easy
+    answers below.
+  - **Workers Logs was a third store, and nobody had counted it.** Found and
+    closed 16 Aug 2026. `observability` is on in `wrangler.jsonc`, and
+    `extract.ts` logged the first 300 characters of the model's reply — the
+    structured version of what had just been told — while `openrouter.ts` logged
+    300 characters of the upstream error body, which on several provider errors
+    quotes the request back. Rule 9 of CLAUDE.md sent both there deliberately:
+    it says the cause of an error never reaches the *client*, and it was read as
+    though the log were not a place. It is a place. It is the one place a family
+    cannot export, cannot delete with *"Tyhjennä tämä laite"*, and never agreed
+    to. All three sites now log shape, status and codes; `worker.ts` logs the
+    error's name and message, which puts a standing rule on the messages —
+    an error message must not interpolate content.
   - **A local mode already exists.** `Session.mode` has `.local`, and sync is
     gated on `.inFamily` (`Session.swift`). The machinery for "nothing leaves"
     is built.
   - But onboarding offers **two** choices, *Aloita perheen arkisto* and *Liity
     kutsulinkillä*, and nothing else. The only place the user is ever told the
     audio leaves the phone is the microphone permission prompt — which comes
-    *after* the archive has been created.
+    *after* the archive has been created. The choice is asked before the
+    consequence is explained, and that part is the order rather than the
+    architecture.
 
-  So the barrier is the order, not the architecture: the choice is asked before
-  the consequence is explained.
+  **The realistic attack paths, in order of probability.** Worth writing down
+  because not one of the three is fixed by moving the data somewhere else:
 
-  Three levers, in rising cost:
+  1. **A secret in the public repo.** By far the likeliest. Rule 7 exists for
+     this, and it is a discipline rather than a technology.
+  2. **The Cloudflare account.** A password or an API token. Two-factor auth and
+     scoped tokens are the entire defence, and they cost minutes.
+  3. **The Worker's own auth.** In reasonable shape: the member secret is hashed
+     specifically so that a database leak grants no direct access (`auth.ts`),
+     and `family_id` is checked on every query rather than only at join time
+     (ARCHITECTURE §3).
 
+  **This entry used to call end-to-end encryption "incompatible with server-side
+  transcription". That was wrong**, and it was wrong in the direction that
+  closed off the best answer. It conflated two different things: data in transit
+  for processing, and data at rest. **A breach dumps the database. It does not
+  dump audio that passed through a Worker in June.** So nearly all of the
+  protection is available without touching the ASR path at all.
+
+  And it is available because **the server never reads the content**. Checked
+  16 Aug 2026 against `sync.ts`: memories are stored and echoed back, the only
+  conditions on `body` are emptiness tests, and the quotas count seconds and
+  photo rows rather than words. Encrypt `body`, `raw_transcript` and the R2
+  objects on the device under a family key the server never sees, and what a
+  dump yields is UUIDs, sequence numbers and timestamps.
+
+  Two things would have to be solved and both are small: the coordinate rule
+  compares `subject.title` to decide whether a rename invalidates the point, so
+  it would compare a hash instead; and `display_name` is joined server-side onto
+  every memory and question, so either the names stay in clear or the client
+  resolves them.
+
+  **One thing would not be small, and it is the whole decision:** losing the key
+  loses the archive — for everyone, permanently, as ciphertext nobody can open.
+  Rule 3 keeps the original audio because the speaker may no longer be around to
+  ask, and an archive that cannot be decrypted has failed rule 3 more completely
+  than one that was never encrypted at all. The key would live in the Keychain
+  under `kSecAttrSynchronizable`, the mechanism ARCHITECTURE §4 has already
+  verified survives deleting the app, and travel in the shared invite *text*
+  rather than in the server-issued code. That is a mitigation and not an answer,
+  and it should be weighed as one.
+
+  Four levers, in rising cost:
+
+  0. **Hygiene.** Two-factor on the Cloudflare account, scoped API tokens, and
+     the logs (done 16 Aug). Minutes, not evenings, and it is the only lever
+     that touches paths 1 and 2 above. **Do it regardless of everything else.**
   1. **Say it in onboarding**, where the archive is created. One evening. For an
      80-year-old this is a dignity question as much as a privacy one — informed
      consent rather than a fact discovered later.
@@ -381,11 +444,32 @@ finished.**
      and sync never runs. One to two evenings, since the machinery exists. It
      must say plainly that audio *still* travels for transcription — fixing the
      barrier with a promise that is not kept would be worse than the barrier.
-  3. **End-to-end encryption.** The only real answer to "everything is in the
-     cloud", and **incompatible with server-side transcription**: the model
-     cannot write down speech it cannot hear. Not September, not close. Worth
-     naming as a v1.1 direction, because a judge or a user will ask.
+  3. **Encryption at rest under a family key.** Several evenings, and §5 says
+     every addition takes a removal. This is the real answer to "everything is
+     in the cloud" and it is compatible with the app as built — which is why it
+     is named in the Devpost as the v1.1 direction if it does not fit September.
 
-  Decide with the rest on 10 Sep. Lever 1 is cheap enough to be worth doing
-  regardless; 2 competes for September evenings and §5 says every addition takes
-  a removal.
+  **Two alternatives were raised on 16 Aug and are recorded here rather than
+  built.** Both were attempts at the same instinct, and both trade worse:
+
+  - **One device, nothing shared at all** — the family gathers round
+    grandmother's phone and does the telling and the guessing in the room. It
+    takes the breach risk to zero and buys a worse risk with it: the archive
+    then exists in exactly one place. A stolen or drowned phone is final, and
+    she may not be there to tell it again. A breach is humiliating and
+    notifiable, and the memories still exist the next morning; loss is the one
+    failure this app was built against. It would also collapse §9 — with one
+    device there is no *"the payer is not the beneficiary"* left to implement.
+    The honest version of this idea is lever 2, which is already on the list.
+  - **A data packet shared over iCloud instead of a database.** Closer than it
+    sounds: the export (ARCHITECTURE §14) is already most of the packet, and the
+    model was built to merge — appended not edited, one-way confirmation, merges
+    that redirect, idempotent upserts keyed by client UUIDs. The genuine gain is
+    custody rather than cryptography: Apple becomes the holder, and the breach
+    and its notification duty stop being a schoolchild's. The costs are that
+    `seq` is server-granted (§2.2) and would need replacing with per-device
+    counters; that a shared file written from two phones produces conflicted
+    copies, so it would have to be append-only per device; and that Advanced
+    Data Protection — the part that would make it end-to-end — is off by default
+    and no 80-year-old is going to switch it on. Kept as a v1.1 direction beside
+    lever 3, not as a September plan.
