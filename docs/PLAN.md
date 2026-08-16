@@ -283,6 +283,45 @@ recordings answer it, the phase E test with a grandparent is where they come
 from, and until then this row is a measurement that has not been taken rather
 than a risk that has been retired.
 
+### The visit that takes the measurement
+
+Written before the day rather than on it, because half of what follows cannot be
+done afterwards at all.
+
+**Before the door.** The build is on her phone already (§3), Developer Mode is
+done, and there is something to write on. `scripts/asr-bench.mjs` says what it
+needs and has said so from the start: three real samples, and *"the correct text
+for each by hand"* beside them. `samples/` is gitignored — her voice does not go
+into a public repo.
+
+**Ask before the microphone, not after.** She is told where the audio goes — to
+our own server, which turns it into text — and whether any of it might be heard
+in a demo video in September. If the answer is that none of hers will be, that is
+decided in the kitchen, not in the edit.
+
+**The cold handover.** Hand her the phone and say as little as it takes. Start a
+clock. **Every question she asks out loud is a sentence missing from a screen**,
+so write each one down in her words — those are the findings, and they are worth
+more than any opinion offered afterwards, including hers. Help only once she has
+asked twice, or after two minutes, whichever comes first.
+
+**The transcript is written in the room.** Nobody can reconstruct later what she
+actually said, which is the premise rule 3 already rests on — and without a
+correct text the recordings cannot be scored at all, so the measurement stays
+untaken with three files to show for it. Write it while she is still there to be
+asked "mitä sanoit siinä".
+
+**What the numbers then answer**, against the tripwires already in this section:
+80 % on proper nouns and 30 % WER, now on speech that is not kind. Above them,
+risk 2 is retired. Below, the answer is the one this app already built —
+correction in the seconds after telling, and from the person's card afterwards
+(ARCHITECTURE.md §17) — and the honest conclusion is about the engine rather than
+about the concept.
+
+**What no number answers.** Whether she pressed the button a second time without
+being asked, and whether she believed the memory was saved. Both are worth a line
+in the notes the same evening, while it is still true rather than remembered.
+
 ## 9. The core of monetisation
 
 **The payer is not the beneficiary.** Grandmother does not buy a subscription —
