@@ -541,6 +541,37 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The settings only a family can see. `testSettings` runs without a
+    /// family, so the Perhe row, "Poistu perheestä" and the in-family wipe
+    /// footer were on no audited screen at all — and the section's bare
+    /// header was the same framework grey the family screen's top audit
+    /// reported on "Käyttö" and "Jäsenet". The rows sit below the fold at
+    /// the largest size and a List does not build what nobody can see, so
+    /// this scrolls to them and audits there, the way testFamily reaches
+    /// its invites.
+    func testSettingsInFamily() throws {
+        try sweep(
+            "Asetukset perheessä",
+            arguments: ["-seed", "family", "-tab", "people", "-screen", "settings"]
+        ) { app, _ in
+            let familyRow = reach(
+                app.descendants(matching: .any)
+                    .matching(NSPredicate(
+                        format: "label CONTAINS %@", "Perheen jäsenet ja kutsut"
+                    ))
+                    .firstMatch,
+                in: app,
+                "the family row in Settings"
+            )
+            reach(app.buttons["Tyhjennä tämä laite"], in: app, "the wipe row")
+            settle(familyRow)
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the in-family Settings screen was still being drawn when the audit ran"
+            )
+        }
+    }
+
     /// Telling about a photo: the Tell screen as a sheet on top of the photo's
     /// card. Nothing had audited this presentation, and it is the one whose way
     /// out is a toolbar button — the shape this app has already had to abandon
