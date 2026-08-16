@@ -14,6 +14,11 @@ structured way. They do not fill in forms and they do not tag photos — they
 talk. Existing album and genealogy apps demand structured input from the one
 person who will never produce it, and so the knowledge disappears at the funeral.
 
+The 80-year-old in that paragraph is not a persona. It is my own grandparent,
+who tested it — which is why the rules further down read as constraints rather
+than good intentions, and why the failure that matters here is not a crash but a
+story nobody could get told.
+
 Side project for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon. Target category: **Next Gen Award** (student category).
 
@@ -72,6 +77,16 @@ Schema: [`backend/schema.sql`](backend/schema.sql).
 Several parts of this app fail *silently* — they keep working, look right, and
 are wrong. Each one has a check of its own rather than a promise:
 
+```bash
+./scripts/verify.sh
+```
+
+That runs everything below that costs nothing, says what it skipped and why, and
+is the same script CI runs — so it cannot drift from the one people actually
+use. What it deliberately leaves out is argued in its header: nothing that
+spends model credit, because a script you run twenty times a day must not cost
+money.
+
 | Claim | Command |
 |---|---|
 | Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 49 UI tests, 26 of them an accessibility sweep at both text sizes |
@@ -110,9 +125,9 @@ reports 15 failures that are not real — see `CLAUDE.md`.)
 
 ## What I got wrong
 
-I am 16 and this is the first project where I wrote down my mistakes instead of
-quietly fixing them. Five that cost real time, kept here because a repo that
-only lists what worked is not telling you how it was built:
+This is the first project where I wrote my mistakes down instead of quietly
+fixing them. Five that cost real time, kept here because a repo that lists only
+what worked is not telling you how it was built:
 
 **I wrote things down as done before they were.** Nearly every row of
 `ARCHITECTURE.md` §1 was marked finished while it was not, and every one of them

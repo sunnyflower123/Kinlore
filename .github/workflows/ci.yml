@@ -1,0 +1,59 @@
+# The checks a stranger can trust without taking anybody's word for it.
+#
+# `verify` runs `scripts/verify.sh` — the same command the README gives a human,
+# rather than a CI-only reimplementation of it that can drift from the one
+# people actually run. What that script deliberately leaves out (anything that
+# spends model credit, and the UI tests, which need a simulator of their own) is
+# argued in its header.
+#
+# `build` compiles the app for a generic simulator. No device is named on
+# purpose: the destination this repo needs locally is a UDID, because four
+# simulators here share the name "iPhone 17 Pro" — a runner has that problem in
+# reverse, having no such device at all.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Invariants and types
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+        working-directory: backend
+
+      - run: ./scripts/verify.sh
+
+  build:
+    name: iOS build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # The .xcodeproj is generated, never committed: XcodeGen globs the source
+      # files, so a checkout has to generate before it can build.
+      - name: Generate the project
+        run: xcodegen generate
+        working-directory: ios
+
+      - name: Build
+        run: |
+          xcodebuild -project ios/Kinlore.xcodeproj -scheme Kinlore \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -skipMacroValidation build
