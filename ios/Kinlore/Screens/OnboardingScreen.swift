@@ -198,11 +198,29 @@ struct OnboardingScreen: View {
 /// worth more than the fix — a wrapper in a footer is invisible on screen and
 /// visible only to the audit.
 private struct WhereMemoriesGo: View {
+    /// Whether the archive being set up is shared with a family.
+    ///
+    /// The first sentence is the only part that changes, and it has to: *"muistot
+    /// näkyvät perheen jäsenille"* is false on a phone that keeps them to itself,
+    /// and a consent notice that is wrong in its first clause is worse than
+    /// none.
+    ///
+    /// The second sentence does not change, and that is the point of lever 2.
+    /// Choosing to keep the archive here does not keep the recording here — the
+    /// model key lives in the Worker (rule 7), so the audio travels either way.
+    /// The word **silti** carries it: without it the sentence reads as a
+    /// consequence of sharing, and somebody who has just declined sharing would
+    /// read straight past it.
+    var isShared = true
+
     var body: some View {
         Section {
         } footer: {
-            Text("Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, "
-                + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.")
+            Text(isShared
+                ? "Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, "
+                    + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään."
+                : "Muistot jäävät tähän puhelimeen. Äänitys lähetetään silti palveluumme, "
+                    + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.")
                 .foregroundStyle(Elder.supporting)
         }
     }
@@ -227,8 +245,29 @@ private struct CreateFamilyForm: View {
     /// Set by pressing the button with the form not filled in. See `missing`.
     @State private var wasPressedEmpty = false
 
+    /// PLAN.md §10 lever 2, asked as a question rather than offered as a third
+    /// button on the screen before.
+    ///
+    /// It belongs here because this is where the archive is created, which is
+    /// the sentence lever 1 was written from — and because the first screen had
+    /// no room. Two buttons at the largest text size already fill it; the intro
+    /// paragraph was dropped entirely to keep the second one above the fold, and
+    /// a third would have spent that fix on the least-used of the three.
+    ///
+    /// Not offered when joining. An invitation is somebody else's family, and
+    /// "join, but keep it to myself" is not a thing that could be honoured.
+    @State private var sharing: Sharing = .family
+
+    private enum Sharing: Hashable { case family, alone }
+
+    private var isShared: Bool { sharing == .family }
+
+    /// The name is what a family sees beside a memory. Nothing shows it on a
+    /// phone that has no family, so it is not asked for there — a field somebody
+    /// fills in that changes nothing is a small dishonesty, and this is the
+    /// first form in the app.
     private var isReady: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty
+        !isShared || !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     /// What is still missing, said in words, instead of a button gone grey.
@@ -248,6 +287,41 @@ private struct CreateFamilyForm: View {
 
     var body: some View {
         Form {
+            // First, because it decides what the rest of the form is for. The
+            // same inline shape as the question below it: both answers visible
+            // without a tap, which is the difference between a question and a
+            // control somebody has to discover.
+            //
+            // Above the name rather than below it so that choosing the single
+            // phone takes a field away underneath the finger rather than out
+            // from under it.
+            Section {
+                // A type of its own rather than a `Bool`, because the section
+                // below is also an inline `Picker` over two cases and two `Bool`
+                // pickers in one `Form` put `.tag(true)` and `.tag(false)` on
+                // four rows — the same tag type and values twice, which SwiftUI
+                // matches by type and value. It is the clearer code either way.
+                //
+                // It was **not** the cause of the audit finding this section
+                // arrived with, and that is worth recording so nobody spends the
+                // build on it twice: changing the tags from `Bool` to this enum
+                // left "Dynamic Type font sizes are partially unsupported" on
+                // the header below, byte for byte the same finding at the same
+                // coordinates.
+                Picker("Keiden kesken", selection: $sharing) {
+                    Text("Perheen kesken").tag(Sharing.family)
+                    Text("Vain minulle, tälle puhelimelle").tag(Sharing.alone)
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Keiden kesken")
+                    .foregroundStyle(Elder.supporting)
+            } footer: {
+                Text("Voit valita jommankumman. Tätä ei voi vaihtaa jälkikäteen.")
+                    .foregroundStyle(Elder.supporting)
+            }
+
             Section {
                 TextField("Nimesi", text: $name)
                     .textInputAutocapitalization(.words)
@@ -277,6 +351,16 @@ private struct CreateFamilyForm: View {
                     .foregroundStyle(Elder.supporting)
             }
 
+            // Above the button rather than below it, which is where it was
+            // until this section was added. Measured, not preferred: with the
+            // "keiden kesken" question in front of it the form grew past the
+            // point where a `Form` builds rows nobody can see, and at
+            // AccessibilityXXXL the notice did not exist at all by the time
+            // "Luo arkisto" became pressable — `ConsentOrderTests` said so in
+            // those words. Lever 1 is an order, so the order is what had to
+            // move; the sentence itself is unchanged.
+            WhereMemoriesGo(isShared: isShared)
+
             Section {
                 Button {
                     guard missing != nil else {
@@ -305,8 +389,6 @@ private struct CreateFamilyForm: View {
                 }
             }
 
-            WhereMemoriesGo()
-
             if let error = session.lastError {
                 Section { ErrorNote(text: error) }
             }
@@ -320,6 +402,11 @@ private struct CreateFamilyForm: View {
     /// nothing renames a family later, so the field's own footer — *"voit
     /// päättää myöhemmin"* — was a promise nothing in the app kept.
     private func start() {
+        // The single-phone archive reaches no network, so it is not a `Task` and
+        // cannot fail. That asymmetry is the feature: the option is taken by
+        // somebody uneasy about the server, and making it wait on the server
+        // answering would be a poor joke. See `Session.keepToThisPhone`.
+        guard isShared else { return session.keepToThisPhone() }
         Task { await session.createFamily(named: "", displayName: name) }
     }
 }

@@ -35,9 +35,15 @@ final class ConsentOrderTests: XCTestCase {
 
     func testTheNoticeIsOnScreenWhenTheCreateButtonIs() {
         for size in [nil, Self.largest] {
+            // The landmark has to be the form's *first* section, not any
+            // section. A `Form` does not build rows nobody can see, so at the
+            // largest text size waiting for something further down waits for
+            // something that does not exist yet — which is how this read as
+            // "the form never arrived" when §10 lever 2 added a section above
+            // the one this used to watch for.
             checkNoticeReachesTheButton(
                 onboardingButton: "Aloita perheen arkisto",
-                landmark: "Kenen puhelin tämä on",
+                landmark: "Keiden kesken",
                 commit: "Luo arkisto",
                 textSize: size
             )
@@ -107,27 +113,25 @@ final class ConsentOrderTests: XCTestCase {
             line: line
         )
 
-        // Where it starts, not where it ends. At the largest text size the
-        // sentence alone is taller than the space left beside a button, so
-        // demanding the whole of it would be demanding something no wording
-        // could satisfy. Beginning on the same screenful is the honest bar:
-        // enough to be seen and read on, rather than found afterwards.
+        // On screen at the same moment, in either direction. Any overlap counts,
+        // and it has to: at the largest text size the sentence alone is taller
+        // than the room left beside a button, so demanding the whole of it would
+        // demand something no wording could satisfy.
         //
-        // **It passes, and the margin is the reason this test exists.** Measured
-        // 16 Aug 2026 on `Uusi arkisto`: 287 pt of room at the default size and
-        // **74 pt at the largest** — about one line. So today the notice clears
-        // the bottom edge by roughly its own first line, and anything added
-        // between the button and it, or any growth in the sections above, spends
-        // a margin nobody would think to check. That is the regression this is
-        // here to catch, and it is invisible in a screenshot at the size the
-        // screen is usually looked at.
-        XCTAssertLessThan(
-            notice.frame.minY,
-            screen.maxY,
-            "At the \(at) the notice starts \(Int(notice.frame.minY - screen.maxY)) pt "
-                + "below the bottom of the screen while \"\(commit)\" is pressable, so "
-                + "the button can be pressed without it having been on screen. "
-                + "PLAN.md §10 lever 1 is about the order, not the wording.",
+        // Both directions, because the notice has been on both sides of the
+        // button. It sat below it until §10 lever 2 added a section above, at
+        // which point it stopped existing by the time the button was reachable
+        // — and moving it above the button would satisfy "not below the fold"
+        // while being just as far out of sight if the form ever grows again. A
+        // sentence scrolled past long ago is not one that was read.
+        XCTAssertTrue(
+            notice.frame.intersects(screen),
+            "At the \(at) the notice about where a recording goes is off screen "
+                + "\(notice.frame.minY < screen.minY ? "above" : "below") "
+                + "while \"\(commit)\" is pressable, so the button can be pressed "
+                + "without it having been in front of anybody. "
+                + "PLAN.md §10 lever 1 is about the order, not the wording. "
+                + "Notice \(NSCoder.string(for: notice.frame)), screen \(NSCoder.string(for: screen)).",
             file: file,
             line: line
         )

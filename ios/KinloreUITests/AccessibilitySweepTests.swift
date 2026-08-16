@@ -207,7 +207,12 @@ final class AccessibilitySweepTests: XCTestCase {
     func testCreateFamilyForm() throws {
         try sweep("Uusi arkisto", arguments: [], api: "http://127.0.0.1:9") { app, _ in
             require(app.buttons["Aloita perheen arkisto"], "the way into setup").tap()
-            require(app.staticTexts["Kenen puhelin tämä on"], "the setup form")
+            // The form's first section, because a `Form` does not build rows
+            // nobody can see: at the largest text size a landmark further down
+            // has not been made yet, and waiting for it reads as "the form never
+            // arrived". That is what happened when §10 lever 2 put a section
+            // above the one this used to watch for.
+            require(app.staticTexts["Keiden kesken"], "the setup form")
         }
     }
 

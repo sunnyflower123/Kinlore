@@ -60,6 +60,21 @@ final class Session {
     private(set) var identity = Identity.loadOrCreate()
 
     private let familyKey = "family_id"
+
+    /// The archive this phone keeps to itself, chosen rather than inferred.
+    ///
+    /// `.local` already meant "no backend configured", which is a build-time
+    /// fact. This is a person's answer, so it has to outlive a launch and it has
+    /// to beat the configuration: a device that can reach a Worker and has been
+    /// told not to must not start syncing because the address is still there.
+    private let localOnlyKey = "local_only"
+
+    /// Whether this archive is one somebody chose to keep to this phone, as
+    /// opposed to one that has no backend to sync to. The screens need the
+    /// difference: only the first is a decision anybody made.
+    var isLocalByChoice: Bool {
+        UserDefaults.standard.bool(forKey: localOnlyKey) && AppServices.apiBaseURL != nil
+    }
     private var client: FamilyClient? {
         guard let base = AppServices.apiBaseURL else { return nil }
         return FamilyClient(baseURL: base, token: identity.token)
@@ -80,6 +95,14 @@ final class Session {
         }
         #endif
         guard AppServices.apiBaseURL != nil else {
+            mode = .local
+            return
+        }
+        // The answer beats the address. Checked before the family id and not
+        // after: a phone told to keep the archive to itself has no family id to
+        // find, and reaching the branch below would put it on the join screen —
+        // asking again, on every launch, a question that has been answered.
+        guard !UserDefaults.standard.bool(forKey: localOnlyKey) else {
             mode = .local
             return
         }
@@ -107,6 +130,30 @@ final class Session {
             let result = try await client.join(code: code, displayName: displayName)
             self.store(familyID: result.familyID)
         }
+    }
+
+    /// Keeps the archive to this phone. PLAN.md §10 lever 2.
+    ///
+    /// Not `async`, and it reaches no network at all — which is the whole of it.
+    /// No family row is created, so there is nothing on the server to leave, to
+    /// be a member of, or to be pulled back by. `SyncEngine` is already gated on
+    /// `.inFamily`, so the queue simply never runs.
+    ///
+    /// It cannot fail, and that is worth saying next to `createFamily`, which
+    /// can: the option exists for somebody uneasy about the server, and making
+    /// it depend on the server answering would be a poor joke.
+    ///
+    /// What it does **not** do is stop the audio leaving for transcription.
+    /// Rule 7 puts the model key in the Worker, so the recording travels
+    /// whatever this is set to. The screen that offers this says so in those
+    /// words; a quieter promise here would be the barrier fixed with a lie.
+    func keepToThisPhone() {
+        UserDefaults.standard.set(true, forKey: localOnlyKey)
+        UserDefaults.standard.removeObject(forKey: familyKey)
+        family = nil
+        usage = nil
+        lastError = nil
+        mode = .local
     }
 
     /// Refreshes the family details. A failure does not throw the user out:
@@ -210,6 +257,13 @@ final class Session {
         Identity.forget()
         identity = Identity.loadOrCreate()
         UserDefaults.standard.removeObject(forKey: familyKey)
+        // And the answer to "keiden kesken", because afterwards the app is a
+        // fresh install and a fresh install has not been asked yet. It is also
+        // the one way back out of a single-device archive: the choice is made
+        // once at setup and nothing else in the app unmakes it, so leaving it
+        // set here would make "Tyhjennä tämä laite" the only door that does not
+        // open either.
+        UserDefaults.standard.removeObject(forKey: localOnlyKey)
         family = nil
         usage = nil
         mode = AppServices.apiBaseURL == nil ? .local : .needsFamily

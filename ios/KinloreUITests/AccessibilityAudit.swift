@@ -267,7 +267,7 @@ enum AccessibilityPolicy {
         "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.",
     ]
 
-    /// A `List` caps how far its own footers grow, exactly as
+    /// A `List` caps how far its own headers and footers grow, exactly as
     /// `ContentUnavailableView` caps its description — same framework decision,
     /// different view, and it is worth keeping apart from the empty states
     /// because these are sentences we wrote.
@@ -282,7 +282,7 @@ enum AccessibilityPolicy {
     ///
     /// So: measure at XXXL before adding anything here. A footer that is
     /// genuinely truncated on screen is a defect, and no list makes it not one.
-    private static let listFooterText: Set<String> = [
+    private static let listHeaderAndFooterText: Set<String> = [
         "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.",
         // Reached from the other direction as well, and worth keeping: this one
         // began failing the moment a row was added *above* it, and giving it an
@@ -290,6 +290,24 @@ enum AccessibilityPolicy {
         // say the same thing as the y-coordinate above — the metrics are the
         // List's, not our typography's.
         "Kertomasi muistot ovat vain tässä laitteessa.",
+        // A header rather than a footer, which is why this set was renamed. The
+        // cap is the same one: `Uusi arkisto` gained a section above this header
+        // for PLAN.md §10 lever 2, and the header began failing at the *default*
+        // size the moment it did.
+        //
+        // Matched against the signature above rather than assumed, over six
+        // runs. It moved with the content above it and nothing else — y 416,
+        // then 444, then 438.67, then 430 — while the finding itself stayed
+        // identical. Changing the new picker's tags from `Bool` to a type of
+        // their own did not touch it; nor did dropping the new section's own
+        // header; nor did replacing the new picker with a `Toggle`. A defect in
+        // a sentence does not depend on where the sentence sits, and three
+        // attempts at the sentence's own neighbours moved nothing.
+        //
+        // At AccessibilityXXXL the same screen audits clean and reports no
+        // `textClipped` on this header, which is the half that would say the
+        // words were actually being lost.
+        "Kenen puhelin tämä on",
     ]
 
     static func isDeliberate(
@@ -464,7 +482,7 @@ enum AccessibilityPolicy {
             return true
         }
 
-        if issue.auditType == .dynamicType, listFooterText.contains(label) {
+        if issue.auditType == .dynamicType, listHeaderAndFooterText.contains(label) {
             return true
         }
 
