@@ -3,10 +3,14 @@
 #
 #   ./scripts/verify.sh
 #
-# Silent is the operative word. Each of these leaves a working app behind: a
-# guessing round that has given the answer away still looks like a round, an
+# Silent is the operative word. Each of these leaves a working app behind: an
 # upsell on the wrong beat still shows a paywall, a coordinate wiped by the
-# wrong device still opens a place. None of them reaches a screenshot.
+# wrong device still opens a place, a transcript stripped by the second push
+# still lists a memory. None of them reaches a screenshot.
+#
+# The guessing round used to head that list, and its check was the reason this
+# file exists. The round was cut on 16 Aug 2026 (PLAN.md §5, row 8) and the
+# check went with it.
 #
 # WHAT THIS DOES NOT RUN, and why:
 #
@@ -69,12 +73,6 @@ run() {
 
 # --- The invariants that need nothing but Xcode -----------------------------
 
-guess_mask() {
-	DEVELOPER_DIR=$XCODE xcrun swiftc -o "$OUT/guess-mask-check" \
-		scripts/guess-mask-check.swift ios/Kinlore/Model/GuessRound.swift \
-		&& "$OUT/guess-mask-check"
-}
-
 upsell_rhythm() {
 	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
 		-o "$OUT/upsell-rhythm-check" scripts/upsell-rhythm-check.swift \
@@ -92,7 +90,6 @@ entitlement_binding() {
 
 echo
 echo "Invariants"
-run "the hidden name stays hidden" guess_mask
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "one purchase unlocks one family" entitlement_binding
 
