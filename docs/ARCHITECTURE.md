@@ -305,6 +305,36 @@ of its own via `CF-Connecting-IP`, which Cloudflare sets from the connection and
 ignores from the client, so it is local only. Seven scripts, twice through with
 no pause: green both times.
 
+### The second push of a subject, and what it cost
+
+The companion check, `scripts/subject-rules-check.mjs`, was written to confirm
+the same statement one table over. It found a defect instead.
+
+A phone pushes its **whole local row** — `Subject.dto` fills every field from
+local state — so a device that has never seen a date sends three nulls with it.
+The coordinates beside them were carefully protected against exactly that; the
+date was assigned straight over the top. Measured against a running Worker: a
+place kept its point and lost *joskus viisikymmentäluvulla* the moment anybody
+on an older copy renamed it. Rule 5 is that uncertainty is stored rather than
+rounded, and it does not survive being stored and then quietly overwritten.
+
+The fix gives the three date columns the shape the point already had, with
+`date_precision` as the signal that the pushing device has an opinion at all.
+That leaves one hole, and it is the interesting half: if a missing date never
+overwrites, a date somebody deliberately *cleared* comes back on the next sync
+from an old copy, for ever. So clearing now sends `unknown` rather than nothing
+— `DatePrecision.unknown` already existed and `displayText` already read it as
+*"Ajankohta ei tiedossa"*, so what changed is that the sheet stores the answer
+instead of an absence. **En tiedä is an answer**, which is the same principle the
+question ladder rests on.
+
+Ten assertions, and the neighbours in that statement are checked beside it:
+confirmation is one-way, a merge is sticky, a rejection cannot be revived.
+
+**Shown to be load-bearing** without a mutation, because the bug was real: run
+against `origin/main` before the fix, on a Worker and database of its own, the
+two date cases went red and the other eight stayed green.
+
 ### Why JSON and not SQLite
 
 Local storage stays a JSON file even after sync.

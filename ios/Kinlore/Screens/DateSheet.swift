@@ -198,7 +198,16 @@ struct DateSheet: View {
     }
 
     private func save(decade: Int? = nil, year: Int? = nil, nothing: Bool = false) {
-        let answer = nothing ? nil : hint(decade: decade, year: year)
+        // "En tiedä" is an answer and is stored as one, rather than as an empty
+        // field. The difference is invisible here — both show nothing — and it
+        // decides what happens on another phone: sync keeps a date unless the
+        // pushing device says something about it, so a cleared date sent as an
+        // absence would come back on the next sync from somebody's older copy.
+        // It is the same reason the sheet asks how sure you are before it asks
+        // for a number.
+        let answer = nothing
+            ? DateHint(start: nil, end: nil, precision: .unknown)
+            : hint(decade: decade, year: year)
         for subject in subjects {
             store.setDateHint(subjectID: subject.id, hint: answer)
         }

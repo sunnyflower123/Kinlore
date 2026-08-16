@@ -242,9 +242,24 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   geo_precision = CASE WHEN excluded.title IS NOT subject.title
 				                        THEN excluded.geo_precision
 				                        ELSE COALESCE(excluded.geo_precision, subject.geo_precision) END,
-				   date_start = excluded.date_start,
-				   date_end = excluded.date_end,
-				   date_precision = excluded.date_precision,
+				   -- The same shape as the point above, and for the same reason.
+				   -- A device pushes its whole local row, so one that has never
+				   -- seen the date sends three nulls — and a plain assignment
+				   -- turned "joskus viisikymmentäluvulla" into nothing the next
+				   -- time somebody on an older copy renamed the subject or
+				   -- confirmed it. Rule 5 says uncertainty is stored; it does
+				   -- not survive being stored and then quietly overwritten.
+				   --
+				   -- date_precision is the signal that the pushing device has
+				   -- an opinion about the date at all. Clearing one deliberately
+				   -- sends 'unknown' rather than nothing, so a person who says
+				   -- "en tiedä sittenkään" is still heard — that is a value,
+				   -- not an absence.
+				   date_start = CASE WHEN excluded.date_precision IS NOT NULL
+				                     THEN excluded.date_start ELSE subject.date_start END,
+				   date_end = CASE WHEN excluded.date_precision IS NOT NULL
+				                   THEN excluded.date_end ELSE subject.date_end END,
+				   date_precision = COALESCE(excluded.date_precision, subject.date_precision),
 				   -- Confirmation is one-way: a device that has been offline for
 				   -- a week must not turn a confirmed person back into a proposal.
 				   confirmed = MAX(subject.confirmed, excluded.confirmed),
