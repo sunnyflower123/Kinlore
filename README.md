@@ -262,8 +262,8 @@ needed, and why, is in [`SETUP.md`](docs/SETUP.md#what-is-not-needed).
 ### 1. The app on its own — no keys, no backend, about two minutes
 
 ```bash
-git clone https://github.com/sunnyflower123/Memorize.git kinlore
-cd kinlore/ios && xcodegen generate && open Kinlore.xcodeproj
+git clone https://github.com/sunnyflower123/Kinlore.git
+cd Kinlore/ios && xcodegen generate && open Kinlore.xcodeproj
 ```
 
 Press Run. **The app is fully usable on stubs**: record or type a memory, watch
