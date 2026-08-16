@@ -16,6 +16,20 @@ do not re-research it:
   verified at submission; a student ID or letter of enrolment is accepted when
   the domain is not on the JetBrains/swot list.
 
+**One requirement is still unmet: the repository is private.** Measured 16 Aug
+2026 — `api.github.com/repos/sunnyflower123/Kinlore` answers 404 unauthenticated
+while `git ls-remote` works with credentials, which is what GitHub does for a
+private repo. Next Gen asks for *"a link to your public, open-source code
+repository, including an open-source license file"*, so this blocks the
+submission rather than merely looking untidy, and every claim in this file about
+the repo being a shop window assumes the change has been made.
+
+Making it public is safe and was checked rather than assumed: `.dev.vars` is in
+`.gitignore`, has never been committed, and no key-shaped string appears
+anywhere in history. It is one setting, not a cleanup. Doing it early also makes
+GitHub Actions free, which is why `ci.yml` runs its expensive half only on pull
+requests today.
+
 **The schedule is built around school:** the heaviest work (backbone + magic
 moment) happens 4–10 Aug during the holiday, not alongside school. When time
 runs out, cut in the order given in PLAN.md §5 — it was decided in advance so
