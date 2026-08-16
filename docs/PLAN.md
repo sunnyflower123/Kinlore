@@ -516,10 +516,27 @@ finished.**
      an 80-year-old this is a dignity question as much as a privacy one, and
      informed consent is the whole of it. `testOnboarding`,
      `testCreateFamilyForm` and `testJoinFamilyForm` pass at both text sizes.
-  2. **A third option: "Vain minulle, tälle puhelimelle."** Sets `mode = .local`
-     and sync never runs. One to two evenings, since the machinery exists. It
-     must say plainly that audio *still* travels for transcription — fixing the
-     barrier with a promise that is not kept would be worse than the barrier.
+  2. ~~**A third option: "Vain minulle, tälle puhelimelle."**~~ **Done 16 Aug
+     2026** (`df65d5b`). Asked on the create form as *"Keiden kesken"* rather
+     than as a third button on the screen before it, which has room for two at
+     the largest text size and no more. `local_only` outlives the launch and
+     beats the configured address; `SyncEngine` was already gated on
+     `.inFamily`, so the queue simply never runs. It says plainly that the audio
+     *still* travels for transcription — *"Äänitys lähetetään **silti**
+     palveluumme"* — because fixing the barrier with a promise that is not kept
+     would be worse than the barrier.
+
+     **Two things it does not do**, both deliberate and both worth knowing
+     before this is called finished:
+
+     - **It is not reversible from inside the app.** Nothing turns a
+       single-phone archive into a family one; the only way back is *"Tyhjennä
+       tämä laite"*, which clears the answer along with everything else and
+       offers the export first. That is defensible for v1 and it is not
+       obviously right — a Settings row that hands the archive to a new family
+       is the honest version, and it is not built.
+     - **It does not encrypt anything.** What stays on the phone stays because
+       nothing sends it, not because anything is unreadable. That is lever 3.
   3. **Encryption at rest under a family key.** Several evenings, and §5 says
      every addition takes a removal. This is the real answer to "everything is
      in the cloud" and it is compatible with the app as built — which is why it
