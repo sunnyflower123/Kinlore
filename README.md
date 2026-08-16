@@ -39,6 +39,10 @@ memory.body           mentioned subjects      follow-up questions
 (cleaned text)        (confirmed = 0)         (prompt_question)
 ```
 
+| <img src="docs/media/01-tell.png" alt="The Tell screen: a large red microphone button under the heading Kerro mitä muistat, with Paina ja ala puhua below it and a link offering to type instead."> | <img src="docs/media/02-result.png" alt="The result screen: Muisto tallennettu, the memory placed at Puumalassa 1950-luku, the spoken text kept as it was said, and three proposed subjects each with a cross and a tick."> | <img src="docs/media/03-guess.png" alt="The memories screen: a guessing round headed Muistatko kuka, showing a story with the name replaced by a long dash, and the question Kuka hän oli."> |
+|---|---|---|
+| **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. | **The reading loop.** The same memory with the name taken out — the only part of the app that asks nothing of the 80-year-old. |
+
 Everything else in the app exists to make that loop worth repeating. What is
 built and what is not is inventoried, honestly, in
 [`ARCHITECTURE.md` §1](docs/ARCHITECTURE.md#1-where-things-stand) — including a
@@ -71,6 +75,10 @@ attaches to any subject. That is why *"write a memory about this photo"* and
 *"tell us what grandmother was like"* are the same screen and the same code
 path, and why the family tree is just the edges between person subjects.
 Schema: [`backend/schema.sql`](backend/schema.sql).
+
+| <img src="docs/media/04-person.png" alt="A person card for Sanni: a large blue button reading Kerro tästä muisto, an empty Suku section offering to add a relative, one memory, and a button to ask the family."> | <img src="docs/media/05-family.png" alt="The family screen for the Virtaset family on the free tier: 7 of 10 minutes of telling used this month, 12 of 20 photos, and three members with the dates they joined."> |
+|---|---|
+| A person card is the same screen as a photo, because a person is the same row. The empty **Suku** section is the point: a gap is an invitation, not an error. | One archive, several members, one shared quota. The quota belongs to the family rather than to whoever paid for it — see **Who pays**. |
 
 ## How to check any of this yourself
 
@@ -122,6 +130,18 @@ wrong is the premise the name-correction step was written for, not a surprise.*
 **Accessibility:** 0 failures across 17 audits, measured 15 Aug 2026 on a
 private simulator. (On a simulator shared with another session the same commit
 reports 15 failures that are not real — see `CLAUDE.md`.)
+
+But the number is not the argument. This is one screen at the default text size
+and at the largest one iOS offers, which is the size rule 1 is actually about:
+
+| <img src="docs/media/02-result.png" alt="The result screen at the default text size: heading, placement, the spoken text, and three proposed subjects all visible at once."> | <img src="docs/media/06-result-xxxl.png" alt="The same result screen at the largest accessibility text size: the heading wraps to two lines, the text reflows, nothing is clipped or truncated, and the screen scrolls instead."> |
+|---|---|
+| Default | Accessibility XXXL |
+
+Nothing is clipped and nothing is truncated — the screen gets longer instead.
+That is rule 1 in one pair. It is also why the sweep opens each screen and audits
+it at both sizes rather than trusting a screenshot at one: a screenshot shows the
+top of a screen, and clipping happens further down.
 
 ## What I got wrong
 
