@@ -71,7 +71,27 @@ CREATE TABLE invite (
 CREATE INDEX idx_invite_family ON invite(family_id);
 
 CREATE INDEX idx_member_family ON member(family_id);
-CREATE INDEX idx_member_rc     ON member(rc_app_user_id);
+-- UNIQUE, and that is the point rather than a tidiness. `syncEntitlement` takes
+-- the customer id from the client and asks RevenueCat what that customer owns,
+-- so without this one purchase reported from two families unlocks both of them.
+--
+-- The worse half is the webhook: it finds the payer with
+-- `WHERE rc_app_user_id = ?` and takes the first row, so a refund would revoke
+-- the right from one family and leave the other paid for ever. An error in that
+-- direction does not correct itself.
+--
+-- Partial, because most members never buy anything and NULL is not a claim.
+-- SQLite treats NULLs as distinct in a unique index anyway; the WHERE clause
+-- says so out loud and keeps the index small.
+--
+-- On a database that already exists:
+--
+--   DROP INDEX IF EXISTS idx_member_rc;
+--   CREATE UNIQUE INDEX idx_member_rc ON member(rc_app_user_id)
+--     WHERE rc_app_user_id IS NOT NULL;
+--
+CREATE UNIQUE INDEX idx_member_rc ON member(rc_app_user_id)
+  WHERE rc_app_user_id IS NOT NULL;
 
 -- ---------------------------------------------------------------- subject
 

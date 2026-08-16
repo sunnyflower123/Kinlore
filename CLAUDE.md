@@ -227,6 +227,13 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -o /tmp/guess-mask-check scripts/guess-mask-check.swift \
   ios/Kinlore/Model/GuessRound.swift && /tmp/guess-mask-check
 
+# One purchase, one family. Loads the real schema.sql into an in-memory SQLite
+# and asks it: the same customer id cannot unlock two families, a refund finds
+# exactly one payer, and a restore inside the family still works. Costs nothing
+# — no Worker, no D1, no RevenueCat — and the guard it backs up cannot be run
+# on this machine at all. After touching the member table or entitlement.ts.
+node scripts/entitlement-binding-check.mjs
+
 # The export, opened. The one output that leaves the app for good, and its
 # promise — "avautuu millä tahansa koneella ilman tätä sovellusta" — is not
 # something XCUITest can check: the file lands in the app's container and the

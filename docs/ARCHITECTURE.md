@@ -432,6 +432,36 @@ exists, `-rcKey <key>` is enough to see it — and the first thing to check is n
 that it looks right but that a purchase reaches `family.entitlement`, with the
 Worker deliberately stopped once to see the sentence above.
 
+### One purchase, one family
+
+`syncEntitlement` takes the customer id **from the client** and asks RevenueCat
+what that customer owns. Nothing checked whose id it was, and
+`member.rc_app_user_id` had an index without a uniqueness rule — so the same
+purchase reported from two families would have unlocked both.
+
+The worse half is the webhook. It finds the payer with `WHERE rc_app_user_id =
+?` and takes the first row, so a refund would have revoked the right from one
+family and left the other paid for ever. An error in that direction does not
+correct itself and nobody would notice until somebody read a bill.
+
+Two answers, deliberately at different levels. The index is now UNIQUE and
+partial — NULL is not a claim, and most members never buy anything — so the
+second binding cannot be written at all. And `syncEntitlement` looks first, so
+the case comes back as **409 `customer_belongs_to_another_family`** rather than
+as a constraint violation: a refused claim is not an outage, and 503 would
+invite the app to retry something that will never succeed.
+
+What must keep working does: the buyer changes phone, or another member of the
+same family restores the purchase — `onRestoreCompleted` exists for exactly
+that. The binding *moves* within a family, released from the old row first.
+
+**Checked by `scripts/entitlement-binding-check.mjs`**, which loads the shipping
+`schema.sql` into an in-memory SQLite and asks it — no Worker, no D1, no
+RevenueCat, none of which exists on this machine. The guard in TypeScript cannot
+be run here at all; the database rule can, and it is the half that still holds
+when the guard is wrong. Run with the index made non-unique again, two of its
+seven checks fail, which is how it was shown to be worth having.
+
 ### Where the paywall goes
 
 Right after the first AI-structured memory is finished. That is when perceived

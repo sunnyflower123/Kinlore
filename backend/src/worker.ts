@@ -196,7 +196,14 @@ export default {
 			if (!body?.customerID) return json({ error: 'missing_customer' }, 400)
 			try {
 				const result = await syncEntitlement(env, session, body.customerID)
-				return 'error' in result ? json(result, 503) : json(result)
+				if ('error' in result) {
+					// A customer id that belongs to another family is a refused
+					// claim, not an outage: 503 would invite the app to keep
+					// retrying something that will never succeed.
+					const conflict = result.error === 'customer_belongs_to_another_family'
+					return json(result, conflict ? 409 : 503)
+				}
+				return json(result)
 			} catch (err) {
 				return failure(err, 'entitlement')
 			}

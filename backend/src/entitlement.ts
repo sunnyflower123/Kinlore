@@ -93,6 +93,25 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 		return { error: 'revenuecat_not_configured' as const }
 	}
 
+	// Whose customer id this is, before anything is written. The client sends it
+	// and the client can send anything: without this check the same purchase
+	// reported from two families unlocks both, and a later refund revokes only
+	// whichever member row the webhook happens to find first. The unique index
+	// on `member.rc_app_user_id` refuses the write in any case — this turns that
+	// into an answer instead of a constraint violation.
+	const bound = await env.DB.prepare(
+		'SELECT id, family_id FROM member WHERE rc_app_user_id = ?',
+	)
+		.bind(customerID)
+		.first<{ id: string; family_id: string }>()
+
+	if (bound && bound.family_id !== session.familyID) {
+		console.error(
+			`[entitlement] customer ${customerID} is already bound to family ${bound.family_id}`,
+		)
+		return { error: 'customer_belongs_to_another_family' as const }
+	}
+
 	const items = await fetchActiveEntitlements(env, customerID)
 
 	// Any active entitlement unlocks the archive. The app has a single paid
@@ -104,6 +123,16 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 		const seconds = Math.floor(item.expires_at / 1000)
 		return max === null ? seconds : Math.max(max, seconds)
 	}, null)
+
+	// The same family, a different member: the buyer reinstalled, changed phone,
+	// or somebody else restored the purchase — the case `onRestoreCompleted`
+	// exists for. The binding moves rather than being refused, because the
+	// family is the same and the index allows only one holder.
+	if (bound && bound.id !== session.memberID) {
+		await env.DB.prepare('UPDATE member SET rc_app_user_id = NULL WHERE id = ?')
+			.bind(bound.id)
+			.run()
+	}
 
 	// The payer is bound to the member so the webhook can find the family
 	// without the app.
