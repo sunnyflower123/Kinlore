@@ -125,6 +125,9 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# on their memories still resolve, which makes "in the database" and "in the
 	# family" two different things.
 	run "a session ends when the member leaves" node scripts/session-boundary-check.mjs
+	# The second push of the same memory, which is where the damage lives: rule
+	# 3's stickiness, §16's empty body, and the two about who is speaking.
+	run "a second push cannot unwrite a telling" node scripts/memory-rules-check.mjs
 else
 	printf '  %-46s%s\n' "the family path, places and the invite boundary" \
 		"skipped — no Worker (cd backend && npm run dev)"

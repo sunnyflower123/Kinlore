@@ -267,6 +267,44 @@ of one.
 Everything else is resolved by the higher `seq`. There are deliberately few
 rules — every extra rule is a place where data can silently go wrong.
 
+### The second push, checked
+
+The table above says "impossible" and "only the author", and until now that was
+a reading of the SQL rather than a measurement of it. Most of what this repo
+promises about a telling lives in one `ON CONFLICT DO UPDATE` in `sync.ts`, and
+`scripts/memory-rules-check.mjs` pushes the same memory twice to find out.
+
+Rule 3 first: the transcript and the audio key are `COALESCE`d, so a phone that
+no longer holds them cannot strip them by pushing the row again — and the
+author's *other* phone is exactly such a device, since the Keychain identity
+syncs and it pushes as the same author. Then §16: an empty body never overwrites
+a real one, and a recording with no text is accepted rather than dropped.
+Then the two about who is speaking: the author is taken from the session and
+never from the payload, and a member of the same family cannot rewrite what
+somebody else said. Last, that a deletion survives a stale push.
+
+Eleven assertions, and none of them is visible when it breaks. A memory whose
+raw transcript has quietly gone looks like a memory.
+
+**Shown to be load-bearing**, in a throwaway worktree with its own Worker and
+database. Dropping the `COALESCE` turned exactly one case red — the transcript
+gone, the audio key still there, which is what the failure would actually look
+like. Removing the author test turned exactly one other case red, and left
+`author_id` untouched: the sentence had become somebody else's while the name on
+it stayed grandmother's. That is the version of the bug worth having a test for.
+
+A first attempt at that second mutation deleted the `?` along with the test and
+broke the bind count, so every case failed at once — which measures nothing.
+When a mutation reddens everything, suspect the mutation.
+
+Adding it also showed that the suite had grown into its own rate limit. Creating
+a family is five a minute per address, and the seven checks that need one create
+eleven between them, so whichever ran last failed with `429` — a message that
+reads like a broken Worker and is not one. Each check now knocks from an address
+of its own via `CF-Connecting-IP`, which Cloudflare sets from the connection and
+ignores from the client, so it is local only. Seven scripts, twice through with
+no pause: green both times.
+
 ### Why JSON and not SQLite
 
 Local storage stays a JSON file even after sync.

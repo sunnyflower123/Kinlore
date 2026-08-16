@@ -36,7 +36,18 @@ const API = process.argv[2] ?? 'http://localhost:8787'
 const backend =
 	process.env.KINLORE_WORKER_DIR ??
 	joinPath(dirname(fileURLToPath(import.meta.url)), '..', 'backend')
-const json = { 'content-type': 'application/json' }
+// Every check knocks on the same two unauthenticated doors, and creating a
+// family is limited to five a minute per address (worker.ts). Seven scripts run
+// back to back in verify.sh and between them they create eleven families, so
+// they were starving each other: whichever ran last failed with "could not
+// create a family: 429", which reads like a broken Worker and is not one.
+//
+// So each run knocks from an address of its own. Cloudflare sets
+// `CF-Connecting-IP` from the connection itself and ignores what the client
+// sends, so this changes nothing in production — it only stops the checks from
+// spending each other's allowance locally.
+const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
+const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
 
 let failures = 0
 
