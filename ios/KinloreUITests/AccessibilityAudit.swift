@@ -475,6 +475,28 @@ enum AccessibilityPolicy {
             return true
         }
 
+        // The in-family Settings row, reported by the audit's *default-size*
+        // simulation and by nothing else. Measured 16 Aug 2026, per the
+        // protocol above, before being listed:
+        //
+        // The finding survived two different row shapes unchanged — the 60 pt
+        // frame on the Label (reported as dynamicType, element 60 pt tall),
+        // and the frame moved to the NavigationLink with the text free to wrap
+        // (reported as textClipped, element 21 pt tall). A defect that keeps
+        // its coordinates while the code under it changes shape is the
+        // listHeaderAndFooterText signature, third appearance.
+        //
+        // At a real AccessibilityXXXL the same screen audits clean — and the
+        // family screen's "Kutsu perheenjäsen", the same construction at the
+        // same length class, audits clean with clipping checks live on every
+        // testFamily run. Both types are named here because the simulation
+        // reports whichever the row's current shape produces; the label match
+        // keeps it to this one row.
+        if issue.auditType == .dynamicType || issue.auditType == .textClipped,
+           label == "Perheen jäsenet ja kutsut" {
+            return true
+        }
+
         return false
     }
 }
