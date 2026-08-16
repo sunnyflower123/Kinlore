@@ -434,9 +434,13 @@ finished.**
 
   Four levers, in rising cost:
 
-  0. **Hygiene.** Two-factor on the Cloudflare account, scoped API tokens, and
-     the logs (done 16 Aug). Minutes, not evenings, and it is the only lever
-     that touches paths 1 and 2 above. **Do it regardless of everything else.**
+  0. ~~**Hygiene.**~~ **Done 16 Aug 2026.** The logs, and the account: two-factor
+     on Cloudflare and on the GitHub account it signs in through. That second
+     one is the part worth writing down, because it was nearly missed — this
+     Cloudflare account uses GitHub social login, so GitHub is the door and
+     Cloudflare's own 2FA sits behind it rather than in front. The same account
+     owns the repository, which makes it paths 1 and 2 in one place. Minutes,
+     not evenings, and the only lever that touches either path.
   1. **Say it in onboarding**, where the archive is created. One evening. For an
      80-year-old this is a dignity question as much as a privacy one — informed
      consent rather than a fact discovered later.
