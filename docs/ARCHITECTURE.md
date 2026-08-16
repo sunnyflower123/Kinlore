@@ -1156,6 +1156,27 @@ in a family, and they are genuinely separate — so the screen names both:
   somebody has already decided to act. The warning was right and it was not
   prevention.
 
+**Verified by opening it, 16 Aug 2026.** The export is the one output that
+leaves the app for good, and its promise — *"sen voi avata millä tahansa
+koneella ilman tätä sovellusta"* — had never been checked against an actual
+file. It was: run on the simulator, pulled out of the app container, unzipped.
+The page carries the memories, `arkisto.json` carries the model, and a recorded
+memory travels as `aani/memory-….m4a` — real M4A by `file`, not by extension —
+with the page linking it as `<audio controls src="aani/…">`, a relative path
+into the same folder. Opened in a browser, grandmother's voice plays out of the
+zip.
+
+The first run proved nothing and is worth recording as a trap: the demo archive
+has no local media at all, so the export contained a page and a JSON and looked
+complete. A second archive with a real recording in it is what tested the half
+that matters.
+
+**What it no longer carries.** The JSON was the on-disk snapshot, which means it
+carried the outbox — which rows this phone had not pushed — and the server's
+ordering cursor. Facts about one phone's sync on one afternoon, in the file a
+family opens in twenty years, which said `dirtyGuesses` at them. It has its own
+shape now: subjects, memories, questions, relations, guesses.
+
 **Deliberately not built: deleting your own memories out of the family.** Rule 3
 keeps the original audio because the speaker may no longer be around to ask, and
 a tap that erases a dead person's voice from everybody else's archive is not a

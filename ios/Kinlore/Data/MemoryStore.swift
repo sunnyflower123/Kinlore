@@ -958,17 +958,39 @@ final class MemoryStore {
     /// read by whatever the family has in twenty years, not by this app. If the
     /// readable HTML ever lags behind the model, this is the file that lost
     /// nothing. See docs/ARCHITECTURE.md §14.
+    ///
+    /// **Its own shape, not the on-disk snapshot.** The snapshot carries the
+    /// outbox — which rows this phone has not pushed yet — and the server's
+    /// ordering cursor, and both were travelling into the family's permanent
+    /// copy: opened in twenty years it said `dirtyGuesses` at somebody. They
+    /// are facts about one phone's sync on one afternoon, not about anything
+    /// anybody told. What is left is the archive: what was said, who was
+    /// spoken about, what was asked, and how people are related.
+    struct Archive: Codable {
+        var subjects: [Subject]
+        var memories: [Memory]
+        var questions: [FollowUpQuestion]
+        var relations: [Relation]
+        var guesses: [Guess]
+    }
+
     func exportJSON() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         encoder.dateEncodingStrategy = .iso8601
-        var archive = snapshot()
-        // A telling the teller took back is not in the copy the family keeps.
-        // Rejected *subjects* still are, and the difference is the point: a
-        // rejected proposal is a note about what the machine got wrong, while a
-        // taken-back memory is content somebody withdrew. Keeping the second one
-        // in a file that outlives the app would make the taking-back a gesture.
-        archive.memories = told
-        return try encoder.encode(archive)
+        return try encoder.encode(
+            Archive(
+                subjects: subjects,
+                // A telling the teller took back is not in the copy the family
+                // keeps. Rejected *subjects* still are, and the difference is
+                // the point: a rejected proposal is a note about what the
+                // machine got wrong, while a taken-back memory is content
+                // somebody withdrew.
+                memories: told,
+                questions: questions,
+                relations: relations,
+                guesses: guesses
+            )
+        )
     }
 }
