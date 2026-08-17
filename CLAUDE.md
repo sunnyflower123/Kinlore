@@ -70,7 +70,7 @@ now and translate it later — the translation pass has already happened once.
 ios/       SwiftUI app, XcodeGen (project.yml → .xcodeproj)
 backend/   Cloudflare Worker + D1 (metadata) + R2 (photos and audio)
 scripts/   asr-bench.mjs — Finnish speech recognition comparison
-docs/      PLAN.md, ARCHITECTURE.md, SETUP.md
+docs/      PLAN.md, ARCHITECTURE.md, UX.md, SETUP.md
 ```
 
 ## Data model
