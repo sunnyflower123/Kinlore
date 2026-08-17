@@ -439,6 +439,29 @@ finished.**
     Rule 7 puts the model key there and nowhere else. **No arrangement of the
     storage changes this**, which is the fact that rules out most of the easy
     answers below.
+  - What keeps those words out of somebody's training set is one flag,
+    `provider: { data_collection: "deny" }`, and rule 8 says it is unconditional
+    rather than a per-call choice — "as a flag it would be forgotten on some
+    call". That is a rule about *every* request, which reading cannot keep:
+    there are three call sites today and the fourth will be written in a hurry.
+
+    It also cannot be checked by making a request. A real call costs credits,
+    and the one thing a check must never do is send a family's words upstream
+    to prove they are being protected. So `scripts/data-collection-check.mjs`
+    builds the request and does not send it: `complete()` is imported straight
+    out of `openrouter.ts` — Node runs TypeScript as it is — and `fetch` is
+    replaced with something that keeps the body. What is asserted is the actual
+    bytes the Worker would have sent, on a plain call, a structured one and one
+    carrying the recording itself, plus that the key is in the header and in
+    neither the body nor the address.
+
+    **Shown to be load-bearing** twice. Rebuilding `body.provider` in the
+    structured branch instead of adding to it — the realistic way this breaks,
+    since that branch already reaches into the object — reddened only the
+    structured case. Turning the rule into an option with a safe default
+    reddened only the case that asks for collection and is refused: every
+    existing call site would still have looked correct, which is precisely
+    what rule 8 predicts.
   - **Workers Logs was a third store, and nobody had counted it.** Found and
     closed 16 Aug 2026. `observability` is on in `wrangler.jsonc`, and
     `extract.ts` logged the first 300 characters of the model's reply — the

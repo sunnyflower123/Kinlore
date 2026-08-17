@@ -92,6 +92,12 @@ echo
 echo "Invariants"
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "one purchase unlocks one family" entitlement_binding
+# Rule 8, without making the request. `complete()` is imported straight out of
+# openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
+# something that keeps the body. Nothing leaves the machine and nothing is
+# spent, which matters twice here: the one thing a check must never do is send
+# a family's words upstream to prove they are being protected.
+run "no request offers the memories for training" node scripts/data-collection-check.mjs
 
 # --- What the documents say about the code ----------------------------------
 
