@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 31 sweep tests, each auditing one screen at the default text size and again at the largest, out of 52 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 31 sweep tests, each auditing one screen at the default text size and again at the largest, out of 53 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -464,6 +464,16 @@ Both halves of the delivery were checked on a simulator — the scheme is
 registered, and `kinlore://join?code=…` reaches the app cold and warm. The tap
 on the system dialog itself could not be automated here, so what happens after
 Open rests on the code rather than on a run.
+
+**And the key fell off exactly there.** Found 17 Aug 2026: since lever 3 the
+shared link is `kinlore://join?code=<code>#<key>`, the family key riding as
+the URL fragment — and the parser read query items, which a fragment never
+reaches. A tapped link therefore joined its family without the means to read
+it, while the pasted text, handed whole to `Session.split`, worked. Silent in
+the worst way: everything looks joined, and nothing sealed had ever been
+synced yet to disagree. The parser reattaches the fragment now, and `-invite`
+accepts a full URL so the test drives the real parser instead of bypassing it
+(`SilentFailureTests.testATappedLinkKeepsTheFamilyKey`).
 
 ### The identity survives deleting the app
 

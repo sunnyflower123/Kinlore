@@ -83,4 +83,30 @@ final class SilentFailureTests: XCTestCase {
         )
         local.terminate()
     }
+
+    /// The family key rides the invite link as its `#`-fragment (lever 3), and
+    /// the parser used to read query items only — which a fragment never
+    /// reaches. The one thing a *tapped* link delivered was membership in a
+    /// family the phone could not read, while *pasting* the same text worked.
+    /// Silent in the worst way: everything looks joined.
+    ///
+    /// `-invite` with a full URL drives the real parser; the assertion is that
+    /// the join form receives the code with its key still attached.
+    func testATappedLinkKeepsTheFamilyKey() {
+        let app = launch(
+            ["-invite", "kinlore://join?code=demo123#demokey"],
+            api: "http://127.0.0.1:9"
+        )
+
+        let field = app.textFields["Kutsukoodi"]
+        XCTAssertTrue(
+            field.waitForExistence(timeout: 10),
+            "the join form did not open from the link"
+        )
+        XCTAssertEqual(
+            field.value as? String,
+            "demo123#demokey",
+            "the code lost its key fragment between the link and the form"
+        )
+    }
 }

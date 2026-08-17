@@ -154,11 +154,19 @@ struct KinloreApp: App {
                 }
                 #if DEBUG
                 .task {
-                    // `-invite <code>`: feeds the link handler at launch, so a
-                    // test can reach the wrong-time alert without driving a
-                    // real URL open. See docs/SETUP.md.
-                    if let code = UserDefaults.standard.string(forKey: "invite") {
-                        handle(inviteCode: code)
+                    // `-invite <code-or-url>`: feeds the link handler at
+                    // launch, so a test can reach the wrong-time alert — and,
+                    // given a full kinlore:// URL, drives the real parser, so
+                    // the fragment that carries the family key is exercised
+                    // rather than bypassed. See docs/SETUP.md.
+                    if let raw = UserDefaults.standard.string(forKey: "invite") {
+                        if raw.hasPrefix("kinlore://"), let url = URL(string: raw) {
+                            if let code = Self.inviteCode(from: url) {
+                                handle(inviteCode: code)
+                            }
+                        } else {
+                            handle(inviteCode: raw)
+                        }
                     }
                     await Self.reportBackendStatus(session: session)
                 }
@@ -203,13 +211,21 @@ struct KinloreApp: App {
         }
     }
 
-    /// `kinlore://join?code=...`
+    /// `kinlore://join?code=<code>#<familyKey>`
+    ///
+    /// The family key rides the link as its **fragment** (PLAN §10 lever 3),
+    /// and a fragment never reaches `queryItems` — reading only those dropped
+    /// the key on exactly the tapped-link path, so a joiner who tapped joined
+    /// a family they had no way to read, while pasting the same text, which
+    /// hands the whole string to `Session.split`, worked. Reattached here so
+    /// both paths deliver the identical string.
     private static func inviteCode(from url: URL) -> String? {
-        guard url.scheme == "kinlore", url.host == "join" else { return nil }
-        return URLComponents(url: url, resolvingAgainstBaseURL: false)?
-            .queryItems?
-            .first { $0.name == "code" }?
-            .value
+        guard url.scheme == "kinlore", url.host == "join",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let code = components.queryItems?.first(where: { $0.name == "code" })?.value
+        else { return nil }
+        guard let key = components.fragment, !key.isEmpty else { return code }
+        return "\(code)#\(key)"
     }
 
     #if DEBUG
