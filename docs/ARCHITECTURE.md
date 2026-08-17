@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 31 sweep tests, each auditing one screen at the default text size and again at the largest, out of 53 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 54 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -555,6 +555,21 @@ right now they would only add moving parts.
 
 Upload is part of the outbox: a photo appears locally at once, and other family
 members see it when sync catches up. A photo added offline is not lost.
+
+**The ceiling used to be swallowed whole.** Found 17 Aug 2026: the free tier's
+photo limit is enforced at `POST /media` with a 402, and the client's upload
+path threw the same bare `URLError` for it as for a dead network — then
+discarded even that with `try?`. The 21st photograph looked normal in the
+grid and silently never reached the family; no path on the client could ever
+produce the photo-quota sentence `RemoteError` carries. The 402 is decoded
+now (the same shape `AppServices` already decodes for transcription), the
+engine counts the refusals per round instead of swallowing them, and Muistot
+carries a quiet note — *"…ei mahtunut ilmaiseen arkistoon. … tallessa tässä
+puhelimessa ja lähtee perheelle kun tilaa on."* — in the `SyncNote` register:
+no modal, no badge. Going paid re-syncs at once, which is what clears it.
+The note's state is held still for the audit by `-photos-refused`; the
+decode itself mirrors a proven path rather than having a Worker-driven check
+of its own, and that is stated here rather than implied otherwise.
 
 **The original audio is always uploaded**, including on the free tier. It is the
 core of the product, not an extra.

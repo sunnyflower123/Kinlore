@@ -124,8 +124,14 @@ struct KinloreApp: App {
                     // longer is. The upgrade is the case that matters: the
                     // memory the quota interrupted is usually the very reason
                     // somebody bought, and it should not have to wait for the
-                    // next launch to be written.
-                    Task { await catchUp?.run() }
+                    // next launch to be written. Sync first, for the same
+                    // reason: the photographs the free ceiling refused now
+                    // fit, and the note about them should clear without
+                    // waiting for a foreground.
+                    Task {
+                        await sync?.sync()
+                        await catchUp?.run()
+                    }
                 }
                 .onChange(of: session.mode) { _, mode in
                     // Joining is the case this exists for: the joiner has just

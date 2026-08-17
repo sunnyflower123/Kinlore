@@ -20,6 +20,16 @@ final class SyncEngine {
     private(set) var state: State = .idle
     private(set) var lastSyncedAt: Date?
 
+    /// Photographs the free tier refused this round.
+    ///
+    /// Counted rather than swallowed: the refusal is an answer about the
+    /// family's ceiling, not an outage, and without this the refused
+    /// photograph looks normal in the grid while silently never reaching the
+    /// family — the failure docs/UX.md §9 names. Recomputed every round; the
+    /// retry is the ordinary lifecycle one (open, foreground, entitlement
+    /// change), and going paid clears the count by making the uploads succeed.
+    private(set) var photosOverQuota = 0
+
     private let store: MemoryStore
     private let session: Session
     private var isRunning = false
@@ -117,14 +127,23 @@ final class SyncEngine {
         let media = MediaClient(baseURL: base, token: session.identity.token)
         let familyKey = FamilyKey.current()
 
+        var refused = 0
         for subject in store.subjectsAwaitingUpload() {
             guard let filename = subject.imageFilename,
                   let data = try? Data(contentsOf: MediaStore.url(for: filename))
             else { continue }
-            if let key = try? await media.upload(data: seal(data, familyKey), kind: .photo) {
+            do {
+                let key = try await media.upload(data: seal(data, familyKey), kind: .photo)
                 store.setR2Key(subjectID: subject.id, key: key)
+            } catch RemoteError.quotaExceeded {
+                // The ceiling, not the network. Counted so the gallery can say
+                // so; the photo stays queued and travels the day there is room.
+                refused += 1
+            } catch {
+                // Transient — the next lifecycle round retries, as ever.
             }
         }
+        photosOverQuota = refused
 
         for memory in store.memoriesAwaitingUpload() {
             guard let filename = memory.audioFilename,

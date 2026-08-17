@@ -252,6 +252,12 @@ struct GalleryScreen: View {
                     // Whether what she told has actually reached the family. The
                     // engine has known this from the beginning and nothing asked it.
                     SyncNote()
+
+                    // And the one refusal that is not a waiting-for-network
+                    // state: the free tier's photo ceiling, which used to be
+                    // swallowed whole — the refused photograph looked normal
+                    // in the grid and silently never reached the family.
+                    PhotoQuotaNote()
                 }
 
                 if !photos.isEmpty {
@@ -382,6 +388,46 @@ private struct SyncNote: View {
     /// this app: a phone on its own, or something on its way up.
     private func symbol(_ state: SyncEngine.State) -> String {
         state == .syncing ? "arrow.up.circle" : "iphone"
+    }
+}
+
+/// "This photograph did not fit the free archive."
+///
+/// The other quiet note, and a different kind from `SyncNote` above it: that
+/// one is a waiting state the queue fixes by itself, this one is an answer
+/// about the family's ceiling that fixes itself only when there is room —
+/// somebody pays, or a photograph is deleted elsewhere. So the words promise
+/// the photo is safe and say when it travels, and nothing here is a modal or
+/// a badge. The count comes from the engine's last round; going paid re-syncs
+/// at once (`KinloreApp`), which is what clears it.
+private struct PhotoQuotaNote: View {
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
+
+    private var refused: Int {
+        #if DEBUG
+        // `-photos-refused <n>`: holds this state still for the audit. The
+        // real one needs a running Worker and a family over its ceiling.
+        if let forced = UserDefaults.standard.string(forKey: "photos-refused").flatMap(Int.init) {
+            return forced
+        }
+        #endif
+        return sync?.photosOverQuota ?? 0
+    }
+
+    var body: some View {
+        if refused > 0 {
+            Label(
+                refused == 1
+                    ? "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on."
+                    : "\(refused) kuvaa ei mahtunut ilmaiseen arkistoon. Ne ovat tallessa tässä puhelimessa ja lähtevät perheelle kun tilaa on.",
+                systemImage: "photo.on.rectangle.angled"
+            )
+            .elderBody()
+            .foregroundStyle(Elder.supporting)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        }
     }
 }
 

@@ -367,11 +367,14 @@ join form in both directions, three new launch arguments in SETUP.md
 `upsell-rhythm-check.swift` — five new cases. Test counts moved 47 → 50 and
 28 → 30, in ARCHITECTURE §1 and README both, which `verify.sh` counts.
 
-Independent fixes already tracked as their own tasks (from §1): the invite
-link's dropped key fragment; the silently swallowed photo-limit 402. The
-second one's visible half belongs to this arc when it lands: a `SyncNote`-
-shaped line on Muistot — *"Kuvia ei mahtunut ilmaiseen arkistoon. Ne ovat
-tallessa tässä puhelimessa."* — never a modal, never a red badge.
+The two independent fixes §1 flagged are done, both 17 Aug 2026: the invite
+link keeps its key fragment (the parser reattaches it, and `-invite` with a
+full URL drives the real parser in `SilentFailureTests`), and the photo-limit
+402 is decoded, counted and said — a `SyncNote`-shaped line on Muistot,
+*"…ei mahtunut ilmaiseen arkistoon. … tallessa tässä puhelimessa ja lähtee
+perheelle kun tilaa on."* — never a modal, never a red badge, cleared by the
+re-sync that going paid now triggers. ARCHITECTURE §4 and §5 carry the full
+accounts.
 
 **Every item ships with its tests** in the house pattern: a sweep audit at
 both text sizes for each new state (the arrival-waiting state, the invite

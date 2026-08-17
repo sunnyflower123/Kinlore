@@ -116,6 +116,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | `-seed alone` | DEBUG | A family of one, with no server behind it: the state where the finished-memory screen's offer slot carries the invitation instead of the paid archive. Empties the archive. See docs/UX.md §3.2. |
 | `-invite <code-or-url>` | DEBUG | Feeds the invite-link handler at launch, as though the link had been tapped. A bare code reaches the handler directly; a full `kinlore://join?code=…#…` URL goes through the real parser, fragment and all — which is how the family key riding the fragment is tested rather than bypassed. The only way a test run can reach the wrong-time answers and the parser at once. |
 | `-seed unseen` | DEBUG | The demo archive plus an empty seen-baseline, so every telling by the fixture's Mummo is one this phone has not seen: the *"Uutta perheeltä"* section, and the Muistot landing that follows from it. A real one needs a second device to have told something between two visits. |
+| `-photos-refused <n>` | DEBUG | Holds still the note about photographs the free ceiling refused — *"…ei mahtunut ilmaiseen arkistoon"*. The real state needs a running Worker and a family over its limit, which is why the refusal went unseen for as long as it did. |
 
 These exist because some screens sit behind a tap, and two things that need to
 reach them have no hands: a screenshot run, and **filming the demo video**

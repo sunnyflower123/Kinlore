@@ -741,4 +741,23 @@ final class AccessibilitySweepTests: XCTestCase {
             )
         }
     }
+
+    /// The note about photographs the free ceiling refused. Its real trigger
+    /// needs a Worker and a family over its limit, which is why the refusal
+    /// was swallowed unseen for as long as it was — nothing could ever look
+    /// at it. `-photos-refused` holds the state still, the same shape of
+    /// answer as `-mic denied`. See docs/UX.md §9.
+    func testMemoriesPhotosOverQuota() throws {
+        try sweep(
+            "Muistot, kuvaraja",
+            arguments: ["-seed", "archive", "-tab", "memories", "-photos-refused", "2"]
+        ) { app, _ in
+            require(
+                app.staticTexts
+                    .containing(NSPredicate(format: "label CONTAINS %@", "ei mahtunut ilmaiseen arkistoon"))
+                    .firstMatch,
+                "the photo-ceiling note"
+            )
+        }
+    }
 }
