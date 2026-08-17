@@ -21,6 +21,15 @@ struct RootView: View {
             default: break
             }
             #endif
+            // The one launch after joining a family opens on Muistot: the
+            // invitation was to something that already exists, and the
+            // arrival should show it rather than an empty Tell screen.
+            // Consumed here, so every later launch opens on Kerro as ever.
+            // See docs/UX.md §4.3.
+            if UserDefaults.standard.bool(forKey: Session.arrivalPendingKey) {
+                UserDefaults.standard.removeObject(forKey: Session.arrivalPendingKey)
+                return .memories
+            }
             return .tell
         }
     }

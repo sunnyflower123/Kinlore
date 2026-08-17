@@ -53,7 +53,9 @@ final class TellViewModel {
     /// People and places proposed by the AI. The user confirms or rejects.
     private(set) var proposals: [Subject] = []
     private(set) var newQuestions: [FollowUpQuestion] = []
-    /// Whether this result screen carries the offer of the paid archive.
+    /// Whether this result screen carries the offer slot — the invitation
+    /// while the family is one person, the paid archive after that
+    /// (`UpsellRhythm.card`, docs/UX.md §3.2).
     ///
     /// Decided once, when the telling lands, rather than read in the view body:
     /// the rhythm counts tellings, and a body that is evaluated three times

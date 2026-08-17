@@ -20,6 +20,40 @@ struct KinloreApp: App {
     /// The code picked out of an invite link, if the app was opened from one.
     @State private var invitedCode: String?
 
+    /// What to say when an invite link arrives on a device that cannot use it.
+    ///
+    /// A parsed link used to be dropped in silence here — the code was stored
+    /// and nothing outside onboarding ever read it — and the likeliest wrong
+    /// time is the most human one: the app was opened and looked at first, an
+    /// archive got created with the big blue button, and *then* the
+    /// grandchild's link was tapped. See docs/UX.md §4.1.
+    @State private var linkNotice: LinkNotice?
+
+    private enum LinkNotice: String, Identifiable {
+        case deviceInFamily
+        case deviceHasLocalArchive
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .deviceInFamily: "Tämä laite kuuluu jo perheeseen"
+            case .deviceHasLocalArchive: "Tällä laitteella on jo oma arkisto"
+            }
+        }
+
+        var message: String {
+            switch self {
+            case .deviceInFamily:
+                "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua "
+                    + "perheestä Asetuksista ja liittyä sitten kutsulla."
+            case .deviceHasLocalArchive:
+                "Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen. "
+                    + "Voit tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla."
+            }
+        }
+    }
+
     /// Set once during setup, on the phone that is being handed over. See
     /// `Elder.largerTextKey`.
     @AppStorage(Elder.largerTextKey) private var largerText = false
@@ -93,12 +127,41 @@ struct KinloreApp: App {
                     // next launch to be written.
                     Task { await catchUp?.run() }
                 }
+                .onChange(of: session.mode) { _, mode in
+                    // Joining is the case this exists for: the joiner has just
+                    // landed on Muistot, and the family's memories are only on
+                    // the server until this pull. The first sync used to wait
+                    // for the next launch or foreground — on a phone that is
+                    // never quit, that is an arrival with nothing arriving.
+                    guard case .inFamily = mode else { return }
+                    Task { await sync?.sync() }
+                }
                 .onOpenURL { url in
                     guard let code = Self.inviteCode(from: url) else { return }
-                    invitedCode = code
+                    handle(inviteCode: code)
+                }
+                .alert(
+                    linkNotice?.title ?? "",
+                    isPresented: Binding(
+                        get: { linkNotice != nil },
+                        set: { if !$0 { linkNotice = nil } }
+                    ),
+                    presenting: linkNotice
+                ) { _ in
+                    Button("Selvä") {}
+                } message: { notice in
+                    Text(notice.message)
                 }
                 #if DEBUG
-                .task { await Self.reportBackendStatus(session: session) }
+                .task {
+                    // `-invite <code>`: feeds the link handler at launch, so a
+                    // test can reach the wrong-time alert without driving a
+                    // real URL open. See docs/SETUP.md.
+                    if let code = UserDefaults.standard.string(forKey: "invite") {
+                        handle(inviteCode: code)
+                    }
+                    await Self.reportBackendStatus(session: session)
+                }
                 #endif
         }
     }
@@ -122,6 +185,20 @@ struct KinloreApp: App {
         let purchases = AppServices.purchases()
         guard await purchases.hasActivePurchase, let id = await purchases.customerID else { return }
         await session.syncPurchase(customerID: id)
+    }
+
+    /// A link is answered whatever state it arrives in. In `.needsFamily` it
+    /// fills the join form, as ever; on a device that already has an archive
+    /// it gets a sentence instead of silence. The server would refuse the
+    /// join anyway (`member_exists`) — this says so before there is a request
+    /// to refuse, in the app's own words, and leaves the one-family-per-device
+    /// rule exactly where it was.
+    private func handle(inviteCode: String) {
+        switch session.mode {
+        case .needsFamily: invitedCode = inviteCode
+        case .inFamily: linkNotice = .deviceInFamily
+        case .local: linkNotice = .deviceHasLocalArchive
+        }
     }
 
     /// `kinlore://join?code=...`

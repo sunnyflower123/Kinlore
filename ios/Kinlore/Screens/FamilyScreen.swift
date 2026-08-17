@@ -11,8 +11,6 @@ struct FamilyScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(SyncEngine.self) private var sync: SyncEngine?
 
-    @State private var freshCode: String?
-    @State private var isSharing = false
     @State private var isShowingPaywall = false
 
     var body: some View {
@@ -105,22 +103,10 @@ struct FamilyScreen: View {
                 }
 
                 Section {
-                    Button {
-                        Task {
-                            freshCode = await session.createInvite()
-                            if freshCode != nil { isSharing = true }
-                        }
-                    } label: {
-                        if session.isWorking {
-                            ProgressView().frame(maxWidth: .infinity)
-                        } else {
-                            Label("Kutsu perheenjäsen", systemImage: "person.badge.plus")
-                                .font(.body.weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                                .elderTapTarget()
-                        }
-                    }
-                    .disabled(session.isWorking)
+                    // Shared with the finished-memory screen's offer card, so
+                    // the two doors hand out the same invitation. See
+                    // `InviteShareButton`.
+                    InviteShareButton()
 
                     ForEach(family.invites) { invite in
                         InviteRow(invite: invite) {
@@ -187,15 +173,6 @@ struct FamilyScreen: View {
         .task { await session.refresh() }
         .refreshable { await session.refresh() }
         .paywallSheet(isPresented: $isShowingPaywall)
-        .sheet(isPresented: $isSharing) {
-            if let code = freshCode {
-                ShareLink(item: Self.inviteText(code: code)) {
-                    Label("Jaa kutsu", systemImage: "square.and.arrow.up")
-                }
-                .presentationDetents([.medium])
-                .padding(Elder.screenPadding)
-            }
-        }
     }
 
     /// What the sync has actually managed, in one line.
@@ -235,33 +212,6 @@ struct FamilyScreen: View {
         return formatter.string(from: date)
     }
 
-    /// The shared text contains both the link and the code. The link is quick,
-    /// but the code works even when the messaging app does not make the link
-    /// tappable — and grandmother cannot be asked to work out why a link will
-    /// not open.
-    ///
-    /// **Both halves carry the family key since PLAN.md §10 lever 3**, joined to
-    /// the invite code by `#`. They have to be the same string: the paste field
-    /// exists so that somebody who cannot open a link can still get in, and a
-    /// fallback that produced a member who could not read anything would be
-    /// worse than no fallback.
-    ///
-    /// This is also where the honesty about lever 3 has to be stated, because
-    /// it is the one thing about it a user could be misled by. The server never
-    /// sees this key — that is the whole design — but **whatever carried this
-    /// message did.** Sending it over a chat app puts the key wherever that
-    /// app keeps it. It is still a large improvement on the archive itself
-    /// being readable in a dump, and it is not the same claim as end-to-end.
-    private static func inviteText(code: String) -> String {
-        let shared = FamilyKey.shareable().map { "\(code)#\($0)" } ?? code
-        return """
-        Liity perheen muistoarkistoon:
-        kinlore://join?code=\(shared)
-
-        Tai avaa sovellus ja liitä tämä koodi:
-        \(shared)
-        """
-    }
 }
 
 private struct MemberRow: View {

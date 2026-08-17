@@ -43,7 +43,9 @@ The findings, each measured on 17 Aug:
    people who need it.** The onboarding intro — *"Kerätkää yhdessä talteen se
    mitä isovanhemmat muistavat…"* — is dropped entirely at accessibility text
    sizes (`OnboardingScreen.swift:51-55`). What remains is a title and two
-   buttons that both assume you already know.
+   buttons that both assume you already know. *(Stands as an observation; the
+   fix this document proposed for it was measured and rejected before it was
+   proposed — see §3.1.)*
 3. **The joiner lands as if nothing had been shared.** After
    *"Liity perheeseen"* the mode flips and `RootView` opens on the default tab
    — Kerro (`RootView.swift:16-25`) — with starter questions, exactly like a
@@ -123,15 +125,19 @@ keiden kesken, consent above the button) → Kerro with opening starters →
 first telling → result with *"Kuulinko nimet oikein?"* → rhythm-gated offer →
 RevenueCat paywall → *"Kiitos — maksu meni läpi"* recovery. Two changes.
 
-### 3.1 The welcome sentence survives large text
+### 3.1 The welcome sentence at large text — withdrawn, by an existing measurement
 
-At accessibility sizes the intro is not dropped but shortened — one clause
-that still says what this is:
+Proposed on 17 Aug and withdrawn the same day, before any code moved: the code
+already carries the measurement this needed. `OnboardingScreen.intro`'s
+comment records that shortening was tried — one sentence is still four lines
+at XXXL, and *"Liity kutsulinkillä"* went below the fold again, the exact
+failure that dropping the intro had fixed. The buttons beat the sentence,
+deliberately: a first screen whose only two actions have to be found by
+scrolling is a first screen this user does not get past.
 
-> **"Kerätkää talteen se mitä isovanhemmat muistavat."**
-
-The illustration stays dropped; a sentence is the part that was load-bearing.
-(Fixes finding 2. The long intro stays as is at ordinary sizes.)
+The withdrawal is recorded rather than deleted, because a proposal that
+quietly vanishes gets proposed again by the next person to notice finding 2.
+Measure before editing that screen; the measurement is in the comment.
 
 ### 3.2 The invite card takes the offer slot for a family of one
 
@@ -217,6 +223,14 @@ The way back into telling is already built: open questions and
 *"&lt;nimi&gt; kysyy"* cards wait on the Kerro tab, and a person arriving from
 a family will meet them on their second tab visit, now with context above
 them. (Fixes finding 3.)
+
+**Building this found the arrival had nothing arriving.** Sync ran at launch,
+on foregrounding and when the entitlement changed — and at no other moment —
+so a fresh joiner's first pull waited for the app to be backgrounded and
+opened again. On a phone that is never quit, that is an arrival that stays
+empty for hours. `KinloreApp` now starts a sync the moment the mode flips
+into a family, which is also what makes the waiting state above a state
+rather than a permanent screen.
 
 ### 4.4 Sharing itself — what stands, said out loud
 
@@ -323,16 +337,26 @@ re-litigate them:
 Phases per PLAN §3; school evenings. P0 fits before 31 Aug (phase C's tail),
 P1 in early phase D beside the paywall craft it neighbours.
 
-| # | Item | §  | Cost | Pays with / owes |
-|---|---|---|---|---|
-| P0-1 | Intro survives accessibility sizes | 3.1 | ½ evening | completion, no removal owed |
-| P0-2 | Invite card in the offer slot, family of one | 3.2 | 1–1½ | replaces the upsell card there; deletes a false sentence |
-| P0-3 | Link always answered (3 strings, moved guard) | 4.1 | ½ | completion of ARCH §4's known shortcoming |
-| P0-4 | Joiner lands on Muistot + "Haetaan perheen muistoja…" | 4.3 | 1 | state derivation, no new surface |
-| P0-5 | *"Kenen puhelin tämä on"* on the join form | 5 | ½ | §16 precedent: rule 1 completion |
-| P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature |
-| P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** |
-| P2 | Own-name row; restore-purchases row outside the paywall | 8 | 1 | only if the 10 Sep rule opens spare time |
+| # | Item | §  | Cost | Pays with / owes | State |
+|---|---|---|---|---|---|
+| P0-1 | ~~Intro survives accessibility sizes~~ | 3.1 | — | — | **Withdrawn** — measured and rejected in `OnboardingScreen.intro` before this document proposed it |
+| P0-2 | Invite card in the offer slot, family of one | 3.2 | 1–1½ | replaces the upsell card there; deletes a false sentence | **Built 17 Aug 2026** |
+| P0-3 | Link always answered (3 strings, moved guard) | 4.1 | ½ | completion of ARCH §4's known shortcoming | **Built 17 Aug 2026** |
+| P0-4 | Joiner lands on Muistot + "Haetaan perheen muistoja…" | 4.3 | 1 | state derivation, no new surface | **Built 17 Aug 2026** — and found the first pull waited for a relaunch; fixed with it |
+| P0-5 | *"Kenen puhelin tämä on"* on the join form | 5 | ½ | §16 precedent: rule 1 completion | **Built 17 Aug 2026** |
+| P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature | Waits for the Worker deploy (R2 behind a payment card) |
+| P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** | Not built |
+| P2 | Own-name row; restore-purchases row outside the paywall | 8 | 1 | only if the 10 Sep rule opens spare time | Not built |
+
+What the built rows shipped with, in the house pattern: two new sweep audits
+(`testMemoriesArrival`, which exercises the real landing flag rather than a
+`-tab` argument, and `testResultOffersTheFamily`, the first audit ever to
+reach a card in the offer slot), a silence test for the answered link
+(`SilentFailureTests`), `ConsentOrderTests` unchanged and covering the grown
+join form in both directions, three new launch arguments in SETUP.md
+(`-seed arrival`, `-seed alone`, `-invite`), and the slot decision in
+`upsell-rhythm-check.swift` — five new cases. Test counts moved 47 → 50 and
+28 → 30, in ARCHITECTURE §1 and README both, which `verify.sh` counts.
 
 Independent fixes already tracked as their own tasks (from §1): the invite
 link's dropped key fragment; the silently swallowed photo-limit 402. The

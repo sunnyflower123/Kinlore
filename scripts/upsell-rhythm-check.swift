@@ -71,6 +71,45 @@ enum UpsellRhythmCheck {
         UpsellRhythm.reset()
         check("the count is gone, not merely paused", UpsellRhythm.shouldShow(hasProposals: false), false)
 
+        // The slot's other half: which card it holds once the rhythm has said
+        // it shows at all. A family of one offered the paid archive is being
+        // told "yksi maksaja avaa sen koko perheelle" with nobody to open it
+        // for; a family of one offered nothing never finds the invitation at
+        // all, four levels deep in Settings. docs/UX.md §3.2.
+        func checkCard(
+            _ label: String, _ actual: UpsellRhythm.Card?, _ expected: UpsellRhythm.Card?
+        ) {
+            if actual == expected {
+                print("  ok   \(label)")
+            } else {
+                failures += 1
+                print("  FAIL \(label): got \(String(describing: actual)), "
+                    + "expected \(String(describing: expected))")
+            }
+        }
+
+        print("— what the slot holds —")
+        checkCard(
+            "no family details, nothing offered",
+            UpsellRhythm.card(membersInFamily: nil, isPaid: false), nil
+        )
+        checkCard(
+            "a family of one is offered the family, never the archive",
+            UpsellRhythm.card(membersInFamily: 1, isPaid: false), .invite
+        )
+        checkCard(
+            "a paid family of one is still offered the family",
+            UpsellRhythm.card(membersInFamily: 1, isPaid: true), .invite
+        )
+        checkCard(
+            "a free family of two is offered the archive",
+            UpsellRhythm.card(membersInFamily: 2, isPaid: false), .archive
+        )
+        checkCard(
+            "a paid family is offered nothing",
+            UpsellRhythm.card(membersInFamily: 3, isPaid: true), nil
+        )
+
         UpsellRhythm.reset()
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)

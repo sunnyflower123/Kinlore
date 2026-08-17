@@ -69,6 +69,13 @@ final class Session {
     /// told not to must not start syncing because the address is still there.
     private let localOnlyKey = "local_only"
 
+    /// Set when a family is joined through an invitation, consumed by
+    /// `RootView` the next time it decides its first tab: the one launch after
+    /// joining opens on Muistot rather than Kerro, because an invitation is to
+    /// something that already exists and the arrival should show it. Device
+    /// state, one-shot, never synced. See docs/UX.md §4.3.
+    static let arrivalPendingKey = "arrival_pending"
+
     /// Whether this archive is one somebody chose to keep to this phone, as
     /// opposed to one that has no backend to sync to. The screens need the
     /// difference: only the first is a decision anybody made.
@@ -89,9 +96,28 @@ final class Session {
 
     init() {
         #if DEBUG
-        if UserDefaults.standard.string(forKey: "seed") == "family" {
+        switch UserDefaults.standard.string(forKey: "seed") {
+        case "family":
             seedDemoFamily()
             return
+        case "arrival":
+            // The joiner's landing, held still. The flag below is the same
+            // one a real join sets, so the test exercises the mechanism that
+            // chooses the first tab rather than simulating its outcome; the
+            // gallery's waiting state is forced by the same seed value,
+            // because it otherwise exists only while a pull is in flight.
+            // The store empties itself for this seed — see `MemoryStore`.
+            seedDemoFamily()
+            UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
+            return
+        case "alone":
+            // A family of one: the state where the finished-memory screen's
+            // offer slot carries the invitation instead of the paid archive.
+            // See docs/UX.md §3.2.
+            seedDemoFamily(alone: true)
+            return
+        default:
+            break
         }
         #endif
         guard AppServices.apiBaseURL != nil else {
@@ -147,6 +173,9 @@ final class Session {
         await perform { client in
             if let key = parts.key { FamilyKey.adopt(key) }
             let result = try await client.join(code: parts.code, displayName: displayName)
+            // Before the mode flips: the flip is what creates the root view,
+            // and the root view is what consumes this.
+            UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
             self.store(familyID: result.familyID)
         }
     }
@@ -304,6 +333,8 @@ final class Session {
         // set here would make "Tyhjennä tämä laite" the only door that does not
         // open either.
         UserDefaults.standard.removeObject(forKey: localOnlyKey)
+        // A wiped device has not just joined anything.
+        UserDefaults.standard.removeObject(forKey: Self.arrivalPendingKey)
         family = nil
         usage = nil
         mode = AppServices.apiBaseURL == nil ? .local : .needsFamily
@@ -334,21 +365,27 @@ final class Session {
     /// `refresh()` cannot overwrite this: it returns early without a client, and
     /// there is no client without an address. So the seed survives the screen's
     /// own `.task`, which is the only thing that would otherwise take it away.
-    private func seedDemoFamily() {
+    /// `alone` seeds the family as one person — its founder, before anybody
+    /// has accepted an invitation. That is the state the offer slot answers
+    /// with the invitation, and it cannot be reached by trimming the member
+    /// list of the shared fixture in a test: the count is read at render time
+    /// from this object.
+    private func seedDemoFamily(alone: Bool = false) {
         let now = Date.now.timeIntervalSince1970
         let day: Double = 24 * 60 * 60
         mode = .inFamily(id: "demo-family")
+        let you = Member(id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day)
         family = Family(
             id: "demo-family",
             name: "Virtaset",
             entitlement: "free",
             you: Family.You(id: "demo-you", role: "owner", displayName: "Minä"),
-            members: [
-                Member(id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day),
+            members: alone ? [you] : [
+                you,
                 Member(id: "demo-aino", displayName: "Aino", role: "member", joinedAt: now - 12 * day),
                 Member(id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day),
             ],
-            invites: [
+            invites: alone ? [] : [
                 Invite(code: "demo-avoin", expiresAt: now + 6 * day, usedCount: 0),
                 Invite(code: "demo-kaytetty", expiresAt: now + 2 * day, usedCount: 2),
             ]

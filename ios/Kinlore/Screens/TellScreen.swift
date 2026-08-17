@@ -785,13 +785,28 @@ private struct ResultView: View {
                     questionSection
                 }
 
-                // The paywall goes exactly here: perceived value peaks when the
-                // memory is finished. Not in onboarding, not in settings — and
-                // not as an obstacle, because the memory is already saved.
-                // Not every time, and never on a screen that is also asking
-                // whether the names were heard right: see `UpsellRhythm`.
-                if model.showsUpsell, let usage = session.usage, !usage.isPaid {
-                    UpsellCard(usage: usage)
+                // The offer slot: one card, on the rhythm, and never on a
+                // screen that is also asking whether the names were heard
+                // right (`UpsellRhythm`). The moment stays the one §8.6 argued
+                // for — value peaks when a memory has just finished — but what
+                // the slot holds depends on who is there to hear it: while the
+                // family is one person the offer is the family itself, and the
+                // paid archive follows once there is somebody to share it
+                // with. See docs/UX.md §3.2.
+                if model.showsUpsell {
+                    switch UpsellRhythm.card(
+                        membersInFamily: session.family?.members.count,
+                        isPaid: session.isPaid
+                    ) {
+                    case .invite:
+                        InviteCard()
+                    case .archive:
+                        if let usage = session.usage, !usage.isPaid {
+                            UpsellCard(usage: usage)
+                        }
+                    case nil:
+                        EmptyView()
+                    }
                 }
 
                 VStack(spacing: 12) {
@@ -1034,6 +1049,35 @@ private struct UpsellCard: View {
         .padding(18)
         .background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
         .paywallSheet(isPresented: $isShowingPaywall)
+    }
+}
+
+/// The other card the offer slot can hold: the family, while it is one person.
+///
+/// The invitation used to live only behind People → Asetukset → Perhe —
+/// four levels from any tab — while this very screen told a family of one
+/// that a single payer opens the archive *"koko perheelle"*. The moment a
+/// memory finishes is when there is finally something worth inviting somebody
+/// into, so the offer of the family sits exactly where the offer of the paid
+/// archive otherwise does, on the same rhythm and under the same rules.
+private struct InviteCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Perheen arkisto", systemImage: "person.2")
+                .font(.headline)
+
+            Text("Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+
+            InviteShareButton()
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
     }
 }
 

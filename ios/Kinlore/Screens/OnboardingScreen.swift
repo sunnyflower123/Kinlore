@@ -418,6 +418,8 @@ private struct JoinFamilyForm: View {
     @Binding var name: String
     @Binding var code: String
 
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+
     @State private var wasPressedEmpty = false
 
     /// The same as `CreateFamilyForm.missing`, and it has more to say here:
@@ -470,6 +472,34 @@ private struct JoinFamilyForm: View {
                     .foregroundStyle(Elder.supporting)
             }
 
+            // The same question the create form asks, for the same person: a
+            // phone joined *for* a grandparent is set up by a grandchild in
+            // the only minutes anybody is answering questions — and joining
+            // was the one path where the text-size floor could never be set,
+            // on precisely the phone that is handed over (docs/UX.md §5). The
+            // long why lives on `CreateFamilyForm`; the wording is identical
+            // on purpose — no new word for an old act (§21).
+            Section {
+                Picker("Kenen puhelin tämä on", selection: $largerText) {
+                    Text("Isovanhemman").tag(true)
+                    Text("Minun").tag(false)
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Kenen puhelin tämä on")
+                    .foregroundStyle(Elder.supporting)
+            } footer: {
+                Text("Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.")
+                    .foregroundStyle(Elder.supporting)
+            }
+
+            // Above the button, for the reason the create form measured: with
+            // a section added in front, a `Form` at the largest text size has
+            // not built the notice by the time the button is pressable.
+            // `ConsentOrderTests` covers this form too, in both directions.
+            WhereMemoriesGo()
+
             Section {
                 Button {
                     guard missing != nil else {
@@ -495,8 +525,6 @@ private struct JoinFamilyForm: View {
                         .elderBody()
                 }
             }
-
-            WhereMemoriesGo()
 
             if let error = session.lastError {
                 Section { ErrorNote(text: error) }

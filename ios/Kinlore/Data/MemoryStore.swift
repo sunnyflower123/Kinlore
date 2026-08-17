@@ -728,7 +728,14 @@ final class MemoryStore {
     func seedDemoArchiveIfRequested() {
         // `-seed empty` is the other half: the empty states are a screen each,
         // and on a device that has ever been used they are unreachable.
-        if UserDefaults.standard.string(forKey: "seed") == "empty" {
+        //
+        // `-seed arrival` and `-seed alone` empty it the same way. Both hold a
+        // Session-side state still (see `Session`), and both need the archive
+        // itself out of the way: a fixture left over from an earlier run would
+        // put content on a screen whose whole point is that none has arrived,
+        // or a history under a result screen that is meant to be a first one.
+        if ["empty", "arrival", "alone"]
+            .contains(UserDefaults.standard.string(forKey: "seed") ?? "") {
             subjects = []
             memories = []
             questions = []

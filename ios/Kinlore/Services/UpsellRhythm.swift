@@ -47,4 +47,34 @@ enum UpsellRhythm {
     static func reset() {
         UserDefaults.standard.removeObject(forKey: key)
     }
+
+    // MARK: - What the slot holds
+
+    /// The two cards the offer slot on the finished-memory screen can carry.
+    /// One slot, one card — §22's framed exception, transferred rather than
+    /// duplicated.
+    enum Card {
+        /// "Kutsu perheenjäsen": the family is still one person.
+        case invite
+        /// "Avaa koko arkisto": a real family on the free tier.
+        case archive
+    }
+
+    /// Which card the slot holds, once `shouldShow` has said it shows at all.
+    ///
+    /// While the family is one person the thing worth offering is the family
+    /// itself — *"yksi maksaja avaa sen koko perheelle"* is a false sentence
+    /// with nobody to open it for — and the paid archive follows once there is
+    /// somebody to share it with. See docs/UX.md §3.2.
+    ///
+    /// `members` is the fetched member count, nil when `Session.family` is:
+    /// with no family details there is nothing to decide from — offline, or a
+    /// single-device archive — and the slot stays empty. A family that has
+    /// paid is offered nothing; it is never asked to invite either, wrongly,
+    /// because a paid family of one still deserves the invitation.
+    static func card(membersInFamily members: Int?, isPaid: Bool) -> Card? {
+        guard let members else { return nil }
+        if members <= 1 { return .invite }
+        return isPaid ? nil : .archive
+    }
 }

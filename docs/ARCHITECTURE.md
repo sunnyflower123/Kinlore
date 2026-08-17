@@ -70,7 +70,7 @@ An honest inventory, not a wish list:
 | A date given by hand, at the precision somebody actually has | **Done and tested**, see §8 |
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 28 sweep tests, each auditing one screen at the default text size and again at the largest, out of 47 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 30 sweep tests, each auditing one screen at the default text size and again at the largest, out of 50 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -677,6 +677,14 @@ The count keeps running even when the card is withheld, so a family whose every
 telling names somebody does not stall the rhythm — the next quiet one carries the
 offer. Four lines of arithmetic, every failure of them silent, so they are
 checked by `scripts/upsell-rhythm-check.swift` rather than by looking.
+
+**And never to a family of one.** Since 17 Aug 2026 the slot the card sits in
+is shared: while the family is one person it carries the invitation instead —
+*"yksi maksaja avaa sen koko perheelle"* was a false sentence with nobody to
+open it for, and the invitation itself lived four levels deep in Settings.
+`UpsellRhythm.card` decides which card, the rhythm above decides when the slot
+shows at all, and the check script covers both halves. The argument is
+docs/UX.md §3.2.
 
 ## 7. Quotas and moderation
 
@@ -2080,12 +2088,14 @@ Two of them are now quieter:
   lives, so the next person to add a button finds the choice already made rather
   than making it again.
 
-**The framed exception is the upsell card.** It keeps its prominent button
-because it is not competing for the same act: it sits inside its own tinted card,
-it is an offer rather than a step, and its position is deliberate — the moment a
-memory finishes is where perceived value peaks (§8.6). A card is its own
-decision. If a second card ever appears on one screen, this exception is the
-thing to re-open.
+**The framed exception is the offer card** — the paid archive, or since
+17 Aug 2026 the invitation while the family is one person (docs/UX.md §3.2);
+one slot, one card at a time, so the exception transfers rather than
+multiplies. It keeps its prominent button because it is not competing for the
+same act: it sits inside its own tinted card, it is an offer rather than a
+step, and its position is deliberate — the moment a memory finishes is where
+perceived value peaks (§8.6). A card is its own decision. If a second card
+ever appears on one screen, this exception is the thing to re-open.
 
 Two things this rule is **not**. It is not "one button per screen": the result
 screen still offers *Valmis* and *Poista tämä muisto*, quietly, because a screen

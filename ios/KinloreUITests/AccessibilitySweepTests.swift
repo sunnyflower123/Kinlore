@@ -31,6 +31,14 @@ import XCTest
 /// test that is green alone and red in company is one whose red gets explained
 /// away. The next person to see this failure should reproduce it before
 /// believing it, and should also not shrug at it twice.
+///
+/// **`testCreateFamilyForm` joined it on 17 Aug 2026**, on a screen that run's
+/// changes had not touched: two contrast findings with *no element and no
+/// frame*, at the default size, red in an eleven-test run and green alone on
+/// the same commit and the same private simulator minutes later. That is two
+/// tests now with the same shape, both ending in unattributable findings —
+/// which strengthens the suspicion above without confirming it, and keeps the
+/// instruction the same: reproduce alone before believing a company red.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 
@@ -670,6 +678,48 @@ final class AccessibilitySweepTests: XCTestCase {
             field.tap()
             field.typeText("Millainen kesä mökillä oli?")
             require(app.buttons["Lähetä kysymys"], "the ask sheet")
+        }
+    }
+
+    /// The joiner's landing: straight onto Muistot, with a waiting state in
+    /// place of an invitation that would be false. `-seed arrival` sets the
+    /// same one-shot flag a real join sets, so the navigation bar reading
+    /// "Muistot" — with no `-tab` argument anywhere — *is* the landing
+    /// mechanism being exercised, not a simulation of its outcome. The waiting
+    /// state itself exists only while the first pull is in flight, which no
+    /// run can hold still, so the same seed forces it. See docs/UX.md §4.3.
+    func testMemoriesArrival() throws {
+        try sweep("Muistot, saapuminen", arguments: ["-seed", "arrival"]) { app, _ in
+            require(app.navigationBars["Muistot"], "the landing on Muistot")
+            require(
+                app.staticTexts
+                    .containing(NSPredicate(format: "label CONTAINS %@", "Haetaan perheen muistoja"))
+                    .firstMatch,
+                "the waiting state"
+            )
+        }
+    }
+
+    /// The offer slot while the family is one person: the invitation, not the
+    /// paid archive — *"yksi maksaja avaa sen koko perheelle"* is a false
+    /// sentence with nobody to open it for. `-tellings-since-upsell 2` puts
+    /// the rhythm one telling from offering, and `-defer structure` keeps the
+    /// result free of proposals, which is the slot's other gate. Nothing had
+    /// ever audited a card in this slot: the paid one needs usage rows only a
+    /// backend sends. See docs/UX.md §3.2.
+    func testResultOffersTheFamily() throws {
+        try sweep(
+            "Tulos, kutsukortti",
+            arguments: [
+                "-seed", "alone", "-defer", "structure", "-screen", "interview",
+                "-tellings-since-upsell", "2",
+            ]
+        ) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "the result screen")
+            let invite = reach(
+                app.buttons["Kutsu perheenjäsen"], in: app, "the invitation in the offer slot"
+            )
+            settle(invite)
         }
     }
 }

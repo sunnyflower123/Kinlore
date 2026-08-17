@@ -9,6 +9,7 @@ import SwiftUI
 struct GalleryScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -65,7 +66,12 @@ struct GalleryScreen: View {
                     // kuvia" there would answer a question nobody asked.
                     if nothingMatches { noResults } else { content }
                 } else if nothingMatches {
-                    emptyState
+                    // A phone that has just joined a family is empty in a
+                    // different way from a family nobody has told anything:
+                    // its content exists and is on its way. The invitation —
+                    // "Lisää vanha valokuva…" — is a false sentence there, for
+                    // exactly as long as the first pull takes.
+                    if isAwaitingFamilyContent { arrivalState } else { emptyState }
                 } else {
                     content
                 }
@@ -139,6 +145,41 @@ struct GalleryScreen: View {
                     : "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen.")
             }
         }
+    }
+
+    /// The first pull after joining is running and nothing has arrived yet.
+    ///
+    /// Only while it actually runs: a pull that failed leaves the ordinary
+    /// invitation as the honest screen, and the sync note's philosophy holds —
+    /// the queue looks after itself, so nothing here asks for anything. See
+    /// docs/UX.md §4.3.
+    private var isAwaitingFamilyContent: Bool {
+        #if DEBUG
+        // `-seed arrival` holds this state still for the audit. Nothing else
+        // can: it exists only while a network request is in flight.
+        if UserDefaults.standard.string(forKey: "seed") == "arrival" { return true }
+        #endif
+        guard let sync, sync.isEnabled, sync.state == .syncing else { return false }
+        return store.syncSeq == 0
+    }
+
+    /// Shown in place of the empty state during that first pull. No button on
+    /// purpose: the content is on its way, and the one wrong thing to offer a
+    /// joiner is a way to start building a second archive beside it.
+    private var arrivalState: some View {
+        VStack(spacing: 18) {
+            ProgressView()
+                .controlSize(.large)
+                // The sentence carries the meaning; a spinner read aloud as
+                // "in progress" beside it says less than nothing.
+                .accessibilityHidden(true)
+            Text("Haetaan perheen muistoja…")
+                .font(.title3.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(Elder.screenPadding)
     }
 
     private var emptyState: some View {
