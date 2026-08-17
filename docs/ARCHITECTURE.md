@@ -69,8 +69,9 @@ An honest inventory, not a wish list:
 | Search over what was told, not only over titles | **Done and tested**, see §8 |
 | A date given by hand, at the precision somebody actually has | **Done and tested**, see §8 |
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
+| What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 30 sweep tests, each auditing one screen at the default text size and again at the largest, out of 50 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 31 sweep tests, each auditing one screen at the default text size and again at the largest, out of 52 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -252,6 +253,20 @@ told get through". The family view says the same thing where somebody goes to
 check rather than to be told — with a time on it, and with *"kaikki lähetetty"*
 when there is nothing waiting, because that is an answer rather than the absence
 of one.
+
+**And since 17 Aug 2026, the other direction.** *"Uutta perheeltä"* at the top
+of Muistot lists the tellings other members made that this phone has not seen —
+author and subject, leading to the subject's card — and when such tellings are
+waiting, they are what the app opens on. A visit marks everything seen: the
+section is a waiting state exactly as the note above is, never furniture, and
+there is no badge and no count anywhere else. Seen-ness is a device-local list
+of telling ids (`NewFromFamily`), like the ladder's comfort (§12) and for the
+same reason — what a family member has or has not read is not the family's
+data. The first visit defines the baseline rather than dumping a joiner's whole
+archive into the section; the arrival state (docs/UX.md §4.3) frames that case.
+The cut guessing round left the reading loop unanswered (PLAN §4.1, §13); this
+is the smaller instrument that answers it, and the map staying out of v1
+(PLAN §10) is the removal that paid for it.
 
 ### Conflict rules
 

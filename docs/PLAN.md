@@ -401,13 +401,17 @@ finished.**
   the Devpost tagline do that, and the demo video explains more in ten seconds
   than any name can.
 - **ASR implementation.** Resolved by the phase A test.
-- **A map of the places.** The data half exists: `subject` carries `lat`, `lon`
-  and `geo_precision`, and place names are looked up on the device as they are
-  told, so the archive accumulates coordinates from now on. The screen is *not*
-  decided — it is not in any phase, and if it is built it takes the place of the
-  family tree's edges (§5, row 7). Read `ARCHITECTURE.md` §18 first: the lookup
-  always answers, and a map that draws every answer as a pin publishes guesses as
-  fact.
+- ~~**A map of the places.**~~ **Decided 17 Aug 2026: no map in v1.** The data
+  half exists and keeps accumulating — `subject` carries `lat`, `lon` and
+  `geo_precision`, and place names are looked up on the device as they are
+  told — so deciding the screen away loses nothing that is being collected.
+  The decision is the removal that paid for the *"Uutta perheeltä"* section
+  (docs/UX.md §6): the guessing round's cut left the reading loop unanswered
+  (§4.1), and an archive that is read is worth more than an archive that is
+  drawn. The §5 row 7 slot the map would have taken stays empty. If a map
+  returns in v1.1, read `ARCHITECTURE.md` §18 first: the lookup always
+  answers, a confident wrong answer is indistinguishable from a right one,
+  and a map that draws every answer as a pin publishes guesses as fact.
 - **Prices.** Free: 1 family / ~20 photos / ~10 AI minutes per month. Paid:
   ~€9.99/month or €59.99/year. Nominal on the Test Store, but considered.
 

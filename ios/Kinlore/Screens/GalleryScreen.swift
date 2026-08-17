@@ -48,6 +48,12 @@ struct GalleryScreen: View {
     /// What is typed in the search field.
     @State private var query = ""
 
+    /// Tellings by other members this phone had not seen when this tab was
+    /// opened. Captured on appearance *before* they are marked seen, so the
+    /// section survives its own visit: what was new stays on screen until the
+    /// next arrival at this tab, and the next arrival starts clean.
+    @State private var newFromFamily: [Memory] = []
+
     private var isSearching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -77,6 +83,10 @@ struct GalleryScreen: View {
                 }
             }
             .navigationTitle("Muistot")
+            .onAppear {
+                newFromFamily = NewFromFamily.unseen(in: store, me: session.identity.memberID)
+                NewFromFamily.markAllSeen(in: store)
+            }
             .searchable(text: $query, prompt: "Etsi")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -216,6 +226,29 @@ struct GalleryScreen: View {
                 // waiting to be answered. Somebody looking for a memory is not
                 // looking for either.
                 if !isSearching {
+                    // What the family told while this phone was away — the
+                    // reading half of the promise, facing the other way from
+                    // the note below it. It exists when there is something and
+                    // not when there is not, and being on this screen is what
+                    // marks it seen: no badge, no count, no debt. docs/UX.md
+                    // §6, and the hole PLAN §4.1 left open when the guessing
+                    // round was cut.
+                    if !newFromFamily.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeading("Uutta perheeltä")
+                            ForEach(newFromFamily) { memory in
+                                // A telling whose subject is gone — rejected,
+                                // or taken back — has nowhere to lead.
+                                if let subject = store.subject(id: memory.subjectID) {
+                                    NavigationLink(value: subject) {
+                                        NewTellingRow(memory: memory, subject: subject)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+
                     // Whether what she told has actually reached the family. The
                     // engine has known this from the beginning and nothing asked it.
                     SyncNote()
@@ -420,6 +453,45 @@ private struct PhotoTile: View {
                 ? "Valokuva, ei vielä muistoja"
                 : "Valokuva, \(store.memories(for: subject.id).count) muistoa"
         )
+    }
+}
+
+/// A telling by another member that this phone has not seen yet. It leads to
+/// the subject's card, where the memory itself is — the same place every other
+/// row on this screen leads, so reading it teaches nothing new.
+private struct NewTellingRow: View {
+    let memory: Memory
+    let subject: Subject
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: subject.kind.symbolName)
+                .font(.title2)
+                .foregroundStyle(Elder.supporting)
+                .frame(width: 34)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(subject.displayTitle)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                // "Kertoi" — the act this whole app is named after, in the
+                // past tense; the author's name is the reason to tap (§11's
+                // argument, read in the other direction).
+                Text("\(memory.authorName) kertoi")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Elder.supporting)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
     }
 }
 

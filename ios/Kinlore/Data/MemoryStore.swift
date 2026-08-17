@@ -747,7 +747,16 @@ final class MemoryStore {
             save()
             return
         }
-        guard UserDefaults.standard.string(forKey: "seed") == "archive" else { return }
+        let seed = UserDefaults.standard.string(forKey: "seed")
+        guard seed == "archive" || seed == "unseen" else { return }
+        // `-seed unseen` is the archive with a reading debt: the same fixture,
+        // plus a seen-baseline with nothing in it, so every telling by the
+        // fixture's Mummo is one this phone has not seen. The section and the
+        // landing that follow are otherwise unreachable — a real one needs a
+        // second device to have told something between two visits.
+        if seed == "unseen" {
+            UserDefaults.standard.set([String](), forKey: NewFromFamily.seenKey)
+        }
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
         let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")

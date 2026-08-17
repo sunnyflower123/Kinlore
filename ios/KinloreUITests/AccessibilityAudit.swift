@@ -238,12 +238,21 @@ enum AccessibilityPolicy {
     ///
     /// Not a forgiveness margin any more — it is the strip where a contrast
     /// finding is answered by counting pixels rather than by trusting either
-    /// side. 40 pt because that is the outer limit the earlier note here named
-    /// as worth thinking about, and two samples sit inside it: `Elder.supporting`
-    /// 9 pt above the bar, and the gallery's "Kerro tästä" at 24.37 pt, which
-    /// measures 5.40:1 on screen against a 4.5:1 minimum and had been failing a
-    /// test for it.
-    static let fadeReach: CGFloat = 40
+    /// side. 40 pt was the outer limit the earlier note here named as worth
+    /// thinking about, and two samples sat inside it: `Elder.supporting` 9 pt
+    /// above the bar, and the gallery's "Kerro tästä" at 24.37 pt, which
+    /// measures 5.40:1 on screen against a 4.5:1 minimum and had been failing
+    /// a test for it.
+    ///
+    /// 60 pt since 17 Aug 2026. The first audit ever to reach a row at the
+    /// top of Muistot at the largest size reported primary body text —
+    /// "Eeva", a `NewTellingRow` title, the strongest text colour in the app —
+    /// at 52 pt above the bar, where the XXXL bar's taller capsule pushes its
+    /// effect past the old band. Widening this strip widens the measurement
+    /// and not the forgiveness: everything in it is still decided by
+    /// `ContrastMeter`, so a genuinely faint label inside it goes on failing,
+    /// now with its measured ratio printed beside it.
+    static let fadeReach: CGFloat = 60
 
     /// `ContentUnavailableView` sizes its own title and description, and it caps
     /// their growth. These are its labels, not ours. The empty states matter in

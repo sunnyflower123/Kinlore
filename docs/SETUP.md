@@ -115,6 +115,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | `-seed arrival` | DEBUG | The joiner's landing, held still: sets the same one-shot flag a real join sets — so the app opens on Muistot with no `-tab` argument — and forces the gallery's waiting state, which otherwise exists only while the first pull is in flight. Empties the archive the way `-seed empty` does. See docs/UX.md §4.3. |
 | `-seed alone` | DEBUG | A family of one, with no server behind it: the state where the finished-memory screen's offer slot carries the invitation instead of the paid archive. Empties the archive. See docs/UX.md §3.2. |
 | `-invite <code>` | DEBUG | Feeds the invite-link handler at launch, as though `kinlore://join?code=<code>` had been tapped. The only way a test run can reach the wrong-time answers — a link arriving on a device that already belongs to a family, or one with a single-device archive. |
+| `-seed unseen` | DEBUG | The demo archive plus an empty seen-baseline, so every telling by the fixture's Mummo is one this phone has not seen: the *"Uutta perheeltä"* section, and the Muistot landing that follows from it. A real one needs a second device to have told something between two visits. |
 
 These exist because some screens sit behind a tap, and two things that need to
 reach them have no hands: a screenshot run, and **filming the demo video**

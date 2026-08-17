@@ -74,7 +74,10 @@ final class Session {
     /// joining opens on Muistot rather than Kerro, because an invitation is to
     /// something that already exists and the arrival should show it. Device
     /// state, one-shot, never synced. See docs/UX.md §4.3.
-    static let arrivalPendingKey = "arrival_pending"
+    ///
+    /// `nonisolated`: a string constant needs no actor, and the tab decision
+    /// that reads it runs outside one.
+    nonisolated static let arrivalPendingKey = "arrival_pending"
 
     /// Whether this archive is one somebody chose to keep to this phone, as
     /// opposed to one that has no backend to sync to. The screens need the

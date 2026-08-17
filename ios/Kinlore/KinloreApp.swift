@@ -175,7 +175,9 @@ struct KinloreApp: App {
             // Without a backend the app is a single-device archive and no join
             // screen is shown at all. That keeps development and demoing going
             // even when the Worker is down.
-            RootView()
+            RootView(opensOnNewFromFamily: !NewFromFamily.unseen(
+                in: store, me: session.identity.memberID
+            ).isEmpty)
         }
     }
 

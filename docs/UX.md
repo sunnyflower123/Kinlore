@@ -274,12 +274,21 @@ Two shapes, one derivation:
   Nothing changes.
 - **The reader returns.** New, and the smallest instrument that answers
   finding 7: **"Uutta perheeltä"** — a section at the top of Muistot listing
-  tellings by *other* members with `seq` above a device-local
-  `memories.lastSeenSeq`, author and subject on the row, tap → the subject's
-  card. Visiting Muistot advances the cursor. No red badges, no counts on the
-  tab bar, no notifications — a section that exists when there is something
-  and does not when there is not, exactly like `SyncNote` facing the other
-  direction.
+  tellings by *other* members this phone has not seen, author and subject on
+  the row, tap → the subject's card. Visiting Muistot marks everything seen.
+  No red badges, no counts on the tab bar, no notifications — a section that
+  exists when there is something and does not when there is not, exactly like
+  `SyncNote` facing the other direction.
+
+  **Built 17 Aug 2026**, with one mechanism correction against what this
+  section first sketched: seen-ness is a device-local list of telling ids
+  (`memories.seen`, `NewFromFamily`), not a `lastSeenSeq` cursor — a `Memory`
+  row carries no `seq` on the device, and at hundreds of rows a list is the
+  simpler honest instrument. Two consequences fell out of building it: the
+  first visit defines the baseline rather than dumping a joiner's whole
+  archive into the section (the arrival state frames that case), and
+  "by other members" is exactly `authorID != me` with nil excluded, since a
+  locally told memory has no author id until the server assigns one.
 - **The default tab follows it.** Unseen tellings by others → open on
   Muistot; otherwise → Kerro. The elder whose family has been reading her
   stories opens onto *their* newest telling — which is the reading loop
@@ -345,7 +354,7 @@ P1 in early phase D beside the paywall craft it neighbours.
 | P0-4 | Joiner lands on Muistot + "Haetaan perheen muistoja…" | 4.3 | 1 | state derivation, no new surface | **Built 17 Aug 2026** — and found the first pull waited for a relaunch; fixed with it |
 | P0-5 | *"Kenen puhelin tämä on"* on the join form | 5 | ½ | §16 precedent: rule 1 completion | **Built 17 Aug 2026** |
 | P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature | Waits for the Worker deploy (R2 behind a payment card) |
-| P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** | Not built |
+| P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** | **Built 17 Aug 2026** — the payment is recorded in PLAN §10's map row; mechanism corrected to a seen-id list, see §6 |
 | P2 | Own-name row; restore-purchases row outside the paywall | 8 | 1 | only if the 10 Sep rule opens spare time | Not built |
 
 What the built rows shipped with, in the house pattern: two new sweep audits

@@ -722,4 +722,23 @@ final class AccessibilitySweepTests: XCTestCase {
             settle(invite)
         }
     }
+
+    /// The reading half of the promise: what the family told while this phone
+    /// was away, at the top of Muistot — and the landing that follows from it,
+    /// with no `-tab` argument anywhere, which is the derivation being
+    /// exercised. `-seed unseen` is the demo archive plus an empty
+    /// seen-baseline, so Mummo's tellings are waiting; a real one needs a
+    /// second device to have told something between visits. See docs/UX.md §6.
+    func testMemoriesNewFromFamily() throws {
+        try sweep("Muistot, uutta perheeltä", arguments: ["-seed", "unseen"]) { app, _ in
+            require(app.navigationBars["Muistot"], "the landing on Muistot")
+            require(app.staticTexts["Uutta perheeltä"], "the section heading")
+            require(
+                app.buttons
+                    .matching(NSPredicate(format: "label CONTAINS %@", "Mummo kertoi"))
+                    .firstMatch,
+                "a telling by somebody else"
+            )
+        }
+    }
 }

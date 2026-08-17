@@ -8,12 +8,13 @@ struct RootView: View {
         case memories, tell, people
 
         /// Telling is the default: the app opens on what it exists for, not on
-        /// a list.
+        /// a list. Two states outrank it, both about arrival rather than
+        /// preference — joining, and tellings from others waiting unseen.
         ///
         /// Development and screenshot aid: `-tab memories` or `-tab people` as
         /// a launch argument opens the given tab directly, so screenshots can be
         /// taken without any tapping. DEBUG builds only.
-        static var initial: Tab {
+        static func initial(newFromFamily: Bool) -> Tab {
             #if DEBUG
             switch UserDefaults.standard.string(forKey: "tab") {
             case "memories": return .memories
@@ -30,6 +31,12 @@ struct RootView: View {
                 UserDefaults.standard.removeObject(forKey: Session.arrivalPendingKey)
                 return .memories
             }
+            // The reader's return: the family has told things this phone has
+            // not seen, so the app opens on them — the reading loop finally
+            // pointing both ways (docs/UX.md §6). If the phase E visit shows
+            // this flip costs the teller her button, this one condition is
+            // the thing to revert; the section stays either way.
+            if newFromFamily { return .memories }
             return .tell
         }
     }
@@ -37,7 +44,15 @@ struct RootView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
 
-    @State private var selection: Tab = Tab.initial
+    @State private var selection: Tab
+
+    /// The caller decides whether unseen tellings are waiting, because it has
+    /// the store and a `@State`'s initial value cannot ask the environment.
+    /// Evaluated once per root-view identity, so a person's own tab choice is
+    /// never overridden mid-session.
+    init(opensOnNewFromFamily: Bool = false) {
+        _selection = State(initialValue: Tab.initial(newFromFamily: opensOnNewFromFamily))
+    }
 
     var body: some View {
         TabView(selection: $selection) {

@@ -275,6 +275,9 @@ struct SettingsScreen: View {
         QuestionLadder.reset()
         UpsellRhythm.reset()
         TranscriptionAttempts.reset()
+        // What this phone has seen of the family's tellings goes the same way:
+        // a record about the person holding the phone, not about the family.
+        NewFromFamily.reset()
         // Last, because it is what makes the wipe stick: with the old identity
         // the next sync would pull the whole archive straight back.
         session.renewIdentity()

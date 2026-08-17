@@ -231,7 +231,7 @@ elif [ -n "${KINLORE_TEST_SIM:-}" ]; then
 			-destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" \
 			-derivedDataPath "$OUT/DerivedData-$KINLORE_TEST_SIM" test
 	}
-	run "50 UI tests, 30 of them accessibility" ui_tests
+	run "52 UI tests, 31 of them accessibility" ui_tests
 	# After the tests, because it needs the app installed and they install it.
 	# XCUITest cannot do this one: the zip lands in the app's container and the
 	# test runner is not allowed to look inside it.
