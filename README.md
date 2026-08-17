@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-blue.svg" alt="MIT licence"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-blue.svg" alt="Apache 2.0 licence"></a>
 </p>
 
 A family's shared memory archive. An old person rambles; the AI turns it into
@@ -381,4 +381,4 @@ spelled out in [CLAUDE.md](CLAUDE.md).
 
 ## Licence
 
-[MIT](LICENSE).
+[Apache 2.0](LICENSE).

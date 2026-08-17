@@ -343,12 +343,19 @@ finished.**
 
 ## 10. Open decisions
 
-- ~~**Licence.**~~ **Decided: MIT**, canonical text in `LICENSE`. AGPL-3.0 was
+- ~~**Licence.**~~ **Decided: Apache-2.0**, canonical text in `LICENSE`, verified
+  identical to the reference copy apart from the copyright line. AGPL-3.0 was
   the alternative and would have made commercial copying unattractive, but it is
   effectively incompatible with App Store distribution — and this plan
   deliberately leaves a store release open for v1.1 (see `SETUP.md`). The
   protection AGPL buys matters for server software; here the moat is in the
   product decisions, not the code.
+
+  This row said MIT and was closed on 16 Aug 2026. It was reopened and changed
+  on 17 Aug at the author's decision — Apache-2.0 says the same thing about
+  copying and adds an explicit patent grant, which costs nothing here. The
+  copyright line is `Kinlore contributors` rather than a personal name. That is
+  deliberate; do not replace it with one.
 - ~~**Name.**~~ **Decided 15 Aug 2026: Kinlore.** *Lore* is knowledge that moves
   by being told rather than written, which is §1's claim in one word, and *kin*
   scopes it to the family without promising genealogy — so row 7 of §5 can be
