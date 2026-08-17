@@ -25,7 +25,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -254,20 +254,43 @@ if (active.length === 0) {
   process.exit(1)
 }
 
-const samples = entries.filter((f) => AUDIO_EXT.has(extname(f).toLowerCase()))
+// Provenance, and it decides which of the two questions below can be answered.
+//
+// A sample counts as REAL only if it sits in a `real/` subdirectory. That fails
+// closed on purpose: an unmarked file is treated as synthetic, so the worst case
+// is a go/no-go that refuses to answer rather than one that answers wrongly.
+// PLAN.md §8 spends three paragraphs untangling exactly this confusion, and the
+// bench used to invite it by printing "usable" against text-to-speech.
+const realDir = join(dir, 'real')
+const realEntries = existsSync(realDir)
+  ? readdirSync(realDir).filter((f) => AUDIO_EXT.has(extname(f).toLowerCase()))
+  : []
+const samples = [
+  ...entries
+    .filter((f) => AUDIO_EXT.has(extname(f).toLowerCase()))
+    .map((f) => ({ file: f, dir, real: false })),
+  ...realEntries.map((f) => ({ file: f, dir: realDir, real: true })),
+]
 if (samples.length === 0) {
   console.error(`No audio files in ${dir}`)
   process.exit(1)
 }
 
 console.log(`Engines: ${active.map((e) => e.name).join(', ')}`)
-console.log(`Samples: ${samples.length}\n`)
+console.log(
+  `Samples: ${samples.length} ` +
+    `(${samples.filter((s) => s.real).length} real, ` +
+    `${samples.filter((s) => !s.real).length} synthetic)\n`,
+)
 
-const totals = new Map(active.map((e) => [e.name, { werScores: [], nameScores: [] }]))
+const totals = new Map(
+  active.map((e) => [e.name, { werScores: [], nameScores: [], realWer: [], realNames: [] }]),
+)
 
-for (const sample of samples) {
-  const audioPath = join(dir, sample)
-  const refPath = join(dir, basename(sample, extname(sample)) + '.txt')
+for (const entry of samples) {
+  const sample = entry.file
+  const audioPath = join(entry.dir, sample)
+  const refPath = join(entry.dir, basename(sample, extname(sample)) + '.txt')
 
   let reference
   try {
@@ -278,7 +301,10 @@ for (const sample of samples) {
   }
 
   const bytes = await readFile(audioPath)
-  console.log(`\n━━ ${sample}  (${(bytes.length / 1024 / 1024).toFixed(1)} MB)`)
+  console.log(
+    `\n━━ ${sample}  (${(bytes.length / 1024 / 1024).toFixed(1)} MB)  ` +
+      `${entry.real ? 'REAL SPEECH' : 'synthetic'}`,
+  )
   const refWords = normalize(reference)
 
   for (const engine of active) {
@@ -296,6 +322,11 @@ for (const sample of samples) {
 
     totals.get(engine.name).werScores.push(w)
     if (names) totals.get(engine.name).nameScores.push(names.recall)
+    // Kept apart, because only these can answer the concept question.
+    if (entry.real) {
+      totals.get(engine.name).realWer.push(w)
+      if (names) totals.get(engine.name).realNames.push(names.recall)
+    }
 
     const nameStr = names
       ? `names ${(names.recall * 100).toFixed(0)}% (${names.total})` +
@@ -308,7 +339,7 @@ for (const sample of samples) {
 
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
 
-console.log('\n━━ SUMMARY')
+console.log('\n━━ WHICH ENGINE (relative — this is what synthetic audio is good for)')
 const ranked = active
   .map((e) => ({ name: e.name, ...totals.get(e.name) }))
   .filter((r) => r.werScores.length > 0)
@@ -316,14 +347,93 @@ const ranked = active
   .sort((a, b) => a.wer - b.wer)
 
 for (const r of ranked) {
-  const verdict = r.wer < 0.15 ? 'usable' : r.wer < 0.30 ? 'borderline' : 'NOT ENOUGH'
+  const band = r.wer < 0.15 ? 'usable' : r.wer < 0.30 ? 'borderline' : 'NOT ENOUGH'
   console.log(
     `  ${r.name.padEnd(26)} WER ${(r.wer * 100).toFixed(1).padStart(5)}%  ` +
-      `names ${r.names === null ? '  —' : (r.names * 100).toFixed(0).padStart(3) + '%'}  ${verdict}`,
+      `names ${r.names === null ? '  —' : (r.names * 100).toFixed(0).padStart(3) + '%'}  ${band}`,
   )
 }
 
+// ── The other question, which is not the same one ────────────────────────────
+//
+// PLAN.md §8 sets two bars and calls the first of them a tripwire: below ~80 %
+// on proper nouns, rethink the concept; and this file's own header says a word
+// error rate above 30 % is not usable. Both are claims about ABSOLUTE quality on
+// REAL elderly speech, and the ranking above cannot answer them — the generator
+// says so in its own docstring, because text-to-speech produces no dialect, no
+// stammering, no trailing off, and the figures are therefore optimistic.
+//
+// The optimistic run already missed both bars: 68 % on names against 80, and
+// 37.8 % WER against 30. So this section exists to stop that being mistaken for
+// the answer in either direction — it refuses rather than guesses.
+const NAME_TRIPWIRE = 0.8
+const WER_LIMIT = 0.3
+
+/// The engine the app actually ships, read from the Worker's config rather than
+/// repeated here. Two places for one fact is how the other numbers in this repo
+/// went stale.
+function shippedModel() {
+  try {
+    const raw = readFileSync(join(dirname(resolve(process.argv[1])), '..', 'backend', 'wrangler.jsonc'), 'utf8')
+    return raw.match(/"MODEL_TRANSCRIBE"\s*:\s*"([^"]+)"/)?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+console.log('\n━━ IS THE CONCEPT VIABLE (absolute — needs real speech)')
+const shipped = shippedModel()
+const realCount = samples.filter((s) => s.real).length
+
+if (realCount === 0) {
+  console.log('  NOT ANSWERED. No real recordings were measured.')
+  console.log('')
+  console.log('  Every sample here is synthetic, and synthetic audio cannot answer this.')
+  console.log('  Put real recordings of an elderly speaker in samples/real/, each with a')
+  console.log('  hand-written .txt of what was actually said, and run this again. Three are')
+  console.log('  enough. See PLAN.md §8 and samples/LUEMINUT.txt.')
+  console.log('')
+  console.log('  Until then risk 2 is a measurement that has not been taken, not a risk')
+  console.log('  that has been retired — and the ranking above is not a second opinion on it.')
+} else {
+  const engine = active.find((e) => e.model === shipped) ?? null
+  const scores = engine ? totals.get(engine.name) : null
+  const rw = avg(scores?.realWer ?? [])
+  const rn = avg(scores?.realNames ?? [])
+
+  if (!engine) {
+    console.log(`  The shipped model (${shipped ?? 'unknown'}) was not among the engines run.`)
+    console.log('  The bars below are only meaningful for the one the app actually uses.')
+  } else if (rw === null) {
+    console.log(`  ${engine.name} produced no usable result on the real recordings.`)
+  } else {
+    const namesOK = rn !== null && rn >= NAME_TRIPWIRE
+    const werOK = rw <= WER_LIMIT
+    console.log(`  Engine: ${engine.name}   Real recordings: ${realCount}`)
+    console.log(
+      `  Proper nouns ${(rn === null ? NaN : rn * 100).toFixed(0)}% ` +
+        `(tripwire ${NAME_TRIPWIRE * 100}%)  ${namesOK ? 'ok' : 'BELOW'}`,
+    )
+    console.log(
+      `  Word errors  ${(rw * 100).toFixed(1)}% ` +
+        `(limit ${WER_LIMIT * 100}%)  ${werOK ? 'ok' : 'ABOVE'}`,
+    )
+    console.log('')
+    if (namesOK && werOK) {
+      console.log('  PASSES both bars on real speech. Risk 2 can be retired — write down the')
+      console.log('  numbers and the date in PLAN.md §8 rather than the word "passed".')
+    } else {
+      console.log('  DOES NOT PASS. PLAN.md §8 says to rethink the concept at this point.')
+      console.log('  Read what it already says before doing that: the original audio is kept')
+      console.log('  forever and is playable, the raw transcript is kept beside the cleaned')
+      console.log('  text, and names can be corrected from the person card. One proper noun')
+      console.log('  in three being wrong is the premise those were built for. The decision')
+      console.log('  is whether the family still recognises what she said.')
+    }
+  }
+}
+
 console.log(
-  '\nRemember: proper-noun recall weighs more than WER. The family tree is built\n' +
-    'out of names, and a wrong name produces a wrong person that nobody can fix later.',
+  '\nProper-noun recall weighs more than WER. The family tree is built out of\n' +
+    'names, and a wrong name produces a wrong person that nobody can fix later.',
 )
