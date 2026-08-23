@@ -198,7 +198,16 @@ export default {
 
 		// --- Routes that require authentication ------------------------------
 
-		const session = await authenticate(request, env)
+		// Wrapped like everything downstream of it: this is the one D1 call
+		// that runs before every route's own wrapper, and a database
+		// exception here would escape as a raw Worker error ahead of rule
+		// 9's uniform shape.
+		let session: Awaited<ReturnType<typeof authenticate>>
+		try {
+			session = await authenticate(request, env)
+		} catch (err) {
+			return failure(err, 'auth')
+		}
 
 		if (url.pathname === '/family' && request.method === 'GET') {
 			if (!session) return json({ error: 'unauthorized' }, 401)

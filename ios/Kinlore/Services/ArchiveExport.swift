@@ -208,12 +208,17 @@ enum ArchiveExport {
         // complete while the originals had been silently skipped — and this
         // page is the copy that outlives the app, so a gap it does not name
         // is a gap nobody will ever know to fill.
+        // Two whole sentences rather than a shared tail: the tail's verb has
+        // a number, and "Se on … ja tulevat" is not Finnish. Nor does the
+        // sentence name the family's archive — on a single-phone archive
+        // there is none, and a promise about where the files are must be
+        // true in both modes.
         if missingMedia > 0 {
             out += "<p class=\"meta\"><strong>Huom:</strong> "
             out += missingMedia == 1
-                ? "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on"
-                : "\(missingMedia) kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat"
-            out += " tallessa perheen arkistossa ja tulevat mukaan seuraavaan vientiin.</p>\n"
+                ? "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on tallessa ja tulee mukaan seuraavaan vientiin."
+                : "\(missingMedia) kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat tallessa ja tulevat mukaan seuraavaan vientiin."
+            out += "</p>\n"
         }
 
         var empty: [Subject] = []
@@ -255,7 +260,7 @@ enum ArchiveExport {
                     // tallessa" over an <audio> element that never came.
                     out += audioNames[memory.id] != nil
                         ? "<p class=\"pending\">Ääni tallessa, tekstiä ei ehditty kirjoittaa.</p>\n"
-                        : "<p class=\"pending\">Ääni on tallessa perheen arkistossa, mutta ei ollut saatavilla tähän vientiin.</p>\n"
+                        : "<p class=\"pending\">Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin.</p>\n"
                 } else {
                     for paragraph in memory.body.components(separatedBy: "\n") where !paragraph.isEmpty {
                         out += "<p>\(escaped(paragraph))</p>\n"

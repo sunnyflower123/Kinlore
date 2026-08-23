@@ -780,8 +780,10 @@ final class TellViewModel {
         voice.stop()
         leaveInterview()
         target = initialTarget
-        question = initialQuestion
-        phase = .idle
+        // Through the same door as every other return to .idle, so the
+        // question-resets-with-the-phase invariant is enforced by the call
+        // graph rather than kept by two lines agreeing.
+        returnToIdle()
         draft = ""
         transcript = nil
         result = nil

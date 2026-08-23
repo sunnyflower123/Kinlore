@@ -260,8 +260,8 @@ struct SettingsScreen: View {
         } message: {
             Text(
                 missingFromExport == 1
-                    ? "Yksi kuva tai äänitys ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Se on tallessa perheen arkistossa."
-                    : "\(missingFromExport) kuvaa tai äänitystä ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Ne ovat tallessa perheen arkistossa."
+                    ? "Yksi kuva tai äänitys ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Se on yhä tallessa ja tulee mukaan seuraavaan vientiin."
+                    : "\(missingFromExport) kuvaa tai äänitystä ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Ne ovat yhä tallessa ja tulevat mukaan seuraavaan vientiin."
             )
         }
     }

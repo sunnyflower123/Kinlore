@@ -351,6 +351,26 @@ enum AccessibilityPolicy {
             return true
         }
 
+        // **The keyboard's own prediction strip.** The QuickType bar sits
+        // flush ABOVE `app.keyboards`' frame — touching it, which `intersects`
+        // does not count — and its three candidate cells arrive with no
+        // description when there is nothing to predict. They are the system's
+        // cells over the system's keys: nothing this app draws lives in that
+        // band while the keyboard is up, and nothing this app could do would
+        // label them. Found by `testMemoriesSearching` on a fresh simulator,
+        // and reproduced identically on a commit from before the screen was
+        // last touched — the strip is environment, not code. Narrow three
+        // ways: only while a keyboard is up, only the strip's own height
+        // flush above the keys, and only the descriptionless finding — a
+        // contrast failure in the same band still counts.
+        if !keyboard.isNull,
+           let element = issue.element, element.label.isEmpty,
+           issue.auditType != .contrast,
+           element.frame.maxY <= keyboard.minY,
+           element.frame.minY >= keyboard.minY - 48 {
+            return true
+        }
+
         // **A control that is switched off.** iOS draws a disabled control dim
         // on purpose — that is what "not yet" looks like — and the contrast
         // minimum exempts inactive components for exactly that reason. The
