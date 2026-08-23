@@ -127,9 +127,10 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 		.first<{ id: string; family_id: string }>()
 
 	if (bound && bound.family_id !== session.familyID) {
-		console.error(
-			`[entitlement] customer ${customerID} is already bound to family ${bound.family_id}`,
-		)
+		// The fact without the ids: the customer id is the payer's member UUID,
+		// and this file's own rule says a subscriber's identifiers do not
+		// belong in the log. The ids are in D1 when actually needed.
+		console.error('[entitlement] customer already bound to another family')
 		return { error: 'customer_belongs_to_another_family' as const }
 	}
 
@@ -172,11 +173,28 @@ type WebhookEvent = {
 	app_user_id?: string
 	expiration_at_ms?: number | null
 	product_id?: string
+	/// Why a CANCELLATION happened. UNSUBSCRIBE is auto-renew going off;
+	/// CUSTOMER_SUPPORT is a refund. The distinction is the whole event.
+	cancel_reason?: string
 }
 
-/// Events that end the entitlement immediately regardless of its expiry.
-/// A refund and a transfer away do not wait for expiration.
-const REVOKING = new Set(['CANCELLATION', 'EXPIRATION', 'REFUND', 'TRANSFER', 'SUBSCRIPTION_PAUSED'])
+/// Whether an event ends the entitlement immediately, regardless of the
+/// stored expiry. Measured against RevenueCat's event semantics rather than
+/// assumed — the assumed version cost a family its paid month:
+///
+/// - There is no REFUND event type. A refund arrives as CANCELLATION with
+///   `cancel_reason: CUSTOMER_SUPPORT`, and it is the only CANCELLATION that
+///   revokes. The common one — UNSUBSCRIBE, auto-renew switched off — means
+///   the payer keeps what they paid for until EXPIRATION arrives, and this
+///   used to be a set that locked the whole family out of a period already
+///   paid for the moment anybody toggled the switch.
+/// - SUBSCRIPTION_PAUSED does not end access either; RevenueCat's guidance
+///   is to revoke on the EXPIRATION that follows the pause.
+/// - EXPIRATION, and a TRANSFER away, end it at once.
+function revokes(event: WebhookEvent): boolean {
+	if (event.type === 'EXPIRATION' || event.type === 'TRANSFER') return true
+	return event.type === 'CANCELLATION' && event.cancel_reason === 'CUSTOMER_SUPPORT'
+}
 
 /// Keeps the entitlement current without the app being opened.
 ///
@@ -196,15 +214,22 @@ export async function handleWebhook(env: Env, event: WebhookEvent) {
 	// id. Not an error — the next /entitlement/sync fixes it.
 	if (!member) return { ignored: 'unknown_customer' as const }
 
-	const revoking = REVOKING.has(event.type ?? '')
+	const revoking = revokes(event)
 	const expires = revoking
 		? null
 		: event.expiration_at_ms
 			? Math.floor(event.expiration_at_ms / 1000)
 			: null
 
+	// An event that neither revokes nor carries a paid-through date has
+	// nothing to say about the entitlement — applying its null would end one
+	// the event was not about.
+	if (!revoking && expires === null) return { ignored: 'no_expiration' as const }
+
 	const result = await applyEntitlement(env, member.family_id, member.id, expires)
-	console.log(`[entitlement] ${event.type} → ${member.family_id} = ${result.entitlement}`)
+	// The event type and the outcome; never the family or customer ids, for
+	// the reason the HTTP-error path above spells out.
+	console.log(`[entitlement] ${event.type} → ${result.entitlement}`)
 	return result
 }
 

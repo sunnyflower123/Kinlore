@@ -292,6 +292,15 @@ node scripts/invite-boundary-check.mjs
 # on this machine at all. After touching the member table or entitlement.ts.
 node scripts/entitlement-binding-check.mjs
 
+# When the webhook may take the paid tier away. Drives the real handleWebhook
+# over the shipping schema in in-memory SQLite — no Worker, no RevenueCat
+# secret. The rule is RevenueCat's and was assumed wrong once: there is no
+# REFUND event (a refund is CANCELLATION with cancel_reason CUSTOMER_SUPPORT),
+# and a plain auto-renew-off must keep the tier until EXPIRATION — the old set
+# locked a family out of a month somebody had paid for. After touching
+# entitlement.ts.
+node scripts/webhook-revocation-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after

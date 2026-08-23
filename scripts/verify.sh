@@ -92,6 +92,11 @@ echo
 echo "Invariants"
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "one purchase unlocks one family" entitlement_binding
+# The webhook's revocation rules, driven through the real handleWebhook over
+# the shipping schema in in-memory SQLite. The rule is RevenueCat's and it was
+# assumed wrong once: auto-renew going off — the most common subscriber act —
+# locked the family out of a month somebody had paid for.
+run "a cancelled payer keeps the paid month" node scripts/webhook-revocation-check.mjs
 # Rule 8, without making the request. `complete()` is imported straight out of
 # openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
 # something that keeps the body. Nothing leaves the machine and nothing is

@@ -668,7 +668,8 @@ it current without the app having to be opened.
 | Subscription ends | The family returns to the free tier. **Nothing is deleted.** Existing photos and audio remain and stay readable; the limits apply only to new content. |
 | The payer leaves the family | The right lapses on the next webhook. Another member can buy. |
 | Two payers | The longest expiry wins. Both are shown in the family view. |
-| Refund | The webhook drops the right immediately. |
+| Refund | The webhook drops the right immediately. There is no REFUND event: it arrives as CANCELLATION with `cancel_reason: CUSTOMER_SUPPORT`, which is the only cancellation that revokes. |
+| Auto-renew switched off | Nothing, until the EXPIRATION event ends the period that was paid for. This was assumed wrong once — a plain CANCELLATION revoked at once, locking the family out of a paid month — and `webhook-revocation-check.mjs` now pins the split. |
 
 The rule **"downgrade never deletes"** is absolute. A family that loses memories
 when the payment ends never comes back, and that is not a product worth building.
