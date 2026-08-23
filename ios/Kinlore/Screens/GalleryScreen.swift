@@ -53,6 +53,17 @@ struct GalleryScreen: View {
     /// section survives its own visit: what was new stays on screen until the
     /// next arrival at this tab, and the next arrival starts clean.
     @State private var newFromFamily: [Memory] = []
+    /// The cards pushed on top of this tab. Owned here so a pop-back can be
+    /// told apart from an arrival — see `isReturningFromCard`.
+    @State private var path: [Subject] = []
+    /// Whether the next appearance of this root is a return from a pushed
+    /// card rather than an arrival at the tab. Set when a push covers the
+    /// root (the path is non-empty at that moment), consumed by `onAppear`.
+    /// Without it, reading ONE of three new tellings erased the other two:
+    /// the pop-back re-ran the capture after everything was already marked
+    /// seen, so the section supported exactly one read per visit and the
+    /// rest left no trace anywhere.
+    @State private var isReturningFromCard = false
 
     private var isSearching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -63,7 +74,7 @@ struct GalleryScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 // Three states, and the search has to be asked about first.
                 if isSearching {
@@ -84,8 +95,28 @@ struct GalleryScreen: View {
             }
             .navigationTitle("Muistot")
             .onAppear {
+                // A pop-back from a card is a visit already in progress, not
+                // a new arrival: the captured section stays, the seen-marking
+                // has already happened. A tab switch leaves the flag false,
+                // so returning to the tab still starts clean — the half
+                // `testNewFromFamilyClearsOnceSeen` pins.
+                if isReturningFromCard {
+                    isReturningFromCard = false
+                    return
+                }
                 newFromFamily = NewFromFamily.unseen(in: store, me: session.identity.memberID)
+                // The baseline is not written while the first pull is still
+                // owed. A joiner's arrival used to mark an EMPTY store as
+                // seen, and the pull then landed the whole family archive on
+                // the wrong side of that baseline — every telling "new" at
+                // once, burying the photographs under the exact dump the
+                // first-visit rule exists to prevent. Until the cursor has
+                // moved, being here does not count as having seen anything.
+                guard !(sync?.isEnabled == true && store.syncSeq == 0) else { return }
                 NewFromFamily.markAllSeen(in: store)
+            }
+            .onDisappear {
+                isReturningFromCard = !path.isEmpty
             }
             .searchable(text: $query, prompt: "Etsi")
             .toolbar {

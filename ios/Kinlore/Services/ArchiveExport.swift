@@ -10,6 +10,20 @@ import Foundation
 /// See docs/ARCHITECTURE.md §14.
 @MainActor
 enum ArchiveExport {
+    /// What the build produced — and what it could not.
+    ///
+    /// `missingMedia` counts the photographs and recordings that were skipped
+    /// because they could not be fetched or copied. The skip itself is right
+    /// (one failed download must not cost the family the other two hundred
+    /// files); the count exists because the skip used to be silent, and an
+    /// offline export looked complete while missing grandmother's voice — in
+    /// the one artifact meant to outlive the app. The caller says the number
+    /// out loud, and the page carries it too.
+    struct Export {
+        let zip: URL
+        let missingMedia: Int
+    }
+
     /// Builds the zip and returns its location in the temporary directory. The
     /// caller hands it to the share sheet; the system cleans it up afterwards.
     ///
@@ -20,7 +34,7 @@ enum ArchiveExport {
         store: MemoryStore,
         session: Session,
         progress: (String) -> Void
-    ) async throws -> URL {
+    ) async throws -> Export {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("Muistoarkisto", isDirectory: true)
         try? FileManager.default.removeItem(at: root)
@@ -36,6 +50,7 @@ enum ArchiveExport {
         // grandmother's voice would be a lie about what the word means.
         var photoNames: [String: String] = [:]
         var audioNames: [String: String] = [:]
+        var missing = 0
 
         let subjectsWithPhotos = store.subjects.filter {
             $0.deletedAt == nil && ($0.imageFilename != nil || $0.r2Key != nil)
@@ -44,8 +59,15 @@ enum ArchiveExport {
             progress("Kootaan kuvia \(index + 1)/\(subjectsWithPhotos.count)")
             guard let filename = await MediaLoader.imageFilename(
                 for: subject, store: store, session: session
-            ) else { continue }
-            if copy(filename, into: photos) { photoNames[subject.id] = filename }
+            ) else {
+                missing += 1
+                continue
+            }
+            if copy(filename, into: photos) {
+                photoNames[subject.id] = filename
+            } else {
+                missing += 1
+            }
         }
 
         // `told`: the export is what the family opens in twenty years, not a
@@ -58,17 +80,29 @@ enum ArchiveExport {
             progress("Kootaan ääniä \(index + 1)/\(memoriesWithAudio.count)")
             guard let filename = await MediaLoader.audioFilename(
                 for: memory, store: store, session: session
-            ) else { continue }
-            if copy(filename, into: audio) { audioNames[memory.id] = filename }
+            ) else {
+                missing += 1
+                continue
+            }
+            if copy(filename, into: audio) {
+                audioNames[memory.id] = filename
+            } else {
+                missing += 1
+            }
         }
 
         progress("Kirjoitetaan arkistoa")
-        let page = html(store: store, photoNames: photoNames, audioNames: audioNames)
+        let page = html(
+            store: store,
+            photoNames: photoNames,
+            audioNames: audioNames,
+            missingMedia: missing
+        )
         try Data(page.utf8).write(to: root.appendingPathComponent("muistot.html"))
         try store.exportJSON().write(to: root.appendingPathComponent("arkisto.json"))
 
         progress("Pakataan")
-        return try zip(root)
+        return Export(zip: try zip(root), missingMedia: missing)
     }
 
     /// Copies a media file into the export. A missing file is skipped rather
@@ -126,7 +160,8 @@ enum ArchiveExport {
     private static func html(
         store: MemoryStore,
         photoNames: [String: String],
-        audioNames: [String: String]
+        audioNames: [String: String],
+        missingMedia: Int
     ) -> String {
         // Ordered the way the app lists them, and only subjects somebody has
         // actually spoken about. The empty ones are named at the end rather than
@@ -169,6 +204,18 @@ enum ArchiveExport {
         out += "<code>aani</code> ja kuvat kansiossa <code>kuvat</code>. "
         out += "Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa.</p>\n"
 
+        // The page says what it is missing. A zip built offline used to look
+        // complete while the originals had been silently skipped — and this
+        // page is the copy that outlives the app, so a gap it does not name
+        // is a gap nobody will ever know to fill.
+        if missingMedia > 0 {
+            out += "<p class=\"meta\"><strong>Huom:</strong> "
+            out += missingMedia == 1
+                ? "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on"
+                : "\(missingMedia) kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat"
+            out += " tallessa perheen arkistossa ja tulevat mukaan seuraavaan vientiin.</p>\n"
+        }
+
         var empty: [Subject] = []
 
         for subject in subjects {
@@ -203,7 +250,12 @@ enum ArchiveExport {
             for memory in memories {
                 out += "<article>\n"
                 if memory.isAwaitingTranscription {
-                    out += "<p class=\"pending\">Ääni tallessa, tekstiä ei ehditty kirjoittaa.</p>\n"
+                    // Only claim the recording is here when it is: a memory
+                    // whose audio could not be fetched used to assert "Ääni
+                    // tallessa" over an <audio> element that never came.
+                    out += audioNames[memory.id] != nil
+                        ? "<p class=\"pending\">Ääni tallessa, tekstiä ei ehditty kirjoittaa.</p>\n"
+                        : "<p class=\"pending\">Ääni on tallessa perheen arkistossa, mutta ei ollut saatavilla tähän vientiin.</p>\n"
                 } else {
                     for paragraph in memory.body.components(separatedBy: "\n") where !paragraph.isEmpty {
                         out += "<p>\(escaped(paragraph))</p>\n"

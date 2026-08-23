@@ -52,6 +52,36 @@ final class SyncVisibilityTests: XCTestCase {
         )
     }
 
+    /// Reading one of the new tellings must not erase the rest. The section is
+    /// captured when the tab is arrived at, and a pop-back from a card is the
+    /// same visit still going — it used to re-run the capture after everything
+    /// was already marked seen, so the elder who opened the first of three new
+    /// tellings came back to find the other two gone, with no badge, no count
+    /// and no other trace anywhere to say they had existed.
+    func testNewFromFamilySurvivesReadingOneTelling() {
+        let app = launch(["-seed", "unseen"])
+
+        XCTAssertTrue(
+            app.staticTexts["Uutta perheeltä"].waitForExistence(timeout: 10),
+            "never arrived: the new-from-family section"
+        )
+
+        let telling = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "kertoi")
+        ).firstMatch
+        XCTAssertTrue(telling.waitForExistence(timeout: 10), "never arrived: a new telling's row")
+        telling.tap()
+
+        let back = app.navigationBars.buttons.firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 10), "never arrived: the way back")
+        back.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Uutta perheeltä"].waitForExistence(timeout: 10),
+            "reading one telling erased the rest of the section"
+        )
+    }
+
     /// The mirror, facing in: the section is a waiting state like the note
     /// above, not furniture. Being on the tab is what marks its content seen,
     /// so returning to the tab must find it gone — a "new" that never clears

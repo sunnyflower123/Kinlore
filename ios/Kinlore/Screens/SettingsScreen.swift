@@ -12,6 +12,13 @@ struct SettingsScreen: View {
     @State private var exportStatus: String?
     @State private var isExporting = false
     @State private var isSharing = false
+    /// How many photographs or recordings the export could not include, and
+    /// whether that is waiting to be said before the share sheet opens. The
+    /// zip used to go out looking complete while the originals had been
+    /// silently skipped — an offline export without grandmother's voice, in
+    /// the one file meant to outlive the app.
+    @State private var missingFromExport = 0
+    @State private var isReportingMissing = false
     /// What went wrong, and which thing it was.
     ///
     /// A title of its own because there are two failures on this screen now, and
@@ -236,6 +243,20 @@ struct SettingsScreen: View {
                 dismissButton: .default(Text("Selvä"))
             )
         }
+        // Before the share sheet, not after: once the zip has left, nobody is
+        // going to open it against a checklist. "Jaa silti" is the ordinary
+        // answer — the files are safe in the family's archive either way, and
+        // the page inside the zip says the same thing this does.
+        .alert("Viennistä puuttuu tiedostoja", isPresented: $isReportingMissing) {
+            Button("Jaa silti") { isSharing = true }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text(
+                missingFromExport == 1
+                    ? "Yksi kuva tai äänitys ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Se on tallessa perheen arkistossa."
+                    : "\(missingFromExport) kuvaa tai äänitystä ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Ne ovat tallessa perheen arkistossa."
+            )
+        }
     }
 
     private func export() async {
@@ -243,14 +264,19 @@ struct SettingsScreen: View {
         exportStatus = nil
         defer { isExporting = false }
         do {
-            let url = try await ArchiveExport.build(store: store, session: session) { status in
+            let export = try await ArchiveExport.build(store: store, session: session) { status in
                 exportStatus = status
             }
-            exportURL = url
-            isSharing = true
+            exportURL = export.zip
+            missingFromExport = export.missingMedia
+            if export.missingMedia > 0 {
+                isReportingMissing = true
+            } else {
+                isSharing = true
+            }
             #if DEBUG
-            let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) ?? 0
-            print("[export] wrote \(url.path) (\(size) bytes)")
+            let size = (try? FileManager.default.attributesOfItem(atPath: export.zip.path)[.size]) ?? 0
+            print("[export] wrote \(export.zip.path) (\(size) bytes, \(export.missingMedia) missing)")
             #endif
         } catch {
             failure = Failure(

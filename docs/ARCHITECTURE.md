@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 56 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 57 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -314,6 +314,23 @@ archive into the section; the arrival state (docs/UX.md §4.3) frames that case.
 The cut guessing round left the reading loop unanswered (PLAN §4.1, §13); this
 is the smaller instrument that answers it, and the map staying out of v1
 (PLAN §10) is the removal that paid for it.
+
+Two defects were found in that mechanism on 23 Aug 2026, both in the
+appearance plumbing rather than in `NewFromFamily` itself. Opening ONE of
+three new tellings erased the other two: the pop-back from the card re-ran
+the capture after everything was already marked seen, so the section
+supported exactly one read per visit — and with it gone, the derived launch
+tab lost its signal too, so the unread tellings left no trace anywhere. The
+tab now owns its navigation path and tells a pop-back (path was non-empty
+when the root was covered) from an arrival (it was not); the section stays
+through the former and still clears on the latter, and both halves are
+pinned in `SyncVisibilityTests`. And the joiner's baseline was written
+against an empty store: the arrival visit marked nothing as everything, and
+the first pull then landed the whole family archive on the wrong side of
+that baseline — the exact dump the first-visit rule exists to prevent, one
+visit late. The baseline now waits until the cursor has moved: until the
+first pull has landed, being on the tab does not count as having seen
+anything.
 
 ### Conflict rules
 
@@ -1417,6 +1434,18 @@ Four decisions:
 - **Media missing from the device are fetched first.** A phone that joined last
   week holds R2 keys, not files. An export missing grandmother's voice would be
   a lie about what the word means. It costs a progress bar.
+
+  The fetch can fail — offline is the ordinary case, at exactly the cottage
+  where somebody thinks to make a copy — and until 23 Aug 2026 the failure
+  was skipped in silence: the zip went out looking complete, and a memory
+  whose audio never arrived even asserted *"Ääni tallessa"* over an audio
+  element that was not there. The skip stays (one failed download must not
+  cost the family the other two hundred files); the silence went. The build
+  counts what it could not include, an alert says the number before the
+  share sheet opens — *"Jaa silti"* is the ordinary answer, since the files
+  are safe in the family's archive either way — and the page itself carries
+  the same sentence, because the page is the copy that outlives the app and
+  a gap it does not name is a gap nobody will ever know to fill.
 - **HTML rather than a list of text.** The point of an export is that the
   archive outlives the app, and a browser is the one program every family
   already has. The same file carries the photos and plays the audio without
