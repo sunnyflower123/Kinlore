@@ -189,6 +189,10 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# confirming a rule: a date the family was careful about was erased by any
 	# push from a phone that had not seen it.
 	run "a date survives an older phone" node scripts/subject-rules-check.mjs
+	# The pull cursor, which is the delivery guarantee itself: a number that
+	# runs ahead skips other members' rows silently and forever. Three defects
+	# lived in it (23 Aug 2026, §3) and every one looked like a working app.
+	run "a telling reaches the phone that was pushing" node scripts/sync-cursor-check.mjs
 	# The two unauthenticated doors. Measured by hand once (§4); this is the
 	# part that runs again when somebody edits wrangler.jsonc.
 	run "the two open doors are metered, per address" node scripts/rate-limit-check.mjs

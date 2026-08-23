@@ -269,6 +269,15 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 # nothing — no AI call — but needs `npx wrangler dev` running.
 node scripts/place-sync-check.mjs
 
+# The pull cursor, which is the delivery guarantee itself. Three defects lived
+# in this one number (found 23 Aug 2026, ARCHITECTURE §3) and every one showed
+# a working app while a telling silently never reached another phone: a cursor
+# advanced from a push reply, a seq reservation that was not atomic, and a
+# reply cursor that ran past a capped table. The rule they left behind — the
+# cursor moves only through pull replies — is Swift's half to keep; this
+# drives the server's half. Needs `npx wrangler dev`.
+node scripts/sync-cursor-check.mjs
+
 # The invite link, which §4 calls the entire security boundary. Four rules that
 # are silent when broken: a code expires, a code can be revoked, a code belongs
 # to one family, and a wrong code answers exactly like an expired or revoked one

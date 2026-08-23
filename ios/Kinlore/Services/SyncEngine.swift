@@ -69,9 +69,16 @@ final class SyncEngine {
             // to be readable.
             let payload = store.pendingPayload()
             if !payload.isEmpty {
-                let result = try await client.push(sealing(payload))
+                _ = try await client.push(sealing(payload))
                 store.clearPending(payload)
-                store.advance(seq: result.seq)
+                // The cursor does not move here. The push reply's number is
+                // the family-global counter, and jumping to it would step
+                // past anything the others committed since this device last
+                // pulled — their tellings would then never be fetched, on
+                // this round or any later one, with nothing on any screen to
+                // say so. The pull below returns this device's own rows once
+                // more; `applyRemote` re-applies them unchanged, which costs
+                // a little bandwidth and loses nothing.
             }
 
             // 2. Pull everyone else's work. A loop, because the server caps the

@@ -103,19 +103,45 @@ const GEO_PRECISIONS = new Set(['exact', 'town', 'region', 'unknown'])
 
 /// Reserves one ordering number for the family.
 ///
-/// D1 has no long transactions, so the reservation is made with a conditional
-/// update: `sync_seq = sync_seq + 1` is atomic on a single row. Every row in a
-/// single request gets the same number — which is enough, because the client
-/// always asks for "everything above this" and the relative order of individual
-/// rows does not matter.
+/// One statement: `RETURNING` reads the row the update itself wrote, so the
+/// reservation is atomic. This used to be an UPDATE followed by a separate
+/// SELECT, and two pushes arriving together could both read the counter after
+/// both increments — one number shared between two devices' rows, and each
+/// device's cursor then stepped past the other's work. Every row in a single
+/// request gets the same number, which is enough, because the client always
+/// asks for "everything above this" and the relative order of individual rows
+/// does not matter.
 async function nextSeq(env: Env, familyID: string): Promise<number> {
-	await env.DB.prepare('UPDATE family SET sync_seq = sync_seq + 1 WHERE id = ?')
-		.bind(familyID)
-		.run()
-	const row = await env.DB.prepare('SELECT sync_seq FROM family WHERE id = ?')
+	const row = await env.DB.prepare(
+		'UPDATE family SET sync_seq = sync_seq + 1 WHERE id = ? RETURNING sync_seq',
+	)
 		.bind(familyID)
 		.first<{ sync_seq: number }>()
 	return row?.sync_seq ?? 0
+}
+
+/// The highest seq a reply is complete up to, for one table — or null when the
+/// table has no say because it did not fill its cap.
+///
+/// The reply's cursor must be the *minimum* of these, not the maximum seq in
+/// the reply: each table is capped separately, so when one fills its cap while
+/// another returns higher numbers, a cursor at the overall maximum would skip
+/// the capped table's remaining rows on every later pull — silently, which for
+/// the memory table means a telling that never reaches this device.
+///
+/// One more care for a capped table: a push stamps all its rows with one
+/// number, so the cap can cut through the middle of such a group. The rows
+/// above the cut would sit below the cursor and never be asked for again, so
+/// the safe point is one *below* the last number — the next pull re-fetches
+/// the whole group, and the idempotent upserts make the re-sent rows cost
+/// bandwidth and nothing else. When the entire reply is a single group it is
+/// necessarily complete, because a push accepts at most MAX_ROWS rows per
+/// table; stopping below it would make no progress at all.
+function completeUpTo(rows: { seq: number }[]): number | null {
+	if (rows.length < MAX_ROWS) return null
+	const first = rows[0].seq
+	const last = rows[rows.length - 1].seq
+	return first === last ? last : last - 1
 }
 
 // ---------------------------------------------------------------- pull
@@ -156,24 +182,30 @@ export async function pull(env: Env, session: Session, since: number) {
 	// Mentions travel with the memory rather than as rows of their own: they
 	// change only when a memory is created or names are corrected, so syncing
 	// them separately would be a third table with no benefit.
+	// In batches, because D1 allows at most 100 bound parameters in one query
+	// and the id list can be five times that on a first pull. Local SQLite does
+	// not enforce the limit, which is how an unbatched IN(...) passed every
+	// check here while refusing any real archive past a hundred memories: the
+	// D1_ERROR became a 502, the cursor never advanced, and a joiner saw an
+	// empty family forever — a failure that read like a dead network.
 	const memoryRows = memories.results ?? []
-	if (memoryRows.length > 0) {
-		const ids = memoryRows.map((m) => m.id)
+	const byMemory = new Map<string, string[]>()
+	const BATCH = 100
+	for (let start = 0; start < memoryRows.length; start += BATCH) {
+		const ids = memoryRows.slice(start, start + BATCH).map((m) => m.id)
 		const placeholders = ids.map(() => '?').join(',')
 		const mentions = await env.DB.prepare(
 			`SELECT memory_id, subject_id FROM mention WHERE memory_id IN (${placeholders})`,
 		)
 			.bind(...ids)
 			.all<{ memory_id: string; subject_id: string }>()
-
-		const byMemory = new Map<string, string[]>()
 		for (const row of mentions.results ?? []) {
 			const list = byMemory.get(row.memory_id) ?? []
 			list.push(row.subject_id)
 			byMemory.set(row.memory_id, list)
 		}
-		for (const memory of memoryRows) memory.mentions = byMemory.get(memory.id) ?? []
 	}
+	for (const memory of memoryRows) memory.mentions = byMemory.get(memory.id) ?? []
 
 	const relations = await env.DB.prepare(
 		`SELECT id, from_subject, to_subject, kind, confirmed, created_at, deleted_at, seq
@@ -182,22 +214,22 @@ export async function pull(env: Env, session: Session, since: number) {
 		.bind(family, since, MAX_ROWS)
 		.all<RelationRow>()
 
-	const rows = [
-		...(subjects.results ?? []),
-		...memoryRows,
-		...(questions.results ?? []),
-		...(relations.results ?? []),
+	const tables: { seq: number }[][] = [
+		subjects.results ?? [],
+		memoryRows,
+		questions.results ?? [],
+		relations.results ?? [],
 	]
-	const highest = rows.reduce((max, row) => Math.max(max, row.seq), since)
+	// The cursor is the highest seq the reply is complete up to — held back by
+	// any table that filled its cap. See `completeUpTo` for why the overall
+	// maximum would lose rows.
+	const caps = tables.map(completeUpTo).filter((cap): cap is number => cap !== null)
+	const highest = tables.flat().reduce((max, row) => Math.max(max, row.seq), since)
 
 	return {
-		seq: highest,
+		seq: caps.length > 0 ? Math.min(...caps) : highest,
 		// If any table filled the limit, the client needs to fetch again.
-		more:
-			(subjects.results?.length ?? 0) === MAX_ROWS ||
-			memoryRows.length === MAX_ROWS ||
-			(questions.results?.length ?? 0) === MAX_ROWS ||
-			(relations.results?.length ?? 0) === MAX_ROWS,
+		more: caps.length > 0,
 		subjects: subjects.results ?? [],
 		memories: memoryRows,
 		questions: questions.results ?? [],

@@ -226,6 +226,53 @@ Operations are **idempotent**: everything is an upsert keyed by a client
 generated UUID. The same operation twice breaks nothing, which makes retrying
 safe without coordination.
 
+### The cursor, which only pulls may move
+
+The pull cursor is the family's delivery guarantee: everything above it is
+what the server still owes this device, so a cursor that runs ahead is a
+telling that never arrives — silently, with every push and pull answering 200.
+On 23 Aug 2026 three defects were found living in that one number, none of
+them reachable by the checks that existed, all of them the ordinary operation
+of a two-device family rather than a race:
+
+1. **The client advanced its cursor to the push reply's seq.** That number is
+   the family-global counter, so anything the others committed between this
+   device's last pull and its own push fell below the cursor and was never
+   fetched — grandmother tells something, grandchild opens the app with any
+   change of his own queued, and her telling is gone from his phone forever.
+2. **The server reserved seq with an UPDATE and a separate SELECT.** Two
+   pushes arriving together could read the counter after both increments and
+   share one number, giving each device the same blind spot against the other.
+   The reservation is one atomic statement now (`RETURNING`).
+3. **A reply's cursor was the maximum seq across four separately-capped
+   tables.** When one table filled its 500-row cap while another returned
+   higher numbers, the capped table's tail was skipped permanently. Measured
+   by replaying the pull queries over SQLite: a joiner to a 700-telling
+   archive lost 200 memories and the loop ended cleanly. The reply now
+   advances only to what it is *complete* up to — held one below a capped
+   table's last number, because a push stamps up to 500 rows with one seq and
+   the cap can cut through the middle of such a group; the re-fetched group
+   costs bandwidth, which idempotent upserts turn into nothing.
+
+The rule that survives all three: **the cursor moves only through pull
+replies.** A push tells the server things; only a pull tells this device what
+it has seen. The pull that follows a push therefore returns the device's own
+rows once more, and `applyRemote` re-applies them — which surfaced a fourth
+defect waiting in the same room: replacing a row wholesale dropped the fields
+only this device knows, `imageFilename` and `audioFilename`, orphaning a
+quota-refused photograph the moment any other device touched its subject.
+Remote rows now keep the local file references, which the DTOs never carried
+in the first place.
+
+`scripts/sync-cursor-check.mjs` drives the interleavings that showed each
+defect against a running Worker, and it is load-bearing: putting the maximum
+back as the cursor turns two of its checks red, with 102 of 600 subjects
+lost. What it cannot pin is the Swift half of the rule — no Node script can
+see whether `SyncEngine` grows a new `advance` call — and the D1 parameter
+limit behind the mention batching (§3's pull inlines mentions in batches of
+100, D1's documented maximum) does not exist in local SQLite, so the check
+proves the batches are assembled correctly rather than that D1 accepts them.
+
 ### Whether it got through
 
 A sync failure is a waiting state and not an error: the memories are safe on the

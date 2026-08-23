@@ -482,8 +482,16 @@ final class MemoryStore {
     /// server on the next push and wins there with a higher ordering number.
     func applyRemote(_ reply: SyncPullReply) {
         for dto in reply.subjects {
-            guard !dirtySubjects.contains(dto.id), let incoming = Subject(dto: dto) else { continue }
+            guard !dirtySubjects.contains(dto.id), var incoming = Subject(dto: dto) else { continue }
             if let index = subjects.firstIndex(where: { $0.id == dto.id }) {
+                // The DTO never carries the device-local half of the row: the
+                // photo file on this disk. A pull replaces the row — including
+                // the echo of this device's own push, now that the cursor only
+                // moves through pulls — and dropping the filename would orphan
+                // a photograph the free tier had refused: still on disk, no
+                // longer referenced, and never uploaded even after the family
+                // goes paid.
+                incoming.imageFilename = subjects[index].imageFilename
                 subjects[index] = incoming
             } else {
                 subjects.append(incoming)
@@ -492,8 +500,11 @@ final class MemoryStore {
 
         for dto in reply.memories {
             guard !dirtyMemories.contains(dto.id) else { continue }
-            let incoming = Memory(dto: dto)
+            var incoming = Memory(dto: dto)
             if let index = memories.firstIndex(where: { $0.id == dto.id }) {
+                // Same rule as the subject's photo file above — and here it is
+                // rule 3's file: the recording on this disk is the original.
+                incoming.audioFilename = memories[index].audioFilename
                 memories[index] = incoming
             } else {
                 memories.append(incoming)
