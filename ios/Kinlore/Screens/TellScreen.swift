@@ -351,8 +351,13 @@ private struct IdleView: View {
 
     private var title: String {
         guard let target = model.target else { return "Kerro mitä muistat" }
+        // The name stays in the nominative. A colon before a case ending is
+        // the spelling for abbreviations, never names — and a hardcoded -sta
+        // breaks on vowel harmony ("Yrjö") and consonant stems ("Matias")
+        // anyway. Same rule as the starters: Finnish inflection cannot be
+        // done with string concatenation (QuestionLadder).
         return target.kind == .person
-            ? "Kerro \(target.displayTitle):sta"
+            ? "Kerro hänestä — \(target.displayTitle)"
             : "Kerro tästä kuvasta"
     }
 
@@ -650,6 +655,10 @@ private struct RecordingView: View {
                 .font(.system(.title2, design: .monospaced))
                 .foregroundStyle(Elder.supporting)
                 .monospacedDigit()
+                // The first audit ever run on this screen reported the timer
+                // clipped at the default size; a single line of digits has no
+                // honest reason to shrink.
+                .fixedSize()
                 .accessibilityLabel("Nauhoitettu \(Int(model.recorder.elapsed)) sekuntia")
 
             Spacer(minLength: 0)
@@ -660,7 +669,13 @@ private struct RecordingView: View {
 
             Text("Paina kun olet valmis")
                 .font(.headline)
-                .foregroundStyle(Elder.supporting)
+                // Full primary rather than Elder.supporting, which every
+                // sibling caption wears: this one sits within the pulsing
+                // record disc's reach, and the first audit of this screen
+                // measured it under the minimum there. The instruction for
+                // ending a telling is also the one caption that must never
+                // be the faint one.
+                .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 

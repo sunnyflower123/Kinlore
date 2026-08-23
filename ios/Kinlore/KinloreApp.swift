@@ -67,6 +67,16 @@ struct KinloreApp: App {
                 // being broken. `.xSmall...` is the same as no floor at all —
                 // xSmall is the bottom of the scale.
                 .dynamicTypeSize(largerText ? Elder.textFloor... : DynamicTypeSize.xSmall...)
+                // Light, deliberately, for all of v1. Elder.swift's colours
+                // were measured against white and its own comments carry the
+                // ratios; measured against dark backgrounds on 23 Aug 2026,
+                // destructive lands at ≈2.6:1 and the accent itself at
+                // ≈2.7:1 — under the minimum on exactly the labels rule 1
+                // exists for, on every phone a grandchild has set to dark.
+                // Dark variants for the whole system are a designed piece of
+                // work (ARCHITECTURE §15), not a toggle; until somebody does
+                // it, one committed appearance beats an unmeasured second one.
+                .preferredColorScheme(.light)
                 .environment(store)
                 .environment(session)
                 .environment(player)
@@ -147,6 +157,20 @@ struct KinloreApp: App {
                         await sync?.sync()
                         await catchUp?.run()
                     }
+                }
+                .onChange(of: store.outboxCount) { old, new in
+                    // A telling leaves for the family the moment it exists.
+                    // The lifecycle triggers cover the phone being picked up
+                    // again; this covers the phone that never left the hand —
+                    // without it, the ordinary flow (open, tell, put it down)
+                    // shipped the memory on the NEXT opening, while Muistot
+                    // promised it would leave by itself. The same argument
+                    // already added the joiner's mode-flip trigger and the
+                    // push after a deferred completion; the ordinary telling
+                    // was the argument left unwired. Growth only: a wipe and
+                    // a successful push both empty the outbox too.
+                    guard new > old else { return }
+                    Task { await sync?.sync() }
                 }
                 .onChange(of: session.mode) { _, mode in
                     // Joining is the case this exists for: the joiner has just

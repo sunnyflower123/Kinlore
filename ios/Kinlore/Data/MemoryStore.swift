@@ -163,6 +163,14 @@ final class MemoryStore {
         told.filter { dirtyMemories.contains($0.id) }.count
     }
 
+    /// Everything queued for the family, across all four tables. Watched by
+    /// the app so that a write pushes the moment it lands rather than waiting
+    /// for the next lifecycle moment; `waitingToBeSent` above stays the
+    /// user-facing count, because tellings are what anybody ever asks about.
+    var outboxCount: Int {
+        dirtySubjects.count + dirtyMemories.count + dirtyQuestions.count + dirtyRelations.count
+    }
+
     /// Whether anything in the archive still refers to this subject.
     ///
     /// Both directions count: a memory filed under it, and a memory that merely

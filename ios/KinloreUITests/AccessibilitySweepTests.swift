@@ -430,6 +430,32 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The screen an 80-year-old is on while actually telling — and the one no
+    /// sweep had ever audited: it animates continuously, so the settling the
+    /// other tests wait for never comes, and it had been left out entirely.
+    /// The audit itself needs no settled screen; what an animation costs is
+    /// element-detection noise, so exactly that category is forgiven and every
+    /// other — contrast, clipping, hit regions, Dynamic Type — is measured
+    /// here for the first time. Not written through `sweep(...)` on purpose:
+    /// verify.sh counts sweeps as settled-screen audits, and this one is the
+    /// exception it would miscount. It really records and answers the prompt,
+    /// like testAudioSaved.
+    func testRecordingInProgressIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty"], textSize: size)
+            require(app.buttons["Aloita kertominen"], "the record button").tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["Kuuntelen"], "the recording screen")
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Kuuntelen, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
     /// The screen behind a refused microphone. Two buttons and a paragraph, and
     /// nothing had ever looked at it — reaching it by hand means answering a
     /// system prompt with "Älä salli" and then digging the app out of iOS

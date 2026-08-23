@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 60 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 61 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -210,13 +210,24 @@ rather than queued operations, because every operation here is an upsert of a
 whole row — a row changed twice before a push should travel once, in its final
 state.
 
-**The queue is drained when the app is opened and when it comes back to the
-foreground**, not on a timer and not with backoff. An earlier version of this
-document promised backoff; it never existed, and it should not. iOS suspends a
-backgrounded app, so a retry timer is a thing that mostly does not fire, and the
-one moment worth retrying at — the phone being in someone's hand again — is a
-lifecycle event the system already delivers. A failed sync leaves everything
-queued and says nothing to the user, because a network error is not her problem.
+**The queue is drained when the app is opened, when it comes back to the
+foreground — and, since 23 Aug 2026, the moment a write lands in it**, not on
+a timer and not with backoff. An earlier version of this document promised
+backoff; it never existed, and it should not. iOS suspends a backgrounded app,
+so a retry timer is a thing that mostly does not fire, and the one moment
+worth retrying at — the phone being in someone's hand again — is a lifecycle
+event the system already delivers. A failed sync leaves everything queued and
+says nothing to the user, because a network error is not her problem.
+
+The write-lands trigger closes the gap the lifecycle pair left open: the
+ordinary flow — open the app, tell, put the phone down — shipped the telling
+on the NEXT opening, while Muistot promised it would leave by itself. The
+same argument had already been applied twice, to the joiner's mode flip and
+to a deferred transcription completing, and the ordinary telling was the
+argument left unwired. It is event-driven (the app watches the outbox grow),
+so the no-timer decision above stands untouched; the cottage phone kept
+foregrounded with no signal still waits for a lifecycle moment, which that
+decision knowingly accepts.
 
 The one row the outbox deliberately holds back is a memory whose audio has not
 reached R2 yet: the server would refuse it, and a refused row is cleared from
@@ -1564,11 +1575,20 @@ a person's card, a photo's card, the ask sheet and settings. It found the same
 class of problem in almost all of them, and nearly all of it came from three
 system defaults.
 
-Not covered, and honestly so: the paywall (needs a RevenueCat key), the family
-view (needs a backend), and Kerro's recording, processing and result states,
-which need a microphone and a live pipeline. The fixes below are app-wide
-constants, so those screens moved with the rest — but they have not been
-measured.
+Not covered, and honestly so: the paywall (needs a RevenueCat key), and
+Kerro's asking and processing states, which animate. This list used to be
+longer — the family view (`-seed family`), the result states (`-screen
+result`) and, since 23 Aug 2026, the recording screen itself have each been
+brought in. The recording one deserves its account: it animates continuously,
+so the settling every sweep waits for never comes, and the product's core
+moment had never been measured at any size. The audit needs no settled screen
+— what an animation costs is element-detection noise, so
+`testRecordingInProgressIsAudited` forgives exactly that category and
+measures everything else. Its first run reported two real findings on the
+first screen an 80-year-old tells into: *"Paina kun olet valmis"* under the
+contrast minimum within the pulsing disc's reach, and the timer clipped at
+the default size. Both fixed the same day, which is the argument for the
+audit in one sentence.
 
 ### Three defaults, three fixes
 
@@ -1721,11 +1741,18 @@ only where the element really is disabled. What keeps the disabling honest is
 `NameCorrectionTests`, which asserts the button stays off until something
 changes, rather than this exemption.
 
-**Dark mode is not covered.** The app has never been designed for it — the
-launch screen is parchment, no asset has a dark variant, and the accent colour
-is deliberately one value for both appearances. Running the sweep in dark mode
-would find real problems and they would be the first dark-mode problems anybody
-has looked at, which is a different piece of work.
+**Dark mode is pinned off, decided 23 Aug 2026.** The app had never been
+designed for it — the launch screen is parchment, no asset has a dark variant,
+the accent is one value for both appearances — and nothing forced light
+either, so every phone a grandchild had set to dark got an unmeasured second
+appearance of a contrast-driven app. Measured with the same WCAG arithmetic
+`ContrastMeter` uses: on dark backgrounds `Elder.destructive` lands at
+≈2.6:1 — *"Tyhjennä tämä laite"*, the label a person most needs to read
+correctly — and the accent itself at ≈2.7:1, which is every tinted button at
+once. So v1 commits to the appearance it was measured in:
+`.preferredColorScheme(.light)` at the app root. Dark variants for the whole
+Elder system, plus a sweep pass in that appearance, are the designed piece of
+work this deliberately is not.
 
 ## 16. The memory that was interrupted
 
