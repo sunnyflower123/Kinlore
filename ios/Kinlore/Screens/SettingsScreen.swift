@@ -45,11 +45,18 @@ struct SettingsScreen: View {
     }
 
     /// What emptying this device actually costs, which depends entirely on
-    /// whether anyone else has a copy.
+    /// whether anyone else has a copy — and, for the last copy of a shared
+    /// family, on the invites: the invitation text carries the family key, so
+    /// a live code is join-and-read access to the archive this sentence just
+    /// called gone. The wipe revokes them, and the sentence says so.
     private var wipeWarning: String {
-        canLeave
-            ? "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla."
-            : "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne."
+        if canLeave {
+            return "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla."
+        }
+        if case .inFamily = session.mode {
+            return "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne."
+        }
+        return "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne."
     }
 
     var body: some View {
@@ -290,8 +297,33 @@ struct SettingsScreen: View {
         // Leaving happens first and on the server: a wipe that left the
         // membership behind would keep this device's name in the family list
         // for good, and the invite links it made would stay alive.
+        //
+        // First AND decisive. The result used to be discarded, and a failed
+        // leave — offline, or the server refusing — then wiped the store and
+        // renewed the Keychain identity anyway: the member row stayed in the
+        // family forever with nobody left who could authenticate as it, its
+        // ghost counted against the last-member check, and the invites it
+        // made stayed alive. The comment above described the exact invariant
+        // the discard was violating.
         if canLeave {
-            _ = await session.leaveFamily()
+            guard await session.leaveFamily() else {
+                failure = Failure(
+                    title: "Perheestä ei voitu poistua",
+                    message: session.lastError
+                        ?? "Yritä uudelleen, kun verkkoyhteys toimii. Laitetta ei tyhjennetty."
+                )
+                return
+            }
+        } else if case .inFamily = session.mode {
+            // The last copy cannot leave — the server refuses the last member
+            // — but the invites must not outlive it: the invitation text
+            // carries the family key, so a live code is join-and-read access
+            // to an archive whose dialog just said it is gone. Best effort,
+            // never blocking: this wipe is a device-local right, and an
+            // offline phone must still be emptiable.
+            for invite in session.family?.invites ?? [] {
+                _ = await session.revokeInvite(code: invite.code)
+            }
         }
         store.wipe()
         // The ladder describes whoever holds the phone, so it goes too — and so

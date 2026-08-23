@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 57 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 60 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -1495,6 +1495,24 @@ in a family, and they are genuinely separate — so the screen names both:
   somebody has already decided to act. The warning was right and it was not
   prevention.
 
+  Two more of its promises were found unkept on 23 Aug 2026. **The leave was
+  first but not decisive**: its result was discarded, so a failed leave —
+  offline, or the server refusing — wiped the store and renewed the Keychain
+  identity anyway, leaving a member row in the family forever with nobody able
+  to authenticate as it; the ghost even counted against the last-member check,
+  so the genuinely last person could leave and strand the archive on a device
+  that no longer exists. The wipe now stops on a failed leave and says so in
+  the leave's own words, and `WipeTests` holds the store intact through the
+  refusal. And **the last copy's wipe left the invites alive**: the invitation
+  text carries the family key, so for up to seven days a live code was
+  join-and-read access to an archive the dialog had just called gone. That
+  wipe now revokes the family's open invites first — best effort, never
+  blocking, because an offline phone must still be emptiable — and the
+  dialog's sentence says it does. What it still cannot do is remove the D1
+  rows and R2 objects themselves; with no members able to authenticate and no
+  live codes, nothing can reach them, and server-side deletion stays a
+  deliberate non-feature beside member removal (§14's moderation pairing).
+
 **Verified by opening it, 16 Aug 2026.** The export is the one output that
 leaves the app for good, and its promise — *"sen voi avata millä tahansa
 koneella ilman tätä sovellusta"* — had never been checked against an actual
@@ -2163,6 +2181,16 @@ returns false and puts the reason in `session.lastError`; the screen read
 neither, so the dialog closed and the family stayed. A refusal that looks like
 nothing happening is the worst possible answer to a deliberate act — it is now
 an alert with its own title, beside the export's.
+
+The same reasoning had been applied to leaving and skipped for its neighbours,
+found 23 Aug 2026. **Creating an invite** failed as a brief spinner and a
+resting button, on the flow UX.md calls the path to the product's second user;
+**revoking one** — the boundary's one remedy for a link gone astray — changed
+nothing on screen at all, not even when the server answered. Both say so now,
+in the leave alert's shape and register, and `SilentFailureTests` drives both
+failures. `Session.revokeInvite` returns whether the server heard it; a server
+that answers `revoked: false` is deliberately not a failure, because that code
+was already dead and the refresh clears the row either way.
 
 **And a swipe deleted a relationship on the spot.** A swipe is easy to make by
 accident, `swipeActions` is invisible until it happens, and what it removed was

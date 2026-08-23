@@ -257,6 +257,7 @@ final class Session {
 
     func createInvite() async -> String? {
         guard let client else { return nil }
+        lastError = nil
         isWorking = true
         defer { isWorking = false }
         do {
@@ -269,10 +270,26 @@ final class Session {
         }
     }
 
-    func revokeInvite(code: String) async {
-        guard let client else { return }
-        try? await client.revokeInvite(code: code)
-        await refresh()
+    /// Whether the server heard the revocation.
+    ///
+    /// "Poista" on an invite row is the family's one remedy for a link that
+    /// went astray, and it used to fail in total silence — the exact shape
+    /// the leave-family screen calls the worst possible answer to a
+    /// deliberate act, on the one action §4 counts as part of the security
+    /// boundary. A server that answers `revoked: false` is not a failure
+    /// here: that code was already dead or never this family's, and the
+    /// refresh clears the row either way.
+    func revokeInvite(code: String) async -> Bool {
+        guard let client else { return false }
+        lastError = nil
+        do {
+            try await client.revokeInvite(code: code)
+            await refresh()
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
     }
 
     // MARK: - Leaving

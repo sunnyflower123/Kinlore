@@ -17,12 +17,22 @@ struct InviteShareButton: View {
 
     @State private var code: String?
     @State private var isSharing = false
+    @State private var couldNotCreate = false
 
     var body: some View {
         Button {
             Task {
                 code = await session.createInvite()
-                if code != nil { isSharing = true }
+                if code != nil {
+                    isSharing = true
+                } else {
+                    // Said out loud, on the path to the product's second
+                    // user. A spinner that returns to a resting button is a
+                    // refusal that looks like nothing happening — the shape
+                    // the leave-family screen names as the worst possible
+                    // answer to a deliberate act.
+                    couldNotCreate = true
+                }
             }
         } label: {
             if session.isWorking {
@@ -35,6 +45,11 @@ struct InviteShareButton: View {
             }
         }
         .disabled(session.isWorking)
+        .alert("Kutsua ei voitu luoda", isPresented: $couldNotCreate) {
+            Button("Selvä", role: .cancel) {}
+        } message: {
+            Text(session.lastError ?? "Yritä uudelleen, kun verkkoyhteys toimii.")
+        }
         .sheet(isPresented: $isSharing) {
             if let code {
                 ShareLink(item: Self.inviteText(code: code)) {

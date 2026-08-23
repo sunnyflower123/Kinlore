@@ -29,4 +29,35 @@ final class WipeTests: XCTestCase {
         // Left where it was: the archive is what this test is protecting.
         XCTAssertTrue(app.buttons["Tyhjennä"].exists, "the emptying itself is still offered")
     }
+
+    /// A wipe that cannot leave must stop, not shrug. The result of the leave
+    /// used to be discarded: a failed leave wiped the store and renewed the
+    /// Keychain identity anyway, leaving a member row in the family forever
+    /// with nobody able to authenticate as it — a ghost that even counted
+    /// against the last-member check. The seeded family has no client, which
+    /// is the same refusal the real screen meets offline.
+    func testAWipeThatCannotLeaveStopsAndSaysSo() {
+        let app = launch(["-seed", "family", "-tab", "people", "-screen", "settings"])
+
+        let wipe = app.buttons["Tyhjennä tämä laite"]
+        XCTAssertTrue(wipe.waitForExistence(timeout: 10), "never arrived: Settings")
+        wipe.tap()
+
+        let confirm = app.buttons["Tyhjennä"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the wipe asked nothing first")
+        confirm.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Perheestä ei voitu poistua"].waitForExistence(timeout: 10),
+            "the failed leave said nothing"
+        )
+        app.buttons["Selvä"].tap()
+
+        // And nothing was emptied: the family row is still here, which means
+        // the store and the identity both survived the refusal.
+        XCTAssertTrue(
+            app.buttons["Perheen jäsenet ja kutsut"].waitForExistence(timeout: 10),
+            "the device was wiped despite the failed leave"
+        )
+    }
 }

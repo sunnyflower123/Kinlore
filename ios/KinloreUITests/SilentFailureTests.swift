@@ -109,4 +109,38 @@ final class SilentFailureTests: XCTestCase {
             "the code lost its key fragment between the link and the form"
         )
     }
+
+    /// Creating an invite used to fail in total silence: a brief spinner, then
+    /// the resting button, on the flow UX.md calls the path to the product's
+    /// second user. The seeded family has no client at all, which is the same
+    /// nil the real screen meets with no network — so the button must say so.
+    func testCreatingAnInviteSaysWhenItCannot() {
+        let app = launch(["-seed", "family", "-tab", "people", "-screen", "family"])
+
+        let invite = app.buttons["Kutsu perheenjäsen"]
+        XCTAssertTrue(invite.waitForExistence(timeout: 10), "never arrived: the family screen")
+        invite.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Kutsua ei voitu luoda"].waitForExistence(timeout: 10),
+            "a failed invite creation said nothing"
+        )
+    }
+
+    /// The same shape on the boundary's one remedy: "Poista" on a leaked
+    /// invite with no connectivity used to leave the row in place with no
+    /// message, indistinguishable from a slow revoke that worked.
+    func testRevokingAnInviteSaysWhenItCannot() {
+        let app = launch(["-seed", "family", "-tab", "people", "-screen", "family"])
+
+        let revoke = app.buttons["Poista"].firstMatch
+        for _ in 0 ..< 4 where !revoke.exists { app.swipeUp() }
+        XCTAssertTrue(revoke.waitForExistence(timeout: 10), "never arrived: an invite row")
+        revoke.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Kutsua ei voitu perua"].waitForExistence(timeout: 10),
+            "a failed revocation said nothing"
+        )
+    }
 }

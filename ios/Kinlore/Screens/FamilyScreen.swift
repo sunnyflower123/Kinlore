@@ -12,6 +12,11 @@ struct FamilyScreen: View {
     @Environment(SyncEngine.self) private var sync: SyncEngine?
 
     @State private var isShowingPaywall = false
+    /// A revocation the server did not hear. The row staying put is passively
+    /// honest, but the person just did the one deliberate thing the boundary
+    /// offers, and a failure that looks like nothing happening is the answer
+    /// the leave-family screen already refuses to give.
+    @State private var revokeFailed = false
 
     var body: some View {
         List {
@@ -110,7 +115,11 @@ struct FamilyScreen: View {
 
                     ForEach(family.invites) { invite in
                         InviteRow(invite: invite) {
-                            Task { await session.revokeInvite(code: invite.code) }
+                            Task {
+                                if await !session.revokeInvite(code: invite.code) {
+                                    revokeFailed = true
+                                }
+                            }
                         }
                     }
 
@@ -160,6 +169,11 @@ struct FamilyScreen: View {
             }
         }
         .navigationTitle("Perhe")
+        .alert("Kutsua ei voitu perua", isPresented: $revokeFailed) {
+            Button("Selvä", role: .cancel) {}
+        } message: {
+            Text(session.lastError ?? "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.")
+        }
         // Room under the last row for the floating tab bar.
         //
         // iOS 26's bar is a capsule that content scrolls beneath, and at the
