@@ -145,6 +145,19 @@ try {
 		const { status } = await send('/sync?since=0', { headers: { Authorization: 'Bearer nonsense' } })
 		check('a token with no shape at all is refused', status === 401, String(status))
 	}
+	{
+		// The model call is deliberately unmetered — a typed memory must always
+		// save, quota or not — and unmetered was quietly read as unauthenticated
+		// for a while: /extract answered anybody, an open model call billed to
+		// rule 7's key. The refusal comes before the model is reached, so this
+		// costs nothing to ask.
+		const { status } = await send('/extract', {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({ transcript: 'Mummo kertoi rannasta.' }),
+		})
+		check('the model answers nobody without a member identity', status === 401, String(status))
+	}
 
 	console.log('— one family cannot see another —')
 	{

@@ -132,13 +132,21 @@ export default {
 			if (!body) return json({ error: 'invalid_json' }, 400)
 			if (!body.memberID || !body.secret) return json({ error: 'missing_identity' }, 400)
 
-			const result = await createFamily(env, {
-				memberID: body.memberID,
-				secret: body.secret,
-				displayName: body.displayName ?? '',
-				familyName: body.familyName ?? '',
-			})
-			return 'error' in result ? json(result, 409) : json(result)
+			// Wrapped like every route with database work behind it: rule 9's
+			// uniform shape holds only if a D1 exception cannot escape as a raw
+			// Worker error. The same wrapper repeats on the family, usage and
+			// quota routes below for the same reason.
+			try {
+				const result = await createFamily(env, {
+					memberID: body.memberID,
+					secret: body.secret,
+					displayName: body.displayName ?? '',
+					familyName: body.familyName ?? '',
+				})
+				return 'error' in result ? json(result, 409) : json(result)
+			} catch (err) {
+				return failure(err, 'family-create')
+			}
 		}
 
 		if (url.pathname === '/family/join' && request.method === 'POST') {
@@ -159,16 +167,20 @@ export default {
 				return json({ error: 'missing_fields' }, 400)
 			}
 
-			const result = await joinFamily(env, {
-				memberID: body.memberID,
-				secret: body.secret,
-				displayName: body.displayName ?? '',
-				code: body.code,
-			})
-			if ('error' in result) {
-				return json(result, result.error === 'invalid_invite' ? 404 : 409)
+			try {
+				const result = await joinFamily(env, {
+					memberID: body.memberID,
+					secret: body.secret,
+					displayName: body.displayName ?? '',
+					code: body.code,
+				})
+				if ('error' in result) {
+					return json(result, result.error === 'invalid_invite' ? 404 : 409)
+				}
+				return json(result)
+			} catch (err) {
+				return failure(err, 'family-join')
 			}
-			return json(result)
 		}
 
 		// The webhook authenticates with its own secret rather than a member
@@ -190,13 +202,21 @@ export default {
 
 		if (url.pathname === '/family' && request.method === 'GET') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
-			const result = await getFamily(env, session)
-			return 'error' in result ? json(result, 404) : json(result)
+			try {
+				const result = await getFamily(env, session)
+				return 'error' in result ? json(result, 404) : json(result)
+			} catch (err) {
+				return failure(err, 'family-get')
+			}
 		}
 
 		if (url.pathname === '/family/invite' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
-			return json(await createInvite(env, session))
+			try {
+				return json(await createInvite(env, session))
+			} catch (err) {
+				return failure(err, 'invite-create')
+			}
 		}
 
 		if (url.pathname === '/entitlement/sync' && request.method === 'POST') {
@@ -220,7 +240,11 @@ export default {
 
 		if (url.pathname === '/usage' && request.method === 'GET') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
-			return json(await usage(env, session))
+			try {
+				return json(await usage(env, session))
+			} catch (err) {
+				return failure(err, 'usage')
+			}
 		}
 
 		if (url.pathname === '/sync' && request.method === 'GET') {
@@ -247,14 +271,14 @@ export default {
 		if (url.pathname === '/media' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			const kind = url.searchParams.get('kind') ?? 'photo'
-			if (kind === 'photo') {
-				const denial = await checkPhotoCount(env, session)
-				if (denial) return json(denial, 402)
-			}
-			// Audio is not subject to the photo limit: the original audio is
-			// always uploaded, free tier included, because it is the core of
-			// the product.
 			try {
+				if (kind === 'photo') {
+					const denial = await checkPhotoCount(env, session)
+					if (denial) return json(denial, 402)
+				}
+				// Audio is not subject to the photo limit: the original audio
+				// is always uploaded, free tier included, because it is the
+				// core of the product.
 				return await upload(env, session, kind, await request.arrayBuffer())
 			} catch (err) {
 				return failure(err, 'media-upload')
@@ -276,15 +300,23 @@ export default {
 		// cleared on the device.
 		if (url.pathname === '/family/me' && request.method === 'DELETE') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
-			const result = await leaveFamily(env, session)
-			return 'error' in result ? json(result, 409) : json(result)
+			try {
+				const result = await leaveFamily(env, session)
+				return 'error' in result ? json(result, 409) : json(result)
+			} catch (err) {
+				return failure(err, 'family-leave')
+			}
 		}
 
 		if (url.pathname === '/family/invite' && request.method === 'DELETE') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			const code = url.searchParams.get('code')
 			if (!code) return json({ error: 'missing_code' }, 400)
-			return json(await revokeInvite(env, session, code))
+			try {
+				return json(await revokeInvite(env, session, code))
+			} catch (err) {
+				return failure(err, 'invite-revoke')
+			}
 		}
 
 		if (request.method !== 'POST') return json({ error: 'not_found' }, 404)
@@ -339,6 +371,13 @@ export default {
 				}
 				const transcript = payload.transcript?.trim()
 				if (!transcript) return json({ error: 'missing_transcript' }, 400)
+
+				// The one route that had no identity check at all — which, on a
+				// public URL, is an open model call billed to rule 7's key. It
+				// is unmetered on purpose (a typed memory must always save,
+				// quota or not); unmetered and unauthenticated are different
+				// promises, and only the first was meant.
+				if (!session) return json({ error: 'unauthorized' }, 401)
 
 				// Empty and no-op corrections are stripped so that no noise
 				// reaches the prompt and merely confuses the model.

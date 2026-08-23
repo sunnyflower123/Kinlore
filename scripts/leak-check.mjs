@@ -127,14 +127,44 @@ try {
 	// Stop rather than spend.
 	if (health.hasKey) throw new Error('this Worker has a key — refusing to call upstream')
 
+	// Both model routes are behind a session, so this Worker needs a family of
+	// its own — its `--persist-to` database is empty, which is the point of it.
+	execFileSync(
+		'npx',
+		[
+			'wrangler',
+			'd1',
+			'execute',
+			'memorize',
+			'--local',
+			'--persist-to',
+			join(state, 'd1'),
+			'--file=schema.sql',
+		],
+		{ cwd: backend, stdio: 'ignore' },
+	)
+	const memberID = randomUUID()
+	const secret = randomBytes(32).toString('hex')
+	await post('/family', {
+		memberID,
+		secret,
+		displayName: 'Mummo',
+		familyName: 'Vuotokoe',
+	})
+	const auth = { Authorization: `Bearer ${memberID}.${secret}` }
+
 	console.log('— the app is told nothing (rule 9, first half) —')
 	let answer = null
 	{
-		answer = await post('/extract', {
-			transcript: SAID,
-			corrections: [{ from: 'Eeva Liisa', to: NAME }],
-			level: 2,
-		})
+		answer = await post(
+			'/extract',
+			{
+				transcript: SAID,
+				corrections: [{ from: 'Eeva Liisa', to: NAME }],
+				level: 2,
+			},
+			auth,
+		)
 		check('an extraction failure answers 502', answer.status === 502, String(answer.status))
 		check(
 			'and the body is upstream_failed, on its own',
@@ -143,34 +173,10 @@ try {
 		)
 	}
 	{
-		// Transcription is behind a session, so this Worker needs a family of its
-		// own — its `--persist-to` database is empty, which is the point of it.
-		execFileSync(
-			'npx',
-			[
-				'wrangler',
-				'd1',
-				'execute',
-				'memorize',
-				'--local',
-				'--persist-to',
-				join(state, 'd1'),
-				'--file=schema.sql',
-			],
-			{ cwd: backend, stdio: 'ignore' },
-		)
-		const memberID = randomUUID()
-		const secret = randomBytes(32).toString('hex')
-		await post('/family', {
-			memberID,
-			secret,
-			displayName: 'Mummo',
-			familyName: 'Vuotokoe',
-		})
 		const transcription = await post(
 			'/transcribe',
 			{ audio: AUDIO, format: 'm4a', seconds: 8 },
-			{ Authorization: `Bearer ${memberID}.${secret}` },
+			auth,
 		)
 		check(
 			'and so does a transcription failure',
