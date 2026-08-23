@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 54 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 55 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -1994,6 +1994,39 @@ it asks before it does anything. The recorder keeps running while it asks: sayin
 no has to be the cheap answer, because it is the one somebody who tapped by
 mistake will choose.
 
+**A third way out existed and was unguarded**, found 23 Aug 2026: the Tell
+screen presented as a sheet — from a photo or person card, or from an
+idle-screen question about another subject — carried a "Sulje" both presenters
+attached themselves, unguarded in every phase, and nothing disabled the swipe.
+One tap in the middle of a recording deallocated the model and the running
+recorder: telling gone, no question asked, past the exact guard the hidden tab
+bar and the confirmed discard put on the other exits. The button is now the
+screen's own (`onClose`), because only the screen knows which phases an exit
+destroys: a running recording gets the same "Hylätäänkö tämä kertominen?" the
+in-screen discard uses, a typed draft is let go the way its own Peruuta lets
+it go, an interview between rounds ends the way "Riittää tältä erää" ends it,
+and the swipe is disabled in exactly the two phases where it loses words —
+transcribing and organizing finish on their own after a dismissal, so they
+stay dismissable.
+
+**And the world can end a telling from outside.** A phone call, an alarm, the
+screen auto-locking two minutes into a five-minute story: the system pauses
+`AVAudioRecorder`, and everything on screen — the waveform that is the only
+"the device can hear you" feedback, the timer, "Kuuntelen" — froze while
+looking exactly like a working microphone listening to a quiet room. The
+elder kept talking to a dead recorder, and pressing stop saved the partial
+file as the whole memory with nothing to say anything was lost. Three
+mechanisms close it, all in `AudioRecorder`: the idle timer is held while
+recording, so auto-lock — the commonest cause — cannot happen at all; the
+interruption notification is observed, resuming into the same file when the
+call ends with permission to resume, and finishing-with-what-was-captured
+when it does not; and a watchdog in the metering tick treats two seconds of
+a system-paused recorder outside any signalled interruption as a cut, so
+even the interruption iOS never announces ends as a saved memory instead of
+a frozen screen. A cut finishes exactly as if stop had been pressed — the
+words already said are kept, which is rule 3 applied to the half of a
+telling that survived.
+
 **After saving.** Nothing in the app removed a memory. The result screen — the one
 moment when the app knows for certain whose telling it is looking at — now offers
 it, behind a confirmation. It takes with it what only that telling explains: the
@@ -2040,6 +2073,13 @@ and answers the microphone prompt rather than working around it. The first was
 also run with the orphaned-subject cleanup switched off, where it fails on the
 gallery — the assertion that matters is the one about what is left, and it had to
 be shown to be load-bearing.
+
+The sheet exit has its own test in the same file: mid-recording, a swipe does
+not dismiss and "Sulje" asks in the discard's words before anything is lost.
+The interruption machinery is the one piece a UI test cannot drive — nothing
+can place a phone call into a simulator from XCUITest — so its account above
+is backed by the build and by reading, and the phase E visit is where a real
+interruption will happen whether anyone schedules it or not.
 
 ## 20. Small promises the app was not keeping
 

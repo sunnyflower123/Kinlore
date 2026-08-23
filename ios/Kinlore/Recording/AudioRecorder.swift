@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import UIKit
 
 /// Recording and level metering.
 ///
@@ -16,8 +17,21 @@ final class AudioRecorder {
     private(set) var levels: [Float] = []
     private(set) var lastRecordingURL: URL?
 
+    /// Called at most once per recording, when an interrupted recording cannot
+    /// go on: the phone call ended without permission to resume, or the system
+    /// took the microphone away and never said so. The owner finishes the
+    /// telling with everything captured — the same act as pressing stop —
+    /// because the alternative is "Kuuntelen" standing over a dead microphone
+    /// while an 80-year-old keeps talking to it, which is the one lie this
+    /// screen must never tell.
+    var onCut: (() -> Void)?
+
     private var recorder: AVAudioRecorder?
     private var ticker: Timer?
+    private var interruptionObserver: NSObjectProtocol?
+    private var isPausedByInterruption = false
+    private var frozenTicks = 0
+    private var hasCut = false
 
     /// Only as many samples are kept as fit in the waveform. Old ones are
     /// dropped, so memory use does not grow during a long recording.
@@ -92,6 +106,32 @@ final class AudioRecorder {
         isRecording = true
         elapsed = 0
         levels = []
+        isPausedByInterruption = false
+        frozenTicks = 0
+        hasCut = false
+
+        // The screen must not go dark mid-telling. Without this, iOS's
+        // auto-lock suspends the app a couple of minutes into exactly the
+        // several-minute story this screen exists for, and the recording ends
+        // with nothing anywhere to say so.
+        UIApplication.shared.isIdleTimerDisabled = true
+
+        // A phone call, an alarm, Siri: the system pauses the recorder, and
+        // the waveform freezes while looking exactly like a quiet room. Resume
+        // when the interruption ends with permission to; finish with what was
+        // captured when it does not.
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            let type = (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt)
+                .flatMap(AVAudioSession.InterruptionType.init(rawValue:))
+            let options = AVAudioSession.InterruptionOptions(
+                rawValue: notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0
+            )
+            Task { @MainActor in self?.handleInterruption(type, options) }
+        }
 
         ticker = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
@@ -102,6 +142,12 @@ final class AudioRecorder {
     /// anything.
     @discardableResult
     func stop() -> URL? {
+        UIApplication.shared.isIdleTimerDisabled = false
+        if let interruptionObserver {
+            NotificationCenter.default.removeObserver(interruptionObserver)
+        }
+        interruptionObserver = nil
+        isPausedByInterruption = false
         ticker?.invalidate()
         ticker = nil
         recorder?.stop()
@@ -120,8 +166,54 @@ final class AudioRecorder {
         return url
     }
 
+    private func handleInterruption(
+        _ type: AVAudioSession.InterruptionType?,
+        _ options: AVAudioSession.InterruptionOptions
+    ) {
+        guard isRecording else { return }
+        switch type {
+        case .began:
+            // The system has already paused the recorder. Remembering why
+            // keeps the watchdog in `tick` from reading a phone call as a
+            // dead microphone and cutting a telling that may still resume.
+            isPausedByInterruption = true
+        case .ended:
+            isPausedByInterruption = false
+            if options.contains(.shouldResume), recorder?.record() == true {
+                // Resumed into the same file: the call is a gap in the
+                // audio, not the end of the telling.
+            } else {
+                cut()
+            }
+        default:
+            break
+        }
+    }
+
+    /// Ends the telling with everything captured so far, exactly once.
+    private func cut() {
+        guard !hasCut, isRecording else { return }
+        hasCut = true
+        onCut?()
+    }
+
     private func tick() {
-        guard let recorder, recorder.isRecording else { return }
+        guard let recorder else { return }
+        guard recorder.isRecording else {
+            // Our flag says recording, the system's says not: the frozen
+            // state — elapsed stopped, waveform flat, the screen claiming
+            // "Kuuntelen" over a microphone that is not listening. During a
+            // signalled interruption that is a wait, because the call may end
+            // with permission to resume. Without one, two seconds is long
+            // enough to know no resume is coming, and the honest end is the
+            // same as pressing stop: keep everything that was captured.
+            if !isPausedByInterruption {
+                frozenTicks += 1
+                if frozenTicks == 40 { cut() }
+            }
+            return
+        }
+        frozenTicks = 0
         recorder.updateMeters()
         elapsed = recorder.currentTime
 

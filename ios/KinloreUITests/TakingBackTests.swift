@@ -96,6 +96,46 @@ final class TakingBackTests: XCTestCase {
         )
     }
 
+    /// The third exit, and the one both sheet sites had left unguarded: a Tell
+    /// screen presented from a card carries a "Sulje" in its corner, and it
+    /// used to destroy a running recording on one tap — or one swipe — past
+    /// the exact guard the hidden tab bar and the confirmed discard put on the
+    /// other two exits. This one also really records, so it answers the
+    /// microphone prompt like the test above.
+    func testClosingTheSheetMidRecordingAsksFirst() {
+        let app = launch(["-seed", "archive", "-tab", "people", "-screen", "person"])
+
+        let tell = app.buttons["Kerro tästä muisto"]
+        XCTAssertTrue(tell.waitForExistence(timeout: 15), "never arrived: the person card")
+        tell.tap()
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 10), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+
+        // A swipe must not do what the button is guarded against.
+        app.swipeDown()
+        XCTAssertTrue(app.staticTexts["Kuuntelen"].exists, "a swipe dismissed a running recording")
+
+        app.buttons["Sulje"].tap()
+
+        // It asks first, in the same words as the in-screen discard. Only the
+        // destructive row is asserted, as above: an action sheet's cancel row
+        // is not in the app's element tree on iOS 26.
+        let discard = app.buttons["Hylkää"]
+        XCTAssertTrue(discard.waitForExistence(timeout: 10), "Sulje asked nothing first")
+        discard.tap()
+
+        // The sheet is gone, the card is back, and nothing was saved.
+        XCTAssertTrue(tell.waitForExistence(timeout: 10), "the sheet did not close after the discard")
+    }
+
     /// Answers the microphone prompt if it is showing. The label depends on the
     /// simulator's own language, so the button is found by position in the
     /// alert rather than by what it says: permission alerts put the allowing

@@ -438,12 +438,7 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isTelling) {
             NavigationStack {
-                TellScreen(target: subject)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Sulje") { isTelling = false }
-                        }
-                    }
+                TellScreen(target: subject, onClose: { isTelling = false })
             }
         }
         .sheet(isPresented: $isAsking) {

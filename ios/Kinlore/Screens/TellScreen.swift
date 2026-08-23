@@ -13,8 +13,17 @@ struct TellScreen: View {
     /// When the screen is opened from an open question, the question is marked
     /// answered on save.
     var question: FollowUpQuestion?
+    /// Set when the screen is presented as a sheet. The "Sulje" in the corner
+    /// is this screen's to draw rather than the presenter's, because only the
+    /// screen knows which phases an exit would destroy: both sheet sites used
+    /// to attach their own unguarded button, and one tap — or a swipe — in the
+    /// middle of a recording threw the telling away with no question asked,
+    /// past the exact guard the hidden tab bar and the confirmed discard
+    /// already put on the other two exits.
+    var onClose: (() -> Void)?
 
     @State private var model: TellViewModel?
+    @State private var isConfirmingClose = false
 
     var body: some View {
         Group {
@@ -23,6 +32,36 @@ struct TellScreen: View {
             } else {
                 ProgressView()
             }
+        }
+        .toolbar {
+            if onClose != nil {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Sulje") { requestClose() }
+                }
+            }
+        }
+        // A swipe must not do what "Sulje" is guarded against. Only the two
+        // phases where an exit loses words are pinned: transcribing and
+        // organizing finish on their own after a dismissal (the task holds the
+        // model), and the interview between rounds has nothing unsaved.
+        .interactiveDismissDisabled(
+            onClose != nil && (model?.phase == .recording || model?.phase == .writing)
+        )
+        // The same words as the in-screen discard, and the same manners: the
+        // recorder keeps running while the question is open, so saying no
+        // costs nothing.
+        .confirmationDialog(
+            "Hylätäänkö tämä kertominen?",
+            isPresented: $isConfirmingClose,
+            titleVisibility: .visible
+        ) {
+            Button("Hylkää", role: .destructive) {
+                model?.discardRecording()
+                onClose?()
+            }
+            Button("Jatka kertomista", role: .cancel) {}
+        } message: {
+            Text("Nauhoitusta ei tallenneta. Voit aloittaa alusta heti.")
         }
         .task {
             guard model == nil else { return }
@@ -121,6 +160,25 @@ struct TellScreen: View {
             }
             #endif
             model = created
+        }
+    }
+
+    /// What "Sulje" does depends on what would be lost. A running recording is
+    /// asked about; a typed draft is let go the way the screen's own Peruuta
+    /// already lets it go; an interview between rounds ends the way "Riittää
+    /// tältä erää" ends it; everything else just closes.
+    private func requestClose() {
+        switch model?.phase {
+        case .recording:
+            isConfirmingClose = true
+        case .writing:
+            model?.cancelWriting()
+            onClose?()
+        case .asking:
+            model?.endInterview()
+            onClose?()
+        default:
+            onClose?()
         }
     }
 
@@ -285,13 +343,9 @@ private struct IdleView: View {
             NavigationStack {
                 TellScreen(
                     target: question.subjectID.flatMap { store.subject(id: $0) },
-                    question: question
+                    question: question,
+                    onClose: { answering = nil }
                 )
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Sulje") { answering = nil }
-                    }
-                }
             }
         }
     }

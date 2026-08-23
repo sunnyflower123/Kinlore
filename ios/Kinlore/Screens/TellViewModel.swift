@@ -144,6 +144,16 @@ final class TellViewModel {
         self.question = question
         self.initialTarget = target
         self.initialQuestion = question
+
+        // A recording the system cut — a call that ended without permission
+        // to resume, a microphone that quietly stopped — finishes exactly as
+        // if stop had been pressed: everything captured is kept, transcribed
+        // and saved. The recorder can only notice the cut; what finishing
+        // means is this model's to say.
+        recorder.onCut = { [weak self] in
+            guard let self else { return }
+            Task { await self.stopAndProcess() }
+        }
     }
 
     // MARK: - Recording
