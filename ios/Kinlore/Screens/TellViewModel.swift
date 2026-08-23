@@ -189,7 +189,7 @@ final class TellViewModel {
                 leaveInterview()
                 phase = .done
             } else {
-                phase = .idle
+                returnToIdle()
             }
             return
         }
@@ -244,8 +244,22 @@ final class TellViewModel {
             leaveInterview()
             phase = .done
         } else {
-            phase = .idle
+            returnToIdle()
         }
+    }
+
+    /// Back to the idle screen with nothing pending.
+    ///
+    /// The question resets with the phase. An abandoned answer used to leave
+    /// it attached, invisibly — the idle screen draws its own offers — and the
+    /// next telling on this screen, about anything at all, was recorded
+    /// against it: a family member's question marked answered by words that
+    /// never addressed it, and the ladder taught at its level. The interview
+    /// exits do not come through here; they land on `.done`, whose own exits
+    /// reset everything.
+    private func returnToIdle() {
+        question = initialQuestion
+        phase = .idle
     }
 
     /// Takes back the memory that was just saved.
@@ -354,6 +368,16 @@ final class TellViewModel {
     private func leaveInterview() {
         isInterviewing = false
         askedQuestion = nil
+        // The offer slot's decision was made when the pre-interview telling
+        // landed, against that telling's proposals. The rounds since then
+        // have added names of their own, and three exits — "Riittää tältä
+        // erää", a sub-second answer, a discarded one — used to carry the
+        // old decision back to the result screen unexamined: a card beside
+        // "Kuulinko nimet oikein?", the one neighbourhood UpsellRhythm's
+        // first rule forbids. Narrowed here, never widened: a slot already
+        // denied stays denied, and `process` still recomputes in full on
+        // the ordinary path.
+        showsUpsell = showsUpsell && proposals.isEmpty
     }
 
     // MARK: - Starters
@@ -393,7 +417,7 @@ final class TellViewModel {
         // not abandoned by this — it goes back into the catch-up's care and its
         // text arrives when the network or the minutes do.
         completingMemoryID = nil
-        phase = .idle
+        returnToIdle()
     }
 
     /// Typed text goes through the same extraction as spoken text. Otherwise a
@@ -558,7 +582,20 @@ final class TellViewModel {
             )
             mentioned.append(subject)
         }
-        proposals = mentioned.filter { !$0.confirmed }
+        // During an interview the rounds accumulate: each answer's names join
+        // the names already waiting, so the loop-end result screen checks
+        // every round — a plain assignment here quietly narrowed the check to
+        // whichever round happened to be last, while the comment in `process`
+        // promised otherwise. Outside the loop each telling starts its own
+        // check. Deduplicated by id, because the same person mentioned twice
+        // is one row to confirm, not two.
+        let fresh = mentioned.filter { !$0.confirmed }
+        if isInterviewing {
+            let known = Set(proposals.map(\.id))
+            proposals += fresh.filter { !known.contains($0.id) }
+        } else {
+            proposals = fresh
+        }
 
         // Free dictation needs a home. It is named after the place and the time
         // — precisely the organising the user would never do themselves.

@@ -14,6 +14,56 @@ final class NameCorrectionTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// The interview's rounds each propose names, and the loop-end result
+    /// screen is their one at-telling correction moment. An assignment in
+    /// `save` used to replace the list every round, so only the last round's
+    /// names ever met "Kuulinko nimet oikein?" — the opening telling's people
+    /// skipped this screen entirely, and their backstop was the person list.
+    ///
+    /// `-screen interviewed` runs the loop hands-free to its result: the
+    /// typed opening mentions Kuopio (the stub reads names mid-sentence only,
+    /// so Eevert — who opens his sentence — is never extracted), and the
+    /// first recorded round rotates to the sample that mentions Aino. One
+    /// name from each round must stand in the editable rows. The second round
+    /// records for real, which is why the microphone prompt is answered here.
+    func testInterviewRoundsAllReachTheNameCheck() throws {
+        let app = launch(["-seed", "empty", "-screen", "interviewed"])
+        allowTheMicrophone()
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 60),
+            "the interview never reached its result screen"
+        )
+
+        let opening = app.textFields.matching(
+            NSPredicate(format: "value == %@", "Kuopiossa")
+        ).firstMatch
+        let recorded = app.textFields.matching(
+            NSPredicate(format: "value == %@", "Aino")
+        ).firstMatch
+        for _ in 0 ..< 4 where !opening.exists { app.swipeUp() }
+        XCTAssertTrue(
+            opening.waitForExistence(timeout: 10),
+            "the opening telling's name skipped the check"
+        )
+        XCTAssertTrue(
+            recorded.exists || recorded.waitForExistence(timeout: 5),
+            "the recorded round's name is missing from the check"
+        )
+    }
+
+    /// Answers the microphone prompt if it appears. The interviewed loop's
+    /// first recording raises it a few seconds into the run, so this waits
+    /// longer than the sibling in TakingBackTests.
+    private func allowTheMicrophone() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let alert = springboard.alerts.firstMatch
+        guard alert.waitForExistence(timeout: 20) else { return }
+        let buttons = alert.buttons
+        guard buttons.count > 0 else { return }
+        buttons.element(boundBy: buttons.count - 1).tap()
+    }
+
     func testACorrectedNameShowsOnTheCard() throws {
         let app = launch(["-seed", "archive", "-tab", "people"])
 

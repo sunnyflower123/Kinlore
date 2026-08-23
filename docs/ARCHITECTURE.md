@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 55 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 56 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -774,6 +774,21 @@ open it for, and the invitation itself lived four levels deep in Settings.
 shows at all, and the check script covers both halves. The argument is
 docs/UX.md §3.2.
 
+**Two defects the check script could not see, found 23 Aug 2026.** Both lived
+in the wiring around `UpsellRhythm`, which is exactly the half a check of the
+pure function never touches. The slot's input was dead on every cold launch:
+`session.family` and `usage` were populated only by `refresh()`, which nothing
+on the launch or Tell path ever called — so from the second launch on,
+`card()` read nil, the slot rendered nothing, and the rhythm counter was spent
+on the empty view all the same; the launch and foreground tasks now refresh
+beside the sync, which as a side effect also carries a webhook's verdict to
+the devices that never bought anything. And the never-against-a-proposal rule
+held only on the direct path: three interview exits — *"Riittää tältä erää"*,
+a sub-second answer, a discarded one — reused the decision made before the
+loop, while the rounds since had put fresh names on the result screen.
+`leaveInterview` now narrows the decision on every exit, never widens it: a
+slot already denied stays denied.
+
 ## 7. Quotas and moderation
 
 ### Quotas on the server
@@ -1107,6 +1122,13 @@ Decisions, in the order they were argued about:
   recording) ends the loop like the button does, and the question that was
   being asked stays open. Quota running out mid-loop ends the loop with the
   answer's audio safe, exactly as in a single dictation.
+
+  The same invariant held only inside the loop until 23 Aug 2026: outside it,
+  an answer abandoned on the way back to the idle screen — a discard, a
+  sub-second recording, a cancelled typing — left the chosen question
+  silently attached, and the next telling on that screen, about anything at
+  all, marked it answered and taught the ladder at its level. Every return to
+  idle now resets the question with the phase.
 
 One knowingly open edge: every round adds three questions and answers one, so
 a long interview grows the open-question list. That is today's behaviour for
@@ -1831,6 +1853,13 @@ interview loop deliberately stacks its proposals up until the loop ends, and the
 person most likely to notice that *Sotkamo* has become *Skotlanti* is a
 grandchild who is not in the room. A name missed there was permanent: a wrong
 person on the people list, in the export, and in the tree.
+
+(The stacking itself was an intention this document stated while the code did
+something narrower — found 23 Aug 2026: `save` *replaced* the list every round,
+so the loop-end screen checked only the last round's names and everyone earlier
+skipped straight to the person-list backstop. It accumulates now, deduplicated
+by id, and `testInterviewRoundsAllReachTheNameCheck` holds a name from each
+round on the final screen.)
 
 Worse, it could become *fact*. A correct guess in a round confirms the person
 (§13), and a family member who knows perfectly well who was meant will happily

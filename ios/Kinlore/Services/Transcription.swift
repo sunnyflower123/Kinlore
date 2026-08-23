@@ -37,19 +37,20 @@ struct StubTranscriptionService: TranscriptionService {
         """,
     ]
 
+    /// Rotation rather than the file-size seed this used: consecutive
+    /// recordings must differ — the interview loop's rounds each say
+    /// something new in development, and the test that checks the rounds
+    /// accumulate their names needs to know which round said what. The seed
+    /// varied with the length of real microphone audio, which made the
+    /// second round a coin toss.
+    @MainActor private static var next = 0
+
     func transcribe(audioURL: URL) async throws -> String {
         try await Task.sleep(for: simulatedDelay)
-        // Vary the sample by recording length, so the same text does not come
-        // back every time during development.
-        let seed = Int(FileManager.default.fileSize(at: audioURL) / 1024)
-        return Self.samples[abs(seed) % Self.samples.count]
-    }
-}
-
-private extension FileManager {
-    func fileSize(at url: URL) -> Int64 {
-        let attributes = try? attributesOfItem(atPath: url.path)
-        return (attributes?[.size] as? Int64) ?? 0
+        return await MainActor.run {
+            defer { Self.next += 1 }
+            return Self.samples[Self.next % Self.samples.count]
+        }
     }
 }
 

@@ -95,6 +95,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | `-tab memories` / `-tab people` | DEBUG | Opens on that tab instead of Tell. |
 | `-screen write` | DEBUG | Opens the typing view directly. |
 | `-screen interview` | DEBUG | Runs a canned memory through the stub pipeline and enters the interview loop, finishing the first spoken round by itself — the whole loop, hands-free. |
+| `-screen interviewed` | DEBUG | The same loop run to its end: one spoken round finished, the loop left on the result screen. For the test that checks every round's names reach the name check — tapping "Riittää tältä erää" by hand races the speech window. |
 | `-comfort <1–5>` | DEBUG | Puts the question ladder at a given level instead of where the answers have taken it. Level 1 offers naming questions, level 5 reflective ones — the whole progression without answering six questions first. See ARCHITECTURE.md §12. |
 | `-screen starter` | DEBUG | Opens the Tell screen on a photo nobody has spoken about yet, where the starter questions live. Otherwise that state is reachable only by picking a photo from the library by hand. |
 | `-screen person` | DEBUG | Opens the first person's card, relationships and all. |

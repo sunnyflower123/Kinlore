@@ -38,10 +38,12 @@ final class OrganisingFailureTests: XCTestCase {
             "the result screen did not say that the organising failed"
         )
 
-        // The words themselves, in the teller's own order.
+        // The words themselves, in the teller's own order. "Kuopiossa" is from
+        // the sample `-screen interview` types as its opening telling — the
+        // last one, since the recorded rounds rotate from the first.
         XCTAssertTrue(
             app.staticTexts
-                .containing(NSPredicate(format: "label CONTAINS %@", "Puumalassa"))
+                .containing(NSPredicate(format: "label CONTAINS %@", "Kuopiossa"))
                 .firstMatch
                 .exists,
             "the telling is not on the result screen"

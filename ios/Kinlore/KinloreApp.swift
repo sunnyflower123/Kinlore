@@ -86,6 +86,13 @@ struct KinloreApp: App {
                     }
                     RevenueCatPurchases.configure(memberID: session.identity.memberID)
                     await sync?.sync()
+                    // The family's details, beside the rows. They had no other
+                    // writer on this path: `session.family` and `usage` were
+                    // populated only by a visit to Asetukset → Perhe, so from
+                    // the second launch on, the result screen's offer slot
+                    // read nil, rendered nothing — and the rhythm counter was
+                    // spent on the empty view all the same.
+                    await session.refresh()
                     // Before the catch-up, not after: if this device is carrying
                     // a purchase the server has not heard about, the minutes it
                     // needs are one call away.
@@ -104,6 +111,14 @@ struct KinloreApp: App {
                     guard phase == .active else { return }
                     Task {
                         await sync?.sync()
+                        // The details refresh here too — and this is what
+                        // carries a webhook's verdict to the devices that
+                        // never bought anything. The payer is not the
+                        // beneficiary, and until now only the payer's device
+                        // ever asked: a family whose subscription renewed, or
+                        // ended, learned of it on everyone else's phone only
+                        // through Asetukset → Perhe.
+                        await session.refresh()
                         // The network is the usual reason a transcription was
                         // deferred, and being opened again is the best evidence
                         // there is that it came back.

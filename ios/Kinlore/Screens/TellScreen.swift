@@ -109,7 +109,11 @@ struct TellScreen: View {
             if UserDefaults.standard.string(forKey: "screen") == "interview" {
                 Task {
                     created.beginWriting()
-                    created.draft = StubTranscriptionService.samples[0]
+                    // The LAST sample, deliberately: the recorded answers
+                    // rotate from the first, so the opening telling and the
+                    // first round never share their names — which is what
+                    // lets a test see whether the rounds accumulate.
+                    created.draft = StubTranscriptionService.samples[2]
                     await created.submitTyped()
                     await created.beginInterview()
                     // beginInterview returns once the question has been spoken
@@ -119,6 +123,34 @@ struct TellScreen: View {
                     try? await Task.sleep(for: .seconds(3))
                     if created.phase == .recording {
                         await created.stopAndProcess()
+                    }
+                }
+            }
+            // `-screen interviewed`: the same canned loop, run to its END —
+            // one spoken round finished, the loop left on the result. A test
+            // cannot do this by tapping: "Riittää tältä erää" exists only
+            // while a question is being spoken, and the next round's
+            // recording replaces it within seconds, so tapping it races the
+            // speech window and loses. What the result screen must then show
+            // is every round's names — see the accumulation note in
+            // `TellViewModel.save`.
+            if UserDefaults.standard.string(forKey: "screen") == "interviewed" {
+                Task {
+                    created.beginWriting()
+                    created.draft = StubTranscriptionService.samples[2]
+                    await created.submitTyped()
+                    await created.beginInterview()
+                    try? await Task.sleep(for: .seconds(3))
+                    if created.phase == .recording {
+                        await created.stopAndProcess()
+                    }
+                    // The next question's recording has started by itself;
+                    // ending here lands on the result with both rounds'
+                    // names waiting.
+                    if created.phase == .recording {
+                        created.discardRecording()
+                    } else if created.phase == .asking {
+                        created.endInterview()
                     }
                 }
             }
