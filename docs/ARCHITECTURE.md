@@ -2219,6 +2219,20 @@ failures. `Session.revokeInvite` returns whether the server heard it; a server
 that answers `revoked: false` is deliberately not a failure, because that code
 was already dead and the refresh clears the row either way.
 
+**Three smaller ones joined the list on 23 Aug 2026.** A telling the app was
+killed under vanished without a trace — the recorder writes into tmp and
+nothing referenced the file until stop() — and is now swept in at launch as
+the same audio-only memory a quota outage leaves, with the catch-up writing
+its text (`RecordingRecovery`). A question you asked the family came back at
+you as a pinned *"Minä kysyy"* prompt — wrong in conjugation and in direction
+— and the Tell screen's offers now exclude their own asker, while the subject
+card keeps the question listed without the asker line. And a device the
+server has stopped knowing (a 401 — realistically the shared Keychain, after
+*"Tyhjennä tämä laite"* on another phone of the same Apple ID) was shown as
+waiting for the network forever; it is its own sync state now, the gallery
+note stops promising it fixes itself, and the Perhe screen says what
+happened.
+
 **And a swipe deleted a relationship on the spot.** A swipe is easy to make by
 accident, `swipeActions` is invisible until it happens, and what it removed was
 a fact somebody had confirmed about their own family. It asks now — and the

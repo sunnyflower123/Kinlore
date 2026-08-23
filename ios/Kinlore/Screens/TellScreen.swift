@@ -272,6 +272,7 @@ struct TellScreen: View {
 
 private struct IdleView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
     let model: TellViewModel
 
@@ -342,10 +343,12 @@ private struct IdleView: View {
     /// launch; `openingQuestions()` is that rung.
     private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
         guard let target = model.target else {
-            let open = store.openQuestions(limit: 2)
+            let open = store.openQuestions(limit: 2, excludingAuthor: session.identity.memberID)
             return open.isEmpty ? (store.openingQuestions(), true) : (open, false)
         }
-        let own = store.openQuestions(limit: 2, for: target.id)
+        let own = store.openQuestions(
+            limit: 2, for: target.id, excludingAuthor: session.identity.memberID
+        )
         return own.isEmpty ? (store.starterQuestions(for: target), true) : (own, false)
     }
 

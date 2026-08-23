@@ -112,7 +112,11 @@ final class MemoryStore {
     /// question they are shown does not press the button again. Passing a
     /// subject narrows it to that photo's or that person's own questions.
     /// See docs/ARCHITECTURE.md §12.
-    func openQuestions(limit: Int = 3, for subjectID: String? = nil) -> [FollowUpQuestion] {
+    func openQuestions(
+        limit: Int = 3,
+        for subjectID: String? = nil,
+        excludingAuthor: String? = nil
+    ) -> [FollowUpQuestion] {
         let open = questions.filter { question in
             guard !question.answered else { return false }
             // A question whose subject is no longer there has nothing left to be
@@ -121,6 +125,11 @@ final class MemoryStore {
             // offered on the Tell screen, where the subject's own card is not
             // there to make the emptiness visible.
             if let id = question.subjectID, subject(id: id) == nil { return false }
+            // The Tell screen passes the asker's own id: a question asked FOR
+            // the family must not come back at its asker as a prompt — with
+            // the default display name it read "Minä kysyy", and the ladder
+            // even pinned it first, because pinning keys on having an author.
+            if let author = excludingAuthor, question.authorID == author { return false }
             return subjectID == nil || question.subjectID == subjectID
         }
         return QuestionLadder.select(open, comfort: QuestionLadder.comfort, limit: limit)

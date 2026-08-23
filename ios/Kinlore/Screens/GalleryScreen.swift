@@ -410,6 +410,15 @@ private struct SyncNote: View {
 
     private func text(waiting: Int, state: SyncEngine.State) -> String {
         if state == .syncing { return "Lähetetään perheelle…" }
+        // A refused identity does not get the network's promise: "lähtee
+        // itsestään kun verkko palaa" was said for a 401 too, indefinitely,
+        // while no push could ever succeed. The full account is on the Perhe
+        // screen; this line stays true and points there.
+        if state == .refused {
+            return waiting == 1
+                ? "Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä."
+                : "\(waiting) muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä."
+        }
         return waiting == 1
             ? "Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa."
             : "\(waiting) muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa."

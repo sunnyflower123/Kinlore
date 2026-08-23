@@ -15,6 +15,13 @@ final class SyncEngine {
         /// A failure is not an error state but a waiting state: the local data
         /// is safe and the queue drains when the connection returns.
         case waitingForNetwork
+        /// The server no longer knows this device — a 401, not weather. The
+        /// realistic cause is the synchronizable Keychain: "Tyhjennä tämä
+        /// laite" on another phone sharing the Apple ID renews the identity
+        /// there and deletes this one's credentials with it. Kept apart from
+        /// the network case because the network's promise — it fixes itself —
+        /// is exactly the sentence that must not be said here.
+        case refused
     }
 
     private(set) var state: State = .idle
@@ -95,9 +102,13 @@ final class SyncEngine {
             lastSyncedAt = .now
             state = .idle
         } catch {
-            // Not shown to the user. The memories are safe locally and the
-            // queue drains by itself — a network error is not her problem.
-            state = .waitingForNetwork
+            // Not shown to the user as an error. The memories are safe locally
+            // and the queue drains by itself — a network error is not her
+            // problem. A refused identity is told apart, because its waiting
+            // never ends and the notes that promise otherwise must not.
+            state = (error as? URLError)?.code == .userAuthenticationRequired
+                ? .refused
+                : .waitingForNetwork
         }
     }
 
@@ -210,6 +221,12 @@ private struct SyncClient {
     private func perform<T: Decodable>(_ request: URLRequest) async throws -> T {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse, (200 ..< 300).contains(http.statusCode) else {
+            // 401 kept apart from everything else: a device the server has
+            // stopped knowing is not a dead cottage connection, and the
+            // engine's state machine has a case for exactly that difference.
+            if (response as? HTTPURLResponse)?.statusCode == 401 {
+                throw URLError(.userAuthenticationRequired)
+            }
             throw URLError(.badServerResponse)
         }
         return try JSONDecoder().decode(T.self, from: data)

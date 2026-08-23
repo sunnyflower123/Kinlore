@@ -87,7 +87,7 @@ final class AudioRecorder {
         try session.setActive(true)
 
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("memory-\(UUID().uuidString).m4a")
+            .appendingPathComponent("\(Self.orphanPrefix)\(UUID().uuidString).m4a")
 
         // Speech, not music: 22 kHz mono is enough for ASR and keeps the files
         // small. The audio is kept permanently, so the size accumulates.
@@ -197,6 +197,10 @@ final class AudioRecorder {
         onCut?()
     }
 
+    /// The recording's filename shape, shared with the launch-time sweep
+    /// below: what start() writes is what the sweep looks for.
+    static let orphanPrefix = "memory-"
+
     private func tick() {
         guard let recorder else { return }
         guard recorder.isRecording else {
@@ -223,5 +227,53 @@ final class AudioRecorder {
         let normalized = max(0, (db + 55) / 55)
         levels.append(normalized)
         if levels.count > maxLevels { levels.removeFirst(levels.count - maxLevels) }
+    }
+}
+
+/// The telling the app was killed under.
+///
+/// The recorder writes into the temporary directory and nothing references the
+/// file until stop() — so a crash, a force-quit or a low-memory kill
+/// mid-telling left an m4a nobody would ever find, and the system's tmp
+/// cleanup eventually made "gone without a trace" literal. Swept at launch:
+/// every orphaned recording becomes the same audio-only memory a quota outage
+/// leaves behind, and the catch-up writes its text on the app's own schedule —
+/// rule 3's spirit applied to the file that never got as far as the rules.
+@MainActor
+enum RecordingRecovery {
+    static func sweep(into store: MemoryStore) {
+        let tmp = FileManager.default.temporaryDirectory
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: tmp.path) else {
+            return
+        }
+        for name in names where name.hasPrefix(AudioRecorder.orphanPrefix) && name.hasSuffix(".m4a") {
+            let source = tmp.appendingPathComponent(name)
+            // The same floor as a live recording: under a second is an
+            // accident, not a memory — and an unreadable file is not audio.
+            let duration = (try? AVAudioPlayer(contentsOf: source))?.duration ?? 0
+            guard duration >= 1.0 else {
+                try? FileManager.default.removeItem(at: source)
+                continue
+            }
+            let destination = MediaStore.url(for: name)
+            try? FileManager.default.removeItem(at: destination)
+            guard (try? FileManager.default.moveItem(at: source, to: destination)) != nil else {
+                continue
+            }
+            // The shape saveAudioOnly gives a telling whose words never
+            // arrived: an untitled event — describe fills empty fields only,
+            // so the name comes with the text — and a memory the row shows
+            // as "Ääni tallessa" until the catch-up finishes it.
+            let home = Subject(kind: .event, title: "")
+            store.add(home)
+            store.add(Memory(
+                subjectID: home.id,
+                authorName: store.authorName,
+                body: "",
+                audioFilename: name,
+                audioDuration: duration,
+                source: .voice
+            ))
+        }
     }
 }

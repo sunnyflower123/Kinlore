@@ -107,6 +107,9 @@ struct KinloreApp: App {
                     // a purchase the server has not heard about, the minutes it
                     // needs are one call away.
                     await syncEntitlementIfPurchased()
+                    // A telling the app was killed under, adopted before the
+                    // catch-up runs so its text is written in the same round.
+                    RecordingRecovery.sweep(into: store)
                     await catchUp?.run()
                     // Last, and after sync: a place another device has already
                     // looked up arrives with the pull, and looking it up again

@@ -197,6 +197,12 @@ struct FamilyScreen: View {
     private var syncText: String {
         let waiting = store.waitingToBeSent
         if sync?.state == .syncing { return "lähetetään…" }
+        // The one sync state whose waiting never ends by itself. The likely
+        // cause is the shared Keychain: emptying another phone on the same
+        // Apple ID renews the identity there and takes this one's with it.
+        if sync?.state == .refused {
+            return "lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta"
+        }
         if waiting > 0 { return waiting == 1 ? "1 odottaa verkkoa" : "\(waiting) odottaa verkkoa" }
         guard let at = sync?.lastSyncedAt else { return "kaikki lähetetty" }
         return "kaikki lähetetty \(Self.moment(at))"
@@ -281,7 +287,11 @@ private struct InviteRow: View {
     let onRevoke: () -> Void
 
     private var expiryText: String {
-        let days = Int((invite.expiresAt - Date().timeIntervalSince1970) / 86_400)
+        // Ceiling, not truncation: a just-created week-long invite read
+        // "vanhenee 6 päivän päästä" directly above the row promising
+        // "voimassa viikon" — a one-day contradiction on the screen that
+        // exists so numbers can be checked.
+        let days = Int(ceil((invite.expiresAt - Date().timeIntervalSince1970) / 86_400))
         if days <= 0 { return "vanhenee tänään" }
         return days == 1 ? "vanhenee huomenna" : "vanhenee \(days) päivän päästä"
     }

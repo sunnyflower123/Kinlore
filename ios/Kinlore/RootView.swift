@@ -375,10 +375,14 @@ struct SubjectDetailScreen: View {
                     ForEach(open) { question in
                         VStack(alignment: .leading, spacing: 4) {
                             // A person's name on a question turns a prompt into
-                            // a request. AI questions stay unattributed.
-                            if let asker = question.authorName {
+                            // a request. AI questions stay unattributed — and
+                            // so is your own here: with the default display
+                            // name the line read "Minä kysyy", wrong in both
+                            // conjugation and direction.
+                            if let asker = question.authorName,
+                               question.authorID != session.identity.memberID {
                                 Text("\(asker) kysyy")
-                                    .font(.caption.weight(.medium))
+                                    .font(.subheadline.weight(.medium))
                                     .foregroundStyle(.tint)
                             }
                             Label(question.text, systemImage: "questionmark.circle")
@@ -499,8 +503,12 @@ private struct MemoryRow: View {
             }
 
             HStack(spacing: 12) {
+                // Subheadline, matching the "X kertoi" line on the Uutta
+                // perheeltä row: who told this matters most exactly when
+                // several members write on one subject, and it was the
+                // smallest text in the whole reading loop.
                 Text(memory.authorName)
-                    .font(.caption.weight(.medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(Elder.supporting)
 
                 // The original audio is part of the product, not a step towards it.

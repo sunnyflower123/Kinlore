@@ -73,6 +73,13 @@ struct DateSheet: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
+                form(proxy)
+            }
+        }
+    }
+
+    private func form(_ proxy: ScrollViewProxy) -> some View {
             Form {
                 Section {
                     Picker("Kuinka tarkkaan tiedät?", selection: $sureness) {
@@ -121,6 +128,7 @@ struct DateSheet: View {
                             choice("\(String(start))-luku", isCurrent: isStored(.decade, start)) {
                                 save(decade: start)
                             }
+                            .id(start)
                         }
                     case .year:
                         // `String(year)` rather than the number: SwiftUI formats
@@ -130,6 +138,7 @@ struct DateSheet: View {
                             choice(String(value), isCurrent: isStored(.year, value)) {
                                 save(year: value)
                             }
+                            .id(value)
                         }
                     case .unknown:
                         choice("Poista ajankohta", isCurrent: false) { save(nothing: true) }
@@ -141,8 +150,22 @@ struct DateSheet: View {
             }
             .navigationTitle(single == nil ? "Milloin nämä olivat?" : "Milloin tämä oli?")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { load() }
-        }
+            .onAppear {
+                load()
+                // To the ticked row, once the list exists. Verifying what a
+                // photo already claims meant scrolling most of a century: the
+                // years run 1900 upwards, and a family archive's common
+                // decades sit mid-list with the tick ~60 rows off-screen.
+                Task { scrollToStored(proxy) }
+            }
+    }
+
+    /// Brings the stored answer's row into view. Only when there is one:
+    /// a fresh photo and the many-photos import start at the top as before.
+    private func scrollToStored(_ proxy: ScrollViewProxy) {
+        guard let subject = single, let hint = subject.dateHint, let start = hint.start else { return }
+        let year = Self.calendar.component(.year, from: start)
+        proxy.scrollTo(hint.precision == .decade ? year / 10 * 10 : year, anchor: .center)
     }
 
     /// One answer. The stored one is ticked — the shape says which it is, not a
