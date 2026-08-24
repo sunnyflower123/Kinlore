@@ -1,0 +1,842 @@
+/* ============================================================================
+   Kinlore, the page. Everything scrollcraft does not own.
+
+   The theme is six colour roles and two families, as the engine asks. The
+   colours are not picked: #C2410C and #1E7A3A are the two measured values from
+   ios/Kinlore/Services/Elder.swift, and the parchment and ink are the mark's
+   own palette from docs/logo/README.md.
+
+   One accent, in two states. The page has exactly one accent, #C2410C, and it
+   owns one role: "the model proposed this and no human has confirmed it". Its
+   resolution, #1E7A3A, appears only at the moment a person confirms something.
+   That pair is the product's central rule, which is why it is allowed to be the
+   one place the page changes hue.
+   ========================================================================== */
+
+:root {
+  --sc-canvas:     #F6ECDC;
+  --sc-surface:    #FFFAF2;
+  --sc-ink:        #241A14;
+  --sc-ink-soft:   #5B4A3E;
+  --sc-accent:     #C2410C;
+  --sc-accent-ink: #FFFAF2;
+
+  /* The accent, one step darker, for accent-coloured TEXT sitting on the page
+     ground rather than on a raised surface. Measured, not chosen: Elder.swift's
+     5.2:1 for #C2410C is against white, and this page's ground is parchment,
+     where the same colour gives 4.43:1 and misses the 4.5 minimum. Same hue,
+     one lightness per ground, which is what taste.md licenses. 4.81:1. */
+  --k-accent-text: #B93D0B;
+
+  /* The resolution of the accent, and nothing else uses it. */
+  --k-confirmed:   #1E7A3A;
+  --k-destruct:    #B3261E;
+  --k-recording:   #D6231C;
+
+  --k-rule:        #E2D2B8;
+  --k-rule-strong: #C9B393;
+
+  --sc-font-display: Charter, "Bitstream Charter", "Sitka Text", Georgia, "Times New Roman", serif;
+  --sc-font-text:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --sc-font-mono:    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --sc-shadow-color: 24 40% 14%;
+  --sc-maxw: 74rem;
+
+  --k-chrome-h: 3.5rem;
+  --k-tree-w: 13.5rem;
+}
+
+/* The mark is drawn on parchment, so a light page is the honest one. The
+   engine's tokens are all set above; nothing here inverts mid-page, which is
+   also why the --sc-ink inheritance trap in taste.md cannot bite. */
+
+body { background: var(--sc-canvas); color: var(--sc-ink); }
+.sc-grain { opacity: 0.03; mix-blend-mode: multiply; }
+
+::selection { background: var(--sc-accent); color: var(--sc-accent-ink); }
+
+/* -------------------------------------------------------------- language -- */
+/* Page copy exists twice, with real lang attributes, and the inactive half is
+   removed from the accessibility tree rather than merely hidden. App strings
+   carry lang="fi" WITHOUT data-l: they stay in both, because that is what the
+   app says. */
+html[data-lang="fi"] [data-l="en"],
+html[data-lang="en"] [data-l="fi"] { display: none; }
+
+/* ------------------------------------------------------------- big text --- */
+/* The Aa control is the app's text-size floor, made operable here. One notch,
+   as in Elder.swift, not three. */
+html[data-bigtext] { font-size: 122%; }
+
+/* ------------------------------------------------------------------ base -- */
+.vh {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+.skip {
+  position: fixed; z-index: 100; top: 0.5rem; left: 0.5rem;
+  transform: translateY(-200%);
+  background: var(--sc-ink); color: var(--sc-surface);
+  padding: 0.6rem 1rem; border-radius: var(--sc-r-sm); text-decoration: none;
+}
+.skip:focus { transform: none; }
+
+:where(a) { color: inherit; text-decoration-color: var(--sc-accent);
+            text-underline-offset: 0.18em; text-decoration-thickness: 2px; }
+:where(a):hover { color: var(--sc-accent); }
+
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--sc-accent);
+  outline-offset: 3px;
+  border-radius: var(--sc-r-sm);
+}
+
+code { font-family: var(--sc-font-mono); font-size: 0.88em; }
+
+.sc-display { font-family: var(--sc-font-display); font-weight: 600; text-wrap: balance; }
+.sc-body { max-width: var(--sc-measure); text-wrap: pretty; }
+
+/* ---------------------------------------------------------------- chrome -- */
+.chrome {
+  position: fixed; inset: 0 0 auto 0; z-index: var(--sc-z-chrome);
+  background: color-mix(in oklab, var(--sc-surface) 88%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--k-rule);
+}
+.chrome__row {
+  display: flex; align-items: center; gap: 0.75rem;
+  min-height: var(--k-chrome-h);
+  padding: 0.4rem clamp(0.75rem, 3vw, 1.5rem);
+  padding-top: max(0.4rem, env(safe-area-inset-top));
+}
+.chrome__mark { flex: none; }
+.chrome__titles { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.chrome__title { font-size: var(--sc-t-sm); font-weight: 650; letter-spacing: var(--sc-track-snug); }
+.chrome__sub { font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+.chrome__controls { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+
+.ctl {
+  min-height: 2.75rem; padding: 0.35rem 0.7rem;   /* 44 px, measured not assumed */
+  border: 1px solid var(--k-rule-strong); border-radius: var(--sc-r-sm);
+  background: var(--sc-surface); color: var(--sc-ink);
+  font-size: var(--sc-t-xs); font-weight: 600; letter-spacing: var(--sc-track-normal);
+  cursor: pointer;
+  transition: background var(--sc-d-fast) var(--sc-ease-out),
+              color var(--sc-d-fast) var(--sc-ease-out),
+              transform 120ms var(--sc-ease-out);
+}
+.ctl:hover { background: color-mix(in oklab, var(--sc-accent) 10%, var(--sc-surface)); }
+.ctl:active { transform: translateY(1px); }
+.ctl[aria-pressed="true"] { background: var(--sc-ink); color: var(--sc-surface); border-color: var(--sc-ink); }
+.ctl--aa { font-family: var(--sc-font-display); font-size: var(--sc-t-sm); min-width: 2.75rem; }
+.ctl--howto { display: inline-flex; align-items: center; gap: 0.4rem; }
+.ctl__glyph {
+  width: 1.15rem; height: 1.15rem; border-radius: 50%; flex: none;
+  border: 2px solid currentColor; display: grid; place-items: center;
+  font-size: 0.72em; font-weight: 700; line-height: 1;
+}
+/* The label goes before the language control does, because the glyph still
+   says what the button is and the language buttons do not. */
+@media (max-width: 780px) { .ctl--howto .ctl__label { display: none; } }
+
+/* The glosses that used to sit beside the archive panel's Finnish labels are
+   gone: read in English the surface is now translated outright rather than
+   annotated, so there is nothing left to gloss. */
+.ctl-group { display: flex; }
+.ctl-group .ctl { border-radius: 0; }
+.ctl-group .ctl:first-child { border-radius: var(--sc-r-sm) 0 0 var(--sc-r-sm); }
+.ctl-group .ctl:last-child { border-radius: 0 var(--sc-r-sm) var(--sc-r-sm) 0; border-left: 0; }
+
+/* ---------------------------------------------------------------- how to -- */
+/* Fixed under the chrome rather than modal: it must not trap focus, must not
+   stop the page scrolling, and must not read as an interstitial in front of
+   the thing it is describing. */
+.howto {
+  position: fixed; z-index: calc(var(--sc-z-chrome) - 1);
+  top: var(--k-chrome-h); left: 0; right: 0;
+  background: var(--sc-surface);
+  border-bottom: 1px solid var(--k-rule);
+  box-shadow: var(--sc-e2);
+  max-height: calc(100vh - var(--k-chrome-h));
+  overflow-y: auto;
+}
+html[data-howto="seen"] .howto { display: none; }
+
+/* Not a modal: nothing is trapped, nothing is inert, and the page still
+   scrolls. The veil is there so the archive behind reads as behind rather than
+   as a card somebody sliced in half. Clicking it closes, same as Esc. */
+.howto__veil {
+  position: fixed; inset: 0; z-index: calc(var(--sc-z-chrome) - 2);
+  background: color-mix(in oklab, var(--sc-canvas) 66%, transparent);
+  -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
+}
+html[data-howto="seen"] .howto__veil { display: none; }
+.howto__inner {
+  max-width: 44rem; margin-inline: auto;
+  padding: clamp(1rem, 3vw, 1.75rem) var(--sc-gutter) clamp(1rem, 2.5vw, 1.5rem);
+}
+.howto__h {
+  margin: 0 0 0.5rem; font-family: var(--sc-font-display);
+  font-size: var(--sc-t-xl); font-weight: 600; line-height: 1.15;
+}
+.howto__h:focus-visible { outline: 3px solid var(--sc-accent); outline-offset: 4px; }
+.howto__lede { margin: 0 0 0.85rem; font-size: var(--sc-t-lg); line-height: 1.4; text-wrap: pretty; }
+.howto__list {
+  margin: 0 0 1rem; padding: 0; list-style: none;
+  display: grid; gap: 0.5rem;
+  font-size: var(--sc-t-sm); color: var(--sc-ink-soft); line-height: 1.5;
+}
+.howto__list li { padding-left: 1rem; position: relative; text-wrap: pretty; }
+.howto__list li::before {
+  content: ""; position: absolute; left: 0; top: 0.62em;
+  width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--k-rule-strong);
+}
+.howto__list b { color: var(--sc-ink); font-weight: 650; }
+/* Sticky, because on a short phone the panel is taller than the screen and a
+   dismiss button below the fold is a panel with no way out. */
+.howto__foot {
+  position: sticky; bottom: 0; margin: 0;
+  padding: 0.6rem 0 clamp(0.6rem, 2vw, 1rem);
+  background: linear-gradient(to top, var(--sc-surface) 70%, transparent);
+}
+.howto__close {
+  min-height: 2.75rem; padding: 0 1.5rem;
+  background: var(--sc-ink); color: var(--sc-surface);
+  border: 0; border-radius: var(--sc-r-md);
+  font: inherit; font-size: var(--sc-t-base); font-weight: 650; cursor: pointer;
+  transition: transform 120ms var(--sc-ease-out), background var(--sc-d-fast) var(--sc-ease-out);
+}
+.howto__close:hover { background: color-mix(in oklab, var(--sc-ink) 85%, var(--sc-accent)); }
+.howto__close:active { transform: translateY(1px); }
+
+/* A phone, or any short window: the panel has to leave the page visible behind
+   it rather than becoming the page. */
+@media (max-width: 640px), (max-height: 720px) {
+  .howto__inner { padding-block: 0.9rem 0; }
+  .howto__h { font-size: var(--sc-t-lg); }
+  .howto__lede { font-size: var(--sc-t-base); margin-bottom: 0.6rem; }
+  .howto__list { font-size: var(--sc-t-xs); gap: 0.45rem; margin-bottom: 0; }
+  .howto { max-height: min(72vh, calc(100vh - var(--k-chrome-h))); }
+}
+@media (max-width: 620px) { .chrome__sub-more { display: none; } }
+
+/* ------------------------------------------------------------------ tree -- */
+/* Chrome, navigation and the signature move. It draws itself as the visitor
+   travels and stops at the dotted nodes, which only a person can fill. */
+.tree {
+  /* Below the first-run veil, so the one thing the panel is explaining does
+     not sit lit on top of a dimmed page. */
+  position: fixed; z-index: calc(var(--sc-z-chrome) - 4);
+  left: 1rem; bottom: 1rem; width: var(--k-tree-w);
+  background: var(--sc-surface);
+  border: 1px solid var(--k-rule);
+  border-radius: var(--sc-r-md);
+  box-shadow: var(--sc-e2), var(--sc-edge);
+  padding: 0.7rem 0.8rem 0.6rem;
+}
+.tree__h {
+  margin: 0 0 0.4rem; font-size: var(--sc-t-xs); font-weight: 700;
+  letter-spacing: var(--sc-track-wide); text-transform: uppercase;
+  color: var(--sc-ink-soft);
+}
+.tree__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.tree__list li { position: relative; }
+.tree__list li[data-depth="1"] { padding-left: 0.95rem; }
+/* The connecting line. Solid when a person vouched for the node, dashed while
+   the model is the only source: the state is in the line's shape as well as in
+   its colour, because colour alone is the accessibility failure this app's user
+   suffers from first. */
+.tree__list li[data-depth="1"]::before {
+  content: ""; position: absolute; left: 0.34rem; top: 0; bottom: 0;
+  border-left: 2px solid var(--k-rule-strong);
+}
+.tree__list li[data-depth="1"]:last-child::before { bottom: 50%; }
+.tree__list li[data-depth="1"]::after {
+  content: ""; position: absolute; left: 0.34rem; top: 50%; width: 0.4rem;
+  border-top: 2px solid var(--k-rule-strong);
+}
+.tree__list li[data-state="proposed"]::before,
+.tree__list li[data-state="proposed"]::after { border-style: dashed; border-color: var(--sc-accent); }
+.tree__list li[data-state="confirmed"]::before,
+.tree__list li[data-state="confirmed"]::after { border-color: var(--k-confirmed); }
+
+.node {
+  display: flex; align-items: center; gap: 0.35rem; width: 100%;
+  min-height: 2.75rem; padding: 0.2rem 0.35rem;   /* 44 px. It is navigation. */
+  border: 0; background: none; color: inherit; cursor: pointer;
+  font: inherit; font-size: var(--sc-t-xs); text-align: left;
+  border-radius: var(--sc-r-sm);
+}
+.node:hover { background: color-mix(in oklab, var(--sc-accent) 10%, transparent); }
+.node__dot {
+  flex: none; width: 0.6rem; height: 0.6rem; border-radius: 50%;
+  background: var(--sc-ink); border: 2px solid var(--sc-ink);
+}
+li[data-state="proposed"] .node__dot { background: transparent; border-style: dotted; border-color: var(--sc-accent); }
+li[data-state="confirmed"] .node__dot { background: var(--k-confirmed); border-color: var(--k-confirmed); }
+li[data-state="proposed"] .node__name { color: var(--sc-accent); font-weight: 650; }
+.node__tag { margin-left: auto; font-size: 0.7em; color: var(--sc-ink-soft); }
+.tree__state {
+  margin: 0.45rem 0 0; padding-top: 0.4rem; border-top: 1px solid var(--k-rule);
+  font-size: var(--sc-t-xs); line-height: 1.35; color: var(--sc-ink-soft);
+}
+.tree__state b { color: var(--sc-accent); }
+
+.tree.is-empty { display: none; }
+
+/* -------------------------------------------------------------- the acts -- */
+main { padding-top: var(--k-chrome-h); }
+@media (min-width: 1100px) { main { padding-left: calc(var(--k-tree-w) + 2.5rem); } }
+@media (max-width: 1099px) { main { padding-bottom: 5.5rem; } }
+
+.stage-inner {
+  height: 100%; max-height: 100%;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: clamp(0.75rem, 2vh, 1.5rem);
+  padding: calc(var(--k-chrome-h) + 0.5rem) var(--sc-gutter) 1rem;
+  /* Not `auto`, and never `overscroll-behavior: contain`. A pinned stage sits
+     under the pointer for viewport-heights at a time, so a scrollable box here
+     eats the wheel and the page stops moving: on a scroll-driven page that is
+     not a rough edge, it is the page being broken. Every stage is designed to
+     fit instead. The one case that cannot be designed away is the text-size
+     control below, and there the box becomes scrollable WITHOUT `contain`, so
+     the wheel still chains onward once it reaches the end. */
+  overflow: hidden;
+}
+html[data-bigtext] .stage-inner { overflow-y: auto; }
+
+/* 1 · the archive ---------------------------------------------------------- */
+.act--archive .stage-inner { align-items: center; }
+.panel {
+  width: min(30rem, 100%);
+  background: var(--sc-surface);
+  border: 1px solid var(--k-rule);
+  border-radius: var(--sc-r-lg);
+  box-shadow: var(--sc-e2), var(--sc-edge);
+  overflow: hidden;
+}
+.panel__bar {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--k-rule);
+}
+.panel__title { margin: 0; font-size: var(--sc-t-lg); font-family: var(--sc-font-display); font-weight: 600; }
+.badge {
+  margin-left: auto; font-size: var(--sc-t-xs); font-weight: 650;
+  padding: 0.2rem 0.5rem; border-radius: var(--sc-r-pill);
+  background: color-mix(in oklab, var(--sc-ink) 8%, transparent);
+}
+.tallies { display: flex; margin: 0; padding: 0.9rem 1.1rem 0.5rem; gap: 1.75rem; }
+.tallies div { display: flex; flex-direction: column-reverse; }
+.tallies dt { font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+.tallies dd {
+  margin: 0; font-family: var(--sc-font-display); font-size: var(--sc-t-xl);
+  line-height: 1.05; font-variant-numeric: tabular-nums;
+}
+.tallies dd.is-new { color: var(--k-confirmed); }
+.quota { padding: 0.4rem 1.1rem 0.9rem; }
+.quota__row { display: flex; justify-content: space-between; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+.quota__track { margin-top: 0.3rem; height: 6px; border-radius: 3px; background: color-mix(in oklab, var(--sc-ink) 10%, transparent); overflow: hidden; }
+.quota__track i { display: block; height: 100%; width: calc(var(--w) * 100%); background: var(--sc-ink-soft); transition: width var(--sc-d-slow) var(--sc-ease-out); }
+
+.subjects { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--k-rule); }
+.subjects li { display: flex; align-items: center; gap: 0.7rem; padding: 0.7rem 1.1rem; border-bottom: 1px solid var(--k-rule); }
+.subjects li:last-child { border-bottom: 0; }
+.subj__kind {
+  flex: none; width: 2rem; height: 2rem; border-radius: var(--sc-r-sm);
+  background: color-mix(in oklab, var(--sc-ink) 8%, transparent);
+  display: grid; place-items: center; font-size: 0.8rem;
+}
+.subj__name { font-weight: 600; }
+.subj__sub { display: block; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+.subj__count { margin-left: auto; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); font-variant-numeric: tabular-nums; }
+.subjects li[data-state="proposed"] .subj__name { color: var(--sc-accent); }
+
+.status {
+  margin: 0; max-width: 34rem; text-align: center;
+  font-family: var(--sc-font-display); font-size: var(--sc-t-lg);
+  line-height: 1.3; text-wrap: balance;
+}
+.status--2 { color: var(--sc-ink-soft); font-size: var(--sc-t-base); font-family: var(--sc-font-text); }
+.disclosure {
+  margin: 0; max-width: 34rem; text-align: center;
+  font-size: var(--sc-t-xs); line-height: 1.5; color: var(--sc-ink-soft);
+}
+
+/* Every flow act on this page follows a pinned one, and a pinned stage needs a
+   whole viewport to scroll off. Full section padding on top of that delays the
+   first content by another screen: the harness will not call it dead scroll,
+   correctly, and the reader still sees an empty screen. */
+.act--gap, .act--confirm, .act--ask { padding-top: clamp(1.75rem, 4vh, 3rem); }
+.act--ask { padding-bottom: clamp(1.5rem, 3vh, 2.5rem); }
+
+/* 2 · the gap -------------------------------------------------------------- */
+.gap { display: grid; gap: clamp(1.5rem, 4vw, 3rem); }
+@media (min-width: 900px) {
+  .gap { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); align-items: start; }
+  .gap__text { grid-column: 1; }
+  .shot { grid-column: 2; grid-row: 1 / span 2; }
+  .empty { grid-column: 1; }
+}
+.gap__text h2 { margin: 0 0 0.5rem; }
+.gap__text .sc-body { color: var(--sc-ink-soft); }
+.gap__text em { font-style: italic; color: var(--sc-ink); }
+
+.shot { margin: 0; }
+.shot__frame {
+  border-radius: 22px; overflow: hidden; background: var(--sc-ink);
+  border: 1px solid var(--k-rule-strong);
+  box-shadow: var(--sc-e3), var(--sc-edge);
+  max-width: 18rem; margin-inline: auto;
+  transform-style: preserve-3d;
+}
+.shot__frame img { width: 100%; height: auto; }
+.shot figcaption {
+  margin-top: 0.75rem; font-size: var(--sc-t-xs); color: var(--sc-ink-soft);
+  text-align: center; max-width: 20rem; margin-inline: auto;
+}
+
+.empty {
+  border: 2px dashed var(--k-rule-strong); border-radius: var(--sc-r-md);
+  padding: clamp(1.25rem, 4vw, 2rem); max-width: 32rem;
+  background: color-mix(in oklab, var(--sc-surface) 55%, transparent);
+}
+.empty h3 { margin: 0 0 0.35rem; font-size: var(--sc-t-lg); font-family: var(--sc-font-display); font-weight: 600; }
+.empty__line { margin: 0; color: var(--sc-ink-soft); }
+.empty__gloss { margin: 0.6rem 0 0; font-size: var(--sc-t-sm); color: var(--sc-ink-soft); }
+
+/* 3 · the telling, the peak ------------------------------------------------ */
+.act--tell .stage-inner { align-items: center; }
+@media (min-width: 1000px) {
+  .tell {
+    display: grid; grid-template-columns: auto minmax(17rem, 24rem);
+    grid-template-rows: auto auto;
+    align-items: center; justify-content: center;
+    gap: 0.75rem clamp(1.5rem, 3vw, 3rem);
+  }
+  /* The caption is not a column. Without this it becomes one, and the phone
+     and the annotation are pushed apart into a broken composition. */
+  .mechanism { grid-column: 1 / -1; grid-row: 1; justify-self: center; }
+  .phone { grid-column: 1; grid-row: 2; }
+  .wire  { grid-column: 2; grid-row: 2; }
+}
+.phone {
+  position: relative;
+  height: min(38rem, 60vh); aspect-ratio: 1206 / 2622;
+  background: var(--sc-ink);
+  border-radius: clamp(20px, 4vh, 34px);
+  padding: 6px;
+  box-shadow: var(--sc-e3), var(--sc-edge);
+  flex: none;
+}
+@media (min-width: 1000px) { .phone { height: min(40rem, 74vh); } }
+.phone__screen {
+  position: relative; height: 100%; width: 100%; overflow: hidden;
+  border-radius: clamp(15px, 3.2vh, 28px);
+  background: var(--sc-surface);
+  display: grid;
+}
+.scr {
+  grid-area: 1 / 1; padding: clamp(0.7rem, 1.6vh, 1.1rem);
+  display: flex; flex-direction: column; gap: 0.55rem;
+  overflow: hidden;
+  font-size: clamp(0.72rem, 1.55vh, 0.95rem);
+  opacity: 0; visibility: hidden;
+  transition: opacity var(--sc-d-base) var(--sc-ease-out), visibility var(--sc-d-base);
+}
+.phone[data-phase="idle"] .scr--record,
+.phone[data-phase="recording"] .scr--record,
+.phone[data-phase="working"] .scr--record { opacity: 1; visibility: visible; }
+.phone[data-phase="result"] .scr--result { opacity: 1; visibility: visible; }
+
+.scr__h { margin: 0; font-family: var(--sc-font-display); font-size: 1.5em; line-height: 1.15; font-weight: 600; }
+.scr__hint { margin: 0; color: var(--sc-ink-soft); text-align: center; }
+.rec { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; margin-top: 0.3rem; }
+.rec__btn {
+  width: clamp(4.5rem, 13vh, 7rem); aspect-ratio: 1; border-radius: 50%;
+  background: var(--k-recording);
+  box-shadow: 0 2px 4px hsl(var(--sc-shadow-color) / 0.3), 0 10px 22px -6px hsl(var(--sc-shadow-color) / 0.4);
+  display: grid; place-items: center; position: relative;
+}
+.rec__btn::after {
+  content: ""; width: 34%; height: 46%; border-radius: 999px; background: #fff;
+  transition: width var(--sc-d-base) var(--sc-ease-out),
+              height var(--sc-d-base) var(--sc-ease-out),
+              border-radius var(--sc-d-base) var(--sc-ease-out);
+}
+.phone[data-phase="recording"] .rec__btn::after { width: 34%; height: 34%; border-radius: 4px; }
+.phone[data-phase="working"] .rec__btn { background: color-mix(in oklab, var(--k-recording) 35%, var(--k-rule)); }
+.rec__time { font-variant-numeric: tabular-nums; font-size: 1.15em; color: var(--sc-ink-soft); }
+
+.wave { display: flex; align-items: center; justify-content: center; gap: 2px; height: clamp(1.6rem, 4.5vh, 2.6rem); }
+.wave i {
+  display: block; width: 3px; border-radius: 2px;
+  height: calc(var(--h) * 100%); min-height: 3px;
+  background: var(--k-rule-strong);
+}
+.wave i.on { background: var(--k-recording); }
+
+.transcript { margin: 0.2rem 0 0; line-height: 1.5; }
+.transcript w { opacity: 0.12; transition: opacity 260ms var(--sc-ease-out); }
+.transcript w.on { opacity: 1; }
+.phone[data-phase="idle"] .transcript { opacity: 0; }
+.transcript { transition: opacity var(--sc-d-base) var(--sc-ease-out); }
+
+.scr__saved { margin: 0; display: flex; align-items: center; gap: 0.4rem; color: var(--k-confirmed); font-weight: 650; }
+.tick { width: 1.05em; height: 1.05em; flex: none; border-radius: 50%; background: var(--k-confirmed); position: relative; }
+.tick::after {
+  content: ""; position: absolute; left: 32%; top: 16%; width: 26%; height: 50%;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.rowset { border-left: 3px solid var(--k-rule-strong); padding-left: 0.6rem; }
+.rec-body { margin: 0; line-height: 1.45; }
+.rec-meta { margin: 0.35rem 0 0; color: var(--sc-ink-soft); display: flex; align-items: center; gap: 0.35rem; }
+.pin-i { width: 0.55em; height: 0.55em; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--sc-ink-soft); flex: none; }
+.dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+.rec-note { margin: 0.3rem 0 0; font-size: 0.85em; color: var(--sc-ink-soft); }
+
+.listen {
+  display: flex; align-items: center; justify-content: center; gap: 0.45rem;
+  min-height: 2.6rem; width: 100%;
+  border: 1px solid var(--k-rule-strong); border-radius: var(--sc-r-sm);
+  background: var(--sc-surface); color: var(--sc-ink); font: inherit; font-weight: 600;
+  cursor: pointer;
+}
+.listen:hover { background: color-mix(in oklab, var(--sc-accent) 8%, var(--sc-surface)); }
+.listen__glyph { width: 0; height: 0; border-left: 0.6em solid currentColor; border-block: 0.38em solid transparent; }
+.listen.is-playing .listen__glyph { width: 0.55em; height: 0.62em; border: 0; background: currentColor; }
+.listen__note .secs { font-weight: 650; font-variant-numeric: tabular-nums; color: var(--sc-ink); }
+.listen__note { margin: 0 0 0.1rem; font-size: 0.8em; color: var(--sc-ink-soft); text-align: center; line-height: 1.35; }
+
+.props__h, .asks__h { margin: 0 0 0.35rem; font-weight: 650; }
+.props__row {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.35rem 0.45rem; border-radius: var(--sc-r-sm);
+  border: 1px solid color-mix(in oklab, var(--sc-accent) 40%, transparent);
+  background: color-mix(in oklab, var(--sc-accent) 7%, transparent);
+  margin-bottom: 0.3rem;
+}
+.props__q { flex: none; width: 1.25em; height: 1.25em; border-radius: 50%; border: 2px solid var(--sc-accent); color: var(--sc-accent); display: grid; place-items: center; font-size: 0.8em; font-weight: 700; }
+.props__name { font-weight: 650; }
+.props__state { margin-left: auto; font-size: 0.8em; color: var(--sc-accent); }
+.asks ul { list-style: none; margin: 0; padding: 0; }
+.asks li { padding: 0.3rem 0; border-top: 1px solid var(--k-rule); color: var(--sc-ink-soft); }
+
+.mechanism {
+  margin: 0; text-align: center; max-width: 34rem;
+  font-size: var(--sc-t-xs); color: var(--sc-ink-soft); line-height: 1.4;
+}
+
+/* the annotation column */
+.wire {
+  width: min(24rem, 100%);
+  background: color-mix(in oklab, var(--sc-ink) 4%, var(--sc-surface));
+  border: 1px solid var(--k-rule); border-radius: var(--sc-r-md);
+  padding: 0.9rem 1rem;
+}
+.wire__h { margin: 0 0 0.5rem; font-size: var(--sc-t-xs); font-weight: 700;
+           letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); }
+.wire__code {
+  margin: 0; font-family: var(--sc-font-mono); font-size: clamp(0.66rem, 1.5vh, 0.8rem);
+  line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  min-height: 11.5em;
+}
+/* The raw transcript is written before any model is called, and it is what the
+   panel holds while the recording runs. Without it this column is an empty box
+   for a third of the page's longest act. */
+.wire__field { margin: 0 0 0.35rem; font-family: var(--sc-font-mono);
+               font-size: clamp(0.66rem, 1.5vh, 0.8rem); color: var(--sc-ink-soft); }
+.wire__raw {
+  margin: 0 0 0.9rem; font-family: var(--sc-font-mono);
+  font-size: clamp(0.66rem, 1.5vh, 0.8rem); line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word;
+  min-height: 6.2em; color: var(--sc-ink);
+  border-left: 2px solid var(--k-rule-strong); padding-left: 0.6rem;
+}
+.wire__raw i { font-style: normal; color: var(--sc-accent); }
+.wire__code b { font-weight: 400; color: var(--sc-accent); }
+.wire__code i { font-style: normal; color: var(--k-confirmed); }
+.wire__code s { text-decoration: none; color: var(--sc-ink-soft); }
+.wire__note { margin: 0.6rem 0 0; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+/* A pinned stage is exactly one viewport and it clips, so on a phone the act
+   cannot hold the screen AND the whole row it writes. The full JSON is the
+   thing that goes: the three lines that carry the argument stay, and they are
+   the ones a judge would quote anyway. */
+.wire__short { display: none; }
+@media (max-width: 999px) {
+  .wire { width: min(30rem, 100%); padding: 0.7rem 0.85rem; }
+  .wire__code { display: none; }
+  .wire__short {
+    display: grid; gap: 0.3rem; list-style: none; margin: 0 0 0.6rem; padding: 0;
+    font-size: var(--sc-t-xs); color: var(--sc-ink-soft);
+  }
+  .wire__short code { color: var(--sc-ink); }
+  .wire__raw, .wire__field, .wire__note { display: none; }  /* the phone is already showing the words */
+
+  /* No device bezel on a phone. A drawn iPhone inside a real iPhone is a
+     costume, and keeping its 9:19.5 ratio at this width left a 190 px column
+     that cut the proposals and the questions off the bottom of the act, which
+     is the half of the result the page exists to show. It becomes what it
+     honestly is: the app's own screen, on a card, like the archive in act 1. */
+  .phone {
+    aspect-ratio: auto; width: 100%; max-width: 24rem; margin-inline: auto;
+    height: min(32rem, 57vh);
+    background: none; padding: 0; box-shadow: none;
+  }
+  .phone__screen {
+    border: 1px solid var(--k-rule); border-radius: var(--sc-r-lg);
+    box-shadow: var(--sc-e2), var(--sc-edge);
+  }
+  .act--tell .stage-inner { gap: 0.6rem; }
+  .rec-meta { white-space: nowrap; }
+}
+/* A short phone cannot hold both, and the screen is the one that matters: the
+   proposals and the questions are the act's payoff, the annotation is support.
+   Support goes. */
+@media (max-width: 999px) and (max-height: 719px) {
+  .wire { display: none; }
+  .phone { height: 76vh; }
+}
+
+/* 4 · the confirm gate ----------------------------------------------------- */
+/* One column, not two. Two short columns left a void under both of them that
+   read as a page that had run out of things to say, which is the opposite of
+   what this act is doing. */
+.confirm { display: grid; gap: clamp(1rem, 2.5vw, 1.75rem); max-width: 48rem; }
+.confirm h2 { margin: 0; }
+.gloss-line { margin: 0; color: var(--sc-ink-soft); font-size: var(--sc-t-sm); }
+.confirm .sc-body { color: var(--sc-ink-soft); }
+
+/* The ask sits above the rows. It used to sit below them, which meant the
+   page showed two buttons and explained why only to whoever read on. */
+.confirm__ask { margin: 0; font-size: var(--sc-t-lg); font-weight: 650; }
+
+.proposals { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.prop {
+  display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  background: var(--sc-surface);
+  border: 1px solid color-mix(in oklab, var(--sc-accent) 45%, transparent);
+  border-left: 4px solid var(--sc-accent);
+  border-radius: var(--sc-r-md);
+  box-shadow: var(--sc-e1);
+}
+.prop__mark {
+  flex: none; width: 2rem; height: 2rem; border-radius: 50%;
+  border: 2px dotted var(--sc-accent); color: var(--sc-accent);
+  display: grid; place-items: center; font-weight: 700;
+}
+.prop__body { min-width: 8rem; }
+.prop__name { font-weight: 650; font-size: var(--sc-t-lg); font-family: var(--sc-font-display); }
+.prop__meta { display: block; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+.prop__acts { margin-left: auto; display: flex; gap: 0.5rem; }
+.act-btn {
+  min-width: 3.75rem; min-height: 3.75rem;   /* 60 px, the app's floor */
+  border-radius: var(--sc-r-md); border: 2px solid var(--k-rule-strong);
+  background: var(--sc-surface); color: var(--sc-ink);
+  display: grid; place-items: center; cursor: pointer;
+  transition: transform 120ms var(--sc-ease-out), background var(--sc-d-fast) var(--sc-ease-out),
+              border-color var(--sc-d-fast) var(--sc-ease-out);
+}
+.act-btn:active { transform: translateY(1px); }
+.act-btn--yes:hover { border-color: var(--k-confirmed); background: color-mix(in oklab, var(--k-confirmed) 12%, var(--sc-surface)); }
+.act-btn--no:hover  { border-color: var(--k-destruct); background: color-mix(in oklab, var(--k-destruct) 10%, var(--sc-surface)); }
+.act-btn svg { width: 1.6rem; height: 1.6rem; }
+.act-btn--yes svg { color: var(--k-confirmed); }
+.act-btn--no svg  { color: var(--k-destruct); }
+
+.prop[data-state="confirmed"] { border-color: color-mix(in oklab, var(--k-confirmed) 45%, transparent); border-left-color: var(--k-confirmed); }
+.prop[data-state="confirmed"] .prop__mark { border: 2px solid var(--k-confirmed); background: var(--k-confirmed); color: #fff; }
+.prop[data-state="rejected"] { border-color: var(--k-rule); border-left-color: var(--k-rule-strong); opacity: 0.72; }
+.prop[data-state="rejected"] .prop__name { text-decoration: line-through; text-decoration-thickness: 1px; }
+.prop__done { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
+.prop__verdict { font-weight: 650; font-size: var(--sc-t-sm); }
+.prop[data-state="confirmed"] .prop__verdict { color: var(--k-confirmed); }
+.prop[data-state="rejected"] .prop__verdict { color: var(--sc-ink-soft); }
+.undo { min-height: 2.75rem; padding: 0 0.7rem; border: 1px solid var(--k-rule-strong);
+        border-radius: var(--sc-r-sm); background: none; color: var(--sc-ink); font: inherit;
+        font-size: var(--sc-t-xs); cursor: pointer; }
+.undo:hover { background: color-mix(in oklab, var(--sc-ink) 6%, transparent); }
+
+.confirm__live { margin: 0; min-height: 1.5em; font-weight: 600; }
+.confirm__foot { margin: 0; color: var(--sc-ink-soft); font-size: var(--sc-t-sm); }
+
+/* 5 · the floor ------------------------------------------------------------ */
+.act--floor .stage-inner { align-items: center; }
+.floor { width: 100%; }
+@media (min-width: 1000px) {
+  .floor { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+           grid-template-rows: auto auto;
+           gap: clamp(1rem, 2vw, 1.75rem) clamp(1.5rem, 3vw, 3rem);
+           align-items: start; align-content: center;
+           max-width: var(--sc-maxw); margin-inline: auto; }
+  .floor__text { grid-column: 1; grid-row: 1; }
+  .tablewrap { grid-column: 2; grid-row: 1 / span 2; }
+  .floor__aa { grid-column: 1; grid-row: 2; }
+  /* Four lines of display type in a narrow column is a wall, not a heading. */
+  .floor__text h2 { font-size: var(--sc-t-xl); }
+}
+.floor__text h2 { margin: 0 0 0.6rem; }
+.floor__text .sc-body { color: var(--sc-ink-soft); font-size: var(--sc-t-sm); }
+.tablewrap { overflow-x: auto; }
+.floor__table {
+  border-collapse: collapse; width: 100%; min-width: 20rem;
+  background: var(--sc-surface); border: 1px solid var(--k-rule);
+  border-radius: var(--sc-r-md); overflow: hidden;
+  box-shadow: var(--sc-e1);
+}
+.floor__table th, .floor__table td {
+  padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--k-rule);
+  font-size: var(--sc-t-sm);
+}
+.floor__table thead th {
+  font-size: var(--sc-t-xs); text-transform: uppercase; letter-spacing: var(--sc-track-wide);
+  color: var(--sc-ink-soft); font-weight: 700;
+  background: color-mix(in oklab, var(--sc-ink) 4%, transparent);
+}
+.floor__table tbody th { font-weight: 600; display: flex; align-items: center; gap: 0.45rem; border-bottom: 0; }
+.floor__table tbody tr:last-child th, .floor__table tbody tr:last-child td { border-bottom: 0; }
+.floor__table td { font-variant-numeric: tabular-nums; }
+/* No counter here, and no staged rows either. A ratio counting through 4.6:1
+   beside #1E7A3A puts a false measurement on screen at every frame but the
+   last, and rows that arrive one at a time are either illegible on the way in
+   or read as a table that failed to load. The table is the act's ground,
+   readable from the first pixel; the copy beside it is what advances. */
+.floor__text .sc-body + .sc-body { margin-top: 0.75rem; }
+.floor__table .bad { color: var(--sc-ink-soft); }
+.floor__table .good { font-weight: 650; }
+.sw { width: 0.85rem; height: 0.85rem; border-radius: 3px; flex: none; }
+.sw--prop { background: var(--sc-accent); }
+.sw--conf { background: var(--k-confirmed); }
+.sw--dest { background: var(--k-destruct); }
+.sw--soft { background: var(--sc-ink-soft); }
+.sw--tap  { background: none; border: 2px solid var(--sc-ink); }
+.floor__aa { margin: 0; font-size: var(--sc-t-sm); color: var(--sc-ink-soft); max-width: 30rem; }
+
+/* 6 · it asks you one ------------------------------------------------------ */
+.ask { display: grid; gap: clamp(1.1rem, 3vw, 1.75rem); max-width: 46rem; }
+/* Not the accent. The accent owns one role on this page, "the model proposed
+   this and nobody has confirmed it", and a rung label is not that. */
+.rung {
+  margin: 0; font-size: var(--sc-t-xs); font-weight: 700;
+  letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft);
+}
+.ask h2 { margin: 0; }
+.askform { display: grid; gap: 0.4rem; }
+.askform__label { font-size: var(--sc-t-sm); font-weight: 600; }
+.askform__row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.askform__input {
+  flex: 1 1 14rem; min-height: 3.75rem; padding: 0 1rem;
+  background: var(--sc-surface); color: var(--sc-ink);
+  border: 2px solid var(--k-rule-strong); border-radius: var(--sc-r-md);
+  font-size: var(--sc-t-lg); caret-color: var(--sc-accent);
+}
+.askform__input::placeholder { color: color-mix(in oklab, var(--sc-ink) 45%, transparent); }
+.askform__input:focus { border-color: var(--sc-accent); }
+.askform__go {
+  min-height: 3.75rem; padding: 0 1.5rem;
+  background: var(--sc-accent); color: var(--sc-accent-ink);
+  border: 0; border-radius: var(--sc-r-md);
+  font: inherit; font-size: var(--sc-t-base); font-weight: 650; cursor: pointer;
+  transition: transform 120ms var(--sc-ease-out), background var(--sc-d-fast) var(--sc-ease-out);
+}
+.askform__go:hover { background: color-mix(in oklab, var(--sc-accent) 88%, #000); }
+.askform__go:active { transform: translateY(1px); }
+.askform__note { margin: 0; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
+
+.kept {
+  background: var(--sc-surface); border: 1px solid var(--k-rule);
+  border-left: 4px solid var(--sc-accent);
+  border-radius: var(--sc-r-md); padding: 1rem 1.1rem;
+}
+.kept__h { margin: 0 0 0.5rem; font-size: var(--sc-t-xs); font-weight: 700;
+           letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); }
+.kept__code { margin: 0 0 0.6rem; font-family: var(--sc-font-mono); font-size: var(--sc-t-sm);
+              line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.kept__code b { font-weight: 400; color: var(--sc-accent); }
+.kept__line { margin: 0; font-size: var(--sc-t-sm); color: var(--sc-ink-soft); }
+
+.verdict {
+  margin: 0; padding: 0.9rem 1.1rem; border-radius: var(--sc-r-md);
+  background: color-mix(in oklab, var(--sc-accent) 8%, transparent);
+  border: 1px solid color-mix(in oklab, var(--sc-accent) 30%, transparent);
+  font-size: var(--sc-t-base);
+}
+.verdict:empty { display: none; }
+
+.cta-line { margin: 0; font-size: var(--sc-t-lg); font-family: var(--sc-font-display); line-height: 1.45; text-wrap: pretty; }
+.cta {
+  display: inline-block; margin-left: 0.15em;
+  font-family: var(--sc-font-text); font-size: var(--sc-t-base); font-weight: 650;
+  color: var(--k-accent-text); text-decoration: underline;
+  text-decoration-thickness: 2px; text-underline-offset: 0.2em;
+  min-height: 2.75rem; padding: 0.35rem 0;
+}
+.cta:hover { color: var(--sc-accent-ink); background: var(--sc-accent); text-decoration-color: transparent; }
+
+.foot {
+  margin-top: clamp(1rem, 3vw, 2rem); padding-top: 1.25rem;
+  border-top: 1px solid var(--k-rule);
+  display: grid; gap: 0.75rem;
+  font-size: var(--sc-t-sm); color: var(--sc-ink-soft);
+}
+.foot p { margin: 0; max-width: var(--sc-measure); }
+.foot__mark { opacity: 0.8; }
+/* Blockified by the flex parent, so these are standalone targets rather than
+   links in a sentence, and 44 px applies to them. */
+.foot__links { display: flex; flex-wrap: wrap; gap: 0.25rem 1.5rem; }
+.foot__links a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.foot__small { font-size: var(--sc-t-xs); }
+
+/* ---------------------------------------------------------------- mobile -- */
+@media (max-width: 1099px) {
+  /* The tree becomes a fixed bar down there, and a pinned stage is exactly one
+     viewport, so without this the last line of every stage sits under it.
+     It lives here rather than beside the other `main` rules because
+     `.stage-inner`'s own padding shorthand is declared later in the file and
+     would win on source order. */
+  .stage-inner { padding-bottom: 4.25rem; }
+
+  .tree {
+    left: 0; right: 0; bottom: 0; width: auto;
+    border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0;
+    padding: 0.4rem 0.75rem calc(0.4rem + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .tree__h { margin: 0; flex: none; }
+  .tree__list { flex-direction: row; overflow-x: auto; gap: 0.35rem; flex: 1; }
+  .tree__list li[data-depth="1"] { padding-left: 0; }
+  .tree__list li[data-depth="1"]::before { display: none; }
+  .node { white-space: nowrap; border: 1px solid var(--k-rule); }
+  li[data-state="proposed"] .node { border-style: dotted; border-color: var(--sc-accent); }
+  li[data-state="confirmed"] .node { border-color: var(--k-confirmed); }
+  .node__tag { display: none; }
+  .tree__state { display: none; }
+}
+@media (max-width: 560px) {
+  .tree__h { display: none; }
+  .status { font-size: var(--sc-t-base); }
+  /* The archive card is the ground of a pinned act, so on a phone it has to
+     leave room for the two lines under it rather than filling the viewport. */
+  .panel__bar { padding: 0.7rem 0.9rem; }
+  .tallies { padding: 0.7rem 0.9rem 0.35rem; gap: 1.25rem; }
+  .tallies dd { font-size: var(--sc-t-lg); }
+  .quota { padding: 0.3rem 0.9rem 0.7rem; }
+  .subjects li { padding: 0.55rem 0.9rem; }
+}
+/* Under about 700 px there is room for the archive and one line, not two. The
+   second line's point is the one act 2 opens with anyway. */
+@media (max-height: 700px) {
+  .status--2 { display: none; }
+}
+
+/* -------------------------------------------------------- reduced motion -- */
+/* Fewer and gentler, not zero: the opacity that carries comprehension stays,
+   every position change goes. */
+@media (prefers-reduced-motion: reduce) {
+  .shot__frame { transform: none !important; }
+  .transcript w { opacity: 1; }
+  .quota__track i { transition: none; }
+  .scr { transition: opacity 1ms; }
+}

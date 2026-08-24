@@ -1,167 +1,556 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<!--
+  Kinlore, the page.
+
+  Grammar: live surface (scrollcraft uniqueness.md 2.3). The page is not a
+  description of the app, it is the app running: every panel below computes from
+  the one data model in assets/kinlore.js. The two photographs are captioned as
+  photographs. Nothing here is a picture of a screen pretending to work.
+
+  Two languages, and the boundary is the project's own: page copy is Finnish and
+  English, switchable in the chrome; the strings inside the app surface stay
+  Finnish in both, because that is what the app says. English readers get a
+  gloss beside them.
+-->
+<html lang="en" data-lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kinlore — a family's shared memory archive</title>
-<meta name="description" content="An old person rambles; the AI turns it into structure. A family's shared memory archive, built for the RevenueCat Shipaton 2026.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kinlore · an old person rambles, and it becomes a record</title>
+<meta name="description" content="A family's shared memory archive. Ninety seconds of talk becomes a memory with a place, a decade and the names in it, and no name enters the family tree until a human confirms it.">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="logo/favicon-32.png" sizes="32x32">
-<style>
-  :root {
-    --parchment: #FBF1E2;
-    --ink: #241A14;
-    --amber: #E8A33C;
-    --terracotta: #C4552C;
-    --espresso: #2E1D16;
-    --bg: var(--parchment);
-    --fg: var(--ink);
-    --muted: #5C4B3F;
-    --rule: #E0D2BC;
-    --card: #FFFAF1;
+<meta property="og:title" content="Kinlore">
+<meta property="og:description" content="An old person rambles; the app gives it structure and keeps the voice that said it.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="assets/scrollcraft.css">
+<link rel="stylesheet" href="assets/kinlore.css">
+
+<!--
+  Three lines that have to run before the first paint, or the page renders in
+  the wrong language and flashes a panel at somebody who has already read it.
+  Everything else waits for the bottom of the body.
+-->
+<script>
+(function () {
+  var d = document.documentElement, q, seen;
+  try { q = (location.search.match(/[?&]lang=(fi|en)\b/) || [])[1] || localStorage.getItem('kinlore.lang'); } catch (e) {}
+  if (!q) q = (navigator.language || '').toLowerCase().indexOf('fi') === 0 ? 'fi' : 'en';
+  d.setAttribute('data-lang', q); d.lang = q;
+  try { seen = localStorage.getItem('kinlore.howto') === 'seen'; } catch (e) {}
+  if (seen) d.setAttribute('data-howto', 'seen');
+})();
+</script>
+
+<!--
+  Without JavaScript the engine never mounts, and its own stylesheet parks every
+  cue and every reveal at opacity 0 waiting for a scroll handler that will never
+  run: most of this page's prose would be present in the DOM and invisible on
+  the screen. So the no-script case gets the page as a document. This overrides
+  engine selectors, which is normally forbidden, and it is the one place it is
+  not: the mechanism is not running, so there is nothing here to fight with.
+-->
+<noscript><style>
+  [data-sc-cue], [data-sc-in], [data-sc-stagger] > * { opacity: 1 !important; transform: none !important; }
+  [data-sc-reveal] { clip-path: none !important; }
+  .sc-act--pinned .sc-stage, .sc-act--pinned [data-sc-stage] {
+    position: static !important; height: auto !important; overflow: visible !important;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: var(--espresso);
-      --fg: var(--parchment);
-      --muted: #C3B2A0;
-      --rule: #4A362A;
-      --card: #3A241A;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 1.0625rem;
-    line-height: 1.7;
-    -webkit-text-size-adjust: 100%;
-    /* A long word must break rather than push the page sideways at large text
-       sizes. The primary user of the app is 80; the page it is announced on
-       does not get to be the exception. */
-    overflow-wrap: break-word;
-  }
-  /* Horizontal padding is deliberately not in rem. rem scales with the text
-     size, so at 200% the insets ate the line width and the page scrolled
-     sideways on a 320 px screen. */
-  .wrap { max-width: 42rem; margin: 0 auto; padding: 3rem clamp(16px, 5vw, 24px) 4rem; }
-  h1, h2 { font-family: Charter, Georgia, "Times New Roman", serif; line-height: 1.2; }
-  h1 { margin: 0; font-size: 0; }
-  h1 img { width: min(340px, 80%); height: auto; display: block; }
-  h2 { font-size: 1.5rem; margin: 3rem 0 0.75rem; }
-  p { margin: 0 0 1.1rem; }
-  a { color: inherit; text-decoration: none; border-bottom: 2px solid var(--amber); }
-  a:hover, a:focus { background: var(--amber); color: var(--ink); }
-  header { margin-bottom: 2.5rem; }
-  .lede { font-size: 1.25rem; margin-top: 1.75rem; }
-  .moment {
-    margin: 0 0 1.25rem;
-    padding: 1.5rem clamp(16px, 5vw, 28px);
-    background: var(--card);
-    border-left: 4px solid var(--terracotta);
-    font-family: Charter, Georgia, "Times New Roman", serif;
-    font-size: 1.2rem;
-  }
-  .moment p:last-child { margin-bottom: 0; }
-  .video {
-    margin: 1.5rem 0;
-    padding: 2.5rem clamp(12px, 4vw, 24px);
-    border: 2px dashed var(--rule);
-    border-radius: 12px;
-    text-align: center;
-    color: var(--muted);
-  }
-  ul { padding-left: 1.25rem; margin: 0 0 1.1rem; }
-  li { margin-bottom: 0.6rem; }
-  .links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; margin-top: 1.5rem; }
-  footer {
-    margin-top: 3.5rem; padding-top: 1.5rem;
-    border-top: 1px solid var(--rule);
-    color: var(--muted); font-size: 0.9375rem;
-  }
-</style>
+  .stage-inner { height: auto; overflow: visible; padding-block: var(--sc-section) 1rem; }
+  .phone { height: auto !important; aspect-ratio: auto !important; }
+  .phone__screen { display: block; }
+  .scr { opacity: 1 !important; visibility: visible !important; grid-area: auto; }
+  .transcript, .transcript w { opacity: 1 !important; }
+  /* The two panes that only JavaScript can fill give way to the three lines
+     that say the same thing without it. */
+  .wire__field, .wire__raw, .wire__code { display: none; }
+  .wire__short { display: grid; }
+  .tree, .rec, .wave, .rec__time { display: none; }
+  /* The help panel is the only orientation a scriptless visitor gets, so it
+     stops being a dismissible overlay and becomes the opening block. */
+  .howto { position: static !important; border-radius: 0; }
+  .howto__close, .ctl--howto, .howto__veil { display: none; }
+</style></noscript>
 </head>
 <body>
-<div class="wrap">
 
-<header>
-  <h1>
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="logo/lockup-dark.svg">
-      <img src="logo/lockup.svg" alt="Kinlore">
-    </picture>
-  </h1>
-  <p class="lede">A family's shared memory archive. An old person rambles; the
-  app turns it into structure — and keeps the voice that said it.</p>
+<span data-sc-progress></span>
+<div class="sc-grain" aria-hidden="true"></div>
+
+<a class="skip" href="#surface">
+  <span data-l="fi" lang="fi">Siirry sisältöön</span><span data-l="en" lang="en">Skip to the content</span>
+</a>
+
+<!-- ===================================================================== -->
+<!-- CHROME. App chrome, not a marketing bar: a navigation title, a text    -->
+<!-- size control that really resizes this page, and a language control.    -->
+<!-- ===================================================================== -->
+<header class="chrome" role="banner">
+  <div class="chrome__row">
+    <img class="chrome__mark" src="logo/mark.svg" alt="" width="30" height="30">
+    <span class="chrome__titles">
+      <b class="chrome__title">Kinlore</b>
+      <span class="chrome__sub"><span lang="fi">Virtaset</span><span class="chrome__sub-more"> · <span data-l="fi" lang="fi">Perheen arkisto</span><span data-l="en" lang="en">the family archive</span></span></span>
+    </span>
+
+    <div class="chrome__controls">
+      <button type="button" id="howto-open" class="ctl ctl--howto" aria-expanded="true" aria-controls="howto">
+        <span class="ctl__glyph" aria-hidden="true">?</span>
+        <span class="ctl__label" data-l="fi" lang="fi">Näin tämä toimii</span>
+        <span class="ctl__label" data-l="en" lang="en">How this works</span>
+      </button>
+      <button type="button" id="bigtext" class="ctl ctl--aa" aria-pressed="false">
+        <span aria-hidden="true">Aa</span>
+        <span class="vh" data-l="fi" lang="fi">Suurempi teksti, kuten sovelluksessa</span>
+        <span class="vh" data-l="en" lang="en">Larger text, as in the app</span>
+      </button>
+      <div class="ctl-group" role="group" aria-label="Kieli / Language">
+        <button type="button" class="ctl" data-set-lang="fi" aria-pressed="false" lang="fi">Suomi</button>
+        <button type="button" class="ctl" data-set-lang="en" aria-pressed="true" lang="en">English</button>
+      </div>
+    </div>
+  </div>
 </header>
 
-<h2>The one thing it does</h2>
+<!-- ===================================================================== -->
+<!-- HOW THIS WORKS. The live-surface grammar puts a page's copy in the       -->
+<!-- surface's own register: labels, status lines, empty states, a help       -->
+<!-- panel. This is the help panel, and the app has a screen by this name     -->
+<!-- already. It opens itself once, remembers that it did, and gets out of    -->
+<!-- the way as soon as the visitor scrolls past the first act.               -->
+<!-- ===================================================================== -->
+<div class="howto__veil" id="howto-veil" hidden></div>
+<aside class="howto" id="howto" aria-labelledby="howto-h">
+  <div class="howto__inner">
+    <h2 class="howto__h" id="howto-h" tabindex="-1">
+      <span data-l="fi" lang="fi">Näin tämä toimii</span>
+      <span data-l="en" lang="en">How this works</span>
+    </h2>
 
-<blockquote class="moment">
-  <p>Grandmother presses a big button and rambles for ninety seconds about an
-  old photo. The app returns a structured memory attached to that photo, person
-  cards for the relatives she mentioned, the year and the place — and three
-  follow-up questions back.</p>
-</blockquote>
+    <p class="howto__lede">
+      <span data-l="fi" lang="fi"><b>Kinlore</b> on perheen yhteinen muistiarkisto. Vanhus puhuu, ja sovellus jäsentää puheen muistoksi ja säilyttää äänen joka sen sanoi.</span>
+      <span data-l="en" lang="en"><b>Kinlore</b> is a family's shared memory archive. An old person talks, the app gives the talk structure, and it keeps the voice that said it.</span>
+    </p>
 
-<p>The original recording is always kept and can be played back from the memory.
-Her voice is itself the inheritance, not a step on the way to text.</p>
+    <ul class="howto__list">
+      <li>
+        <span data-l="fi" lang="fi">Tämä sivu <b>on</b> sovellus, selaimeen rakennettuna. Perhe on näyte ja mallin vastaus on purkitettu, mutta jokainen paneeli laskee oikeasti ja jokainen luku on mitattu.</span>
+        <span data-l="en" lang="en">This page <b>is</b> the app, rebuilt in a browser. The family is a sample and the model's answer is canned, but every panel really computes and every number is measured.</span>
+      </li>
+      <li>
+        <span data-l="fi" lang="fi"><b>Vieritys kelaa.</b> Kohdassa, jossa muisto kerrotaan, vieritys on nauhurin kelaus: se ajaa nauhoituksen, tekstin ja sen jäsentymisen tietueeksi.</span>
+        <span data-l="en" lang="en"><b>Scroll is the playhead.</b> In the act where the memory gets told, your scroll drives the recording, the words, and the moment they turn into a record.</span>
+      </li>
+      <li>
+        <span data-l="fi" lang="fi"><b>Sukupuu nurkassa</b> on myös navigaatio, ja se ei täyty vierittämällä. Malli ehdottaa nimiä katkoviivalla; vain ihminen voi vahvistaa ne.</span>
+        <span data-l="en" lang="en"><b>The tree in the corner</b> is also the navigation, and it does not fill in by scrolling. The model proposes names as dashed outlines; only a person can confirm them.</span>
+      </li>
+      <li>
+        <span data-l="fi" lang="fi"><b>Aa</b> suurentaa koko sivun sovelluksen omaan tekstikokoon. Sovelluksen käyttäjä on 80-vuotias, joten se ei ole demo vaan mitta.</span>
+        <span data-l="en" lang="en"><b>Aa</b> enlarges this whole page to the app's own text size. The app's user is 80, so that button is a measurement rather than a demo.</span>
+      </li>
+      <li>
+        <span data-l="fi" lang="fi"><b>Sovellus on suomenkielinen</b>, koska se on tehty suomalaiselle 80-vuotiaalle. Suomeksi luettuna sivu näyttää sen omat tekstit sellaisinaan.</span>
+        <span data-l="en" lang="en"><b>The app itself runs in Finnish</b>, because it is built for a Finnish 80-year-old. Read in English, this page translates its interface and speaks its sample in English too. The two screenshots are the untranslated originals, and so is the Finnish recording in the repository.</span>
+      </li>
+    </ul>
 
-<h2>Why it exists</h2>
+    <p class="howto__foot">
+      <button type="button" class="howto__close" id="howto-close">
+        <span data-l="fi" lang="fi">Selvä</span><span data-l="en" lang="en">Got it</span>
+      </button>
+    </p>
+  </div>
+</aside>
 
-<p>Grandparents <em>know</em>, but they cannot explain it in a structured way.
-They do not fill in forms and they do not tag photographs — they talk. Album and
-genealogy apps demand structured input from the one person who will never
-produce it, and so the knowledge disappears at the funeral.</p>
+<!-- ===================================================================== -->
+<!-- THE TREE. Chrome, navigation, and the signature move in one element.   -->
+<!-- It draws itself as the visitor travels and it will not complete on     -->
+<!-- scroll alone: a dotted node stays dotted until somebody confirms it.   -->
+<!-- ===================================================================== -->
+<nav class="tree" id="tree" aria-labelledby="tree-h">
+  <h2 class="tree__h" id="tree-h">
+    <span data-l="fi" lang="fi">Sukupuu</span><span data-l="en" lang="en">Family tree</span>
+  </h2>
+  <ol class="tree__list" id="tree-list"></ol>
+  <p class="tree__state" id="tree-state" aria-live="polite"></p>
+</nav>
 
-<h2>What it is built on</h2>
+<main id="surface">
 
-<ul>
-  <li><strong>The primary user is 80 years old.</strong> Dynamic Type to the
-  largest size, VoiceOver, 60 pt touch targets. Accessibility is the design, not
-  a checklist bolted to it.</li>
-  <li><strong>Telling a story is never behind the paywall.</strong> The paywall
-  limits photographs and AI minutes, never the act of recording a memory.</li>
-  <li><strong>The AI proposes, a human confirms.</strong> An inferred relative
-  is created unconfirmed and does not appear in the family tree as fact. A wrong
-  relationship is worse than a missing one.</li>
-  <li><strong>Uncertainty is stored, not rounded off.</strong> "Sometime in the
-  fifties" is kept as a range with decade precision, never forced into a date.</li>
-</ul>
+  <!-- =================================================================== -->
+  <!-- 1 · RECOGNITION. pin, 1.7. The archive is the ground: it is on       -->
+  <!-- screen at p=0, so the stage is never empty while it slides in.       -->
+  <!-- =================================================================== -->
+  <section class="act act--archive" data-sc-act="pin" data-sc-span="1.7" data-sc-drift="#F6ECDC" aria-labelledby="a1-h">
+    <div data-sc-stage>
+      <div class="stage-inner">
 
-<h2>The demo</h2>
+        <div class="panel panel--archive" id="archive-panel">
+          <div class="panel__bar">
+            <h2 class="panel__title" id="a1-h"><span data-l="fi" lang="fi">Perheen arkisto</span><span data-l="en" lang="en">Family archive</span></h2>
+            <span class="badge" id="archive-badge"><span data-l="fi" lang="fi">Ilmainen</span><span data-l="en" lang="en">Free</span></span>
+          </div>
 
-<div class="video">
-  <p>The demo video goes here.<br>It is due with the Devpost submission on
-  28 September 2026.</p>
-</div>
+          <dl class="tallies" id="tallies">
+            <div><dt><span data-l="fi" lang="fi">Ihmiset</span><span data-l="en" lang="en">People</span></dt><dd class="sc-nums" data-tally="people">3</dd></div>
+            <div><dt><span data-l="fi" lang="fi">Muistot</span><span data-l="en" lang="en">Memories</span></dt><dd class="sc-nums" data-tally="memories">0</dd></div>
+            <div><dt><span data-l="fi" lang="fi">Kuvat</span><span data-l="en" lang="en">Photos</span></dt><dd class="sc-nums" data-tally="photos">1</dd></div>
+          </dl>
 
-<h2>Built in the open</h2>
+          <div class="quota">
+            <div class="quota__row">
+              <span><span data-l="fi" lang="fi">AI-minuutit</span><span data-l="en" lang="en">AI minutes</span></span>
+              <span class="sc-nums" id="quota-text">0:00 / 10:00</span>
+            </div>
+            <div class="quota__track"><i id="quota-fill" style="--w:0"></i></div>
+          </div>
 
-<p>Kinlore is a side project for the
-<a href="https://revenuecat-shipaton-2026.devpost.com/">RevenueCat Shipaton
-2026</a>, entered in the Next Gen student category. The source is public,
-including the reasoning: the plan, the architecture, and the design decisions
-are all in the repository.</p>
+          <ul class="subjects" id="subjects"></ul>
+        </div>
 
-<p>The app's interface is Finnish, because the person it exists for is a Finnish
-80-year-old. Everything else — documentation, comments, commit messages — is
-English.</p>
+        <p class="status" data-sc-cue="0 0.56 0 0.25">
+          <span data-l="fi" lang="fi"><b>Kinlore</b> on perheen yhteinen muistiarkisto. Tämä on Virtasten arkisto: kolme jäsentä, yksi valokuva, ei yhtään muistoa.</span>
+          <span data-l="en" lang="en"><b>Kinlore</b> is a family's shared memory archive. This one belongs to the Virtaset family: three members, one photograph, not a single memory in it.</span>
+        </p>
+        <p class="status status--2" data-sc-cue="0.40 0.94 0.14 0.22">
+          <span data-l="fi" lang="fi">Tämä on tyhjä hylly, ei rikkinäinen sovellus. Se joka tietää, ei täytä lomakkeita.</span>
+          <span data-l="en" lang="en">This is an empty shelf, not a broken app. The one who knows does not fill in forms.</span>
+        </p>
 
-<div class="links">
-  <a href="https://github.com/sunnyflower123/Kinlore">Source on GitHub</a>
-  <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/PLAN.md">The plan</a>
-  <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/ARCHITECTURE.md">The architecture</a>
-  <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/logo/README.md">The mark</a>
-</div>
+        <p class="disclosure">
+          <span data-l="fi" lang="fi">Tämä sivu on sovellus uudelleen rakennettuna selaimeen. Perhe on näyte, mallin vastaus on purkitettu, ja jokainen luku alla on mitattu ja löytyy koodista.</span>
+          <span data-l="en" lang="en">This page is the app rebuilt in a browser. The family is a sample, the model's answer is canned, and every number below is measured and traceable to a file.</span>
+        </p>
 
-<footer>
-  <p><strong>Kinlore</strong> is the name as of 15 Aug 2026. MIT licensed. Not on the App
-  Store — this is a hackathon entry, judged on the public source and the video.</p>
-</footer>
+      </div>
+    </div>
+  </section>
 
-</div>
+  <!-- =================================================================== -->
+  <!-- 2 · UNEASE. flow + reveal + tilt. The one act that reads like a      -->
+  <!-- document. It ends on an empty section, holding still: that empty     -->
+  <!-- screen is the authored silence in front of the peak.                 -->
+  <!-- =================================================================== -->
+  <section class="act act--gap sc-section" data-sc-act="flow" data-sc-drift="#F6ECDC" aria-labelledby="a2-h">
+    <div class="sc-wrap gap">
+
+      <div class="gap__text sc-stack" data-sc-in data-sc-stagger="70">
+        <h2 class="sc-display sc-display--md" id="a2-h">
+          <span data-l="fi" lang="fi">Sanni on arkistossa. Hänestä ei tiedetä mitään.</span>
+          <span data-l="en" lang="en">Sanni is in the archive. Nothing about her is known.</span>
+        </h2>
+        <p class="sc-body" data-l="fi" lang="fi">Isovanhemmat <em>tietävät</em>, mutta eivät osaa kertoa sitä jäsennellysti. He eivät täytä lomakkeita eivätkä merkitse valokuvia. He puhuvat. Albumi- ja sukututkimussovellukset vaativat jäsenneltyä syötettä juuri siltä ihmiseltä, joka ei sitä koskaan tuota, ja niin tieto katoaa hautajaisissa.</p>
+        <p class="sc-body" data-l="en" lang="en">Grandparents <em>know</em>, but they cannot explain it in a structured way. They do not fill in forms and they do not tag photographs. They talk. Album and genealogy apps demand structured input from the one person who will never produce it, and so the knowledge disappears at the funeral.</p>
+        <p class="sc-body" data-l="fi" lang="fi">Sovelluksen 80-vuotias ei ole persoona vaan oma isovanhempani, joka testasi tämän. Siksi säännöt luetaan täällä rajoitteina eikä hyvinä aikomuksina, ja siksi paha vika ei ole kaatuminen vaan tarina jota kukaan ei saanut kerrottua.</p>
+        <p class="sc-body" data-l="en" lang="en">The 80-year-old in that paragraph is not a persona. It is my own grandparent, who tested it. That is why the rules here read as constraints rather than good intentions, and why the failure that matters is not a crash but a story nobody could get told.</p>
+      </div>
+
+      <figure class="shot" data-sc-reveal="left" data-sc-reveal-at="0.06 0.5">
+        <div class="shot__frame" data-sc-tilt="5">
+          <img src="media/04-person.png" width="1206" height="2622"
+               alt="Sanni's person card in the app: a large blue button reading Kerro tästä muisto, an empty Suku section offering to add a relative, and a button to ask the family.">
+        </div>
+        <figcaption>
+          <span data-l="fi" lang="fi">Oikea sovellus, iPhone 17 Pro -simulaattori. Tiedosto on <code>docs/media/04-person.png</code>.</span>
+          <span data-l="en" lang="en">The real app, in its own Finnish, on an iPhone 17 Pro simulator. The file is <code>docs/media/04-person.png</code>.</span>
+        </figcaption>
+      </figure>
+
+      <div class="empty" data-sc-in>
+        <h3><span data-l="fi" lang="fi">Suku</span><span data-l="en" lang="en">Relatives</span></h3>
+        <p class="empty__line"><span data-l="fi" lang="fi">Ei vielä sukulaisia</span><span data-l="en" lang="en">No relatives yet</span></p>
+        <p class="empty__gloss" data-l="en" lang="en">No relatives yet. The empty section is the point: a gap is an invitation, not an error.</p>
+        <p class="empty__gloss" data-l="fi" lang="fi">Tyhjä osio on tarkoitus: aukko on kutsu eikä virhe.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- 3 · THE PEAK. pin, 3.8, the largest span on the page by nearly       -->
+  <!-- double. Scroll is the recording's playhead. Everything inside is     -->
+  <!-- driven from --sc-p by kinlore.js; the ground (the phone with the     -->
+  <!-- record button on it) is present at p=0.                              -->
+  <!-- =================================================================== -->
+  <section class="act act--tell" id="tell" data-sc-act="pin" data-sc-span="3.8" data-sc-drift="#EFE1CB" aria-labelledby="a3-h">
+    <div data-sc-stage>
+      <div class="stage-inner tell">
+
+        <h2 class="vh" id="a3-h">
+          <span data-l="fi" lang="fi">Kertominen</span><span data-l="en" lang="en">The telling</span>
+        </h2>
+
+        <!-- One line, greeting at p=0 and gone by 0.18: it is needed exactly
+             when the visitor arrives and never again. -->
+        <p class="mechanism" data-sc-cue="0 0.18 0 0.35">
+          <span data-l="fi" lang="fi">Vieritys kelaa. Nauhoitus, teksti ja sen jäsentyminen etenevät sen mukana.</span>
+          <span data-l="en" lang="en">Scroll is the playhead here. The recording, the words and the record they become all follow it.</span>
+        </p>
+
+        <!-- The phone. Real markup, real state, one data model. -->
+        <div class="phone" id="phone" data-phase="idle">
+          <div class="phone__screen">
+
+            <div class="scr scr--record">
+              <p class="scr__h"><span data-l="fi" lang="fi">Kerro mitä muistat</span><span data-l="en" lang="en">Tell us what you remember</span></p>
+              <div class="rec">
+                <span class="rec__btn" id="rec-btn" aria-hidden="true"></span>
+                <span class="rec__time sc-nums" id="rec-time">0:00</span>
+              </div>
+              <div class="wave" id="wave" aria-hidden="true"></div>
+              <p class="scr__hint" id="rec-hint"><span data-l="fi" lang="fi">Paina ja ala puhua</span><span data-l="en" lang="en">Press and start talking</span></p>
+              <p class="transcript" id="transcript" data-l="fi" lang="fi">Siinä kuvassa ollaan sen mökin rannassa, se oli Puumalassa se mökki. Aino oli siinä vieressäni ja Toivo otti sen kuvan. Se oli joskus viideskymmenluvulla, en muista tarkkaan.</p><p class="transcript" id="transcript-en" data-l="en" lang="en">In that photograph we are at the cottage shore, the cottage was in Puumala. Aino was there beside me and Toivo took the picture. It was sometime in the fifties, I do not remember exactly.</p>
+            </div>
+
+            <div class="scr scr--result" id="result">
+              <p class="scr__saved"><span class="tick" aria-hidden="true"></span> <span data-l="fi" lang="fi">Muisto tallennettu</span><span data-l="en" lang="en">Memory saved</span></p>
+
+              <div class="rowset">
+                <p class="rec-body"><span data-l="fi" lang="fi">Kuva on otettu mökin rannassa Puumalassa. Aino oli vieressä ja Toivo otti kuvan.</span><span data-l="en" lang="en">The photograph was taken at the cottage shore in Puumala. Aino was beside her and Toivo took it.</span></p>
+                <p class="rec-meta"><span class="pin-i" aria-hidden="true"></span> <span data-l="fi" lang="fi">Puumalassa</span><span data-l="en" lang="en">In Puumala</span> <span class="dot" aria-hidden="true"></span> <span data-l="fi" lang="fi">1950-luku</span><span data-l="en" lang="en">the 1950s</span></p>
+                <p class="rec-note">
+                  <span data-l="fi" lang="fi">Vuosikymmen säilyy vuosikymmenenä. Päivämäärää ei keksitä.</span>
+                  <span data-l="en" lang="en">A decade is kept as a decade. No date is invented.</span>
+                </p>
+              </div>
+
+              <!-- The note is above the control, not below it. A person who
+                   presses play and then hears a language the page is not
+                   written in has been surprised by something the page knew. -->
+              <p class="listen__note">
+                <span data-l="fi" lang="fi"><b class="secs">13 s</b>, näytteen todellinen pituus. Puhe on syntetisoitua, ei oikea nauhoitus.</span>
+                <span data-l="en" lang="en"><b class="secs">14 s</b>, the sample's real length. The speech is synthetic rather than a real recording, and it is synthesised in English so the page can be heard in the language it is read in.</span>
+              </p>
+              <button type="button" class="listen" id="listen">
+                <span class="listen__glyph" aria-hidden="true"></span>
+                <span data-l="fi" lang="fi">Kuuntele omalla äänellä</span><span data-l="en" lang="en">Listen in her own voice</span>
+              </button>
+              <!-- src is set by kinlore.js, one sample per language -->
+              <audio id="audio" preload="none" src="assets/sample-mokki-puhdas.m4a"></audio>
+
+              <div class="props" id="props">
+                <p class="props__h"><span data-l="fi" lang="fi">Kuulinko nimet oikein?</span><span data-l="en" lang="en">Did I hear the names right?</span></p>
+              </div>
+
+              <div class="asks" id="asks">
+                <p class="asks__h"><span data-l="fi" lang="fi">Kysyisin vielä</span><span data-l="en" lang="en">I would still ask</span></p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- The row it writes. The annotation column: the real JSON shape from
+             backend/src/extract.ts, assembling beside the screen that caused
+             it. This is what a judge is here to see. -->
+        <aside class="wire" id="wire" aria-labelledby="wire-h">
+          <h3 class="wire__h" id="wire-h">
+            <span data-l="fi" lang="fi">Mitä siitä tallentuu</span>
+            <span data-l="en" lang="en">The row it writes</span>
+          </h3>
+          <p class="wire__field"><code>memory.raw_transcript</code></p>
+          <pre class="wire__raw" id="wire-raw" aria-hidden="true"></pre>
+          <pre class="wire__code" id="wire-code" aria-live="off"></pre>
+          <ul class="wire__short">
+            <li><code>memory.raw_transcript</code> <span data-l="fi" lang="fi">talteen sanatarkkana</span><span data-l="en" lang="en">kept verbatim</span></li>
+            <li><code>date_precision = "decade"</code> <span data-l="fi" lang="fi">vuosikymmen, ei päivää</span><span data-l="en" lang="en">a decade, not a day</span></li>
+            <li><code>subject.confirmed = 0</code> <span data-l="fi" lang="fi">kahdesti, sääntö 4</span><span data-l="en" lang="en">twice, rule 4</span></li>
+            <li><code>backend/src/extract.ts</code> <span data-l="fi" lang="fi">oikea rakenne</span><span data-l="en" lang="en">the real shape</span></li>
+          </ul>
+          <p class="wire__note">
+            <span data-l="fi" lang="fi">Sanatarkka teksti kirjoitetaan ennen kuin mallia kutsutaan, ja se jää talteen. Mallin palauttama rakenne on <code>backend/src/extract.ts</code>:n oikea muoto, ja <code>confirmed = 0</code> siinä on sääntö 4.</span>
+            <span data-l="en" lang="en">The verbatim text is written before the model is called, and it is kept. The shape the model returns is the real one in <code>backend/src/extract.ts</code>, and the <code>confirmed = 0</code> in it is rule 4.</span>
+          </p>
+        </aside>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- 4 · RESPONSIBILITY. flow, and the one act scroll cannot advance.     -->
+  <!-- The page waits for a pointer or a keyboard. This is the signature    -->
+  <!-- move: the tree in the chrome cannot complete without it.            -->
+  <!-- =================================================================== -->
+  <section class="act act--confirm sc-section" id="confirm" data-sc-act="flow" data-sc-drift="#F6ECDC" aria-labelledby="a4-h">
+    <div class="sc-wrap confirm">
+
+      <div class="sc-stack" data-sc-in data-sc-stagger="60">
+        <h2 class="sc-display sc-display--md" id="a4-h"><span data-l="fi" lang="fi">Sovellus ehdottaa, ihminen päättää</span><span data-l="en" lang="en">The app proposes, a human decides</span></h2>
+        <p class="gloss-line" data-l="en" lang="en">That line is in the app itself, not written for this page.</p>
+        <p class="sc-body">
+          <span data-l="fi" lang="fi">Malli kuuli kaksi nimeä. Se ei tiedä keitä he ovat, eikä se arvaa sukulaisuutta, koska sitä ei sanottu ääneen. Molemmat ovat <code>confirmed = 0</code> siihen asti kunnes ihminen sanoo toisin, eivätkä ne näy sukupuussa faktana. Väärä sukulaisuus on pahempi kuin puuttuva.</span>
+          <span data-l="en" lang="en">The model heard two names. It does not know who they are, and it does not guess how they are related, because nobody said. Both are <code>confirmed = 0</code> until a person says otherwise, and neither appears in the family tree as fact. A wrong relationship is worse than a missing one.</span>
+        </p>
+      </div>
+
+      <p class="confirm__ask" data-sc-in>
+        <span data-l="fi" lang="fi">Vahvista tai hylkää. Sivu odottaa sinua.</span>
+        <span data-l="en" lang="en">Confirm or reject. The page is waiting for you.</span>
+      </p>
+
+      <ul class="proposals" id="proposals" data-sc-in></ul>
+
+      <p class="confirm__live" id="confirm-live" aria-live="polite"></p>
+
+      <p class="confirm__foot">
+        <span data-l="fi" lang="fi">Sukupuu vasemmalla ei täyty vierittämällä. Se odottaa tätä.</span>
+        <span data-l="en" lang="en">The tree in the corner does not fill in by scrolling. It is waiting for this.</span>
+      </p>
+
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- 5 · COMPETENCE. pin + count, 2.2. Real measured figures only. The    -->
+  <!-- table is the ground, present at p=0; the counters run inside it.     -->
+  <!-- =================================================================== -->
+  <section class="act act--floor" id="floor" data-sc-act="pin" data-sc-span="2.2" data-sc-drift="#F6ECDC" aria-labelledby="a5-h">
+    <div data-sc-stage>
+      <div class="stage-inner floor">
+
+        <div class="floor__text">
+          <h2 class="sc-display sc-display--md" id="a5-h">
+            <span data-l="fi" lang="fi">Käyttäjä on 80. Se on mitattu, ei luvattu.</span>
+            <span data-l="en" lang="en">The user is 80. That was measured, not promised.</span>
+          </h2>
+          <p class="sc-body" data-sc-cue="0 0.52 0 0.22">
+            <span data-l="fi" lang="fi">Raja on 4,5:1, ja kaikki neljä iOS:n omaa väriä jäävät sen alle. Alin niistä kantaa juuri sitä riviä, jossa perhettä pyydetään tarkistamaan jotain.</span>
+            <span data-l="en" lang="en">The threshold is 4.5:1, and all four of iOS's own colours are under it. The lowest one carries the very label that asks the family to check something.</span>
+          </p>
+          <p class="sc-body" data-sc-cue="0.44 0.96 0.14 0.18">
+            <span data-l="fi" lang="fi">Oikean sarakkeen luvut on mitattu ja kirjoitettu perusteluineen yhteen tiedostoon, <code>ios/Kinlore/Services/Elder.swift</code>. Kontrasti on se sääntö, jota silmä ei voi tarkistaa.</span>
+            <span data-l="en" lang="en">The figures in the right column were measured and written down with their reasoning in one file, <code>ios/Kinlore/Services/Elder.swift</code>. Contrast is the one rule eyes cannot check.</span>
+          </p>
+        </div>
+
+        <div class="tablewrap">
+          <table class="floor__table">
+            <caption class="vh">
+              <span data-l="fi" lang="fi">Kontrastisuhteet ja kosketusalue</span>
+              <span data-l="en" lang="en">Contrast ratios and tap target</span>
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col"><span data-l="fi" lang="fi">Mihin</span><span data-l="en" lang="en">What for</span></th>
+                <th scope="col"><span data-l="fi" lang="fi">iOS antaa</span><span data-l="en" lang="en">iOS gives</span></th>
+                <th scope="col"><span data-l="fi" lang="fi">Kinlore käyttää</span><span data-l="en" lang="en">Kinlore uses</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><span class="sw sw--prop" aria-hidden="true"></span><span data-l="fi" lang="fi">Ehdotus</span><span data-l="en" lang="en">Proposal</span></th>
+                <td class="sc-nums bad"><code>.orange</code> 2.2:1</td>
+                <td class="sc-nums good"><code>#C2410C</code> 5.2:1</td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="sw sw--conf" aria-hidden="true"></span><span data-l="fi" lang="fi">Vahvistus</span><span data-l="en" lang="en">Confirmation</span></th>
+                <td class="sc-nums bad"><code>.green</code> 1.8:1</td>
+                <td class="sc-nums good"><code>#1E7A3A</code> 5.4:1</td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="sw sw--dest" aria-hidden="true"></span><span data-l="fi" lang="fi">Poisto</span><span data-l="en" lang="en">Destruction</span></th>
+                <td class="sc-nums bad"><code>.red</code> 3.6:1</td>
+                <td class="sc-nums good"><code>#B3261E</code> 6.5:1</td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="sw sw--soft" aria-hidden="true"></span><span data-l="fi" lang="fi">Tukiteksti</span><span data-l="en" lang="en">Supporting text</span></th>
+                <td class="sc-nums bad"><code>.secondary</code> 4.2:1</td>
+                <td class="sc-nums good">75&nbsp;% 6.6:1</td>
+              </tr>
+              <tr>
+                <th scope="row"><span class="sw sw--tap" aria-hidden="true"></span><span data-l="fi" lang="fi">Kosketusalue</span><span data-l="en" lang="en">Tap target</span></th>
+                <td class="sc-nums bad">44 pt</td>
+                <td class="sc-nums good">60 pt</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="floor__aa">
+          <span data-l="fi" lang="fi">Aa-painike ylhäällä suurentaa myös tämän sivun. Jos jokin rikkoutuu suurimmalla tekstillä, se ei ole valmis.</span>
+          <span data-l="en" lang="en">The Aa button at the top enlarges this page too. If a screen does not work at the largest text size, it is not done.</span>
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- 6 · INTIMACY, then resolve. flow, and the close is an actual input,  -->
+  <!-- which is what this grammar asks for. A magnetic button would be the  -->
+  <!-- wrong ending for a page that spent its length being a tool.          -->
+  <!-- =================================================================== -->
+  <section class="act act--ask sc-section" id="ask" data-sc-act="flow" data-sc-drift="#F6ECDC" aria-labelledby="a6-h">
+    <div class="sc-wrap ask">
+
+      <div class="sc-stack" data-sc-in data-sc-stagger="60">
+        <p class="rung"><span data-l="fi" lang="fi">Taso 1, nimeäminen. Vastaus on 1 tai 3 sanaa.</span><span data-l="en" lang="en">Level 1, naming. The answer is one to three words.</span></p>
+        <h2 class="sc-display sc-display--md" id="a6-h">
+          <span data-l="fi" lang="fi">Kuka sinun suvussasi tietää jotain, mitä kukaan ei ole kirjoittanut ylös?</span>
+          <span data-l="en" lang="en">Who in your family knows something that nobody has written down?</span>
+        </h2>
+      </div>
+
+      <form class="askform" id="askform" novalidate>
+        <label class="askform__label" for="askname">
+          <span data-l="fi" lang="fi">Nimi</span><span data-l="en" lang="en">A name</span>
+        </label>
+        <div class="askform__row">
+          <input class="askform__input" id="askname" name="askname" type="text" autocomplete="off"
+                 maxlength="60" spellcheck="false"
+                 placeholder="Kerttu">
+          <button class="askform__go" type="submit">
+            <span data-l="fi" lang="fi">Lisää</span><span data-l="en" lang="en">Add</span>
+          </button>
+        </div>
+        <p class="askform__note">
+          <span data-l="fi" lang="fi">Tämä ei lähde mihinkään. Sivulla ei ole palvelinta, ja teksti jää selaimeesi.</span>
+          <span data-l="en" lang="en">This goes nowhere. The page has no server, and the text stays in your browser.</span>
+        </p>
+      </form>
+
+      <div class="kept" id="kept" hidden>
+        <p class="kept__h"><span data-l="fi" lang="fi">Näin se jää talteen</span><span data-l="en" lang="en">This is how it is kept</span></p>
+        <pre class="kept__code" id="kept-code"></pre>
+        <p class="kept__line" id="kept-line"></p>
+      </div>
+
+      <p class="verdict" id="verdict"></p>
+
+      <p class="cta-line">
+        <span data-l="fi" lang="fi">Suunnitelma, arkkitehtuuri ja jokainen päätös perusteluineen ovat samassa repossa kuin koodi.</span>
+        <span data-l="en" lang="en">The plan, the architecture and every decision with its reasoning are in the same repository as the code.</span>
+        <a class="cta" href="https://github.com/sunnyflower123/Kinlore">
+          <span data-l="fi" lang="fi">Lue lähdekoodi</span><span data-l="en" lang="en">Read the source</span>
+        </a>
+      </p>
+
+      <footer class="foot">
+        <img class="foot__mark" src="logo/mark.svg" alt="" width="26" height="26">
+        <p>
+          <span data-l="fi" lang="fi">Kinlore on sivuprojekti <a href="https://revenuecat-shipaton-2026.devpost.com/">RevenueCat Shipaton 2026</a> -kilpailuun, sarjassa Next Gen. Sovellus ei tule App Storeen: arvostelu kohdistuu julkiseen lähdekoodiin ja videoon. Sovelluksen kieli on suomi, koska se on tehty suomalaiselle 80-vuotiaalle.</span>
+          <span data-l="en" lang="en">Kinlore is a side project for the <a href="https://revenuecat-shipaton-2026.devpost.com/">RevenueCat Shipaton 2026</a>, entered in the Next Gen student category. It is not going to the App Store: the judging is on the public source and the video. The app's own language is Finnish, because it is built for a Finnish 80-year-old.</span>
+        </p>
+        <p class="foot__links">
+          <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/PLAN.md"><span data-l="fi" lang="fi">Suunnitelma</span><span data-l="en" lang="en">The plan</span></a>
+          <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/ARCHITECTURE.md"><span data-l="fi" lang="fi">Arkkitehtuuri</span><span data-l="en" lang="en">The architecture</span></a>
+          <a href="simple.html"><span data-l="fi" lang="fi">Yhden sivun versio</span><span data-l="en" lang="en">The plain page</span></a>
+        </p>
+        <p class="foot__small">
+          <span data-l="fi" lang="fi">Vieritysmoottori on <a href="https://github.com/nateherkai/scroll-craft">scrollcraft</a>, MIT, muuttamattomana. Kuvakaappaukset ovat simulaattorista.</span>
+          <span data-l="en" lang="en">The scroll engine is <a href="https://github.com/nateherkai/scroll-craft">scrollcraft</a>, MIT, vendored unmodified. The screenshots are from the simulator.</span>
+        </p>
+      </footer>
+
+    </div>
+  </section>
+
+</main>
+
+<script src="assets/scrollcraft.js"></script>
+<script src="assets/kinlore.js"></script>
 </body>
 </html>

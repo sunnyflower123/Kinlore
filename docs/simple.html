@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinlore — a family's shared memory archive</title>
+<meta name="description" content="An old person rambles; the AI turns it into structure. A family's shared memory archive, built for the RevenueCat Shipaton 2026.">
+<link rel="icon" href="logo/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="logo/favicon-32.png" sizes="32x32">
+<style>
+  :root {
+    --parchment: #FBF1E2;
+    --ink: #241A14;
+    --amber: #E8A33C;
+    --terracotta: #C4552C;
+    --espresso: #2E1D16;
+    --bg: var(--parchment);
+    --fg: var(--ink);
+    --muted: #5C4B3F;
+    --rule: #E0D2BC;
+    --card: #FFFAF1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: var(--espresso);
+      --fg: var(--parchment);
+      --muted: #C3B2A0;
+      --rule: #4A362A;
+      --card: #3A241A;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    -webkit-text-size-adjust: 100%;
+    /* A long word must break rather than push the page sideways at large text
+       sizes. The primary user of the app is 80; the page it is announced on
+       does not get to be the exception. */
+    overflow-wrap: break-word;
+  }
+  /* Horizontal padding is deliberately not in rem. rem scales with the text
+     size, so at 200% the insets ate the line width and the page scrolled
+     sideways on a 320 px screen. */
+  .wrap { max-width: 42rem; margin: 0 auto; padding: 3rem clamp(16px, 5vw, 24px) 4rem; }
+  h1, h2 { font-family: Charter, Georgia, "Times New Roman", serif; line-height: 1.2; }
+  h1 { margin: 0; font-size: 0; }
+  h1 img { width: min(340px, 80%); height: auto; display: block; }
+  h2 { font-size: 1.5rem; margin: 3rem 0 0.75rem; }
+  p { margin: 0 0 1.1rem; }
+  a { color: inherit; text-decoration: none; border-bottom: 2px solid var(--amber); }
+  a:hover, a:focus { background: var(--amber); color: var(--ink); }
+  header { margin-bottom: 2.5rem; }
+  .lede { font-size: 1.25rem; margin-top: 1.75rem; }
+  .moment {
+    margin: 0 0 1.25rem;
+    padding: 1.5rem clamp(16px, 5vw, 28px);
+    background: var(--card);
+    border-left: 4px solid var(--terracotta);
+    font-family: Charter, Georgia, "Times New Roman", serif;
+    font-size: 1.2rem;
+  }
+  .moment p:last-child { margin-bottom: 0; }
+  .video {
+    margin: 1.5rem 0;
+    padding: 2.5rem clamp(12px, 4vw, 24px);
+    border: 2px dashed var(--rule);
+    border-radius: 12px;
+    text-align: center;
+    color: var(--muted);
+  }
+  ul { padding-left: 1.25rem; margin: 0 0 1.1rem; }
+  li { margin-bottom: 0.6rem; }
+  .links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; margin-top: 1.5rem; }
+  footer {
+    margin-top: 3.5rem; padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+    color: var(--muted); font-size: 0.9375rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="logo/lockup-dark.svg">
+      <img src="logo/lockup.svg" alt="Kinlore">
+    </picture>
+  </h1>
+  <p class="lede">A family's shared memory archive. An old person rambles; the
+  app turns it into structure — and keeps the voice that said it.</p>
+</header>
+
+<h2>The one thing it does</h2>
+
+<blockquote class="moment">
+  <p>Grandmother presses a big button and rambles for ninety seconds about an
+  old photo. The app returns a structured memory attached to that photo, person
+  cards for the relatives she mentioned, the year and the place — and three
+  follow-up questions back.</p>
+</blockquote>
+
+<p>The original recording is always kept and can be played back from the memory.
+Her voice is itself the inheritance, not a step on the way to text.</p>
+
+<h2>Why it exists</h2>
+
+<p>Grandparents <em>know</em>, but they cannot explain it in a structured way.
+They do not fill in forms and they do not tag photographs — they talk. Album and
+genealogy apps demand structured input from the one person who will never
+produce it, and so the knowledge disappears at the funeral.</p>
+
+<h2>What it is built on</h2>
+
+<ul>
+  <li><strong>The primary user is 80 years old.</strong> Dynamic Type to the
+  largest size, VoiceOver, 60 pt touch targets. Accessibility is the design, not
+  a checklist bolted to it.</li>
+  <li><strong>Telling a story is never behind the paywall.</strong> The paywall
+  limits photographs and AI minutes, never the act of recording a memory.</li>
+  <li><strong>The AI proposes, a human confirms.</strong> An inferred relative
+  is created unconfirmed and does not appear in the family tree as fact. A wrong
+  relationship is worse than a missing one.</li>
+  <li><strong>Uncertainty is stored, not rounded off.</strong> "Sometime in the
+  fifties" is kept as a range with decade precision, never forced into a date.</li>
+</ul>
+
+<h2>The demo</h2>
+
+<div class="video">
+  <p>The demo video goes here.<br>It is due with the Devpost submission on
+  28 September 2026.</p>
+</div>
+
+<h2>Built in the open</h2>
+
+<p>Kinlore is a side project for the
+<a href="https://revenuecat-shipaton-2026.devpost.com/">RevenueCat Shipaton
+2026</a>, entered in the Next Gen student category. The source is public,
+including the reasoning: the plan, the architecture, and the design decisions
+are all in the repository.</p>
+
+<p>The app's interface is Finnish, because the person it exists for is a Finnish
+80-year-old. Everything else — documentation, comments, commit messages — is
+English.</p>
+
+<div class="links">
+  <a href="https://github.com/sunnyflower123/Kinlore">Source on GitHub</a>
+  <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/PLAN.md">The plan</a>
+  <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/ARCHITECTURE.md">The architecture</a>
+  <a href="https://github.com/sunnyflower123/Kinlore/blob/main/docs/logo/README.md">The mark</a>
+</div>
+
+<footer>
+  <p><strong>Kinlore</strong> is the name as of 15 Aug 2026. MIT licensed. Not on the App
+  Store — this is a hackathon entry, judged on the public source and the video.</p>
+</footer>
+
+</div>
+</body>
+</html>
