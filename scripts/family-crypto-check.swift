@@ -102,7 +102,12 @@ enum FamilyCryptoCheck {
             exit(1)
         }
         check("opens byte for byte", FamilyCrypto.open(sealedAudio, with: key) == audio)
-        check("the ftyp box is not left in the open", !sealedAudio.dropFirst(3).starts(with: Data("ftyp".utf8)))
+        // dropFirst(4), because that is where the fixture puts ftyp — after
+        // the four-byte box size, as in a real m4a. This said 3 for a while
+        // (the length of "k1.", a different offset entirely), which made the
+        // comparison false for sealed AND plaintext bytes alike: a check that
+        // could never fail, found by the deploy-day audit, 24 Aug 2026.
+        check("the ftyp box is not left in the open", !sealedAudio.dropFirst(4).starts(with: Data("ftyp".utf8)))
         check("a stranger's key opens no audio", FamilyCrypto.open(sealedAudio, with: other) == nil)
         check("unsealed bytes pass through", FamilyCrypto.open(audio, with: key) == audio)
 
@@ -124,8 +129,7 @@ enum FamilyCryptoCheck {
                       "source":"voice","created_at":0}],
          "questions":[{"id":"q1","text":"Millainen Aino oli?","status":"open","created_at":0}],
          "relations":[{"id":"r1","from_subject":"s1","to_subject":"s2","kind":"parent",
-                       "confirmed":0,"created_at":0}],
-         "guesses":[{"memory_id":"m1","member_id":"p1","created_at":0}]}
+                       "confirmed":0,"created_at":0}]}
         """
         guard let payload = try? JSONDecoder().decode(SyncPayload.self, from: Data(wire.utf8)) else {
             print("  FAIL the wire JSON did not decode into SyncPayload")
@@ -180,8 +184,13 @@ enum FamilyCryptoCheck {
             empty.subjects[0].title = ""
             return empty.sealed(with: key).subjects[0].title == ""
         }())
+        // A guesses check stood here until the guessing round was cut
+        // (PLAN §5 row 8) and took SyncPayload.guesses with it — at which
+        // point this script stopped COMPILING, silently, because its own
+        // instruction says to run it only after touching FamilyCrypto and
+        // nobody had. Found by the deploy-day audit chain, 24 Aug 2026:
+        // a check that does not build is the quietest possible green.
         check("relations are untouched", out.relations.first?.kind == "parent")
-        check("guesses are untouched", out.guesses.first?.member_id == "p1")
 
         print("— a title survives being pushed twice —")
         check(

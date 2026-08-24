@@ -321,12 +321,13 @@ until it happens every demo of the family half runs on launch arguments.
 narrowing: the default is baked into the **Release** configuration only.
 A DEBUG build without `-api` stays on stubs, because every test, demo recipe
 and screenshot run launches without an address and must never talk to the
-live database by accident (the UI tests additionally pin `-api ""` on every
-launch). A device build that should sync runs Release or passes `-api`;
+live database by accident (every UI test launch additionally passes `-api`
+explicitly — empty, or a dead loopback address, never a real one). A device
+build that should sync runs Release or passes `-api`;
 SETUP.md carries the recipe. The mode fork itself is unchanged — `.local` is
 still only ever chosen.
 
-The choice `.local` now is has a cost the review named B4: with a real
+The choice `.local` now has a cost the review named B4: with a real
 backend in the build, the chosen local mode still has no member the server
 knows, so transcription could only ever answer 401 — and the app used to
 promise *"teksti valmistuu myöhemmin"* over it, forever. Since the same day,
@@ -335,6 +336,15 @@ lived (the result screen and the memory row): the text is not coming, the
 voice is safe, writing it yourself is right there. A family-less
 transcription identity — or on-device ASR — is the v1.1 way to make the
 promise true instead of unmade.
+
+Coverage, honestly: `LocalModeTests` pins the sentences and their gating and
+would redden if either screen promised again. The skip itself — that no
+request leaves — is revert-blind there (a reverted guard fails fast against
+the test's dead port into the same screen) and is guarded only by the guard's
+own code and this paragraph. The same audit also caught this change's blast
+radius the first pass missed: the local-choice consent notice, the Help
+screen and the microphone permission text all still said the recording is
+sent, and each now tells the mode's truth.
 
 ## 8. Deliberately not built
 
@@ -372,7 +382,7 @@ P1 in early phase D beside the paywall craft it neighbours.
 | P0-3 | Link always answered (3 strings, moved guard) | 4.1 | ½ | completion of ARCH §4's known shortcoming | **Built 17 Aug 2026** |
 | P0-4 | Joiner lands on Muistot + "Haetaan perheen muistoja…" | 4.3 | 1 | state derivation, no new surface | **Built 17 Aug 2026** — and found the first pull waited for a relaunch; fixed with it |
 | P0-5 | *"Kenen puhelin tämä on"* on the join form | 5 | ½ | §16 precedent: rule 1 completion | **Built 17 Aug 2026** |
-| P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature | Waits for the Worker deploy (R2 behind a payment card) |
+| P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature | **Built 24 Aug** — Release default, DEBUG stays on stubs (§7); R2 had been enabled since 17 Aug |
 | P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** | **Built 17 Aug 2026** — the payment is recorded in PLAN §10's map row; mechanism corrected to a seen-id list, see §6 |
 | P2 | Own-name row; restore-purchases row outside the paywall | 8 | 1 | only if the 10 Sep rule opens spare time | Not built |
 

@@ -609,7 +609,7 @@ finished.**
        objects, which is what a dump contains.
      - **The invitation carries the key**, so whatever app delivered that
        message has it. The server does not, which is the design; that is a
-       smaller claim than end-to-end and `FamilyScreen` states it where the
+       smaller claim than end-to-end and `InviteShare` states it where the
        invite text is built.
      - **Place coordinates stay plaintext beside their sealed titles** — a
        point is a name in different clothes, and this one is a decided v1

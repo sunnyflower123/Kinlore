@@ -78,8 +78,8 @@ targets:
         # app never told anybody — anywhere — that the audio leaves the phone.
         NSMicrophoneUsageDescription: >-
           Kinlore tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
-          voi kuunnella ne myöhemmin. Äänitys lähetetään palveluumme, jossa
-          puheesta kirjoitetaan teksti.
+          voi kuunnella ne myöhemmin. Perheen arkistossa äänitys lähetetään
+          palveluumme, jossa puheesta kirjoitetaan teksti.
         NSPhotoLibraryUsageDescription: >-
           Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.
         # Invite link: kinlore://join?code=...

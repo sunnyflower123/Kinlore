@@ -5,12 +5,18 @@ import XCTest
 /// That mode never creates a member the server knows, so transcription can
 /// only ever answer 401 — and until this was fixed, the app recorded, promised
 /// "teksti valmistuu myöhemmin", and kept the promise-shaped request alive on
-/// every launch, forever. The honest behaviour is the one checked here: no
-/// attempt is made, and both the result screen and the memory row say the text
-/// is not coming instead of promising it.
+/// every launch, forever. The honest behaviour is the one checked here: both
+/// the result screen and the memory row say the text is not coming instead of
+/// promising it.
 ///
-/// The api argument points at a port nothing listens on, which is the point:
-/// the screens must reach their sentences without a single request leaving.
+/// Said precisely, because the audit refuted a bigger claim this comment used
+/// to make: what these assertions pin is the sentences and their gating —
+/// `canTranscribe` reaching the result screen, `isLocalByChoice` reaching the
+/// row. The skip-guard in `TellViewModel.stopAndProcess` is NOT pinned:
+/// against this dead loopback port a reverted guard fails fast into the same
+/// phase and the same sentences, and nothing here observes whether a request
+/// left. That residual is named in docs/UX.md §7 rather than papered over
+/// with a timing assertion that would flake.
 final class LocalModeTests: XCTestCase {
     func testLocalModeSaysTheTextIsNotComing() {
         // `-local_only YES` is the same UserDefaults key the onboarding form's

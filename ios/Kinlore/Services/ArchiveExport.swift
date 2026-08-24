@@ -259,7 +259,7 @@ enum ArchiveExport {
                     // whose audio could not be fetched used to assert "Ääni
                     // tallessa" over an <audio> element that never came.
                     out += audioNames[memory.id] != nil
-                        ? "<p class=\"pending\">Ääni tallessa, tekstiä ei ehditty kirjoittaa.</p>\n"
+                        ? "<p class=\"pending\">Ääni tallessa, tekstiä ei ole vielä kirjoitettu.</p>\n"
                         : "<p class=\"pending\">Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin.</p>\n"
                 } else {
                     for paragraph in memory.body.components(separatedBy: "\n") where !paragraph.isEmpty {

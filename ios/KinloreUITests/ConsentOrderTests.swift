@@ -141,10 +141,16 @@ final class ConsentOrderTests: XCTestCase {
 
     /// Part of `WhereMemoriesGo` and not all of it. Matching the whole sentence
     /// would turn every rewording into a red test, which is not what this is
-    /// here to catch — the clause about the recording being sent is.
+    /// here to catch — the clause about where the recording goes is. Since
+    /// finding B4 that clause has two truths: the family form says it is sent,
+    /// the kept-here form says it is not, and the notice this order test
+    /// guards is whichever of the two the form carries.
     private func notice(in app: XCUIApplication) -> XCUIElement {
         app.staticTexts
-            .matching(NSPredicate(format: "label CONTAINS[c] %@", "Äänitys lähetetään"))
+            .matching(NSPredicate(
+                format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@",
+                "Äänitys lähetetään", "Äänityksiä ei lähetetä"
+            ))
             .firstMatch
     }
 

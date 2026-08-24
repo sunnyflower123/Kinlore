@@ -2094,11 +2094,12 @@ village — is the name in different clothes.
 
 It stays for v1 because sealing it costs more than the honesty it buys today:
 
-- The columns are `REAL`, and the Worker's *"rubbish is refused"* check
-  (`coordinate(lat, 90)` in `sync.ts`, case 4 of `place-sync-check.mjs`) reads
-  the numbers. Sealed blobs would move that guarantee into the client — the
-  one place this section says silent rules must not live alone — and need a
-  column-type migration on a shipping table.
+- The Worker's *"rubbish is refused"* check (`coordinate(lat, 90)` in
+  `sync.ts`, case 4 of `place-sync-check.mjs`) reads the numbers. Sealed
+  blobs would move that guarantee into the client — the one place this
+  section says silent rules must not live alone. That is the real cost; the
+  storage itself would not even need a migration, since SQLite's `REAL` is
+  affinity rather than a constraint and stores a text blob as it is.
 - The rename rule itself would survive: it compares titles, which are already
   deterministic ciphertext. So the v1.1 route is known and small — seal the
   pair as one opaque blob, keep null as the only server-visible state — and it
@@ -2107,11 +2108,15 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
 - Nothing displays a coordinate yet (§18 above), so what accumulates before
   v1.1 is bounded and re-sealable by the same sweep that resolved it.
 
-`FamilyScreen`'s claim about the invite already says the smaller thing lever 3
-promises; this paragraph is where the whole of what a dump yields is written
-down: sealed words, clear structure — names of members, times, sequence
-numbers, relationships, and points for places. Anyone weighing the app against
-that list is weighing the truth.
+`InviteShare`'s doc comment beside the invite text already says the smaller
+thing lever 3 promises about the key; this paragraph is where the whole of
+what a dump yields is written down. Sealed: memory bodies, raw transcripts,
+subject titles, question text, and the R2 bytes. In the clear: the family's
+own name and its members' display names, timestamps and the carefully kept
+dates with their precision (rule 5), subject kinds, memory sources and audio
+lengths, sequence numbers, relationships, the mention graph — which memory
+names which subject, with the model's confidence — and points for places.
+Anyone weighing the app against that list is weighing the truth.
 
 ## 19. The telling that was not meant
 

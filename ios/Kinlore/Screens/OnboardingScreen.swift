@@ -200,17 +200,14 @@ struct OnboardingScreen: View {
 private struct WhereMemoriesGo: View {
     /// Whether the archive being set up is shared with a family.
     ///
-    /// The first sentence is the only part that changes, and it has to: *"muistot
-    /// näkyvät perheen jäsenille"* is false on a phone that keeps them to itself,
-    /// and a consent notice that is wrong in its first clause is worse than
-    /// none.
-    ///
-    /// The second sentence does not change, and that is the point of lever 2.
-    /// Choosing to keep the archive here does not keep the recording here — the
-    /// model key lives in the Worker (rule 7), so the audio travels either way.
-    /// The word **silti** carries it: without it the sentence reads as a
-    /// consequence of sharing, and somebody who has just declined sharing would
-    /// read straight past it.
+    /// Both sentences change with the answer now, and both have to: *"muistot
+    /// näkyvät perheen jäsenille"* is false on a phone that keeps them to
+    /// itself, and since finding B4 the second clause splits too. The kept-here
+    /// mode has no member the server knows, so nothing is sent and no text is
+    /// ever written — this notice used to say *"lähetetään silti palveluumme"*,
+    /// which was true while the mode still tried and met a 401, and became a
+    /// false promise the day the attempt was removed. A consent notice that is
+    /// wrong in either clause is worse than none.
     var isShared = true
 
     var body: some View {
@@ -219,8 +216,9 @@ private struct WhereMemoriesGo: View {
             Text(isShared
                 ? "Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, "
                     + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään."
-                : "Muistot jäävät tähän puhelimeen. Äänitys lähetetään silti palveluumme, "
-                    + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.")
+                : "Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään "
+                    + "eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, "
+                    + "ja alkuperäinen ääni säilyy puhelimessa.")
                 .foregroundStyle(Elder.supporting)
         }
     }

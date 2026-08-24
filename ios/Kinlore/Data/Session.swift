@@ -206,10 +206,13 @@ final class Session {
     /// can: the option exists for somebody uneasy about the server, and making
     /// it depend on the server answering would be a poor joke.
     ///
-    /// What it does **not** do is stop the audio leaving for transcription.
-    /// Rule 7 puts the model key in the Worker, so the recording travels
-    /// whatever this is set to. The screen that offers this says so in those
-    /// words; a quieter promise here would be the barrier fixed with a lie.
+    /// Since finding B4, nothing leaves in this mode at all: it creates no
+    /// member the server knows, every transcription call would be the same
+    /// 401, so the attempt is skipped (`TellViewModel.canTranscribe`) and the
+    /// screens say the text is not coming. This comment used to say the
+    /// opposite — that the audio travels whatever this is set to — which was
+    /// true while the mode still tried, and the consent notice has been
+    /// rewritten in step with the code both times.
     func keepToThisPhone() {
         UserDefaults.standard.set(true, forKey: localOnlyKey)
         UserDefaults.standard.removeObject(forKey: familyKey)

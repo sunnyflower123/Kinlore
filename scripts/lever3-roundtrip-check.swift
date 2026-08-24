@@ -7,11 +7,16 @@
 // for the marker and for the absence of every told word, and then opened with
 // the key the second device took out of the invitation — the same two
 // transforms the app runs, `SyncPayload.sealed` and `SyncPullReply.opened`,
-// not a re-implementation of them. The R2 bytes make the same trip through
-// /media. The one thing the harness re-spells is FamilyKey's base64url
-// shuffle (shareable/adopt), because the real one lives in the Keychain and a
-// command-line process has no business in the app's — the bytes are asserted
-// equal after the shuffle, so a drift would fail loudly.
+// not a re-implementation of them.
+//
+// The sealing is the app's; the transport around it is not. The harness
+// re-spells FamilyKey's base64url shuffle (the real one lives in the
+// Keychain), the invite text's composition and parsing (InviteShare's
+// `code#key` and Session.split), and the HTTP calls (SyncClient pulls in the
+// whole app). So the shuffle assertion below is a self-check — it proves the
+// harness's own two halves agree, and a drift in the app's FamilyKey would
+// not fail here. What the app-side halves get instead is their own coverage:
+// family-crypto-check for the crypto, the join tests for the invite text.
 //
 // Needs a running Worker, and leaves one throwaway family behind:
 //
@@ -155,7 +160,14 @@ enum Lever3RoundTripCheck {
             let fetched = try await download(base, key: audioKey, auth: aino.token)
             check(
                 "the R2 bytes travel sealed",
-                !fetched.dropFirst(3).starts(with: Data("ftyp".utf8))
+                // dropFirst(4): ftyp sits after the four-byte box size in the
+                // fixture, as in a real m4a. This said 3 briefly — the length
+                // of "k1.", a different offset — and the clause could then
+                // never fail; the audit caught it on day one. The second
+                // conjunct does the load-bearing work either way: open() is
+                // identity on unmarked data, so plaintext bytes come back
+                // equal and fail the check.
+                !fetched.dropFirst(4).starts(with: Data("ftyp".utf8))
                     && FamilyCrypto.open(fetched, with: keyB) != fetched
             )
             check(

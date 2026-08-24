@@ -28,7 +28,10 @@ struct HelpScreen: View {
 
             section(
                 "Mitä äänellesi tapahtuu",
-                "Äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti.",
+                "Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta "
+                    + "kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, "
+                    + "mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi "
+                    + "kirjoittaa itse.",
                 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä."
             )
 

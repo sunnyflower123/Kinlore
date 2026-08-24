@@ -15,8 +15,9 @@ enum AppServices {
 
     /// The backend address. A Release build defaults to `productionURL`;
     /// `-api http://localhost:8787` overrides it, and `-api ""` means no
-    /// backend at all — which is what every UI test pins, so a test run can
-    /// never talk to production by accident.
+    /// backend at all. Every UI test launch passes `-api` explicitly — empty,
+    /// or a dead loopback address — so a test run can never talk to
+    /// production by accident.
     ///
     /// A DEBUG build without `-api` stays on stubs on purpose. The demo,
     /// screenshot and test recipes all launch without an address and rely on

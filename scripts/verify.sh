@@ -88,9 +88,24 @@ entitlement_binding() {
 	node scripts/entitlement-binding-check.mjs
 }
 
+# The sealing itself, no Worker needed. This was a run-by-hand command in
+# CLAUDE.md until 24 Aug 2026, when it turned out to have stopped COMPILING
+# a week earlier — the guessing round's cut removed a field it referenced,
+# and its own instruction said to run it only after touching FamilyCrypto,
+# which nobody had. A check that does not build is the quietest green there
+# is, so it runs here now, on every verify.
+family_crypto() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/family-crypto-check" scripts/family-crypto-check.swift \
+		ios/Kinlore/Services/FamilyCrypto.swift \
+		ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/family-crypto-check"
+}
+
 echo
 echo "Invariants"
 run "the paid archive is offered on a rhythm" upsell_rhythm
+run "a wrong key opens nothing, a title seals stably" family_crypto
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over
 # the shipping schema in in-memory SQLite. The rule is RevenueCat's and it was
