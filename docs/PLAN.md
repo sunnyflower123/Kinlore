@@ -3,7 +3,8 @@
 Name: **Kinlore** (decided 15 Aug 2026, §10)
 Contest: RevenueCat Shipaton 2026, 1 Aug – 30 Sep 2026
 **Target category: Next Gen Award** (student category, $15,000). The store route
-is a conditional option decided on 10 Sep, not a second target — see §2.1.
+was a conditional option to be decided on 10 Sep; **closed for good on
+24 Aug 2026** — see §2.1. Next Gen is the only target.
 
 ---
 
@@ -43,7 +44,7 @@ What this saves:
 Roughly **two weeks of work removed and ten days added.** The name does not even
 have to be locked in advance, because no App Store Connect record is created.
 
-## 2.1 The store route, reopened as an option — 15 Aug 2026
+## 2.1 The store route, reopened as an option — 15 Aug 2026, closed 24 Aug 2026
 
 §2 remains the default, but two of the things it priced in turned out not to
 exist:
@@ -84,6 +85,17 @@ the app is live by **25 Sep**. Phase F in §3 is unchanged.
 Keeping the option open until 10 Sep costs one DAC7 click and locking the app
 name and bundle ID before an App Store Connect record exists (§10). Nothing
 else, and nothing in August.
+
+**Closed 24 Aug 2026, ahead of its own checkpoint.** The developer decided it
+directly — no App Store release, Next Gen only — on a rested day in August
+rather than at the 10 Sep sitting, and a rested day is the better place to
+decide anything. What follows from the closing: the 10 Sep rule never fires and the 17/25 Sep App Review dates
+are void; the 6–8 September evenings the route would have cost go to phase D's
+craft and to phase E instead; the DAC7 click is not needed; and the name and
+bundle id never meet an App Store Connect record, so the reservation moment
+§10 pointed at does not exist. §2's original reasoning stands in full. Do not
+reopen this, and do not re-price it — both prices are already written down
+above.
 
 ## 3. The schedule is built around school
 
@@ -367,9 +379,9 @@ finished.**
   identified by its API key and has no bundle-id field at all — *"Test Store
   works automatically with the RevenueCat SDK, no additional configuration is
   required beyond using your Test Store API key."* The bundle id becomes a
-  RevenueCat field only when an **App Store** app config is added, which happens
-  only if the store route opens (§2.1), and by then the new id is the one that
-  gets typed in. So the rename cost nothing here at all.
+  RevenueCat field only when an **App Store** app config is added — which,
+  with §2.1 closed on 24 Aug 2026, never happens. So the rename cost nothing
+  here at all.
 
   The Cloudflare worker, D1 database and R2 bucket keep the name `memorize` on
   purpose: a bucket cannot be renamed, only recreated empty, and rule 3 of
@@ -395,7 +407,10 @@ finished.**
 
   So search availability is a filter, never a clearance. The authoritative check
   happens once, when the record is created and the name is reserved — which is
-  why all three names travel to that moment (§2.1, 10 Sep) rather than one.
+  why all three names were to travel to that moment rather than one. With §2.1
+  closed (24 Aug 2026) no record is ever created, so the question never gets
+  its authoritative answer and never needs one: a name only has to be free on
+  the store if the app goes there.
 
   And the name does not have to explain the product. The App Store subtitle and
   the Devpost tagline do that, and the demo video explains more in ten seconds
@@ -439,7 +454,11 @@ finished.**
   over is taken. A breach here does not spill email addresses. It spills a
   family's memories of dead relatives, in their own words and in their own
   voice, and the person who could consent to that is often the one who has died.
-  Undecided; decided on 10 Sep with the rest.
+  Undecided. It was attached to the 10 Sep sitting, which went when §2.1
+  closed (24 Aug 2026), so it stands on its own: v1's answer is lever 3 of
+  §10, built and since proven through production, and the custody question —
+  Apple as holder via an iCloud packet — remains a recorded v1.1 alternative,
+  not a September decision.
 
   **What is in the cloud today**, measured rather than assumed:
 
