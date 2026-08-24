@@ -721,7 +721,11 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
    last, and rows that arrive one at a time are either illegible on the way in
    or read as a table that failed to load. The table is the act's ground,
    readable from the first pixel; the copy beside it is what advances. */
-.floor__text .sc-body + .sc-body { margin-top: 0.75rem; }
+/* The two lines cross over in place rather than stacking. Cued copy keeps its
+   box whether it is visible or not, so laid out one under the other they left
+   a hole the size of the invisible one between the heading and the text. */
+.floor__lines { display: grid; }
+.floor__lines > .sc-body { grid-area: 1 / 1; margin: 0; }
 .floor__table .bad { color: var(--sc-ink-soft); }
 .floor__table .good { font-weight: 650; }
 .sw { width: 0.85rem; height: 0.85rem; border-radius: 3px; flex: none; }

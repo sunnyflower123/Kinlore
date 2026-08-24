@@ -192,9 +192,13 @@
     if (!howtoIsOpen()) return;
     setHowto(false); howtoOpen.focus();
   });
-  /* Scrolling past the first act is an answer too. */
+  /* Scrolling is an answer too, and it has to be taken early. The threshold
+     was a viewport and a fifth, which meant the panel sat over the whole of
+     the first act while the visitor scrolled through the very screen it was
+     describing. 120 px is past a stray trackpad twitch and short of anything
+     that could be called reading on. */
   addEventListener('scroll', function () {
-    if (scrollY < innerHeight * 1.2 || !howtoIsOpen()) return;
+    if (scrollY < 120 || !howtoIsOpen()) return;
     setHowto(false);
   }, { passive: true });
 
