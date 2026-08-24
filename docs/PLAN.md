@@ -601,7 +601,7 @@ finished.**
      change; what that leaks is exactly what the comparison already needed.
 
      **It is not end-to-end, and it must not be called that where a user can
-     read it.** Two things stay outside it, both by necessity:
+     read it.** Three things stay outside it, each for a named reason:
 
      - **Transcription still sends the recording in clear.** Rule 7 puts the
        model key in the Worker and a model cannot write down speech it cannot
@@ -611,14 +611,22 @@ finished.**
        message has it. The server does not, which is the design; that is a
        smaller claim than end-to-end and `FamilyScreen` states it where the
        invite text is built.
+     - **Place coordinates stay plaintext beside their sealed titles** — a
+       point is a name in different clothes, and this one is a decided v1
+       leak, not a necessity: the Worker's range check reads the numbers and
+       the columns are `REAL`. The reasoning and the v1.1 sealing route are in
+       ARCHITECTURE §18 (finding M19, decided 24 Aug 2026).
 
-     **Still to do before this can be called finished:** it has never made a
-     round trip through a real Worker. The checks cover the crypto and the
-     payload — 33 of them, including that none of the words appear in what is
-     sent — but no two devices have yet exchanged a sealed memory, because R2
-     is not enabled and nothing is deployed. That is the test to run the day it
-     is, and until then this row is a thing that is built rather than a thing
-     that is working.
+     **The round trip ran on 24 Aug 2026 — the day the Worker deployed — and
+     passed whole.** `scripts/lever3-roundtrip-check.swift` drives the app's
+     own transforms (`SyncPayload.sealed`, `SyncPullReply.opened`,
+     `FamilyCrypto`) as two identities against the real Worker: the key
+     crossed only in the invite text, every stored text carried the seal and
+     none of the told words, the R2 bytes travelled sealed, and the second
+     identity opened everything byte for byte. Production D1 was read back
+     directly as well: the stored body begins `k1.`. This row is now a thing
+     that is working, not merely built — and the check runs against local
+     `wrangler dev` in verify.sh so it stays true.
 
      The timing was luck worth naming: there is **no production data**, so this
      needed no migration. Landing it in v1.1 would have meant re-encrypting a

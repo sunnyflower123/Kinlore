@@ -185,7 +185,11 @@ final class TranscriptionCatchUp {
         // that archive is canned to begin with; there is nothing to forge.
         if AppServices.defersNextTranscription { return true }
         #endif
-        return AppServices.isRemote
+        // The chosen local mode has no member the server knows, so every
+        // attempt would be the same 401. The Tell screen already says the
+        // text is not coming (finding B4); retrying here on every launch
+        // would only keep a promise-shaped request alive.
+        return AppServices.isRemote && !session.isLocalByChoice
     }
 
     /// Whether a failure says something about this moment rather than about

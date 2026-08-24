@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 61 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 62 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -2083,6 +2083,35 @@ yet. So they are checked through the running Worker rather than asserted —
 `scripts/place-sync-check.mjs`, five cases, no AI call and no credits spent.
 The check was itself checked: with the `CASE` replaced by a plain `COALESCE`,
 case 3 fails and the script exits non-zero.
+
+### What the columns tell the server — a decided leak
+
+The three columns are plaintext in D1, beside a title that lever 3 seals. That
+is a real leak and it was decided, not overlooked (24 Aug 2026, the review's
+finding M19): a database dump shows a coordinate pair whose name it cannot
+read, which for a family's most-told places — the summer cottage, the home
+village — is the name in different clothes.
+
+It stays for v1 because sealing it costs more than the honesty it buys today:
+
+- The columns are `REAL`, and the Worker's *"rubbish is refused"* check
+  (`coordinate(lat, 90)` in `sync.ts`, case 4 of `place-sync-check.mjs`) reads
+  the numbers. Sealed blobs would move that guarantee into the client — the
+  one place this section says silent rules must not live alone — and need a
+  column-type migration on a shipping table.
+- The rename rule itself would survive: it compares titles, which are already
+  deterministic ciphertext. So the v1.1 route is known and small — seal the
+  pair as one opaque blob, keep null as the only server-visible state — and it
+  is recorded here so it is a decision to revisit rather than a discovery to
+  make twice.
+- Nothing displays a coordinate yet (§18 above), so what accumulates before
+  v1.1 is bounded and re-sealable by the same sweep that resolved it.
+
+`FamilyScreen`'s claim about the invite already says the smaller thing lever 3
+promises; this paragraph is where the whole of what a dump yields is written
+down: sealed words, clear structure — names of members, times, sequence
+numbers, relationships, and points for places. Anyone weighing the app against
+that list is weighing the truth.
 
 ## 19. The telling that was not meant
 

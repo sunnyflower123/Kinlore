@@ -8,15 +8,32 @@ import Foundation
 /// address switches the real services on. That keeps development moving even
 /// when the Worker is broken.
 enum AppServices {
-    /// The backend address. Set with a launch argument:
-    ///   `-api http://localhost:8787`
-    /// or permanently in `UserDefaults` under the key `api`.
+    /// Where a real install syncs (docs/UX.md §7). Baked in on deploy day,
+    /// 24 Aug 2026 — before this, a Release build had no address at all and
+    /// every real install was silently a single-device archive.
+    static let productionURL = "https://memorize.arkiste.workers.dev"
+
+    /// The backend address. A Release build defaults to `productionURL`;
+    /// `-api http://localhost:8787` overrides it, and `-api ""` means no
+    /// backend at all — which is what every UI test pins, so a test run can
+    /// never talk to production by accident.
+    ///
+    /// A DEBUG build without `-api` stays on stubs on purpose. The demo,
+    /// screenshot and test recipes all launch without an address and rely on
+    /// the stub pipeline; a DEBUG default of the production URL would point
+    /// every one of them — and every parallel session's — at the live
+    /// database. A device build that should sync passes `-api` or runs the
+    /// Release configuration.
     static var apiBaseURL: URL? {
-        guard let raw = UserDefaults.standard.string(forKey: "api"),
-              !raw.isEmpty,
-              let url = URL(string: raw)
-        else { return nil }
-        return url
+        if let raw = UserDefaults.standard.string(forKey: "api") {
+            guard !raw.isEmpty, let url = URL(string: raw) else { return nil }
+            return url
+        }
+        #if DEBUG
+        return nil
+        #else
+        return URL(string: productionURL)
+        #endif
     }
 
     static var isRemote: Bool { apiBaseURL != nil }

@@ -51,15 +51,23 @@ the repo is public. After that:
 cd backend && npx wrangler dev
 ```
 
-The app uses stubs until it is told the backend's address. Switch the real
-services on with a launch argument:
+A **DEBUG** build uses stubs until it is told the backend's address. Switch
+the real services on with a launch argument:
 
 ```
 -api http://localhost:8787
 ```
 
-Without it the app still works completely — that is deliberate, so development
-does not stop when the Worker is broken or there is no network.
+Without it a DEBUG build still works completely — that is deliberate, so
+development does not stop when the Worker is broken, and so no test, demo or
+screenshot run ever talks to production by accident.
+
+A **Release** build defaults to production (`https://memorize.arkiste.workers.dev`,
+baked into `AppServices` on deploy day, 24 Aug 2026 — docs/UX.md §7). So a
+phone that should behave like a real install runs the Release configuration
+(Xcode: Product → Scheme → Edit Scheme → Run → Build Configuration), or a
+DEBUG build with `-api https://memorize.arkiste.workers.dev` in the scheme —
+remembering that scheme arguments only apply to launches Xcode makes.
 
 ### Health check
 
@@ -90,7 +98,8 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 
 | Argument | Build | What it does |
 |---|---|---|
-| `-api <url>` | any | Points the app at a backend. Without it the app runs on stubs — deliberately, so development does not stop when the Worker is broken. |
+| `-api <url>` | any | Points the app at a backend; `-api ""` means none at all. Without the argument a DEBUG build runs on stubs — deliberately, so development does not stop when the Worker is broken — and a Release build uses production. |
+| `-local_only YES` | any | The same UserDefaults key the onboarding form's *"Vain minulle, tälle puhelimelle"* writes: the chosen local mode, without filling the form. `LocalModeTests` launches with it beside a dead `-api` address to check the mode promises nothing it cannot deliver. |
 | `-rcKey <key>` | any | The RevenueCat Test Store key. Without it purchases and the paywall do not exist, and the app works normally. |
 | `-tab memories` / `-tab people` | DEBUG | Opens on that tab instead of Tell. |
 | `-screen write` | DEBUG | Opens the typing view directly. |

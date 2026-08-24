@@ -317,6 +317,25 @@ it deliberately is — the *chosen* mode behind *"Vain minulle, tälle
 puhelimelle"*, never the accident of a missing default. Minutes of work, and
 until it happens every demo of the family half runs on launch arguments.
 
+**Done 24 Aug 2026**, the day the Worker deployed — with one deliberate
+narrowing: the default is baked into the **Release** configuration only.
+A DEBUG build without `-api` stays on stubs, because every test, demo recipe
+and screenshot run launches without an address and must never talk to the
+live database by accident (the UI tests additionally pin `-api ""` on every
+launch). A device build that should sync runs Release or passes `-api`;
+SETUP.md carries the recipe. The mode fork itself is unchanged — `.local` is
+still only ever chosen.
+
+The choice `.local` now is has a cost the review named B4: with a real
+backend in the build, the chosen local mode still has no member the server
+knows, so transcription could only ever answer 401 — and the app used to
+promise *"teksti valmistuu myöhemmin"* over it, forever. Since the same day,
+that mode skips the attempt and says the truth in both places the promise
+lived (the result screen and the memory row): the text is not coming, the
+voice is safe, writing it yourself is right there. A family-less
+transcription identity — or on-device ASR — is the v1.1 way to make the
+promise true instead of unmade.
+
 ## 8. Deliberately not built
 
 Each of these was considered and refused, so the next session does not

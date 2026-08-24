@@ -114,6 +114,14 @@ final class TellViewModel {
     private let store: MemoryStore
     private let transcription: TranscriptionService
     private let extraction: ExtractionService
+    /// Whether "the text arrives later" is a promise this configuration can
+    /// keep. False in the chosen local mode of a build that has a real
+    /// backend: transcription needs a member the server knows, that mode
+    /// never creates one, and every call would be a 401 — so the attempt is
+    /// skipped and the screens say so instead of promising (docs/UX.md §7,
+    /// finding B4). The real fix — a family-less transcription identity or
+    /// on-device ASR — is a v1.1 decision.
+    let canTranscribe: Bool
     /// When a memory is told about a specific photo or person, it attaches to
     /// that. In free dictation this is nil and the subject is inferred from the
     /// speech. During an interview this moves to wherever the first memory
@@ -135,11 +143,13 @@ final class TellViewModel {
         transcription: TranscriptionService,
         extraction: ExtractionService,
         target: Subject? = nil,
-        question: FollowUpQuestion? = nil
+        question: FollowUpQuestion? = nil,
+        canTranscribe: Bool = true
     ) {
         self.store = store
         self.transcription = transcription
         self.extraction = extraction
+        self.canTranscribe = canTranscribe
         self.target = target
         self.question = question
         self.initialTarget = target
@@ -194,6 +204,15 @@ final class TellViewModel {
             return
         }
         let duration = recorder.elapsed
+        guard canTranscribe else {
+            // Not an error and not a deferral: in this mode the text is never
+            // coming, and uploading the audio to be told 401 would only make
+            // the screen's honest sentence arrive slower.
+            leaveInterview()
+            saveAudioOnly(audioURL: url, duration: duration)
+            phase = .savedWithoutTranscript
+            return
+        }
         do {
             phase = .transcribing
             let text = try await transcription.transcribe(audioURL: url)

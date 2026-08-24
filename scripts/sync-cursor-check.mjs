@@ -49,8 +49,18 @@ import { randomUUID, randomBytes } from 'node:crypto'
 const API = process.argv[2] ?? 'http://localhost:8787'
 // Each run knocks from an address of its own, so the checks do not spend each
 // other's rate-limit allowance. See family-sync-check.mjs for the argument.
+//
+// Local Workers only: the real Cloudflare edge answers 403 to any request
+// that tries to bring its own CF-Connecting-IP, so against production the
+// header stays home and the run spends the machine's real allowance — one
+// family per run, well under the five a minute the Worker permits.
 const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
-const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
+const json = {
+	'content-type': 'application/json',
+	...(new URL(API).hostname === 'localhost' || new URL(API).hostname === '127.0.0.1'
+		? { 'CF-Connecting-IP': household }
+		: {}),
+}
 
 let failures = 0
 

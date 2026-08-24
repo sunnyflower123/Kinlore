@@ -94,7 +94,12 @@ struct TellScreen: View {
                 transcription: transcription,
                 extraction: AppServices.extraction { session.identity.token },
                 target: opened,
-                question: question
+                question: question,
+                // The chosen local mode of a build with a real backend has no
+                // member the server knows, so transcription can never succeed
+                // there — the model skips the attempt and the result screen
+                // says so (finding B4).
+                canTranscribe: !session.isLocalByChoice
             )
             #if DEBUG
             // Screenshot aid: `-screen write` opens the typing view directly.
@@ -1334,7 +1339,12 @@ private struct AudioSavedView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
+            // Two truths for one screen: a deferral the catch-up will finish,
+            // and a mode where no text is ever coming. Promising "valmistuu
+            // myöhemmin" in the second would be the §16 lie all over again.
+            Text(model.canTranscribe
+                ? "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse."
+                : "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.")
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)

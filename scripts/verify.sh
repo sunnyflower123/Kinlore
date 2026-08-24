@@ -198,6 +198,18 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# runs ahead skips other members' rows silently and forever. Three defects
 	# lived in it (23 Aug 2026, §3) and every one looked like a working app.
 	run "a telling reaches the phone that was pushing" node scripts/sync-cursor-check.mjs
+	# PLAN §10 lever 3, end to end: the app's own sealing transforms pushed and
+	# pulled as two identities through the running Worker, the key crossing only
+	# in the invite text, the R2 bytes making the same trip. First production
+	# run 24 Aug 2026; this keeps the local Worker honest about the same claims.
+	lever3_roundtrip() {
+		DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+			-o "$OUT/lever3-roundtrip-check" scripts/lever3-roundtrip-check.swift \
+			ios/Kinlore/Services/FamilyCrypto.swift \
+			ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
+			&& "$OUT/lever3-roundtrip-check" http://localhost:8787
+	}
+	run "a sealed memory crosses between two phones" lever3_roundtrip
 	# The two unauthenticated doors. Measured by hand once (§4); this is the
 	# part that runs again when somebody edits wrangler.jsonc.
 	run "the two open doors are metered, per address" node scripts/rate-limit-check.mjs

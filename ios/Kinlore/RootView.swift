@@ -490,9 +490,15 @@ private struct MemoryRow: View {
                 // a promise nothing kept for a while (§16); it must not become
                 // one again on the recordings the catch-up has given up on.
                 Label(
-                    TranscriptionAttempts.hasGivenUp(on: memory.id)
-                        ? "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
-                        : "Ääni tallessa — teksti valmistuu myöhemmin",
+                    // The chosen local mode first: there the text is not late
+                    // and not given up on — it is simply never coming, and
+                    // "valmistuu myöhemmin" would be a promise nothing keeps
+                    // (finding B4).
+                    session.isLocalByChoice
+                        ? "Ääni tallessa — voit kirjoittaa tekstin itse"
+                        : TranscriptionAttempts.hasGivenUp(on: memory.id)
+                            ? "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
+                            : "Ääni tallessa — teksti valmistuu myöhemmin",
                     systemImage: "waveform"
                 )
                 .elderBody()

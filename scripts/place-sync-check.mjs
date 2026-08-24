@@ -36,12 +36,19 @@ const auth = { Authorization: `Bearer ${memberID}.${secret}` }
 // they were starving each other: whichever ran last failed with "could not
 // create a family: 429", which reads like a broken Worker and is not one.
 //
-// So each run knocks from an address of its own. Cloudflare sets
-// `CF-Connecting-IP` from the connection itself and ignores what the client
-// sends, so this changes nothing in production — it only stops the checks from
-// spending each other's allowance locally.
+// So each run knocks from an address of its own — against a local Worker
+// only. This comment used to claim the real edge "ignores what the client
+// sends"; measured 24 Aug 2026, it does not ignore it, it answers 403 to the
+// whole request. So against anything but localhost the header stays home and
+// the run spends the machine's real allowance — one family per run, well
+// under the limit.
 const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
-const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
+const json = {
+	'content-type': 'application/json',
+	...(new URL(API).hostname === 'localhost' || new URL(API).hostname === '127.0.0.1'
+		? { 'CF-Connecting-IP': household }
+		: {}),
+}
 
 let failures = 0
 

@@ -263,6 +263,19 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
   && /tmp/family-crypto-check
 
+# The same sealing, end to end: two identities through a real Worker, the key
+# crossing only in the invite text, D1 rows and R2 bytes checked sealed and
+# opened byte for byte on the second identity (PLAN §10 lever 3's "test to run
+# the day it deploys" — first production run 24 Aug 2026). Same compile line
+# with the round-trip source; needs `npx wrangler dev`, and against production
+# pass https://memorize.arkiste.workers.dev instead. Leaves one throwaway
+# family behind wherever it runs.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/lever3-roundtrip-check \
+  scripts/lever3-roundtrip-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
+  ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
+  && /tmp/lever3-roundtrip-check http://localhost:8787
+
 # Place coordinates through sync. Checks the four rules that are silent when
 # broken: a resolved point round-trips, a device that has not looked the name up
 # cannot wipe it, correcting the title clears it, and rubbish is refused. Costs
