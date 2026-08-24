@@ -28,21 +28,33 @@
      the app speaks English. */
   /* One sample per language, and both are synthetic. The Finnish one is
      samples/mokki-puhdas.m4a straight out of the repository; the English one
-     was made by the same method scripts/make-synthetic-samples.py uses, the
-     same Grandma voice family at the same 150 words per minute, through the
-     same 22.05 kHz mono WAV and AAC chain:
+     was made by the same method scripts/make-synthetic-samples.py uses, at the
+     same 150 words per minute and through the same 22.05 kHz mono WAV and AAC
+     chain. The voice is Karen rather than the Grandma the Finnish samples use:
+     Grandma is one of macOS's stylised character voices, and the clarity it
+     costs is not worth the age it buys on a page somebody hears once.
 
-       say -v "Grandma (English (UK))" -r 150 -o en.aiff "<the sentence>"
+       say -v "Karen" -r 150 -o en.aiff "<the sentence>"
        afconvert -f WAVE -d LEI16@22050 -c 1 en.aiff en.wav
        afconvert -f m4af -d aac -c 1 en.wav sample-cottage-en.m4a
 
      Both durations are read out of the files' own mvhd atoms rather than
      guessed, and they drive the timer and the caption. */
-  var AUDIO = {
-    fi: { src: 'assets/sample-mokki-puhdas.m4a', seconds: 13.24 },
-    en: { src: 'assets/sample-cottage-en.m4a',   seconds: 14.44 }
+  var VOICES = {
+    fi: [{ id: 'grandma', label: 'Grandma', src: 'assets/sample-mokki-puhdas.m4a', seconds: 13.24 }],
+    en: [{ id: 'karen',  label: 'Karen',  src: 'assets/sample-cottage-en.m4a',        seconds: 11.61 },
+         { id: 'daniel', label: 'Daniel', src: 'assets/sample-cottage-en-daniel.m4a', seconds: 12.31 }]
   };
-  function audioSeconds() { return AUDIO[lang].seconds; }
+  var voiceChoice = 'karen';
+  try { voiceChoice = localStorage.getItem('kinlore.voice') || 'karen'; } catch (e) {}
+
+  function voices() { return VOICES[lang]; }
+  function currentVoice() {
+    var list = voices();
+    for (var i = 0; i < list.length; i++) if (list[i].id === voiceChoice) return list[i];
+    return list[0];
+  }
+  function audioSeconds() { return currentVoice().seconds; }
   var QUOTA_SECONDS = 600;     /* the free tier: ten minutes of AI a month */
 
   var archive = {
@@ -74,7 +86,7 @@
       photoSub: 'Ei vielä muistoja', photoSub1: '1 muisto',
       hintIdle: 'Paina ja ala puhua', hintRec: 'Kuuntelen', hintWork: 'Järjestelen muistoa…',
       qs: ['Kuka muu oli paikalla?', 'Millainen ihminen Aino oli?', 'Minä vuonna tämä suunnilleen oli?'],
-      propState: 'vahvistamatta',
+      propState: 'vahvistamatta', voiceLabel: 'Ääni',
       wireBody: '"Kuva on otettu mökin\n            rannassa Puumalassa…",',
       confirmedWord: 'Vahvistettu', rejectedWord: 'Hylätty, ei tallennettu',
       undo: 'Kumoa',
@@ -101,7 +113,7 @@
       photoSub: 'No memories yet', photoSub1: '1 memory',
       hintIdle: 'Press and start talking', hintRec: 'Listening', hintWork: 'Organising the memory…',
       qs: ['Who else was there?', 'What sort of person was Aino?', 'Roughly what year was this?'],
-      propState: 'unconfirmed',
+      propState: 'unconfirmed', voiceLabel: 'Voice',
       wireBody: '"The photograph was taken at\n            the cottage shore…",',
       confirmedWord: 'Confirmed', rejectedWord: 'Rejected, not written',
       undo: 'Undo',
@@ -438,11 +450,12 @@
     envCache[which].forEach(function (v, k) { bars[k].style.setProperty('--h', v.toFixed(3)); });
     return true;
   }
-  function loadEnvelope(which) {
+  function loadEnvelope(v) {
     var AC = window.AudioContext || window.webkitAudioContext;
+    var which = v.id;
     if (paintEnvelope(which)) return;
     if (!AC || !window.fetch) return;
-    fetch(AUDIO[which].src).then(function (r) { return r.arrayBuffer(); })
+    fetch(v.src).then(function (r) { return r.arrayBuffer(); })
       .then(function (buf) { return new AC().decodeAudioData(buf); })
       .then(function (audio) {
         var data = audio.getChannelData(0), step = Math.floor(data.length / BARS), peak = 0, out = [];
@@ -452,8 +465,8 @@
           out.push(m); if (m > peak) peak = m;
         }
         if (!peak) return;
-        envCache[which] = out.map(function (v) { return Math.max(0.06, v / peak); });
-        if (which === lang) paintEnvelope(which);
+        envCache[which] = out.map(function (n) { return Math.max(0.06, n / peak); });
+        if (which === currentVoice().id) paintEnvelope(which);
       }).catch(function () { /* the authored envelope stays */ });
   }
 
@@ -492,7 +505,7 @@
   /* The result assembles: each block has its own threshold. */
   var REVEAL = [
     { sel: '.rowset', at: 0.735 },
-    { sel: '#listen', at: 0.79 }, { sel: '.listen__note', at: 0.79 },
+    { sel: '#listen', at: 0.79 }, { sel: '.listen__note', at: 0.79 }, { sel: '#voicepick', at: 0.79 },
     { sel: '#props', at: 0.845 }, { sel: '#asks', at: 0.915 }
   ];
   REVEAL.forEach(function (r) {
@@ -641,13 +654,52 @@
      it. Switching mid-playback stops the old one rather than leaving two
      recordings racing. */
   function paintAudio() {
-    var a = AUDIO[lang];
-    if (audio.getAttribute('src') !== a.src) {
+    var v = currentVoice();
+    if (audio.getAttribute('src') !== v.src) {
       if (!audio.paused) audio.pause();
-      audio.setAttribute('src', a.src);
+      audio.setAttribute('src', v.src);
     }
-    $$('.secs').forEach(function (el) { el.textContent = Math.round(a.seconds) + ' s'; });
-    loadEnvelope(lang);
+    $$('.secs').forEach(function (el) { el.textContent = Math.round(v.seconds) + ' s'; });
+    loadEnvelope(v);
+    paintVoicePicker();
+  }
+
+  /* A page control, not an app one, and it says so by living in the annotation
+     register the caption above it already uses. The app has no voice picker;
+     this chooses which synthesised sample the page plays. It appears only when
+     there is something to choose. */
+  function paintVoicePicker() {
+    var wrap = $('#voicepick');
+    var list = voices();
+    wrap.hidden = list.length < 2;
+    /* Clearing the markup has to clear the memo with it, or coming back from
+       Finnish takes the "already built" path and finds no buttons to update. */
+    if (wrap.hidden) { wrap.innerHTML = ''; wrap.__for = null; return; }
+    if (wrap.__for === lang) {
+      $$('button', wrap).forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.getAttribute('data-voice') === currentVoice().id));
+      });
+      $('.voicepick__label', wrap).textContent = t('voiceLabel');
+      return;
+    }
+    wrap.__for = lang;
+    wrap.innerHTML = '<span class="voicepick__label"></span>';
+    $('.voicepick__label', wrap).textContent = t('voiceLabel');
+    list.forEach(function (v) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'voicepick__btn';
+      b.setAttribute('data-voice', v.id);
+      b.textContent = v.label;
+      b.setAttribute('aria-pressed', String(v.id === currentVoice().id));
+      b.addEventListener('click', function () {
+        if (!audio.paused) audio.pause();
+        voiceChoice = v.id;
+        try { localStorage.setItem('kinlore.voice', v.id); } catch (e) {}
+        paintAudio();
+      });
+      wrap.appendChild(b);
+    });
   }
   listen.addEventListener('click', function () {
     if (audio.paused) { audio.currentTime = 0; audio.play().catch(function () {}); }
@@ -685,10 +737,11 @@
   var saved = null;
   try { saved = localStorage.getItem('kinlore.lang'); } catch (e) {}
   /* ?lang=fi and ?lang=en so a link can carry the language it was read in.
-     The query wins over the remembered choice, which wins over the browser. */
+     The query wins over a remembered choice, which wins over the default, and
+     the default is English. Same order as the head script, which has already
+     decided this before the first paint; this call only has to agree with it. */
   var q = (location.search.match(/[?&]lang=(fi|en)\b/) || [])[1];
-  var isFinn = (navigator.language || '').toLowerCase().indexOf('fi') === 0;
-  setLang(q || saved || (isFinn ? 'fi' : 'en'));   /* setLang renders */
+  setLang(q || saved || 'en');   /* setLang renders */
   if (window.ScrollCraft) ScrollCraft.mount(document.body);
   requestAnimationFrame(tick);
 })();

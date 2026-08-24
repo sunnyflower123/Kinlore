@@ -36,7 +36,11 @@
 (function () {
   var d = document.documentElement, q, seen;
   try { q = (location.search.match(/[?&]lang=(fi|en)\b/) || [])[1] || localStorage.getItem('kinlore.lang'); } catch (e) {}
-  if (!q) q = (navigator.language || '').toLowerCase().indexOf('fi') === 0 ? 'fi' : 'en';
+  /* English is the default. The browser's own language is deliberately not
+     consulted: this page is read by the competition's judges first, and a
+     Finnish reader is one control away. A link carrying ?lang=fi and a choice
+     already made both still win over it. */
+  if (q !== 'fi' && q !== 'en') q = 'en';
   d.setAttribute('data-lang', q); d.lang = q;
   try { seen = localStorage.getItem('kinlore.howto') === 'seen'; } catch (e) {}
   if (seen) d.setAttribute('data-howto', 'seen');
@@ -64,7 +68,7 @@
   .transcript, .transcript w { opacity: 1 !important; }
   /* The two panes that only JavaScript can fill give way to the three lines
      that say the same thing without it. */
-  .wire__field, .wire__raw, .wire__code { display: none; }
+  .wire__field, .wire__raw, .wire__code, .voicepick { display: none; }
   .wire__short { display: grid; }
   .tree, .rec, .wave, .rec__time { display: none; }
   /* The help panel is the only orientation a scriptless visitor gets, so it
@@ -321,14 +325,15 @@
                    written in has been surprised by something the page knew. -->
               <p class="listen__note">
                 <span data-l="fi" lang="fi"><b class="secs">13 s</b>, näytteen todellinen pituus. Puhe on syntetisoitua, ei oikea nauhoitus.</span>
-                <span data-l="en" lang="en"><b class="secs">14 s</b>, the sample's real length. The speech is synthetic rather than a real recording, and it is synthesised in English so the page can be heard in the language it is read in.</span>
+                <span data-l="en" lang="en"><b class="secs">12 s</b>, the sample's real length. The speech is synthetic rather than a real recording, and it is synthesised in English so the page can be heard in the language it is read in.</span>
               </p>
               <button type="button" class="listen" id="listen">
                 <span class="listen__glyph" aria-hidden="true"></span>
                 <span data-l="fi" lang="fi">Kuuntele omalla äänellä</span><span data-l="en" lang="en">Listen in her own voice</span>
               </button>
-              <!-- src is set by kinlore.js, one sample per language -->
+              <!-- src is set by kinlore.js, one sample per language and voice -->
               <audio id="audio" preload="none" src="assets/sample-mokki-puhdas.m4a"></audio>
+              <p class="voicepick" id="voicepick" hidden></p>
 
               <div class="props" id="props">
                 <p class="props__h"><span data-l="fi" lang="fi">Kuulinko nimet oikein?</span><span data-l="en" lang="en">Did I hear the names right?</span></p>

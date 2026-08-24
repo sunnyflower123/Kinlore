@@ -509,6 +509,24 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
 .listen__note .secs { font-weight: 650; font-variant-numeric: tabular-nums; color: var(--sc-ink); }
 .listen__note { margin: 0 0 0.1rem; font-size: 0.8em; color: var(--sc-ink-soft); text-align: center; line-height: 1.35; }
 
+/* The one page control that sits inside the phone. It stays in the caption's
+   register, quieter and smaller than anything the app itself draws, so nobody
+   reads it as a setting the app has. */
+.voicepick {
+  margin: 0.15rem 0 0; display: flex; flex-wrap: wrap;
+  align-items: center; justify-content: center; gap: 0.3rem;
+  font-size: 0.8em; color: var(--sc-ink-soft);
+}
+.voicepick__label { margin-right: 0.1rem; }
+.voicepick__btn {
+  min-height: 1.9rem; padding: 0.1rem 0.55rem;
+  border: 1px solid var(--k-rule-strong); border-radius: var(--sc-r-pill);
+  background: none; color: var(--sc-ink-soft); font: inherit; cursor: pointer;
+  transition: background var(--sc-d-fast) var(--sc-ease-out), color var(--sc-d-fast) var(--sc-ease-out);
+}
+.voicepick__btn:hover { background: color-mix(in oklab, var(--sc-ink) 6%, transparent); }
+.voicepick__btn[aria-pressed="true"] { background: var(--sc-ink); color: var(--sc-surface); border-color: var(--sc-ink); }
+
 .props__h, .asks__h { margin: 0 0 0.35rem; font-weight: 650; }
 .props__row {
   display: flex; align-items: center; gap: 0.45rem;
