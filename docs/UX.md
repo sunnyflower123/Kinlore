@@ -440,3 +440,8 @@ thing to *simplify* — a seeded family (`-seed`) can stand in for step 3's
 mechanics, and the arrival composition still shows, because it renders from
 synced content and not from how the content arrived. The concept is never
 cut; the implementation is.
+
+**Pre-production ran 28 Aug 2026**: every scene above is mapped to launch
+arguments and dry-run with stubs in [VIDEO.md](VIDEO.md) — recipes, the traps
+the dry run found, and the one item to fetch before filming night. Scene 4's
+state is pinned by `VideoSceneTests` so it stays filmable.

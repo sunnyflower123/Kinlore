@@ -70,7 +70,7 @@ now and translate it later — the translation pass has already happened once.
 ios/       SwiftUI app, XcodeGen (project.yml → .xcodeproj)
 backend/   Cloudflare Worker + D1 (metadata) + R2 (photos and audio)
 scripts/   asr-bench.mjs — Finnish speech recognition comparison
-docs/      PLAN.md, ARCHITECTURE.md, UX.md, SETUP.md
+docs/      PLAN.md, ARCHITECTURE.md, UX.md, SETUP.md, VIDEO.md
 ```
 
 ## Data model
@@ -132,6 +132,54 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    counts, status and the provider's own error codes. **An error message must
    not interpolate content** — not a title, not a transcript, not a name —
    because `message` is the one field of a thrown error that reaches the log.
+
+## The assistant's rules — checked in, not personal setup
+
+Most of the typing here is Claude Code's, and since **28 Aug 2026** it happens
+under a guideline file that lives in the repository:
+[`.claude/skills/karpathy-guidelines/SKILL.md`](.claude/skills/karpathy-guidelines/SKILL.md),
+vendored unmodified from
+[multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)
+(MIT; provenance in `SOURCE.md` beside it). Four rules against the four things a
+model does wrong when left to itself: inventing scope, abstracting for a single
+caller, tidying code it was not asked to touch, and calling a thing done without
+a check that could have failed.
+
+It is checked in rather than left in `~/.claude` for the same reason everything
+else here is written down — so that it travels with the clone and can be read
+instead of taken on trust.
+
+**It is not retroactive.** Two of the four rules this repository had already
+paid for the hard way: *surgical changes* is the staging rule immediately below,
+learned from one commit that swept up two other sessions' work; *goal-driven
+execution* is why the Commands section is a list of scripts rather than a list
+of intentions, learned from four features that were marked done and were not.
+That overlap is why the file was adopted, not a claim that the months before it
+were worked this way.
+
+A second skill sits beside it in `~/.claude/skills/` and is deliberately **not**
+checked in: [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+(MIT), 3.3 MB of design reference across 47 files. One file of it earns its keep
+here — `data/ux-guidelines.csv`, 119 rules, 30 of them about accessibility and
+motion — and it earns it against [docs/index.html](docs/index.html), the one
+surface in this project with no test of its own. The app is not the customer:
+the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
+contrast rows, against the 32 accessibility audits that already run here.
+
+Run over the page on 28 Aug 2026 it produced **one real defect and one false
+alarm**: ten headings and no `<h1>` at all, so a screen reader navigating by
+level found no page heading — fixed; and a fixed-chrome `scroll-padding-top`
+rule that measurement then killed, because the page has exactly one fragment
+link and `<main>` already reserves the chrome's height. One in two is the
+honest yield, and the second one is why a guideline is read against the page
+rather than applied to it.
+
+**The palettes, font pairings and style presets are not to be used at all.**
+They are measured on white. `#C2410C` is 5.2:1 on white and 4.43:1 on the
+parchment this project actually uses; it failed here and had to be replaced.
+Colours come from `Elder.swift` in the app and the six tokens in `kinlore.css`
+on the page — and neumorphism and glassmorphism are low-contrast by
+construction, which is rule 1 inverted.
 
 ## Git — stage only what you changed yourself
 

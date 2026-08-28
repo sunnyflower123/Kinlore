@@ -785,6 +785,24 @@ final class MemoryStore {
         if seed == "unseen" {
             UserDefaults.standard.set([String](), forKey: NewFromFamily.seenKey)
         }
+        // An open question from the fixture's Mummo, in the unseen branch
+        // only. The demo video's fourth scene (docs/UX.md §10, the return) is
+        // a "<nimi> kysyy" question answered aloud, and until pre-production
+        // dry-ran the scenes (28 Aug 2026, docs/VIDEO.md) no seed carried one
+        // — the state needs a second member to have asked, so no launch could
+        // film it.
+        // Deliberately not in `-seed archive`: the plain archive is what most
+        // tests launch with, and a question offer appearing on their idle
+        // screen would move furniture under every one of them.
+        let mummoAsks: [FollowUpQuestion] = seed == "unseen"
+            ? [FollowUpQuestion(
+                id: "demo-question-mummo",
+                subjectID: "demo-photo",
+                text: "Kuka souti veneen saareen sinä aamuna?",
+                authorID: "demo-mummo",
+                authorName: "Mummo"
+            )]
+            : []
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
         let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
@@ -840,7 +858,7 @@ final class MemoryStore {
             Memory(id: "demo-memory-sanni", subjectID: sanni.id, authorID: "demo-mummo",
                    authorName: "Mummo", body: "Sanni hoiti kauppaa.", source: .typed),
         ]
-        questions = []
+        questions = mummoAsks
         relations = []
         // Nothing is queued for the server: this archive is a fixture, and
         // pushing it into a real family would be a genuine mess.
