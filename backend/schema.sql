@@ -65,7 +65,20 @@ CREATE TABLE invite (
   expires_at    INTEGER NOT NULL,
   revoked_at    INTEGER,
   used_count    INTEGER NOT NULL DEFAULT 0,
-  created_at    INTEGER NOT NULL
+  created_at    INTEGER NOT NULL,
+  -- Who the invitation is for, written by whoever created it.
+  --
+  -- The join form asks the joiner for their own name, and the joiner is the
+  -- 80-year-old: a keyboard on the one path rule 1 most wanted to keep clear.
+  -- The person who creates the invitation already knows the answer, so the
+  -- answer travels with the invitation and is applied on join when the field
+  -- was left empty.
+  --
+  -- It is never handed back before joining, and that is a boundary and not an
+  -- oversight: an unauthenticated lookup that answered for a real code and not
+  -- for a wrong one would hand a guesser the oracle §4 exists to deny.
+  --   ALTER TABLE invite ADD COLUMN display_name TEXT;
+  display_name  TEXT
 );
 
 CREATE INDEX idx_invite_family ON invite(family_id);

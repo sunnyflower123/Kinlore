@@ -83,6 +83,13 @@ async function post(path, body, headers = {}) {
 	return { status: response.status, body: await response.json().catch(() => ({})) }
 }
 
+/// A person with a phone who types nothing at all when they join. The name on
+/// the join form stopped being required when the invitation started carrying
+/// one: on a phone handed to a grandparent, typing is the step worth removing.
+function silent(label) {
+	return { ...person(label), name: '' }
+}
+
 /// A person with a phone: an id, a secret, and the header the two make.
 function person(name) {
 	const memberID = randomUUID()
@@ -105,10 +112,20 @@ async function createFamily(who, familyName) {
 	if (status !== 200) throw new Error(`could not create ${familyName}: ${status}`)
 }
 
-async function invite(who) {
-	const { body } = await post('/family/invite', {}, who.auth)
+async function invite(who, displayName) {
+	const body_ = displayName === undefined ? {} : { displayName }
+	const { body } = await post('/family/invite', body_, who.auth)
 	if (!body.code) throw new Error('no invite code came back')
 	return body.code
+}
+
+/// What the family list calls somebody. The joiner asks with their own
+/// credentials, which is also the only way to read this back — the invitation's
+/// name is deliberately never handed out before joining.
+async function nameOf(who) {
+	const response = await fetch(`${API}/family`, { headers: { ...json, ...who.auth } })
+	const body = await response.json().catch(() => ({}))
+	return (body.members ?? []).find((m) => m.id === who.memberID)?.displayName
 }
 
 async function join(who, code) {
@@ -235,6 +252,46 @@ try {
 			'and the invite still works afterwards',
 			after.error === undefined,
 			JSON.stringify(after),
+		)
+	}
+	console.log('— the name the invitation was addressed to —')
+	{
+		// The point of the whole column: the grandchild who makes the invitation
+		// knows who it is for, so the grandmother who uses it types nothing.
+		const code = await invite(mummo, 'Kaarina')
+		const guest = silent('Nimetön')
+		const { body } = await join(guest, code)
+		check('a silent joiner is let in', body.error === undefined, JSON.stringify(body))
+		check(
+			"and is called what the invitation called them",
+			(await nameOf(guest)) === 'Kaarina',
+			await nameOf(guest),
+		)
+	}
+	{
+		// The person joining is still the authority on their own name. If this
+		// ever inverted, an invitation could rename somebody who disagreed with
+		// it, silently, at the one moment they were saying who they are.
+		const code = await invite(mummo, 'Kaarina')
+		const guest = person('Kaarina Virtanen')
+		await join(guest, code)
+		check(
+			'what the joiner types beats what the invitation says',
+			(await nameOf(guest)) === 'Kaarina Virtanen',
+			await nameOf(guest),
+		)
+	}
+	{
+		// The shape this route had before the column existed, kept working: an
+		// unnamed invitation and a joiner who types nothing still produces a
+		// member rather than an error or an empty name.
+		const code = await invite(mummo)
+		const guest = silent('Nimetön kutsu')
+		await join(guest, code)
+		check(
+			'an unnamed invitation still falls back to Perheenjäsen',
+			(await nameOf(guest)) === 'Perheenjäsen',
+			await nameOf(guest),
 		)
 	}
 } catch (error) {

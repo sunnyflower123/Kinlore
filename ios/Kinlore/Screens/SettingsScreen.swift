@@ -76,6 +76,44 @@ struct SettingsScreen: View {
                     .foregroundStyle(Elder.supporting)
             }
 
+            // The way out of the archive chosen on the first form in the app,
+            // and the only row on this screen that opens something up rather
+            // than taking something away. Offered only where the choice was
+            // actually made: `isLocalByChoice` is false on a build with no
+            // backend address, where `.needsFamily` would be a fork with
+            // nothing behind either button.
+            //
+            // **A `Text` and not a `Label`, which is measured rather than
+            // preferred.** With an icon this row failed the audit as "Text
+            // clipped" and "Dynamic Type font sizes are partially
+            // unsupported", in every shape it was written in: as a `Button`
+            // and as a `NavigationLink`, in a section of its own and inside
+            // the help row's, with a header, with a footer, high on the screen
+            // and low, with the label long and short, and with the same symbol
+            // the help row carries. A `Label` in this `List` exposes its title
+            // as a static text element of its own, 60 pt tall inside the tap
+            // target, and that is the element the audit objects to; a plain
+            // `Text` composes into the link's own element and passes at both
+            // sizes.
+            //
+            // Not the row's defect, and worth saying so: swapping this row
+            // with the help row above moved the identical finding onto
+            // "Näin tämä toimii", which has passed every audit it has ever
+            // been in. The older rows are left alone — they are green where
+            // they stand, and this is a new row's problem to solve, not an
+            // excuse to rewrite four that work.
+            //
+            // The icon is the price. The row reads plainly without one, and
+            // what it leads to says the rest.
+            if session.isLocalByChoice {
+                Section {
+                    NavigationLink(value: SharingRoute()) {
+                        Text("Ota perhe käyttöön")
+                            .elderTapTarget()
+                    }
+                }
+            }
+
             Section {
                 Button {
                     Task { await export() }

@@ -492,6 +492,23 @@ final class MemoryStore {
         save()
     }
 
+    /// Puts every row on this device into the outbox.
+    ///
+    /// One caller: a single-device archive being opened to a family
+    /// (`Session.enableFamilySharing`). Rows told before there was anywhere to
+    /// send them were never queued — nothing queues for a server that does not
+    /// exist — so without this the archive would sit on the phone while the app
+    /// said it was shared, which is the silent failure this project keeps
+    /// finding. Media needs no marking: the upload queue is `r2Key == nil`, not
+    /// the outbox.
+    func markAllPending() {
+        dirtySubjects.formUnion(subjects.map(\.id))
+        dirtyMemories.formUnion(memories.map(\.id))
+        dirtyQuestions.formUnion(questions.map(\.id))
+        dirtyRelations.formUnion(relations.map(\.id))
+        save()
+    }
+
     /// Applies rows received from the server.
     ///
     /// A locally changed row is skipped: it is still queued, and the remote

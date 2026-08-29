@@ -575,6 +575,53 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The way out of the single-device archive, which `testSettings` cannot
+    /// reach: that run has no backend address, `isLocalByChoice` is false, and
+    /// the row, its header and its footer are on no audited screen at all. The
+    /// footer is the long one — it says what changes about the recording, on
+    /// the screen where somebody decides whether to let it change.
+    func testSettingsLocalArchive() throws {
+        try sweep(
+            "Asetukset, vain tämä puhelin",
+            arguments: [
+                "-seed", "archive", "-local_only", "YES", "-tab", "people", "-screen", "settings",
+            ],
+            api: "http://127.0.0.1:9"
+        ) { app, _ in
+            reach(app.buttons["Ota perhe käyttöön"], in: app, "the way into a family")
+        }
+    }
+
+    /// What is on the other side of that row: three sentences about a change
+    /// that cannot be undone, and the button that makes it. It is a screen
+    /// rather than a `confirmationDialog` because the dialog's row would not
+    /// pass this audit at all — see `EnableSharingScreen`.
+    func testEnableSharing() throws {
+        try sweep(
+            "Ota perhe käyttöön",
+            arguments: [
+                "-seed", "archive", "-local_only", "YES", "-tab", "people", "-screen", "sharing",
+            ],
+            api: "http://127.0.0.1:9"
+        ) { app, _ in
+            require(app.buttons["Ota perhe käyttöön"], "the door itself")
+        }
+    }
+
+    /// The invitation's first step, which did not exist until the invitation
+    /// started carrying a name. It is a sheet with a text field and a long
+    /// explanation in it — the shape that has failed this audit before, on a
+    /// `Form` footer holding a stack.
+    func testInviteNaming() throws {
+        try sweep(
+            "Kutsu, kenelle",
+            arguments: ["-seed", "family", "-tab", "people", "-screen", "family"]
+        ) { app, _ in
+            reach(app.buttons["Kutsu perheenjäsen"], in: app, "the invite row").tap()
+            require(app.staticTexts["Kenelle kutsu menee?"], "the naming step")
+        }
+    }
+
     /// The settings only a family can see. `testSettings` runs without a
     /// family, so the Perhe row, "Poistu perheestä" and the in-family wipe
     /// footer were on no audited screen at all — and the section's bare

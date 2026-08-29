@@ -221,8 +221,11 @@ export default {
 
 		if (url.pathname === '/family/invite' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
+			// Optional, and a missing body is not an error: an invitation with
+			// nobody's name on it is what this route made until now.
+			const body = await readJSON<{ displayName?: string }>(request)
 			try {
-				return json(await createInvite(env, session))
+				return json(await createInvite(env, session, body?.displayName))
 			} catch (err) {
 				return failure(err, 'invite-create')
 			}

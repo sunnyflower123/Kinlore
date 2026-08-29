@@ -316,7 +316,7 @@ private struct CreateFamilyForm: View {
                 Text("Keiden kesken")
                     .foregroundStyle(Elder.supporting)
             } footer: {
-                Text("Voit valita jommankumman. Tätä ei voi vaihtaa jälkikäteen.")
+                Text("Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen.")
                     .foregroundStyle(Elder.supporting)
             }
 
@@ -420,19 +420,46 @@ private struct JoinFamilyForm: View {
 
     @State private var wasPressedEmpty = false
 
-    /// The same as `CreateFamilyForm.missing`, and it has more to say here:
-    /// this form has two fields, and "grey" cannot tell somebody which of them
-    /// it is waiting for. This is also the screen an 80-year-old reaches on her
-    /// own, from a link, with nobody beside her.
+    /// The same as `CreateFamilyForm.missing`, on the screen an 80-year-old
+    /// reaches on her own, from a link, with nobody beside her.
+    ///
+    /// **The name is no longer part of it.** It used to be required, which made
+    /// a keyboard the price of entry on exactly the path rule 1 most wanted
+    /// clear — and for an answer the app can already have: whoever made the
+    /// invitation was asked who it was for, and the server uses that name when
+    /// this field is empty (`invite.display_name`). Demanding it here would be
+    /// this app insisting she type something it has already been told.
+    ///
+    /// The code stays required, because nothing can supply it but her.
     private var missing: String? {
-        let hasName = !name.trimmingCharacters(in: .whitespaces).isEmpty
-        let hasCode = !code.trimmingCharacters(in: .whitespaces).isEmpty
-        switch (hasName, hasCode) {
-        case (true, true): return nil
-        case (false, true): return "Kirjoita ensin nimesi."
-        case (true, false): return "Liitä vielä saamasi kutsukoodi."
-        case (false, false): return "Kirjoita nimesi ja liitä saamasi kutsukoodi."
+        code.trimmingCharacters(in: .whitespaces).isEmpty
+            ? "Liitä vielä saamasi kutsukoodi."
+            : nil
+    }
+
+    /// The code, taken out of whatever was actually copied.
+    ///
+    /// The invitation is a four-line message carrying the link on one line and
+    /// the pasteable code on another, and selecting one line out of a message
+    /// is a finer gesture than selecting the whole message — so the whole
+    /// message is what a paste button will usually deliver here. Failing on it
+    /// would be answering the easy gesture with "invalid_invite", which is the
+    /// least explicable error this app can produce.
+    ///
+    /// The link line is read by `KinloreApp.inviteCode(from:)` and not by a
+    /// second parser written here: the family key rides the URL's fragment, and
+    /// the last time that string had two readings the tapped link joined a
+    /// family it could not decrypt.
+    static func code(inPasted text: String) -> String {
+        for line in text.split(whereSeparator: \.isNewline) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("kinlore://"),
+                  let url = URL(string: trimmed),
+                  let code = KinloreApp.inviteCode(from: url)
+            else { continue }
+            return code
         }
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
@@ -444,7 +471,7 @@ private struct JoinFamilyForm: View {
                 Text("Kuka sinä olet")
                     .foregroundStyle(Elder.supporting)
             } footer: {
-                Text("Tämä näkyy muistojesi vieressä.")
+                Text("Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi.")
                     .foregroundStyle(Elder.supporting)
             }
 
@@ -462,6 +489,28 @@ private struct JoinFamilyForm: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.system(.body, design: .monospaced))
+
+                // The one gesture in this app that this audience does not have.
+                //
+                // The code arrives inside a message and has to cross into a
+                // text field, and the only way across was a long press and a
+                // context menu: a fine, timed, two-step gesture on the screen
+                // an 80-year-old reaches alone, from a link, with nobody
+                // beside her. It is also the exact step the whole no-login
+                // design exists to make possible, which makes it the worst
+                // place in the app to leave a gesture nobody can do.
+                //
+                // The system's own control rather than one of ours: it carries
+                // iOS's own Finnish label, and it is the one paste that asks
+                // for no clipboard permission at all — the alert would be a
+                // second English dialog on the same path as "Open in Kinlore?".
+                PasteButton(payloadType: String.self) { items in
+                    guard let pasted = items.first else { return }
+                    code = Self.code(inPasted: pasted)
+                }
+                .labelStyle(.titleAndIcon)
+                .elderTapTarget()
+                .accessibilityIdentifier("invite-code-paste")
             } header: {
                 Text("Kutsu")
                     .foregroundStyle(Elder.supporting)

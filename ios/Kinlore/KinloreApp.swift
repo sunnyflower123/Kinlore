@@ -267,7 +267,10 @@ struct KinloreApp: App {
     /// a family they had no way to read, while pasting the same text, which
     /// hands the whole string to `Session.split`, worked. Reattached here so
     /// both paths deliver the identical string.
-    private static func inviteCode(from url: URL) -> String? {
+    /// Not private: the join form's paste button reads the same text through
+    /// the same parser. Two readings of one format is how the fragment got
+    /// dropped the first time.
+    static func inviteCode(from url: URL) -> String? {
         guard url.scheme == "kinlore", url.host == "join",
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let code = components.queryItems?.first(where: { $0.name == "code" })?.value

@@ -113,13 +113,23 @@ final class SilentFailureTests: XCTestCase {
     /// Creating an invite used to fail in total silence: a brief spinner, then
     /// the resting button, on the flow UX.md calls the path to the product's
     /// second user. The seeded family has no client at all, which is the same
-    /// nil the real screen meets with no network — so the button must say so.
+    /// nil the real screen meets with no network — so it must say so.
+    ///
+    /// The refusal moved one step in, and the test with it: since the
+    /// invitation started carrying a name, the row opens a sheet that asks who
+    /// it is for, and the code is made when that is answered. What must not
+    /// change is the ending — a deliberate act that fails says so, rather than
+    /// returning to a resting button.
     func testCreatingAnInviteSaysWhenItCannot() {
         let app = launch(["-seed", "family", "-tab", "people", "-screen", "family"])
 
         let invite = app.buttons["Kutsu perheenjäsen"]
         XCTAssertTrue(invite.waitForExistence(timeout: 10), "never arrived: the family screen")
         invite.tap()
+
+        let create = app.buttons["Luo kutsu"]
+        XCTAssertTrue(create.waitForExistence(timeout: 10), "never arrived: the naming step")
+        create.tap()
 
         XCTAssertTrue(
             app.staticTexts["Kutsua ei voitu luoda"].waitForExistence(timeout: 10),

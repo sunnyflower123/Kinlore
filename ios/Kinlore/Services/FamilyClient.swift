@@ -61,12 +61,16 @@ struct FamilyClient {
         try await send("family", method: "GET", body: Optional<Int>.none, authenticated: true)
     }
 
-    func createInvite() async throws -> String {
+    /// `displayName` is who the invitation is for. Empty sends no body at all,
+    /// which is the request this route answered before the name existed.
+    func createInvite(displayName: String) async throws -> String {
+        struct Body: Encodable { let displayName: String }
         struct Reply: Decodable { let code: String }
+        let named = displayName.trimmingCharacters(in: .whitespaces)
         let reply: Reply = try await send(
             "family/invite",
             method: "POST",
-            body: Optional<Int>.none,
+            body: named.isEmpty ? nil : Body(displayName: named),
             authenticated: true
         )
         return reply.code

@@ -79,6 +79,75 @@ final class LocalModeTests: XCTestCase {
         )
     }
 
+    /// The door out of the single-device archive.
+    ///
+    /// "Keiden kesken" is answered on the first form in the app, before anybody
+    /// knows what the app does, and until this existed the only thing that
+    /// unmade it was "Tyhjennä tämä laite" — an exit priced at every memory on
+    /// the phone. The cost of the wrong answer was the whole product: this mode
+    /// attempts no transcription at all.
+    ///
+    /// **What this pins, exactly.** The row exists only where the choice was
+    /// made (`isLocalByChoice` needs both the flag and an address), the dialog
+    /// says what travels before it happens, and the far side is the onboarding
+    /// fork rather than a screen with nothing on it.
+    ///
+    /// **What it does not.** `store.markAllPending()` runs in the same handler,
+    /// one line above the mode flip, and nothing on any screen shows an outbox
+    /// on a device with no family — so a build that dropped that call would go
+    /// green here and would send an archive that stayed behind. That residual
+    /// is named rather than papered over with an assertion that cannot see it;
+    /// see docs/UX.md §11.
+    func testTheLocalArchiveOpensToAFamilyWithoutLosingIt() {
+        let app = launch(
+            ["-seed", "archive", "-local_only", "YES", "-tab", "people", "-screen", "settings"],
+            api: "http://127.0.0.1:9"
+        )
+
+        let row = app.buttons["Ota perhe käyttöön"]
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "never arrived: the way into a family")
+        row.tap()
+
+        // A screen rather than a dialog, and the sentence that has to be on it
+        // is the one nobody would expect: what is already on this phone goes
+        // with it. Asked for by name, because a screen that opened without it
+        // would be this app changing where the memories live without saying so.
+        XCTAssertTrue(
+            app.staticTexts[
+                "Tämän puhelimen muistot lähtevät sille perheelle, "
+                    + "jonka perustat tai johon liityt."
+            ].waitForExistence(timeout: 10),
+            "the door does not say what travels through it"
+        )
+        app.buttons["Ota perhe käyttöön"].firstMatch.tap()
+
+        XCTAssertTrue(
+            app.buttons["Aloita perheen arkisto"].waitForExistence(timeout: 15),
+            "the far side of the door is not the onboarding fork"
+        )
+        XCTAssertTrue(
+            app.buttons["Liity kutsulinkillä"].exists,
+            "the fork arrived with only one way through it"
+        )
+    }
+
+    /// And it is not offered where the choice was never made: a build with no
+    /// backend address is local because there is nowhere to sync to, not
+    /// because anybody decided so, and a row promising a family it cannot
+    /// reach would be an offer with nothing behind it.
+    func testTheDoorIsNotOfferedWithoutABackend() {
+        let app = launch(["-seed", "archive", "-tab", "people", "-screen", "settings"])
+
+        XCTAssertTrue(
+            app.buttons["Vie arkisto"].waitForExistence(timeout: 15),
+            "never arrived: Settings"
+        )
+        XCTAssertFalse(
+            app.buttons["Ota perhe käyttöön"].exists,
+            "a build with no address offers a family it cannot reach"
+        )
+    }
+
     /// Answers the microphone prompt if it is showing, by position rather than
     /// label — permission alerts put the allowing answer last, whatever the
     /// simulator's language. Same helper as TakingBackTests.

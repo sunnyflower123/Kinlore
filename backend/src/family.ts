@@ -70,10 +70,16 @@ export type JoinInput = {
 
 export async function joinFamily(env: Env, input: JoinInput) {
 	const invite = await env.DB.prepare(
-		'SELECT code, family_id, expires_at, revoked_at FROM invite WHERE code = ?',
+		'SELECT code, family_id, expires_at, revoked_at, display_name FROM invite WHERE code = ?',
 	)
 		.bind(input.code.trim())
-		.first<{ code: string; family_id: string; expires_at: number; revoked_at: number | null }>()
+		.first<{
+			code: string
+			family_id: string
+			expires_at: number
+			revoked_at: number | null
+			display_name: string | null
+		}>()
 
 	// The same answer in all three cases: a wrong, an expired and a revoked code
 	// must be indistinguishable, or the existence of a valid code could be
@@ -81,6 +87,12 @@ export async function joinFamily(env: Env, input: JoinInput) {
 	if (!invite || invite.revoked_at || invite.expires_at < now()) {
 		return { error: 'invalid_invite' as const }
 	}
+
+	// The joiner's own typing wins; the invitation's name is what stands when
+	// they typed nothing, which on a phone handed to a grandparent is the
+	// ordinary case rather than the exception.
+	const displayName =
+		input.displayName.trim() || invite.display_name?.trim() || DEFAULT_MEMBER_NAME
 
 	const existing = await env.DB.prepare('SELECT id, family_id, left_at FROM member WHERE id = ?')
 		.bind(input.memberID)
@@ -97,7 +109,7 @@ export async function joinFamily(env: Env, input: JoinInput) {
 			await env.DB.batch([
 				env.DB.prepare(
 					'UPDATE member SET left_at = NULL, display_name = ?, last_seen_at = ? WHERE id = ?',
-				).bind(input.displayName.trim() || DEFAULT_MEMBER_NAME, now(), input.memberID),
+				).bind(displayName, now(), input.memberID),
 				env.DB.prepare('UPDATE invite SET used_count = used_count + 1 WHERE code = ?').bind(
 					invite.code,
 				),
@@ -118,7 +130,7 @@ export async function joinFamily(env: Env, input: JoinInput) {
 		).bind(
 			input.memberID,
 			invite.family_id,
-			input.displayName.trim() || DEFAULT_MEMBER_NAME,
+			displayName,
 			await hashSecret(input.secret),
 			timestamp,
 			timestamp,
@@ -129,14 +141,25 @@ export async function joinFamily(env: Env, input: JoinInput) {
 	return { familyID: invite.family_id, role: 'member' as const }
 }
 
-export async function createInvite(env: Env, session: Session) {
+/// `displayName` is who the invitation is for, and it is optional: an
+/// invitation with nobody's name on it is the shape this had before and stays
+/// valid. See the column's comment in schema.sql for why it is never read back
+/// out before joining.
+export async function createInvite(env: Env, session: Session, displayName?: string) {
 	const code = randomCode()
 	const timestamp = now()
 	await env.DB.prepare(
-		`INSERT INTO invite (code, family_id, created_by, expires_at, created_at)
-		 VALUES (?, ?, ?, ?, ?)`,
+		`INSERT INTO invite (code, family_id, created_by, expires_at, created_at, display_name)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
 	)
-		.bind(code, session.familyID, session.memberID, timestamp + INVITE_DAYS * 86_400, timestamp)
+		.bind(
+			code,
+			session.familyID,
+			session.memberID,
+			timestamp + INVITE_DAYS * 86_400,
+			timestamp,
+			displayName?.trim() || null,
+		)
 		.run()
 
 	return { code, expiresAt: timestamp + INVITE_DAYS * 86_400 }

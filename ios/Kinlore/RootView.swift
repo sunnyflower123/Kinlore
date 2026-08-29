@@ -82,6 +82,10 @@ struct SettingsRoute: Hashable {}
 /// And for the help page, one step below Settings.
 struct HelpRoute: Hashable {}
 
+/// And for opening a single-device archive to a family, one step below
+/// Settings and offered only there. See `EnableSharingScreen`.
+struct SharingRoute: Hashable {}
+
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
 struct PeopleScreen: View {
@@ -157,6 +161,9 @@ struct PeopleScreen: View {
             .navigationDestination(for: HelpRoute.self) { _ in
                 HelpScreen()
             }
+            .navigationDestination(for: SharingRoute.self) { _ in
+                EnableSharingScreen()
+            }
             .toolbar {
                 // Settings belongs under People rather than as its own tab:
                 // three tabs is already the limit of what an 80-year-old holds
@@ -178,6 +185,7 @@ struct PeopleScreen: View {
             //   -screen person     the first person's card, relationships and all
             //   -screen family     members, usage and the invite link
             //   -screen settings   export, leaving, emptying the device
+            //   -screen sharing    opening a single-device archive to a family
             //
             // Checking a screen at the largest text size means opening it, and
             // this is how the two that were skipped stopped being skipped.
@@ -189,6 +197,10 @@ struct PeopleScreen: View {
                     path.append(FamilyRoute())
                 case "settings", "export":
                     path.append(SettingsRoute())
+                case "sharing":
+                    // Both, so the screen has the back stack it really has.
+                    path.append(SettingsRoute())
+                    path.append(SharingRoute())
                 default:
                     break
                 }

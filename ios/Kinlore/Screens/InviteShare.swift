@@ -5,8 +5,9 @@ import SwiftUI
 /// Two screens offer it — the family view, and the finished-memory screen's
 /// offer slot while the family is one person (docs/UX.md §3.2) — and they must
 /// produce the same invitation: the same code, the same key, the same words
-/// around them. The button creates the invite on the server, then opens a
-/// small sheet whose one row hands the text to the system share sheet.
+/// around them. The button opens a small sheet that asks who the invitation is
+/// for, makes the code with that name on it, and hands the text to the system
+/// share sheet.
 ///
 /// Unstyled on purpose: the family view shows it as an ordinary row and the
 /// offer card makes it prominent, and `buttonStyle` reaches it from either
@@ -15,50 +16,150 @@ import SwiftUI
 struct InviteShareButton: View {
     @Environment(Session.self) private var session
 
+    @State private var name = ""
     @State private var code: String?
     @State private var isSharing = false
     @State private var couldNotCreate = false
 
     var body: some View {
         Button {
-            Task {
-                code = await session.createInvite()
-                if code != nil {
-                    isSharing = true
-                } else {
-                    // Said out loud, on the path to the product's second
-                    // user. A spinner that returns to a resting button is a
-                    // refusal that looks like nothing happening — the shape
-                    // the leave-family screen names as the worst possible
-                    // answer to a deliberate act.
-                    couldNotCreate = true
-                }
-            }
+            // No network here any more. The sheet asks who the invitation is
+            // for, and the code is made once that is answered — a code made
+            // before the question could not carry the answer.
+            isSharing = true
         } label: {
-            if session.isWorking {
-                ProgressView().frame(maxWidth: .infinity)
-            } else {
-                Label("Kutsu perheenjäsen", systemImage: "person.badge.plus")
-                    .font(.body.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .elderTapTarget()
-            }
+            Label("Kutsu perheenjäsen", systemImage: "person.badge.plus")
+                .font(.body.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .elderTapTarget()
         }
-        .disabled(session.isWorking)
         .alert("Kutsua ei voitu luoda", isPresented: $couldNotCreate) {
             Button("Selvä", role: .cancel) {}
         } message: {
             Text(session.lastError ?? "Yritä uudelleen, kun verkkoyhteys toimii.")
         }
-        .sheet(isPresented: $isSharing) {
-            if let code {
-                ShareLink(item: Self.inviteText(code: code)) {
-                    Label("Jaa kutsu", systemImage: "square.and.arrow.up")
+        .sheet(isPresented: $isSharing, onDismiss: reset) { sheet }
+    }
+
+    /// Two states, in the order the acts happen: name the person, then share it.
+    ///
+    /// The naming step is added to the inviter's path in order to take a step
+    /// off the joiner's, and that trade is the whole point — the inviter is a
+    /// grandchild with a keyboard, and the joiner is the person rule 1 is
+    /// about. It is skippable: an invitation with nobody's name on it is what
+    /// this button made until now, and it still works.
+    ///
+    /// **No `presentationDetents`, which is a fix and not an omission.** The
+    /// sheet was `.medium` while its whole content was one share row; a title,
+    /// a field, a paragraph and a button do not fit in half a screen, and the
+    /// audit did not report them as overflowing — it reported the title, the
+    /// paragraph and the button as *clipped*, and the paragraph as failing
+    /// contrast, which reads like three unrelated styling defects and was one
+    /// squeezed sheet. Full height, like `AskQuestionSheet`, which met the same
+    /// wall first.
+    @ViewBuilder
+    private var sheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                if let code {
+                    Text("Kutsu on valmis")
+                        .font(.title2.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text("Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon.")
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    ShareLink(item: Self.inviteText(code: code)) {
+                        Label("Jaa kutsu", systemImage: "square.and.arrow.up")
+                            .font(.body.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                    }
+                    // The 60 pt minimum belongs to the control and not to the
+                    // label inside it: applied to the label it fights the
+                    // button style over the box the text goes in, and the
+                    // audit reports the label as clipped. `AskQuestionSheet`
+                    // records the same lesson at length.
+                    .buttonStyle(.borderedProminent)
+                    .elderTapTarget()
+
+                    Spacer()
+
+                    Button("Valmis") { isSharing = false }
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                } else {
+                    Text("Kenelle kutsu menee?")
+                        .font(.title2.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    TextField("Nimi", text: $name)
+                        .textInputAutocapitalization(.words)
+                        .font(.body)
+                        .padding(12)
+                        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+
+                    // Says what the name buys, because otherwise it reads as
+                    // one more field to fill in — and the whole reason it is
+                    // here is that somebody else does not have to fill one in.
+                    Text("Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään.")
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button {
+                        Task {
+                            code = await session.createInvite(displayName: name)
+                            if code == nil {
+                                // Said out loud, on the path to the product's
+                                // second user. A spinner that returns to a
+                                // resting button is a refusal that looks like
+                                // nothing happening — the shape the
+                                // leave-family screen names as the worst
+                                // possible answer to a deliberate act.
+                                isSharing = false
+                                couldNotCreate = true
+                            }
+                        }
+                    } label: {
+                        if session.isWorking {
+                            ProgressView().frame(maxWidth: .infinity)
+                        } else {
+                            Text("Luo kutsu")
+                                .font(.body.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .elderTapTarget()
+                    .disabled(session.isWorking)
+
+                    Spacer()
+
+                    // A row rather than a toolbar button: a toolbar button's
+                    // text barely grows with Dynamic Type, which would put the
+                    // way out of this screen in the smallest text on it.
+                    Button("Peruuta") { isSharing = false }
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
                 }
-                .presentationDetents([.medium])
-                .padding(Elder.screenPadding)
             }
+            .padding(Elder.screenPadding)
+            .navigationTitle("Kutsu")
+            .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    /// A dismissed sheet starts over. A code left behind would be shared to
+    /// whoever the next invitation was for, under the previous one's name.
+    private func reset() {
+        code = nil
+        name = ""
     }
 
     /// The shared text contains both the link and the code. The link is quick,
@@ -84,6 +185,8 @@ struct InviteShareButton: View {
         return """
         Liity perheen muistoarkistoon:
         kinlore://join?code=\(shared)
+
+        Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa "Open".
 
         Tai avaa sovellus ja liitä tämä koodi:
         \(shared)

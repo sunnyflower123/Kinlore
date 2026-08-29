@@ -71,7 +71,8 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 32 sweep tests, each auditing one screen at the default text size and again at the largest, out of 63 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 35 sweep tests, each auditing one screen at the default text size and again at the largest, out of 71 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -473,6 +474,17 @@ link sees all of the family's memories. Therefore:
   only doors an uninvited caller can knock on — and both insert rows. The limit
   is aimed at that unmetered write rather than at the guess, which the entropy
   above already answers
+- **The invitation carries the name it is for**, and that name is never handed
+  back out before joining. `invite.display_name` is written by whoever creates
+  the code — the grandchild, who knows — and `joinFamily` uses it when the
+  joiner leaves the name field empty: `input.displayName ||
+  invite.display_name || 'Perheenjäsen'`, the joiner's own typing always
+  winning. The obvious design was to show the suggested name on the join form
+  for her to accept or correct, and it was refused: that needs an
+  unauthenticated lookup of a code, and a lookup that answers for a real code
+  and not for a wrong one is precisely the oracle the rule below denies. So the
+  name travels one way. It buys the one thing worth buying on that path — the
+  80-year-old joining from a link types nothing at all. See docs/UX.md §11.3
 - The family view shows who has joined **and when**. The date was decoded from
   the server and never drawn until it was looked for: a stranger in the list is
   a question, and a stranger who arrived last Tuesday is an answer about which
@@ -1429,6 +1441,25 @@ That also closes a gap nobody had noticed: the toolbar button only appeared when
 a backend was configured, so a **single-device archive had no toolbar entry at
 all** — and a local archive is precisely the one with no copy on any server, the
 one that needs an export most.
+
+### The way into a family
+
+One row, and only where the archive was *chosen* local rather than local for
+want of an address (`Session.isLocalByChoice` needs the `local_only` flag and a
+backend URL together). It opens `EnableSharingScreen`, which says what changes,
+says that the memories already on this phone go with it, and says that there is
+no way back — and then does it: `MemoryStore.markAllPending()` so the rows
+travel, `Session.enableFamilySharing()` so the mode returns to `.needsFamily`
+and the onboarding fork comes back.
+
+One-way on purpose. What has reached the family is on other people's phones and
+cannot be recalled from this one; a switch that pretended otherwise would be
+this app making a promise about somebody else's device.
+
+Why it exists at all is in docs/UX.md §11.1: until it did, the only thing that
+unmade the first form's answer was *"Tyhjennä tämä laite"*, and that mode
+attempts no transcription — so a picker answered out of habit on the first
+screen turned the product off for good on that phone.
 
 ### Export
 

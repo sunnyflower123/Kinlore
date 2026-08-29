@@ -222,6 +222,29 @@ final class Session {
         mode = .local
     }
 
+    /// The one way out of a single-device archive that does not cost the
+    /// archive.
+    ///
+    /// "Keiden kesken" is answered on the first form in the app, before anybody
+    /// knows what the app does, and until now the only thing that unmade it was
+    /// "Tyhjennä tämä laite" — an exit priced at every memory on the phone. The
+    /// cost of the mistake was not small either: this mode attempts no
+    /// transcription at all, so one picker answered out of habit turned the
+    /// product off permanently on that device.
+    ///
+    /// **One-way, and that is not a limitation but the truth.** There is no
+    /// route back: what has reached the family is on other people's phones and
+    /// cannot be recalled from here, and a switch that pretended otherwise
+    /// would be this app lying about somebody else's device.
+    ///
+    /// The rows already on the phone are the caller's to queue —
+    /// `SettingsScreen` owns the store, exactly as it does for wiping.
+    func enableFamilySharing() {
+        UserDefaults.standard.removeObject(forKey: localOnlyKey)
+        lastError = nil
+        mode = .needsFamily
+    }
+
     /// Refreshes the family details. A failure does not throw the user out:
     /// membership is local state, not the result of a network query.
     func refresh() async {
@@ -258,13 +281,13 @@ final class Session {
         return reported && isPaid
     }
 
-    func createInvite() async -> String? {
+    func createInvite(displayName: String = "") async -> String? {
         guard let client else { return nil }
         lastError = nil
         isWorking = true
         defer { isWorking = false }
         do {
-            let code = try await client.createInvite()
+            let code = try await client.createInvite(displayName: displayName)
             await refresh()
             return code
         } catch {

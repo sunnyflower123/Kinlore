@@ -445,3 +445,133 @@ cut; the implementation is.
 arguments and dry-run with stubs in [VIDEO.md](VIDEO.md) — recipes, the traps
 the dry run found, and the one item to fetch before filming night. Scene 4's
 state is pinned by `VideoSceneTests` so it stays filmable.
+
+## 11. Four things standing between her and the family — measured 29 Aug 2026
+
+A second pass over the same arcs, this time reading the code rather than the
+plan. §1–§10 designed the *shape* of the arrivals and largely built it; what
+follows is four places where the shape was right and the path through it still
+demanded something of the wrong person. Each was measured from the source, and
+each is now built.
+
+### 11.1 The archive that could be chosen and never unchosen
+
+*"Keiden kesken"* is answered on `CreateFamilyForm`, the first form in the app,
+by somebody who does not yet know what the app does. Answering *"Vain minulle,
+tälle puhelimelle"* set `local_only`, and the only thing in the app that
+unset it was `Session.renewIdentity()` — the second half of *"Tyhjennä tämä
+laite"*, which takes every memory on the phone with it.
+
+The price of the wrong answer was not a preference but the product: this mode
+attempts no transcription at all (§7's finding B4), so one picker answered out
+of habit turns off dictation, structure, family, invitations and the paywall,
+permanently, on that device.
+
+**Built:** `Session.enableFamilySharing()` and `EnableSharingScreen`, reached
+from a Settings row that exists only where the choice was actually made
+(`isLocalByChoice`, which needs the flag *and* a backend address — a build with
+no address is local because there is nowhere to sync to, not because anybody
+decided so). It is one-way and says so: what has reached the family is on other
+people's phones and cannot be recalled from this one.
+
+The archive travels rather than staying behind. Rows told while there was
+nowhere to send them were never queued — nothing queues for a server that does
+not exist — so `MemoryStore.markAllPending()` puts every row in the outbox
+before the mode flips, and the screen says that this is what will happen before
+it happens. Media needs no marking: the upload queue is `r2Key == nil`, not the
+outbox.
+
+**The residual, named.** `LocalModeTests` pins the row's gating, the sentence
+about what travels, and the landing on the onboarding fork. It does **not** pin
+`markAllPending()`: nothing on any screen shows an outbox on a device with no
+family, so a build that dropped that call would go green and would send an
+archive that stayed behind. The call is four `formUnion` lines one line above
+the mode flip, and this paragraph is its only other guard.
+
+### 11.2 The paste nobody in this audience can perform
+
+The invite code arrives inside a message and has to cross into a text field.
+There was no paste control anywhere in the app, so the only way across was a
+long press and a context menu: a fine, timed, two-step gesture — on the screen
+an 80-year-old reaches alone, from a link, with nobody beside her, which is the
+exact step the whole no-login design exists to make possible.
+
+**Built:** SwiftUI's own `PasteButton` beside the field. The system's control
+rather than one of ours, for two reasons: it carries iOS's own Finnish label,
+and it is the one paste that raises no clipboard permission alert — which would
+have been a second English dialog on the same path as *"Open in Kinlore?"*.
+
+And it reads what was actually copied. Selecting one line out of a message is a
+finer gesture than selecting the message, so the message is what a paste button
+will usually be handed; the field takes the code out of it with
+`KinloreApp.inviteCode(from:)` — the app's own link parser, not a second
+reading of the same format, because the last time that string had two readings
+the tapped link joined a family it could not decrypt (§4.2).
+
+### 11.3 The name the inviter already knows
+
+The join form asked the joiner for their own name and refused to proceed
+without one. The joiner is the grandmother; the person who created the
+invitation is the grandchild, who knows exactly who it is for. The keyboard was
+on the wrong path, for an answer the app could already have been told.
+
+**Built:** `invite.display_name`. The invite sheet asks *"Kenelle kutsu
+menee?"* before making the code, and `joinFamily` uses that name when the
+joiner leaves the field empty — `input.displayName || invite.display_name ||
+'Perheenjäsen'`. The joiner's own typing still wins, because they are the
+authority on their own name.
+
+**What changed from the obvious design, and why.** The first sketch showed the
+suggested name on the join form for the joiner to accept or correct. That needs
+an unauthenticated lookup of an invite code — and a lookup that answers for a
+real code and not for a wrong one is exactly the oracle ARCHITECTURE §4 denies:
+a wrong, expired and revoked code must be indistinguishable, or guessing tells
+you when you have found a real family. So the name travels but is never handed
+back before joining, and the form says *"Voit jättää tyhjäksi, jos kutsun
+lähettäjä kirjoitti nimesi valmiiksi"* rather than showing a name it must not
+reveal.
+
+The pairing this addition owes: the join form's **required** name field is
+gone. One field left the path of the person rule 1 is about, and one field
+arrived on the path of the person who was already typing.
+
+### 11.4 The English dialog in the middle of a Finnish path
+
+Tapping the invite link raises iOS's own *"Open in Kinlore?"* — English, in the
+middle of the one flow this design exists for. A universal link would remove
+it and needs a domain (§4.4 decided that, and it stands). But the invitation
+message is our own text, and it can say what the phone is about to ask.
+
+**Built:** one line in `InviteShareButton.inviteText`, before the link —
+*"Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa \"Open\"."* It
+says *voi kysyä* rather than naming the exact words, because the exact words
+are Apple's and have not been measured here.
+
+### 11.5 What the audit cost, and what it found
+
+Every item above ships with its tests in the house pattern: `JoinFormTests`
+(the paste, the optional name, the code that is still required), two new
+`LocalModeTests` (the door, and its absence without a backend), three new sweep
+audits (`testSettingsLocalArchive`, `testEnableSharing`, `testInviteNaming`),
+four new cases in `invite-boundary-check.mjs`, and `-screen sharing` in
+SETUP.md.
+
+Two findings came out of running them, and both are worth keeping:
+
+- **The invite sheet was `.medium` while its content was one share row.** With
+  a title, a field, a paragraph and a button in it, the audit reported the
+  title, the paragraph and the button as *clipped* and the paragraph as failing
+  contrast — which reads like three unrelated styling defects and was one
+  squeezed sheet. It is full height now, like `AskQuestionSheet`, which met the
+  same wall first.
+- **A `Label` in a `List` row that is a `Button` or a `NavigationLink` exposes
+  its title as a static text element of its own**, 60 pt tall inside the tap
+  target, and the audit reports that element as clipped and as not scaling with
+  Dynamic Type. Twenty-one runs across every shape — both containers, its own
+  section and a shared one, with and without header and footer, high on the
+  screen and low, four different labels including one width-matched to a row
+  that passes, and the same symbol that row carries — and only a plain `Text`
+  passes. It is not the new row's defect: swapping it with *"Näin tämä
+  toimii"* moved the identical finding onto that row, which has passed every
+  audit it has ever been in. The older rows are left where they are, green
+  where they stand; the new one is a `Text` and pays for it with its icon.
