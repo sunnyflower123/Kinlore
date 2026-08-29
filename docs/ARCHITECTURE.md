@@ -71,7 +71,8 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 38 sweep tests, each auditing one screen at the default text size and again at the largest, out of 75 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 39 sweep tests, each auditing one screen at the default text size and again at the largest, out of 79 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
 | Repo in English | **Done** |
@@ -2481,3 +2482,78 @@ the one thing eyes cannot check (§15). The no-questions branch was also read of
 the screen: one blue button, the quiet removal beneath it. The other branch's
 buttons sit below the fold on a phone-sized screen and were verified by the
 audit rather than by eye.
+
+## 23. The card, and why the front door was a blank page
+
+*"Kerro mitä muistat"* over a button is a blank page, and a blank page is the
+most reliable way there is to get nothing from anybody — especially from
+somebody who does not believe they remember anything worth saying. The app has
+believed this since the question ladder was written: §12 opens by saying that
+*answering* a question is easy and *telling something* is hard. But the ladder
+only has questions once there is something to ask about, so on the one screen
+that matters most it had nothing, and fell back to exactly the blank page its
+own reasoning rejects.
+
+**A photograph is a question that needs no writing.** That is the whole idea,
+and almost all of it was already built: the Tell screen has been able to open
+on a subject since it was written — `target` is what makes the title *"Kerro
+tästä kuvasta"* and the starter *"Kuka tässä kuvassa on?"* appear — and
+`QuestionLadder.starters(for:)` has carried starters for all four `kind` values
+from the beginning. What was missing was somebody choosing the subject when
+nobody had navigated to one. `Deck` is that somebody, and it adds no screen, no
+tab and no state.
+
+### What the card is
+
+Picture, question, button, and two ways on. In that order and nothing else:
+
+- **The question is the title.** Not a heading with the question in a box
+  below it — the ordinary title, the reassurance, the caption and a question
+  card together left the question itself under the tab bar, with a 200 pt
+  record button above it. The card asked nothing on the screen built to ask.
+- **The big button answers it** rather than starting free dictation, through
+  the same `answer(_:)` the question cards use, so the ladder still learns.
+- **The reassurance is dropped.** *"Puhu ihan rauhassa ja vapaasti"* exists to
+  make a blank button approachable. A photograph is not a blank button.
+- **The picture is what gives way.** Capped at 200 pt, and the number is the
+  screen's rather than the picture's. Worth knowing before changing it: while
+  the content still fitted, shrinking it moved nothing at all — it sits between
+  two spacers in a full-height frame, so a smaller picture only fed the spacers.
+- **Both ways on share a line**, and neither is tinted. Stacked, the second
+  went under the tab bar; tinted, the audit measured one of them at 3.48:1 and
+  the other at 3.52:1 against a 4.5:1 minimum, inside the bar's fade. The same
+  call the gallery's *"Kerro tästä"* row already made.
+
+### What the deck is allowed to do, and what it is not
+
+**A question a family member asked always outranks it.** *"Ville kysyy"* turns
+a prompt into a request from a person, which is the strongest thing this app
+can put in front of anybody — and the deck hides it silently if allowed to,
+because giving the screen a subject makes it offer *that subject's* questions.
+It did, for one commit; `VideoSceneTests` caught it, because the demo video's
+fourth scene is that question being answered aloud. `DeckTests` now says it
+directly rather than leaving the rule to a film.
+
+Otherwise: photographs nobody has spoken about, then people nobody has spoken
+about — free from the `subject` table, which is where that decision pays.
+
+**And it stops.** `Deck.patience` is three pushes aside per session. This is
+the failure mode the whole idea has to be designed against and it is a silent
+one: nothing crashes, she simply meets a run of pictures she cannot place and
+concludes that an app built to tell her she remembers a great deal has decided
+otherwise. The ladder already holds the same opinion in numbers — one strained
+answer costs a whole level, because for this user one wall costs more than a
+run of easy questions.
+
+Skips are device-local, like the ladder's comfort and `NewFromFamily`'s seen
+list: *"she does not recognise this one"* describes the person holding the
+phone. Her sister should still be asked.
+
+### What is deliberately not in it yet
+
+The blind confirmation of a name the extraction proposed — a card that shows
+the photograph and asks *"kuka tässä on?"* without showing the guess — is the
+strongest thing this shape could do, and §13 records it as what the cut
+guessing round took away. It needs a join from an unconfirmed person back to
+the photograph it was heard in, which the deck does not do yet. It is the next
+thing worth building here, not a gap in what is.

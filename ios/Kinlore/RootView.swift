@@ -60,7 +60,11 @@ struct RootView: View {
                 .tabItem { Label("Muistot", systemImage: "photo.on.rectangle.angled") }
                 .tag(Tab.memories)
 
-            TellScreen()
+            // The one Tell screen that is nobody's destination, and so the one
+            // that has to find its own subject. Every other use of this screen
+            // was navigated to from a photo, a person or a question and already
+            // knows what it is about.
+            TellScreen(usesDeck: true)
                 .tabItem { Label("Kerro", systemImage: "mic.circle.fill") }
                 .tag(Tab.tell)
 

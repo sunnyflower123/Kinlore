@@ -135,7 +135,12 @@ final class TellViewModel {
     /// What the screen was opened with. `target` and `question` move during an
     /// interview, but presentation decisions (a modal's close button) must not
     /// move with them.
-    let initialTarget: Subject?
+    /// What a reset returns to. A `var` since the deck existed: pushing a card
+    /// aside moves this too, so that finishing a telling comes back to the card
+    /// in front rather than the one behind it. Its other meaning is unchanged —
+    /// nil is still exactly "the home was made here", which is what keeps a
+    /// taken-back telling from deleting a photograph the family already had.
+    private(set) var initialTarget: Subject?
     private let initialQuestion: FollowUpQuestion?
 
     init(
@@ -793,6 +798,15 @@ final class TellViewModel {
     func reject(_ subject: Subject) {
         store.remove(subjectID: subject.id)
         proposals.removeAll { $0.id == subject.id }
+    }
+
+    /// Moves on to the next card. Only the deck calls this, and only from
+    /// `.idle` — there is nothing to lose there, which is why it needs no
+    /// guard of its own.
+    func moveTo(_ subject: Subject?) {
+        initialTarget = subject
+        target = subject
+        question = nil
     }
 
     func reset() {

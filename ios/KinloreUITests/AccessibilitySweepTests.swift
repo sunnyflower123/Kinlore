@@ -575,6 +575,24 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The Kerro tab with a card on it — a photograph nobody has spoken about,
+    /// chosen by the deck rather than navigated to.
+    ///
+    /// The screen it replaces is a blank button, and this one is taller than
+    /// any state it has had: a picture, a title, a starter question, the record
+    /// button and two ways past it. The one thing that must survive is the
+    /// order — the words are pinned and the picture yields, which is what makes
+    /// it hold at the largest text size.
+    func testTellWithACard() throws {
+        try sweep("Kerro, kortti", arguments: ["-seed", "deck"]) { app, _ in
+            // The question *is* the title on a card. Asked for by its own
+            // words, because that is the change: the screen stopped saying
+            // "tell about this" and started asking something answerable.
+            require(app.staticTexts["Kuka tässä kuvassa on?"], "the card's question")
+            require(app.buttons["En muista tätä"], "the way past a card")
+        }
+    }
+
     /// Photographing a paper photograph — the screen the shoebox comes in
     /// through. `-camera stub` draws the controls over an empty preview,
     /// because the simulator has no camera and `.ready` is otherwise

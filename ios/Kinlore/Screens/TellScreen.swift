@@ -21,6 +21,9 @@ struct TellScreen: View {
     /// past the exact guard the hidden tab bar and the confirmed discard
     /// already put on the other two exits.
     var onClose: (() -> Void)?
+    /// Whether this screen may choose its own subject when it was given none.
+    /// True on the tab and nowhere else: see `Deck`.
+    var usesDeck = false
 
     @State private var model: TellViewModel?
     @State private var isConfirmingClose = false
@@ -71,9 +74,9 @@ struct TellScreen: View {
             // reachable only by picking a photo from the library by hand.
             let opened = UserDefaults.standard.string(forKey: "screen") == "starter"
                 ? Self.emptyPhoto(in: store)
-                : target
+                : target ?? deckCard
             #else
-            let opened = target
+            let opened = target ?? deckCard
             #endif
             // AppServices picks the stub or the real service depending on
             // whether a backend address is configured. The UI cannot tell the
@@ -224,7 +227,8 @@ struct TellScreen: View {
         Group {
             switch model.phase {
             case .idle:
-                IdleView(model: model)
+                IdleView(model: model, onSkip: usesDeck ? { skipCard(model) } : nil)
+                    .onAppear { advancePastTold(model) }
             case .recording:
                 RecordingView(model: model)
             case .writing:
@@ -247,6 +251,51 @@ struct TellScreen: View {
         // that loses the unfinished memory, and an 80-year-old user gains
         // nothing from alternatives at exactly the moment she is concentrating.
         .toolbar(hidesTabBar(model.phase) ? .hidden : .visible, for: .tabBar)
+    }
+
+    /// The deck's card, and the one thing that outranks it.
+    ///
+    /// **A question somebody in the family asked always comes first.** It is
+    /// the strongest thing this app can put in front of anybody — *"Ville
+    /// kysyy"* turns a prompt into a request from a person — and the deck must
+    /// not step over it. Giving the screen a subject is exactly what would:
+    /// with a target set, the idle screen offers *that subject's* questions and
+    /// the family's question about something else disappears.
+    ///
+    /// It disappeared for one commit, and `VideoSceneTests` caught it — the
+    /// demo video's fourth scene is that question being answered aloud, which
+    /// is why the scene is pinned by a test at all.
+    private var deckCard: Subject? {
+        guard usesDeck,
+              store.openQuestions(
+                  limit: 1, excludingAuthor: session.identity.memberID
+              ).isEmpty
+        else { return nil }
+        return Deck.next(in: store)
+    }
+
+    /// The card that has been answered gives way to the next one.
+    ///
+    /// Without this the loop stops after one telling: finishing returns to
+    /// `.idle` with the same subject, now carrying a memory, still framed as a
+    /// card and still offering a way past something already told. Telling more
+    /// about one photograph is a real thing to want — it is just not what the
+    /// deck is for, and the photograph is one tap away in Muistot.
+    private func advancePastTold(_ model: TellViewModel) {
+        guard usesDeck, let current = model.target, !store.isEmpty(current) else { return }
+        model.moveTo(deckCard)
+    }
+
+    /// *"En muista tätä."* The card goes, the next one arrives, and the screen
+    /// does not move — this is one act, not a navigation.
+    ///
+    /// `Deck.next` is asked again rather than a queue being held: the archive
+    /// may have grown since the last card, and a list built once would go on
+    /// offering a photograph somebody has meanwhile told about.
+    private func skipCard(_ model: TellViewModel) {
+        guard let current = model.target else { return }
+        Deck.skip(current)
+        model.moveTo(deckCard)
     }
 
     #if DEBUG
@@ -280,6 +329,10 @@ private struct IdleView: View {
     @Environment(Session.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
     let model: TellViewModel
+    /// Non-nil only when the subject on screen was chosen by the deck rather
+    /// than navigated to. A photograph somebody opened on purpose is not a card
+    /// to be pushed aside.
+    var onSkip: (() -> Void)?
 
     @State private var answering: FollowUpQuestion?
 
@@ -357,6 +410,71 @@ private struct IdleView: View {
         return own.isEmpty ? (store.starterQuestions(for: target), true) : (own, false)
     }
 
+    /// Typing, which needs nobody's permission — and is not tinted.
+    ///
+    /// The card is what forced that question: with a photograph on this screen
+    /// this row lands inside the tab bar's fade, where the audit measured the
+    /// tint at 3.52:1 against a 4.5:1 minimum. It is the same call the
+    /// gallery's "Kerro tästä" row already made — blue on this grey only
+    /// nearly passes and fails outright in the fade. Weight invites; the
+    /// keyboard says what it does.
+    private var writingButton: some View {
+        Button {
+            model.beginWriting()
+        } label: {
+            Label("Kirjoita sen sijaan", systemImage: "keyboard")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .elderTapTarget()
+        }
+    }
+
+    /// The way past a card she cannot answer, quiet for the same measured
+    /// reason as the row beside it. A photograph she does not recognise with
+    /// no way past it is a screen she leaves.
+    private func skipButton(_ onSkip: @escaping () -> Void) -> some View {
+        Button(action: onSkip) {
+            Label("En muista tätä", systemImage: "arrow.forward")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .elderTapTarget()
+        }
+    }
+
+    /// The card's one question — the smallest thing this app can ask, and on a
+    /// card it is the whole screen's title.
+    ///
+    /// This is the shape the design was drawn in: picture, question, button,
+    /// and two ways on. It arrived by measurement rather than by taste — with
+    /// the ordinary title, the reassurance, the caption and the question in a
+    /// box of its own, a 260 pt photograph and a 200 pt record button left the
+    /// question itself under the tab bar. The card asked nothing on the one
+    /// screen built to ask.
+    ///
+    /// The big button answers it rather than starting free dictation, which is
+    /// what keeps the ladder learning: `answer(_:)` sets the question and then
+    /// records, the same call the question cards make.
+    private var cardQuestion: FollowUpQuestion? {
+        guard deckPhoto != nil else { return nil }
+        return offer.questions.first
+    }
+
+    /// The card's picture, when there is one. Only for a photograph nobody has
+    /// spoken about: a person's card has a name and no face, and a photograph
+    /// that already carries memories is not a card.
+    private var deckPhoto: UIImage? {
+        guard onSkip != nil,
+              let target = model.target,
+              target.kind == .photo,
+              let filename = target.imageFilename
+        else { return nil }
+        return MediaStore.loadImage(named: filename)
+    }
+
     private var title: String {
         guard let target = model.target else { return "Kerro mitä muistat" }
         // The name stays in the nominative. A colon before a case ending is
@@ -403,20 +521,64 @@ private struct IdleView: View {
 
             Spacer(minLength: 0)
 
-            Text(title)
+            // The card. A photograph asks its question without needing a word
+            // in it, which is the whole reason this screen stopped being a
+            // blank button — and it is the one thing here that gives way: at
+            // accessibility sizes the words below it grow and the picture
+            // yields, exactly as the camera's preview does.
+            if let photo = deckPhoto {
+                Image(uiImage: photo)
+                    .resizable()
+                    .scaledToFit()
+                    // 200, and the number is the screen's rather than the
+                    // picture's: with the question, the button, its caption and
+                    // the two ways on, 260 put the last row behind the floating
+                    // tab bar. The picture is what this layout was built to let
+                    // give way, so it gives way.
+                    //
+                    // Worth knowing before changing it: while the content still
+                    // fitted, shrinking this moved nothing at all — it is
+                    // centred between two spacers, so a smaller picture only
+                    // fed the spacers. It only buys height once the screen has
+                    // more on it than fits, which is exactly the case the card
+                    // created.
+                    .frame(maxHeight: typeSize.isAccessibilitySize ? 150 : 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    // A scanned photograph has no description and the app must
+                    // not invent one — guessing at the content is precisely
+                    // what rule 4 forbids. What is said is what is known.
+                    .accessibilityLabel("Valokuva, josta ei ole vielä kerrottu")
+            }
+
+            Text(cardQuestion?.text ?? title)
                 .font(.largeTitle.weight(.semibold))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(intro(withStarters: offered.isStarter))
-                .elderBody()
-                .foregroundStyle(Elder.supporting)
-                .multilineTextAlignment(.center)
+            // Dropped when there is a card. The reassurance exists to make a
+            // blank button approachable — *"Puhu ihan rauhassa ja vapaasti"* is
+            // the sentence that makes somebody willing to start — and a
+            // photograph is not a blank button. It is also the cheapest 60 pt
+            // on a screen that has just grown a picture: with it, the starter
+            // question was below the fold, and the starter is what makes the
+            // card answerable at all.
+            if deckPhoto == nil {
+                Text(intro(withStarters: offered.isStarter))
+                    .elderBody()
+                    .foregroundStyle(Elder.supporting)
+                    .multilineTextAlignment(.center)
+            }
 
             Spacer(minLength: 0)
 
             RecordButton(isRecording: false) {
-                Task { await model.startRecording() }
+                Task {
+                    if let cardQuestion {
+                        await model.answer(cardQuestion)
+                    } else {
+                        await model.startRecording()
+                    }
+                }
             }
 
             // fixedSize on every label below: under vertical pressure SwiftUI
@@ -431,7 +593,10 @@ private struct IdleView: View {
             // An open question is a reason to come back to the app. It is also
             // an easier start than a blank button: telling "something" is hard
             // for an elderly person, answering a question is easy.
-            if !offered.questions.isEmpty {
+            // Not on a card: the question is the title there, and repeating it
+            // in a box below the button is the same ask twice on the screen
+            // that can least afford the height.
+            if !offered.questions.isEmpty, cardQuestion == nil {
                 VStack(spacing: 10) {
                     Text(offered.isStarter ? "Jos et tiedä mistä aloittaa" : "Tai vastaa aiempaan kysymykseen")
                         .font(.subheadline)
@@ -439,7 +604,10 @@ private struct IdleView: View {
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    ForEach(offered.questions) { question in
+                    // One with a card, two without. The card is one question
+                    // at a time by design; a second below a photograph is a
+                    // choice to make before answering, and choosing is work.
+                    ForEach(deckPhoto == nil ? offered.questions : Array(offered.questions.prefix(1))) { question in
                         Button {
                             // A question about some other subject opens that
                             // subject's own screen. When this screen is already
@@ -485,17 +653,23 @@ private struct IdleView: View {
                 .padding(.top, 4)
             }
 
-            // Speaking is the primary way but not the only one: a grandchild
-            // adding photos often prefers to type, and you cannot dictate on a
-            // bus or in a hospital room.
-            Button {
-                model.beginWriting()
-            } label: {
-                Label("Kirjoita sen sijaan", systemImage: "keyboard")
-                    .font(.body.weight(.medium))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .elderTapTarget()
+            // Side by side with the way past a card, and only there. A card
+            // makes this screen taller than any state it has had, and stacked
+            // these two put the second one under the tab bar — a way past a
+            // photograph she cannot place, reachable only by scrolling, which
+            // for this user is not reachable. At accessibility sizes they
+            // stack again: two labels cannot share a line there, and the
+            // screen is taller than the phone on purpose by then.
+            if let onSkip, model.target != nil, !typeSize.isAccessibilitySize {
+                HStack(spacing: 10) {
+                    writingButton
+                    skipButton(onSkip)
+                }
+            } else {
+                writingButton
+                if let onSkip, model.target != nil {
+                    skipButton(onSkip)
+                }
             }
 
             Spacer(minLength: 0)

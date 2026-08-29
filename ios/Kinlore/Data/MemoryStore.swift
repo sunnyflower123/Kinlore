@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Local storage.
 ///
@@ -770,6 +771,21 @@ final class MemoryStore {
     ///
     /// The content is Finnish because it is shown in the app's own UI — the same
     /// rule as the sample transcripts in `scripts/`. See CLAUDE.md.
+    /// A plain generated photograph for `-seed deck`, written through the same
+    /// `MediaStore` call a real one goes through — so what the card draws is a
+    /// file on disk and not a special case.
+    private static func demoPhotoFile() -> String? {
+        let size = CGSize(width: 900, height: 600)
+        let image = UIGraphicsImageRenderer(size: size).image { context in
+            UIColor(red: 0.78, green: 0.72, blue: 0.62, alpha: 1).setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            UIColor(red: 0.36, green: 0.31, blue: 0.26, alpha: 1).setFill()
+            context.fill(CGRect(x: 330, y: 140, width: 240, height: 330))
+        }
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
+        return MediaStore.save(imageData: data)
+    }
+
     func seedDemoArchiveIfRequested() {
         // `-seed empty` is the other half: the empty states are a screen each,
         // and on a device that has ever been used they are unreachable.
@@ -793,7 +809,7 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
-        guard seed == "archive" || seed == "unseen" else { return }
+        guard seed == "archive" || seed == "unseen" || seed == "deck" else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -875,6 +891,41 @@ final class MemoryStore {
             Memory(id: "demo-memory-sanni", subjectID: sanni.id, authorID: "demo-mummo",
                    authorName: "Mummo", body: "Sanni hoiti kauppaa.", source: .typed),
         ]
+        // `-seed deck`: the archive plus one photograph nobody has spoken
+        // about, which is what the Kerro tab's card is drawn from. The plain
+        // archive deliberately has none — every photograph in it carries a
+        // memory, so the deck finds nothing and the tab keeps the blank button
+        // that most tests launch into. A card appearing on their idle screen
+        // would change what every one of them is looking at.
+        if seed == "deck" {
+            // Three, so that the deck's patience — also three — is what ends a
+            // run of pushes rather than the archive simply running out. Two
+            // different endings that look identical on screen, and only one of
+            // them is the promise worth testing.
+            for index in 1 ... 3 {
+                // The first one carries a file that really exists. No fixture
+                // in this project ever has, and it did not matter until the
+                // Tell screen started drawing the photograph itself: a card
+                // audited without its picture is an audit of the one element
+                // the screen was changed for, missing.
+                subjects.append(Subject(
+                    id: "demo-untold-\(index)",
+                    kind: .photo,
+                    title: "",
+                    // Every one of them, not just the first: which card the
+                    // deck offers depends on how `subjects(of:)` happens to
+                    // order three rows created in the same instant, and a
+                    // fixture that is only sometimes a photograph is a fixture
+                    // that only sometimes tests the thing.
+                    imageFilename: Self.demoPhotoFile()
+                ))
+            }
+            // A seed puts the device in a known state, and which cards were
+            // pushed aside is device state that outlives a launch by design.
+            // Without this a second run of the same test starts where the
+            // first one left off. Same shape as the seen baseline above.
+            UserDefaults.standard.removeObject(forKey: Deck.skippedKey)
+        }
         questions = mummoAsks
         relations = []
         // Nothing is queued for the server: this archive is a fixture, and
