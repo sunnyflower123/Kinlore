@@ -71,7 +71,8 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 35 sweep tests, each auditing one screen at the default text size and again at the largest, out of 71 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 38 sweep tests, each auditing one screen at the default text size and again at the largest, out of 75 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
@@ -994,7 +995,46 @@ Built, in the order they were built:
    its icon from `kind`, which is what the `subject` design claims and what a
    second row type would have quietly started to contradict.
 
-9. **The refused microphone** — a screen of its own rather than a message.
+9. **The camera** — *"Kuvaa vanha valokuva"*, and the way the archive is
+   actually filled.
+
+   Until 29 Aug 2026 the only import was `PhotosPicker`, which reads the
+   phone's own library — and an 80-year-old's photographs are not in iCloud,
+   they are in an album on a shelf. The premise of the whole product had no
+   door.
+
+   **One decision shapes the screen: the shutter does not close.** After a shot
+   the camera stays where it is and the line under it becomes *"Tallennettu.
+   Kuvaa seuraava."* An album is thirty photographs and the person taking them
+   is a grandchild in one sitting; returning to the gallery after each one is
+   thirty round trips and the point at which the job is abandoned half-done.
+   That is why this is `AVCaptureSession` and not `UIImagePickerController`,
+   whose camera dismisses itself on every "Use Photo".
+
+   No cropping, no deskewing, no correction — each is its own swamp and none is
+   needed to remember a face. The row a photographed photo makes is the row a
+   picked one makes.
+
+   Nothing is drawn over the preview: text on a live camera image has no
+   contrast to measure. The preview takes the top and every word sits on solid
+   ground below it, which is the same shape the rest of the app uses — what has
+   to be readable is pinned and the picture takes what is left.
+
+   Three states, all audited: capturing, the refused camera (a screen that
+   opens Settings itself and offers the library beside it, §8.9's trade), and a
+   device with no camera at all — which is not hypothetical, it is every
+   simulator, and it is what `SilentFailureTests` checks without forcing
+   anything.
+
+   Muistot' empty state stopped being a `ContentUnavailableView` with it. That
+   view caps how far its own text grows, which is why `AccessibilityPolicy`
+   exempts its labels by name — and the exemption came with the instruction to
+   stop using the view rather than widen the list if it ever stopped being good
+   enough. It did: the screen needs two ways in with the camera first, and a
+   `Button` in that view's action slot fails the Dynamic Type audit in every
+   shape it can be written in. The three strings that screen owns came off the
+   exemption list with it, and now grow like every other sentence in the app.
+10. **The refused microphone** — a screen of its own rather than a message.
 
    It had been a `failed` state whose text read *"Salli mikrofoni asetuksista"*
    and whose only button retried the same refused permission, for ever. The
@@ -1011,7 +1051,7 @@ Built, in the order they were built:
    the app back out of iOS Settings by hand — which is why nothing had ever
    looked at this screen, and why the audit had never measured it.
 
-10. **"Näin tämä toimii"** — the help page, behind the gear.
+11. **"Näin tämä toimii"** — the help page, behind the gear.
 
     The app explains each step where the step happens, which is the right order
     and was the whole of it. Three things are true of the app rather than of any
@@ -1025,7 +1065,7 @@ Built, in the order they were built:
     disclosure triangles — a person who opened a help page is already looking
     for the answer, and making them hunt twice is how help becomes decoration.
 
-11. **Search**, on Muistot and Ihmiset.
+12. **Search**, on Muistot and Ihmiset.
 
     It searches **what was told**, not only titles. A photograph has no title
     until somebody says something about it, so a search over titles would find
@@ -1057,7 +1097,7 @@ Built, in the order they were built:
     Nothing was removed for this one; it is an addition, and the decision to
     take it was made deliberately rather than by forgetting the rule.
 
-12. **A date by hand**, on a photograph or a moment.
+13. **A date by hand**, on a photograph or a moment.
 
     The three date columns have been in the schema from the first day and rule 5
     — uncertainty is stored, never rounded — is one of the things this app rests

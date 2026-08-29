@@ -137,6 +137,27 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// A camera on a device that has none.
+    ///
+    /// The simulator has no camera, and so does an iPad somebody borrowed —
+    /// and the shape a missing camera takes by default is a black rectangle
+    /// with a shutter that does nothing, which is the silence this file is
+    /// about. It is also the state every screenshot run meets, so it is the
+    /// one camera state that can be checked without forcing anything: no
+    /// `-camera` argument here on purpose.
+    func testTheCameraSaysWhenThereIsNone() {
+        let app = launch(["-seed", "empty", "-tab", "memories", "-screen", "camera"])
+
+        XCTAssertTrue(
+            app.staticTexts["Tässä laitteessa ei ole kameraa"].waitForExistence(timeout: 15),
+            "a device with no camera showed no reason"
+        )
+        XCTAssertTrue(
+            app.buttons["Valitse kuvista"].exists,
+            "a device with no camera was left with no way on"
+        )
+    }
+
     /// The same shape on the boundary's one remedy: "Poista" on a leaked
     /// invite with no connectivity used to leave the row in place with no
     /// message, indistinguishable from a slow revoke that worked.

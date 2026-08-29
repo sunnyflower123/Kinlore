@@ -110,6 +110,10 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | `-screen person` | DEBUG | Opens the first person's card, relationships and all. |
 | `-screen family` | DEBUG | Opens the family view: members, usage, invite link. |
 | `-screen settings` | DEBUG | Opens Settings: export, leaving the family, emptying the device. |
+| `-screen camera` | DEBUG | Opens the camera over Muistot. It sits behind a menu row, and a screenshot run has no hands. |
+| `-camera stub` | DEBUG | Draws the capture controls over an empty preview. The simulator has no camera, so this is the only way to reach the ready state on the device every audit runs on. |
+| `-camera denied` | DEBUG | The refused camera, without answering a system prompt with "Älä salli" and digging the app back out of iOS Settings. Same hole as `-mic denied`. |
+| `-camera unavailable` | DEBUG | The no-camera screen. Forcing it is only needed on hardware that has one — a simulator reaches it by itself, which is what `SilentFailureTests` uses. |
 | `-screen sharing` | DEBUG | Opens Settings and pushes the screen behind *"Ota perhe käyttöön"* — the one-way door out of a single-device archive. Combine with `-local_only YES` and an `-api` address, since the row exists only where the archive was *chosen* local. |
 | `-screen export` | DEBUG | Opens Settings and runs the export at once, logging where the zip landed. The export is the one output that leaves the app for good, so it is worth opening the real file. |
 | `-seed archive` | DEBUG | **Replaces** the archive with a canned one that has something in it: four people, a photograph and memories about them. What the UI tests launch with, and the fastest way to reach a screen that needs content. Called `-seed guess` until 16 Aug 2026, after a feature that has since been cut. |

@@ -575,6 +575,47 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// Photographing a paper photograph — the screen the shoebox comes in
+    /// through. `-camera stub` draws the controls over an empty preview,
+    /// because the simulator has no camera and `.ready` is otherwise
+    /// unreachable on the one device every audit runs on.
+    ///
+    /// The words sit on a solid ground below the preview rather than over it,
+    /// which is what makes this measurable at all: text on a live camera image
+    /// has no contrast to measure.
+    func testCameraCapture() throws {
+        try sweep(
+            "Kuvaus",
+            arguments: ["-seed", "empty", "-tab", "memories", "-screen", "camera", "-camera", "stub"]
+        ) { app, _ in
+            require(app.buttons["Kuvaa"], "the shutter")
+        }
+    }
+
+    /// A refused camera, which is a screen rather than a message — the same
+    /// trade as the refused microphone: the dead end is replaced by the way
+    /// out of it.
+    func testCameraDenied() throws {
+        try sweep(
+            "Kamera evätty",
+            arguments: ["-seed", "empty", "-tab", "memories", "-screen", "camera", "-camera", "denied"]
+        ) { app, _ in
+            require(app.buttons["Avaa asetukset"], "the way into settings")
+        }
+    }
+
+    /// And a device that has no camera at all, which on this project is not a
+    /// hypothetical: it is every simulator, and it is what a screenshot run
+    /// meets by default.
+    func testCameraUnavailable() throws {
+        try sweep(
+            "Ei kameraa",
+            arguments: ["-seed", "empty", "-tab", "memories", "-screen", "camera", "-camera", "unavailable"]
+        ) { app, _ in
+            require(app.buttons["Valitse kuvista"], "the way on")
+        }
+    }
+
     /// The way out of the single-device archive, which `testSettings` cannot
     /// reach: that run has no backend address, `isLocalByChoice` is false, and
     /// the row, its header and its footer are on no audited screen at all. The

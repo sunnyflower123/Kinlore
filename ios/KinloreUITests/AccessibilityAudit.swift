@@ -260,9 +260,11 @@ enum AccessibilityPolicy {
     /// view ever stops being good enough, the answer is to stop using it, not to
     /// widen this list.
     private static let systemEmptyStateText: Set<String> = [
-        "Ei vielä kuvia",
-        "Valitse kuvia",
-        "Lisää vanha valokuva, niin koko perhe voi kertoa siitä omat muistonsa.",
+        // Muistot' empty state left this list on 29 Aug 2026 rather than
+        // growing it: it stopped being a `ContentUnavailableView` when it
+        // needed two ways in with the camera first, so its words are ours and
+        // are held to the same standard as every other sentence in the app.
+        // See `GalleryScreen.emptyState`.
         "Ei vielä ihmisiä",
         // Copied from the screen, and it has to be: a `ContentUnavailableView`
         // caps its own description, and the exemption is matched on the label.

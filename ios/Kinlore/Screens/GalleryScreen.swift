@@ -14,6 +14,12 @@ struct GalleryScreen: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var picked: [PhotosPickerItem] = []
+    /// The two ways a photograph gets in. The camera is the one the archive was
+    /// waiting for — an 80-year-old's photographs are in an album on a shelf,
+    /// not in this phone's library — and the picker stays because a grandchild
+    /// scanning at a computer already has files.
+    @State private var isPhotographing = false
+    @State private var isPickingFromLibrary = false
     @State private var isImporting = false
     /// How many of the chosen photos did not make it, and whether that has been
     /// said out loud yet.
@@ -121,7 +127,26 @@ struct GalleryScreen: View {
             .searchable(text: $query, prompt: "Etsi")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    PhotosPicker(selection: $picked, matching: .images, photoLibrary: .shared()) {
+                    // A menu rather than two buttons: the bar has room for one
+                    // control at the largest text size, and the second way in
+                    // would be the one to fall off it.
+                    //
+                    // The camera is first because it is the case this app is
+                    // for. `PhotosPicker` does not survive being a menu row, so
+                    // both rows are plain buttons and the picker is presented
+                    // from the flag one of them sets.
+                    Menu {
+                        Button {
+                            isPhotographing = true
+                        } label: {
+                            Label("Kuvaa vanha valokuva", systemImage: "camera")
+                        }
+                        Button {
+                            isPickingFromLibrary = true
+                        } label: {
+                            Label("Valitse kuvista", systemImage: "photo.on.rectangle.angled")
+                        }
+                    } label: {
                         Image(systemName: "plus")
                             .font(.title3.weight(.semibold))
                             .elderTapTarget()
@@ -136,6 +161,29 @@ struct GalleryScreen: View {
                 guard !items.isEmpty else { return }
                 Task { await importPhotos(items) }
             }
+            // Full screen rather than a sheet: a camera under a card that can
+            // be dragged away is a camera that gets dragged away mid-album.
+            .fullScreenCover(isPresented: $isPhotographing) {
+                CameraScreen(pickFromLibraryInstead: { isPickingFromLibrary = true })
+            }
+            #if DEBUG
+            // `-screen camera`, alongside the other screenshot aids: the camera
+            // sits behind a menu row, and a screenshot run has no hands. It
+            // pairs with `-camera stub|denied|unavailable`, which choose which
+            // of its three states is drawn — on a simulator, where there is no
+            // camera at all, only one of them is otherwise reachable.
+            .task {
+                if UserDefaults.standard.string(forKey: "screen") == "camera" {
+                    isPhotographing = true
+                }
+            }
+            #endif
+            .photosPicker(
+                isPresented: $isPickingFromLibrary,
+                selection: $picked,
+                matching: .images,
+                photoLibrary: .shared()
+            )
             .overlay {
                 if isImporting {
                     ProgressView("Tuodaan kuvia")
@@ -223,20 +271,76 @@ struct GalleryScreen: View {
         .padding(Elder.screenPadding)
     }
 
+    /// The invitation, and no longer a `ContentUnavailableView`.
+    ///
+    /// It was one, and the framework caps how far its title, description and
+    /// actions grow with Dynamic Type — which is why `AccessibilityPolicy`
+    /// exempts its labels by name. That exemption comes with an instruction:
+    /// *"if the system view ever stops being good enough, the answer is to stop
+    /// using it, not to widen this list."*
+    ///
+    /// It stopped. This screen now needs two ways in, with the camera first,
+    /// and a `Button` in that view's action slot fails the audit as "Dynamic
+    /// Type font sizes are partially unsupported" in every shape it can be
+    /// written in — measured five ways, and a `PhotosPicker` in the same slot
+    /// passes only because its label is on the exemption list. Capped text on
+    /// the one screen an empty archive shows is the wrong trade in an app whose
+    /// first rule is the text size.
+    ///
+    /// So the words are ours now, and they grow. The three strings this screen
+    /// owns came off the exemption list with it.
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Ei vielä kuvia", systemImage: "photo.on.rectangle.angled")
-        } description: {
-            Text("Lisää vanha valokuva, niin koko perhe voi kertoa siitä omat muistonsa.")
+        VStack(spacing: 22) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 56))
+                .foregroundStyle(.tint)
+                .accessibilityHidden(true)
+
+            Text("Ei vielä kuvia")
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // The sentence changed with the screen. It used to say "lisää",
+            // which quietly assumed the photographs were already on the phone;
+            // they are in an album on a shelf, and somebody has to photograph
+            // them.
+            Text("Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa.")
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
-        } actions: {
-            PhotosPicker(selection: $picked, matching: .images, photoLibrary: .shared()) {
-                Text("Valitse kuvia")
+                .multilineTextAlignment(.center)
+
+            Button {
+                isPhotographing = true
+            } label: {
+                Text("Kuvaa vanha valokuva")
+                    .font(.body.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+
+            // Second, and quieter. A grandchild who has already scanned at a
+            // computer has files; everybody else has an album.
+            Button {
+                isPickingFromLibrary = true
+            } label: {
+                Text("Valitse kuvista")
+                    .font(.body.weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+            }
+            .controlSize(.large)
+
+            Spacer(minLength: 0)
         }
+        .padding(Elder.screenPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var noResults: some View {

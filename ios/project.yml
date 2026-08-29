@@ -82,6 +82,13 @@ targets:
           palveluumme, jossa puheesta kirjoitetaan teksti.
         NSPhotoLibraryUsageDescription: >-
           Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.
+        # The shoebox. An 80-year-old's photographs are not in this phone's
+        # library — they are in an album on a shelf, and somebody has to
+        # photograph them. Says what happens, in the same plain Finnish as the
+        # microphone's, because the user reads it.
+        NSCameraUsageDescription: >-
+          Kinlore kuvaa vanhat valokuvat talteen, jotta perheesi voi kertoa
+          niistä muistonsa.
         # Invite link: kinlore://join?code=...
         # A universal link would be better, but it requires a domain and an AASA
         # file. The shared text also contains the code, so joining works even if
