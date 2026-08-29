@@ -14,7 +14,7 @@ final class WipeTests: XCTestCase {
     func testEmptyingOffersTheExportBeforeTheEmptying() {
         let app = launch(["-seed", "archive", "-tab", "people", "-screen", "settings"])
 
-        let wipe = app.buttons["Tyhjennä tämä laite"]
+        let wipe = app.buttons["Tyhjennä ja aloita alusta"]
         XCTAssertTrue(wipe.waitForExistence(timeout: 10), "never arrived: Settings")
         wipe.tap()
 
@@ -39,7 +39,7 @@ final class WipeTests: XCTestCase {
     func testAWipeThatCannotLeaveStopsAndSaysSo() {
         let app = launch(["-seed", "family", "-tab", "people", "-screen", "settings"])
 
-        let wipe = app.buttons["Tyhjennä tämä laite"]
+        let wipe = app.buttons["Tyhjennä ja aloita alusta"]
         XCTAssertTrue(wipe.waitForExistence(timeout: 10), "never arrived: Settings")
         wipe.tap()
 

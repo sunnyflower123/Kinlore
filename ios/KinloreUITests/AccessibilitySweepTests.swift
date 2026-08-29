@@ -703,7 +703,7 @@ final class AccessibilitySweepTests: XCTestCase {
                 in: app,
                 "the family row in Settings"
             )
-            reach(app.buttons["Tyhjennä tämä laite"], in: app, "the wipe row")
+            reach(app.buttons["Tyhjennä ja aloita alusta"], in: app, "the wipe row")
             settle(familyRow)
             XCTAssertTrue(
                 hasStoppedDrawing(app),

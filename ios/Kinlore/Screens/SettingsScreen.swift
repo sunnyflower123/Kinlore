@@ -50,13 +50,21 @@ struct SettingsScreen: View {
     /// a live code is join-and-read access to the archive this sentence just
     /// called gone. The wipe revokes them, and the sentence says so.
     private var wipeWarning: String {
+        // Every branch ends on the same sentence, and it is the one nothing
+        // said before: the app does not come back to an emptied version of this
+        // screen, it comes back to its first. That is what makes this the way
+        // to walk the whole thing again, and it was invisible.
+        let afterwards = " Sovellus avautuu ensimmäiselle näytölle."
         if canLeave {
             return "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla."
+                + afterwards
         }
         if case .inFamily = session.mode {
             return "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne."
+                + afterwards
         }
         return "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne."
+            + afterwards
     }
 
     var body: some View {
@@ -190,7 +198,19 @@ struct SettingsScreen: View {
                 Button(role: .destructive) {
                     isConfirmingWipe = true
                 } label: {
-                    Label("Tyhjennä tämä laite", systemImage: "trash")
+                    // Renamed 29 Aug 2026 from "Tyhjennä tämä laite". That
+                    // name was true and half the story: what follows the
+                    // emptying is a first launch — the identity is renewed with
+                    // everything else, so the app has no family to return to
+                    // and lands on the onboarding fork. Somebody wanting to
+                    // walk the whole arc again could not tell from the old
+                    // label that this was the way, and asked for a second
+                    // button that would have done the identical thing.
+                    //
+                    // Comments elsewhere in the app still name this act by its
+                    // old label; they are describing the same act. See
+                    // ARCHITECTURE §14.
+                    Label("Tyhjennä ja aloita alusta", systemImage: "trash")
                         .foregroundStyle(Elder.destructive)
                         .elderTapTarget()
                 }

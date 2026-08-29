@@ -1548,6 +1548,33 @@ Four decisions:
 - **`NSFileCoordinator(.forUploading)` does the zipping**, so no dependency is
   added for one archive format.
 
+### Emptying, and the name it got on 29 Aug 2026
+
+*"Tyhjennä tämä laite"* was true and half the story. What follows the emptying
+is a **first launch**: `renewIdentity` takes a new identity with the family key
+and the family id, so there is no family to return to and the app lands on the
+onboarding fork — the same two buttons a fresh install meets. The store, the
+question ladder, the upsell rhythm, the seen list and the deck's skips all go
+with it.
+
+Nothing said so. Somebody wanting to walk the whole arc again — photograph an
+album, tell about a card, invite somebody, and then do it all a second time on
+a real phone — could not tell from the label that this was already the way, and
+asked for a second button that would have done the identical thing. Building it
+cost three audit findings on rows that pass today, because this `List` is at
+its height limit and any row added to it pushes an existing one into a slot the
+audit objects to; that was measured three ways and then reverted.
+
+So the row is **"Tyhjennä ja aloita alusta"**, and every branch of the warning
+now ends on *"Sovellus avautuu ensimmäiselle näytölle."* — a dialog sentence,
+which costs the screen no height at all. The cheaper fix was the better one:
+the problem was never a missing button, it was a promise the app kept without
+saying it.
+
+Comments through the app still name this act *"Tyhjennä tämä laite"*. They are
+describing the same act, and they were left alone rather than sweeping eight
+unrelated files into one rename.
+
 ### Leaving
 
 There is no account here, so "delete my account" would be a lie in two
