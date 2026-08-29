@@ -474,6 +474,16 @@ link sees all of the family's memories. Therefore:
   only doors an uninvited caller can knock on — and both insert rows. The limit
   is aimed at that unmetered write rather than at the guess, which the entropy
   above already answers
+- **The boundary is checked against the deployed Worker, not only a local
+  one.** `scripts/invite-boundary-check.mjs` takes a URL; first production run
+  29 Aug 2026, twelve cases green. It had never been pointed there before, and
+  the first attempt failed on its first line — the script sends a synthetic
+  `CF-Connecting-IP` so that seven checks in `verify.sh` do not starve each
+  other's rate limit, on a comment claiming Cloudflare ignores a client-set
+  value. It does not: the edge refuses the request with `403 error code: 1000`
+  before the Worker is reached. The header is local-only now, and the expiry
+  case picks `--local` or `--remote` from the same fact — it had been ageing a
+  database nothing was reading
 - **The invitation carries the name it is for**, and that name is never handed
   back out before joining. `invite.display_name` is written by whoever creates
   the code — the grandchild, who knows — and `joinFamily` uses it when the

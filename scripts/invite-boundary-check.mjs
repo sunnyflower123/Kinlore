@@ -17,16 +17,17 @@
 // happy path cannot see. Two cases overlap (a revoked code, a made-up one) and
 // they are cheap; the rest are only here.
 //
-// Costs nothing: no AI, no upstream call, only D1 writes into the local
-// database. Each run leaves two throwaway families behind.
+// Costs nothing: no AI, no upstream call, only D1 writes. Each run leaves two
+// throwaway families behind, wherever it runs.
 //
 // Requires a running Worker:
 //   cd backend && npx wrangler dev
 //
 // Ageing an invite past its expiry cannot be done over HTTP — there is no
-// endpoint for it and there should not be — so that one case reaches into the
-// local D1 with wrangler. It is the same database the Worker in front of it is
-// using.
+// endpoint for it and there should not be — so that one case reaches into D1
+// with wrangler. It has to be the same database the Worker in front of it is
+// using, which is `--local` for `wrangler dev` and `--remote` for the deployed
+// Worker; the URL decides, see `d1Scope`.
 //
 //   node scripts/invite-boundary-check.mjs
 //   node scripts/invite-boundary-check.mjs http://localhost:8787
@@ -36,6 +37,14 @@
 //
 //   KINLORE_WORKER_DIR=/path/to/other/backend \
 //     node scripts/invite-boundary-check.mjs http://localhost:8788
+//
+// And against the deployed Worker, which is where the boundary actually has to
+// hold. First production run 29 Aug 2026, 12/12 — and the first time this was
+// ever pointed there, which is how the `CF-Connecting-IP` claim below was
+// found to be false. It writes into the production database like any other
+// caller: two families and their members stay behind.
+//
+//   node scripts/invite-boundary-check.mjs https://memorize.arkiste.workers.dev
 
 import { randomUUID, randomBytes } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
@@ -56,12 +65,33 @@ const backend =
 // they were starving each other: whichever ran last failed with "could not
 // create a family: 429", which reads like a broken Worker and is not one.
 //
-// So each run knocks from an address of its own. Cloudflare sets
-// `CF-Connecting-IP` from the connection itself and ignores what the client
-// sends, so this changes nothing in production — it only stops the checks from
-// spending each other's allowance locally.
+// So each local run knocks from an address of its own.
+//
+// **Local only, and the sentence that used to stand here was wrong.** It said
+// Cloudflare sets `CF-Connecting-IP` from the connection and ignores what the
+// client sends, so the header changed nothing in production. It does not
+// ignore it: the edge refuses the request outright with `403 error code:
+// 1000`, before the Worker is reached at all. Measured 29 Aug 2026, the first
+// time this check was ever pointed at the deployed Worker — every family
+// creation answered 403 and the run died on its first line. The header is
+// therefore sent only where there is no Cloudflare in front to object.
+//
+// Against production the run pays the real rate limit instead, which it fits
+// inside: two families against five a minute, nine joins against ten.
+const isLocalWorker = /^https?:\/\/(localhost|127\.0\.0\.1)\b/.test(API)
 const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
-const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
+// Which D1 the expiry case reaches into, decided by the same fact.
+//
+// It was `--local`, hardcoded, which is right for `npx wrangler dev` and wrong
+// for the deployed Worker: pointed at production it aged a database nothing was
+// reading, found no row, and threw — aborting the run a third of the way in, so
+// the cases after it never ran at all. The other half of the same wrong-address
+// trap `KINLORE_WORKER_DIR` was written for.
+const d1Scope = isLocalWorker ? '--local' : '--remote'
+const json = {
+	'content-type': 'application/json',
+	...(isLocalWorker ? { 'CF-Connecting-IP': household } : {}),
+}
 
 let failures = 0
 
@@ -143,8 +173,8 @@ function age(code) {
 	let out = ''
 	const wrongDatabase = () =>
 		new Error(
-			`the invite could not be aged in ${backend}: that is not the database ` +
-				`this Worker is using. Set KINLORE_WORKER_DIR to the backend it runs from.`,
+			`the invite could not be aged (${d1Scope}) from ${backend}: that is not the ` +
+				`database this Worker is using. Set KINLORE_WORKER_DIR to the backend it runs from.`,
 		)
 	try {
 		out = execFileSync('npx', [
@@ -152,7 +182,7 @@ function age(code) {
 			'd1',
 			'execute',
 			'memorize',
-			'--local',
+			d1Scope,
 			'--json',
 			'--command',
 			`UPDATE invite SET expires_at = 1 WHERE code = '${code}' RETURNING code`,
