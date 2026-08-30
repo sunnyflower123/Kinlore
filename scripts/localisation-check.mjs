@@ -3,13 +3,13 @@
 //
 //   node scripts/localisation-check.mjs
 //
-// The app speaks Finnish because the person it was built for does. English was
-// added on 30 Aug 2026 so that the app can be shown to people who do not read
-// Finnish — the competition's judges, and the demo video — and it was added in
-// the cheapest possible way: SwiftUI already treats a string literal in Text,
-// Button, Label, navigationTitle and accessibilityLabel as a lookup key, so the
-// Finnish source strings ARE the keys and en.lproj/Localizable.strings is the
-// only new file that carries text.
+// The app is written in Finnish and English is its default, which sounds like a
+// contradiction and is not. SwiftUI treats a string literal in Text, Button,
+// Label, navigationTitle and accessibilityLabel as a lookup key, so the Finnish
+// source strings are the KEYS; both tables translate away from them. English is
+// the default because the app is presented, judged and filmed in English, and a
+// phone with no Finnish should not be handed a language its owner cannot read.
+// A Finnish phone still gets Finnish.
 //
 // That cheapness is also the whole risk. Nothing about writing
 //
@@ -33,9 +33,10 @@
 //     screen: the placement sentence, the subject-kind label and the date
 //     precision picker. There is no substitute for looking, only a guard
 //     against the cases where looking is not necessary.
-//   * Check Finnish. Finnish is the development language, so a key with no
-//     entry anywhere renders as itself, which is the Finnish. That is why
-//     fi.lproj/Localizable.strings is deliberately empty.
+//   * Judge the Finnish. It checks that fi.lproj has an entry for every key,
+//     which is what stops a Finnish phone falling through to English — not that
+//     the entry says the right thing. The entries are generated from the keys,
+//     so being wrong would mean the key itself is wrong.
 //
 // Exits non-zero listing every key with no English.
 
@@ -71,10 +72,34 @@ for (const file of swiftFiles(swiftRoot)) {
   }
 }
 
-const table = readFileSync(join(root, 'ios/Kinlore/en.lproj/Localizable.strings'), 'utf8');
-const translated = new Set(
-  [...table.matchAll(/^"((?:[^"\\]|\\.)*)"\s*=/gm)].map((m) => m[1])
+const keysOf = (lproj) => new Set(
+  [...readFileSync(join(root, `ios/Kinlore/${lproj}.lproj/Localizable.strings`), 'utf8')
+    .matchAll(/^"((?:[^"\\]|\\.)*)"\s*=/gm)].map((m) => m[1])
 );
+const translated = keysOf('en');
+
+// The two tables have to carry the same keys, and this is not tidiness.
+// fi.lproj was deliberately EMPTY while Finnish was the development language: a
+// key with no entry renders as itself, and the keys are the Finnish. When
+// English became the default on 30 Aug 2026 that inverted — the fallback for a
+// missing key is the DEVELOPMENT language, not the key — and a Finnish phone
+// looked in fi.lproj, found nothing, fell through to en.lproj and was shown
+// English. The app spoke the wrong language to the one person it was built for,
+// and it took a screenshot on a Finnish device to see it. Nothing else reported
+// it: the build was clean and the English was correct English.
+const finnish = keysOf('fi');
+const missingFi = [...translated].filter((k) => !finnish.has(k));
+const strayFi = [...finnish].filter((k) => !translated.has(k));
+if (missingFi.length || strayFi.length) {
+  console.error(
+    `the two tables have drifted — a key missing from fi.lproj is shown in `
+    + `English on a Finnish phone\n`
+  );
+  for (const k of missingFi) console.error(`  only in en.lproj: "${k}"`);
+  for (const k of strayFi) console.error(`  only in fi.lproj: "${k}"`);
+  console.error('\nRegenerate fi.lproj from the keys of en.lproj.');
+  process.exit(1);
+}
 
 const missing = [...keys].filter((k) => !translated.has(k)).sort();
 
@@ -99,6 +124,6 @@ if (missing.length) {
 }
 
 console.log(
-  `${keys.size} literal keys, all translated; `
-  + `${interpolated.size} interpolated, ${formatKeys} format keys in the table`
+  `${keys.size} literal keys, all translated; ${interpolated.size} interpolated, `
+  + `${formatKeys} format keys; fi and en tables match at ${finnish.size} entries`
 );

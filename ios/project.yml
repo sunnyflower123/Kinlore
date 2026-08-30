@@ -3,11 +3,17 @@ attributes:
   LastUpgradeCheck: "9999"
 options:
   bundleIdPrefix: com.kinlore
-  # Finnish is the development language, which is what makes the Finnish string
-  # literals in the source the keys AND the fallback. Without this the bundle
-  # declares itself English, and a Finnish phone gets handed en.lproj — the app
-  # speaking the wrong language to the one person it was built for.
-  developmentLanguage: fi
+  # English is the default from 30 Aug 2026: the app is presented, judged and
+  # filmed in English, so a phone with no Finnish gets English rather than a
+  # language its owner cannot read. A Finnish phone still gets Finnish, because
+  # fi.lproj exists and its empty table falls through to the keys — which are
+  # the Finnish source strings. The one person this was built for notices
+  # nothing; everybody else stops needing a translator.
+  #
+  # This is the interface only. What the app HEARS is still Finnish: the
+  # prompts, the ASR choice and the hallucination ceiling are calibrated on
+  # Finnish speech, and PLAN.md §10 says what changing that costs.
+  developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true

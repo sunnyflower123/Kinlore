@@ -1,16 +1,190 @@
-/* Finnish — the development language, and deliberately empty.
+/* Finnish — and no longer empty, which is the whole point of this note.
 
-   Every user-facing string in this app is written in Finnish directly in the
-   SwiftUI source, and SwiftUI treats a string literal in Text, Button, Label,
-   navigationTitle and accessibilityLabel as a LocalizedStringKey. A key with no
-   entry in the table renders as itself, so the Finnish text IS the key and IS
-   the fallback. Filling this file with "Kerro" = "Kerro"; pairs would add a
-   second copy of every string that has to be kept in step with the first, and
-   the day it drifts the app shows the stale half.
+   It WAS empty, deliberately, while Finnish was the development language: a key
+   with no entry renders as itself, the keys are the Finnish source strings, and
+   an identity table would have been a second copy of every string to keep in
+   step with the first.
 
-   The file exists at all for one reason: without a fi.lproj the bundle declares
-   only English, and iOS will hand a Finnish device the English table — which is
-   the app speaking the wrong language to the one person it was built for.
+   That stopped being true on 30 Aug 2026, when English became the default. The
+   fallback for a missing key is the DEVELOPMENT language, not the key — so a
+   Finnish phone looked here, found nothing, fell through to en.lproj and got
+   English. The app spoke the wrong language to the one person it was built for,
+   which is exactly what the old comment in project.yml warned about, in the
+   other direction.
 
-   The translations live in en.lproj/Localizable.strings. To read the Finnish,
-   read the source. */
+   So every key maps to itself. It is generated from the keys of
+   en.lproj/Localizable.strings rather than typed, and scripts/localisation-check.mjs
+   fails if the two tables stop matching. Do not hand-edit one without the other.
+
+   170 entries, generated 30 Aug 2026. */
+
+"Aloita perheen arkisto" = "Aloita perheen arkisto";
+"Arkisto" = "Arkisto";
+"Uusi arkisto" = "Uusi arkisto";
+"Luo arkisto" = "Luo arkisto";
+"Avaa koko arkisto" = "Avaa koko arkisto";
+"Perheen arkisto" = "Perheen arkisto";
+"Perheen muistot" = "Perheen muistot";
+"Ota perhe käyttöön" = "Ota perhe käyttöön";
+"Liity perheeseen" = "Liity perheeseen";
+"Liity kutsulinkillä" = "Liity kutsulinkillä";
+"Haetaan perheen muistoja…" = "Haetaan perheen muistoja…";
+"Perheen tietoja ei saatu haettua" = "Perheen tietoja ei saatu haettua";
+"Kerro" = "Kerro";
+"Kerro tästä" = "Kerro tästä";
+"Kerro tästä muisto" = "Kerro tästä muisto";
+"Kerro hänestä" = "Kerro hänestä";
+"Kerro toinen muisto" = "Kerro toinen muisto";
+"Jatka kertomista" = "Jatka kertomista";
+"Paina ja ala puhua" = "Paina ja ala puhua";
+"Paina kun olet valmis" = "Paina kun olet valmis";
+"Kuuntelen" = "Kuuntelen";
+"Kirjoita se itse" = "Kirjoita se itse";
+"Kirjoita sen sijaan" = "Kirjoita sen sijaan";
+"Kirjoita ihan vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Kirjoita ihan vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.";
+"Muisto tallennettu" = "Muisto tallennettu";
+"En saanut järjesteltyä sitä juuri nyt. Kertomasi on tallessa omilla sanoillasi." = "En saanut järjesteltyä sitä juuri nyt. Kertomasi on tallessa omilla sanoillasi.";
+"Äänesi on tallessa" = "Äänesi on tallessa";
+"Riittää tältä erää" = "Riittää tältä erää";
+"Jatketaan jutellen" = "Jatketaan jutellen";
+"Jatka" = "Jatka";
+"Valmis" = "Valmis";
+"Selvä" = "Selvä";
+"Sulje" = "Sulje";
+"Peruuta" = "Peruuta";
+"Tallenna" = "Tallenna";
+"Yritä uudelleen" = "Yritä uudelleen";
+"Nauhoitettu %lld sekuntia" = "Nauhoitettu %lld sekuntia";
+"Nauhoitusta ei tallenneta. Voit aloittaa alusta heti." = "Nauhoitusta ei tallenneta. Voit aloittaa alusta heti.";
+"Äänitys poistuu eikä sitä voi palauttaa." = "Äänitys poistuu eikä sitä voi palauttaa.";
+"Älä tallenna tätä" = "Älä tallenna tätä";
+"Tyhjennä ja aloita alusta" = "Tyhjennä ja aloita alusta";
+"Tyhjennä" = "Tyhjennä";
+"Mikrofoni ei ole käytössä" = "Mikrofoni ei ole käytössä";
+"Puhuminen tarvitsee luvan mikrofoniin. Voit antaa sen puhelimen asetuksista — tai kirjoittaa muiston nyt." = "Puhuminen tarvitsee luvan mikrofoniin. Voit antaa sen puhelimen asetuksista — tai kirjoittaa muiston nyt.";
+"Avaa asetukset" = "Avaa asetukset";
+"Kuulinko nimet oikein?" = "Kuulinko nimet oikein?";
+"Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.";
+"Korjaa nimi" = "Korjaa nimi";
+"Korjaa nimet myös muistoon" = "Korjaa nimet myös muistoon";
+"Vahvista" = "Vahvista";
+"Hylkää" = "Hylkää";
+"En muista" = "En muista";
+"En muista tätä" = "En muista tätä";
+"Ehdotus — vahvista henkilö" = "Ehdotus — vahvista henkilö";
+"Vahvista %@" = "Vahvista %@";
+"Poista %@" = "Poista %@";
+"Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva." = "Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.";
+"Kysyisin vielä" = "Kysyisin vielä";
+"Kysyn nämä ääneen, ja voit vastata puhumalla." = "Kysyn nämä ääneen, ja voit vastata puhumalla.";
+"Avoimia kysymyksiä" = "Avoimia kysymyksiä";
+"%@ kysyy" = "%@ kysyy";
+"%@ kertoi" = "%@ kertoi";
+"Mitä haluaisit tietää?" = "Mitä haluaisit tietää?";
+"Esimerkiksi: Millainen kesä mökillä oli?" = "Esimerkiksi: Millainen kesä mökillä oli?";
+"Kysy perheeltä" = "Kysy perheeltä";
+"Lähetä kysymys" = "Lähetä kysymys";
+"Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen." = "Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen.";
+"Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän." = "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.";
+"Ihmiset" = "Ihmiset";
+"Suku" = "Suku";
+"Ei vielä ihmisiä" = "Ei vielä ihmisiä";
+"Ei muita henkilöitä" = "Ei muita henkilöitä";
+"Henkilöt syntyvät kertomisesta. Kerro ensin muisto jossa mainitset heidät." = "Henkilöt syntyvät kertomisesta. Kerro ensin muisto jossa mainitset heidät.";
+"Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli." = "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.";
+"Lisää sukulainen" = "Lisää sukulainen";
+"Lapsi" = "Lapsi";
+"Yhdistä" = "Yhdistä";
+"Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne.";
+"Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua.";
+"%@ ei enää näy tämän henkilön suvussa. Voit lisätä sukulaisuuden myöhemmin uudelleen." = "%@ ei enää näy tämän henkilön suvussa. Voit lisätä sukulaisuuden myöhemmin uudelleen.";
+"Kuvaa" = "Kuvaa";
+"Kuvaa vanha valokuva" = "Kuvaa vanha valokuva";
+"Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa." = "Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa.";
+"Valitse kuvista" = "Valitse kuvista";
+"Lisää kuvia" = "Lisää kuvia";
+"Ei vielä kuvia" = "Ei vielä kuvia";
+"Valokuva, jossa on joku" = "Valokuva, jossa on joku";
+"Valokuva, josta ei ole vielä kerrottu" = "Valokuva, josta ei ole vielä kerrottu";
+"Kaikkia kuvia ei saatu tuotua" = "Kaikkia kuvia ei saatu tuotua";
+"Muistot" = "Muistot";
+"Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua." = "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.";
+"Poista tämä muisto" = "Poista tämä muisto";
+"Poista" = "Poista";
+"Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa." = "Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.";
+"Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu." = "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu.";
+"Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä." = "Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä.";
+"Ei osumia" = "Ei osumia";
+"Kuinka tarkkaan tiedät?" = "Kuinka tarkkaan tiedät?";
+"Perhe" = "Perhe";
+"Jäsenet" = "Jäsenet";
+"Perheen jäsenet ja kutsut" = "Perheen jäsenet ja kutsut";
+"Kutsu" = "Kutsu";
+"Kutsut" = "Kutsut";
+"Kutsu perheenjäsen" = "Kutsu perheenjäsen";
+"Luo kutsu" = "Luo kutsu";
+"Jaa kutsu" = "Jaa kutsu";
+"Jaa silti" = "Jaa silti";
+"Kutsu on valmis" = "Kutsu on valmis";
+"Kutsukoodi" = "Kutsukoodi";
+"Kenelle kutsu menee?" = "Kenelle kutsu menee?";
+"Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään." = "Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään.";
+"Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon." = "Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon.";
+"Kutsu on voimassa viikon. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain niille joille se kuuluu." = "Kutsu on voimassa viikon. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain niille joille se kuuluu.";
+"Kutsua ei voitu luoda" = "Kutsua ei voitu luoda";
+"Kutsua ei voitu perua" = "Kutsua ei voitu perua";
+"Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän." = "Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän.";
+"Poistu perheestä" = "Poistu perheestä";
+"Et enää näe perheen uusia muistoja etkä voi kertoa niitä. Kertomasi muistot jäävät perheelle." = "Et enää näe perheen uusia muistoja etkä voi kertoa niitä. Kertomasi muistot jäävät perheelle.";
+"Kuka sinä olet" = "Kuka sinä olet";
+"Nimi" = "Nimi";
+"Nimesi" = "Nimesi";
+"Minun" = "Minun";
+"Kenen puhelin tämä on" = "Kenen puhelin tämä on";
+"Isovanhemman" = "Isovanhemman";
+"Isompi teksti" = "Isompi teksti";
+"Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.";
+"Puhelimen oma tekstikoko on tätä vahvempi." = "Puhelimen oma tekstikoko on tätä vahvempi.";
+"Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi.";
+"Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi." = "Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi.";
+"%@ · %@" = "%@ · %@";
+"Keiden kesken" = "Keiden kesken";
+"Vain minulle, tälle puhelimelle" = "Vain minulle, tälle puhelimelle";
+"Perheen kesken" = "Perheen kesken";
+"Nyt muistot ovat vain tässä puhelimessa, eikä puheesta kirjoiteta tekstiä." = "Nyt muistot ovat vain tässä puhelimessa, eikä puheesta kirjoiteta tekstiä.";
+"Perheen kesken kutsumasi jäsenet näkevät muistot, ja kertomasi kirjoitetaan tekstiksi." = "Perheen kesken kutsumasi jäsenet näkevät muistot, ja kertomasi kirjoitetaan tekstiksi.";
+"Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa." = "Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa.";
+"Tämän puhelimen muistot lähtevät sille perheelle, jonka perustat tai johon liityt." = "Tämän puhelimen muistot lähtevät sille perheelle, jonka perustat tai johon liityt.";
+"Takaisin vain tähän puhelimeen ei pääse." = "Takaisin vain tähän puhelimeen ei pääse.";
+"Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen." = "Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen.";
+"Ilmainen arkisto" = "Ilmainen arkisto";
+"Kertomista tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "Kertomista tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld.";
+"Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle." = "Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle.";
+"Kiitos — maksu meni läpi" = "Kiitos — maksu meni läpi";
+"Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa." = "Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa.";
+"Käyttö" = "Käyttö";
+"Vie arkisto" = "Vie arkisto";
+"Vie arkisto ensin" = "Vie arkisto ensin";
+"Tallenna tai lähetä arkisto" = "Tallenna tai lähetä arkisto";
+"Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.";
+"Viennistä puuttuu tiedostoja" = "Viennistä puuttuu tiedostoja";
+"Asetukset" = "Asetukset";
+"Näin tämä toimii" = "Näin tämä toimii";
+"Sijoitin sen kohteeseen **%@**" = "Sijoitin sen kohteeseen **%@**";
+"Lisäsin sen kohteeseen **%@**" = "Lisäsin sen kohteeseen **%@**";
+"Kuva" = "Kuva";
+"Henkilö" = "Henkilö";
+"Paikka" = "Paikka";
+"Tapahtuma" = "Tapahtuma";
+"Valokuva" = "Valokuva";
+"Kerrottu muisto" = "Kerrottu muisto";
+"%@ · korjattu" = "%@ · korjattu";
+"Vuosikymmen" = "Vuosikymmen";
+"Vuosi" = "Vuosi";
+"En tiedä" = "En tiedä";
+"Hylätäänkö tämä kertominen?" = "Hylätäänkö tämä kertominen?";
+"Poistetaanko tämä muisto?" = "Poistetaanko tämä muisto?";
+"Poistetaanko sukulaisuus?" = "Poistetaanko sukulaisuus?";
+"Poistutaanko perheestä?" = "Poistutaanko perheestä?";
+"Yhdistetäänkö kortit?" = "Yhdistetäänkö kortit?";
+"Tyhjennetäänkö tämä laite?" = "Tyhjennetäänkö tämä laite?";
