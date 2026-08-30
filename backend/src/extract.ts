@@ -4,42 +4,84 @@
 /// than unix timestamps, because language models handle years reliably and
 /// timestamps not at all.
 ///
-/// NOTE ON LANGUAGE: the system prompt and the schema `description` fields below
-/// are deliberately in Finnish. They are not documentation — they are input to
-/// the model, and they instruct it about Finnish morphology (see rule 1). They
-/// were tuned by measurement; rewriting them in English would be a behaviour
-/// change, not a translation. Everything else in this file is English.
+/// NOTE ON LANGUAGE: there are two system prompts and two sets of schema
+/// `description` fields, and neither is a translation of the other. They are
+/// input to the model rather than documentation, and what they instruct depends
+/// on the language being spoken: rule 1 tells a model about Finnish case endings
+/// and has no English counterpart, while the filler words, the common nouns and
+/// the decade idiom in rules 2, 3 and 5 are the part that was tuned and do not
+/// carry across. The Finnish was tuned by measurement and is not to be edited on
+/// the way past. Everything else in this file is English.
+///
+/// Which one is used follows WHO IS SPEAKING, not who is reading the screen —
+/// the app sends `lang` with the transcript. See PLAN.md §10.
 
 import { complete, UpstreamError, type Message } from './openrouter'
 import type { Env } from './worker'
 
-export const EXTRACTION_SCHEMA = {
+export type Lang = 'fi' | 'en'
+
+/// The schema's `description` fields, which are instructions and not comments.
+/// One table rather than two schemas, so the shape cannot drift between the
+/// languages while the wording differs — the shape is the contract with the
+/// iOS side and the wording is the tuning.
+const DESCRIPTIONS: Record<Lang, Record<string, string>> = {
+	fi: {
+		body: 'Muisto siivottuna luettavaan muotoon. Täytesanat pois, sisältö ja pituus ennallaan.',
+		mentions:
+			'Puheessa mainitut henkilöt ja paikat. VAIN erisnimet — ei yleisnimiä ' +
+			'kuten "mummola", "mökki" tai "koulu".',
+		name: 'Nimi PERUSMUODOSSA: "Ainon" → "Aino", "Puumalassa" → "Puumala".',
+		confidence: '0–1. Alle 1 tarkoittaa että ihmisen pitää vahvistaa.',
+		date: 'Ajankohta sellaisena kuin se puheessa esiintyi, ei tarkennettuna.',
+		questions: 'Täsmälleen kolme jatkokysymystä jotka kohdistuvat aukkoihin.',
+		level:
+			'Kuinka paljon kysymys vaatii vastaajalta, 1–5. Arvioi vastauksen ' +
+			'MUOTOA, älä aihetta. ' +
+			'1 = vastaus on nimi tai yksi sana ("Kuka tässä kuvassa on?"). ' +
+			'2 = yksi tieto, paikka tai vuosi ("Missä tämä on otettu?"). ' +
+			'3 = muutama lause ihmisestä tai paikasta ("Millainen ihminen Aino oli?"). ' +
+			'4 = kertomus jolla on alku ja loppu ("Kerro päivästä jolloin muutitte Ouluun."). ' +
+			'5 = pohdinta merkityksestä tai tunteesta ("Mitä toivoisit lastenlastesi tietävän?").',
+	},
+	en: {
+		body: 'The memory tidied into readable prose. Fillers out, content and length untouched.',
+		mentions:
+			'People and places named in the speech. PROPER NOUNS ONLY — not common ' +
+			'nouns like "grandma\'s house", "the cottage" or "school".',
+		// English does not decline names, so this is a smaller job than the
+		// Finnish one and still not nothing: a possessive or a leading article
+		// splits one person into two rows just as an inflected form does.
+		name: 'The name as it would be written alone: "Aino\'s" → "Aino", "the Puumala house" → "Puumala".',
+		confidence: '0–1. Below 1 means a person has to confirm it.',
+		date: 'The date as it appeared in the speech, not sharpened.',
+		questions: 'Exactly three follow-up questions aimed at the gaps.',
+		level:
+			'How much the question asks of the answerer, 1–5. Judge the SHAPE of ' +
+			'the answer, not the subject. ' +
+			'1 = the answer is a name or one word ("Who is in this photograph?"). ' +
+			'2 = one fact, a place or a year ("Where was this taken?"). ' +
+			'3 = a few sentences about a person or a place ("What sort of person was Aino?"). ' +
+			'4 = a story with a beginning and an end ("Tell me about the day you moved to Oulu."). ' +
+			'5 = a reflection on meaning or feeling ("What would you want your grandchildren to know?").',
+	},
+}
+
+export const extractionSchema = (lang: Lang) => ({
 	name: 'memory',
 	schema: {
 		type: 'object',
 		properties: {
-			body: {
-				type: 'string',
-				description:
-					'Muisto siivottuna luettavaan muotoon. Täytesanat pois, sisältö ja pituus ennallaan.',
-			},
+			body: { type: 'string', description: DESCRIPTIONS[lang].body },
 			mentions: {
 				type: 'array',
-				description:
-					'Puheessa mainitut henkilöt ja paikat. VAIN erisnimet — ei yleisnimiä ' +
-					'kuten "mummola", "mökki" tai "koulu".',
+				description: DESCRIPTIONS[lang].mentions,
 				items: {
 					type: 'object',
 					properties: {
-						name: {
-							type: 'string',
-							description: 'Nimi PERUSMUODOSSA: "Ainon" → "Aino", "Puumalassa" → "Puumala".',
-						},
+						name: { type: 'string', description: DESCRIPTIONS[lang].name },
 						kind: { type: 'string', enum: ['person', 'place'] },
-						confidence: {
-							type: 'number',
-							description: '0–1. Alle 1 tarkoittaa että ihmisen pitää vahvistaa.',
-						},
+						confidence: { type: 'number', description: DESCRIPTIONS[lang].confidence },
 					},
 					required: ['name', 'kind', 'confidence'],
 					additionalProperties: false,
@@ -47,7 +89,7 @@ export const EXTRACTION_SCHEMA = {
 			},
 			date: {
 				type: 'object',
-				description: 'Ajankohta sellaisena kuin se puheessa esiintyi, ei tarkennettuna.',
+				description: DESCRIPTIONS[lang].date,
 				properties: {
 					start_year: { type: ['integer', 'null'] },
 					end_year: { type: ['integer', 'null'] },
@@ -61,22 +103,12 @@ export const EXTRACTION_SCHEMA = {
 			},
 			questions: {
 				type: 'array',
-				description: 'Täsmälleen kolme jatkokysymystä jotka kohdistuvat aukkoihin.',
+				description: DESCRIPTIONS[lang].questions,
 				items: {
 					type: 'object',
 					properties: {
 						text: { type: 'string' },
-						level: {
-							type: 'integer',
-							description:
-								'Kuinka paljon kysymys vaatii vastaajalta, 1–5. Arvioi vastauksen ' +
-								'MUOTOA, älä aihetta. ' +
-								'1 = vastaus on nimi tai yksi sana ("Kuka tässä kuvassa on?"). ' +
-								'2 = yksi tieto, paikka tai vuosi ("Missä tämä on otettu?"). ' +
-								'3 = muutama lause ihmisestä tai paikasta ("Millainen ihminen Aino oli?"). ' +
-								'4 = kertomus jolla on alku ja loppu ("Kerro päivästä jolloin muutitte Ouluun."). ' +
-								'5 = pohdinta merkityksestä tai tunteesta ("Mitä toivoisit lastenlastesi tietävän?").',
-						},
+						level: { type: 'integer', description: DESCRIPTIONS[lang].level },
 					},
 					required: ['text', 'level'],
 					additionalProperties: false,
@@ -86,7 +118,7 @@ export const EXTRACTION_SCHEMA = {
 		required: ['body', 'mentions', 'date', 'questions'],
 		additionalProperties: false,
 	},
-} as const
+})
 
 /// Finnish by design — see the note at the top of this file. The six rules, in
 /// English for the reader: (1) names in base form, or the family tree fills with
@@ -96,7 +128,7 @@ export const EXTRACTION_SCHEMA = {
 /// missing one; (5) preserve uncertainty, a decade stays a decade; (6) exactly
 /// three follow-up questions aimed at the gaps, each labelled with how much it
 /// asks of the answerer.
-const SYSTEM_PROMPT = `Autat suomalaista perhettä säilyttämään muistoja. Käyttäjä on usein iäkäs ja puhuu rönsyillen, keskeneräisin lausein ja epävarmoin ajankohdin. Se on normaalia, ei virhe.
+const SYSTEM_PROMPT_FI = `Autat suomalaista perhettä säilyttämään muistoja. Käyttäjä on usein iäkäs ja puhuu rönsyillen, keskeneräisin lausein ja epävarmoin ajankohdin. Se on normaalia, ei virhe.
 
 TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdottomasti:
 
@@ -114,6 +146,29 @@ TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdott
 
 Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan name-kenttä on perusmuodossa.`
 
+/// The same six rules for a language that does not inflect. Rule 1 is not the
+/// Finnish rule translated — English splits a person into two rows through
+/// possessives and articles rather than through case endings, so it asks for
+/// much less and still has to ask. Rules 2, 3 and 5 keep their structure and
+/// lose their Finnish examples entirely: "niinku" is not "like", it is the
+/// filler a Finnish speaker reaches for, and "mummola" has no English word at
+/// all. The examples are the tuning; they had to be chosen again.
+const SYSTEM_PROMPT_EN = `You are helping a family keep its memories. The person speaking is often elderly and rambles, leaves sentences unfinished and is unsure of dates. That is normal, not an error.
+
+YOUR TASK is to turn speech into structure. Follow these rules absolutely:
+
+1. NAMES AS THEY STAND ALONE. Return each name the way it would be written by itself: "Aino's" → "Aino", "the Puumala house" → "Puumala", "Grandad Toivo" → "Toivo" when Toivo is the name. Otherwise the family tree fills with two rows for one person and nobody can join them later.
+
+2. DO NOT SHORTEN. Clean out fillers ("um", "uh", "like", "you know", "I mean") and tidy obvious spoken slips into readable prose, but keep all the content and all the feeling. The length of a memory is part of the memory. You are not writing a summary.
+
+3. PROPER NOUNS ONLY. Put only named people and places in the mentions list. Common nouns like "grandma's house", "the cottage", "school", "church" or "the market" are NOT mentions, even when they are the most important place in the memory — they stay in the memory's text. The reason: "the cottage" does not say whose cottage, and the archive would fill with subjects nobody can identify later. If you could not point at the place on a map by that name, it does not belong in the list.
+
+4. NEVER INVENT. If no date was mentioned, precision is "unknown" and the years are null. If you are unsure whether a name is a person or a place, make your best guess but lower the confidence. An invented relative is worse than a missing one.
+
+5. KEEP THE UNCERTAINTY. "Sometime in the fifties" is precision "decade", start_year 1950, end_year 1959 — do not force a single year. A bare two-digit decade means the 1900s, because the speech is about old photographs.
+
+6. THREE QUESTIONS. Ask about what the speech left out: a person who was named but not described, a place known only by its name, or a memory of a smell or a sound. Ask warmly and briefly, one thing at a time. Address the speaker directly ("What sort of person was Aino?"). Do not ask what the speech has already answered. Give every question a level according to how long an answer it asks for.`
+
 /// Extra instruction for when the user has corrected the names that speech
 /// recognition heard.
 ///
@@ -127,8 +182,21 @@ Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan na
 /// also be applied to the memory text *inflected to fit the sentence*. That last
 /// part is the whole point: a plain string replacement never matches an inflected
 /// form, which is why the model does it instead.
-function correctionInstruction(corrections: Correction[]): string {
+function correctionInstruction(corrections: Correction[], lang: Lang): string {
 	const list = corrections.map((c) => `"${c.from}" → "${c.to}"`).join(', ')
+	if (lang === 'en') {
+		// Shorter than the Finnish on purpose. That one exists mostly to make the
+		// model inflect a corrected name into the sentence, which is the half
+		// English does not need. What survives is the half that matters: the
+		// correction is authoritative and has to reach the memory text too.
+		return `
+
+IMPORTANT — THE TELLER'S CORRECTIONS: ${list}
+
+Speech recognition heard these names wrong and the teller has corrected them. The corrections are AUTHORITATIVE: use them as given and do not restore the old form anywhere.
+
+Correct the name in the memory's text as well, keeping whatever grammar the sentence needs — a possessive stays a possessive ("Sotkamo's"), a plural stays a plural. Replacing the string alone is not enough.`
+	}
 	return `
 
 TÄRKEÄÄ — KÄYTTÄJÄN KORJAUKSET: ${list}
@@ -149,9 +217,22 @@ Korjaa nimi myös muiston tekstiin, ja TAIVUTA SE OIKEIN asiayhteyteen. Jos teks
 /// Without this the questions come out at level 3–4 almost every time, because a
 /// question aimed at a gap is naturally a "tell me about" question. That is a
 /// wall for somebody who has not answered anything yet.
-function levelInstruction(level: number): string {
+function levelInstruction(level: number, lang: Lang): string {
 	const below = Math.max(1, level - 1)
 	const above = Math.min(5, level + 1)
+	if (lang === 'en') {
+		return `
+
+QUESTION DEMAND. The teller is at level ${level} right now. Give three questions from different levels: one from ${below}, one from ${level} and one from ${above}.
+
+1 = the answer is a name or one word ("Who is in this photograph?")
+2 = one fact, a place or a year ("Where was this taken?")
+3 = a few sentences about a person or a place ("What sort of person was Aino?")
+4 = a story with a beginning and an end ("Tell me about the day you moved to Oulu.")
+5 = a reflection on meaning or feeling ("What would you want your grandchildren to know?")
+
+If the teller is at level 1 or 2, do not ask for a story or a reflection. An easy question an elderly person can answer is worth more than a deep one they leave alone.`
+	}
 	return `
 
 KYSYMYSTEN VAATIVUUS. Kertoja on tällä hetkellä tasolla ${level}. Anna kolme kysymystä eri tasoilta: yksi tasolta ${below}, yksi tasolta ${level} ja yksi tasolta ${above}. Taso kuvaa vastauksen MUOTOA, ei aihetta:
@@ -271,14 +352,24 @@ export async function extract(
 	/// that does not track it — the questions then come out wherever the gaps
 	/// happen to lead.
 	level?: number,
+	/// The language being SPOKEN, which is not necessarily the language the app
+	/// is being read in. Defaults to Finnish so that a client which has not been
+	/// updated keeps the behaviour it was written against.
+	lang: Lang = 'fi',
 ): Promise<ExtractionResult> {
-	let system = SYSTEM_PROMPT
-	if (level) system += levelInstruction(level)
-	if (corrections.length > 0) system += correctionInstruction(corrections)
+	let system = lang === 'en' ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_FI
+	if (level) system += levelInstruction(level, lang)
+	if (corrections.length > 0) system += correctionInstruction(corrections, lang)
 
 	const messages: Message[] = [
 		{ role: 'system', content: system },
-		{ role: 'user', content: `Jäsennä tämä muisto:\n\n${transcript}` },
+		{
+			role: 'user',
+			content:
+				lang === 'en'
+					? `Structure this memory:\n\n${transcript}`
+					: `Jäsennä tämä muisto:\n\n${transcript}`,
+		},
 	]
 
 	// This is the app's core path: the user has just spoken for a minute and a
@@ -295,7 +386,7 @@ export async function extract(
 				model,
 				// Low but not zero: at zero the follow-up questions become formulaic.
 				temperature: 0.4,
-				schema: EXTRACTION_SCHEMA,
+				schema: extractionSchema(lang),
 				// Comfortably above the longest memory to be expected.
 				maxTokens: 2000,
 			})

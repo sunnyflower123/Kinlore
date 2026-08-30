@@ -14,7 +14,7 @@ import {
 	revokeInvite,
 } from './family'
 import { download, upload } from './media'
-import { extract } from './extract'
+import { extract, type Lang } from './extract'
 import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement'
 import { checkAISeconds, checkPhotoCount, recordAISeconds, usage } from './quota'
 import { pull, push } from './sync'
@@ -104,6 +104,19 @@ async function withinRateLimit(
 	const key = request.headers.get('CF-Connecting-IP') ?? 'unknown'
 	const { success } = await limiter.limit({ key })
 	return success
+}
+
+/// The language being SPOKEN, as the client reports it.
+///
+/// Not the language the app is being read in: an English-reading grandchild can
+/// hold the phone while a Finnish grandmother talks into it, and what the prompt
+/// and the hallucination ceiling need to know is who is talking. The app sends
+/// its own answer to that; anything else is dropped rather than rejected, the
+/// same way an out-of-range question level is, because losing a telling over a
+/// bad field would be absurd. Absent means Finnish, so a client built before
+/// this existed behaves exactly as it did.
+function spokenLanguage(value: unknown): Lang {
+	return value === 'en' ? 'en' : 'fi'
 }
 
 export default {
@@ -335,7 +348,7 @@ export default {
 
 		switch (url.pathname) {
 			case '/transcribe': {
-				let payload: { audio?: string; format?: string; seconds?: number }
+				let payload: { audio?: string; format?: string; seconds?: number; lang?: string }
 				try {
 					payload = await request.json()
 				} catch {
@@ -362,6 +375,7 @@ export default {
 						payload.audio,
 						payload.format ?? 'm4a',
 						payload.seconds,
+						spokenLanguage(payload.lang),
 					)
 					await recordAISeconds(env, session, payload.seconds ?? 0)
 					return json({ text })
@@ -372,6 +386,7 @@ export default {
 
 			case '/extract': {
 				let payload: {
+					lang?: string
 					transcript?: string
 					corrections?: { from?: string; to?: string }[]
 					level?: number
@@ -407,7 +422,7 @@ export default {
 						: undefined
 
 				try {
-					return json(await extract(env, transcript, corrections, level))
+					return json(await extract(env, transcript, corrections, level, spokenLanguage(payload.lang)))
 				} catch (err) {
 					return failure(err, 'extract')
 				}

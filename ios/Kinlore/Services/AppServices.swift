@@ -203,6 +203,29 @@ private func post<Response: Decodable>(
 
 // MARK: - Transcription
 
+/// The language being SPOKEN, as far as this app can tell from where it sits.
+///
+/// It decides which system prompt the Worker uses and which hallucination
+/// ceiling applies to the transcript — see PLAN.md §10 and the constant in
+/// backend/src/transcribe.ts. Both of those are calibrated per language and
+/// neither can be got right by guessing at the far end.
+///
+/// The app's own resolved localisation is the closest available answer without
+/// asking: a phone showing Finnish is a phone somebody chose Finnish on, and
+/// whoever talks into it is overwhelmingly likely to be speaking it.
+///
+/// WHERE IT IS WRONG, said rather than hidden: an English-reading grandchild
+/// holding the phone while a Finnish grandmother talks. The English prompt then
+/// meets Finnish speech, asks for names "as they stand alone", and has no rule
+/// about case endings — so "Ainon" and "Aino" become two people in the tree.
+/// If that turns out to happen, the answer is to ask the teller which language
+/// they are about to speak, not to guess harder here.
+enum SpokenLanguage {
+    static var current: String {
+        Bundle.main.preferredLocalizations.first?.hasPrefix("fi") == true ? "fi" : "en"
+    }
+}
+
 struct RemoteTranscriptionService: TranscriptionService {
     let baseURL: URL
     let token: () -> String
@@ -215,6 +238,10 @@ struct RemoteTranscriptionService: TranscriptionService {
         /// model hallucinates rather than falling silent, and an invented memory
         /// is worse than a missing one.
         let seconds: Double?
+        /// Which prompt to transcribe with, and which words-per-second ceiling
+        /// to judge the result against. Finnish and English are not the same
+        /// number of words for the same story.
+        let lang: String
     }
 
     private struct Reply: Decodable {
@@ -230,7 +257,8 @@ struct RemoteTranscriptionService: TranscriptionService {
             body: Request(
                 audio: data.base64EncodedString(),
                 format: audioURL.pathExtension.isEmpty ? "m4a" : audioURL.pathExtension,
-                seconds: Self.duration(of: audioURL)
+                seconds: Self.duration(of: audioURL),
+                lang: SpokenLanguage.current
             ),
             timeout: 180
         )
@@ -261,6 +289,9 @@ struct RemoteExtractionService: ExtractionService {
         /// caller does not track it — the Worker then leaves the follow-up
         /// questions wherever the gaps lead.
         let level: Int?
+        /// Which of the two system prompts structures this. Not the language
+        /// the app is being READ in when those differ — see SpokenLanguage.
+        let lang: String
 
         struct Correction: Encodable {
             let from: String
@@ -325,7 +356,8 @@ struct RemoteExtractionService: ExtractionService {
             body: Request(
                 transcript: transcript,
                 corrections: corrections.map { .init(from: $0.from, to: $0.to) },
-                level: level
+                level: level,
+                lang: SpokenLanguage.current
             ),
             timeout: 90
         )
