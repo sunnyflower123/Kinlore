@@ -100,14 +100,30 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    AI is created with `confirmed = 0`. Unconfirmed never appears in the family
    tree as fact. A wrong relationship is worse than a missing one.
 
-   This rule used to name a *blind* confirmation as the strongest kind the app
-   collects — somebody who was never shown the name and arrived at it anyway —
-   and pointed at the guessing round. **The round was cut on 16 Aug 2026**
-   (PLAN.md §5, row 8), so what is left is the orange proposal row on the person
-   list and in the Tell result: a card with the name already on it. That is a
-   weaker instrument and the rule should say so rather than quietly inherit the
-   old sentence. If confirmation ever needs strengthening again, ARCHITECTURE
-   §13 records what blind confirmation was and why it worked.
+   **The strongest kind is blind**: somebody who was never shown the name and
+   arrived at it anyway has genuinely recognised the person. A card with the
+   name already on it gets tapped "yes" without being read.
+
+   That instrument was lost when the guessing round was cut on 16 Aug 2026
+   (PLAN.md §5, row 8) and **came back on 30 Aug 2026 in a cheaper shape**: the
+   Kerro tab's card shows the photograph the name was heard in and asks *"kuka
+   tässä on?"* over four names with the proposal unmarked among them
+   (`BlindConfirmation`, ARCHITECTURE §23). The join it needed —
+   `memories(mentioning:)` — was already in the model, and a photograph has no
+   name in it to leak, which is the whole cost the round's mask used to carry.
+
+   The orange proposal row on the person list and in the Tell result is still
+   there and is still the weaker instrument. It is what answers a proposal the
+   blind card cannot reach: a name heard while talking about a person rather
+   than a picture has no face to put in front of anybody.
+
+   Two things the blind card must keep. **A wrong answer is never called
+   wrong** — the app does not know who is in the photograph either, and saying
+   otherwise is the guess asserted as fact. And **nothing on that screen may
+   name the proposal**, including the photograph's accessibility label; that
+   failure is silent, because a card that leaks its answer still looks exactly
+   like a card that works. `BlindConfirmationTests` asserts it by walking every
+   element on screen.
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
    `date_start`/`date_end` with precision `decade`. Do not force a date.
 6. **No login screen.** Identity is a UUID in the Keychain
