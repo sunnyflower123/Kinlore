@@ -141,6 +141,7 @@ export default {
 				secret?: string
 				displayName?: string
 				familyName?: string
+				lang?: string
 			}>(request)
 			if (!body) return json({ error: 'invalid_json' }, 400)
 			if (!body.memberID || !body.secret) return json({ error: 'missing_identity' }, 400)
@@ -155,6 +156,7 @@ export default {
 					secret: body.secret,
 					displayName: body.displayName ?? '',
 					familyName: body.familyName ?? '',
+					lang: spokenLanguage(body.lang),
 				})
 				return 'error' in result ? json(result, 409) : json(result)
 			} catch (err) {
@@ -174,6 +176,7 @@ export default {
 				secret?: string
 				displayName?: string
 				code?: string
+				lang?: string
 			}>(request)
 			if (!body) return json({ error: 'invalid_json' }, 400)
 			if (!body.memberID || !body.secret || !body.code) {
@@ -186,6 +189,7 @@ export default {
 					secret: body.secret,
 					displayName: body.displayName ?? '',
 					code: body.code,
+					lang: spokenLanguage(body.lang),
 				})
 				if ('error' in result) {
 					return json(result, result.error === 'invalid_invite' ? 404 : 409)

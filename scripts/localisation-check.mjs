@@ -58,13 +58,27 @@ function swiftFiles(dir) {
 // LocalizedStringKey. A literal anywhere else in this app is not shown to
 // anybody, and adding one here that is not user-facing would make this check
 // demand translations for identifiers.
-const SHOWN = String.raw`(?:Text|Button|Label|Toggle|TextField|SecureField`
-  + String.raw`|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)`;
+// The SwiftUI initialisers that read a literal as a LocalizedStringKey, plus
+// String(localized:) — which is how the exported archive's prose is looked up.
+// The export is not SwiftUI and is the one output that leaves the app for good,
+// so its strings are the last place a missing translation should hide.
+// Two shapes, not one alternation with an optional bracket: the SwiftUI
+// initialisers take the literal as their first argument, String(localized:)
+// takes it after a label. Folding them together needs an optional paren, and an
+// optional paren matches Text followed by anything at all — which on the first
+// attempt swallowed a doc comment whole and reported it as an untranslated
+// string. Two patterns cost one more line and cannot do that.
+const SHOWN = [
+  String.raw`(?:Text|Button|Label|Toggle|TextField|SecureField`
+    + String.raw`|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)`
+    + String.raw`\s*\(\s*"((?:[^"\\]|\\.)*)"`,
+  String.raw`String\(localized:\s*"((?:[^"\\]|\\.)*)"`,
+];
 
 const keys = new Set();
 for (const file of swiftFiles(swiftRoot)) {
   const src = readFileSync(file, 'utf8');
-  for (const m of src.matchAll(new RegExp(SHOWN + String.raw`\(\s*"((?:[^"\\]|\\.)*)"`, 'g'))) {
+  for (const m of SHOWN.flatMap((p) => [...src.matchAll(new RegExp(p, 'g'))])) {
     const key = m[1];
     if (!/[a-zA-ZäöåÄÖÅ]/.test(key)) continue;          // "·", "%@" and friends
     if (key.includes('\\(')) continue;                   // interpolated: see below
@@ -110,8 +124,8 @@ const missing = [...keys].filter((k) => !translated.has(k)).sort();
 const interpolated = new Set();
 for (const file of swiftFiles(swiftRoot)) {
   const src = readFileSync(file, 'utf8');
-  for (const m of src.matchAll(new RegExp(SHOWN + String.raw`\(\s*"([^"]*\\\([^"]*)"`, 'g'))) {
-    interpolated.add(m[1]);
+  for (const m of SHOWN.flatMap((p) => [...src.matchAll(new RegExp(p, 'g'))])) {
+    if (m[1].includes('\\(')) interpolated.add(m[1]);
   }
 }
 const formatKeys = [...translated].filter((k) => /%(@|lld|ld|d)/.test(k)).length;

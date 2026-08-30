@@ -56,7 +56,7 @@ enum ArchiveExport {
             $0.deletedAt == nil && ($0.imageFilename != nil || $0.r2Key != nil)
         }
         for (index, subject) in subjectsWithPhotos.enumerated() {
-            progress("Kootaan kuvia \(index + 1)/\(subjectsWithPhotos.count)")
+            progress(String(localized: "Kootaan kuvia \(index + 1)/\(subjectsWithPhotos.count)"))
             guard let filename = await MediaLoader.imageFilename(
                 for: subject, store: store, session: session
             ) else {
@@ -77,7 +77,7 @@ enum ArchiveExport {
             $0.audioFilename != nil || $0.audioR2Key != nil
         }
         for (index, memory) in memoriesWithAudio.enumerated() {
-            progress("Kootaan ääniä \(index + 1)/\(memoriesWithAudio.count)")
+            progress(String(localized: "Kootaan ääniä \(index + 1)/\(memoriesWithAudio.count)"))
             guard let filename = await MediaLoader.audioFilename(
                 for: memory, store: store, session: session
             ) else {
@@ -91,7 +91,7 @@ enum ArchiveExport {
             }
         }
 
-        progress("Kirjoitetaan arkistoa")
+        progress(String(localized: "Kirjoitetaan arkistoa"))
         let page = html(
             store: store,
             photoNames: photoNames,
@@ -101,7 +101,7 @@ enum ArchiveExport {
         try Data(page.utf8).write(to: root.appendingPathComponent("muistot.html"))
         try store.exportJSON().write(to: root.appendingPathComponent("arkisto.json"))
 
-        progress("Pakataan")
+        progress(String(localized: "Pakataan"))
         return Export(zip: try zip(root), missingMedia: missing)
     }
 
@@ -196,13 +196,14 @@ enum ArchiveExport {
         </style>
         </head>
         <body>
-        <h1>Muistoarkisto</h1>
+        <h1>\(String(localized: "Muistoarkisto"))</h1>
 
         """
 
-        out += "<p class=\"meta\">Viety \(dateText(.now)). Äänitiedostot ovat kansiossa "
-        out += "<code>aani</code> ja kuvat kansiossa <code>kuvat</code>. "
-        out += "Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa.</p>\n"
+        out += "<p class=\"meta\">"
+        out += String(localized: "Viety \(dateText(.now)).")
+        out += String(localized: " Äänitiedostot ovat kansiossa <code>aani</code> ja kuvat kansiossa <code>kuvat</code>. Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa.")
+        out += "</p>\n"
 
         // The page says what it is missing. A zip built offline used to look
         // complete while the originals had been silently skipped — and this
@@ -214,10 +215,10 @@ enum ArchiveExport {
         // there is none, and a promise about where the files are must be
         // true in both modes.
         if missingMedia > 0 {
-            out += "<p class=\"meta\"><strong>Huom:</strong> "
+            out += "<p class=\"meta\"><strong>\(String(localized: "Huom:"))</strong> "
             out += missingMedia == 1
-                ? "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on tallessa ja tulee mukaan seuraavaan vientiin."
-                : "\(missingMedia) kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat tallessa ja tulevat mukaan seuraavaan vientiin."
+                ? String(localized: "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on tallessa ja tulee mukaan seuraavaan vientiin.")
+                : String(localized: "\(missingMedia) kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat tallessa ja tulevat mukaan seuraavaan vientiin.")
             out += "</p>\n"
         }
 
@@ -259,8 +260,8 @@ enum ArchiveExport {
                     // whose audio could not be fetched used to assert "Ääni
                     // tallessa" over an <audio> element that never came.
                     out += audioNames[memory.id] != nil
-                        ? "<p class=\"pending\">Ääni tallessa, tekstiä ei ole vielä kirjoitettu.</p>\n"
-                        : "<p class=\"pending\">Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin.</p>\n"
+                        ? "<p class=\"pending\">\(String(localized: "Ääni tallessa, tekstiä ei ole vielä kirjoitettu."))</p>\n"
+                        : "<p class=\"pending\">\(String(localized: "Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin."))</p>\n"
                 } else {
                     for paragraph in memory.body.components(separatedBy: "\n") where !paragraph.isEmpty {
                         out += "<p>\(escaped(paragraph))</p>\n"
@@ -278,7 +279,7 @@ enum ArchiveExport {
             // wall of text nobody reads.
             let open = store.questions.filter { $0.subjectID == subject.id && !$0.answered }
             if !open.isEmpty {
-                out += "<p class=\"open\"><strong>Vielä kysymättä</strong></p>\n<ul class=\"open\">\n"
+                out += "<p class=\"open\"><strong>\(String(localized: "Vielä kysymättä"))</strong></p>\n<ul class=\"open\">\n"
                 for question in open {
                     out += "<li>\(escaped(question.text))</li>\n"
                 }
@@ -287,8 +288,8 @@ enum ArchiveExport {
         }
 
         if !empty.isEmpty {
-            out += "<h2>Ilman muistoja</h2>\n"
-            out += "<p class=\"open\">Näistä ei ole vielä kerrottu mitään: "
+            out += "<h2>\(String(localized: "Ilman muistoja"))</h2>\n"
+            out += "<p class=\"open\">\(String(localized: "Näistä ei ole vielä kerrottu mitään:")) "
             out += escaped(empty.map(\.displayTitle).joined(separator: ", "))
             out += ".</p>\n"
         }
@@ -306,10 +307,10 @@ enum ArchiveExport {
         }
 
         var lines: [String] = []
-        if let parents = names(.parentOf) { lines.append("Vanhemmat: \(parents)") }
-        if let children = names(.parentOf, asParent: true) { lines.append("Lapset: \(children)") }
-        if let spouse = names(.spouseOf) { lines.append("Puoliso: \(spouse)") }
-        if let siblings = names(.siblingOf) { lines.append("Sisarukset: \(siblings)") }
+        if let parents = names(.parentOf) { lines.append(String(localized: "Vanhemmat: \(parents)")) }
+        if let children = names(.parentOf, asParent: true) { lines.append(String(localized: "Lapset: \(children)")) }
+        if let spouse = names(.spouseOf) { lines.append(String(localized: "Puoliso: \(spouse)")) }
+        if let siblings = names(.siblingOf) { lines.append(String(localized: "Sisarukset: \(siblings)")) }
         return lines
     }
 

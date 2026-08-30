@@ -16,7 +16,7 @@
    en.lproj/Localizable.strings rather than typed, and scripts/localisation-check.mjs
    fails if the two tables stop matching. Do not hand-edit one without the other.
 
-   170 entries, generated 30 Aug 2026. */
+   189 entries, generated 30 Aug 2026. */
 
 "Aloita perheen arkisto" = "Aloita perheen arkisto";
 "Arkisto" = "Arkisto";
@@ -188,3 +188,22 @@
 "Poistutaanko perheestä?" = "Poistutaanko perheestä?";
 "Yhdistetäänkö kortit?" = "Yhdistetäänkö kortit?";
 "Tyhjennetäänkö tämä laite?" = "Tyhjennetäänkö tämä laite?";
+"Muistoarkisto" = "Muistoarkisto";
+"Viety %@." = "Viety %@.";
+" Äänitiedostot ovat kansiossa <code>aani</code> ja kuvat kansiossa <code>kuvat</code>. Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa." = " Äänitiedostot ovat kansiossa <code>aani</code> ja kuvat kansiossa <code>kuvat</code>. Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa.";
+"Huom:" = "Huom:";
+"Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on tallessa ja tulee mukaan seuraavaan vientiin." = "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on tallessa ja tulee mukaan seuraavaan vientiin.";
+"%lld kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat tallessa ja tulevat mukaan seuraavaan vientiin." = "%lld kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat tallessa ja tulevat mukaan seuraavaan vientiin.";
+"Ääni tallessa, tekstiä ei ole vielä kirjoitettu." = "Ääni tallessa, tekstiä ei ole vielä kirjoitettu.";
+"Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin." = "Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin.";
+"Vielä kysymättä" = "Vielä kysymättä";
+"Ilman muistoja" = "Ilman muistoja";
+"Näistä ei ole vielä kerrottu mitään:" = "Näistä ei ole vielä kerrottu mitään:";
+"Vanhemmat: %@" = "Vanhemmat: %@";
+"Lapset: %@" = "Lapset: %@";
+"Puoliso: %@" = "Puoliso: %@";
+"Sisarukset: %@" = "Sisarukset: %@";
+"Kootaan kuvia %lld/%lld" = "Kootaan kuvia %lld/%lld";
+"Kootaan ääniä %lld/%lld" = "Kootaan ääniä %lld/%lld";
+"Kirjoitetaan arkistoa" = "Kirjoitetaan arkistoa";
+"Pakataan" = "Pakataan";

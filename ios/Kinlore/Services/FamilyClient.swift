@@ -21,6 +21,9 @@ struct FamilyClient {
             let secret: String
             let displayName: String
             let familyName: String
+            /// Only decides the fallback names when these two are empty, which
+            /// on a phone handed to a grandparent is the ordinary case.
+            let lang: String
         }
         let identity = split(token)
         return try await send(
@@ -30,7 +33,8 @@ struct FamilyClient {
                 memberID: identity.id,
                 secret: identity.secret,
                 displayName: displayName,
-                familyName: familyName
+                familyName: familyName,
+                lang: SpokenLanguage.current
             ),
             authenticated: false
         )
@@ -42,6 +46,7 @@ struct FamilyClient {
             let secret: String
             let displayName: String
             let code: String
+            let lang: String
         }
         let identity = split(token)
         return try await send(
@@ -51,7 +56,8 @@ struct FamilyClient {
                 memberID: identity.id,
                 secret: identity.secret,
                 displayName: displayName,
-                code: code
+                code: code,
+                lang: SpokenLanguage.current
             ),
             authenticated: false
         )

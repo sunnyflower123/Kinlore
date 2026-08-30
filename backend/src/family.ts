@@ -13,17 +13,30 @@ const INVITE_DAYS = 7
 
 const now = () => Math.floor(Date.now() / 1000)
 
-/// Fallback display names are Finnish on purpose: they are written straight into
-/// the app's UI, which is Finnish. See the language rule in CLAUDE.md.
-const DEFAULT_FAMILY_NAME = 'Perhe'
-const DEFAULT_OWNER_NAME = 'Minä'
-const DEFAULT_MEMBER_NAME = 'Perheenjäsen'
+/// Fallback display names, in both languages the app speaks.
+///
+/// These are not error strings — they are written straight into the UI and sit
+/// there for years, on the family screen and beside every memory. They exist
+/// because the ordinary case on a phone handed to a grandparent is that nobody
+/// typed anything, not that somebody skipped a field.
+///
+/// Which language is chosen follows the client's own, sent with the request.
+/// A family is shared and its members may not share a language, so this is a
+/// starting name rather than a translation: whoever renames the family renames
+/// it for everybody, which is the same as it has always been.
+const DEFAULTS = {
+	fi: { family: 'Perhe', owner: 'Minä', member: 'Perheenjäsen' },
+	en: { family: 'Family', owner: 'Me', member: 'Family member' },
+} as const
 
 export type CreateFamilyInput = {
 	memberID: string
 	secret: string
 	displayName: string
 	familyName: string
+	/// The client's language, for the fallback names only. Absent means Finnish,
+	/// so a client built before this existed keeps the names it always got.
+	lang?: 'fi' | 'en'
 }
 
 /// Creates a family and its owner in one go.
@@ -42,7 +55,7 @@ export async function createFamily(env: Env, input: CreateFamilyInput) {
 	await env.DB.batch([
 		env.DB.prepare('INSERT INTO family (id, name, created_at) VALUES (?, ?, ?)').bind(
 			familyID,
-			input.familyName.trim() || DEFAULT_FAMILY_NAME,
+			input.familyName.trim() || DEFAULTS[input.lang ?? 'fi'].family,
 			timestamp,
 		),
 		env.DB.prepare(
@@ -51,7 +64,7 @@ export async function createFamily(env: Env, input: CreateFamilyInput) {
 		).bind(
 			input.memberID,
 			familyID,
-			input.displayName.trim() || DEFAULT_OWNER_NAME,
+			input.displayName.trim() || DEFAULTS[input.lang ?? 'fi'].owner,
 			await hashSecret(input.secret),
 			timestamp,
 			timestamp,
@@ -66,6 +79,8 @@ export type JoinInput = {
 	secret: string
 	displayName: string
 	code: string
+	/// The joiner's language, for the fallback name only. See DEFAULTS.
+	lang?: 'fi' | 'en'
 }
 
 export async function joinFamily(env: Env, input: JoinInput) {
@@ -92,7 +107,7 @@ export async function joinFamily(env: Env, input: JoinInput) {
 	// they typed nothing, which on a phone handed to a grandparent is the
 	// ordinary case rather than the exception.
 	const displayName =
-		input.displayName.trim() || invite.display_name?.trim() || DEFAULT_MEMBER_NAME
+		input.displayName.trim() || invite.display_name?.trim() || DEFAULTS[input.lang ?? 'fi'].member
 
 	const existing = await env.DB.prepare('SELECT id, family_id, left_at FROM member WHERE id = ?')
 		.bind(input.memberID)
