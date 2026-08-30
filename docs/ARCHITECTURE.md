@@ -1894,12 +1894,51 @@ most productive check in the suite. Six screens carry a comment saying they move
 an action out of a toolbar and into a row for exactly this finding, every one of
 them after the screen had already been looked at and thought finished.
 
-**What nobody has established is why only two elements report it.** A floor that
-pinned everything would report a screenful, and this reports two. One of them,
-`Ota perhe käyttöön`, is pinned to `Elder.minTapTarget` and is the same shape
-the audit has objected to before; the other is a section header. Until somebody
-looks, the honest statement is that the band is uncovered and that a run in it
-is not clean — not that it is clean underneath.
+**Why only those two, established the same day** over nine runs, each changing
+one thing and re-measuring.
+
+Three explanations were tried and killed:
+
+- **Not the simulation artefact above.** The `listHeaderAndFooterText` signature
+  is a finding that appears at the default size and audits clean at a real
+  AccessibilityXXXL. These do not go away: with the floor on, the same two
+  report at the default size, at `XL` and at AccessibilityXXXL alike. That is
+  the protocol this file demands before anything is added to that set, and this
+  fails it — so the set is the wrong home for them.
+- **Not the position.** Swapping the sharing section with the help section moved
+  the row from y 322 to y 667 and the finding travelled with the row.
+- **Not `Text` against `Label`.** Written as a `Label` the row reports the same
+  finding with a `Text clipped` added beside it, which is why it is a `Text`.
+
+What it is comes in two halves.
+
+**A row reports when its `Section` is conditionally present.** Deleting
+`if session.isLocalByChoice` from around the sharing section — same row, same
+construction, same coordinates — silences it. The confirming run was written as
+a prediction that could have failed: wrapping the *help* section in the
+identical condition should make `Näin tämä toimii` report, a row that had passed
+every audit it had ever been in. It did.
+
+This also reconciles with the older note in `SettingsScreen`, which found the
+same swap moving the finding onto the help row, if that swap exchanged the rows
+inside their sections rather than the sections themselves — the condition would
+have stayed where it was while the row moved through it.
+
+**List chrome reports when its section has a header.** Adding one header to the
+first section, which had only a footer, made the new header report *and* woke
+that footer, silent on every run before it.
+
+One thing is inferred and not tested: the export footer stays quiet while the
+others report, and it is the only one that wraps to three lines — 61.67 pt at
+the default size against 86 pt at the floor, where every reporting element moves
+two or three points. Text whose height barely changes is the shape the audit's
+own comparison would catch, but nothing here measured that directly.
+
+**Still not fixed, and now for a better reason than not knowing.** The lever is
+a conditional section, and the condition earns its place: `isLocalByChoice` is
+what keeps a device-only escape hatch off the screens of families that have no
+use for it. An audit finding is not a reason to show a row to people it is not
+for.
 
 ## 16. The memory that was interrupted
 
