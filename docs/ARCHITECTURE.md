@@ -1928,11 +1928,25 @@ have stayed where it was while the row moved through it.
 first section, which had only a footer, made the new header report *and* woke
 that footer, silent on every run before it.
 
-One thing is inferred and not tested: the export footer stays quiet while the
-others report, and it is the only one that wraps to three lines — 61.67 pt at
-the default size against 86 pt at the floor, where every reporting element moves
-two or three points. Text whose height barely changes is the shape the audit's
-own comparison would catch, but nothing here measured that directly.
+The wrapping footer was left as an inference for one day and then measured, and
+**the inference was wrong.** Both directions:
+
+| Change | Prediction | Result |
+|--------|------------|--------|
+| Export footer shortened to one line, 32 pt — the same height as a footer that does report | starts reporting | **stays silent** |
+| The reporting footer lengthened until it wrapped to three lines, 86 pt | goes silent | **keeps reporting** |
+
+Height and line count have nothing to do with it. What the two runs leave
+standing is narrower and structural: **a footer follows its section, not its own
+shape.** The first section's footer is silent while that section has no header
+and reports as soon as one is added — at either length. The export section has a
+header throughout and its footer never reports — at either length. Two headed
+sections behaving differently, with the text ruled out as the difference.
+
+So the chrome half of the rule above is really *a header always reports, and a
+footer reports in some headed sections and not others*. That is an open question
+again, with two answers ruled out rather than none — which is worth more than
+the tidy sentence it replaced.
 
 **Still not fixed, and now for a better reason than not knowing.** The lever is
 a conditional section, and the condition earns its place: `isLocalByChoice` is
