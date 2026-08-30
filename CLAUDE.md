@@ -47,19 +47,41 @@ negotiable:
 | Audience | Language | Covers |
 |----------|----------|--------|
 | Whoever reads the repo | **English** | Docs, code comments, commit messages, identifiers, developer-facing log output, test names, debug launch arguments, config comments |
-| Whoever uses the app | **Finnish** | Every string the user sees or hears — labels, accessibility labels, `Info.plist` usage descriptions, user-facing error messages |
+| Whoever uses the app | **Finnish, written; English, default** | Every string the user sees or hears — see the mechanism below |
 
-Three things stay Finnish even though no user reads them, and each has a reason:
+**The app speaks both, and the mechanism is the part to understand before
+touching anything.** Since 30 Aug 2026:
 
-1. **LLM system prompts and JSON-schema `description` fields**
-   (`backend/src/extract.ts`, `backend/src/transcribe.ts`). They instruct the
-   model about Finnish morphology and were tuned by measurement. Rewriting them
-   is a behaviour change, not a translation, and it cannot be re-validated
-   without spending credits.
-2. **Test transcripts and TTS sample texts** (`scripts/`). That is the input
+- **The Finnish strings in the Swift source are the KEYS.** SwiftUI reads a
+  string literal in `Text`, `Button`, `Label`, `navigationTitle` and
+  `accessibilityLabel` as a `LocalizedStringKey`, and the export uses
+  `String(localized:)`. So writing a new user-facing string still means writing
+  it in Finnish, in the source, exactly as before.
+- **Both tables translate away from those keys.** `en.lproj` carries the
+  English; `fi.lproj` maps every key to itself. The Finnish table is not
+  redundant — English is the development language, the fallback for a missing
+  key is the development language rather than the key, and an empty `fi.lproj`
+  hands a Finnish phone English. That happened, and only a screenshot showed it.
+- **`scripts/localisation-check.mjs` fails if either table is short.** Nothing
+  else reports a missing translation: the Finnish build stays perfect, the
+  build succeeds, and the English one shows one Finnish word in the middle of a
+  screen nobody runs except on filming night.
+- **English is the default because the app is presented, judged and filmed in
+  it.** A Finnish phone still gets Finnish. Nothing in the app switches
+  language; it follows the device.
+
+Two things stay Finnish even though no user reads them, and each has a reason:
+
+1. **Test transcripts and TTS sample texts** (`scripts/`). That is the input
    under test. Translating it would test a different thing.
-3. **Server-side default display names** (`'Perhe'`, `'Minä'`, `'Perheenjäsen'`
-   in `backend/src/family.ts`). They are written straight into the app's UI.
+2. **The Finnish half of the LLM prompts** (`backend/src/extract.ts`,
+   `backend/src/transcribe.ts`). There are now two of each, and the English one
+   is not a translation: rule 1 teaches a model about Finnish case endings and
+   has no English counterpart, and the filler words and common nouns in rules 2,
+   3 and 5 are the part that was tuned. **Which prompt runs follows who is
+   SPEAKING**, not who is reading the screen — the app sends `lang`, absent
+   means Finnish. The Finnish was tuned by measurement; do not edit it on the
+   way past. `MAX_WORDS_PER_SECOND` is two numbers for the same reason.
 
 Everything new follows this rule from the start. Do not write a Finnish comment
 now and translate it later — the translation pass has already happened once.

@@ -373,12 +373,19 @@ xcrun simctl create kinlore-tests com.apple.CoreSimulator.SimDeviceType.iPhone-1
 ## Two languages, on purpose
 
 The repo is written in **English**: docs, comments, identifiers, commit
-messages. The app's user interface is **Finnish**, because the person it exists
-for is a Finnish 80-year-old. A handful of Finnish strings therefore live in the
-source on purpose — LLM system prompts tuned for Finnish morphology, the test
-transcripts that are the input under test, and the server-side default display
-names that are written straight into the UI. The boundary and its exceptions are
-spelled out in [CLAUDE.md](CLAUDE.md).
+messages. The app's user interface is **written in Finnish**, because the person
+it exists for is a Finnish 80-year-old — and it **speaks English by default**,
+because the app has to be shown to people who do not read Finnish. A Finnish
+phone still gets Finnish. The Finnish source strings are the lookup keys, so
+writing a new one still means writing Finnish; `scripts/localisation-check.mjs`
+fails if it has no English.
+
+The pipeline follows **who is speaking**, not who is reading the screen: there
+are two system prompts and two hallucination ceilings, and the app says which
+applies. The English prompt is not the Finnish one translated — its first rule
+teaches a model about case endings that English does not have. The test
+transcripts stay Finnish because they are the input under test. The boundary and
+its exceptions are spelled out in [CLAUDE.md](CLAUDE.md).
 
 ## Licence
 

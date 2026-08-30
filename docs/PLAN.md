@@ -676,8 +676,9 @@ finished.**
     and no 80-year-old is going to switch it on. Kept as a v1.1 direction beside
     lever 3, not as a September plan.
 
-- **English as a language the app HEARS, not only one it reads.** Raised
-  30 Aug 2026, when the interface got English so that the app could be shown to
+- ~~**English as a language the app HEARS, not only one it reads.**~~ **Done
+  30 Aug 2026**, the same day it was raised — the entry below is what it cost and
+  is kept because the reasoning is what makes the numbers legible. Raised when the interface got English so that the app could be shown to
   people who do not read Finnish — the judges, and the video. That half is done
   and it is only the interface: the pipeline was not touched, and this is what
   touching it would cost.
@@ -720,6 +721,22 @@ finished.**
   It is one model measured on one language.
 
   So this is a second pipeline — its own constant, its own prompt, its own bench
-  run — and not a translation. It needs model credit and a removal under §5, and
-  it is **not needed for what English was added for**. Not a v1 decision; parked
-  here so that whoever opens it starts at the constant rather than at the prompt.
+  run — and not a translation.
+
+  **Built the same day**, at the author's decision and with model credit granted
+  for it. What shipped: two system prompts in `extract.ts` and `transcribe.ts`
+  written rather than translated, one description table so the schema shape
+  cannot drift between them, `MAX_WORDS_PER_SECOND` as `{ fi: 4, en: 6 }` with
+  the arithmetic beside it, and a `lang` field carried from the app so the
+  pipeline follows who is SPEAKING. Absent means Finnish, so a client built
+  before this behaves exactly as it did. Verified against the real models: 22 of
+  22 extraction cases, five English and seventeen Finnish, in one run — and the
+  Finnish ones matter as much, because the schema was restructured under them.
+
+  **What is NOT done**, and it is the item this entry now exists for: the ASR
+  model is still the one chosen by measuring Finnish word error rate and Finnish
+  proper-noun recall. `asr-bench.mjs` has to be run again on English samples
+  before anybody claims a number about English transcription. Until then the
+  English pipeline is measured at the extraction end and unmeasured at the
+  listening end, which is exactly the shape of the Finnish risk in §8 and should
+  be read the same way.
