@@ -1863,6 +1863,44 @@ once. So v1 commits to the appearance it was measured in:
 Elder system, plus a sweep pass in that appearance, are the designed piece of
 work this deliberately is not.
 
+### The band between the two sizes, measured 30 Aug 2026
+
+Every sweep runs a screen twice: at the default size and at
+`AccessibilityXXXL`. **`Elder.textFloor` sits between them.** The configuration
+it produces — `largerText` on, iOS's own size untouched — is the one an
+80-year-old's phone is actually in, and it had never been audited at all.
+
+It surfaced by accident, from a test polluting its own device. A run with the
+new `Elder.forgetLargerText()` deliberately switched off left `elder.largerText`
+set behind it, and the next two Settings sweeps failed on screens that had
+passed minutes earlier. Measured on purpose afterwards:
+
+| Screen | `largerText` on, system default | System `XL`, `largerText` off |
+|--------|--------------------------------|-------------------------------|
+| Asetukset | 1 — `Arkisto` | clean |
+| Asetukset, vain tämä puhelin | 2 — `Arkisto`, `Ota perhe käyttöön` | clean |
+
+Both findings are *"Dynamic Type font sizes are partially unsupported"*. The two
+columns render text at the same size and answer differently, so **the trigger is
+the floor and not the size**: the audit asks whether text follows the system
+setting, and below `xLarge` it does not, because stopping exactly that is what a
+floor is. The finding is the mechanism describing itself.
+
+Recorded rather than fixed, because both available fixes are worse than the gap.
+Removing the floor takes away the one thing that makes the app readable for the
+person it was built for. Adding the category to `AccessibilityPolicy` would
+switch off Dynamic Type detection on ordinary rows — and that detection is the
+most productive check in the suite. Six screens carry a comment saying they moved
+an action out of a toolbar and into a row for exactly this finding, every one of
+them after the screen had already been looked at and thought finished.
+
+**What nobody has established is why only two elements report it.** A floor that
+pinned everything would report a screenful, and this reports two. One of them,
+`Ota perhe käyttöön`, is pinned to `Elder.minTapTarget` and is the same shape
+the audit has objected to before; the other is a section header. Until somebody
+looks, the honest statement is that the band is uncovered and that a run in it
+is not clean — not that it is clean underneath.
+
 ## 16. The memory that was interrupted
 
 §7 says that a quota never rejects a recording: the audio is saved and the
