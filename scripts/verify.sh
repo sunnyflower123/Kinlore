@@ -178,6 +178,13 @@ run "the test counts the documents state" doc_counts
 # said the same thing twice in one language and not the other. Costs nothing —
 # no browser, no network.
 run "the site says each thing once, in one language" node scripts/page-check.mjs
+# The app gained English on 30 Aug 2026, in the cheapest shape there is: the
+# Finnish literals in the source are the lookup keys, so nothing had to change
+# except one table. Which means nothing warns you when a new Text() has no
+# translation — the Finnish build is perfect and the English one shows one
+# Finnish word in the middle of a screen nobody runs except on filming night.
+# It found six missing dialog titles the hour it was written.
+run "every string the app shows has an English one" node scripts/localisation-check.mjs
 
 # --- The backend ------------------------------------------------------------
 
