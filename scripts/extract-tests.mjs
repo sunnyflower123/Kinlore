@@ -24,6 +24,56 @@ const API = process.argv[2] ?? 'http://localhost:8787'
 // ---------------------------------------------------------------- cases
 
 const CASES = [
+  // ---------------------------------------------------------------- English
+  // Added 30 Aug 2026 with the second prompt. These are not the Finnish cases
+  // translated: they test the rules that had to be REWRITTEN rather than the
+  // rules that carried across. English splits one person into two rows through
+  // possessives rather than case endings, its fillers are different words, and
+  // "mummola" has no English counterpart at all — so each of those got its own
+  // case rather than a translated one.
+  {
+    name: 'possessive: one person, not two',
+    lang: 'en',
+    why: "The English answer to the Finnish base-form rule. \"Margaret's\" and \"Margaret\" are one woman, and a tree that holds both cannot be joined up later.",
+    transcript:
+      "Margaret's mother made the cake every year, and it was Margaret who taught " +
+      'me to bake it. Margaret never wrote any of it down.',
+    expect: { people: ['Margaret'], exactPeople: true },
+  },
+  {
+    name: 'common nouns are not places',
+    lang: 'en',
+    why: 'The cottage and the church identify nobody. If they become subjects the archive fills with rows no family member can tell apart.',
+    transcript:
+      'We walked from the cottage up to the church every Sunday, past the old ' +
+      'school, and then down to the shore. That was in Ambleside.',
+    expect: { places: ['Ambleside'], exactPlaces: true },
+  },
+  {
+    name: 'a decade stays a decade',
+    lang: 'en',
+    why: 'Forcing a year invents precision the teller did not have. "The fifties" is the whole answer she gave.',
+    transcript:
+      "It was sometime in the fifties, I don't remember exactly. Arthur was still " +
+      'driving the van then.',
+    expect: { datePrecision: 'decade' },
+  },
+  {
+    name: 'fillers out, people in',
+    lang: 'en',
+    why: 'English fillers are different words from Finnish ones, and the rule that removes them must not take the names with it.',
+    transcript:
+      'Well, um, you know, it was Arthur, I mean Arthur and Elsie, they were the ' +
+      'ones who, like, ran the shop in Keswick for years.',
+    expect: { people: ['Arthur', 'Elsie'], places: ['Keswick'] },
+  },
+  {
+    name: 'never invent a date',
+    lang: 'en',
+    why: 'An invented year looks exactly like a remembered one, and nobody can tell them apart afterwards.',
+    transcript: 'Elsie had the loveliest voice. She sang at every wedding in the village.',
+    expect: { datePrecision: 'unknown' },
+  },
   {
     name: 'base form: a person in three cases',
     why: 'If the surface form gets through, the family tree gains three different Ainos.',
@@ -243,21 +293,45 @@ if (!health.hasKey) {
   process.exit(1)
 }
 
+// /extract began requiring a member session at some point after this bench was
+// written, and the bench went on sending no Authorization header — so every case
+// failed with HTTP 401 and the failure looked like the route, not the caller. A
+// throwaway family is created here rather than a token being configured, because
+// a bench that needs setup is a bench nobody runs.
+const identity = {
+  memberID: crypto.randomUUID().toUpperCase(),
+  secret: [...crypto.getRandomValues(new Uint8Array(24))]
+    .map((b) => b.toString(16).padStart(2, '0')).join(''),
+}
+const created = await fetch(`${API}/family`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ ...identity, displayName: 'Bench', familyName: 'Bench' }),
+})
+if (!created.ok) {
+  console.error(`Could not create a family to run against: HTTP ${created.status}`)
+  process.exit(1)
+}
+const AUTH = `Bearer ${identity.memberID}.${identity.secret}`
+
 console.log(`Extraction tests — ${API}\n`)
 
 let passed = 0
 const failures = []
 
 for (const testCase of CASES) {
-  process.stdout.write(`  ${testCase.name} ... `)
+  process.stdout.write(`  [${testCase.lang ?? 'fi'}] ${testCase.name} ... `)
   let result
   try {
     const res = await fetch(`${API}/extract`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: AUTH },
       body: JSON.stringify({
         transcript: testCase.transcript,
         corrections: testCase.corrections ?? [],
+        // Absent means Finnish, which is what every case written before
+        // 30 Aug 2026 assumed and what the Worker still defaults to.
+        lang: testCase.lang ?? 'fi',
       }),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
