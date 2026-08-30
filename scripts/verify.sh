@@ -172,6 +172,12 @@ doc_counts() {
 echo
 echo "Docs"
 run "the test counts the documents state" doc_counts
+# The site had no check at all until 30 Aug 2026, which made it the one surface
+# here whose only guard was somebody looking. Two defects had already gone
+# through: a page with no <h1> for a screen reader to find, and a line that
+# said the same thing twice in one language and not the other. Costs nothing —
+# no browser, no network.
+run "the site says each thing once, in one language" node scripts/page-check.mjs
 
 # --- The backend ------------------------------------------------------------
 
