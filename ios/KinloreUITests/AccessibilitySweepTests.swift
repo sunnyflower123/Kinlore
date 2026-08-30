@@ -892,4 +892,39 @@ final class AccessibilitySweepTests: XCTestCase {
             )
         }
     }
+
+    /// The blind confirmation: the one card on this screen with no record
+    /// button on it.
+    ///
+    /// Four answers stand where the 200 pt disc does, and a fifth way past
+    /// below them — three more rows than the deck's card carries, on the screen
+    /// this project has already measured to its limit twice. The first build
+    /// drew *"En muista"* underneath the floating tab bar at the **ordinary**
+    /// text size, which is what the spacing on `blindContent` is set to and
+    /// says.
+    func testBlindConfirmation() throws {
+        try sweep("Sokkovahvistus", arguments: ["-seed", "blind"]) { app, _ in
+            reach(
+                app.buttons["En muista"], in: app,
+                "the way past a face she cannot place"
+            )
+        }
+    }
+
+    /// And what the card says afterwards, which is a second shape on it: the
+    /// answers go and one sentence takes their place.
+    ///
+    /// Audited on the branch that confirms nothing, because that is the
+    /// sentence the app has to say without claiming anything — and because it
+    /// is reachable without changing the archive, so the audit measures a card
+    /// rather than a side effect.
+    func testBlindConfirmationAfterAnswering() throws {
+        try sweep("Sokkovahvistus, vastattu", arguments: ["-seed", "blind"]) { app, _ in
+            reach(
+                app.buttons["En muista"], in: app,
+                "the way past a face she cannot place"
+            ).tap()
+            reach(app.buttons["Jatka"], in: app, "the way on from the answer")
+        }
+    }
 }

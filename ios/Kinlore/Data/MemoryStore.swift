@@ -60,6 +60,20 @@ final class MemoryStore {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// The tellings that *named* a subject rather than being about it.
+    ///
+    /// The other half of the same web `memories(for:)` reads. A person the
+    /// extraction proposed usually has no memory of their own — their name was
+    /// heard inside somebody else's story — so this is the only way back from
+    /// that person to what was being talked about when the name was said.
+    /// `BlindConfirmation` is what needed it, and it is a join rather than a
+    /// column for the same reason the deck needed no schema.
+    func memories(mentioning subjectID: String) -> [Memory] {
+        told
+            .filter { $0.mentionedSubjectIDs.contains(subjectID) }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
     /// Follows the merge chain. A reference to a merged subject always resolves
     /// to the survivor, so nothing points at nothing.
     ///
@@ -809,7 +823,7 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
-        guard seed == "archive" || seed == "unseen" || seed == "deck" else { return }
+        guard ["archive", "unseen", "deck", "blind"].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -841,7 +855,20 @@ final class MemoryStore {
         let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
         let kalle = Subject(id: "demo-kalle", kind: .person, title: "Kalle")
         let sanni = Subject(id: "demo-sanni", kind: .person, title: "Sanni")
-        let photo = Subject(id: "demo-photo", kind: .photo, title: "")
+        // `-seed blind` is the archive with a face on its one photograph.
+        //
+        // The picture is the whole difference, and it is also the guard:
+        // `BlindConfirmation` will not build a card without one, because "who
+        // is this?" over a grey placeholder asks nothing. That is why the plain
+        // archive is untouched by this feature — `demo-photo` has no file
+        // there, so no card appears on the idle screen every other test
+        // launches into.
+        let photo = Subject(
+            id: "demo-photo",
+            kind: .photo,
+            title: "",
+            imageFilename: seed == "blind" ? Self.demoPhotoFile() : nil
+        )
         // A place with nothing said about it yet, which is the ordinary state of
         // a place: it is named inside somebody's memory and gets a card of its
         // own. It is here so the accessibility sweep actually covers the Paikat
@@ -926,6 +953,11 @@ final class MemoryStore {
             // first one left off. Same shape as the seen baseline above.
             UserDefaults.standard.removeObject(forKey: Deck.skippedKey)
         }
+        // Same reason as the skips above: which proposals this device has
+        // already answered is device state that outlives a launch on purpose,
+        // and a second run of the same test would otherwise start with the
+        // card already spent.
+        UserDefaults.standard.removeObject(forKey: BlindConfirmation.answeredKey)
         questions = mummoAsks
         relations = []
         // Nothing is queued for the server: this archive is a fixture, and

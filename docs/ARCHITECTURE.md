@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 39 sweep tests, each auditing one screen at the default text size and again at the largest, out of 79 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 41 sweep tests, each auditing one screen at the default text size and again at the largest, out of 88 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1444,8 +1444,14 @@ otherwise.
 
 ### The parts worth having back
 
-If confirmation is ever strengthened, these are the pieces that were expensive to
-get right and are recorded here rather than rediscovered:
+**Taken up on 30 Aug 2026**, in a different shape: the deck's card asks *"kuka
+tässä on?"* over the photograph the name was heard in, with the proposal unmarked
+among four names. §23 records what was built and which of the pieces below went
+into it. The reading loop above is still unsolved; this is the confirmation half
+only.
+
+If confirmation is ever strengthened again, these are the pieces that were
+expensive to get right and are recorded here rather than rediscovered:
 
 - **The mask has to be a word, not a gap.** An em dash run reads to VoiceOver as
   nothing at all or as punctuation, so the sentence is spoken as though the name
@@ -2701,11 +2707,65 @@ Skips are device-local, like the ladder's comfort and `NewFromFamily`'s seen
 list: *"she does not recognise this one"* describes the person holding the
 phone. Her sister should still be asked.
 
-### What is deliberately not in it yet
+### The blind confirmation, built 30 Aug 2026
 
-The blind confirmation of a name the extraction proposed — a card that shows
-the photograph and asks *"kuka tässä on?"* without showing the guess — is the
-strongest thing this shape could do, and §13 records it as what the cut
-guessing round took away. It needs a join from an unconfirmed person back to
-the photograph it was heard in, which the deck does not do yet. It is the next
-thing worth building here, not a gap in what is.
+The strongest thing this shape could do, and until now the thing §13 recorded
+as lost with the cut guessing round: a card that shows the photograph and asks
+*"kuka tässä on?"* **without showing what the extraction guessed**. Four names,
+the proposal unmarked among them, and *"En muista"*. `BlindConfirmation`.
+
+**The join was already in the model.** `Memory.subjectID` is what a telling is
+about and `mentionedSubjectIDs` is who it named, so "the photograph this name
+was heard in" is a query and not a column — `memories(mentioning:)`, the other
+half of the `memories(for:)` this store has always had. That is the same reason
+the deck itself needed no schema, and it is why this could be built in an
+afternoon after being described as the next expensive thing.
+
+**The photograph is why this is cheaper than what was cut.** The round hid a
+name inside a sentence, and hiding it properly was most of its cost: an em dash
+run reads to VoiceOver as punctuation, so the card asked nothing at all to the
+person most likely to be listening rather than looking. A picture has no name in
+it to leak. What is left of that lesson is one accessibility label —
+*"Valokuva, jossa on joku"* — and a test that walks every element on screen
+looking for a name.
+
+What §13 asked to have back, and where each piece went:
+
+- **A choice of four, three at the fewest.** Two is a coin. An archive with too
+  few people gets no card at all, which is correct: there is nothing to
+  recognise her *against*.
+- **The seats do not move.** Their order comes from the enum's own string hash
+  and not Swift's, which is seeded per process — and this is recomputed on every
+  render, so anything unstable would shuffle the buttons under a finger already
+  reaching for one.
+- **Nobody named in the same telling is a decoy.** They may be in the photograph
+  too, and a question with two right answers teaches the archive nothing.
+- **"En muista" is an answer.** It confirms nothing, un-confirms nothing, and it
+  is what stops the card coming back for ever.
+- **One per person, one per session.** The first because a second attempt
+  answers a question you have just been shown; the second because this card asks
+  nothing — one tap, no telling — and a screen built for telling must not become
+  a quiz.
+- **A correct answer survives a merge**, because both sides are resolved through
+  `store.subject(id:)`, which follows the chain.
+
+**And a wrong answer is not called wrong.** The app does not know who is in the
+photograph either; saying so would be the guess asserted as fact one screen
+after the whole point was not asserting it. Both non-confirming answers get the
+same sentence — *"Kiitos. Tämä jää toistaiseksi avoimeksi."*
+
+**Two things the first build got wrong**, both caught by looking at the screen
+rather than by a test. `.buttonStyle(.bordered)` paints its label from the tint
+*after* the label is built, so `foregroundStyle` underneath it did nothing and
+four names arrived in the system blue — the colour rule 1 names outright, in the
+band where the audit has measured that accent at 3.52:1. And at the outer
+stack's 24 pt spacing the fifth row, the way past a face she cannot place, was
+drawn underneath the floating tab bar at the *ordinary* text size. 18 pt and a
+`.tint(.primary)`.
+
+**The card is held in state, not recomputed.** It was a computed property first,
+and that was wrong in a way only the *correct* answer showed: confirming writes
+to the store, the store is `@Observable`, the view rebuilds, the query says
+there is no card any more — and the card vanished under the finger that had just
+answered it, before its one sentence could be read. A wrong answer writes
+nothing and so kept its card, which is the same bug wearing the opposite face.

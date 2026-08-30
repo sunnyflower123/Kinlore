@@ -27,6 +27,17 @@ struct TellScreen: View {
 
     @State private var model: TellViewModel?
     @State private var isConfirmingClose = false
+    /// Resolved once, like the opened subject beside it, and held rather than
+    /// recomputed.
+    ///
+    /// It was a computed property first and that was wrong in a way only the
+    /// *correct* answer showed: confirming a person writes to the store, the
+    /// store is `@Observable`, this view rebuilds, the query says there is no
+    /// card any more — and the card vanished under the finger that had just
+    /// answered it, before the one sentence it had to say could be read. A
+    /// wrong answer writes nothing and so kept its card, which is the same bug
+    /// wearing the opposite face.
+    @State private var blind: BlindConfirmation.Card?
 
     var body: some View {
         Group {
@@ -68,6 +79,7 @@ struct TellScreen: View {
         }
         .task {
             guard model == nil else { return }
+            blind = blindCard
             #if DEBUG
             // `-screen starter` opens on a photo nobody has spoken about yet —
             // the state the starter questions exist for, and otherwise
@@ -227,8 +239,13 @@ struct TellScreen: View {
         Group {
             switch model.phase {
             case .idle:
-                IdleView(model: model, onSkip: usesDeck ? { skipCard(model) } : nil)
-                    .onAppear { advancePastTold(model) }
+                IdleView(
+                    model: model,
+                    blind: blind,
+                    onBlindDone: { blind = nil },
+                    onSkip: usesDeck ? { skipCard(model) } : nil
+                )
+                .onAppear { advancePastTold(model) }
             case .recording:
                 RecordingView(model: model)
             case .writing:
@@ -272,6 +289,28 @@ struct TellScreen: View {
               ).isEmpty
         else { return nil }
         return Deck.next(in: store)
+    }
+
+    /// The strongest card this screen can offer, and the one thing it will not
+    /// step over.
+    ///
+    /// **Ranked above the deck's own card and below a family question.** It
+    /// asks for a tap rather than a telling, so it costs the least of anything
+    /// here — and §13's account of the cut round says the same thing from the
+    /// other end: it was the only part of the app that asked nothing of the
+    /// 80-year-old. `BlindConfirmation` bounds it to one per session, which is
+    /// what keeps a screen built for telling from becoming a quiz.
+    ///
+    /// It inherits the family-question guard rather than restating it: a
+    /// question somebody actually asked outranks anything the app thought of
+    /// by itself, and that is true of this card exactly as it is of the deck's.
+    private var blindCard: BlindConfirmation.Card? {
+        guard usesDeck,
+              store.openQuestions(
+                  limit: 1, excludingAuthor: session.identity.memberID
+              ).isEmpty
+        else { return nil }
+        return BlindConfirmation.next(in: store)
     }
 
     /// The card that has been answered gives way to the next one.
@@ -329,12 +368,22 @@ private struct IdleView: View {
     @Environment(Session.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
     let model: TellViewModel
+    /// The blind confirmation, when the archive can make one. It replaces
+    /// everything else on the screen while it is up — there is no record button
+    /// on it, because the answer is a name and not a telling.
+    var blind: BlindConfirmation.Card?
+    /// Puts the card away once she has read what her answer did. The card is
+    /// the screen while it is up, so this is the only way off it.
+    var onBlindDone: () -> Void = {}
     /// Non-nil only when the subject on screen was chosen by the deck rather
     /// than navigated to. A photograph somebody opened on purpose is not a card
     /// to be pushed aside.
     var onSkip: (() -> Void)?
 
     @State private var answering: FollowUpQuestion?
+    /// What to say once she has answered, and the only state this card keeps.
+    /// Nil while the question is still on screen.
+    @State private var afterward: String?
 
     /// The reassurance is what makes an elderly person willing to start talking,
     /// so it is not dropped at large text sizes — it is shortened. In full it ran
@@ -513,7 +562,146 @@ private struct IdleView: View {
         }
     }
 
+    @ViewBuilder
     private var content: some View {
+        if let blind {
+            blindContent(blind)
+        } else {
+            tellingContent
+        }
+    }
+
+    // MARK: - The blind confirmation
+
+    /// Picture, question, names. The deck's card with the record button taken
+    /// out and the answers put where it stood, because the question is not
+    /// *"tell me about this"* — it is *"who is this"*, and it is answered by
+    /// pointing rather than by talking.
+    ///
+    /// **Nothing here carries the proposal's name until she has chosen one.**
+    /// The rows are drawn from `card.names`, which the proposal sits inside
+    /// unmarked, and `card.person` is never read by this view. That is the
+    /// whole feature and it is the half that fails silently — a card that leaks
+    /// its answer still looks like a working card — so
+    /// `BlindConfirmationTests` asserts it instead of trusting this comment.
+    private func blindContent(_ card: BlindConfirmation.Card) -> some View {
+        // 18 and not the 28 the telling screen uses. Four answers is three more
+        // rows than that screen carries, and at 24 the last of them — the way
+        // past a face she cannot place — was drawn underneath the floating tab
+        // bar. Measured on the first build of this card.
+        VStack(spacing: 18) {
+            Spacer(minLength: 0)
+
+            if let filename = card.photo.imageFilename,
+               let image = MediaStore.loadImage(named: filename) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: typeSize.isAccessibilitySize ? 150 : 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    // What is known and nothing more. A name in here would hand
+                    // the answer to whoever is listening rather than looking —
+                    // the audience this card is most for, and the same leak the
+                    // cut round's mask existed to stop, arriving by the other
+                    // door.
+                    .accessibilityLabel("Valokuva, jossa on joku")
+            }
+
+            Text(afterward ?? "Kuka tässä on?")
+                .font(.largeTitle.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if afterward == nil {
+                // The answers, as one block: with the outer stack's spacing
+                // between them they took the height the last row needed.
+                VStack(spacing: 10) {
+                    // **Untinted**, which the first build of this card got
+                    // wrong. `.bordered` paints its label in the accent, so
+                    // four names arrived in the system blue — the colour rule 1
+                    // names outright — sitting in the tab bar's fade, where the
+                    // audit has already measured that accent at 3.52:1 against
+                    // a 4.5:1 minimum. The border says it is a control and the
+                    // weight invites; the colour was doing neither job.
+                    ForEach(card.names) { name in
+                        Button {
+                            answer(card, chose: name)
+                        } label: {
+                            Text(name.displayTitle)
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        // On the Button and not on the Text inside it, which
+                        // was the first attempt and did nothing: a bordered
+                        // button paints its label from the tint after the label
+                        // has been built, so `foregroundStyle` underneath it is
+                        // overwritten and the names came out blue anyway.
+                        .tint(.primary)
+                        .elderTapTarget()
+                    }
+                }
+
+                // An answer, not a refusal. It confirms nothing and un-confirms
+                // nothing, and it is what stops the card coming back for ever —
+                // which for this user matters more than the data does: a
+                // question that returns every time she cannot answer it is the
+                // app telling her so. §13 had to learn this the same way.
+                Button {
+                    answer(card, chose: nil)
+                } label: {
+                    Label("En muista", systemImage: "arrow.forward")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(Elder.supporting)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .elderTapTarget()
+                }
+            } else {
+                // The way on, and a button rather than a timer. The camera's
+                // hint clears itself after two seconds because nothing depends
+                // on its being read; this sentence is the whole answer to what
+                // she just did, and a screen that moves on by itself while an
+                // 80-year-old is still reading it has taken the answer away.
+                Button {
+                    onBlindDone()
+                } label: {
+                    Text("Jatka")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.primary)
+                .elderTapTarget()
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Says the one true thing and stops.
+    ///
+    /// A name that matched is a person the archive now knows. Anything else
+    /// leaves it open, and that is what the app says: it cannot call her wrong,
+    /// because it does not know who is in the photograph either. Naming the
+    /// proposal here would be the guess asserted as fact one screen after the
+    /// entire point was not asserting it.
+    private func answer(_ card: BlindConfirmation.Card, chose: Subject?) {
+        let confirmed = BlindConfirmation.answer(card, chose: chose, in: store)
+        afterward = confirmed
+            ? "Kiitos. Nyt tiedämme, kuka hän on."
+            : "Kiitos. Tämä jää toistaiseksi avoimeksi."
+    }
+
+    // MARK: - Telling
+
+    private var tellingContent: some View {
         VStack(spacing: 28) {
             // Resolved once: what is offered at the bottom decides how long the
             // reassurance at the top can afford to be.
