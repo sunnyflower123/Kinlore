@@ -1944,9 +1944,28 @@ header throughout and its footer never reports — at either length. Two headed
 sections behaving differently, with the text ruled out as the difference.
 
 So the chrome half of the rule above is really *a header always reports, and a
-footer reports in some headed sections and not others*. That is an open question
-again, with two answers ruled out rather than none — which is worth more than
-the tidy sentence it replaced.
+footer reports in some headed sections and not others*.
+
+**Which section is which resisted five more single-variable runs.** The two
+sections were made structurally identical — one row, a header, a footer, the row
+a `Toggle` bound to the same property in both — and they went on disagreeing:
+
+| Ruled out | How |
+|-----------|-----|
+| The footer's own text, length, line count | Shortened to 32 pt and lengthened to 86 pt, both directions, no change either way |
+| Where it sits on screen | Export section moved to the top of the `List`: its footer landed at y 301, the exact y where the other section's footer reports, and stayed silent |
+| What its row is | Export row reduced to a plain `Text`, then made a `Toggle` bound to `largerText` — the reporting section's own construction — still silent |
+| The section that follows it | Export section moved to sit immediately before the conditional sharing section, the position the reporting footer occupies. Still silent |
+| A conditional section existing at all | With `if session.isLocalByChoice` deleted the screen reports one finding, and it is the header |
+
+What is left is not reachable from this code. Two sections written the same way
+answer differently, and every property either of them exposes has been swapped
+without moving the finding.
+
+**And a footer that does not report costs nothing.** The question worth
+answering was why the two that *do* report do, and that one has an answer with a
+lever in it. This one is the absence of a finding, chased far enough to say
+honestly that it was chased.
 
 **Still not fixed, and now for a better reason than not knowing.** The lever is
 a conditional section, and the condition earns its place: `isLocalByChoice` is
