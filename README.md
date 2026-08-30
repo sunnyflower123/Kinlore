@@ -259,6 +259,7 @@ bodies can echo back the memory that was just told, so they go to
 | `backend/` | Cloudflare Worker + D1 (metadata) + R2 (photos and audio). |
 | `scripts/` | The checks in the table above, plus `asr-bench.mjs` and the logo tooling. |
 | `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `logo/`. |
+| `.claude/` | The [guideline file](.claude/skills/karpathy-guidelines/SKILL.md) Claude Code works under here — vendored, MIT, [why](CLAUDE.md#the-assistants-rules--checked-in-not-personal-setup). |
 
 ## Setting it up
 
