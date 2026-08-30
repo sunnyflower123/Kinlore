@@ -1973,6 +1973,21 @@ what keeps a device-only escape hatch off the screens of families that have no
 use for it. An audit finding is not a reason to show a row to people it is not
 for.
 
+**And the screen was looked at, which is what settles it.** Everything above is
+frames and audit types; the question a person actually has is whether the text
+comes out too small or too big. Screenshotted with `largerText` on and off, same
+seed, same screen: both reported elements — the `Arkisto` header and the
+`Ota perhe käyttöön` row — are drawn in full, one notch larger with the floor on,
+nothing clipped, nothing overflowing, the long export footer wrapping to four
+lines instead of three. Nothing on that screen is wrong to look at.
+
+So the finding is true about the mechanism and empty about the product: below
+`xLarge` the text does not follow the system setting, because that is what the
+floor is for. **What is left is the coverage gap and not a defect** — and the
+gap is worth naming on its own, because the band nothing measures is the one the
+primary user's phone is in, and a real defect appearing there later would be
+just as invisible as this non-defect was.
+
 ## 16. The memory that was interrupted
 
 §7 says that a quota never rejects a recording: the audio is saved and the
