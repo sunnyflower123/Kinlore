@@ -38,7 +38,31 @@ OUT = ROOT / "samples"
 # The content is chosen for what matters to the archive: proper nouns, places
 # and an imprecise decade. These drive how the family tree is built, so their
 # accuracy weighs more than that of filler words.
-TEXTS = {
+# Two sets, and the English one is not the Finnish one translated. What each
+# text is FOR is the same — proper nouns an engine can plausibly get wrong, a
+# place, and a date that is vague in one and exact in another — but the traps
+# have to be that language's own traps. "Sotkamo" heard as "Skotlanti" is a
+# Finnish failure; the English equivalent is Alnwick, which is not pronounced
+# the way it is spelled, and Elsie, which is a name no model has heard often.
+TEXTS_EN = {
+    "cottage": (
+        "In that photograph we are down at the cottage by the water, "
+        "that was in Ambleside. Elsie was sitting beside me and Arthur took "
+        "the picture. It was sometime in the fifties, I do not remember exactly."
+    ),
+    "siblings": (
+        "Margaret and Beatrice were sisters. Wilfred was their brother "
+        "and he went out to Canada and never came back. "
+        "Elsie stayed in Alnwick to look after the house."
+    ),
+    "wedding": (
+        "We were married in nineteen sixty-two in Keswick. "
+        "Beatrice was the bridesmaid and Wilfred was the best man. "
+        "It poured with rain the whole day."
+    ),
+}
+
+TEXTS_FI = {
     "cottage": (
         "Siinä kuvassa ollaan sen mökin rannassa, se oli Puumalassa se mökki. "
         "Aino oli siinä vieressäni ja Toivo otti sen kuvan. "
@@ -66,13 +90,18 @@ STAGES = {
     "hard": (0.15, 0.014, 4),
 }
 
-VOICE = "Grandma (Finnish (Finland))"
+# The same voice in both languages, which is what makes the two sets comparable
+# rather than merely both synthetic: same family, same rate, same degradation.
+VOICES = {
+    "fi": "Grandma (Finnish (Finland))",
+    "en": "Grandma (English (UK))",
+}
 RATE = 150  # words per minute; slower than the default, as with an elderly speaker
 
 
-def synth(text: str, aiff: Path) -> None:
+def synth(text: str, aiff: Path, lang: str) -> None:
     subprocess.run(
-        ["say", "-v", VOICE, "-r", str(RATE), "-o", str(aiff), text],
+        ["say", "-v", VOICES[lang], "-r", str(RATE), "-o", str(aiff), text],
         check=True,
     )
 
@@ -140,11 +169,20 @@ def main() -> int:
     tmp = OUT / ".tmp"
     tmp.mkdir(exist_ok=True)
 
+    # The language is in the FILE NAME rather than in a flag the bench also has
+    # to be told: asr-bench.mjs reads it off the name and picks the matching
+    # system prompt, so one directory can hold both sets and one run measures
+    # both. A flag would have to agree with the files, and one day would not.
+    lang = "en" if "--lang" in sys.argv and sys.argv[sys.argv.index("--lang") + 1] == "en" else "fi"
+    texts = TEXTS_EN if lang == "en" else TEXTS_FI
+    print(f"Language: {lang} ({VOICES[lang]})")
+
     made = 0
-    for name, text in TEXTS.items():
+    for base, text in texts.items():
+        name = f"{lang}-{base}"
         aiff = tmp / f"{name}.aiff"
         wav = tmp / f"{name}.wav"
-        synth(text, aiff)
+        synth(text, aiff, lang)
         to_wav(aiff, wav)
 
         for stage, (gain, noise, smooth) in STAGES.items():
@@ -162,7 +200,7 @@ def main() -> int:
     tmp.rmdir()
 
     print(f"Made {made} samples in {OUT}")
-    print(f"  {len(TEXTS)} texts × {len(STAGES)} degradation steps")
+    print(f"  {len(texts)} texts × {len(STAGES)} degradation steps")
     print("\nRun the comparison:  node scripts/asr-bench.mjs")
     print("\nNOTE: these figures are optimistic. TTS does not produce dialect,")
     print("self-correction or sentences trailing off. Use these to CHOOSE an")

@@ -94,6 +94,26 @@ const ENGINES = [
   { name: 'gpt-audio-mini (0.60)', key: 'OPENROUTER_API_KEY', model: 'openai/gpt-audio-mini', custom: openRouterTranscribe, needsWav: true },
 ]
 
+/// The sample's language, read off its file name.
+///
+/// make-synthetic-samples.py writes "en-cottage-clean.m4a" and
+/// "fi-cottage-clean.m4a", so one directory holds both sets and one run
+/// measures both. A flag would have to agree with the files, and one day would
+/// not. Anything unprefixed is Finnish, which is what every sample made before
+/// 30 Aug 2026 is.
+const languageOf = (filePath) => (basename(filePath).startsWith('en-') ? 'en' : 'fi')
+
+const BENCH_PROMPTS = {
+  fi:
+    'Puret suomenkielistä puhetta tekstiksi. Kirjoita täsmälleen se mitä kuulet, ' +
+    'älä siisti äläkä tiivistä. Kiinnitä erityistä huomiota erisnimiin. ' +
+    'Palauta pelkkä teksti.',
+  en:
+    'You are transcribing English speech. Write down exactly what you hear, do ' +
+    'not tidy and do not condense. Pay particular attention to proper nouns. ' +
+    'Return the plain text.',
+}
+
 async function openRouterTranscribe(engine, filePath, bytes) {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -108,14 +128,13 @@ async function openRouterTranscribe(engine, filePath, bytes) {
       provider: { data_collection: 'deny' },
       messages: [
         {
-          // Finnish on purpose: this mirrors the prompt in
-          // backend/src/transcribe.ts, so the benchmark measures what the app
-          // will actually do.
+          // Mirrors the prompt in backend/src/transcribe.ts, so the benchmark
+          // measures what the app will actually do — and there are two of those
+          // now, so there are two here. Measuring English speech with the
+          // Finnish instruction would measure neither: the instruction is part
+          // of what is being tested, not scaffolding around it.
           role: 'system',
-          content:
-            'Puret suomenkielistä puhetta tekstiksi. Kirjoita täsmälleen se mitä kuulet, ' +
-            'älä siisti äläkä tiivistä. Kiinnitä erityistä huomiota erisnimiin. ' +
-            'Palauta pelkkä teksti.',
+          content: BENCH_PROMPTS[languageOf(filePath)],
         },
         {
           role: 'user',

@@ -144,7 +144,7 @@ struct StubExtractionService: ExtractionService {
             // A rough split: Finnish place names often carry the -ssa/-lla endings.
             MentionedEntity(
                 name: $0,
-                kind: Self.looksLikePlace($0) ? .place : .person,
+                kind: Self.looksLikePlace($0, in: text) ? .place : .person,
                 confidence: 0.7
             )
         }
@@ -173,9 +173,21 @@ struct StubExtractionService: ExtractionService {
         return found
     }
 
-    static func looksLikePlace(_ name: String) -> Bool {
+    /// Finnish tells you a place by its case ending. English does not tell you
+    /// at all, so the stub reads the word in front of the name instead — the
+    /// same signal a person uses, and the only one available without a model.
+    ///
+    /// This is the stub, so being wrong is cheap and being SILENTLY wrong is
+    /// not: before this, every English place came back a person, and a demo
+    /// filmed on the stub would have shown the family tree growing a row called
+    /// Ambleside.
+    static func looksLikePlace(_ name: String, in text: String = "") -> Bool {
         let suffixes = ["ssa", "ssä", "lla", "llä", "sta", "stä", "lta", "ltä"]
-        return suffixes.contains { name.lowercased().hasSuffix($0) }
+        if suffixes.contains(where: { name.lowercased().hasSuffix($0) }) { return true }
+        for preposition in ["in ", "at ", "to ", "from ", "near "] {
+            if text.lowercased().contains(preposition + name.lowercased()) { return true }
+        }
+        return false
     }
 
     /// Picks either a four-digit year or a decade of the "50-luvulla" form.
@@ -207,7 +219,13 @@ struct StubExtractionService: ExtractionService {
     /// memory is part of the memory — the real implementation may reshape, not
     /// shorten.
     static func tidy(_ text: String) -> String {
-        let fillers = ["niinku", "tota", "öö", "ää", "siis niinku"]
+        // Both languages' fillers in one list. They cannot collide — no Finnish
+        // filler is an English word or the other way round — so the stub does
+        // not need to be told which language it is imitating here.
+        let fillers = [
+            "niinku", "tota", "öö", "ää", "siis niinku",
+            "um", "uh", "erm", "you know", "I mean", "sort of",
+        ]
         var result = text
         for filler in fillers {
             result = result.replacingOccurrences(
@@ -234,24 +252,50 @@ struct StubExtractionService: ExtractionService {
         let people = mentions.filter { $0.kind == .person }.map(\.name)
         let places = mentions.filter { $0.kind == .place }.map(\.name)
 
-        var pool = [
-            ExtractedQuestion(text: "Kuka muu oli paikalla?", level: 1),
-            ExtractedQuestion(text: "Minä vuonna tämä suunnilleen oli?", level: 2),
-            ExtractedQuestion(text: "Muistatko miltä siellä tuoksui tai kuulosti?", level: 4),
-            ExtractedQuestion(text: "Mitä toivoisit lastenlastesi tietävän tästä?", level: 5),
-        ]
+        // The real questions come back from the model in the language that was
+        // spoken. Until 30 Aug 2026 the stub answered Finnish whatever the app
+        // was showing, so an English screen carried Finnish questions — visible
+        // in the first English screenshot ever taken of this app, and it would
+        // have been visible in the film.
+        let english = SpokenLanguage.current == "en"
+
+        var pool = english
+            ? [
+                ExtractedQuestion(text: "Who else was there?", level: 1),
+                ExtractedQuestion(text: "Roughly what year was this?", level: 2),
+                ExtractedQuestion(text: "Do you remember how it smelled, or sounded?", level: 4),
+                ExtractedQuestion(text: "What would you want your grandchildren to know about this?", level: 5),
+            ]
+            : [
+                ExtractedQuestion(text: "Kuka muu oli paikalla?", level: 1),
+                ExtractedQuestion(text: "Minä vuonna tämä suunnilleen oli?", level: 2),
+                ExtractedQuestion(text: "Muistatko miltä siellä tuoksui tai kuulosti?", level: 4),
+                ExtractedQuestion(text: "Mitä toivoisit lastenlastesi tietävän tästä?", level: 5),
+            ]
         if let first = people.first {
-            pool.append(ExtractedQuestion(text: "Millainen ihminen \(first) oli?", level: 3))
+            pool.append(ExtractedQuestion(
+                text: english ? "What sort of person was \(first)?" : "Millainen ihminen \(first) oli?",
+                level: 3
+            ))
         }
         if people.count > 1 {
-            pool.append(
-                ExtractedQuestion(text: "Miten \(people[0]) ja \(people[1]) tunsivat toisensa?", level: 3)
-            )
+            pool.append(ExtractedQuestion(
+                text: english
+                    ? "How did \(people[0]) and \(people[1]) know each other?"
+                    : "Miten \(people[0]) ja \(people[1]) tunsivat toisensa?",
+                level: 3
+            ))
         }
         if let place = places.first {
-            // In the speech a place name is already inflected ("Puumalassa"), so
-            // the question is built to avoid inflecting it again.
-            pool.append(ExtractedQuestion(text: "\(place) — mitä muuta siellä tapahtui?", level: 4))
+            // In Finnish speech a place name arrives already inflected
+            // ("Puumalassa"), so the question is built to avoid inflecting it
+            // again. English needs no such care and reads better without it.
+            pool.append(ExtractedQuestion(
+                text: english
+                    ? "What else happened at \(place)?"
+                    : "\(place) — mitä muuta siellä tapahtui?",
+                level: 4
+            ))
         }
 
         let aim = level ?? 3
