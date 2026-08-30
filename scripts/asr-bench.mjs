@@ -341,6 +341,15 @@ for (const entry of samples) {
 
     totals.get(engine.name).werScores.push(w)
     if (names) totals.get(engine.name).nameScores.push(names.recall)
+    // Kept apart as well as together. One directory can now hold both
+    // languages, and an average across both is a number about neither: the
+    // engines are not equally good at them, which is the whole reason for
+    // measuring English separately rather than assuming the Finnish ranking
+    // carries over.
+    const perLang = totals.get(engine.name).byLang ?? (totals.get(engine.name).byLang = {})
+    const bucket = (perLang[languageOf(sample)] ??= { wer: [], names: [] })
+    bucket.wer.push(w)
+    if (names) bucket.names.push(names.recall)
     // Kept apart, because only these can answer the concept question.
     if (entry.real) {
       totals.get(engine.name).realWer.push(w)
@@ -358,19 +367,29 @@ for (const entry of samples) {
 
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
 
-console.log('\n━━ WHICH ENGINE (relative — this is what synthetic audio is good for)')
-const ranked = active
-  .map((e) => ({ name: e.name, ...totals.get(e.name) }))
-  .filter((r) => r.werScores.length > 0)
-  .map((r) => ({ name: r.name, wer: avg(r.werScores), names: avg(r.nameScores) }))
-  .sort((a, b) => a.wer - b.wer)
+const LANGUAGE_NAMES = { fi: 'Finnish', en: 'English' }
+const languagesSeen = [...new Set(
+  active.flatMap((e) => Object.keys(totals.get(e.name).byLang ?? {})),
+)].sort()
 
-for (const r of ranked) {
-  const band = r.wer < 0.15 ? 'usable' : r.wer < 0.30 ? 'borderline' : 'NOT ENOUGH'
+for (const lang of languagesSeen) {
   console.log(
-    `  ${r.name.padEnd(26)} WER ${(r.wer * 100).toFixed(1).padStart(5)}%  ` +
-      `names ${r.names === null ? '  —' : (r.names * 100).toFixed(0).padStart(3) + '%'}  ${band}`,
+    `\n━━ WHICH ENGINE — ${LANGUAGE_NAMES[lang] ?? lang}` +
+      ' (relative — this is what synthetic audio is good for)',
   )
+  const ranked = active
+    .map((e) => ({ name: e.name, ...(totals.get(e.name).byLang?.[lang] ?? { wer: [], names: [] }) }))
+    .filter((r) => r.wer.length > 0)
+    .map((r) => ({ name: r.name, wer: avg(r.wer), names: avg(r.names) }))
+    .sort((a, b) => a.wer - b.wer)
+
+  for (const r of ranked) {
+    const band = r.wer < 0.15 ? 'usable' : r.wer < 0.30 ? 'borderline' : 'NOT ENOUGH'
+    console.log(
+      `  ${r.name.padEnd(26)} WER ${(r.wer * 100).toFixed(1).padStart(5)}%  ` +
+        `names ${r.names === null ? '  —' : (r.names * 100).toFixed(0).padStart(3) + '%'}  ${band}`,
+    )
+  }
 }
 
 // ── The other question, which is not the same one ────────────────────────────

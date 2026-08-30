@@ -59,16 +59,42 @@
 		"RC_PROJECT_ID": "proj087f04ef",
 
 		// The models were CHOSEN BY MEASUREMENT, not from memory:
-		// scripts/asr-bench.mjs, 3 texts × 4 degradation steps × 5 models.
+		// scripts/asr-bench.mjs, 3 texts × 4 degradation steps × 5 models, in
+		// BOTH languages since 30 Aug 2026 — the same voice family, rate and
+		// degradation in each, which is what makes the two columns comparable.
 		//
-		//   gemini-3.6-flash        WER 37.8 %   proper nouns 68 %   ← chosen
-		//   gemini-3.1-flash-lite   WER 43.9 %   proper nouns 49 %
-		//   gpt-audio-mini          WER 58.7 %   proper nouns 57 %   (rejects m4a)
-		//   gemini-2.5-flash        WER 13,530 % proper nouns 33 %   (hallucinates)
+		//                           Finnish              English
+		//   gemini-3.6-flash        37.3 %  names 65 %   29.9 %  names 60 %  ← chosen
+		//   gemini-3.1-flash-lite   44.7 %  names 51 %   31.2 %  names 63 %
+		//   gpt-audio-mini          46.9 %  names 49 %   4 011 % names 68 %
+		//   gemini-2.5-flash        13 533 % names 25 %  27.4 %  names 58 %
 		//   voxtral-small           fails on audio input entirely
 		//
 		// Proper-noun accuracy weighs more than WER: the family tree is built
 		// out of names.
+		//
+		// THE RANKING IS NOT THE SAME IN THE TWO LANGUAGES, and that is the
+		// finding this run was for — assuming it carried over is exactly what
+		// PLAN.md §10 said could not be assumed. On English, gemini-2.5-flash
+		// leads on WER and gemini-3.1-flash-lite on names; the chosen model is
+		// second on one and third on the other.
+		//
+		// It is chosen anyway, and not out of inertia. Both of those leaders
+		// blow up in the other language: gemini-2.5-flash produces 13 533 % on
+		// Finnish and gpt-audio-mini 4 011 % on English, which is the wall of
+		// invented text this app fears most — an engine that does it in one
+		// language will do it in the other on the day the audio is bad enough.
+		// Only gemini-3.6-flash is sane in both, and its gaps to the leaders,
+		// 2.5 points of WER and 3 of recall over twelve samples each, are inside
+		// the noise of a sample set this size.
+		//
+		// English scores BETTER than Finnish here, on the same method: 29.9 %
+		// against 37.3 %. That is not a compliment to the English pipeline, it
+		// is the size of the training sets talking.
+		//
+		// Both columns are synthetic. Neither answers whether the concept works
+		// on a real elderly voice — see PLAN.md §8, and the bench says so on
+		// every run.
 		"MODEL_EXTRACT": "google/gemini-3.6-flash",
 		// The third attempt switches model: the measured fault was in the
 		// provider (finish_reason=error), and the same model again does not help.
