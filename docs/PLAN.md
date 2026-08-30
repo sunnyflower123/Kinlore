@@ -675,3 +675,51 @@ finished.**
     Data Protection — the part that would make it end-to-end — is off by default
     and no 80-year-old is going to switch it on. Kept as a v1.1 direction beside
     lever 3, not as a September plan.
+
+- **English as a language the app HEARS, not only one it reads.** Raised
+  30 Aug 2026, when the interface got English so that the app could be shown to
+  people who do not read Finnish — the judges, and the video. That half is done
+  and it is only the interface: the pipeline was not touched, and this is what
+  touching it would cost.
+
+  **The blocker is a number, not a prompt.** `MAX_WORDS_PER_SECOND = 4` in
+  `backend/src/transcribe.ts` is the hallucination guard, and it is load-bearing:
+  above it the transcript is thrown away and logged as fabricated. That is the
+  right call — on poor audio a model does not fall silent, it pours out a wall of
+  text nobody said, measured once at 135× reality, and an invented memory
+  entering the archive under grandmother's name is the worst outcome this app
+  has. But the ceiling is calibrated on Finnish, and its comment says so.
+
+  Measured on this repository's own paired samples rather than argued, because
+  the site carries the same story in both languages with both durations:
+
+  | | words | seconds | words/second | share of the ceiling |
+  |---|---|---|---|---|
+  | Finnish (`sample-mokki-puhdas`) | 27 | 13.24 | 2.04 | 51 % |
+  | English (`sample-cottage-en`) | 35 | 11.61 | 3.01 | 75 % |
+
+  Same content, **30 % more words in English**, because Finnish is agglutinative
+  — one long word carries what English needs three or four for. So English does
+  not cross the line at these rates, and the first version of this note said it
+  would, which was wrong. What it does is halve the headroom: the comment beside
+  the constant says four is a ceiling *"nobody crosses by accident"*, and that
+  is a Finnish sentence. A fast or excited English speaker crosses it, and what
+  they get is their real telling discarded and a request to try again. Nothing
+  looks broken. The memory simply never arrives.
+
+  **The prompt is the second cost and a smaller one.** Of the six rules in
+  `extract.ts`, one cannot be translated at all — names in base form, `"Ainon"`
+  → `"Aino"`, describes a declension English does not have — three are rules
+  that translate while their calibration does not (the filler words *niinku,
+  tota, öö*; the common nouns *mummola, mökki, tori*; the decade idiom
+  *50-luku*), and two are language-neutral. The examples are the part that was
+  tuned; the structure is not what makes it work.
+
+  **And the model choice does not transfer.** `asr-bench.mjs` measured Finnish
+  word error rate and Finnish proper-noun recall, with a Finnish instruction.
+  It is one model measured on one language.
+
+  So this is a second pipeline — its own constant, its own prompt, its own bench
+  run — and not a translation. It needs model credit and a removal under §5, and
+  it is **not needed for what English was added for**. Not a v1 decision; parked
+  here so that whoever opens it starts at the constant rather than at the prompt.
