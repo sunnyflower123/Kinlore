@@ -1,0 +1,16 @@
+/* Finnish — the development language, and deliberately empty.
+
+   Every user-facing string in this app is written in Finnish directly in the
+   SwiftUI source, and SwiftUI treats a string literal in Text, Button, Label,
+   navigationTitle and accessibilityLabel as a LocalizedStringKey. A key with no
+   entry in the table renders as itself, so the Finnish text IS the key and IS
+   the fallback. Filling this file with "Kerro" = "Kerro"; pairs would add a
+   second copy of every string that has to be kept in step with the first, and
+   the day it drifts the app shows the stale half.
+
+   The file exists at all for one reason: without a fi.lproj the bundle declares
+   only English, and iOS will hand a Finnish device the English table — which is
+   the app speaking the wrong language to the one person it was built for.
+
+   The translations live in en.lproj/Localizable.strings. To read the Finnish,
+   read the source. */

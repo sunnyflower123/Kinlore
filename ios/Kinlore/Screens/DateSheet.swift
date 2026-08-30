@@ -84,7 +84,7 @@ struct DateSheet: View {
                 Section {
                     Picker("Kuinka tarkkaan tiedät?", selection: $sureness) {
                         ForEach(Sureness.allCases) { choice in
-                            Text(choice.label).tag(choice)
+                            Text(LocalizedStringKey(choice.label)).tag(choice)
                         }
                     }
                     .pickerStyle(.inline)

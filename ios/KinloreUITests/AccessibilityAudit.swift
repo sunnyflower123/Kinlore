@@ -211,12 +211,22 @@ extension XCTestCase {
     /// address the last hand-run left in UserDefaults, and a device that has been
     /// pointed at a Worker starts on the join screen instead — which is how the
     /// first of these tests failed, with nothing wrong in the app.
+    ///
+    /// The language is pinned for the same kind of reason and it is newer. Every
+    /// query in this suite names an element by its Finnish label — `buttons[
+    /// "Aloita perheen arkisto"]`, `tabBars.buttons["Muistot"]` — which was safe
+    /// while the app had exactly one language. It stopped being safe on
+    /// 30 Aug 2026, when English was added: on a simulator set to English the
+    /// app answers in English and every one of those queries finds nothing.
+    /// The suite failed as "never arrived: the ask button", which reads like a
+    /// broken screen and is a device set to the wrong language.
     func launch(
         _ arguments: [String] = [],
         api: String = "",
         textSize: String? = nil
     ) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchArguments += ["-AppleLanguages", "(fi)", "-AppleLocale", "fi_FI"]
         app.launchArguments += ["-api", api] + arguments
         if let textSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", textSize]
@@ -225,6 +235,12 @@ extension XCTestCase {
         return app
     }
 }
+
+/// UIKit's own name for the clear button inside a `.searchable` field, in every
+/// language this app ships. It is the system's string and not ours, so it cannot
+/// be looked up in our table — and it changes with the app's language, which is
+/// what broke the exemption below when English was added.
+private let searchFieldClearButtonLabels: Set<String> = ["Clear text", "Poista teksti"]
 
 /// The findings that are decisions rather than defects.
 ///
@@ -479,7 +495,26 @@ enum AccessibilityPolicy {
         // search is the one part of this app aimed at the grandchild rather
         // than at the person whose hands shake. If that ever stops being true,
         // the answer is our own field rather than a wider exemption.
-        if issue.auditType == .hitRegion, label == "Clear text" {
+        //
+        // Matched on the element rather than on its name since 30 Aug 2026.
+        // The name was "Clear text", which is UIKit's ENGLISH label — and it
+        // matched for two months only because the app had one language and the
+        // simulator had another. Pinning the tests to Finnish renamed the same
+        // button "Poista teksti", the exemption stopped matching, and the suite
+        // reported a hit-area failure on a control this app does not own and
+        // cannot resize. It read like a regression in the search screen. It was
+        // an exemption written in a language the app had just stopped assuming.
+        //
+        // It is still a list of names, because XCUIElement offers no parent to
+        // ask and the frame alone would exempt any small button anywhere. What
+        // it is not any more is a list of ONE name that happened to be right.
+        // Adding a third language means adding its label above — and forgetting
+        // to is loud, not silent: the suite fails on this exact control, with
+        // the untranslated name printed in the message.
+        if issue.auditType == .hitRegion,
+           let element = issue.element,
+           element.elementType == .button,
+           searchFieldClearButtonLabels.contains(label) {
             return true
         }
 

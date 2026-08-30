@@ -1354,11 +1354,17 @@ private struct ResultView: View {
                 // The most important piece of the result: where the AI filed
                 // the memory. Precisely the organising the user would never do
                 // themselves.
-                Text(
-                    model.target == nil
-                        ? "Sijoitin sen kohteeseen **\(placed.displayTitle)**"
-                        : "Lisäsin sen kohteeseen **\(placed.displayTitle)**"
-                )
+                // Two branches rather than a ternary inside Text: a ternary of
+                // two interpolated literals resolves to String, and Text(String)
+                // is shown verbatim instead of being looked up. The sentence
+                // stayed Finnish in the English build until this was split.
+                Group {
+                    if model.target == nil {
+                        Text("Sijoitin sen kohteeseen **\(placed.displayTitle)**")
+                    } else {
+                        Text("Lisäsin sen kohteeseen **\(placed.displayTitle)**")
+                    }
+                }
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
             }
@@ -1608,7 +1614,11 @@ private struct ProposalRow: View {
                     // name is caught.
                     .accessibilityLabel("Nimi")
 
-                Text(isEdited ? "\(subject.kind.label) · korjattu" : subject.kind.label)
+                // kind.label is a runtime String — the Finnish IS the key, so
+                // it has to be handed over as one to be looked up at all.
+                Text(isEdited
+                     ? LocalizedStringKey("\(subject.kind.label) · korjattu")
+                     : LocalizedStringKey(subject.kind.label))
                     .font(.caption)
                     .foregroundStyle(isEdited ? Color.accentColor : Elder.supporting)
             }

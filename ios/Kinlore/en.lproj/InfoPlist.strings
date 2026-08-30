@@ -1,0 +1,15 @@
+/* The three sentences iOS shows before it hands over a permission, in English.
+
+   These are not decoration. The microphone one is the only moment the system
+   gives this app to say, before the first recording, that the audio leaves the
+   phone — and until 16 Aug 2026 it never said so anywhere. A translation that
+   dropped that clause would be a worse lie in English than the Finnish ever
+   was, so it is the clause the English keeps hardest.
+
+   The Finnish originals live in ios/project.yml, which generates Info.plist. */
+
+"NSMicrophoneUsageDescription" = "Kinlore records the memories you tell in your own voice, so that your family can listen to them later. In a family archive the recording is sent to our service, where the speech is written out as text.";
+
+"NSPhotoLibraryUsageDescription" = "Choose old photographs for your family to tell memories about.";
+
+"NSCameraUsageDescription" = "Kinlore photographs old pictures to keep, so that your family can tell their memories of them.";

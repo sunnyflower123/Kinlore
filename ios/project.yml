@@ -3,6 +3,11 @@ attributes:
   LastUpgradeCheck: "9999"
 options:
   bundleIdPrefix: com.kinlore
+  # Finnish is the development language, which is what makes the Finnish string
+  # literals in the source the keys AND the fallback. Without this the bundle
+  # declares itself English, and a Finnish phone gets handed en.lproj — the app
+  # speaking the wrong language to the one person it was built for.
+  developmentLanguage: fi
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true

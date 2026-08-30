@@ -1,0 +1,228 @@
+/* English — the app's second language, added 30 Aug 2026.
+
+   The keys are the Finnish source strings, because that is what SwiftUI uses as
+   the key when a Text, Button, Label, navigationTitle or accessibilityLabel is
+   given a string literal. Nothing in the Swift source had to change for these
+   to take effect: the app was already localisable and simply had nowhere to
+   look. See fi.lproj/Localizable.strings for why the Finnish table is empty.
+
+   Finnish stays the default and the point. This exists because the app has to
+   be shown to people who do not read Finnish -- the competition's judges, and
+   the demo video -- and the honest way to do that is for the app to speak their
+   language rather than for somebody to narrate over Finnish screens.
+
+   To see it: -AppleLanguages "(en)" as a launch argument, or set the simulator
+   to English. Nothing in the app switches language on its own.
+
+   The register is deliberate. This app addresses an 80-year-old directly and
+   plainly, never brightly, and the English says the same things the same way:
+   short sentences, no exclamation, no "oops", nothing that would sound like a
+   younger person being encouraging at somebody. */
+
+/* --- The archive, and getting into one ---------------------------------- */
+"Aloita perheen arkisto" = "Start a family archive";
+"Arkisto" = "Archive";
+"Uusi arkisto" = "New archive";
+"Luo arkisto" = "Create the archive";
+"Avaa koko arkisto" = "Open the whole archive";
+"Perheen arkisto" = "The family archive";
+"Perheen muistot" = "The family's memories";
+"Ota perhe käyttöön" = "Turn the family on";
+"Liity perheeseen" = "Join a family";
+"Liity kutsulinkillä" = "Join with an invitation link";
+"Haetaan perheen muistoja…" = "Fetching the family's memories…";
+"Perheen tietoja ei saatu haettua" = "The family's details could not be fetched";
+
+/* --- Telling, which is the whole point ---------------------------------- */
+"Kerro" = "Tell";
+"Kerro tästä" = "Tell us about this";
+"Kerro tästä muisto" = "Tell a memory about this";
+"Kerro hänestä" = "Tell us about them";
+"Kerro toinen muisto" = "Tell another memory";
+"Jatka kertomista" = "Keep telling";
+"Paina ja ala puhua" = "Press and start talking";
+"Paina kun olet valmis" = "Press when you are finished";
+"Kuuntelen" = "Listening";
+"Kirjoita se itse" = "Write it yourself";
+"Kirjoita sen sijaan" = "Write instead";
+"Kirjoita ihan vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Write freely. You do not have to remember the order, or the years — we will put those in order for you.";
+"Muisto tallennettu" = "Memory saved";
+"En saanut järjesteltyä sitä juuri nyt. Kertomasi on tallessa omilla sanoillasi." = "I could not put it in order just now. What you told is kept, in your own words.";
+"Äänesi on tallessa" = "Your voice is kept";
+"Riittää tältä erää" = "That is enough for now";
+"Jatketaan jutellen" = "Let us keep talking";
+"Jatka" = "Continue";
+"Valmis" = "Done";
+"Selvä" = "All right";
+"Sulje" = "Close";
+"Peruuta" = "Cancel";
+"Tallenna" = "Save";
+"Yritä uudelleen" = "Try again";
+"Nauhoitettu %lld sekuntia" = "Recorded %lld seconds";
+"Nauhoitusta ei tallenneta. Voit aloittaa alusta heti." = "The recording will not be saved. You can start again straight away.";
+"Äänitys poistuu eikä sitä voi palauttaa." = "The recording will be deleted and cannot be brought back.";
+"Älä tallenna tätä" = "Do not save this";
+"Tyhjennä ja aloita alusta" = "Clear it and start again";
+"Tyhjennä" = "Clear";
+
+/* --- The microphone, and being refused it -------------------------------- */
+"Mikrofoni ei ole käytössä" = "The microphone is not available";
+"Puhuminen tarvitsee luvan mikrofoniin. Voit antaa sen puhelimen asetuksista — tai kirjoittaa muiston nyt." = "Talking needs permission to use the microphone. You can give it in the phone's settings — or write the memory now.";
+"Avaa asetukset" = "Open Settings";
+
+/* --- What comes back: names to check, questions to answer ---------------- */
+"Kuulinko nimet oikein?" = "Did I hear the names right?";
+"Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Write the name again if I heard it wrong. Nobody joins the family without your approval.";
+"Korjaa nimi" = "Correct the name";
+"Korjaa nimet myös muistoon" = "Correct the names in the memory too";
+"Vahvista" = "Confirm";
+"Hylkää" = "Reject";
+"En muista" = "I do not remember";
+"En muista tätä" = "I do not remember this";
+"Ehdotus — vahvista henkilö" = "A proposal — confirm this person";
+"Vahvista %@" = "Confirm %@";
+"Poista %@" = "Remove %@";
+"Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva." = "The ones marked in orange are the app's proposals. Confirm only the ones you know to be right — a wrong relationship is worse than a missing one.";
+"Kysyisin vielä" = "I would still ask";
+"Kysyn nämä ääneen, ja voit vastata puhumalla." = "I will ask these out loud, and you can answer by speaking.";
+"Avoimia kysymyksiä" = "Open questions";
+"%@ kysyy" = "%@ asks";
+"%@ kertoi" = "%@ told this";
+"Mitä haluaisit tietää?" = "What would you like to know?";
+"Esimerkiksi: Millainen kesä mökillä oli?" = "For example: what were the summers at the cottage like?";
+"Kysy perheeltä" = "Ask the family";
+"Lähetä kysymys" = "Send the question";
+"Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen." = "The question appears for the whole family on the Tell screen, and the answer is saved as a memory here.";
+"Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän." = "The question appears for the family on the Tell screen, and the answer is saved here.";
+
+/* --- People, and the family tree ----------------------------------------- */
+"Ihmiset" = "People";
+"Suku" = "Relatives";
+"Ei vielä ihmisiä" = "No people yet";
+"Ei muita henkilöitä" = "No other people";
+"Henkilöt syntyvät kertomisesta. Kerro ensin muisto jossa mainitset heidät." = "People come out of telling. Tell a memory that mentions them first.";
+"Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli." = "People gather here as they get talked about. What each of them was like is written down together.";
+"Lisää sukulainen" = "Add a relative";
+"Lapsi" = "Child";
+"Yhdistä" = "Merge";
+"Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "The family already has %@. The cards will be merged, and this one's memories will move there.";
+"Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "The family already has %@. This card's memories will move to them, and the merge cannot be undone.";
+"%@ ei enää näy tämän henkilön suvussa. Voit lisätä sukulaisuuden myöhemmin uudelleen." = "%@ no longer appears among this person's relatives. You can add the relationship again later.";
+
+/* --- Photographs ---------------------------------------------------------- */
+"Kuvaa" = "Photograph";
+"Kuvaa vanha valokuva" = "Photograph an old picture";
+"Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa." = "Photograph an old picture from the album, and the whole family can tell their own memories of it.";
+"Valitse kuvista" = "Choose from photos";
+"Lisää kuvia" = "Add photographs";
+"Ei vielä kuvia" = "No photographs yet";
+"Valokuva, jossa on joku" = "A photograph with somebody in it";
+"Valokuva, josta ei ole vielä kerrottu" = "A photograph nobody has told about yet";
+"Kaikkia kuvia ei saatu tuotua" = "Not every photograph could be imported";
+
+/* --- Memories: the list, and losing one ---------------------------------- */
+"Muistot" = "Memories";
+"Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua." = "Nobody has told anything yet. Press the button above and start talking.";
+"Poista tämä muisto" = "Delete this memory";
+"Poista" = "Delete";
+"Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa." = "The memory leaves the family archive, recording and all, and cannot be brought back.";
+"Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu." = "Nobody was found for \"%@\". The search looks through names and through what has been told about people.";
+"Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä." = "Nothing was found for \"%@\". The search looks through what has been told and through the names.";
+"Ei osumia" = "No matches";
+"Kuinka tarkkaan tiedät?" = "How exactly do you know?";
+
+/* --- The family: who is in it, and inviting them ------------------------- */
+"Perhe" = "Family";
+"Jäsenet" = "Members";
+"Perheen jäsenet ja kutsut" = "Family members and invitations";
+"Kutsu" = "Invite";
+"Kutsut" = "Invitations";
+"Kutsu perheenjäsen" = "Invite a family member";
+"Luo kutsu" = "Create an invitation";
+"Jaa kutsu" = "Share the invitation";
+"Jaa silti" = "Share anyway";
+"Kutsu on valmis" = "The invitation is ready";
+"Kutsukoodi" = "Invitation code";
+"Kenelle kutsu menee?" = "Who is the invitation for?";
+"Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään." = "The name appears beside their memories. If you write it here, they do not have to type anything when they join.";
+"Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon." = "Send it in a message to the person you made it for. The link works for a week.";
+"Kutsu on voimassa viikon. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain niille joille se kuuluu." = "The invitation is valid for a week. Anyone who gets the link can see all of the family's memories, so share it only with the people it belongs to.";
+"Kutsua ei voitu luoda" = "The invitation could not be created";
+"Kutsua ei voitu perua" = "The invitation could not be revoked";
+"Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän." = "You were given a link or a code by a family member. You can paste it here.";
+"Poistu perheestä" = "Leave the family";
+"Et enää näe perheen uusia muistoja etkä voi kertoa niitä. Kertomasi muistot jäävät perheelle." = "You will not see the family's new memories any more, and you will not be able to tell any. The memories you told stay with the family.";
+
+/* --- Who you are, and which phone this is -------------------------------- */
+"Kuka sinä olet" = "Who you are";
+"Nimi" = "Name";
+"Nimesi" = "Your name";
+"Minun" = "Mine";
+"Kenen puhelin tämä on" = "Whose phone this is";
+"Isovanhemman" = "A grandparent's";
+"Isompi teksti" = "Larger text";
+"Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "On a grandparent's phone the text is larger. You can change this later in Settings.";
+"Puhelimen oma tekstikoko on tätä vahvempi." = "The phone's own text size overrides this.";
+"Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "This appears beside your memories, so the family knows who told them.";
+"Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi." = "This appears beside your memories. You can leave it empty if whoever invited you already wrote your name.";
+"%@ · %@" = "%@ · %@";
+
+/* --- Where the memories live: this phone, or the family ------------------ */
+"Keiden kesken" = "Who this is between";
+"Vain minulle, tälle puhelimelle" = "Only for me, on this phone";
+"Perheen kesken" = "Between the family";
+"Nyt muistot ovat vain tässä puhelimessa, eikä puheesta kirjoiteta tekstiä." = "For now the memories are on this phone only, and speech is not written out as text.";
+"Perheen kesken kutsumasi jäsenet näkevät muistot, ja kertomasi kirjoitetaan tekstiksi." = "Between the family, the members you invite can see the memories, and what you tell is written out as text.";
+"Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa." = "This archive is still yours alone. An invited family member can see the memories and tell their own.";
+"Tämän puhelimen muistot lähtevät sille perheelle, jonka perustat tai johon liityt." = "This phone's memories go to whichever family you start or join.";
+"Takaisin vain tähän puhelimeen ei pääse." = "There is no way back to this phone alone.";
+"Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen." = "You can choose either one. The family can be turned on later in Settings — but what has been told to a family cannot be taken back to this phone alone.";
+
+/* --- Paying, and what the free archive holds ----------------------------- */
+"Ilmainen arkisto" = "The free archive";
+"Kertomista tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "About %lld minutes of telling left this month, and room for %lld more photographs.";
+"Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle." = "The paid archive has no limits, and one payer opens it for the whole family.";
+"Kiitos — maksu meni läpi" = "Thank you — the payment went through";
+"Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa." = "The family archive has not opened yet. The app will report this again by itself, and you do not have to pay a second time.";
+"Käyttö" = "Usage";
+
+/* --- Taking it all with you ---------------------------------------------- */
+"Vie arkisto" = "Export the archive";
+"Vie arkisto ensin" = "Export the archive first";
+"Tallenna tai lähetä arkisto" = "Save or send the archive";
+"Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "You get one file holding the memories as a readable page, the original recordings and the photographs. It opens on any computer, without this app.";
+"Viennistä puuttuu tiedostoja" = "Files are missing from the export";
+
+/* --- Settings and the rest ------------------------------------------------ */
+"Asetukset" = "Settings";
+"Näin tämä toimii" = "How this works";
+
+/* --- Strings composed at runtime -----------------------------------------
+   These are not literals in a SwiftUI initialiser, so they reach the table
+   only because the call site hands the Finnish over as a LocalizedStringKey.
+   The Finnish is still the key; there is no second copy of it anywhere. */
+"Sijoitin sen kohteeseen **%@**" = "I filed it under **%@**";
+"Lisäsin sen kohteeseen **%@**" = "I added it to **%@**";
+"Kuva" = "Photograph";
+"Henkilö" = "Person";
+"Paikka" = "Place";
+"Tapahtuma" = "Event";
+"Valokuva" = "Photograph";
+"Kerrottu muisto" = "A told memory";
+"%@ · korjattu" = "%@ · corrected";
+"Vuosikymmen" = "Decade";
+"Vuosi" = "Year";
+"En tiedä" = "I do not know";
+
+/* --- The questions asked before something cannot be undone ---------------
+   Every one of these is a confirmation dialog's title, and every one of them
+   was missing until scripts/localisation-check.mjs was written and run. They
+   were missed because the first pass over the source did not look inside
+   confirmationDialog, which is the initialiser used for exactly the moments
+   this app most needs to be understood in. */
+"Hylätäänkö tämä kertominen?" = "Discard this telling?";
+"Poistetaanko tämä muisto?" = "Delete this memory?";
+"Poistetaanko sukulaisuus?" = "Remove the relationship?";
+"Poistutaanko perheestä?" = "Leave the family?";
+"Yhdistetäänkö kortit?" = "Merge the cards?";
+"Tyhjennetäänkö tämä laite?" = "Empty this device?";
