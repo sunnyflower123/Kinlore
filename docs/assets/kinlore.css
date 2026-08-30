@@ -38,7 +38,6 @@
 
   --sc-font-display: Charter, "Bitstream Charter", "Sitka Text", Georgia, "Times New Roman", serif;
   --sc-font-text:    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --sc-font-mono:    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
   --sc-shadow-color: 24 40% 14%;
   --sc-maxw: 74rem;
@@ -92,8 +91,6 @@ html[data-bigtext] { font-size: 122%; }
   border-radius: var(--sc-r-sm);
 }
 
-code { font-family: var(--sc-font-mono); font-size: 0.88em; }
-
 .sc-display { font-family: var(--sc-font-display); font-weight: 600; text-wrap: balance; }
 .sc-body { max-width: var(--sc-measure); text-wrap: pretty; }
 
@@ -113,7 +110,10 @@ code { font-family: var(--sc-font-mono); font-size: 0.88em; }
 }
 .chrome__mark { flex: none; }
 .chrome__titles { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
-.chrome__title { font-size: var(--sc-t-sm); font-weight: 650; letter-spacing: var(--sc-track-snug); }
+/* The visible title is the document h1. There was none at all until 28 Aug
+   2026 — ten headings, the first an h2 — so a screen reader navigating by
+   level found no page heading. margin is the UA h1 default, turned off. */
+.chrome__title { margin: 0; font-size: var(--sc-t-sm); font-weight: 650; letter-spacing: var(--sc-track-snug); }
 .chrome__sub { font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
 .chrome__controls { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
 
@@ -556,18 +556,19 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
 .wire__h { margin: 0 0 0.5rem; font-size: var(--sc-t-xs); font-weight: 700;
            letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); }
 .wire__code {
-  margin: 0; font-family: var(--sc-font-mono); font-size: clamp(0.66rem, 1.5vh, 0.8rem);
-  line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+  margin: 0; font-family: inherit; font-size: clamp(0.72rem, 1.6vh, 0.86rem);
+  line-height: 1.6; white-space: pre-wrap; word-break: break-word;
   min-height: 11.5em;
 }
 /* The raw transcript is written before any model is called, and it is what the
    panel holds while the recording runs. Without it this column is an empty box
    for a third of the page's longest act. */
-.wire__field { margin: 0 0 0.35rem; font-family: var(--sc-font-mono);
-               font-size: clamp(0.66rem, 1.5vh, 0.8rem); color: var(--sc-ink-soft); }
+.wire__field { margin: 0 0 0.35rem; font-size: var(--sc-t-xs);
+               letter-spacing: var(--sc-track-wide); text-transform: uppercase;
+               color: var(--sc-ink-soft); }
 .wire__raw {
-  margin: 0 0 0.9rem; font-family: var(--sc-font-mono);
-  font-size: clamp(0.66rem, 1.5vh, 0.8rem); line-height: 1.55;
+  margin: 0 0 0.9rem; font-family: inherit;
+  font-size: clamp(0.72rem, 1.6vh, 0.86rem); line-height: 1.6;
   white-space: pre-wrap; word-break: break-word;
   min-height: 6.2em; color: var(--sc-ink);
   border-left: 2px solid var(--k-rule-strong); padding-left: 0.6rem;
@@ -578,9 +579,8 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
 .wire__code s { text-decoration: none; color: var(--sc-ink-soft); }
 .wire__note { margin: 0.6rem 0 0; font-size: var(--sc-t-xs); color: var(--sc-ink-soft); }
 /* A pinned stage is exactly one viewport and it clips, so on a phone the act
-   cannot hold the screen AND the whole row it writes. The full JSON is the
-   thing that goes: the three lines that carry the argument stay, and they are
-   the ones a judge would quote anyway. */
+   cannot hold the screen AND the whole record beside it. The long version is
+   the thing that goes; the four lines that carry the argument stay. */
 .wire__short { display: none; }
 @media (max-width: 999px) {
   .wire { width: min(30rem, 100%); padding: 0.7rem 0.85rem; }
@@ -774,7 +774,7 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
 }
 .kept__h { margin: 0 0 0.5rem; font-size: var(--sc-t-xs); font-weight: 700;
            letter-spacing: var(--sc-track-wide); text-transform: uppercase; color: var(--sc-ink-soft); }
-.kept__code { margin: 0 0 0.6rem; font-family: var(--sc-font-mono); font-size: var(--sc-t-sm);
+.kept__code { margin: 0 0 0.6rem; font-family: inherit; font-size: var(--sc-t-sm);
               line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
 .kept__code b { font-weight: 400; color: var(--sc-accent); }
 .kept__line { margin: 0; font-size: var(--sc-t-sm); color: var(--sc-ink-soft); }
@@ -788,14 +788,6 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
 .verdict:empty { display: none; }
 
 .cta-line { margin: 0; font-size: var(--sc-t-lg); font-family: var(--sc-font-display); line-height: 1.45; text-wrap: pretty; }
-.cta {
-  display: inline-block; margin-left: 0.15em;
-  font-family: var(--sc-font-text); font-size: var(--sc-t-base); font-weight: 650;
-  color: var(--k-accent-text); text-decoration: underline;
-  text-decoration-thickness: 2px; text-underline-offset: 0.2em;
-  min-height: 2.75rem; padding: 0.35rem 0;
-}
-.cta:hover { color: var(--sc-accent-ink); background: var(--sc-accent); text-decoration-color: transparent; }
 
 .foot {
   margin-top: clamp(1rem, 3vw, 2rem); padding-top: 1.25rem;

@@ -87,10 +87,20 @@
       hintIdle: 'Paina ja ala puhua', hintRec: 'Kuuntelen', hintWork: 'Järjestelen muistoa…',
       qs: ['Kuka muu oli paikalla?', 'Millainen ihminen Aino oli?', 'Minä vuonna tämä suunnilleen oli?'],
       propState: 'vahvistamatta', voiceLabel: 'Ääni',
-      wireBody: '"Kuva on otettu mökin\n            rannassa Puumalassa…",',
+      wireField: 'Omin sanoin',
+      wireLines: [
+        'Muisto', '   Kuva on otettu mökin rannassa Puumalassa…',
+        'Keitä mainittiin', '   <b>Aino</b>', '   <b>Toivo</b>',
+        'Missä', '   Puumala',
+        'Milloin', '   1950-luku', '   <i>vuosikymmen, ei päivää</i>',
+        'Mitä jäi kysymättä', '   3 kysymystä', '',
+        '<s>Aino ja Toivo odottavat ihmisen vahvistusta</s>',
+        '<s>Alkuperäiset sanat tallessa</s>',
+        '<s>Alkuperäinen ääni tallessa</s>'
+      ],
       confirmedWord: 'Vahvistettu', rejectedWord: 'Hylätty, ei tallennettu',
       undo: 'Kumoa',
-      liveYes: ' on nyt sukupuussa. Sinä vahvistit sen, ei malli.',
+      liveYes: ' on nyt sukupuussa. Sinä vahvistit sen, ei sovellus.',
       liveNo:  ' jäi pois. Puuttuva nimi on turvallisempi virhe kuin väärä.',
       liveUndo: 'Kumottu. Nimi on taas vahvistamatta.',
       treeOpenOne: 'nimi odottaa ihmistä.',
@@ -98,9 +108,10 @@
       treeStart: 'Puu kasvaa vasta kun joku kertoo jotain.',
       treeDone: 'Ei katkoviivoja. Jokaisen nimen on vahvistanut ihminen.',
       treeNone: 'Puu jäi vajaaksi, ja se on kelvollinen lopputulos.',
-      keptLine: 'Sana sanalta niin kuin kirjoitit sen. Sääntö 3: alkuperäistä ei siivota, koska kertojalta ei ehkä voi enää kysyä.',
+      keptPending: 'odottaa ihmisen vahvistusta',
+      keptLine: 'Sana sanalta niin kuin kirjoitit sen. Alkuperäistä ei siivota, koska kertojalta ei ehkä voi enää kysyä.',
       guestTag: 'sinun',
-      vAll: 'Sukupuussa ei ole enää katkoviivaa. Sen teit sinä, ei malli.',
+      vAll: 'Sukupuussa ei ole enää katkoviivaa. Sen teit sinä, ei sovellus.',
       vSome: 'Yksi nimi jäi pois, ja se on kelvollinen lopputulos: väärä sukulaisuus on pahempi kuin puuttuva.',
       vNone: 'Kaksi nimeä on yhä katkoviivalla. Sivu ei täytä niitä puolestasi, eikä sovelluskaan täytä.',
       vOpen: 'Yksi nimi on yhä katkoviivalla. Se ei ole hylätty, sitä ei vain ole vielä kysytty keneltäkään.',
@@ -114,10 +125,20 @@
       hintIdle: 'Press and start talking', hintRec: 'Listening', hintWork: 'Organising the memory…',
       qs: ['Who else was there?', 'What sort of person was Aino?', 'Roughly what year was this?'],
       propState: 'unconfirmed', voiceLabel: 'Voice',
-      wireBody: '"The photograph was taken at\n            the cottage shore…",',
+      wireField: 'In her own words',
+      wireLines: [
+        'The memory', '   The photograph was taken at the cottage shore…',
+        'Who was mentioned', '   <b>Aino</b>', '   <b>Toivo</b>',
+        'Where', '   Puumala',
+        'When', '   The 1950s', '   <i>a decade, not a day</i>',
+        'What went unasked', '   3 questions', '',
+        '<s>Aino and Toivo are waiting for a person</s>',
+        '<s>The original words are kept</s>',
+        '<s>The original recording is kept</s>'
+      ],
       confirmedWord: 'Confirmed', rejectedWord: 'Rejected, not written',
       undo: 'Undo',
-      liveYes: ' is in the family tree now. You confirmed that, not the model.',
+      liveYes: ' is in the family tree now. You confirmed that, not the app.',
       liveNo:  ' was left out. A missing name is a safer error than a wrong one.',
       liveUndo: 'Undone. The name is unconfirmed again.',
       treeOpenOne: 'name is waiting for a person.',
@@ -125,9 +146,10 @@
       treeStart: 'The tree grows once somebody tells something.',
       treeDone: 'No dashed lines. Every name here was confirmed by a person.',
       treeNone: 'The tree stayed incomplete, and that is a good outcome.',
-      keptLine: 'Word for word as you typed it. Rule 3: the original is never tidied, because the person who said it may not be there to ask.',
+      keptPending: 'waiting for a person to confirm',
+      keptLine: 'Word for word as you typed it. The original is never tidied, because the person who said it may not be there to ask.',
       guestTag: 'yours',
-      vAll: 'There is no dotted line left in the tree. You did that, not the model.',
+      vAll: 'There is no dotted line left in the tree. You did that, not the app.',
       vSome: 'One name was left out, and that is a good outcome: a wrong relationship is worse than a missing one.',
       vNone: 'Two names are still dotted. This page will not fill them in for you, and neither will the app.',
       vOpen: 'One name is still dotted. It has not been rejected, it has simply not been asked about yet.',
@@ -474,24 +496,15 @@
       }).catch(function () { /* the authored envelope stays */ });
   }
 
-  /* The row it writes, line by line, beside the screen that caused it. */
+  /* What gets kept, line by line, beside the screen that caused it. This used
+     to be the literal JSON the model returns. It is the same information said
+     in words, because a page that anyone might read should not need someone to
+     already know what a field name is. */
   var WIRE = [
-    { at: 0.71, html: '{' },
-    { at: 0.72, key: 'body' },
-    { at: 0.78, html: '  "mentions": [' },
-    { at: 0.79, html: '    { "name": <b>"Aino"</b>, "kind": "person" },' },
-    { at: 0.80, html: '    { "name": <b>"Toivo"</b>, "kind": "person" },' },
-    { at: 0.81, html: '    { "name": "Puumala", "kind": "place" }' },
-    { at: 0.82, html: '  ],' },
-    { at: 0.85, html: '  "date": { "start_year": 1950,' },
-    { at: 0.86, html: '            "end_year": 1959,' },
-    { at: 0.87, html: '            "precision": <i>"decade"</i> },' },
-    { at: 0.91, html: '  "questions": [ 3 ]' },
-    { at: 0.92, html: '}' },
-    { at: 0.94, html: '' },
-    { at: 0.95, html: '<s>subject.confirmed = 0  ×2</s>' },
-    { at: 0.96, html: '<s>memory.raw_transcript kept</s>' },
-    { at: 0.97, html: '<s>memory.audio_r2_key kept</s>' }
+    { at: 0.71 }, { at: 0.72 }, { at: 0.78 }, { at: 0.79 },
+    { at: 0.80 }, { at: 0.81 }, { at: 0.82 }, { at: 0.85 },
+    { at: 0.86 }, { at: 0.87 }, { at: 0.91 }, { at: 0.92 },
+    { at: 0.94 }, { at: 0.95 }, { at: 0.96 }, { at: 0.97 }
   ];
   WIRE.forEach(function (line) {
     var s = document.createElement('span');
@@ -501,9 +514,9 @@
     wireCode.appendChild(s);
   });
   function repaintWire() {
-    WIRE.forEach(function (line) {
-      line.el.innerHTML = (line.key === 'body' ? '  "body": ' + t('wireBody') : line.html) + '\n';
-    });
+    var lines = t('wireLines');
+    WIRE.forEach(function (line, i) { line.el.innerHTML = (lines[i] || '') + '\n'; });
+    $('.wire__field').textContent = t('wireField');
   }
 
   /* The result assembles: each block has its own threshold. */
@@ -720,9 +733,8 @@
     if (!archive.guest) { kept.hidden = true; return; }
     kept.hidden = false;
     $('#kept-code').innerHTML =
-      'subject.kind      = "person"\n' +
-      'subject.title     = ' + esc(JSON.stringify(archive.guest)) + '\n' +
-      'subject.confirmed = <b>0</b>';
+      esc(archive.guest) + '\n' +
+      '<b>' + t('keptPending') + '</b>';
     $('#kept-line').textContent = t('keptLine');
   }
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
