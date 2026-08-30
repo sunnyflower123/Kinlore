@@ -32,6 +32,24 @@ enum Elder {
     /// only place where the grandchild is already answering questions.
     static let largerTextKey = "elder.largerText"
 
+    /// Part of emptying the device, beside the ladder's comfort and the deck's
+    /// skips — and for the identical reason: this is an answer about *whose
+    /// phone this is*, and an emptied device has not been asked yet. It was the
+    /// last piece of device state the wipe left behind, so the returning
+    /// onboarding fork met its own question with the previous household's
+    /// answer already filled in.
+    ///
+    /// Cheap to lose and cheap to give back: `textFloor` is a floor and never a
+    /// ceiling, so anybody who enlarged iOS's own text keeps every notch of it,
+    /// and the question is re-asked two screens later on either path.
+    ///
+    /// Named `forgetLargerText` and not `reset`, which is what every other
+    /// device-local store here is called. `Elder.reset()` would read as
+    /// resetting the design tokens; this touches exactly one key.
+    static func forgetLargerText() {
+        UserDefaults.standard.removeObject(forKey: largerTextKey)
+    }
+
     /// The smallest text the app will draw once that question is answered
     /// "grandmother's".
     ///

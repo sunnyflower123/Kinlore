@@ -396,6 +396,9 @@ struct SettingsScreen: View {
         NewFromFamily.reset()
         // And which cards she pushed aside, for the same reason.
         Deck.reset()
+        // And whose phone this is, which is asked in onboarding and was the
+        // one answer that used to outlive the archive it was given for.
+        Elder.forgetLargerText()
         // Last, because it is what makes the wipe stick: with the old identity
         // the next sync would pull the whole archive straight back.
         session.renewIdentity()
