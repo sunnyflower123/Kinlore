@@ -112,6 +112,13 @@ run "one purchase unlocks one family" entitlement_binding
 # assumed wrong once: auto-renew going off — the most common subscriber act —
 # locked the family out of a month somebody had paid for.
 run "a cancelled payer keeps the paid month" node scripts/webhook-revocation-check.mjs
+# The other half of the purchase arc, and the one ARCHITECTURE §1 called unrun
+# until 1 Sep 2026: /entitlement/sync does not accept a state from the client,
+# it asks RevenueCat. The real syncEntitlement over the shipping schema with
+# fetch replaced — no key, no network, nothing spent. Nine deliberate breakages
+# were each caught before this line was added, including one that made the run
+# print its own green closing sentence and then a stack trace.
+run "the purchase is verified rather than believed" node scripts/entitlement-sync-check.mjs
 # Rule 8, without making the request. `complete()` is imported straight out of
 # openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
 # something that keeps the body. Nothing leaves the machine and nothing is

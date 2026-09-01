@@ -400,6 +400,18 @@ node scripts/entitlement-binding-check.mjs
 # entitlement.ts.
 node scripts/webhook-revocation-check.mjs
 
+# The other half of the same arc: /entitlement/sync does not accept a state
+# from the client, it asks RevenueCat. That claim went unchecked until 1 Sep
+# 2026 because it looked as though it needed a key, and it does not — the real
+# syncEntitlement runs over the shipping schema with `fetch` replaced by
+# something that answers like RevenueCat and keeps the request. Nothing leaves
+# the machine, which matters twice here: the request that proves the payer's
+# account is protected must not be the request that sends it anywhere. Pins the
+# claim the endpoint exists for, the 409 before any upstream call, the restore,
+# the two-payer rule, and rules 7 and 9 on the one path whose upstream body is
+# somebody's account. After touching entitlement.ts.
+node scripts/entitlement-sync-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after

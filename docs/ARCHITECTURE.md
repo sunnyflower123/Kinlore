@@ -56,7 +56,7 @@ An honest inventory, not a wish list:
 | Media to R2 (`/media`) | **Done and checked**, see §5 — the round trip and the isolation, against wrangler's local bucket |
 | Quotas (`/usage`, limits on the server) | **Done and checked**, see §7 — the counting and rule 2; not the transcription path itself |
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
-| RevenueCat, shared family entitlement | **Built** — the binding rule is checked (§6); the REST verification and the webhook need keys and are unrun |
+| RevenueCat, shared family entitlement | **Built and checked without a key** — the binding rule, the webhook's revocation rules and the REST verification all run against the shipping schema with RevenueCat replaced, see §6. What still needs a key is the part a key is actually for: a real purchase, a real event with a real signature, and the paywall screen |
 | Audio playback, open questions, relationships | **Done and tested** |
 | Paywall | Built — unverified, needs a RevenueCat key |
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
@@ -760,6 +760,63 @@ RevenueCat's own view, it requires the SDK to be configured, and without a key
 exists, `-rcKey <key>` is enough to see it — and the first thing to check is not
 that it looks right but that a purchase reaches `family.entitlement`, with the
 Worker deliberately stopped once to see the sentence above.
+
+### The purchase, verified rather than believed — 1 Sep 2026
+
+`/entitlement/sync` does not accept a state from the client, it accepts a hint:
+the app says *this customer bought something* and the server asks RevenueCat.
+That sentence is the reason the endpoint exists, and until this date nothing
+checked it — §1 carried the row *"the REST verification and the webhook need
+keys and are unrun"* for two weeks after the webhook half had stopped being
+true.
+
+The key was never what stood in the way. `scripts/entitlement-sync-check.mjs`
+imports the real `syncEntitlement`, runs it over the shipping `schema.sql` in
+in-memory SQLite behind a D1-shaped shim, and replaces `fetch` with something
+that answers like RevenueCat and keeps the request — the same technique
+`data-collection-check.mjs` uses, and for a reason that applies twice as hard
+here: the request that proves the payer's account is protected must not be the
+request that sends it somewhere.
+
+Twenty-nine checks, and the ones worth naming:
+
+- **A purchase RevenueCat has never heard of unlocks nothing.** This is the
+  request an attacker makes and also the request a confused app makes, and it
+  is the single claim the endpoint exists to enforce.
+- **An entitlement that has already run out opens nothing**, and a perpetual one
+  — `expires_at: null`, which is also what *no date* looks like — opens
+  everything. Read the wrong way round, the second is the first.
+- **The 409 answers before asking RevenueCat anything.** The database refuses
+  the second binding in any case (§6 above); this is the guard over it, and the
+  part worth pinning is that a refused claim costs no upstream request.
+- **A restore inside the family moves the binding** rather than adding one. This
+  is the check that found the file's own defect: breaking the release makes the
+  UPDATE violate the unique index, the case threw, and the run printed every
+  earlier `ok`, then its own closing line *"The purchase is verified rather than
+  believed"*, and only then a stack trace. A green sentence over a failed run is
+  what every check in `scripts/` exists to prevent, so a throw is now a failure
+  of the case that threw.
+- **The two-payer rule through this path.** The longest expiry wins, and only
+  the webhook had ever exercised it.
+- **Rules 7 and 9 on the one path where the upstream body is a subscriber's
+  account.** The key is in the Authorization header and nowhere in the URL; a
+  failure logs the status and RevenueCat's numeric code and none of the body,
+  and neither does the message of the error that is thrown — `message` is the
+  one field of a thrown error that reaches the log. The 409's own line says
+  *another family* and names no ids.
+- **No key configured answers `revenuecat_not_configured`** and asks nobody
+  anything, because that is the branch a real install takes today.
+
+**Nine deliberate breakages, nine caught** — trusting the client, moving the 409
+below the fetch, logging the body, moving the key out of the header, reading a
+perpetual entitlement as none, dropping the restore's release, swallowing the
+upstream failure, letting the newest payer always win, and putting the ids back
+in the 409. That list is the argument for the file; an all-green first run is
+not one.
+
+What this does **not** check, and no amount of it could: a real Test Store key,
+a real purchase, a real webhook signature, and the paywall screen. Those are
+still the first things to do the day a key exists.
 
 ### One purchase, one family
 
