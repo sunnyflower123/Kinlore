@@ -159,11 +159,51 @@ The first device opens onto *"Uutta perheeltä"* and answers a question aloud.
   **one item to fetch before filming night**, and the purchase then completes
   against the Test Store.
 
+### What the Test Store does on its own, which can ruin the take
+
+Two things about scene 5 that are not in the app and cannot be seen by looking
+at it. Both were read out of RevenueCat's own documentation on 1 Sep 2026,
+because everything else about this scene had been checked against the code and
+these are facts about somebody else's service.
+
+**A test subscription expires by itself, quickly.** Renewals are accelerated —
+a one-week product renews about every five minutes, a one-year product hourly
+— and **after five renewals it cancels and the entitlement goes inactive.** A
+one-week product is therefore about twenty-five minutes from purchase to dead.
+
+With the webhook wired, the Worker then does exactly what it is supposed to:
+EXPIRATION arrives, `family.entitlement` returns to `free`, and the card the
+camera is pointed at says *"Ilmainen"*. Nothing is broken —
+`webhook-revocation-check.mjs` pins that behaviour deliberately. **So buy on
+filming night and shoot scene 5 immediately.** Do not buy hours ahead to "have
+it ready".
+
+**Test Store purchases are reported as sandbox data.** The webhook
+configuration in the RevenueCat dashboard (Integrations → Webhooks) has an
+environment scope, and one scoped to production only receives nothing at all
+from the Test Store. Nothing reports this: the purchase succeeds, the app says
+thank you, and `family.entitlement` simply never changes. The Authorization
+header field has a matching trap — `isAuthorizedWebhook` compares the whole
+header against `RC_WEBHOOK_SECRET` by length and then byte for byte, so a
+field typed as `Bearer <secret>` against a secret of `<secret>` is refused
+silently.
+
 ## Before filming night, in one list
 
 1. Copy the Test Store public key from the RevenueCat dashboard (scene 5).
-2. Decide stub or live per scene — the recipes above run either way.
-3. `xcrun simctl list devices | grep -c "(Booted)"` — a starved machine
+   Sidebar → *Apps and providers* → **Test configuration**, or Project
+   Settings → **API keys**; the project is `proj087f04ef`, already in
+   `wrangler.jsonc`. It is the **public** key — the three Worker secrets
+   (`OPENROUTER_API_KEY`, `RC_SECRET_KEY`, `RC_WEBHOOK_SECRET`) were already
+   set in production, checked with `wrangler secret list` on 1 Sep 2026.
+2. Check the webhook's environment scope includes **sandbox**, and that its
+   Authorization header is byte-identical to `RC_WEBHOOK_SECRET` — see above.
+3. `-rcKey` is a launch argument and lives in NSArgumentDomain, which is
+   volatile: **launched from the icon the key is gone** and the paywall
+   disappears with it. Every recipe here launches with arguments; stay on
+   them.
+4. Decide stub or live per scene — the recipes above run either way.
+5. `xcrun simctl list devices | grep -c "(Booted)"` — a starved machine
    drops frames the same way it invents test failures (CLAUDE.md).
-4. Check the Devpost form's video requirements (length, host) before editing
+6. Check the Devpost form's video requirements (length, host) before editing
    to a length; the rules are the form's, not this file's.
