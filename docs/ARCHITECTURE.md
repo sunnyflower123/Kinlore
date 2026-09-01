@@ -1486,8 +1486,23 @@ Two things, and they are separable.
 **The reading loop.** Everything in the magic moment is a *writing* loop, and
 nothing gave the family a reason to open a memory that was already written. That
 is how family archives actually die — not unrecorded, unread. The round cost one
-tap and was the only part of the app that asked nothing of the 80-year-old. That
-problem is now unsolved again, and nothing else in the app addresses it.
+tap and was the only part of the app that asked nothing of the 80-year-old.
+
+**Half of that is answered, and this section claimed none of it was for two
+weeks after it stopped being true.** `NewFromFamily` — built 17 Aug 2026,
+docs/UX.md §6, which paid for it by closing the map — gives a reason to open a
+telling that is *new and unread*, and its own source quotes the same PLAN §4.1
+sentence this paragraph does. What it cannot do is visible in one line of it:
+`unseen(in:me:)` is `authorID != me` minus a device-local seen list, so it is
+empty by construction in a family of one and empty again the day after
+everybody has looked. **The round needed nothing to arrive.** It re-presented a
+telling that was old and already read, which is the half still open — and the
+half that matters most for an archive whose whole risk is the year nobody
+opens it.
+
+That this section went on saying "nothing else in the app addresses it" is the
+failure §1 warns about in its own words: a sentence that was true when written,
+was never re-read, and reads exactly like one that still is.
 
 **Blind confirmation, which is the larger loss.** Rule 4 says AI proposes and a
 human confirms. A proposal card with the name already written on it gets tapped
@@ -1504,8 +1519,8 @@ otherwise.
 **Taken up on 30 Aug 2026**, in a different shape: the deck's card asks *"kuka
 tässä on?"* over the photograph the name was heard in, with the proposal unmarked
 among four names. §23 records what was built and which of the pieces below went
-into it. The reading loop above is still unsolved; this is the confirmation half
-only.
+into it. The reading loop's older half above is still unsolved; this is the
+confirmation half only.
 
 If confirmation is ever strengthened again, these are the pieces that were
 expensive to get right and are recorded here rather than rediscovered:

@@ -77,7 +77,11 @@ The findings, each measured on 17 Aug:
    dot; the only sync surface is outgoing (`SyncNote`, *"…vielä vain tässä
    puhelimessa"*, `GalleryScreen.swift:282-312`). PLAN §4.1 already names this
    hole — *"a family archive dies unread more often than unrecorded"* — and
-   cutting the guessing round left it open on purpose. It is still open.
+   cutting the guessing round left it open on purpose. **Answered for the
+   half it can reach**, 17 Aug 2026 — *"Uutta perheeltä"* and the derived
+   default tab, §6 and §9 row P1-1. The half it cannot: a reason to open a
+   telling that is old and already read, which is empty by construction here
+   (`authorID != me` minus a seen list). See ARCHITECTURE §13.
 
 Two defects found by the same measurement are code fixes rather than design,
 and are tracked as their own tasks, not here: the invite **link** drops the
