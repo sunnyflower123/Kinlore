@@ -496,6 +496,8 @@ struct SubjectDetailScreen: View {
 private struct MemoryRow: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var isConfirmingRemoval = false
     let memory: Memory
 
     var body: some View {
@@ -539,8 +541,41 @@ private struct MemoryRow: View {
                 }
             }
 
+            // The teller's own, the day after. The result screen offers this
+            // in the seconds after telling; a memory read back on its card
+            // tomorrow is the same "I did not mean to say that", and until
+            // 3 Sep 2026 the card had no answer to it. Quiet and last, as on
+            // the result screen: the rarest thing done here, and the one that
+            // must never be hit by mistake — so it asks first, in the same
+            // words.
+            //
+            // Own means told on this phone or by this member. A memory told
+            // here carries no author until the pull hands it back, and one
+            // that never syncs (a phone kept to itself) never gets one; the
+            // server refuses a tombstone from anybody but the author either way.
+            if memory.authorID == nil || memory.authorID == session.identity.memberID {
+                Button("Poista tämä muisto") { isConfirmingRemoval = true }
+                    .buttonStyle(.borderless)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Elder.destructive)
+                    .elderTapTarget()
+            }
         }
         .padding(.vertical, 6)
+        .confirmationDialog(
+            "Poistetaanko tämä muisto?",
+            isPresented: $isConfirmingRemoval,
+            titleVisibility: .visible
+        ) {
+            Button("Poista", role: .destructive) {
+                // A moment that held only this telling goes with it, and the
+                // card being read is then that moment's: nothing to stay for.
+                if store.takeBack(memoryID: memory.id) { dismiss() }
+            }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.")
+        }
     }
 }
 

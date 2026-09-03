@@ -555,6 +555,30 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The memory row's own way out, which shows only on a telling of one's
+    /// own. The fixture's memories are all Mummo's, so this one is told first
+    /// and read back from its card, the way it would be the day after.
+    func testMemoryCardOwnTelling() throws {
+        try sweep(
+            "Memory card with an own telling",
+            arguments: ["-seed", "empty", "-defer", "structure", "-screen", "interview"]
+        ) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "the result screen")
+            let another = app.buttons["Kerro toinen muisto"]
+            for _ in 0 ..< 4 where !another.exists { app.swipeUp() }
+            require(another, "the way on from the result screen")
+            another.tap()
+            app.tabBars.buttons["Muistot"].tap()
+            let row = app.staticTexts["Kerrottu muisto"].firstMatch
+            require(row, "the telling in the gallery")
+            row.tap()
+            // On screen for the audit: at the largest size it is below the fold.
+            let remove = app.buttons["Poista tämä muisto"]
+            for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
+            require(remove, "the card's way to take the telling back")
+        }
+    }
+
     /// A person's card carries the proposal row and the relationships, which are
     /// the two places in the app where a colour means something.
     func testPersonCard() throws {

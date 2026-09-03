@@ -456,6 +456,35 @@ final class MemoryStore {
         save()
     }
 
+    /// The same taking back, from the memory's own card the day after.
+    ///
+    /// `discardSavedMemory` on the result screen knows what its telling
+    /// proposed and which question it answered; a card knows only the row. So
+    /// the tidying here is what the row itself can vouch for: the people this
+    /// memory alone put in the family list, and the moment it alone was filed
+    /// under. Anyone confirmed, or named by another telling, stays — and so
+    /// does a photo or a person, whatever they hold.
+    ///
+    /// Returns whether the home subject went with it: the card the caller is
+    /// standing on has then nothing left to show.
+    @discardableResult
+    func takeBack(memoryID: String) -> Bool {
+        guard let memory = memories.first(where: { $0.id == memoryID }) else { return false }
+        remove(memoryID: memoryID)
+        for id in memory.mentionedSubjectIDs {
+            if let subject = subjects.first(where: { $0.id == id }),
+               !subject.confirmed, subject.deletedAt == nil, isOrphaned(subjectID: id) {
+                remove(subjectID: id)
+            }
+        }
+        if let home = subjects.first(where: { $0.id == memory.subjectID }),
+           home.kind == .event, home.deletedAt == nil, isOrphaned(subjectID: home.id) {
+            remove(subjectID: home.id)
+            return true
+        }
+        return false
+    }
+
     func markAnswered(questionID: String) {
         guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
         questions[index].answered = true

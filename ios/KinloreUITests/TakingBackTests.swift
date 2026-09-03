@@ -51,6 +51,49 @@ final class TakingBackTests: XCTestCase {
         )
     }
 
+    /// The same, the day after: from the memory's own card instead of the
+    /// result screen. The result screen is open for seconds; the card is where
+    /// a telling is read back tomorrow, and "I did not mean to say that" comes
+    /// more often then than right away. Until 3 Sep 2026 the card had no way.
+    func testAMemoryCanBeTakenBackFromItsCard() {
+        let app = launch(arguments)
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "never arrived: the result screen"
+        )
+
+        // Leave the result screen the ordinary way, keeping the telling.
+        let another = app.buttons["Kerro toinen muisto"]
+        for _ in 0 ..< 4 where !another.exists { app.swipeUp() }
+        XCTAssertTrue(another.waitForExistence(timeout: 10), "never arrived: the way on")
+        another.tap()
+
+        // Free dictation filed the telling under a moment of its own; with
+        // the structuring deferred that moment is still untitled.
+        app.tabBars.buttons["Muistot"].tap()
+        let row = app.staticTexts["Kerrottu muisto"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
+        row.tap()
+
+        let remove = app.buttons["Poista tämä muisto"]
+        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take it back")
+        remove.tap()
+
+        // The same question, in the same words, as on the result screen.
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+
+        // The moment held only this telling, so it went too, and the card
+        // with it: back in the gallery, which is empty again.
+        XCTAssertTrue(
+            app.staticTexts["Ei vielä kuvia"].waitForExistence(timeout: 10),
+            "the taken-back memory left something behind in the gallery"
+        )
+    }
+
     /// The other half: a recording abandoned while it is still running.
     ///
     /// This one really records, so the run needs the microphone. A simulator
