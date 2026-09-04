@@ -549,6 +549,7 @@ private struct MemoryRow: View {
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var isConfirmingRemoval = false
+    @State private var isEditingText = false
     let memory: Memory
 
     var body: some View {
@@ -605,6 +606,21 @@ private struct MemoryRow: View {
             // that never syncs (a phone kept to itself) never gets one; the
             // server refuses a tombstone from anybody but the author either way.
             if memory.authorID == nil || memory.authorID == session.identity.memberID {
+                // The words the family reads, corrected by the one who said
+                // them. The name step reaches a heard name; a wrong ordinary
+                // word in the one sentence that mattered — "kuoli" for
+                // "kasvoi" — it cannot, and at the measured error rate that
+                // word is common. No model call and no minutes: the body is
+                // rewritten by hand, and rule 3's recording and raw transcript
+                // stay exactly as they were. Not while the text is still on
+                // its way: there is nothing to correct yet.
+                if !memory.isAwaitingTranscription {
+                    Button("Muokkaa tekstiä") { isEditingText = true }
+                        .buttonStyle(.borderless)
+                        .font(.body.weight(.medium))
+                        .elderTapTarget()
+                }
+
                 Button("Poista tämä muisto") { isConfirmingRemoval = true }
                     .buttonStyle(.borderless)
                     .font(.body.weight(.medium))
@@ -627,6 +643,89 @@ private struct MemoryRow: View {
         } message: {
             Text("Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.")
         }
+        .sheet(isPresented: $isEditingText) {
+            MemoryTextSheet(memory: memory)
+        }
+    }
+}
+
+/// The teller rewrites the words the family reads.
+///
+/// The recording and the raw transcript are rule 3's, and this never touches
+/// them: only `body`, through the same `updateBody` the name correction uses,
+/// so the server's author rule applies here exactly as it does there.
+private struct MemoryTextSheet: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    let memory: Memory
+
+    @State private var text: String
+    @FocusState private var isFocused: Bool
+
+    init(memory: Memory) {
+        self.memory = memory
+        _text = State(initialValue: memory.body)
+    }
+
+    private var trimmed: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                // The same field the question sheet uses, for the same reasons
+                // (see AskQuestionSheet): it grows with what is in it and stays
+                // under the audit. Capped so a long telling scrolls inside the
+                // field rather than pushing the buttons under the keyboard.
+                TextField("Muiston teksti", text: $text, axis: .vertical)
+                    .lineLimit(3...8)
+                    .font(.body)
+                    .lineSpacing(Elder.lineSpacing)
+                    .padding(12)
+                    .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+                    .focused($isFocused)
+                    .accessibilityLabel("Muiston teksti")
+
+                Text("Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan.")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Spacer()
+
+                Button {
+                    save()
+                } label: {
+                    Text("Tallenna")
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .elderTapTarget()
+                // An empty body is not a correction: the row would read as a
+                // recording still waiting for its text, and the server keeps
+                // the old words on an empty push anyway.
+                .disabled(trimmed.isEmpty || trimmed == memory.body)
+
+                Button("Peruuta") { dismiss() }
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
+            }
+            .padding(Elder.screenPadding)
+            .navigationTitle("Muokkaa tekstiä")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear { isFocused = true }
+        }
+    }
+
+    private func save() {
+        guard !trimmed.isEmpty else { return }
+        store.updateBody(memoryID: memory.id, body: trimmed)
+        dismiss()
     }
 }
 

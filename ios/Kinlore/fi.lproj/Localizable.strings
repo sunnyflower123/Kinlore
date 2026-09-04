@@ -212,3 +212,8 @@
 "Poista kuva" = "Poista kuva";
 "Poistetaanko tämä kuva?" = "Poistetaanko tämä kuva?";
 "Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa." = "Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa.";
+
+// The memory row: the teller corrects the words the family reads (4 Sep 2026).
+"Muokkaa tekstiä" = "Muokkaa tekstiä";
+"Muiston teksti" = "Muiston teksti";
+"Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan." = "Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan.";

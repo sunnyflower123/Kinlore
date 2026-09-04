@@ -135,6 +135,46 @@ final class TakingBackTests: XCTestCase {
         XCTAssertEqual(tiles.count, 1, "the deleted photo is still in the gallery")
     }
 
+    /// Not taking back but correcting: the words the family reads, fixed by
+    /// the one who said them. A wrong ordinary word in the one sentence that
+    /// mattered is what the name step cannot reach, and from the card the day
+    /// after is where it is noticed. In this file because it walks the same
+    /// path as the taking back above, and until 4 Sep 2026 had no door either.
+    func testTheTextOfAnOwnTellingCanBeCorrected() {
+        let app = launch(arguments)
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "never arrived: the result screen"
+        )
+        let another = app.buttons["Kerro toinen muisto"]
+        for _ in 0 ..< 4 where !another.exists { app.swipeUp() }
+        XCTAssertTrue(another.waitForExistence(timeout: 10), "never arrived: the way on")
+        another.tap()
+
+        app.tabBars.buttons["Muistot"].tap()
+        let row = app.staticTexts["Kerrottu muisto"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
+        row.tap()
+
+        let edit = app.buttons["Muokkaa tekstiä"]
+        for _ in 0 ..< 4 where !edit.exists { app.swipeUp() }
+        XCTAssertTrue(edit.waitForExistence(timeout: 10), "the card offers no way to correct the text")
+        edit.tap()
+
+        let field = app.descendants(matching: .any)["Muiston teksti"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "never arrived: the text to correct")
+        field.tap()
+        field.typeText(" Lisätty korjaus.")
+        app.buttons["Tallenna"].tap()
+
+        // The corrected words are what the card reads now.
+        let corrected = app.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", "Lisätty korjaus."))
+            .firstMatch
+        XCTAssertTrue(corrected.waitForExistence(timeout: 10), "the correction did not reach the memory")
+    }
+
     /// The other half: a recording abandoned while it is still running.
     ///
     /// This one really records, so the run needs the microphone. A simulator

@@ -258,3 +258,8 @@
 "Poista kuva" = "Delete photo";
 "Poistetaanko tämä kuva?" = "Delete this photo?";
 "Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa." = "The photo leaves the family archive and cannot be brought back.";
+
+// The memory row: the teller corrects the words the family reads (4 Sep 2026).
+"Muokkaa tekstiä" = "Edit the text";
+"Muiston teksti" = "Memory text";
+"Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan." = "The original recording and the word-for-word speech stay as they are.";

@@ -595,6 +595,21 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The sheet a teller corrects their own words in.
+    func testMemoryTextSheet() throws {
+        try sweep(
+            "Memory text sheet",
+            arguments: ["-seed", "empty", "-defer", "structure", "-screen", "interview"]
+        ) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "the result screen")
+            reach(app.buttons["Kerro toinen muisto"], in: app, "the way on").tap()
+            app.tabBars.buttons["Muistot"].tap()
+            require(app.staticTexts["Kerrottu muisto"].firstMatch, "the telling in the gallery").tap()
+            reach(app.buttons["Muokkaa tekstiä"], in: app, "the way to correct the text").tap()
+            require(app.buttons["Tallenna"], "the sheet")
+        }
+    }
+
     /// A person's card carries the proposal row and the relationships, which are
     /// the two places in the app where a colour means something.
     func testPersonCard() throws {
