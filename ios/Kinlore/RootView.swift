@@ -609,6 +609,26 @@ private struct MemoryRow: View {
     @State private var isEditingText = false
     let memory: Memory
 
+    /// Four truths for one row, in the order they are decided.
+    ///
+    /// The chosen local mode first: there the text is not late and not given
+    /// up on — it is simply never coming, and "valmistuu myöhemmin" would be
+    /// a promise nothing keeps (finding B4). Then the recordings the catch-up
+    /// has stopped asking about. Then the month's minutes, which used to fall
+    /// through to "myöhemmin" — a word that read as a delay while the truth
+    /// was "not until next month, unless somebody pays", on every phone in
+    /// the family (findings #103, #107). A `LocalizedStringKey` from a
+    /// function rather than a nested ternary: the ternary was a String, and
+    /// not one of these four had ever been looked up.
+    private var awaitingText: LocalizedStringKey {
+        if session.isLocalByChoice { return "Ääni tallessa — voit kirjoittaa tekstin itse" }
+        if TranscriptionAttempts.hasGivenUp(on: memory.id) {
+            return "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
+        }
+        if session.isOutOfMinutes { return "Ääni tallessa — kuukauden kertominen täynnä" }
+        return "Ääni tallessa — teksti valmistuu myöhemmin"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if memory.isAwaitingTranscription {
@@ -616,18 +636,7 @@ private struct MemoryRow: View {
                 // after it has stopped trying. "Teksti valmistuu myöhemmin" was
                 // a promise nothing kept for a while (§16); it must not become
                 // one again on the recordings the catch-up has given up on.
-                Label(
-                    // The chosen local mode first: there the text is not late
-                    // and not given up on — it is simply never coming, and
-                    // "valmistuu myöhemmin" would be a promise nothing keeps
-                    // (finding B4).
-                    session.isLocalByChoice
-                        ? "Ääni tallessa — voit kirjoittaa tekstin itse"
-                        : TranscriptionAttempts.hasGivenUp(on: memory.id)
-                            ? "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
-                            : "Ääni tallessa — teksti valmistuu myöhemmin",
-                    systemImage: "waveform"
-                )
+                Label(awaitingText, systemImage: "waveform")
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
             } else {

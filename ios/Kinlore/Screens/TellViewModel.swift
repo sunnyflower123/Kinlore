@@ -191,6 +191,12 @@ final class TellViewModel {
         }
     }
 
+    /// Whether the last audio-only save was the month's minutes rather than
+    /// the network. The screen after it used to say the same "valmistuu
+    /// myöhemmin" for both, and for the quota that was a delay's words on a
+    /// wall (findings #68, #24).
+    private(set) var savedBecauseOfQuota = false
+
     func stopAndProcess() async {
         guard let url = recorder.stop() else {
             // A recording under a second is an accident, not a memory. In the
@@ -215,6 +221,7 @@ final class TellViewModel {
             // the screen's honest sentence arrive slower.
             leaveInterview()
             saveAudioOnly(audioURL: url, duration: duration)
+            savedBecauseOfQuota = false
             phase = .savedWithoutTranscript
             return
         }
@@ -230,11 +237,13 @@ final class TellViewModel {
             // interview ends here — with the answer safe.
             leaveInterview()
             saveAudioOnly(audioURL: url, duration: duration)
+            savedBecauseOfQuota = true
             phase = .savedWithoutTranscript
         } catch {
             // The same applies to a network error: keep the audio, text later.
             leaveInterview()
             saveAudioOnly(audioURL: url, duration: duration)
+            savedBecauseOfQuota = false
             phase = .savedWithoutTranscript
         }
     }

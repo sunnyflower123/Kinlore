@@ -41,6 +41,39 @@ final class SilentFailureTests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Kerro"].waitForExistence(timeout: 10), "the app did not go on")
     }
 
+    /// The month's minutes are a wall with a date, and the app says so where
+    /// it happens and everywhere the wait shows: the screen after the telling,
+    /// the note on Muistot and the row itself. `-defer once` fails the first
+    /// transcription as the quota would; `-minutes-out 1` holds the meter
+    /// there, as the server's would be.
+    func testRunningOutOfMinutesIsSaidWithADate() {
+        let app = launch(["-seed", "empty", "-defer", "once", "-minutes-out", "1"])
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+
+        XCTAssertTrue(app.staticTexts["Äänesi on tallessa"].waitForExistence(timeout: 30), "never arrived: the audio-saved screen")
+        let quota = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kuukauden ilmainen kertominen on täynnä")).firstMatch
+        XCTAssertTrue(quota.waitForExistence(timeout: 10), "the screen did not say it was the month's minutes")
+
+        let done = app.buttons["Selvä"]
+        for _ in 0 ..< 4 where !done.exists { app.swipeUp() }
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "never arrived: the way on")
+        done.tap()
+
+        app.tabBars.buttons["Muistot"].tap()
+        let note = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Yksi kertomus odottaa tekstiä")).firstMatch
+        XCTAssertTrue(note.waitForExistence(timeout: 10), "the gallery did not count the waiting telling")
+
+        let row = app.staticTexts["Kerrottu muisto"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
+        row.tap()
+        XCTAssertTrue(
+            app.staticTexts["Ääni tallessa — kuukauden kertominen täynnä"].waitForExistence(timeout: 10),
+            "the row still promised the text for later"
+        )
+    }
+
     func testARefusedMicrophoneOffersAWayOn() {
         let app = launch(["-seed", "empty", "-mic", "denied"])
 

@@ -1683,9 +1683,11 @@ private struct ProposalRow: View {
 /// user did nothing wrong and lost nothing.
 private struct AudioSavedView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(Session.self) private var session
     let model: TellViewModel
 
     @State private var isConfirmingDiscard = false
+    @State private var isShowingPaywall = false
 
     var body: some View {
         // The same scroll treatment as IdleView and the refused microphone. As a
@@ -1703,6 +1705,9 @@ private struct AudioSavedView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
+        .paywallSheet(isPresented: $isShowingPaywall)
+        // The meter has just moved; every note that reads it should know.
+        .task { if model.savedBecauseOfQuota { await session.refresh() } }
         .confirmationDialog(
             "Poistetaanko tämä muisto?",
             isPresented: $isConfirmingDiscard,
@@ -1735,15 +1740,27 @@ private struct AudioSavedView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Two truths for one screen: a deferral the catch-up will finish,
-            // and a mode where no text is ever coming. Promising "valmistuu
-            // myöhemmin" in the second would be the §16 lie all over again.
-            Text(model.canTranscribe
-                ? "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse."
-                : "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.")
-                .elderBody()
-                .foregroundStyle(Elder.supporting)
-                .multilineTextAlignment(.center)
+            // Three truths for one screen: a mode where no text is ever
+            // coming, the month's minutes, and a deferral the catch-up will
+            // finish. Promising "valmistuu myöhemmin" in the first would be
+            // the §16 lie all over again; in the second it was a delay's
+            // words on a wall that lifts on a date, or when somebody pays —
+            // so the date is said, and the way to lift it is beside it.
+            // Three `Text`s and not a ternary: a ternary of literals is a
+            // String, and neither of the two here had ever been looked up.
+            Group {
+                if !model.canTranscribe {
+                    Text("Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.")
+                } else if model.savedBecauseOfQuota {
+                    let date = Session.nextFreeMinutes().formatted(.dateTime.day().month(.wide))
+                    Text("Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas \(date) — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.")
+                } else {
+                    Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
+                }
+            }
+            .elderBody()
+            .foregroundStyle(Elder.supporting)
+            .multilineTextAlignment(.center)
 
             Spacer(minLength: 0)
 
@@ -1767,6 +1784,25 @@ private struct AudioSavedView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+
+                // The handle on the wall, when there is one: the same
+                // purchase the family screen and the finished-memory card
+                // offer, here beside the one moment it is the answer to.
+                // Quiet, below the prominent one — §22 allows one of those.
+                if model.savedBecauseOfQuota, !session.isPaid,
+                   RevenueCatPurchases.configuredKey != nil {
+                    Button {
+                        isShowingPaywall = true
+                    } label: {
+                        Text("Avaa koko arkisto")
+                            .font(.body.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
+                    }
+                    .controlSize(.large)
+                }
 
                 Button {
                     if model.target == nil { model.reset() } else { dismiss() }

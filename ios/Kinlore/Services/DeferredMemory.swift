@@ -257,6 +257,14 @@ final class TranscriptionCatchUp {
                 // authenticated. Every other recording would meet the same wall,
                 // so the round ends — and nothing is counted against any of
                 // them, because none of this was their fault.
+                //
+                // When it was the minutes, the meter has just changed, and the
+                // rows that read it should say so on this launch rather than
+                // the next: the note on Muistot and every "Ääni tallessa" row
+                // read `Session.isOutOfMinutes` (finding #104).
+                if let remote = error as? RemoteError, remote.isQuota {
+                    await session.refresh()
+                }
                 break
             } catch {
                 // Something about this recording rather than about this moment:

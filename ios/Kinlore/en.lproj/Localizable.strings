@@ -308,3 +308,14 @@
 // Rule 10: an archive this version cannot read is kept, and said so (4 Sep 2026).
 "Tallennettua arkistoa ei saatu luettua" = "The saved archive could not be read";
 "Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen." = "It is still kept as a file on this phone, but this version of the app cannot open it. Do not clear the device: an updated app may still read it.";
+
+// The month's minutes, said as a date and a count instead of "myöhemmin" — and the row and screen that had never been looked up (4 Sep 2026).
+"Ääni tallessa — voit kirjoittaa tekstin itse" = "Voice kept — you can write the text yourself";
+"Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta" = "Voice kept — no text could be made of this recording";
+"Ääni tallessa — kuukauden kertominen täynnä" = "Voice kept — this month's telling is used up";
+"Ääni tallessa — teksti valmistuu myöhemmin" = "Voice kept — the text will follow later";
+"Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "One telling is waiting for its text — the month's free telling is used up. More telling on %@.";
+"%lld kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "%lld tellings are waiting for their text — the month's free telling is used up. More telling on %@.";
+"Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse." = "When the archive is only on this phone, speech is not turned into text. Your voice is kept — you can write the memory yourself.";
+"Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "The month's free telling is used up, so no text was written now. It will be written when telling comes back on %@ — or at once, if the family opens the whole archive. You can also write the memory yourself.";
+"Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse." = "We could not write it down as text just now, but what you told is not lost. The text will follow later — you can also write the memory yourself.";

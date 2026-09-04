@@ -262,3 +262,14 @@
 // Rule 10: an archive this version cannot read is kept, and said so (4 Sep 2026).
 "Tallennettua arkistoa ei saatu luettua" = "Tallennettua arkistoa ei saatu luettua";
 "Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen." = "Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen.";
+
+// The month's minutes, said as a date and a count instead of "myöhemmin" — and the row and screen that had never been looked up (4 Sep 2026).
+"Ääni tallessa — voit kirjoittaa tekstin itse" = "Ääni tallessa — voit kirjoittaa tekstin itse";
+"Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta" = "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta";
+"Ääni tallessa — kuukauden kertominen täynnä" = "Ääni tallessa — kuukauden kertominen täynnä";
+"Ääni tallessa — teksti valmistuu myöhemmin" = "Ääni tallessa — teksti valmistuu myöhemmin";
+"Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@.";
+"%lld kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "%lld kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@.";
+"Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse." = "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.";
+"Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.";
+"Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse." = "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.";

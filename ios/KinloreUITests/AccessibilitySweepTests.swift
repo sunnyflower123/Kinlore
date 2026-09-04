@@ -619,6 +619,20 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The gallery with the month's minutes used up and tellings waiting on
+    /// them: the third quiet note, held still by `-minutes-out`.
+    func testMemoriesOutOfMinutes() throws {
+        try sweep(
+            "Memories, out of minutes",
+            arguments: ["-seed", "archive", "-tab", "memories", "-minutes-out", "12"]
+        ) { app, _ in
+            require(
+                app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "12 kertomusta odottaa tekstiä")).firstMatch,
+                "the note about the month's minutes"
+            )
+        }
+    }
+
     /// A person's card carries the proposal row and the relationships, which are
     /// the two places in the app where a colour means something.
     func testPersonCard() throws {

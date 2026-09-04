@@ -393,6 +393,11 @@ struct GalleryScreen: View {
                     // swallowed whole — the refused photograph looked normal
                     // in the grid and silently never reached the family.
                     PhotoQuotaNote()
+
+                    // The same for the month's minutes, which had no note at
+                    // all: a dozen tellings stranded on the quota were the
+                    // one refusal shown as a delay.
+                    MinutesQuotaNote()
                 }
 
                 if !photos.isEmpty {
@@ -571,6 +576,74 @@ private struct PhotoQuotaNote: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        }
+    }
+}
+
+/// "These are waiting on the month's telling, and this is when it comes back."
+///
+/// The third quiet note, of `PhotoQuotaNote`'s kind: an answer about the
+/// family's ceiling, not a waiting state that fixes itself. It differs in
+/// one thing — the fix has a date. The server's window is the calendar
+/// month, so the row can say when the text comes instead of "myöhemmin",
+/// and beside it the one act that brings it sooner, when there is such an
+/// act. The count is every recording in the archive still without its text,
+/// whoever told it: the meter is the family's, and so is the wait. Rule 2 is
+/// kept — nothing here stops anyone telling; what is offered is the writing
+/// down (findings #104, #105, #107).
+private struct MinutesQuotaNote: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
+
+    @State private var isShowingPaywall = false
+
+    private var waiting: Int {
+        #if DEBUG
+        // `-minutes-out <n>`: holds this state still for the audit, with
+        // `Session.isOutOfMinutes` forced by the same argument.
+        if let forced = UserDefaults.standard.string(forKey: "minutes-out").flatMap(Int.init) {
+            return forced
+        }
+        #endif
+        return store.told.filter {
+            $0.isAwaitingTranscription && !TranscriptionAttempts.hasGivenUp(on: $0.id)
+        }.count
+    }
+
+    var body: some View {
+        if session.isOutOfMinutes, waiting > 0 {
+            let date = Session.nextFreeMinutes().formatted(.dateTime.day().month(.wide))
+            VStack(alignment: .leading, spacing: 12) {
+                Group {
+                    if waiting == 1 {
+                        Label(
+                            "Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista \(date).",
+                            systemImage: "waveform"
+                        )
+                    } else {
+                        Label(
+                            "\(waiting) kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista \(date).",
+                            systemImage: "waveform"
+                        )
+                    }
+                }
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+
+                // Only when there is something to open: without a RevenueCat
+                // key the sheet would be a dead button, and a paid family is
+                // not out of minutes.
+                if !session.isPaid, RevenueCatPurchases.configuredKey != nil {
+                    Button("Avaa koko arkisto") { isShowingPaywall = true }
+                        .buttonStyle(.borderless)
+                        .font(.body.weight(.semibold))
+                        .elderTapTarget()
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+            .paywallSheet(isPresented: $isShowingPaywall)
         }
     }
 }

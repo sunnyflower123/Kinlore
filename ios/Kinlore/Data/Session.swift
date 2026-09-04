@@ -97,6 +97,33 @@ final class Session {
 
     var isPaid: Bool { usage?.isPaid ?? false }
 
+    /// The month's free telling is used up: the meter the server keeps, read
+    /// on every phone. Not a device-local flag on purpose — the grandchild's
+    /// phone never transcribes grandmother's recordings and would never learn
+    /// it any other way, and it is her rows that read "valmistuu myöhemmin"
+    /// on his screen. False whenever there is nothing to know: no family, no
+    /// usage fetched yet, or a paid archive (founder's-eye review, 3 Sep 2026,
+    /// findings #103–#105).
+    var isOutOfMinutes: Bool {
+        #if DEBUG
+        // `-minutes-out <n>`: holds the state still for the audit and the
+        // tests; the real one needs a family over its ceiling.
+        if UserDefaults.standard.string(forKey: "minutes-out") != nil { return true }
+        #endif
+        guard let usage, !usage.isPaid, let limit = usage.aiSeconds.limit else { return false }
+        return usage.aiSeconds.used >= limit
+    }
+
+    /// When the free minutes come back. The server's window is the UTC
+    /// calendar month (quota.ts `period`), so this is the first moment of the
+    /// next one — the date a row can promise instead of "myöhemmin".
+    static func nextFreeMinutes(after now: Date = .now) -> Date {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let start = calendar.dateInterval(of: .month, for: now)?.start ?? now
+        return calendar.date(byAdding: .month, value: 1, to: start) ?? now
+    }
+
     init() {
         #if DEBUG
         switch UserDefaults.standard.string(forKey: "seed") {
