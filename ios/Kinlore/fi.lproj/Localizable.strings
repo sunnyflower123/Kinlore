@@ -280,3 +280,11 @@
 "Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis." = "Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis.";
 "Paina ja vastaa" = "Paina ja vastaa";
 "Paina jos haluat vastata heti" = "Paina jos haluat vastata heti";
+
+// The result screen's familiar names, and "not that one" (4 Sep 2026).
+"Tutut nimet" = "Tutut nimet";
+"Perhe tuntee nämä jo. Jos joku niistä on eri henkilö kuin luulin, sano se nyt." = "Perhe tuntee nämä jo. Jos joku niistä on eri henkilö kuin luulin, sano se nyt.";
+"Eri henkilö" = "Eri henkilö";
+"Eri paikka" = "Eri paikka";
+"Eri henkilö kuin %@" = "Eri henkilö kuin %@";
+"Eri paikka kuin %@" = "Eri paikka kuin %@";

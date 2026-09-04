@@ -384,6 +384,24 @@ final class AccessibilitySweepTests: XCTestCase {
     /// exists because the screen could not be held still otherwise — the
     /// interview starts talking a second later, and the verbatim path reaches
     /// the same screen with no proposals on it at all.
+    /// The result screen with a familiar name on it: the `related` fixture
+    /// knows Toivo, and the canned telling names him.
+    func testResultWithKnownNames() throws {
+        try sweep(
+            "Tulos, tutut nimet",
+            arguments: ["-seed", "related", "-screen", "result"]
+        ) { app, largest in
+            // At the default size the row is on screen without scrolling; at
+            // the largest it is not, and it has to be, to be audited at all.
+            if largest {
+                reach(app.staticTexts["Tutut nimet"], in: app, "the familiar names")
+            } else {
+                require(app.staticTexts["Tutut nimet"], "the familiar names")
+            }
+            XCTAssertTrue(hasStoppedDrawing(app), "the result screen was still being drawn when the audit ran")
+        }
+    }
+
     func testResultWithProposals() throws {
         try sweep(
             "Tulos, nimiehdotukset",

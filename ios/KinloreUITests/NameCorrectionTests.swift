@@ -137,6 +137,27 @@ final class NameCorrectionTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Kalle"].exists, "the spouse is somebody else")
     }
 
+    /// A familiar name can be told apart at the moment of telling. The fixture
+    /// knows Toivo; the canned telling names him; "Eri henkilö" makes a fresh
+    /// proposal of the same name, where it can be renamed and confirmed.
+    func testAFamiliarNameCanBeToldApart() throws {
+        let app = launch(["-seed", "related", "-screen", "result"])
+        XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result screen")
+
+        let familiar = app.staticTexts["Tutut nimet"]
+        for _ in 0 ..< 4 where !familiar.exists { app.swipeUp() }
+        XCTAssertTrue(familiar.waitForExistence(timeout: 10), "the familiar names are not shown")
+        let other = app.buttons["Eri henkilö kuin Toivo"]
+        XCTAssertTrue(other.waitForExistence(timeout: 10), "Toivo was not offered as possibly another person")
+        other.tap()
+
+        // A second Toivo, unconfirmed, in the name check — and the familiar
+        // row is gone, because there is nothing familiar left to tell apart.
+        let proposal = app.textFields.matching(NSPredicate(format: "value == %@", "Toivo")).firstMatch
+        XCTAssertTrue(proposal.waitForExistence(timeout: 10), "the split name did not become a proposal")
+        XCTAssertTrue(other.waitForNonExistence(timeout: 10), "the familiar row stayed after the split")
+    }
+
     func testAMergeAsksBeforeItHappens() throws {
         let app = launch(["-seed", "archive", "-tab", "people"])
 

@@ -1273,6 +1273,10 @@ private struct ResultView: View {
                     proposalSection
                 }
 
+                if !model.known.isEmpty {
+                    knownSection
+                }
+
                 if !model.newQuestions.isEmpty {
                     questionSection
                 }
@@ -1406,6 +1410,51 @@ private struct ResultView: View {
                 )
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
+            }
+        }
+    }
+
+    /// Names the family already has, resolved by title alone — which is also
+    /// how two Mattis become one card (finding #14). Shown so the teller can
+    /// say "not that one" while she still knows which one she meant; the
+    /// split name becomes a proposal above, where it can be told apart and
+    /// confirmed. Quiet, below the names that need checking: the common case
+    /// is that the familiar name is right.
+    private var knownSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Tutut nimet")
+                .font(.headline)
+
+            Text("Perhe tuntee nämä jo. Jos joku niistä on eri henkilö kuin luulin, sano se nyt.")
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ForEach(model.known) { subject in
+                // A column, not a row: at the largest text size a name and a
+                // button side by side is two truncations.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(subject.displayTitle)
+                        .font(.body.weight(.medium))
+                        .fixedSize(horizontal: false, vertical: true)
+                    // Two buttons rather than a ternary label: a ternary of
+                    // literals is a String and is never looked up.
+                    if subject.kind == .place {
+                        Button("Eri paikka") { model.splitMention(subject) }
+                            .buttonStyle(.bordered)
+                            .elderTapTarget()
+                            .accessibilityLabel("Eri paikka kuin \(subject.title)")
+                    } else {
+                        Button("Eri henkilö") { model.splitMention(subject) }
+                            .buttonStyle(.bordered)
+                            .elderTapTarget()
+                            .accessibilityLabel("Eri henkilö kuin \(subject.title)")
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
             }
         }
     }

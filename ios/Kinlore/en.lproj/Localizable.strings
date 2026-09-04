@@ -326,3 +326,11 @@
 "Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis." = "When the question ends, recording starts by itself. Tell your answer and press the big button when you are done.";
 "Paina ja vastaa" = "Press and answer";
 "Paina jos haluat vastata heti" = "Press to answer right away";
+
+// The result screen's familiar names, and "not that one" (4 Sep 2026).
+"Tutut nimet" = "Familiar names";
+"Perhe tuntee nämä jo. Jos joku niistä on eri henkilö kuin luulin, sano se nyt." = "The family already knows these. If one of them is somebody else than I took them for, say so now.";
+"Eri henkilö" = "A different person";
+"Eri paikka" = "A different place";
+"Eri henkilö kuin %@" = "A different person from %@";
+"Eri paikka kuin %@" = "A different place from %@";

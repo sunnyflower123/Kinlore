@@ -237,17 +237,65 @@ final class MemoryStore {
         // A rejected subject is not "existing". Somebody said this was not a
         // person, and the answer to hearing the name again is a fresh proposal
         // they can reject again — not the quiet return of the one they buried.
-        if let existing = subjects.first(where: {
-            $0.kind == kind && $0.deletedAt == nil
+        let matches = subjects.filter {
+            $0.kind == kind && $0.deletedAt == nil && $0.mergedInto == nil
                 && $0.title.compare(name, options: .caseInsensitive) == .orderedSame
-        }) {
-            return existing
+        }
+        if matches.count == 1 { return matches[0] }
+        if matches.count > 1 {
+            // Two Mattis. A name is not an identity — the father and the
+            // cousin's son share one by the habit of naming after grandparents
+            // — and since 4 Sep 2026 a family may hold two live cards with
+            // one title, told apart on the result screen ("Eri henkilö"). A
+            // new mention goes to the one the family talked about last: a
+            // guess, but a visible one, because the result screen shows every
+            // familiar name it resolved and lets it be switched (finding #14).
+            let ids = Set(matches.map(\.id))
+            if let last = told.sorted(by: { $0.createdAt > $1.createdAt }).first(where: {
+                ids.contains($0.subjectID) || $0.mentionedSubjectIDs.contains(where: ids.contains)
+            }) {
+                if let home = matches.first(where: { $0.id == last.subjectID }) { return home }
+                if let named = matches.first(where: { last.mentionedSubjectIDs.contains($0.id) }) { return named }
+            }
+            return matches[0]
         }
         let subject = Subject(kind: kind, title: name, confirmed: confirmed)
         subjects.append(subject)
         dirtySubjects.insert(subject.id)
         save()
         return subject
+    }
+
+    /// "Not that Matti": a fresh, unconfirmed card with the same name, and the
+    /// given memories now mention it instead of the familiar one. The
+    /// familiar card keeps everything else it has; nothing is merged or
+    /// tombstoned, so this is the one correction here that cannot lose a
+    /// story. The new card comes back as a proposal, where its name can be
+    /// told apart — "Matti Virtanen" — and confirmed like any other.
+    func split(mention subjectID: String, in memoryIDs: [String]) -> Subject? {
+        guard let original = subject(id: subjectID) else { return nil }
+        let other = Subject(kind: original.kind, title: original.title, confirmed: false)
+        subjects.append(other)
+        dirtySubjects.insert(other.id)
+        for i in memories.indices where memoryIDs.contains(memories[i].id) {
+            var touched = false
+            if memories[i].mentionedSubjectIDs.contains(subjectID) {
+                memories[i].mentionedSubjectIDs = memories[i].mentionedSubjectIDs.map {
+                    $0 == subjectID ? other.id : $0
+                }
+                touched = true
+            }
+            // A telling about a familiar person is filed under them, not only
+            // as a mention — "Lisäsin sen kohteeseen Toivo" — so the home
+            // moves with the name, or the story would stay on the wrong card.
+            if memories[i].subjectID == subjectID {
+                memories[i].subjectID = other.id
+                touched = true
+            }
+            if touched { dirtyMemories.insert(memories[i].id) }
+        }
+        save()
+        return other
     }
 
     func add(_ subject: Subject) {
@@ -962,7 +1010,12 @@ final class MemoryStore {
             deletedAt: Date(timeIntervalSince1970: 1_700_000_000)
         )
 
+        // `-seed related` also knows Toivo, confirmed: the canned telling names
+        // him, which is how the result screen's "Tutut nimet" row is reached
+        // by a test — the plain archive knows nobody the samples mention.
+        let toivo = Subject(id: "demo-toivo", kind: .person, title: "Toivo")
         subjects = [aino, eeva, kalle, sanni, photo, puumala, rejected]
+            + (seed == "related" ? [toivo] : [])
         memories = [
             Memory(
                 id: "demo-memory-aino",
@@ -1035,10 +1088,10 @@ final class MemoryStore {
         UserDefaults.standard.removeObject(forKey: BlindConfirmation.answeredKey)
         questions = mummoAsks
         // `-seed related`: the archive with one confirmed relationship, Eeva
-        // and Kalle as spouses. NameCorrectionTests merges Eeva into Aino and
-        // expects Kalle on Aino's card afterwards; adding the edge through the
-        // card's own menu proved unreachable for XCUITest, and a fixture is a
-        // fact rather than a race.
+        // and Kalle as spouses (and Toivo, above). NameCorrectionTests merges
+        // Eeva into Aino and expects Kalle on Aino's card afterwards; adding
+        // the edge through the card's own menu proved unreachable for
+        // XCUITest, and a fixture is a fact rather than a race.
         relations = seed == "related"
             ? [Relation(fromSubjectID: eeva.id, toSubjectID: kalle.id, kind: .spouseOf, confirmed: true)]
             : []

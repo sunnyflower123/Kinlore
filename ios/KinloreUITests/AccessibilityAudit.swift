@@ -563,6 +563,28 @@ enum AccessibilityPolicy {
             return true
         }
 
+        // The result screen's name field, on any archive that already holds
+        // memories: reported clipped by the default-size simulation, and by
+        // nothing else. Measured 4 Sep 2026, per the protocol above:
+        //
+        // `-seed archive -screen result` and `-seed related -screen result`
+        // both report the first proposal row's "Nimi" field, 132 × 22 pt at
+        // y 516, as clipped at the default size. The field was given its
+        // column's full width and the frame reported did not move by a
+        // point — SwiftUI hands the audit the text's own rect, whatever the
+        // field's frame — which is the signature: a defect that keeps its
+        // coordinates while the code under it changes shape, fourth
+        // appearance. The same screen audits clean at the real largest size
+        // (a one-off test on the `related` fixture, 7.2 s), and on
+        // `-seed empty` at both sizes on every testResultWithProposals run.
+        // Narrowed to the one label and the one element type: a name field
+        // that really clipped at the largest size would still be caught by
+        // the sweep's second launch, which measures the real layout.
+        if issue.auditType == .textClipped, label == "Nimi",
+           issue.element?.elementType == .textField {
+            return true
+        }
+
         return false
     }
 }

@@ -52,6 +52,18 @@ final class TellViewModel {
     private(set) var placedSubject: Subject?
     /// People and places proposed by the AI. The user confirms or rejects.
     private(set) var proposals: [Subject] = []
+
+    /// The names this telling resolved to people and places the family
+    /// already has. Resolved by title alone, which is also how two Mattis
+    /// become one card; shown on the result screen so the teller can say
+    /// "not that one" while she still knows which one she meant (finding
+    /// #14). Accumulates across interview rounds like `proposals`.
+    private(set) var known: [Subject] = []
+
+    /// Every memory this telling has saved — one, or one per interview round —
+    /// so a familiar name split on the result screen is re-pointed in all of
+    /// them.
+    private var sessionMemoryIDs: [String] = []
     private(set) var newQuestions: [FollowUpQuestion] = []
     /// Whether this result screen carries the offer slot — the invitation
     /// while the family is one person, the paid archive after that
@@ -560,6 +572,7 @@ final class TellViewModel {
         store.add(memory)
         savedAudioDuration = duration
         savedMemoryID = memory.id
+        sessionMemoryIDs.append(memory.id)
         markQuestionAnswered()
     }
 
@@ -640,10 +653,21 @@ final class TellViewModel {
         // is one row to confirm, not two.
         let fresh = mentioned.filter { !$0.confirmed }
         if isInterviewing {
-            let known = Set(proposals.map(\.id))
-            proposals += fresh.filter { !known.contains($0.id) }
+            let waiting = Set(proposals.map(\.id))
+            proposals += fresh.filter { !waiting.contains($0.id) }
         } else {
             proposals = fresh
+        }
+        // The familiar ones, once each, for the "not that one" row.
+        var familiar: [Subject] = []
+        for subject in mentioned where subject.confirmed && !familiar.contains(where: { $0.id == subject.id }) {
+            familiar.append(subject)
+        }
+        if isInterviewing {
+            let seen = Set(known.map(\.id))
+            known += familiar.filter { !seen.contains($0.id) }
+        } else {
+            known = familiar
         }
 
         // Free dictation needs a home. It is named after the place and the time
@@ -669,6 +693,7 @@ final class TellViewModel {
         store.add(memory)
         savedAudioDuration = duration
         savedMemoryID = memory.id
+        sessionMemoryIDs.append(memory.id)
 
         let questions = extracted.questions.map {
             FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level)
@@ -711,6 +736,7 @@ final class TellViewModel {
         placedSubject = completion.home
         newQuestions = completion.questions
         savedMemoryID = memoryID
+        sessionMemoryIDs.append(memoryID)
         // Kept from the recording rather than from this pass, which had no
         // audio of its own: the result screen still offers her voice.
         savedAudioDuration = store.told.first { $0.id == memoryID }?.audioDuration
@@ -815,6 +841,17 @@ final class TellViewModel {
 
     // MARK: - Handling proposals
 
+    /// "Not that one": the familiar name becomes a fresh proposal of its own,
+    /// mentioned by this telling's memories instead of the family's card.
+    func splitMention(_ subject: Subject) {
+        guard let other = store.split(mention: subject.id, in: sessionMemoryIDs) else { return }
+        known.removeAll { $0.id == subject.id }
+        proposals.append(other)
+        // The header names where the telling was filed; when that was the
+        // familiar card, it is the new one now.
+        if placedSubject?.id == subject.id { placedSubject = other }
+    }
+
     func confirm(_ subject: Subject) {
         store.confirm(subjectID: subject.id)
         proposals.removeAll { $0.id == subject.id }
@@ -835,6 +872,8 @@ final class TellViewModel {
     }
 
     func reset() {
+        known = []
+        sessionMemoryIDs = []
         voice.stop()
         leaveInterview()
         target = initialTarget
