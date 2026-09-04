@@ -344,6 +344,30 @@ final class MemoryStore {
             dirtyMemories.formUnion(
                 memories.filter { $0.subjectID == existing.id }.map(\.id)
             )
+            // The relationships move too. They did not, until 4 Sep 2026:
+            // `relatives(of:)` reads this side of every edge by raw id, so a
+            // confirmed spouse of the tombstoned card simply vanished from
+            // the survivor's tree the moment a name was tidied — the one flow
+            // that exists to keep the tree right, erasing what the family had
+            // confirmed (founder's-eye review, 3 Sep 2026, finding #15).
+            // A tombstone and a fresh edge rather than a remap in place: the
+            // server never updates an edge's ends on conflict, only its
+            // confirmation and its tombstone, so a remapped row would stay
+            // pointing at the old card on every other phone. `addRelation`
+            // refuses a self-loop and folds a duplicate into the edge the
+            // survivor already has.
+            for i in relations.indices where relations[i].deletedAt == nil
+                && (relations[i].fromSubjectID == subjectID || relations[i].toSubjectID == subjectID) {
+                let old = relations[i]
+                relations[i].deletedAt = .now
+                dirtyRelations.insert(old.id)
+                addRelation(
+                    from: old.fromSubjectID == subjectID ? existing.id : old.fromSubjectID,
+                    to: old.toSubjectID == subjectID ? existing.id : old.toSubjectID,
+                    kind: old.kind,
+                    confirmed: old.confirmed
+                )
+            }
         } else {
             subjects[index].title = trimmed
             // The coordinates were the answer to the old name. "Sortavala"
@@ -874,7 +898,7 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
-        guard ["archive", "unseen", "deck", "blind"].contains(seed) else { return }
+        guard ["archive", "unseen", "deck", "blind", "related"].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -1010,7 +1034,14 @@ final class MemoryStore {
         // card already spent.
         UserDefaults.standard.removeObject(forKey: BlindConfirmation.answeredKey)
         questions = mummoAsks
-        relations = []
+        // `-seed related`: the archive with one confirmed relationship, Eeva
+        // and Kalle as spouses. NameCorrectionTests merges Eeva into Aino and
+        // expects Kalle on Aino's card afterwards; adding the edge through the
+        // card's own menu proved unreachable for XCUITest, and a fixture is a
+        // fact rather than a race.
+        relations = seed == "related"
+            ? [Relation(fromSubjectID: eeva.id, toSubjectID: kalle.id, kind: .spouseOf, confirmed: true)]
+            : []
         // Nothing is queued for the server: this archive is a fixture, and
         // pushing it into a real family would be a genuine mess.
         dirtySubjects = []

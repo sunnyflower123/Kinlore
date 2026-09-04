@@ -100,6 +100,43 @@ final class NameCorrectionTests: XCTestCase {
     /// the two cards become one and this one's memories move across. It used to
     /// happen on the same tap as an ordinary rename, warned about only by a
     /// footer — and unlike a rename, nothing in the app undoes it.
+    /// A merge carries the relationships across. Until 4 Sep 2026 it moved
+    /// the memories and the mentions and left every edge pointing at the
+    /// tombstone, so a confirmed spouse vanished from the survivor's tree the
+    /// moment a name was tidied — in the one flow that exists to keep the
+    /// tree right.
+    func testAMergeKeepsTheRelationships() throws {
+        // The fixture with Eeva and Kalle as spouses.
+        let app = launch(["-seed", "related", "-tab", "people"])
+
+        let eeva = app.staticTexts["Eeva"]
+        XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
+        eeva.tap()
+        XCTAssertTrue(app.staticTexts["Puoliso"].waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
+
+        // Then Eeva's name is corrected onto Aino, and the cards merge.
+        let correct = app.buttons["Korjaa nimi"]
+        XCTAssertTrue(correct.waitForExistence(timeout: 10), "the correction button")
+        correct.tap()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the name field")
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "Aino")
+        app.buttons["Tallenna"].tap()
+        XCTAssertTrue(app.staticTexts["Yhdistetäänkö kortit?"].waitForExistence(timeout: 10), "the merge did not ask")
+        app.buttons["Yhdistä"].tap()
+        XCTAssertTrue(app.navigationBars["Ihmiset"].waitForExistence(timeout: 10), "the merged card stayed open")
+
+        // Aino's card now holds the spouse Eeva had.
+        let aino = app.staticTexts["Aino"]
+        XCTAssertTrue(aino.waitForExistence(timeout: 10), "Aino is not on the list")
+        aino.tap()
+        let group = app.staticTexts["Puoliso"]
+        for _ in 0 ..< 4 where !group.exists { app.swipeUp() }
+        XCTAssertTrue(group.waitForExistence(timeout: 10), "the spouse did not follow the merge")
+        XCTAssertTrue(app.staticTexts["Kalle"].exists, "the spouse is somebody else")
+    }
+
     func testAMergeAsksBeforeItHappens() throws {
         let app = launch(["-seed", "archive", "-tab", "people"])
 
