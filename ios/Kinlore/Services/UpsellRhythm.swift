@@ -16,6 +16,10 @@ import Foundation
 ///    proposes names shows no card at all, however long it has been.
 /// 2. **Not every time.** One in three finished tellings, counted on the device.
 ///
+/// Both are the *paid card's* rules. The invitation a family of one is shown
+/// instead follows only the first, and by waiting rather than by hiding — see
+/// `slotShows`.
+///
 /// The count is `UserDefaults` and never syncs, for the same reason the question
 /// ladder's comfort does not (§12): it describes the person holding the phone,
 /// and a family has no business seeing how often somebody has been asked to pay.
@@ -76,5 +80,26 @@ enum UpsellRhythm {
         guard let members else { return nil }
         if members <= 1 { return .invite }
         return isPaid ? nil : .archive
+    }
+
+    /// Whether the slot shows, given what it would hold.
+    ///
+    /// The paid archive keeps the rhythm above: one in three, never against a
+    /// name. The invitation does not. It is not an offer to buy something but
+    /// the product's second user — and, for a family of one, the only other
+    /// holder of the key that the whole archive rests on (docs/PLAN.md §10
+    /// lever 3). On the shared rhythm it was hidden whenever a telling
+    /// proposed names, which a telling about relatives does every time, so a
+    /// founder who told about the family never saw it (founder's-eye review,
+    /// 3 Sep 2026, finding #41). So the invitation shows on every finished
+    /// telling of a family of one — but only once the names are answered:
+    /// rule 1 above is kept to the letter, by waiting rather than by hiding.
+    /// `proposalsRemaining` is the live count, not the one the rhythm saw.
+    static func slotShows(card: Card?, rhythm: Bool, proposalsRemaining: Bool) -> Bool {
+        switch card {
+        case .invite: !proposalsRemaining
+        case .archive: rhythm
+        case nil: false
+        }
     }
 }

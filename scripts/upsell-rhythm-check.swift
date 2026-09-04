@@ -110,6 +110,28 @@ enum UpsellRhythmCheck {
             UpsellRhythm.card(membersInFamily: 3, isPaid: true), nil
         )
 
+        print("— whether the slot shows —")
+        check(
+            "the invitation shows without the rhythm, once the names are answered",
+            UpsellRhythm.slotShows(card: .invite, rhythm: false, proposalsRemaining: false), true
+        )
+        check(
+            "the invitation waits while a name is still on the screen",
+            UpsellRhythm.slotShows(card: .invite, rhythm: true, proposalsRemaining: true), false
+        )
+        check(
+            "the archive keeps the rhythm",
+            UpsellRhythm.slotShows(card: .archive, rhythm: false, proposalsRemaining: false), false
+        )
+        check(
+            "the archive shows when the rhythm says so",
+            UpsellRhythm.slotShows(card: .archive, rhythm: true, proposalsRemaining: false), true
+        )
+        check(
+            "nothing to hold, nothing shown",
+            UpsellRhythm.slotShows(card: nil, rhythm: true, proposalsRemaining: false), false
+        )
+
         UpsellRhythm.reset()
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)

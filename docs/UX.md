@@ -170,6 +170,18 @@ the first structured memory is when the value peaks, and the founder's next
 thought is *who else should see this*. Four levels of Settings should never
 have been the only path to the product's second user.
 
+**Revised 4 Sep 2026: the invitation no longer rides the 1-in-3 rhythm.** On
+it, the card was hidden whenever a telling proposed names — which a telling
+about relatives does every time — so a founder who told about the family
+never met the invitation on the first telling, the second or the third, and
+for a family of one that card is the only other holder of the key the whole
+archive rests on (founder's-eye review, finding #41). Now a family of one is
+shown the invitation on every finished telling, but only once the names on
+the screen are answered: *never beside a name* is kept to the letter, by
+waiting rather than by hiding. The paid card keeps both rules unchanged.
+`UpsellRhythm.slotShows` holds the rule and `upsell-rhythm-check.swift` runs
+it.
+
 ### 3.3 The purchase arc is already designed — leave it
 
 Rhythm, paywall placement, the family-wide entitlement, the

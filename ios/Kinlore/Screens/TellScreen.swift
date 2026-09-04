@@ -1264,11 +1264,15 @@ private struct ResultView: View {
                 // family is one person the offer is the family itself, and the
                 // paid archive follows once there is somebody to share it
                 // with. See docs/UX.md §3.2.
-                if model.showsUpsell {
-                    switch UpsellRhythm.card(
-                        membersInFamily: session.family?.members.count,
-                        isPaid: session.isPaid
-                    ) {
+                let card = UpsellRhythm.card(
+                    membersInFamily: session.family?.members.count,
+                    isPaid: session.isPaid
+                )
+                if UpsellRhythm.slotShows(
+                    card: card, rhythm: model.showsUpsell,
+                    proposalsRemaining: !model.proposals.isEmpty
+                ) {
+                    switch card {
                     case .invite:
                         InviteCard()
                     case .archive:
