@@ -108,6 +108,21 @@ final class TellViewModel {
     /// True while the hands-free loop runs: each saved answer speaks the next
     /// question and restarts recording by itself.
     private(set) var isInterviewing = false
+
+    /// "Riittää tältä erää" pressed while answering: this answer is saved and
+    /// no further question is asked. The loop's one exit used to stand only
+    /// while a question was being spoken — seconds — and once the microphone
+    /// had armed itself the big button meant "next question" and the only
+    /// other one threw the answer away (founder's-eye review, 3 Sep 2026,
+    /// findings #113 and #114).
+    private(set) var endsAfterAnswer = false
+
+    /// The way out of the loop that keeps what was just said.
+    func finishAfterThisAnswer() async {
+        guard phase == .recording, isInterviewing else { return }
+        endsAfterAnswer = true
+        await stopAndProcess()
+    }
     /// The question currently being read aloud.
     private(set) var askedQuestion: FollowUpQuestion?
 
@@ -400,6 +415,7 @@ final class TellViewModel {
 
     private func leaveInterview() {
         isInterviewing = false
+        endsAfterAnswer = false
         askedQuestion = nil
         // The offer slot's decision was made when the pre-interview telling
         // landed, against that telling's proposals. The rounds since then
@@ -503,7 +519,7 @@ final class TellViewModel {
         // A verbatim result carries no questions, so an interview ends here of
         // its own accord — with the answer saved, which is the part that
         // matters.
-        if isInterviewing, let next = nextQuestion {
+        if isInterviewing, !endsAfterAnswer, let next = nextQuestion {
             // The loop feeds itself: this answer's extraction produced the next
             // questions. No result screen between rounds — proposals pile up
             // unconfirmed and are handled when the loop ends.

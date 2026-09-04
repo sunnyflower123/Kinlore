@@ -319,3 +319,10 @@
 "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse." = "When the archive is only on this phone, speech is not turned into text. Your voice is kept — you can write the memory yourself.";
 "Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "The month's free telling is used up, so no text was written now. It will be written when telling comes back on %@ — or at once, if the family opens the whole archive. You can also write the memory yourself.";
 "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse." = "We could not write it down as text just now, but what you told is not lost. The text will follow later — you can also write the memory yourself.";
+
+// The interview loop: how an answer ends, said before the microphone arms (4 Sep 2026).
+"Paina nauhoitusnappia ja vastaa." = "Press the record button and answer.";
+"Vastaa puhumalla. Paina isoa nappia, kun olet valmis." = "Answer by talking. Press the big button when you are done.";
+"Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis." = "When the question ends, recording starts by itself. Tell your answer and press the big button when you are done.";
+"Paina ja vastaa" = "Press and answer";
+"Paina jos haluat vastata heti" = "Press to answer right away";

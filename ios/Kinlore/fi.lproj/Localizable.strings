@@ -273,3 +273,10 @@
 "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse." = "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.";
 "Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.";
 "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse." = "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.";
+
+// The interview loop: how an answer ends, said before the microphone arms (4 Sep 2026).
+"Paina nauhoitusnappia ja vastaa." = "Paina nauhoitusnappia ja vastaa.";
+"Vastaa puhumalla. Paina isoa nappia, kun olet valmis." = "Vastaa puhumalla. Paina isoa nappia, kun olet valmis.";
+"Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis." = "Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis.";
+"Paina ja vastaa" = "Paina ja vastaa";
+"Paina jos haluat vastata heti" = "Paina jos haluat vastata heti";

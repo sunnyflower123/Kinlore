@@ -440,6 +440,28 @@ final class AccessibilitySweepTests: XCTestCase {
     /// verify.sh counts sweeps as settled-screen audits, and this one is the
     /// exception it would miscount. It really records and answers the prompt,
     /// like testAudioSaved.
+    /// The listening screen inside the interview loop, which carries one
+    /// button the plain one does not. Audited on the second round: the aid
+    /// stops the first after three seconds, and the second stays.
+    func testInterviewRecordingIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty", "-screen", "interview"], textSize: size)
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            let listening = app.staticTexts["Paina kun olet valmis"]
+            XCTAssertTrue(listening.waitForExistence(timeout: 60), "never arrived: the first round's listening screen")
+            XCTAssertTrue(listening.waitForNonExistence(timeout: 30), "the aid did not finish the first round")
+            XCTAssertTrue(listening.waitForExistence(timeout: 60), "never arrived: the second round's listening screen")
+            reach(app.buttons["Riittää tältä erää"], in: app, "the way out that keeps the answer")
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Kuuntelen, haastattelu, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
     func testRecordingInProgressIsAudited() throws {
         for size in [nil, Self.largest] {
             let app = launch(["-seed", "empty"], textSize: size)

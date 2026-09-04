@@ -74,6 +74,33 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The conversation can be ended while answering, keeping the answer. The
+    /// loop's exit used to stand only while a question was being spoken; once
+    /// the microphone had armed itself, the big button asked the next question
+    /// and the only other one threw the answer away.
+    func testTheConversationCanBeEndedWhileAnswering() {
+        let app = launch(["-seed", "empty", "-screen", "interview"])
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+
+        // The loop arms the microphone by itself; whichever round this is,
+        // the way out must be on the listening screen.
+        XCTAssertTrue(
+            app.staticTexts["Paina kun olet valmis"].waitForExistence(timeout: 60),
+            "never arrived: the listening screen"
+        )
+        let enough = app.buttons["Riittää tältä erää"]
+        XCTAssertTrue(enough.waitForExistence(timeout: 10), "the listening screen has no way out that keeps the answer")
+        enough.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "ending the conversation did not land on the result"
+        )
+        XCTAssertFalse(app.staticTexts["Paina kun olet valmis"].exists, "the loop went on after being ended")
+    }
+
     func testARefusedMicrophoneOffersAWayOn() {
         let app = launch(["-seed", "empty", "-mic", "denied"])
 

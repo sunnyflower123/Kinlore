@@ -148,10 +148,11 @@ struct TellScreen: View {
             }
             // `-screen interviewed`: the same canned loop, run to its END —
             // one spoken round finished, the loop left on the result. A test
-            // cannot do this by tapping: "Riittää tältä erää" exists only
-            // while a question is being spoken, and the next round's
-            // recording replaces it within seconds, so tapping it races the
-            // speech window and loses. What the result screen must then show
+            // could not do this by tapping until 4 Sep 2026: "Riittää tältä
+            // erää" existed only while a question was being spoken, and the
+            // next round's recording replaced it within seconds. It stands on
+            // the listening screen too now (SilentFailureTests taps it); this
+            // aid stays for the screenshot. What the result screen must then show
             // is every round's names — see the accumulation note in
             // `TellViewModel.save`.
             if UserDefaults.standard.string(forKey: "screen") == "interviewed" {
@@ -1049,6 +1050,19 @@ private struct RecordingView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
+            // The loop's exit that keeps the answer. In the loop the big button
+            // means "next question", and until 4 Sep 2026 the only other way
+            // out while listening was the red one below — so ending a
+            // conversation that had gone somewhere hard meant racing the
+            // seconds "Riittää tältä erää" stood on the asking screen, or
+            // throwing the answer away (finding #114). The same words as
+            // there, for the same act: enough for now, and keep what I said.
+            if model.isInterviewing {
+                Button("Riittää tältä erää") { Task { await model.finishAfterThisAnswer() } }
+                    .controlSize(.large)
+                    .elderTapTarget()
+            }
+
             // The way out. A false start, the wrong story, somebody coming into
             // the room — until this existed the only button here both stopped
             // and saved, so a telling begun by accident had to be finished and
@@ -1156,17 +1170,24 @@ private struct AskingView: View {
     @AccessibilityFocusState private var questionFocused: Bool
 
     /// VoiceOver users answer with the button; everyone else can just start
-    /// talking when the voice stops. Shortened at accessibility sizes for the
-    /// same reason as IdleView's intro: the question and the button matter
-    /// more than the full instruction.
-    private var hint: String {
+    /// talking when the voice stops — and the same sentence now says how the
+    /// answer ends. It used to say only how it starts, on the one screen she
+    /// is looking at: the microphone then armed itself, and the instruction
+    /// to press when done stood on the listening screen she had been moved to
+    /// without pressing anything. An app that speaks first is expected to
+    /// take the turn back, and this one never did (finding #113). Shortened
+    /// at accessibility sizes for the same reason as IdleView's intro.
+    ///
+    /// `LocalizedStringKey`, not `String`: as Strings these had never been
+    /// looked up, on the flagship loop.
+    private var hint: LocalizedStringKey {
         if UIAccessibility.isVoiceOverRunning { return "Paina nauhoitusnappia ja vastaa." }
         return typeSize.isAccessibilitySize
-            ? "Voit vastata puhumalla."
-            : "Voit vastata puhumalla heti kun kysymys loppuu."
+            ? "Vastaa puhumalla. Paina isoa nappia, kun olet valmis."
+            : "Kun kysymys loppuu, nauhoitus alkaa itsestään. Kerro vastauksesi ja paina isoa nappia, kun olet valmis."
     }
 
-    private var buttonCaption: String {
+    private var buttonCaption: LocalizedStringKey {
         UIAccessibility.isVoiceOverRunning
             ? "Paina ja vastaa"
             : "Paina jos haluat vastata heti"
