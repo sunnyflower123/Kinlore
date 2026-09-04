@@ -170,6 +170,18 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    counts, status and the provider's own error codes. **An error message must
    not interpolate content** — not a title, not a transcript, not a name —
    because `message` is the one field of a thrown error that reaches the log.
+10. **A file written by an older version must still load.** The local archive
+    is one JSON file, and Swift's synthesized `Codable` does not use a
+    property's default value for a missing key: a non-optional field added
+    with a default throws on every old file. Until 4 Sep 2026 `load()`
+    answered that by coming up empty and letting the next `save()` write
+    empty over the family's only local copy. So a new persisted field is
+    `Optional`, or `Snapshot`'s hand-written `init(from:)` reads it
+    `IfPresent`; `schemaVersion` says what wrote the file; a file that still
+    cannot be read is moved aside, never overwritten, and the app says so.
+    `-store outdated` and `-store unreadable` drive the two UI tests in
+    `SilentFailureTests` that keep this true — run them after touching
+    `Snapshot` or any persisted model.
 
 ## The assistant's rules — checked in, not personal setup
 

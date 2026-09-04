@@ -304,3 +304,7 @@
 "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "If the archive is only on this phone, it is only on this phone: the exported file is its only other copy.";
 "Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "The archive is only on this phone: the exported file is its only other copy.";
 "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta." = "The archive is still yours alone. Until you invite somebody, the exported file is the only copy that opens without this phone.";
+
+// Rule 10: an archive this version cannot read is kept, and said so (4 Sep 2026).
+"Tallennettua arkistoa ei saatu luettua" = "The saved archive could not be read";
+"Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen." = "It is still kept as a file on this phone, but this version of the app cannot open it. Do not clear the device: an updated app may still read it.";

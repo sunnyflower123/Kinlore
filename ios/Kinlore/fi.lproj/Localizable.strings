@@ -258,3 +258,7 @@
 "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.";
 "Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.";
 "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta." = "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta.";
+
+// Rule 10: an archive this version cannot read is kept, and said so (4 Sep 2026).
+"Tallennettua arkistoa ei saatu luettua" = "Tallennettua arkistoa ei saatu luettua";
+"Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen." = "Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen.";

@@ -32,9 +32,31 @@ final class MemoryStore {
 
     private let fileURL: URL
 
+    /// What this version writes into `Snapshot.schemaVersion`. Bumped only
+    /// when a file this version writes could not be read by the previous one;
+    /// a field added as Optional needs no bump.
+    static let schemaVersion = 1
+
+    /// Where an archive this version could not read was moved, if that has
+    /// happened on this launch. The file is kept exactly as it was: a store
+    /// that could not be decoded used to come up empty, and the next save
+    /// wrote empty over the family's only local copy (CLAUDE.md rule 10).
+    private(set) var unreadableArchive: URL?
+
+    /// False only when an unreadable file could not even be moved aside. Then
+    /// nothing is written at all: an empty archive on screen is recoverable,
+    /// an overwritten file is not.
+    private var mayWrite = true
+
     init(filename: String = "kinlore-store.json") {
         let documents = URL.documentsDirectory
         fileURL = documents.appendingPathComponent(filename)
+        #if DEBUG
+        // `-store outdated` writes a file in the shape of one saved before the
+        // newer fields existed; `-store unreadable` writes one that is not
+        // JSON at all. They are how SilentFailureTests drives rule 10.
+        Self.writeFixture(UserDefaults.standard.string(forKey: "store"), to: fileURL)
+        #endif
         load()
         #if DEBUG
         // Only with `-seed archive`, and it replaces what is on the device.
@@ -1001,6 +1023,15 @@ final class MemoryStore {
 
     // MARK: - Disk
 
+    /// The file on disk.
+    ///
+    /// Decoded by hand, and this is not tidiness: Swift's synthesized
+    /// `Codable` does not use a property's default value for a missing key, so
+    /// every field after the first three would throw on a file written before
+    /// it existed — and a snapshot that fails to decode used to be an empty
+    /// archive (rule 10). Each later field is read `IfPresent`; a file from
+    /// any earlier version decodes with the defaults below. Adding a field
+    /// here means adding it to `init(from:)` the same way.
     struct Snapshot: Codable {
         var subjects: [Subject]
         var memories: [Memory]
@@ -1011,12 +1042,42 @@ final class MemoryStore {
         var dirtyQuestions: Set<String> = []
         var relations: [Relation] = []
         var dirtyRelations: Set<String> = []
+        /// What wrote the file. Absent in files from before 4 Sep 2026.
+        var schemaVersion: Int? = MemoryStore.schemaVersion
+
+        enum CodingKeys: String, CodingKey {
+            case subjects, memories, questions, syncSeq
+            case dirtySubjects, dirtyMemories, dirtyQuestions
+            case relations, dirtyRelations, schemaVersion
+        }
     }
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
-              let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data)
-        else { return }
+        guard let data = try? Data(contentsOf: fileURL) else { return }
+        let snapshot: Snapshot
+        do {
+            snapshot = try JSONDecoder().decode(Snapshot.self, from: data)
+        } catch {
+            // Never come up empty over a file that exists. The file is moved
+            // aside under a name that says what happened, and the app goes
+            // on with an empty store that will be written to a *new* file —
+            // the old one stays on disk, byte for byte, for a version that
+            // can read it. If even the move fails, nothing is written at all.
+            // Nothing about the file is logged: the words in it are somebody's
+            // memories (rule 9), and the failure is shown on screen instead.
+            let kept = fileURL.deletingLastPathComponent().appendingPathComponent(
+                fileURL.deletingPathExtension().lastPathComponent
+                    + ".unreadable-\(Int(Date.now.timeIntervalSince1970)).json"
+            )
+            do {
+                try FileManager.default.moveItem(at: fileURL, to: kept)
+                unreadableArchive = kept
+            } catch {
+                mayWrite = false
+                unreadableArchive = fileURL
+            }
+            return
+        }
         subjects = snapshot.subjects
         memories = snapshot.memories
         questions = snapshot.questions
@@ -1031,9 +1092,45 @@ final class MemoryStore {
     }
 
     func save() {
-        guard let data = try? JSONEncoder().encode(snapshot()) else { return }
+        guard mayWrite, let data = try? JSONEncoder().encode(snapshot()) else { return }
         try? data.write(to: fileURL, options: .atomic)
     }
+
+    /// The alert has been read. The file stays where it was moved.
+    func acknowledgeUnreadableArchive() {
+        unreadableArchive = nil
+    }
+
+    #if DEBUG
+    /// The two files rule 10 is tested against. See `init`.
+    private static func writeFixture(_ shape: String?, to url: URL) {
+        switch shape {
+        case "unreadable":
+            try? Data("{ this is not an archive".utf8).write(to: url, options: .atomic)
+        case "outdated":
+            // Encode a snapshot this version writes, then strip every key that
+            // was added after the first three: what is left is a file from
+            // before those fields existed, produced by the real encoder rather
+            // than typed by hand, so it stays an old file as the model moves.
+            let snapshot = Snapshot(
+                subjects: [Subject(kind: .person, title: "Vanha Aino")],
+                memories: [], questions: []
+            )
+            guard let data = try? JSONEncoder().encode(snapshot),
+                  var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { return }
+            for key in ["syncSeq", "dirtySubjects", "dirtyMemories", "dirtyQuestions",
+                        "relations", "dirtyRelations", "schemaVersion"] {
+                object.removeValue(forKey: key)
+            }
+            if let old = try? JSONSerialization.data(withJSONObject: object) {
+                try? old.write(to: url, options: .atomic)
+            }
+        default:
+            break
+        }
+    }
+    #endif
 
     private func snapshot() -> Snapshot {
         Snapshot(
@@ -1087,5 +1184,21 @@ final class MemoryStore {
                 relations: relations
             )
         )
+    }
+}
+
+extension MemoryStore.Snapshot {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        subjects = try c.decode([Subject].self, forKey: .subjects)
+        memories = try c.decode([Memory].self, forKey: .memories)
+        questions = try c.decode([FollowUpQuestion].self, forKey: .questions)
+        syncSeq = try c.decodeIfPresent(Int.self, forKey: .syncSeq) ?? 0
+        dirtySubjects = try c.decodeIfPresent(Set<String>.self, forKey: .dirtySubjects) ?? []
+        dirtyMemories = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyMemories) ?? []
+        dirtyQuestions = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyQuestions) ?? []
+        relations = try c.decodeIfPresent([Relation].self, forKey: .relations) ?? []
+        dirtyRelations = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyRelations) ?? []
+        schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion)
     }
 }

@@ -11,6 +11,36 @@ final class SilentFailureTests: XCTestCase {
     /// `-mic denied` refuses the microphone without touching the device's own
     /// permission, which is otherwise a manual trip into iOS Settings and out of
     /// reach of any test run.
+    /// A file written before the newer fields existed still loads. Swift's
+    /// synthesized Codable does not use a default for a missing key, and until
+    /// 4 Sep 2026 that meant an ordinary update could read a two-year-old
+    /// archive as empty (CLAUDE.md rule 10). `-store outdated` writes such a
+    /// file with the real encoder minus the later keys.
+    func testAnArchiveWrittenBeforeNewerFieldsStillLoads() {
+        let app = launch(["-store", "outdated", "-tab", "people"])
+        XCTAssertTrue(
+            app.staticTexts["Vanha Aino"].waitForExistence(timeout: 10),
+            "the archive from an older file did not load"
+        )
+        XCTAssertFalse(
+            app.staticTexts["Tallennettua arkistoa ei saatu luettua"].exists,
+            "an old file that loads must not be reported as unreadable"
+        )
+    }
+
+    /// A file this version cannot read is kept and said so — never an empty
+    /// archive that the next save overwrites.
+    func testAnUnreadableArchiveIsKeptAndSaidSo() {
+        let app = launch(["-store", "unreadable"])
+        XCTAssertTrue(
+            app.staticTexts["Tallennettua arkistoa ei saatu luettua"].waitForExistence(timeout: 10),
+            "an unreadable archive came up empty in silence"
+        )
+        app.buttons["Selvä"].tap()
+        // And the app goes on: the person is not locked out of telling.
+        XCTAssertTrue(app.tabBars.buttons["Kerro"].waitForExistence(timeout: 10), "the app did not go on")
+    }
+
     func testARefusedMicrophoneOffersAWayOn() {
         let app = launch(["-seed", "empty", "-mic", "denied"])
 

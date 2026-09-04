@@ -72,6 +72,20 @@ struct RootView: View {
                 .tabItem { Label("Ihmiset", systemImage: "person.2.fill") }
                 .tag(Tab.people)
         }
+        // Rule 10, said out loud. Once per launch that moved a file aside,
+        // and never silently: the archive on screen is empty, and the person
+        // holding the phone must know that is not the same as gone.
+        .alert(
+            "Tallennettua arkistoa ei saatu luettua",
+            isPresented: Binding(
+                get: { store.unreadableArchive != nil },
+                set: { if !$0 { store.acknowledgeUnreadableArchive() } }
+            )
+        ) {
+            Button("Selvä") { store.acknowledgeUnreadableArchive() }
+        } message: {
+            Text("Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen.")
+        }
     }
 }
 
