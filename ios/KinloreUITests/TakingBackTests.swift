@@ -94,6 +94,47 @@ final class TakingBackTests: XCTestCase {
         )
     }
 
+    /// A photograph, not a telling: the wrong side of a print, a blurred one,
+    /// the same one twice. Nothing has been told about it, so nothing is lost
+    /// with it — and until 4 Sep 2026 it could not go at all.
+    func testAPhotoNobodyHasToldAboutCanBeDeleted() {
+        let app = launch(["-seed", "empty", "-tab", "memories", "-import", "2"])
+
+        // The pile asks its date first; any answer will do.
+        XCTAssertTrue(
+            app.staticTexts["Milloin nämä olivat?"].waitForExistence(timeout: 10),
+            "the import did not ask for a date"
+        )
+        app.buttons["Vuosikymmen"].tap()
+        let fifties = app.buttons["1950-luku"]
+        for _ in 0 ..< 4 where !fifties.exists { app.swipeUp() }
+        XCTAssertTrue(fifties.waitForExistence(timeout: 10), "never arrived: the decade to choose")
+        fifties.tap()
+
+        let tiles = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva"))
+        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 10), "never arrived: the imported photos")
+        XCTAssertEqual(tiles.count, 2, "the import did not bring in two photos")
+        wait(
+            for: [expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: tiles.firstMatch)],
+            timeout: 10
+        )
+        tiles.firstMatch.tap()
+
+        let remove = app.buttons["Poista kuva"]
+        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the photo's card offers no way to delete it")
+        remove.tap()
+
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+
+        // Back in the gallery with one photo fewer — and the other still there.
+        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "did not get back to the gallery")
+        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 10), "the other photo went too")
+        XCTAssertEqual(tiles.count, 1, "the deleted photo is still in the gallery")
+    }
+
     /// The other half: a recording abandoned while it is still running.
     ///
     /// This one really records, so the run needs the microphone. A simulator

@@ -253,3 +253,8 @@
 "Kootaan ääniä %lld/%lld" = "Gathering recordings %lld/%lld";
 "Kirjoitetaan arkistoa" = "Writing the archive";
 "Pakataan" = "Packing";
+
+// The photo's own card: deleting a photograph nobody has told about (4 Sep 2026).
+"Poista kuva" = "Delete photo";
+"Poistetaanko tämä kuva?" = "Delete this photo?";
+"Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa." = "The photo leaves the family archive and cannot be brought back.";

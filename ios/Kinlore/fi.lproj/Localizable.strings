@@ -207,3 +207,8 @@
 "Kootaan ääniä %lld/%lld" = "Kootaan ääniä %lld/%lld";
 "Kirjoitetaan arkistoa" = "Kirjoitetaan arkistoa";
 "Pakataan" = "Pakataan";
+
+// The photo's own card: deleting a photograph nobody has told about (4 Sep 2026).
+"Poista kuva" = "Poista kuva";
+"Poistetaanko tämä kuva?" = "Poistetaanko tämä kuva?";
+"Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa." = "Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa.";

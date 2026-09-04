@@ -275,6 +275,7 @@ struct SubjectDetailScreen: View {
     @State private var isAsking = false
     @State private var isCorrectingName = false
     @State private var isDating = false
+    @State private var isConfirmingRemoval = false
 
     /// The subject as the store has it now, rather than as it was when this
     /// screen was pushed. A name corrected here has to be visible here, and the
@@ -295,6 +296,14 @@ struct SubjectDetailScreen: View {
     /// Whether "when did this happen" is a question this subject can answer.
     private var datable: Bool {
         current.kind == .photo || current.kind == .event
+    }
+
+    /// Whether the photograph can be deleted: only while nothing has been
+    /// told about it and nobody has asked about it.
+    private var removable: Bool {
+        current.kind == .photo
+            && store.memories(for: subject.id).isEmpty
+            && !store.questions.contains { $0.subjectID == subject.id && !$0.answered }
     }
 
     var body: some View {
@@ -367,9 +376,37 @@ struct SubjectDetailScreen: View {
             let memories = store.memories(for: subject.id)
             if memories.isEmpty {
                 Section {
-                    Text("Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.")
-                        .elderBody()
-                        .foregroundStyle(Elder.supporting)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.")
+                            .elderBody()
+                            .foregroundStyle(Elder.supporting)
+
+                        // A photograph nobody has told about yet can go: the
+                        // wrong side of a print, a blurred one, the same one
+                        // twice — the batch camera guarantees a few, and until
+                        // 4 Sep 2026 they stayed forever, each holding one of
+                        // the free slots (the count is a total, and the server
+                        // frees a tombstoned photo's place). Only while it
+                        // holds nothing, which is why it lives in this empty
+                        // state: once a story is filed under it, rule 3 applies
+                        // to the story, and the story is taken back first, on
+                        // its own row. The same tombstone as a rejected person,
+                        // so it reaches the family.
+                        //
+                        // In this row and not a section of its own: alone in a
+                        // section the audit reported the button's font as not
+                        // following Dynamic Type in every shape it was tried
+                        // in — plain, styled, as a Label — four runs; beside
+                        // the text, in the shape the memory row's button has,
+                        // it passes.
+                        if removable {
+                            Button("Poista kuva") { isConfirmingRemoval = true }
+                                .buttonStyle(.borderless)
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(Elder.destructive)
+                                .elderTapTarget()
+                        }
+                    }
                 }
             } else {
                 Section {
@@ -431,9 +468,23 @@ struct SubjectDetailScreen: View {
                 Text("Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.")
                     .foregroundStyle(Elder.supporting)
             }
+
         }
         .navigationTitle(current.displayTitle)
         .navigationBarTitleDisplayMode(.large)
+        .confirmationDialog(
+            "Poistetaanko tämä kuva?",
+            isPresented: $isConfirmingRemoval,
+            titleVisibility: .visible
+        ) {
+            Button("Poista", role: .destructive) {
+                store.remove(subjectID: subject.id)
+                dismiss()
+            }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa.")
+        }
         .toolbar {
             if nameCameFromSpeech {
                 ToolbarItem(placement: .topBarTrailing) {

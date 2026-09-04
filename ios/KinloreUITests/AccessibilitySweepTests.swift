@@ -579,6 +579,22 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The photo's own screen while nothing has been told about it, which is
+    /// when it can be deleted: the fixture's photograph carries stories, so
+    /// this one is imported empty.
+    func testPhotoDetailWithoutAStory() throws {
+        try sweep(
+            "Photo detail without a story",
+            arguments: ["-seed", "empty", "-tab", "memories", "-import", "2"]
+        ) { app, _ in
+            require(app.staticTexts["Milloin nämä olivat?"], "the import's date question")
+            app.buttons["Vuosikymmen"].tap()
+            reach(app.buttons["1950-luku"], in: app, "the decade to choose").tap()
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Poista kuva"], in: app, "the way to delete the photo")
+        }
+    }
+
     /// A person's card carries the proposal row and the relationships, which are
     /// the two places in the app where a colour means something.
     func testPersonCard() throws {
