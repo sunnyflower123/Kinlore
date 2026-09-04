@@ -26,12 +26,13 @@ struct HelpScreen: View {
                 "Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena."
             )
 
+            // One literal, not three joined with `+`: a String built from parts
+            // is handed over as a String and never looked up, so this sentence
+            // — the one that says the recording leaves the phone — stayed
+            // Finnish on an English phone. See scripts/localisation-check.mjs.
             section(
                 "Mitä äänellesi tapahtuu",
-                "Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta "
-                    + "kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, "
-                    + "mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi "
-                    + "kirjoittaa itse.",
+                "Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.",
                 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä."
             )
 
@@ -47,14 +48,27 @@ struct HelpScreen: View {
                 "Siksi ne näkyvät ehdotuksina, kunnes joku perheestä vahvistaa ne. Väärä sukulaisuus on pahempi kuin puuttuva."
             )
 
+            // The reassurance that makes an old person willing to speak
+            // freely: that a thing said can be unsaid. The app could do it
+            // from the result screen since August and from the card since
+            // 4 Sep 2026, and this page — the one place for whole-app answers
+            // — had never said so.
+            section(
+                "Jos sanoit jotain, mitä et tarkoittanut",
+                "Oman muistosi voit poistaa sen kortilta, ja sen tekstin voit korjata. Äänitys ja sanatarkka puhe eivät muutu korjatessa.",
+                "Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta."
+            )
+
+            // "Kertomisaika", not "AI-minuutit". The same quota is called
+            // "kertominen tässä kuussa" on the family screen and "kertomista
+            // tässä kuussa jäljellä" on the card after a telling, and this
+            // page was the last place still using the jargon name for it.
+            // See docs/ARCHITECTURE.md §21. (Above the call rather than inside
+            // it: the localisation check reads every literal inside a
+            // `section(` call as a key, comments included.)
             section(
                 "Mikä maksaa",
                 "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan.",
-                // "Kertomisaika", not "AI-minuutit". The same quota is called
-                // "kertominen tässä kuussa" on the family screen and "kertomista
-                // tässä kuussa jäljellä" on the card after a telling, and this
-                // page was the last place still using the jargon name for it.
-                // See docs/ARCHITECTURE.md §21.
                 "Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle."
             )
 
@@ -76,16 +90,34 @@ struct HelpScreen: View {
                 "Voit viedä koko arkiston yhtenä tiedostona Asetuksista.",
                 "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta."
             )
+
+            // The truth about the key, said where somebody can act on it. The
+            // server holds only ciphertext; the key is on the family's phones
+            // and nowhere else, and the app cannot tell whether iCloud Keychain
+            // — the one thing that carries it to a new phone on its own — is
+            // on. So the two things that actually keep the archive are named:
+            // a second member, and the export. Founder's-eye review, 3 Sep
+            // 2026, findings #87 and #100.
+            section(
+                "Jos puhelin katoaa",
+                "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki.",
+                "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää.",
+                "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio."
+            )
         }
         .navigationTitle("Näin tämä toimii")
     }
 
-    /// A heading and one or two plain sentences. Nothing is folded away behind a
+    /// A heading and a few plain sentences. Nothing is folded away behind a
     /// tap: somebody who opened this page is already looking for the answer, and
     /// making them hunt for it twice is how a help page becomes decoration.
-    private func section(_ title: String, _ lines: String...) -> some View {
+    ///
+    /// `LocalizedStringKey`, not `String`: a literal handed to a String
+    /// parameter is shown verbatim, and until 4 Sep 2026 this whole page was
+    /// Finnish under an English title on an English phone.
+    private func section(_ title: LocalizedStringKey, _ lines: LocalizedStringKey...) -> some View {
         Section {
-            ForEach(lines, id: \.self) { line in
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .elderBody()
             }

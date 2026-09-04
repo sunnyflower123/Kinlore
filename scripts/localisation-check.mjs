@@ -75,14 +75,25 @@ const SHOWN = [
   String.raw`String\(localized:\s*"((?:[^"\\]|\\.)*)"`,
 ];
 
+// The help page hands its sentences to a helper rather than to Text, and the
+// patterns above cannot see through a helper: the whole page was Finnish under
+// an English title on an English phone until 4 Sep 2026, and nothing here
+// noticed. Every string literal inside a `section(` call is a key — comments
+// included, which is why HelpScreen keeps its comments outside the calls.
+const HELPER = String.raw`\bsection\s*\(((?:[^()"]|"(?:[^"\\]|\\.)*")*)\)`;
+const LITERAL = String.raw`"((?:[^"\\]|\\.)*)"`;
+
 const keys = new Set();
+const add = (key) => {
+  if (!/[a-zA-ZäöåÄÖÅ]/.test(key)) return;          // "·", "%@" and friends
+  if (key.includes('\\(')) return;                   // interpolated: see below
+  keys.add(key);
+};
 for (const file of swiftFiles(swiftRoot)) {
   const src = readFileSync(file, 'utf8');
-  for (const m of SHOWN.flatMap((p) => [...src.matchAll(new RegExp(p, 'g'))])) {
-    const key = m[1];
-    if (!/[a-zA-ZäöåÄÖÅ]/.test(key)) continue;          // "·", "%@" and friends
-    if (key.includes('\\(')) continue;                   // interpolated: see below
-    keys.add(key);
+  for (const m of SHOWN.flatMap((p) => [...src.matchAll(new RegExp(p, 'g'))])) add(m[1]);
+  for (const call of src.matchAll(new RegExp(HELPER, 'g'))) {
+    for (const m of call[1].matchAll(new RegExp(LITERAL, 'g'))) add(m[1]);
   }
 }
 

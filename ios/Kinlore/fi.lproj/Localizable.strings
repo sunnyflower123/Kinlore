@@ -227,3 +227,34 @@
 "Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa." = "Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa.";
 "Poistetaanko %@?" = "Poistetaanko %@?";
 "Nimi poistuu perheen listalta. Kertomasi teksti ei muutu." = "Nimi poistuu perheen listalta. Kertomasi teksti ei muutu.";
+
+// "Näin tämä toimii" and the export footer: looked up at last, and two new answers — taking back, and the lost phone (4 Sep 2026).
+"Kertominen" = "Kertominen";
+"Paina isoa nappia ja puhu ihan vapaasti. Sinun ei tarvitse muistaa järjestystä eikä vuosilukuja — sovellus järjestää ne puolestasi." = "Paina isoa nappia ja puhu ihan vapaasti. Sinun ei tarvitse muistaa järjestystä eikä vuosilukuja — sovellus järjestää ne puolestasi.";
+"Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena." = "Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena.";
+"Mitä äänellesi tapahtuu" = "Mitä äänellesi tapahtuu";
+"Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.";
+"Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä." = "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä.";
+"Kuka näkee muistot" = "Kuka näkee muistot";
+"Vain ne, joille joku perheestä on lähettänyt kutsulinkin." = "Vain ne, joille joku perheestä on lähettänyt kutsulinkin.";
+"Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain omille. Perhe-näytöltä näet ketkä ovat liittyneet ja milloin." = "Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain omille. Perhe-näytöltä näet ketkä ovat liittyneet ja milloin.";
+"Sovellus ehdottaa, ihminen päättää" = "Sovellus ehdottaa, ihminen päättää";
+"Sovellus arvaa puheesta nimiä ja sukulaisuuksia, ja arvaa joskus väärin." = "Sovellus arvaa puheesta nimiä ja sukulaisuuksia, ja arvaa joskus väärin.";
+"Siksi ne näkyvät ehdotuksina, kunnes joku perheestä vahvistaa ne. Väärä sukulaisuus on pahempi kuin puuttuva." = "Siksi ne näkyvät ehdotuksina, kunnes joku perheestä vahvistaa ne. Väärä sukulaisuus on pahempi kuin puuttuva.";
+"Jos sanoit jotain, mitä et tarkoittanut" = "Jos sanoit jotain, mitä et tarkoittanut";
+"Oman muistosi voit poistaa sen kortilta, ja sen tekstin voit korjata. Äänitys ja sanatarkka puhe eivät muutu korjatessa." = "Oman muistosi voit poistaa sen kortilta, ja sen tekstin voit korjata. Äänitys ja sanatarkka puhe eivät muutu korjatessa.";
+"Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta." = "Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta.";
+"Mikä maksaa" = "Mikä maksaa";
+"Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan." = "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan.";
+"Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle." = "Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle.";
+"Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista." = "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista.";
+"Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy." = "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy.";
+"Omat muistot itsellesi" = "Omat muistot itsellesi";
+"Voit viedä koko arkiston yhtenä tiedostona Asetuksista." = "Voit viedä koko arkiston yhtenä tiedostona Asetuksista.";
+"Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.";
+"Jos puhelin katoaa" = "Jos puhelin katoaa";
+"Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki." = "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki.";
+"Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää." = "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää.";
+"Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.";
+"Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.";
+"Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta." = "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta.";

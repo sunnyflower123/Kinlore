@@ -189,6 +189,7 @@ struct PeopleScreen: View {
             //   -screen person     the first person's card, relationships and all
             //   -screen family     members, usage and the invite link
             //   -screen settings   export, leaving, emptying the device
+            //   -screen help       the "Näin tämä toimii" page
             //   -screen sharing    opening a single-device archive to a family
             //
             // Checking a screen at the largest text size means opening it, and
@@ -201,6 +202,12 @@ struct PeopleScreen: View {
                     path.append(FamilyRoute())
                 case "settings", "export":
                     path.append(SettingsRoute())
+                case "help":
+                    // Both, so the page has the back stack it really has —
+                    // and so it can be photographed on an English phone,
+                    // which is how it was found to be Finnish (4 Sep 2026).
+                    path.append(SettingsRoute())
+                    path.append(HelpRoute())
                 case "sharing":
                     // Both, so the screen has the back stack it really has.
                     path.append(SettingsRoute())

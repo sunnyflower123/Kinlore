@@ -146,10 +146,25 @@ struct SettingsScreen: View {
                 Text("Arkisto")
                     .foregroundStyle(Elder.supporting)
             } footer: {
-                // Say what comes out, in the words of somebody who will open it
-                // on a computer years from now.
-                Text("Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.")
-                    .foregroundStyle(Elder.supporting)
+                VStack(alignment: .leading, spacing: 6) {
+                    // First, whose copy this is. The server holds ciphertext
+                    // and the key is only on the family's phones, so for one
+                    // phone the export is the only copy that opens anywhere
+                    // else — and the app cannot tell whether iCloud Keychain
+                    // would carry the key on. Said here, beside the one act
+                    // that changes it. Two `Text`s rather than a ternary: a
+                    // ternary of two literals is a String, and is never looked
+                    // up.
+                    if case .local = session.mode {
+                        Text("Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.")
+                    } else if case .inFamily = session.mode, (session.family?.members.count ?? 0) <= 1 {
+                        Text("Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta.")
+                    }
+                    // Say what comes out, in the words of somebody who will
+                    // open it on a computer years from now.
+                    Text("Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.")
+                }
+                .foregroundStyle(Elder.supporting)
             }
 
             // First, and without a header. It is the only row here that answers

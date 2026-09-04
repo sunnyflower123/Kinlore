@@ -273,3 +273,34 @@
 "Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa." = "The place leaves the family archive and cannot be brought back.";
 "Poistetaanko %@?" = "Delete %@?";
 "Nimi poistuu perheen listalta. Kertomasi teksti ei muutu." = "The name leaves the family's list. What you told stays as it is.";
+
+// "Näin tämä toimii" and the export footer: looked up at last, and two new answers — taking back, and the lost phone (4 Sep 2026).
+"Kertominen" = "Telling";
+"Paina isoa nappia ja puhu ihan vapaasti. Sinun ei tarvitse muistaa järjestystä eikä vuosilukuja — sovellus järjestää ne puolestasi." = "Press the big button and just talk. You do not need to remember the order or the years — the app puts them in place for you.";
+"Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena." = "If talking does not suit you right now, you can write the memory instead. It goes into the archive just the same.";
+"Mitä äänellesi tapahtuu" = "What happens to your voice";
+"Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "In a family archive the recording is sent to our service, where the speech is written down as text. If the archive is only on this phone, nothing is sent and no text is written — you can write the memories yourself.";
+"Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä." = "The original recording is always kept. The text does not replace it — the family can listen to what you told in your own voice years from now.";
+"Kuka näkee muistot" = "Who sees the memories";
+"Vain ne, joille joku perheestä on lähettänyt kutsulinkin." = "Only those somebody in the family has sent an invitation link to.";
+"Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain omille. Perhe-näytöltä näet ketkä ovat liittyneet ja milloin." = "Anyone who receives the link sees all of the family's memories, so share it only with your own. The Family screen shows who has joined and when.";
+"Sovellus ehdottaa, ihminen päättää" = "The app proposes, a person decides";
+"Sovellus arvaa puheesta nimiä ja sukulaisuuksia, ja arvaa joskus väärin." = "The app guesses names and relationships from speech, and sometimes guesses wrong.";
+"Siksi ne näkyvät ehdotuksina, kunnes joku perheestä vahvistaa ne. Väärä sukulaisuus on pahempi kuin puuttuva." = "That is why they are shown as proposals until somebody in the family confirms them. A wrong relationship is worse than a missing one.";
+"Jos sanoit jotain, mitä et tarkoittanut" = "If you said something you did not mean";
+"Oman muistosi voit poistaa sen kortilta, ja sen tekstin voit korjata. Äänitys ja sanatarkka puhe eivät muutu korjatessa." = "You can delete a memory of your own from its card, and correct its text. Correcting does not change the recording or the word-for-word speech.";
+"Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta." = "Deleting shows for the whole family and cannot be undone. A wrongly guessed name you can remove right after telling, or later from the person's card.";
+"Mikä maksaa" = "What costs";
+"Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan." = "Telling is always free. It is never limited.";
+"Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle." = "The paid archive removes the limits on the number of photos and on the monthly telling time. One payer opens it for the whole family.";
+"Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista." = "If the phone is a grandparent's, turn on larger text in Settings.";
+"Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy." = "It applies only to this app, and the phone's own text size takes precedence: if you have already made the text larger there, that size stays.";
+"Omat muistot itsellesi" = "Your memories for yourself";
+"Voit viedä koko arkiston yhtenä tiedostona Asetuksista." = "You can export the whole archive as one file from Settings.";
+"Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "It holds the memories as a readable page, the original recordings and the photos. It opens on any computer without this app.";
+"Jos puhelin katoaa" = "If the phone is lost";
+"Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki." = "In a family archive the memories are also on the family's server, but encrypted with a key that exists only on the family's phones. If every phone in the family is lost, the key is lost with them, and the copy on the server can no longer be opened.";
+"Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää." = "So invite another family member — then the key is on two phones — and export the archive to your own computer now and then. Apple's iCloud Keychain carries the key to a new phone if it is turned on, but it is not something to rely on.";
+"Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "If the archive is only on this phone, it is only on this phone: the exported file is its only other copy.";
+"Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "The archive is only on this phone: the exported file is its only other copy.";
+"Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta." = "The archive is still yours alone. Until you invite somebody, the exported file is the only copy that opens without this phone.";
