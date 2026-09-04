@@ -1586,6 +1586,8 @@ private struct ProposalRow: View {
     let onConfirm: () -> Void
     let onReject: () -> Void
 
+    @State private var isConfirmingReject = false
+
     private var isEdited: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
             .compare(subject.title, options: .caseInsensitive) != .orderedSame
@@ -1629,7 +1631,15 @@ private struct ProposalRow: View {
             // in; it should be the widest thing in the row.
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button(action: onReject) {
+            // Asks first. The cross sits beside the tick, and the hand that
+            // holds this phone shakes: a miss here tombstoned the real person
+            // just named, on the spot, with no dialog and no way back — the
+            // one destructive act in the app that did not ask, until 4 Sep
+            // 2026. The text under it is not touched: the name stays in what
+            // was told, and only the card goes.
+            Button {
+                isConfirmingReject = true
+            } label: {
                 Image(systemName: "xmark")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(Elder.supporting)
@@ -1637,6 +1647,16 @@ private struct ProposalRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Poista \(subject.title)")
+            .confirmationDialog(
+                "Poistetaanko \(subject.title)?",
+                isPresented: $isConfirmingReject,
+                titleVisibility: .visible
+            ) {
+                Button("Poista", role: .destructive, action: onReject)
+                Button("Peruuta", role: .cancel) {}
+            } message: {
+                Text("Nimi poistuu perheen listalta. Kertomasi teksti ei muutu.")
+            }
 
             Button(action: onConfirm) {
                 Image(systemName: "checkmark")

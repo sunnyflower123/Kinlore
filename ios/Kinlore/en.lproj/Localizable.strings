@@ -263,3 +263,13 @@
 "Muokkaa tekstiä" = "Edit the text";
 "Muiston teksti" = "Memory text";
 "Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan." = "The original recording and the word-for-word speech stay as they are.";
+
+// A person or a place nobody has told about can go, and the reject cross asks first (4 Sep 2026).
+"Poista henkilö" = "Delete person";
+"Poista paikka" = "Delete place";
+"Poistetaanko tämä henkilö?" = "Delete this person?";
+"Poistetaanko tämä paikka?" = "Delete this place?";
+"Henkilö poistuu perheen arkistosta, eikä sitä voi palauttaa." = "The person leaves the family archive and cannot be brought back.";
+"Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa." = "The place leaves the family archive and cannot be brought back.";
+"Poistetaanko %@?" = "Delete %@?";
+"Nimi poistuu perheen listalta. Kertomasi teksti ei muutu." = "The name leaves the family's list. What you told stays as it is.";

@@ -217,3 +217,13 @@
 "Muokkaa tekstiä" = "Muokkaa tekstiä";
 "Muiston teksti" = "Muiston teksti";
 "Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan." = "Alkuperäinen äänitys ja sanatarkka puhe säilyvät ennallaan.";
+
+// A person or a place nobody has told about can go, and the reject cross asks first (4 Sep 2026).
+"Poista henkilö" = "Poista henkilö";
+"Poista paikka" = "Poista paikka";
+"Poistetaanko tämä henkilö?" = "Poistetaanko tämä henkilö?";
+"Poistetaanko tämä paikka?" = "Poistetaanko tämä paikka?";
+"Henkilö poistuu perheen arkistosta, eikä sitä voi palauttaa." = "Henkilö poistuu perheen arkistosta, eikä sitä voi palauttaa.";
+"Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa." = "Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa.";
+"Poistetaanko %@?" = "Poistetaanko %@?";
+"Nimi poistuu perheen listalta. Kertomasi teksti ei muutu." = "Nimi poistuu perheen listalta. Kertomasi teksti ei muutu.";

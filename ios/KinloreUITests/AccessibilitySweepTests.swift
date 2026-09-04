@@ -610,6 +610,15 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// A person's card while nothing has been told about them, which is when
+    /// the card can be deleted: the fixture's Aino.
+    func testPersonCardWithoutAStory() throws {
+        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+            require(app.staticTexts["Aino"], "the people list").tap()
+            reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person")
+        }
+    }
+
     /// A person's card carries the proposal row and the relationships, which are
     /// the two places in the app where a colour means something.
     func testPersonCard() throws {

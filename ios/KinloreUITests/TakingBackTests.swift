@@ -175,6 +175,30 @@ final class TakingBackTests: XCTestCase {
         XCTAssertTrue(corrected.waitForExistence(timeout: 10), "the correction did not reach the memory")
     }
 
+    /// A person nobody has told about: the checkmark hit instead of the
+    /// cross, or a name the recognition invented. The fixture's Aino is a
+    /// proposal with no story of her own and nobody related to her.
+    func testAPersonNobodyHasToldAboutCanBeDeleted() {
+        let app = launch(["-seed", "archive", "-tab", "people"])
+
+        let aino = app.staticTexts["Aino"]
+        XCTAssertTrue(aino.waitForExistence(timeout: 10), "never arrived: the people list")
+        aino.tap()
+
+        let remove = app.buttons["Poista henkilö"]
+        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the person's card offers no way to delete her")
+        remove.tap()
+
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+
+        // Back on the list, and she is not on it.
+        XCTAssertTrue(app.navigationBars["Ihmiset"].waitForExistence(timeout: 10), "did not get back to the people list")
+        XCTAssertFalse(app.staticTexts["Aino"].exists, "the deleted person is still on the list")
+    }
+
     /// The other half: a recording abandoned while it is still running.
     ///
     /// This one really records, so the run needs the microphone. A simulator

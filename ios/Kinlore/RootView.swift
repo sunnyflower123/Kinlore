@@ -298,12 +298,48 @@ struct SubjectDetailScreen: View {
         current.kind == .photo || current.kind == .event
     }
 
-    /// Whether the photograph can be deleted: only while nothing has been
-    /// told about it and nobody has asked about it.
+    /// Whether this card can be deleted: only while nothing has been told
+    /// about it, nobody has asked about it and, for a person, nobody is
+    /// related to them. A photograph is the wrong side of a print; a person
+    /// or a place is the checkmark hit instead of the cross, or a name the
+    /// recognition invented — confirmed by mistake, and rule 4 read backwards
+    /// until 4 Sep 2026: a wrong person permanent as fact, with no way out.
+    /// Anything that holds a story stays; the story is taken back first.
     private var removable: Bool {
-        current.kind == .photo
+        (current.kind == .photo || current.kind == .person || current.kind == .place)
             && store.memories(for: subject.id).isEmpty
             && !store.questions.contains { $0.subjectID == subject.id && !$0.answered }
+            && !store.relations.contains {
+                $0.deletedAt == nil && ($0.fromSubjectID == subject.id || $0.toSubjectID == subject.id)
+            }
+    }
+
+    /// The words of the deletion, by what is being deleted. Three literal
+    /// keys rather than one with the kind interpolated: each is read as a
+    /// whole sentence by somebody who is 80, and the translation table holds
+    /// sentences.
+    private var removalButton: LocalizedStringKey {
+        switch current.kind {
+        case .person: "Poista henkilö"
+        case .place: "Poista paikka"
+        default: "Poista kuva"
+        }
+    }
+
+    private var removalTitle: LocalizedStringKey {
+        switch current.kind {
+        case .person: "Poistetaanko tämä henkilö?"
+        case .place: "Poistetaanko tämä paikka?"
+        default: "Poistetaanko tämä kuva?"
+        }
+    }
+
+    private var removalMessage: LocalizedStringKey {
+        switch current.kind {
+        case .person: "Henkilö poistuu perheen arkistosta, eikä sitä voi palauttaa."
+        case .place: "Paikka poistuu perheen arkistosta, eikä sitä voi palauttaa."
+        default: "Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa."
+        }
     }
 
     var body: some View {
@@ -400,7 +436,7 @@ struct SubjectDetailScreen: View {
                         // the text, in the shape the memory row's button has,
                         // it passes.
                         if removable {
-                            Button("Poista kuva") { isConfirmingRemoval = true }
+                            Button(removalButton) { isConfirmingRemoval = true }
                                 .buttonStyle(.borderless)
                                 .font(.body.weight(.medium))
                                 .foregroundStyle(Elder.destructive)
@@ -473,7 +509,7 @@ struct SubjectDetailScreen: View {
         .navigationTitle(current.displayTitle)
         .navigationBarTitleDisplayMode(.large)
         .confirmationDialog(
-            "Poistetaanko tämä kuva?",
+            removalTitle,
             isPresented: $isConfirmingRemoval,
             titleVisibility: .visible
         ) {
@@ -483,7 +519,7 @@ struct SubjectDetailScreen: View {
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
-            Text("Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa.")
+            Text(removalMessage)
         }
         .toolbar {
             if nameCameFromSpeech {

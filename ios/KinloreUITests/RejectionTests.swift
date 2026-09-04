@@ -23,6 +23,36 @@ final class RejectionTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// The cross beside the tick asks first. It is the one destructive act
+    /// that did not, and the hand holding this phone shakes.
+    func testRejectingAProposalAsksFirst() {
+        let app = launch(["-seed", "empty", "-screen", "result"])
+
+        XCTAssertTrue(
+            app.staticTexts["Kuulinko nimet oikein?"].waitForExistence(timeout: 30),
+            "never arrived: the proposals"
+        )
+        let crosses = app.buttons.matching(NSPredicate(
+            format: "label BEGINSWITH %@ AND label != %@", "Poista ", "Poista tämä muisto"
+        ))
+        let cross = crosses.firstMatch
+        XCTAssertTrue(cross.waitForExistence(timeout: 10), "never arrived: a proposal's cross")
+        // Held by its label: `firstMatch` would move on to the next cross
+        // the moment this one went, and say nothing about it.
+        let rejected = app.buttons[cross.label]
+        cross.tap()
+
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the cross removed the name without asking")
+        confirm.tap()
+
+        // Gone, and only after the answer.
+        XCTAssertTrue(
+            rejected.waitForNonExistence(timeout: 10),
+            "the rejected proposal is still on the screen"
+        )
+    }
+
     func testARejectedPersonIsNotOnThePeopleList() throws {
         let app = launch(["-seed", "archive", "-tab", "people"])
 
