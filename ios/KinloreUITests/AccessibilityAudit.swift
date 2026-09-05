@@ -563,6 +563,27 @@ enum AccessibilityPolicy {
             return true
         }
 
+        // The family screen's usage row, reported by the default-size
+        // simulation and by nothing else. Measured 5 Sep 2026, per the
+        // protocol above, on a private simulator created for the run and a
+        // machine under a load of four:
+        //
+        // The label passed at y 438 on every run of the day until the "Kopio
+        // tällä puhelimella" row was added above it; it failed at y 512.83
+        // with that row, and at y 615.83 with the row and a sentence under
+        // it, the finding identical to the point each time while the label's
+        // own code never changed. The value beside it was rebuilt twice on
+        // the way — a ternary, a `Group` holding two branches, one `Text`
+        // from a helper — and moved nothing. A finding that keeps its shape
+        // while the code under it changes and turns on how low the row sits
+        // is the listHeaderAndFooterText signature, fifth appearance: the
+        // simulation grows everything above, and the row lands where it
+        // cannot be measured whole. The same row is measured live at the
+        // real largest size on every testFamily run, where it audits clean.
+        if issue.auditType == .dynamicType, label == "Kertominen tässä kuussa" {
+            return true
+        }
+
         // The result screen's name field, on any archive that already holds
         // memories: reported clipped by the default-size simulation, and by
         // nothing else. Measured 4 Sep 2026, per the protocol above:

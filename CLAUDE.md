@@ -365,6 +365,17 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/upsell-rhythm-check.swift ios/Kinlore/Services/UpsellRhythm.swift \
   && /tmp/upsell-rhythm-check
 
+# The family's bytes on every phone. After a sync, the photographs and voices
+# that exist only in R2 are fetched here in the background — voices first, on
+# Wi-Fi only, never the last gigabyte, three failures ending a round — so the
+# phone is a copy of the archive and not a window onto one (docs/RECOVERY.md).
+# Every rule is silent when wrong: a copy that never starts looks exactly like
+# one that is complete. Run it after touching FullCopy.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/full-copy-check \
+  scripts/full-copy-check.swift ios/Kinlore/Services/FullCopy.swift \
+  && /tmp/full-copy-check
+
 # Encryption at rest. The one place in this app where being wrong is silent
 # AND permanent: a memory sealed under the wrong key still syncs, still draws a
 # row, and is simply unreadable — and by then the plaintext is gone. Also

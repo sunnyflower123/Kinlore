@@ -275,9 +275,20 @@ final class AccessibilitySweepTests: XCTestCase {
     func testFamily() throws {
         try sweep(
             "Perhe",
-            arguments: ["-seed", "family", "-tab", "people", "-screen", "family"]
+            // `-copy waiting` holds the "Kopio tällä puhelimella" row in its
+            // longest state — some fetched, the rest waiting for Wi-Fi.
+            arguments: ["-seed", "family", "-tab", "people", "-screen", "family", "-copy", "waiting"]
         ) { app, isLargest in
             require(app.navigationBars["Perhe"], "the family screen")
+            require(
+                app.descendants(matching: .any)
+                    .matching(NSPredicate(
+                        format: "label CONTAINS %@ OR value CONTAINS %@",
+                        "odottaa wifi-yhteyttä", "odottaa wifi-yhteyttä"
+                    ))
+                    .firstMatch,
+                "the copy row, waiting for Wi-Fi"
+            )
             // By label *or* value: `LabeledContent` folds the row into one
             // element whose label is "Nimi" and whose value is the name, so
             // `staticTexts["Virtaset"]` matches nothing — measured here, the

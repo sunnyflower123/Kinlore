@@ -80,6 +80,16 @@ upsell_rhythm() {
 		&& "$OUT/upsell-rhythm-check"
 }
 
+# The family's bytes on every phone: what the full copy fetches after a sync,
+# in what order, and what stops it. Every rule is silent when wrong — a copy
+# that never starts looks exactly like one that is complete.
+full_copy() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/full-copy-check" scripts/full-copy-check.swift \
+		ios/Kinlore/Services/FullCopy.swift \
+		&& "$OUT/full-copy-check"
+}
+
 # Hermetic in a different way: it loads the shipping schema.sql into an
 # in-memory SQLite and asks the database itself. No Worker, no D1, no
 # RevenueCat — and the TypeScript guard it backs up cannot be run on this
@@ -105,6 +115,7 @@ family_crypto() {
 echo
 echo "Invariants"
 run "the paid archive is offered on a rhythm" upsell_rhythm
+run "the family's bytes end up on every phone" full_copy
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over

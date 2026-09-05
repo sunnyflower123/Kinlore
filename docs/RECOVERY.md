@@ -17,7 +17,7 @@ honestly.
 | D1 `memorize` (id `a39d23ba-…`, region EEUR) | Families, members, subjects, memories, mentions, invites, questions — metadata in the clear, content sealed | 12 tables, 520 kB; 7 families, 127 memories, 21 members, all of them throwaway rows left by the check scripts. **No real family yet.** |
 | R2 `memorize-media` (EEUR) | Photographs and audio, sealed. Rule 3 lives here | 2 objects, 4.39 kB — the lever-3 round trip's bytes |
 | Workers Logs | Shape, counts, status. Never content (rule 9) | on |
-| Every member's phone | The whole text archive in one JSON file, in the clear; the media that phone has fetched; **the family key** | — |
+| Every member's phone | The whole text archive in one JSON file, in the clear; the media — since 5 Sep 2026 all of it, fetched over Wi-Fi after every sync (`FullCopy`, ARCHITECTURE §5), before that only what was viewed; **the family key** | — |
 | The export (*Asetukset → Vie arkisto*) | A readable page, the JSON, and every media file the phone had | made by hand, by a member |
 
 What a database dump yields is written down once, in
@@ -68,10 +68,11 @@ table of Cloudflare's
 measured 5 Sep 2026. A deleted object is gone from the server, and the bucket
 is what rule 3 stands on.
 
-Where the bytes also are: on every phone that has looked at the photograph or
-pressed play (`MediaLoader` fetches on demand, not ahead), and in every export
-made since. Nothing re-uploads them — there is no import — so the recovery is a
-member's export, kept.
+Where the bytes also are: on every member's phone that has met Wi-Fi since
+the object arrived — `FullCopy` fetches everything after every sync, and the
+family screen's *"Kopio tällä puhelimella"* row says whether it has finished —
+and in every export made since. Nothing re-uploads them — there is no import —
+so the recovery is a member's phone or export, kept.
 
 Today two objects sit there and nothing real is at risk. **Before the first
 real family** (Phase E, the grandparent's phone, 15–24 Sep 2026) a copy off
@@ -124,7 +125,7 @@ only — rolling back does not touch D1 or R2.
 
 | Copy | Holds | Needs the account | Made by |
 |------|-------|-------------------|---------|
-| Every member's phone | Text in the clear, the key, fetched media | no | the app, continuously |
+| Every member's phone | Text in the clear, the key, and all the media once it has met Wi-Fi | no | the app, after every sync |
 | An export | Text, page, the media that phone had | no | a member, by hand |
 | `backend/backups/*.sql` | D1 only, content sealed | no, once made | `npm run db:export`, by hand |
 | D1 Time Travel | D1, the last 7 or 30 days | yes | Cloudflare, continuously |
@@ -139,7 +140,9 @@ only — rolling back does not touch D1 or R2.
   hand-typed statement; that is the whole procedure today.
 - **No rehearsal** of either restore. The Time Travel restore and the dump
   import have not been run against anything.
-- **The phone only holds what was viewed.** It is the family's real backup and
-  the only one that needs no account, and it fetches media on demand. The
-  review's finding #86 — *keep a full copy on this phone* — is the change that
-  would make the first row of the table above complete.
+- **The phone's copy needs Wi-Fi.** Since 5 Sep 2026 every member's phone
+  fetches the whole archive after every sync (finding #86, built), but only
+  over a cheap network: a phone that lives on cellular holds what it viewed
+  and nothing more, and the family screen's row says so. The weight of a real
+  family's archive on an old phone — roughly 1.3 GB at the sizes in
+  ARCHITECTURE §5 — has not been measured.

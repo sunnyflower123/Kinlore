@@ -1,5 +1,6 @@
 import CryptoKit
 import Foundation
+import Network
 
 /// The sync driver: push first, then pull.
 ///
@@ -37,6 +38,10 @@ final class SyncEngine {
     /// change), and going paid clears the count by making the uploads succeed.
     private(set) var photosOverQuota = 0
 
+    /// The family's photographs and voices on this phone, all of them — see
+    /// `FullCopy`. Started after every successful round, in the background.
+    let fullCopy: FullCopy
+
     private let store: MemoryStore
     private let session: Session
     private var isRunning = false
@@ -44,6 +49,47 @@ final class SyncEngine {
     init(store: MemoryStore, session: Session) {
         self.store = store
         self.session = session
+        fullCopy = FullCopy(ports: Self.ports(store: store, session: session))
+        #if DEBUG
+        // `-copy waiting` holds the family screen's row in its longest state
+        // — some fetched, the rest waiting for Wi-Fi — for the audit.
+        if UserDefaults.standard.string(forKey: "copy") == "waiting" {
+            fullCopy.hold(progress: .init(have: 3, total: 12), halt: .expensiveNetwork)
+        }
+        #endif
+    }
+
+    /// Wires the copy to the phone: the rows, the media store, the same fetch
+    /// the views use, the network's price and the disk.
+    private static func ports(store: MemoryStore, session: Session) -> FullCopy.Ports {
+        FullCopy.Ports(
+            items: {
+                // Voices, then photographs: what has a key and has not been
+                // taken back. A merged card's memories moved with the merge.
+                store.memories
+                    .filter { $0.deletedAt == nil && $0.audioR2Key != nil }
+                    .map { FullCopy.Item(id: $0.id, kind: .audio, key: $0.audioR2Key!, filename: $0.audioFilename) }
+                + store.subjects
+                    .filter { $0.deletedAt == nil && $0.mergedInto == nil && $0.r2Key != nil }
+                    .map { FullCopy.Item(id: $0.id, kind: .photo, key: $0.r2Key!, filename: $0.imageFilename) }
+            },
+            exists: { MediaStore.exists($0) },
+            fetch: { key in await MediaLoader.fetch(key: key, session: session) },
+            save: { data, ext in MediaStore.saveRaw(data, extension: ext) },
+            record: { item, filename in
+                switch item.kind {
+                case .audio: store.setLocalAudio(memoryID: item.id, filename: filename)
+                case .photo: store.setLocalImage(subjectID: item.id, filename: filename)
+                }
+            },
+            networkIsCheap: { NetworkPrice.isCheap },
+            freeBytes: {
+                let values = try? URL.documentsDirectory.resourceValues(
+                    forKeys: [.volumeAvailableCapacityForImportantUsageKey]
+                )
+                return values?.volumeAvailableCapacityForImportantUsage
+            }
+        )
     }
 
     var isEnabled: Bool {
@@ -101,6 +147,10 @@ final class SyncEngine {
 
             lastSyncedAt = .now
             state = .idle
+            // The bytes, after the rows. Not awaited: the callers of `sync()`
+            // go on to the catch-up and the places, and a family's whole
+            // archive should not stand between them and that.
+            Task { await fullCopy.run() }
         } catch {
             // Not shown to the user as an error. The memories are safe locally
             // and the queue drains by itself — a network error is not her
@@ -180,6 +230,25 @@ final class SyncEngine {
     private func seal(_ data: Data, _ key: SymmetricKey?) -> Data {
         guard let key else { return data }
         return FamilyCrypto.seal(data, with: key) ?? data
+    }
+}
+
+// MARK: - What the network costs
+
+/// Whether the current path is one a family would want an archive fetched
+/// over. Cellular and hotspots are "expensive" in the system's own word, and
+/// Low Data Mode is "constrained"; either one stops the full copy.
+@MainActor
+enum NetworkPrice {
+    private static let monitor: NWPathMonitor = {
+        let monitor = NWPathMonitor()
+        monitor.start(queue: DispatchQueue(label: "kinlore.network-price"))
+        return monitor
+    }()
+
+    static var isCheap: Bool {
+        let path = monitor.currentPath
+        return path.status == .satisfied && !path.isExpensive && !path.isConstrained
     }
 }
 

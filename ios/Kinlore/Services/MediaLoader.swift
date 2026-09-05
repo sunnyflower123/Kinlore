@@ -2,10 +2,11 @@ import UIKit
 
 /// Fetching media for the views: local first, R2 when needed.
 ///
-/// Fetching is on demand rather than eager. A family may have hundreds of
-/// photos, and they must not all be fetched at launch — an old phone's battery
-/// and a cottage's network will not take it. The grid fetches only what is
-/// visible.
+/// Fetching for the views is on demand rather than eager. A family may have
+/// hundreds of photos, and they must not all be fetched at launch — an old
+/// phone's battery and a cottage's network will not take it. The grid fetches
+/// only what is visible. The archive's own copy is `FullCopy`'s job: the same
+/// `fetch`, after a sync, on Wi-Fi, in the background.
 @MainActor
 enum MediaLoader {
     /// Ensures the subject's photo is present locally and returns its filename.
@@ -53,7 +54,7 @@ enum MediaLoader {
     /// into the media store under a `.jpg` or `.m4a` name, and an envelope
     /// saved under those names is a file that fails to draw or play once, now,
     /// and every time afterwards from the local cache.
-    private static func fetch(key: String, session: Session) async -> Data? {
+    static func fetch(key: String, session: Session) async -> Data? {
         guard let base = AppServices.apiBaseURL else { return nil }
         let client = MediaClient(baseURL: base, token: session.identity.token)
         guard let data = try? await client.download(key: key) else { return nil }

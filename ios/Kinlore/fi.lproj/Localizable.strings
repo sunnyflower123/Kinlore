@@ -371,3 +371,11 @@
 "Jäsentä ei voitu poistaa" = "Jäsentä ei voitu poistaa";
 "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii." = "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii.";
 "Vain perheen perustaja voi poistaa jäsenen." = "Vain perheen perustaja voi poistaa jäsenen.";
+"Kopio tällä puhelimella" = "Kopio tällä puhelimella";
+"ei vielä kuvia eikä ääniä" = "ei vielä kuvia eikä ääniä";
+"haetaan, %lld / %lld" = "haetaan, %lld / %lld";
+"kaikki tallessa" = "kaikki tallessa";
+"%lld / %lld, odottaa wifi-yhteyttä" = "%lld / %lld, odottaa wifi-yhteyttä";
+"%lld / %lld, puhelimessa ei ole tilaa" = "%lld / %lld, puhelimessa ei ole tilaa";
+"%lld / %lld, jatkuu kun yhteys palaa" = "%lld / %lld, jatkuu kun yhteys palaa";
+"Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa." = "Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa.";

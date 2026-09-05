@@ -102,6 +102,7 @@ struct HelpScreen: View {
                 "Jos puhelin katoaa",
                 "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki.",
                 "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää.",
+                "Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa.",
                 "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio."
             )
         }

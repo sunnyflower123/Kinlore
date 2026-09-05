@@ -76,6 +76,7 @@ An honest inventory, not a wish list:
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
 | Backup and recovery | **Written down and measured**, see docs/RECOVERY.md — Time Travel answers, the dump runs, R2 has no versioning, and nothing yet copies the media off the account |
+| The family's media on every phone, not only in R2 | **Done and checked**, see §5 — `FullCopy` after every sync, on Wi-Fi, voices first, with the number on the family screen |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -679,8 +680,26 @@ key, so one field would not be enough.
 Upload happens **before push**, so rows travel with their keys. Otherwise the
 other device would see the memory but not the photo it belongs to.
 
-Fetching is **on demand**: a family may have hundreds of photos, and they are
-not fetched at launch. The grid fetches only what is visible.
+Fetching for the views is **on demand**: a family may have hundreds of photos,
+and they are not fetched at launch. The grid fetches only what is visible.
+
+**And since 5 Sep 2026 the phone also keeps the whole thing.** Until then the
+views' policy was the archive's: everything nobody had happened to open
+existed in R2 alone, and R2 exists for as long as one hobbyist's Cloudflare
+account does (founder's-eye review, finding #86; docs/RECOVERY.md). `FullCopy`
+runs after every successful sync round, in the background, and fetches every
+photograph and recording that exists only as an R2 key — voices first, because
+a recording cannot be made a second time; on a cheap network only, never
+cellular or a hotspot, so a phone that never meets Wi-Fi never copies and the
+family screen says so; never into the phone's last gigabyte; three failures in
+a row end a round and the next sync starts another from where it stopped; one
+round at a time. The family screen's *"Kopio tällä puhelimella"* row carries
+the number, because a copy that never started looks exactly like one that is
+complete. `scripts/full-copy-check.swift` holds those rules with the network,
+the disk and the fetch handed in as closures. What it does not check is the
+weight: a family of 3 000 photographs at 300 kB and 2 000 recordings at 200 kB
+is about 1.3 GB per phone, and the store writes its JSON once per file fetched
+— measured on nothing yet, and worth measuring before the first real family.
 
 **In the MVP the file passes through the Worker.** Photos are about 300 kB
 (downscaled to 2048 px) and 90 seconds of audio about 200 kB, so that is

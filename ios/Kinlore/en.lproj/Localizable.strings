@@ -417,3 +417,11 @@
 "Jäsentä ei voitu poistaa" = "The member could not be removed";
 "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii." = "They are still in the family. Try again when the connection works.";
 "Vain perheen perustaja voi poistaa jäsenen." = "Only the family's founder can remove a member.";
+"Kopio tällä puhelimella" = "Copy on this phone";
+"ei vielä kuvia eikä ääniä" = "no photographs or voices yet";
+"haetaan, %lld / %lld" = "fetching, %lld / %lld";
+"kaikki tallessa" = "everything is here";
+"%lld / %lld, odottaa wifi-yhteyttä" = "%lld / %lld, waiting for Wi-Fi";
+"%lld / %lld, puhelimessa ei ole tilaa" = "%lld / %lld, the phone is out of room";
+"%lld / %lld, jatkuu kun yhteys palaa" = "%lld / %lld, continues when the connection returns";
+"Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa." = "The photographs and voices are fetched to every phone in the family over Wi-Fi, so the archive survives even if the server one day goes dark. The family screen's row ”Copy on this phone” says whether everything is on this phone already.";

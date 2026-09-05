@@ -74,6 +74,19 @@ struct FamilyScreen: View {
                         syncText
                             .foregroundStyle(Elder.supporting)
                     }
+                    // The other direction: the family's photographs and voices
+                    // on this phone, so the phone is a copy of the archive and
+                    // not a window onto one. See `FullCopy` and
+                    // docs/RECOVERY.md. Said with a number, because a copy that
+                    // never started looks exactly like one that is complete.
+                    // The sentence explaining it lives on the help page under
+                    // "Jos puhelin katoaa", where the rest of that story is.
+                    if let copy = sync?.fullCopy {
+                        LabeledContent("Kopio tällä puhelimella") {
+                            copyText(copy)
+                                .foregroundStyle(Elder.supporting)
+                        }
+                    }
                 } header: {
                     Text("Perhe")
                         .foregroundStyle(Elder.supporting)
@@ -86,25 +99,17 @@ struct FamilyScreen: View {
                         // it — on the card after a telling — and one of the two
                         // names is jargon aimed at the person least able to
                         // decode it. The app should have one word for one thing.
+                        // One `Text` each, chosen in a helper, rather than a
+                        // `Group` holding an if/else: two views for one value
+                        // gave the audit's default-size simulation a label
+                        // to stumble on — see `minutesText`.
                         LabeledContent("Kertominen tässä kuussa") {
-                            Group {
-                                if let limit = usage.aiSeconds.limit {
-                                    Text("\(usage.aiSeconds.used / 60) / \(limit / 60) min")
-                                } else {
-                                    Text("rajaton")
-                                }
-                            }
-                            .foregroundStyle(Elder.supporting)
+                            minutesText(usage)
+                                .foregroundStyle(Elder.supporting)
                         }
                         LabeledContent("Kuvat") {
-                            Group {
-                                if let limit = usage.photos.limit {
-                                    Text("\(usage.photos.used) / \(limit)")
-                                } else {
-                                    Text("rajaton")
-                                }
-                            }
-                            .foregroundStyle(Elder.supporting)
+                            photosText(usage)
+                                .foregroundStyle(Elder.supporting)
                         }
 
                         // The second way in. The first is the moment a memory
@@ -290,6 +295,34 @@ struct FamilyScreen: View {
             return Text("kaikki lähetetty klo \(at.formatted(date: .omitted, time: .shortened))")
         }
         return Text("kaikki lähetetty \(at.formatted(date: .numeric, time: .shortened))")
+    }
+
+    /// The month's telling, as one `Text`. Two keys rather than a ternary:
+    /// `Text(a ? "x" : "y")` is a String and is never looked up.
+    private func minutesText(_ usage: EntitlementClient.Usage) -> Text {
+        guard let limit = usage.aiSeconds.limit else { return Text("rajaton") }
+        return Text("\(usage.aiSeconds.used / 60) / \(limit / 60) min")
+    }
+
+    private func photosText(_ usage: EntitlementClient.Usage) -> Text {
+        guard let limit = usage.photos.limit else { return Text("rajaton") }
+        return Text("\(usage.photos.used) / \(limit)")
+    }
+
+    /// How far the copy has got, and if it stopped, why — in the words of the
+    /// rules in `FullCopy`.
+    private func copyText(_ copy: FullCopy) -> Text {
+        let have = copy.progress.have
+        let total = copy.progress.total
+        if total == 0 { return Text("ei vielä kuvia eikä ääniä") }
+        if copy.isRunning { return Text("haetaan, \(have) / \(total)") }
+        if copy.progress.isComplete { return Text("kaikki tallessa") }
+        switch copy.halt {
+        case .expensiveNetwork: return Text("\(have) / \(total), odottaa wifi-yhteyttä")
+        case .lowDisk: return Text("\(have) / \(total), puhelimessa ei ole tilaa")
+        case .failures: return Text("\(have) / \(total), jatkuu kun yhteys palaa")
+        case .none: return Text("\(have) / \(total)")
+        }
     }
 
     /// The same thing said where the family details could not be fetched at all.
