@@ -149,6 +149,10 @@ they follow the repo's language rule rather than the app's. See CLAUDE.md.
 No manual key. `npx wrangler login` handles it via OAuth.
 `CLOUDFLARE_API_TOKEN` is only needed if CI is ever set up.
 
+When something on this account has gone wrong — a schema run against the wrong
+database, a deleted bucket, a lost login — read [RECOVERY.md](RECOVERY.md)
+before typing anything.
+
 ## What is NOT needed
 
 - **Apple: nothing.** No $99 account, no Sign in with Apple, no APNs certificate.

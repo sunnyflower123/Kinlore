@@ -16,3 +16,7 @@ build/
 
 # ASR test samples: real people's voices, not for the repo.
 samples/
+
+# Dumps of the production database (`npm run db:export` in backend/). Family
+# and member names are plaintext in them. Never in the repo.
+backend/backups/

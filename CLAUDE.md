@@ -92,7 +92,7 @@ now and translate it later — the translation pass has already happened once.
 ios/       SwiftUI app, XcodeGen (project.yml → .xcodeproj)
 backend/   Cloudflare Worker + D1 (metadata) + R2 (photos and audio)
 scripts/   asr-bench.mjs — Finnish speech recognition comparison
-docs/      PLAN.md, ARCHITECTURE.md, UX.md, SETUP.md, VIDEO.md
+docs/      PLAN.md, ARCHITECTURE.md, UX.md, SETUP.md, VIDEO.md, RECOVERY.md
 ```
 
 ## Data model
@@ -333,6 +333,17 @@ cd backend && npx wrangler dev
 #     --command "PRAGMA table_info(subject);"
 #
 cd backend && npx wrangler d1 execute memorize --local --file=schema.sql
+
+# A copy of the PRODUCTION database as SQL, into backend/backups/ — ignored by
+# git, because family and member names are plaintext in it. D1's Time Travel
+# keeps the last days of history by itself and needs no command until the day
+# it is needed; this is the copy that outlives the account. It carries no R2
+# object — the photographs and the voices — and R2 has no versioning to lean
+# on. Both facts, the restore commands, and what to do when the account itself
+# is gone are in docs/RECOVERY.md: read it BEFORE typing anything on the day
+# something has gone wrong, because two of the commands there make things
+# worse when run against the wrong target.
+cd backend && npm run db:export
 
 # ASR comparison
 node scripts/asr-bench.mjs samples/

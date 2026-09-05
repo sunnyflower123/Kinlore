@@ -7,7 +7,8 @@
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
     "db:local": "wrangler d1 execute memorize --local --file=schema.sql",
-    "db:remote": "wrangler d1 execute memorize --remote --file=schema.sql"
+    "db:remote": "wrangler d1 execute memorize --remote --file=schema.sql",
+    "db:export": "mkdir -p backups && wrangler d1 export memorize --remote --output=backups/memorize-$(date +%Y%m%d-%H%M).sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260730.1",
