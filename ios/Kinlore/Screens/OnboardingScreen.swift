@@ -54,7 +54,7 @@ struct OnboardingScreen: View {
     ///
     /// The title says what the app is and the two buttons say what can be done.
     /// A promise nobody can reach the buttons past is not a promise.
-    private var intro: String? {
+    private var intro: LocalizedStringKey? {
         typeSize.isAccessibilitySize
             ? nil
             : "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme."
@@ -227,13 +227,18 @@ private struct WhereMemoriesGo: View {
     var body: some View {
         Section {
         } footer: {
-            Text(isShared
-                ? "Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, "
-                    + "jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään."
-                : "Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään "
-                    + "eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, "
-                    + "ja alkuperäinen ääni säilyy puhelimessa.")
-                .foregroundStyle(Elder.supporting)
+            // Two `Text`s with one literal each. As a ternary of parts joined
+            // with `+` this was a String, shown verbatim in every language —
+            // the informed-consent sentence, Finnish on an English phone
+            // (founder's-eye review, 3 Sep 2026, finding #38).
+            Group {
+                if isShared {
+                    Text("Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.")
+                } else {
+                    Text("Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa.")
+                }
+            }
+            .foregroundStyle(Elder.supporting)
         }
     }
 }
@@ -295,7 +300,7 @@ private struct CreateFamilyForm: View {
     ///
     /// The same trade as the refused microphone in ARCHITECTURE §8.9: the dead
     /// end is replaced by the way out of it, rather than being made prettier.
-    private var missing: String? {
+    private var missing: LocalizedStringKey? {
         isReady ? nil : "Kirjoita ensin nimesi."
     }
 
@@ -449,7 +454,7 @@ private struct JoinFamilyForm: View {
     /// this app insisting she type something it has already been told.
     ///
     /// The code stays required, because nothing can supply it but her.
-    private var missing: String? {
+    private var missing: LocalizedStringKey? {
         code.trimmingCharacters(in: .whitespaces).isEmpty
             ? "Liitä vielä saamasi kutsukoodi."
             : nil

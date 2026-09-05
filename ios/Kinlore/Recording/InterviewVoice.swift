@@ -29,7 +29,19 @@ final class InterviewVoice: NSObject {
     /// an English sentence is not an accent: it applies one language's phonemes
     /// to another language's spelling, and for somebody who is 80 and listening
     /// rather than reading, that is close to noise.
-    static let questionLanguage = "fi-FI"
+    ///
+    /// The same rule the pipeline uses to choose the prompt (`SpokenLanguage`):
+    /// the questions come back in the speaker's language, and the speaker's
+    /// language is the phone's. Hardcoded "fi-FI" read every English question
+    /// with Finnish phonemes, which for somebody listening rather than reading
+    /// is close to noise (founder's-eye review, 3 Sep 2026, finding #95). The
+    /// device's own English variant when it has one, so an American phone is
+    /// not read to in British.
+    nonisolated static var questionLanguage: String {
+        if SpokenLanguage.current == "fi" { return "fi-FI" }
+        let preferred = Locale.preferredLanguages.first ?? "en-GB"
+        return preferred.hasPrefix("en") ? preferred : "en-GB"
+    }
 
     /// The voice to read `language` with: the system's own choice, upgraded to
     /// a better recording of that same speaker if one has been downloaded.

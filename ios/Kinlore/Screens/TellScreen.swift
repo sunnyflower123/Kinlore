@@ -384,7 +384,7 @@ private struct IdleView: View {
     @State private var answering: FollowUpQuestion?
     /// What to say once she has answered, and the only state this card keeps.
     /// Nil while the question is still on screen.
-    @State private var afterward: String?
+    @State private var afterward: LocalizedStringKey?
 
     /// The reassurance is what makes an elderly person willing to start talking,
     /// so it is not dropped at large text sizes — it is shortened. In full it ran
@@ -414,7 +414,12 @@ private struct IdleView: View {
     /// It names no button. The affirmative label on that prompt is Apple's and
     /// has changed between iOS versions; sending an 80-year-old to look for a
     /// word that is not there would be worse than saying nothing.
-    private func intro(withStarters: Bool) -> String {
+    // `LocalizedStringKey`, here and on every other computed text of this
+    // screen: as Strings they were shown verbatim, so the title, the
+    // microphone hint, the starters' heading, the processing phases and the
+    // blind card's answer were Finnish on an English phone — photographed
+    // 5 Sep 2026, after the review's own list (#38, #93) had missed them.
+    private func intro(withStarters: Bool) -> LocalizedStringKey {
         if AudioRecorder.isPermissionUnasked {
             // Shortened by the same rule as the reassurance below, and it was
             // measured the hard way: the two-line version at the *ordinary* text
@@ -525,7 +530,7 @@ private struct IdleView: View {
         return MediaStore.loadImage(named: filename)
     }
 
-    private var title: String {
+    private var title: LocalizedStringKey {
         guard let target = model.target else { return "Kerro mitä muistat" }
         // The name stays in the nominative. A colon before a case ending is
         // the spelling for abbreviations, never names — and a hardcoded -sta
@@ -739,10 +744,18 @@ private struct IdleView: View {
                     .accessibilityLabel("Valokuva, josta ei ole vielä kerrottu")
             }
 
-            Text(cardQuestion?.text ?? title)
-                .font(.largeTitle.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            // A question's text is the family's own words and is shown as it
+            // is; the title is a key. Two `Text`s, one for each.
+            Group {
+                if let question = cardQuestion {
+                    Text(question.text)
+                } else {
+                    Text(title)
+                }
+            }
+            .font(.largeTitle.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
 
             // Dropped when there is a card. The reassurance exists to make a
             // blank button approachable — *"Puhu ihan rauhassa ja vapaasti"* is
@@ -787,7 +800,13 @@ private struct IdleView: View {
             // that can least afford the height.
             if !offered.questions.isEmpty, cardQuestion == nil {
                 VStack(spacing: 10) {
-                    Text(offered.isStarter ? "Jos et tiedä mistä aloittaa" : "Tai vastaa aiempaan kysymykseen")
+                    Group {
+                        if offered.isStarter {
+                            Text("Jos et tiedä mistä aloittaa")
+                        } else {
+                            Text("Tai vastaa aiempaan kysymykseen")
+                        }
+                    }
                         .font(.subheadline)
                         .foregroundStyle(Elder.supporting)
                         .multilineTextAlignment(.center)
@@ -877,7 +896,7 @@ private struct WritingView: View {
         model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    private var heading: String {
+    private var heading: LocalizedStringKey {
         model.target == nil ? "Kirjoita muisto" : "Kirjoita tästä muisto"
     }
 
@@ -1124,11 +1143,11 @@ private struct Waveform: View {
 private struct ProcessingView: View {
     let phase: TellViewModel.Phase
 
-    private var title: String {
+    private var title: LocalizedStringKey {
         phase == .transcribing ? "Kuuntelen mitä sanoit" : "Järjestelen muistoa"
     }
 
-    private var detail: String {
+    private var detail: LocalizedStringKey {
         phase == .transcribing
             ? "Puran puheen tekstiksi."
             : "Etsin ihmiset, paikat ja ajankohdan."

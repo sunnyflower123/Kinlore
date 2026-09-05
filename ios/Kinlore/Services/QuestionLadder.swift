@@ -269,6 +269,11 @@ enum QuestionLadder {
     /// the list worthless. A starter is a prompt, not a debt — which is also why
     /// its id is derived from the subject rather than random: the same starter
     /// has to keep its identity across a redraw.
+    // The prompts are looked up here, at creation, with `String(localized:)`:
+    // they travel as Strings and were shown verbatim — the opening move of the
+    // product, Finnish on an English phone (founder's-eye review, 3 Sep 2026,
+    // finding #93). A question the model generates follows the speaker's
+    // language already; only these hand-written ones needed the lookup.
     static func starters(for subject: Subject) -> [FollowUpQuestion] {
         // The level is written out rather than inferred. These texts were chosen
         // for their level, and a reworded starter must not quietly become a
@@ -278,9 +283,9 @@ enum QuestionLadder {
         switch subject.kind {
         case .photo:
             texts = [
-                ("Kuka tässä kuvassa on?", .naming),
-                ("Missä tämä kuva on otettu?", .fact),
-                ("Minä vuonna tämä suunnilleen otettiin?", .fact),
+                (String(localized: "Kuka tässä kuvassa on?"), .naming),
+                (String(localized: "Missä tämä kuva on otettu?"), .fact),
+                (String(localized: "Minä vuonna tämä suunnilleen otettiin?"), .fact),
             ]
         case .person:
             // The name stays in the nominative in every one of these. Finnish
@@ -288,18 +293,18 @@ enum QuestionLadder {
             // built in code would be wrong exactly as often as it was right.
             let name = subject.displayTitle
             texts = [
-                ("Kuka \(name) oli sinulle?", .naming),
-                ("Missä \(name) asui?", .fact),
+                (String(localized: "Kuka \(name) oli sinulle?"), .naming),
+                (String(localized: "Missä \(name) asui?"), .fact),
             ]
         case .place:
             texts = [
-                ("Milloin olit siellä viimeksi?", .fact),
-                ("Kuka siellä asui?", .naming),
+                (String(localized: "Milloin olit siellä viimeksi?"), .fact),
+                (String(localized: "Kuka siellä asui?"), .naming),
             ]
         case .event:
             texts = [
-                ("Ketkä siellä olivat?", .naming),
-                ("Milloin tämä tapahtui?", .fact),
+                (String(localized: "Ketkä siellä olivat?"), .naming),
+                (String(localized: "Milloin tämä tapahtui?"), .fact),
             ]
         }
         return texts.enumerated().map { index, starter in
@@ -329,8 +334,8 @@ enum QuestionLadder {
     /// Both are at the bottom of the ladder and the naming question comes first,
     /// because this is the first question the app ever asks anybody.
     static let opening: [FollowUpQuestion] = [
-        ("Kuka on vanhin ihminen, jonka muistat?", QuestionLevel.naming),
-        ("Missä asuit lapsena?", QuestionLevel.fact),
+        (String(localized: "Kuka on vanhin ihminen, jonka muistat?"), QuestionLevel.naming),
+        (String(localized: "Missä asuit lapsena?"), QuestionLevel.fact),
     ].enumerated().map { index, starter in
         FollowUpQuestion(
             id: "opening-\(index)",

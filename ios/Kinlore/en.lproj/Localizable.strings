@@ -337,3 +337,53 @@
 
 // Opening a local archive to a family no longer hides the archive (5 Sep 2026).
 "Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty." = "You can still cancel until a family has been started or joined.";
+
+// The strings that reached the screen as Strings and were never looked up: the first screen, the consent notice, the join errors and the starter questions (5 Sep 2026).
+"Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme." = "Gather together what the grandparents remember. Tell it in your own voice — we put it in order.";
+"Kirjoita ensin nimesi." = "Write your name first.";
+"Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään." = "The memories are seen by the family's members. The recording is sent to our service, where the speech is written down as text, and the original voice is kept.";
+"Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa." = "The memories stay on this phone. Recordings are sent nowhere and no text is written from the speech — you can write the memories yourself, and the original voice stays on the phone.";
+"Palvelin ei vastannut." = "The server did not answer.";
+"Jotain meni pieleen. Yritä uudelleen." = "Something went wrong. Try again.";
+"Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki." = "The invitation is not valid. It may have expired — ask for a new link.";
+"Tämä laite kuuluu jo toiseen perheeseen." = "This device already belongs to another family.";
+"Tunnistautuminen epäonnistui." = "Authentication failed.";
+"Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen." = "Too many attempts in a short time. Wait a moment and then try again.";
+"Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen." = "You are the family's only member, so you cannot leave it. You can clear this device.";
+"Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen." = "The server cannot be reached. Try again in a moment.";
+"Verkkoyhteyttä ei juuri nyt ole. Yritä uudelleen kun yhteys palaa." = "There is no network connection right now. Try again when it is back.";
+"Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen." = "The server did not answer in time. Try again in a moment.";
+"Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen." = "The connection did not succeed. Try again in a moment.";
+"Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa." = "The family service cannot be reached right now. The memories are kept on this device.";
+"Kuka tässä kuvassa on?" = "Who is in this picture?";
+"Missä tämä kuva on otettu?" = "Where was this picture taken?";
+"Minä vuonna tämä suunnilleen otettiin?" = "About what year was this taken?";
+"Kuka %@ oli sinulle?" = "Who was %@ to you?";
+"Missä %@ asui?" = "Where did %@ live?";
+"Milloin olit siellä viimeksi?" = "When were you there last?";
+"Kuka siellä asui?" = "Who lived there?";
+"Ketkä siellä olivat?" = "Who was there?";
+"Milloin tämä tapahtui?" = "When did this happen?";
+"Kuka on vanhin ihminen, jonka muistat?" = "Who is the oldest person you remember?";
+"Missä asuit lapsena?" = "Where did you live as a child?";
+"Virheellinen osoite." = "Invalid address.";
+
+// The Tell screen's computed texts, photographed Finnish on an English phone (5 Sep 2026).
+"Puhelin kysyy ensin luvan mikrofoniin." = "The phone will first ask permission for the microphone.";
+"Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua." = "The phone will first ask permission for the microphone. Allow it, and you can talk.";
+"Puhu ihan rauhassa ja vapaasti." = "Talk at your own pace, freely.";
+"Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Talk at your own pace, freely. No need to remember the order or the years — we put them in place for you.";
+"Kerro mitä muistat" = "Tell what you remember";
+"Kerro hänestä — %@" = "Tell about %@";
+"Kerro tästä kuvasta" = "Tell about this picture";
+"Jos et tiedä mistä aloittaa" = "If you do not know where to start";
+"Tai vastaa aiempaan kysymykseen" = "Or answer an earlier question";
+"Kirjoita muisto" = "Write a memory";
+"Kirjoita tästä muisto" = "Write a memory about this";
+"Kuuntelen mitä sanoit" = "Listening to what you said";
+"Järjestelen muistoa" = "Putting the memory in order";
+"Puran puheen tekstiksi." = "Writing the speech down as text.";
+"Etsin ihmiset, paikat ja ajankohdan." = "Finding the people, the places and the time.";
+"Kuka tässä on?" = "Who is this?";
+"Kiitos. Nyt tiedämme, kuka hän on." = "Thank you. Now we know who this is.";
+"Kiitos. Tämä jää toistaiseksi avoimeksi." = "Thank you. This stays open for now.";

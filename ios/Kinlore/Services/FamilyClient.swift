@@ -119,7 +119,7 @@ struct FamilyClient {
         authenticated: Bool
     ) async throws -> Response {
         guard let url = URL(string: path, relativeTo: baseURL) else {
-            throw FamilyError.message("Virheellinen osoite.")
+            throw FamilyError.message(String(localized: "Virheellinen osoite."))
         }
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -147,7 +147,7 @@ struct FamilyClient {
             throw FamilyError.transport(error)
         }
         guard let http = response as? HTTPURLResponse else {
-            throw FamilyError.message("Palvelin ei vastannut.")
+            throw FamilyError.message(String(localized: "Palvelin ei vastannut."))
         }
         guard (200 ..< 300).contains(http.statusCode) else {
             throw FamilyError.forStatus(http.statusCode, data: data)
@@ -157,11 +157,17 @@ struct FamilyClient {
         } catch {
             // The server answered something the app could not read. The person
             // can do nothing differently, so the sentence promises nothing.
-            throw FamilyError.message("Jotain meni pieleen. Yritä uudelleen.")
+            throw FamilyError.message(String(localized: "Jotain meni pieleen. Yritä uudelleen."))
         }
     }
 }
 
+/// Every sentence here is looked up with `String(localized:)` at the point it
+/// is made: the message travels as a String into `Session.lastError` and on to
+/// a label, and a literal put in here as a String was shown verbatim in every
+/// language — the join form's "Kutsu ei kelpaa" on an English phone, on the
+/// one screen a person reaches alone from a link (founder's-eye review, 3 Sep
+/// 2026, finding #94).
 enum FamilyError: LocalizedError {
     case message(String)
 
@@ -178,24 +184,24 @@ enum FamilyError: LocalizedError {
 
         switch code {
         case "invalid_invite":
-            return .message("Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki.")
+            return .message(String(localized: "Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki."))
         case "member_exists":
-            return .message("Tämä laite kuuluu jo toiseen perheeseen.")
+            return .message(String(localized: "Tämä laite kuuluu jo toiseen perheeseen."))
         case "unauthorized":
-            return .message("Tunnistautuminen epäonnistui.")
+            return .message(String(localized: "Tunnistautuminen epäonnistui."))
         // Creating a family and joining one are metered per address
         // (docs/ARCHITECTURE.md §4), so this is the one refusal the app can now
         // meet that the generic wording actively misleads about: "yritä
         // uudelleen" is exactly what will not work, and a person who has just
         // been told to try again will tap the button until it does.
         case "too_many_requests":
-            return .message("Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen.")
+            return .message(String(localized: "Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen."))
         case "last_member":
-            return .message("Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen.")
+            return .message(String(localized: "Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen."))
         default:
             return .message(status >= 500
-                ? "Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen."
-                : "Jotain meni pieleen. Yritä uudelleen.")
+                ? String(localized: "Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen.")
+                : String(localized: "Jotain meni pieleen. Yritä uudelleen."))
         }
     }
 
@@ -209,11 +215,11 @@ enum FamilyError: LocalizedError {
     static func transport(_ error: URLError) -> FamilyError {
         switch error.code {
         case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
-            return .message("Verkkoyhteyttä ei juuri nyt ole. Yritä uudelleen kun yhteys palaa.")
+            return .message(String(localized: "Verkkoyhteyttä ei juuri nyt ole. Yritä uudelleen kun yhteys palaa."))
         case .timedOut:
-            return .message("Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen.")
+            return .message(String(localized: "Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen."))
         default:
-            return .message("Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen.")
+            return .message(String(localized: "Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen."))
         }
     }
 }

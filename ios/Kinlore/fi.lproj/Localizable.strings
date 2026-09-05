@@ -291,3 +291,53 @@
 
 // Opening a local archive to a family no longer hides the archive (5 Sep 2026).
 "Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty." = "Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty.";
+
+// The strings that reached the screen as Strings and were never looked up: the first screen, the consent notice, the join errors and the starter questions (5 Sep 2026).
+"Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme." = "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme.";
+"Kirjoita ensin nimesi." = "Kirjoita ensin nimesi.";
+"Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään." = "Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.";
+"Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa." = "Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa.";
+"Palvelin ei vastannut." = "Palvelin ei vastannut.";
+"Jotain meni pieleen. Yritä uudelleen." = "Jotain meni pieleen. Yritä uudelleen.";
+"Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki." = "Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki.";
+"Tämä laite kuuluu jo toiseen perheeseen." = "Tämä laite kuuluu jo toiseen perheeseen.";
+"Tunnistautuminen epäonnistui." = "Tunnistautuminen epäonnistui.";
+"Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen." = "Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen.";
+"Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen." = "Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen.";
+"Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen." = "Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen.";
+"Verkkoyhteyttä ei juuri nyt ole. Yritä uudelleen kun yhteys palaa." = "Verkkoyhteyttä ei juuri nyt ole. Yritä uudelleen kun yhteys palaa.";
+"Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen." = "Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen.";
+"Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen." = "Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen.";
+"Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa." = "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa.";
+"Kuka tässä kuvassa on?" = "Kuka tässä kuvassa on?";
+"Missä tämä kuva on otettu?" = "Missä tämä kuva on otettu?";
+"Minä vuonna tämä suunnilleen otettiin?" = "Minä vuonna tämä suunnilleen otettiin?";
+"Kuka %@ oli sinulle?" = "Kuka %@ oli sinulle?";
+"Missä %@ asui?" = "Missä %@ asui?";
+"Milloin olit siellä viimeksi?" = "Milloin olit siellä viimeksi?";
+"Kuka siellä asui?" = "Kuka siellä asui?";
+"Ketkä siellä olivat?" = "Ketkä siellä olivat?";
+"Milloin tämä tapahtui?" = "Milloin tämä tapahtui?";
+"Kuka on vanhin ihminen, jonka muistat?" = "Kuka on vanhin ihminen, jonka muistat?";
+"Missä asuit lapsena?" = "Missä asuit lapsena?";
+"Virheellinen osoite." = "Virheellinen osoite.";
+
+// The Tell screen's computed texts, photographed Finnish on an English phone (5 Sep 2026).
+"Puhelin kysyy ensin luvan mikrofoniin." = "Puhelin kysyy ensin luvan mikrofoniin.";
+"Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua." = "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua.";
+"Puhu ihan rauhassa ja vapaasti." = "Puhu ihan rauhassa ja vapaasti.";
+"Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.";
+"Kerro mitä muistat" = "Kerro mitä muistat";
+"Kerro hänestä — %@" = "Kerro hänestä — %@";
+"Kerro tästä kuvasta" = "Kerro tästä kuvasta";
+"Jos et tiedä mistä aloittaa" = "Jos et tiedä mistä aloittaa";
+"Tai vastaa aiempaan kysymykseen" = "Tai vastaa aiempaan kysymykseen";
+"Kirjoita muisto" = "Kirjoita muisto";
+"Kirjoita tästä muisto" = "Kirjoita tästä muisto";
+"Kuuntelen mitä sanoit" = "Kuuntelen mitä sanoit";
+"Järjestelen muistoa" = "Järjestelen muistoa";
+"Puran puheen tekstiksi." = "Puran puheen tekstiksi.";
+"Etsin ihmiset, paikat ja ajankohdan." = "Etsin ihmiset, paikat ja ajankohdan.";
+"Kuka tässä on?" = "Kuka tässä on?";
+"Kiitos. Nyt tiedämme, kuka hän on." = "Kiitos. Nyt tiedämme, kuka hän on.";
+"Kiitos. Tämä jää toistaiseksi avoimeksi." = "Kiitos. Tämä jää toistaiseksi avoimeksi.";

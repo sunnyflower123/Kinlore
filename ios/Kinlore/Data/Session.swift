@@ -340,7 +340,7 @@ final class Session {
             // written for whoever configured the build, and it was shown to the
             // person holding the phone — who can do nothing with the word
             // "backend" except conclude that they broke something.
-            lastError = "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa."
+            lastError = String(localized: "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa.")
             return false
         }
         isWorking = true
@@ -476,7 +476,7 @@ final class Session {
             // written for whoever configured the build, and it was shown to the
             // person holding the phone — who can do nothing with the word
             // "backend" except conclude that they broke something.
-            lastError = "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa."
+            lastError = String(localized: "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa.")
             return
         }
         isWorking = true
