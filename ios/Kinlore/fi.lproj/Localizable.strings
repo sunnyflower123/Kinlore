@@ -395,3 +395,10 @@
 "%lld kuvaa tai äänitystä ei ollut saatavilla. Ne ovat vain perheen palvelimella, joten tämä vienti ei ole täydellinen kopio. Yritä uudelleen verkossa, äläkä tyhjennä laitetta ennen sitä." = "%lld kuvaa tai äänitystä ei ollut saatavilla. Ne ovat vain perheen palvelimella, joten tämä vienti ei ole täydellinen kopio. Yritä uudelleen verkossa, äläkä tyhjennä laitetta ennen sitä.";
 "Yhtä kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä siitä ole muuta kopiota." = "Yhtä kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä siitä ole muuta kopiota.";
 "%lld kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä niistä ole muuta kopiota." = "%lld kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä niistä ole muuta kopiota.";
+"Siirrä toiselle kortille" = "Siirrä toiselle kortille";
+"Mihin muisto kuuluu?" = "Mihin muisto kuuluu?";
+"Ei muita kortteja" = "Ei muita kortteja";
+"Kortit syntyvät kertomisesta. Kun perhe on kertonut ihmisistä, paikoista ja tapahtumista, muiston voi siirtää niille." = "Kortit syntyvät kertomisesta. Kun perhe on kertonut ihmisistä, paikoista ja tapahtumista, muiston voi siirtää niille.";
+"Paikat" = "Paikat";
+"Tapahtumat" = "Tapahtumat";
+"Muisto on nyt kohteessa **%@**" = "Muisto on nyt kohteessa **%@**";

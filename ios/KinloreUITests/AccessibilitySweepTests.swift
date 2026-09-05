@@ -386,6 +386,18 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The sheet that corrects where a telling was filed: the family's people,
+    /// places and events, from the result screen.
+    func testMoveMemory() throws {
+        try sweep("Siirrä toiselle kortille", arguments: ["-seed", "archive", "-tab", "tell", "-screen", "result"]) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "the result")
+            let move = app.buttons["Siirrä toiselle kortille"]
+            for _ in 0 ..< 3 where !move.exists { app.swipeUp() }
+            require(move, "the way to move the telling").tap()
+            require(app.navigationBars["Mihin muisto kuuluu?"], "the sheet")
+        }
+    }
+
     /// The recording that could not be kept, said on the screen that used to
     /// say the opposite. `-audio-lost` holds the failure still.
     func testTellRecordingLost() throws {

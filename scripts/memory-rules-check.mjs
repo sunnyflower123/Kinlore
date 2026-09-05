@@ -247,6 +247,42 @@ try {
 		check('nor take the telling for himself', m?.author_id === mummo.memberID, JSON.stringify(m?.author_id))
 	}
 
+	console.log('— a telling can be moved to another card, by its teller —')
+	{
+		// The AI filed it under the wrong place; the teller moves it. Ville,
+		// who is family, does not get to move it back — the same author rule
+		// as the words, and the refusal is as silent.
+		const elsewhere = randomUUID()
+		await push(mummo, {
+			subjects: [{ id: elsewhere, kind: 'place', title: 'Sortavala', created_at: now }],
+		})
+		await push(mummo, {
+			memories: [{ id: told, subject_id: elsewhere, body: spoken, created_at: now }],
+		})
+		let m = (await memories(mummo)).get(told)
+		check('the teller moves it', m?.subject_id === elsewhere, JSON.stringify(m?.subject_id))
+		check('and the words travel with it unchanged', m?.body === spoken, JSON.stringify(m?.body))
+		// A second member, invited for this: the one above lives in its own
+		// block, and a code admits one person.
+		const { body: invite } = await send('/family/invite', { method: 'POST', headers: mummo.auth })
+		const toinen = person('Toinen')
+		await send('/family/join', {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({
+				memberID: toinen.memberID,
+				secret: toinen.secret,
+				displayName: toinen.name,
+				code: invite.code,
+			}),
+		})
+		await push(toinen, {
+			memories: [{ id: told, subject_id: subject, body: spoken, created_at: now }],
+		})
+		m = (await memories(mummo)).get(told)
+		check('another member cannot move it back', m?.subject_id === elsewhere, JSON.stringify(m?.subject_id))
+	}
+
 	console.log('— and what was taken away stays away —')
 	{
 		await push(mummo, {

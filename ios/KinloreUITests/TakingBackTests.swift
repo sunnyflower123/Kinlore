@@ -205,6 +205,33 @@ final class TakingBackTests: XCTestCase {
     /// that has never been asked shows the system prompt on the first launch —
     /// it is answered here rather than worked around, because a test that
     /// quietly skipped itself would be a green claim that nobody checked.
+    /// Where the AI filed the telling, corrected. The placement line was the
+    /// most important piece of the result and the one nothing could change
+    /// (founder's-eye review, finding #27): the sheet offers the family's
+    /// people, places and events, and the sentence follows the choice.
+    func testATellingCanBeMovedToAnotherCard() {
+        let app = launch(["-seed", "archive", "-tab", "tell", "-screen", "result"])
+        XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
+
+        let move = app.buttons["Siirrä toiselle kortille"]
+        for _ in 0 ..< 3 where !move.exists { app.swipeUp() }
+        XCTAssertTrue(move.waitForExistence(timeout: 10), "the placement could not be corrected")
+        move.tap()
+
+        XCTAssertTrue(app.navigationBars["Mihin muisto kuuluu?"].waitForExistence(timeout: 10), "the sheet did not open")
+        let sanni = app.buttons["Sanni"]
+        for _ in 0 ..< 3 where !sanni.exists { app.swipeUp() }
+        XCTAssertTrue(sanni.waitForExistence(timeout: 10), "the family's people were not offered")
+        sanni.tap()
+
+        XCTAssertTrue(
+            app.staticTexts
+                .containing(NSPredicate(format: "label CONTAINS %@ AND label CONTAINS %@", "Muisto on nyt kohteessa", "Sanni"))
+                .firstMatch.waitForExistence(timeout: 10),
+            "the placement line did not follow the move"
+        )
+    }
+
     func testAnAbandonedRecordingLeavesNothingBehind() {
         let app = launch(["-seed", "empty"])
 

@@ -731,6 +731,7 @@ final class TellViewModel {
         store.add(memory)
         savedAudioDuration = duration
         savedMemoryID = memory.id
+        movedByHand = false
         sessionMemoryIDs.append(memory.id)
 
         let questions = extracted.questions.map {
@@ -842,6 +843,22 @@ final class TellViewModel {
         }
         return nil
     }
+
+    // MARK: - Moving
+
+    /// Files the telling just saved under another card. The result's placement
+    /// line follows, so the sentence on screen says where it is now — in its
+    /// own words, because "sijoitin" and "lisäsin" were the AI's and the card's
+    /// doing, and this was the teller's.
+    func move(to subject: Subject) {
+        guard let id = savedMemoryID else { return }
+        store.move(memoryID: id, to: subject.id)
+        placedSubject = subject
+        movedByHand = true
+    }
+
+    /// Whether the telling on the result screen was refiled by hand.
+    private(set) var movedByHand = false
 
     // MARK: - Name correction
 

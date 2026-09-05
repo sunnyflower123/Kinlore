@@ -345,6 +345,14 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                     audio_r2_key, audio_seconds, source, created_at, deleted_at, seq)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
+				   -- The author may move a telling to another card: the AI's
+				   -- placement is the most important piece of the result, and
+				   -- until 5 Sep 2026 it was the one nobody could correct
+				   -- (founder's-eye review, finding #27). The WHERE below keeps
+				   -- it the author's alone. The author's other device pushing
+				   -- an older row would move it back — the same shared-identity
+				   -- edge the body already lives with.
+				   subject_id = excluded.subject_id,
 				   -- An empty body never overwrites a real one. The transcript
 				   -- arrives after the audio, and the author's other device may
 				   -- still hold the untranscribed version — the Keychain

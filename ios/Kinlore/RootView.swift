@@ -20,6 +20,10 @@ struct RootView: View {
             switch UserDefaults.standard.string(forKey: "tab") {
             case "memories": return .memories
             case "people": return .people
+            // Kerro by name, for a test that needs the result screen over an
+            // archive with tellings from others waiting — which otherwise wins
+            // the first tab.
+            case "tell": return .tell
             default: break
             }
             #endif
@@ -636,6 +640,7 @@ private struct MemoryRow: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isConfirmingRemoval = false
     @State private var isEditingText = false
+    @State private var isMoving = false
     let memory: Memory
 
     /// Four truths for one row, in the order they are decided.
@@ -716,6 +721,14 @@ private struct MemoryRow: View {
                         .elderTapTarget()
                 }
 
+                // Where the telling is filed, corrected the day after. The
+                // AI's placement could be corrected nowhere until 5 Sep 2026
+                // (finding #27); the same sheet the result screen opens.
+                Button("Siirrä toiselle kortille") { isMoving = true }
+                    .buttonStyle(.borderless)
+                    .font(.body.weight(.medium))
+                    .elderTapTarget()
+
                 Button("Poista tämä muisto") { isConfirmingRemoval = true }
                     .buttonStyle(.borderless)
                     .font(.body.weight(.medium))
@@ -724,6 +737,13 @@ private struct MemoryRow: View {
             }
         }
         .padding(.vertical, 6)
+        .sheet(isPresented: $isMoving) {
+            MoveMemorySheet(current: memory.subjectID) { subject in
+                // A moment that held only this telling goes with it, and the
+                // card being read is then that moment's: nothing to stay for.
+                if store.move(memoryID: memory.id, to: subject.id) { dismiss() }
+            }
+        }
         .alert(
             "Poistetaanko tämä muisto?",
             isPresented: $isConfirmingRemoval

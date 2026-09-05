@@ -1298,6 +1298,7 @@ private struct ResultView: View {
     let model: TellViewModel
 
     @State private var isConfirmingDiscard = false
+    @State private var isMoving = false
 
     var body: some View {
         ScrollView {
@@ -1409,6 +1410,11 @@ private struct ResultView: View {
         } message: {
             Text("Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.")
         }
+        .sheet(isPresented: $isMoving) {
+            if let placed = model.placedSubject {
+                MoveMemorySheet(current: placed.id) { model.move(to: $0) }
+            }
+        }
     }
 
     private var header: some View {
@@ -1426,7 +1432,9 @@ private struct ResultView: View {
                 // is shown verbatim instead of being looked up. The sentence
                 // stayed Finnish in the English build until this was split.
                 Group {
-                    if model.target == nil {
+                    if model.movedByHand {
+                        Text("Muisto on nyt kohteessa **\(placed.displayTitle)**")
+                    } else if model.target == nil {
                         Text("Sijoitin sen kohteeseen **\(placed.displayTitle)**")
                     } else {
                         Text("Lisäsin sen kohteeseen **\(placed.displayTitle)**")
@@ -1434,6 +1442,19 @@ private struct ResultView: View {
                 }
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
+
+                // The correction for the sentence above. The AI's placement
+                // was the one thing on this screen nobody could correct
+                // until 5 Sep 2026 (finding #27): grandfather's war years
+                // filed under "Kesä Puumalassa" stayed there for good. Also
+                // for a telling started from a card: the deck offered Aino
+                // and grandmother talked about the cottage, and the card is
+                // wrong the same way.
+                if model.savedMemoryID != nil {
+                    Button("Siirrä toiselle kortille") { isMoving = true }
+                        .buttonStyle(.bordered)
+                        .elderTapTarget()
+                }
             }
 
             // Said out loud rather than left to be inferred. Without it a

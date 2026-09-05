@@ -441,3 +441,10 @@
 "%lld kuvaa tai äänitystä ei ollut saatavilla. Ne ovat vain perheen palvelimella, joten tämä vienti ei ole täydellinen kopio. Yritä uudelleen verkossa, äläkä tyhjennä laitetta ennen sitä." = "%lld photographs or recordings were not available. They are only on the family's server, so this export is not a complete copy. Try again online, and do not empty the device before then.";
 "Yhtä kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä siitä ole muuta kopiota." = "One photograph or recording could not be found on this phone, and there is no other copy of it.";
 "%lld kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä niistä ole muuta kopiota." = "%lld photographs or recordings could not be found on this phone, and there is no other copy of them.";
+"Siirrä toiselle kortille" = "Move to another card";
+"Mihin muisto kuuluu?" = "Where does the memory belong?";
+"Ei muita kortteja" = "No other cards";
+"Kortit syntyvät kertomisesta. Kun perhe on kertonut ihmisistä, paikoista ja tapahtumista, muiston voi siirtää niille." = "Cards are born out of telling. Once the family has told about people, places and events, a memory can be moved to them.";
+"Paikat" = "Places";
+"Tapahtumat" = "Events";
+"Muisto on nyt kohteessa **%@**" = "The memory is now under **%@**";

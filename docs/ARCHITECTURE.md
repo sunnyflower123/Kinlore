@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 50 sweep tests, each auditing one screen at the default text size and again at the largest, out of 113 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 51 sweep tests, each auditing one screen at the default text size and again at the largest, out of 114 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2705,6 +2705,20 @@ the wipe skips the leave there is nothing to make. What it does not fix is the
 cause: two phones on one Apple ID share one identity by design (§4), so
 emptying either one renews the other's — that stays a design question, written
 down here rather than patched.
+
+**And where the AI filed a telling could not be corrected.** The placement line
+is the most important piece of the result — the organising the teller would
+never do herself — and it was the one thing on that screen nothing could change:
+grandfather's war years filed under *"Kesä Puumalassa"* stayed there for good,
+while a misheard name got a whole correction flow (founder's-eye review,
+finding #27; fixed 5 Sep 2026). *"Siirrä toiselle kortille"* under the line, and
+on the memory's own row the day after, opens one sheet of the family's people,
+places and events; `MemoryStore.move` refiles the telling, keeps its mentions,
+and takes an auto-made moment with it when nothing is left under it, exactly as
+taking the telling back does. The server's memory upsert now carries
+`subject_id` from the author — it never had, so a move would have stayed on one
+phone — and `memory-rules-check.mjs` presses on both halves: the teller moves
+it, another member cannot move it back.
 
 **And a recording that could not be kept was called kept.** `persistAudio`
 moves the file out of the temporary directory, and until 5 Sep 2026 a failed

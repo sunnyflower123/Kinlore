@@ -579,6 +579,40 @@ final class MemoryStore {
         return false
     }
 
+    /// Moves a telling to another card.
+    ///
+    /// The AI's placement is the most important piece of the result — the
+    /// organising the teller would never do herself — and until 5 Sep 2026 it
+    /// was the one thing on that screen nobody could correct: grandfather's
+    /// war years filed under "Kesä Puumalassa" stayed there for good
+    /// (founder's-eye review, finding #27). The server takes the new card from
+    /// the author alone, as it takes the words.
+    ///
+    /// The mentions stay: who was named in the telling does not change with
+    /// where it is filed. A moment the AI made for this telling alone goes
+    /// with it, exactly as it goes when the telling is taken back — an
+    /// untitled or auto-named event with nothing left under it is not a card.
+    ///
+    /// Returns whether the old home went: the card the caller is standing on
+    /// has then nothing left to show.
+    @discardableResult
+    func move(memoryID: String, to subjectID: String) -> Bool {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }),
+              memories[index].subjectID != subjectID,
+              subjects.contains(where: { $0.id == subjectID && $0.deletedAt == nil && $0.mergedInto == nil })
+        else { return false }
+        let from = memories[index].subjectID
+        memories[index].subjectID = subjectID
+        dirtyMemories.insert(memoryID)
+        save()
+        if let home = subjects.first(where: { $0.id == from }),
+           home.kind == .event, home.deletedAt == nil, isOrphaned(subjectID: home.id) {
+            remove(subjectID: home.id)
+            return true
+        }
+        return false
+    }
+
     func markAnswered(questionID: String) {
         guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
         questions[index].answered = true
