@@ -134,6 +134,11 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    `memories(mentioning:)` — was already in the model, and a photograph has no
    name in it to leak, which is the whole cost the round's mask used to carry.
 
+   Since 5 Sep 2026 the card follows whose phone it is: on a reader's phone it
+   stays on the Kerro tab; on a grandparent's (the text-floor signal) it sits
+   on Muistot in the reading loop, and her Kerro tab is the button and nothing
+   else (`BlindCardView`, one view in both places).
+
    The orange proposal row on the person list and in the Tell result is still
    there and is still the weaker instrument. It is what answers a proposal the
    blind card cannot reach: a name heard while talking about a person rather

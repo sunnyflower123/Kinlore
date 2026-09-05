@@ -34,6 +34,31 @@ final class BlindConfirmationTests: XCTestCase {
     /// photograph's accessibility label, which is where a leak would reach the
     /// person most likely to be listening rather than looking. That is the door
     /// the cut round's mask had to be a *word* rather than a gap to close.
+    /// On a grandparent's phone the Kerro tab is the button and nothing else,
+    /// and the card is on Muistot, where she reads. The launch argument is the
+    /// answer to "kenen puhelin tämä on".
+    func testAGrandparentsPhoneKeepsTheButtonAndReadsTheCardOnMuistot() {
+        let app = launch(["-seed", "blind", "-elder.largerText", "YES"])
+        XCTAssertTrue(app.buttons["Aloita kertominen"].waitForExistence(timeout: 15), "her Kerro tab did not open on the button")
+        XCTAssertFalse(app.staticTexts["Kuka tässä on?"].exists, "the card took her button")
+        app.tabBars.buttons["Muistot"].tap()
+        XCTAssertTrue(app.staticTexts["Kuka tässä on?"].waitForExistence(timeout: 10), "the card is not on Muistot")
+    }
+
+    /// And the reader-flip is hers to be spared: with the family's tellings
+    /// unread, her phone still opens on Kerro.
+    func testAGrandparentsPhoneOpensOnKerroDespiteNewTellings() {
+        let app = launch(["-seed", "unseen", "-elder.largerText", "YES"])
+        XCTAssertTrue(app.buttons["Aloita kertominen"].waitForExistence(timeout: 15), "her phone opened somewhere other than the button")
+        // Leave the reading debt paid. `-seed unseen` empties the seen list
+        // and the list persists across launches, so a test that never opens
+        // Muistot hands the next launch — the next test — a reader's phone
+        // that opens on Muistot. Measured: the test after this one waited on
+        // the Kerro tab's card that was never going to show.
+        app.tabBars.buttons["Muistot"].tap()
+        XCTAssertTrue(app.staticTexts["Uutta perheeltä"].waitForExistence(timeout: 10), "the reading list did not open")
+    }
+
     func testTheCardNeverSaysWhichNameWasProposed() {
         let app = launch(["-seed", "blind"])
         card(app)

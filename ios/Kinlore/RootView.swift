@@ -36,7 +36,16 @@ struct RootView: View {
             // pointing both ways (docs/UX.md §6). If the phase E visit shows
             // this flip costs the teller her button, this one condition is
             // the thing to revert; the section stays either way.
-            if newFromFamily { return .memories }
+            // The readers' phones open on what the family told; the teller's
+            // opens on her button. "Kenen puhelin tämä on" is the signal the
+            // app already has (the text floor), and until 5 Sep 2026 the flip
+            // ignored it: on her phone the home screen was a grid one day and
+            // a button the next, and the one thing the screen exists for was
+            // a tab away (founder's-eye review, 3 Sep 2026, findings #76,
+            // #81). The blind card moves the same way — see GalleryScreen.
+            if newFromFamily, !UserDefaults.standard.bool(forKey: Elder.largerTextKey) {
+                return .memories
+            }
             return .tell
         }
     }

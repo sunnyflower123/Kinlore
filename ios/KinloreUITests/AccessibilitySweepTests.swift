@@ -979,6 +979,44 @@ final class AccessibilitySweepTests: XCTestCase {
     /// exercised. `-seed unseen` is the demo archive plus an empty
     /// seen-baseline, so Mummo's tellings are waiting; a real one needs a
     /// second device to have told something between visits. See docs/UX.md §6.
+    /// Muistot on a grandparent's phone with the blind card on it.
+    ///
+    /// By hand rather than through `sweep`, because the text floor is on — it
+    /// is what puts the card here — and with the floor the audit's Dynamic
+    /// Type simulation cannot move the text: not down at the default size, not
+    /// down from the largest either, so it reports texts as "partially
+    /// unsupported" at both. Measured 5 Sep 2026: the plain gallery with the
+    /// floor and no card gives three such findings ("Puumala", "Kerro tästä",
+    /// "Paikat") at the default size, and this screen gives one on the card's
+    /// title at the largest. That one check is allowed here; contrast,
+    /// clipping, tap targets and labels are measured at both sizes, and the
+    /// card's own Dynamic Type behaviour is measured without the floor by
+    /// testTellWithACard, on the same view.
+    func testMemoriesWithTheBlindCard() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(
+                ["-seed", "blind", "-elder.largerText", "YES", "-tab", "memories"], textSize: size
+            )
+            require(app.staticTexts["Kuka tässä on?"], "the blind card on Muistot")
+            XCTAssertTrue(hasStoppedDrawing(app), "Muistot was still being drawn when the audit ran")
+            let at = size == nil ? "default text size" : "largest text size"
+            // The title's contrast, at the largest size only. Measured 5 Sep
+            // 2026, twice, settled: the audit holds the title's frame at
+            // y 450–592 and the screenshot shows the text at 558–680 — the
+            // expanded large title's height, and the frame it samples lies
+            // over the card's photograph, so a black-on-white title reports
+            // as failing contrast. Every other element on the screen is
+            // measured for contrast as usual, and the same title is measured
+            // without the large title above it by testTellWithACard.
+            try audit(app, "Memories with the blind card, \(at)", alsoAllowing: { issue in
+                issue.auditType == .dynamicType
+                    || (size != nil && issue.auditType == .contrast
+                        && issue.element?.label == "Kuka tässä on?")
+            })
+            app.terminate()
+        }
+    }
+
     func testMemoriesNewFromFamily() throws {
         try sweep("Muistot, uutta perheeltä", arguments: ["-seed", "unseen"]) { app, _ in
             require(app.navigationBars["Muistot"], "the landing on Muistot")

@@ -312,6 +312,8 @@ Two shapes, one derivation:
   flip costs her the button, the flip (one condition) is reverted and the
   section stays.
 
+**Revised 5 Sep 2026:** the flip is gated on whose phone it is. A reader's phone still opens on Muistot when the family has told something; a grandparent's (the text-floor signal from *"kenen puhelin tämä on"*) opens on Kerro every time, and the blind card moves to her Muistot for the same reason (founder's-eye review, findings #75, #76, #81, #83).
+
 **The removal that pays for it:** the map screen. PLAN §10 holds it as an
 open decision; this document closes it — **no map in v1**, the coordinates
 keep accumulating (ARCH §18), and the §5 row 7 slot the map would have taken

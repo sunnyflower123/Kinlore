@@ -59,6 +59,10 @@ struct GalleryScreen: View {
     /// section survives its own visit: what was new stays on screen until the
     /// next arrival at this tab, and the next arrival starts clean.
     @State private var newFromFamily: [Memory] = []
+    /// The blind card for a grandparent's phone, fetched once per appearance
+    /// like the Kerro tab's, and gone once answered.
+    @State private var blind: BlindConfirmation.Card?
+    @AppStorage(Elder.largerTextKey) private var largerText = false
     /// The cards pushed on top of this tab. Owned here so a pop-back can be
     /// told apart from an arrival — see `isReturningFromCard`.
     @State private var path: [Subject] = []
@@ -111,6 +115,10 @@ struct GalleryScreen: View {
                     return
                 }
                 newFromFamily = NewFromFamily.unseen(in: store, me: session.identity.memberID)
+                if largerText, blind == nil,
+                   store.openQuestions(limit: 1, excludingAuthor: session.identity.memberID).isEmpty {
+                    blind = BlindConfirmation.next(in: store)
+                }
                 // The baseline is not written while the first pull is still
                 // owed. A joiner's arrival used to mark an EMPTY store as
                 // seen, and the pull then landed the whole family archive on
@@ -368,6 +376,14 @@ struct GalleryScreen: View {
                     // marks it seen: no badge, no count, no debt. docs/UX.md
                     // §6, and the hole PLAN §4.1 left open when the guessing
                     // round was cut.
+                    // The blind card, on a grandparent's phone: the recognising
+                    // is reading, and this is where she reads. Her Kerro tab
+                    // keeps the button (see TellScreen.blindCard).
+                    if let card = blind {
+                        BlindCardView(card: card) { blind = nil }
+                            .padding(.vertical, 8)
+                    }
+
                     if !newFromFamily.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             SectionHeading("Uutta perheeltä")
