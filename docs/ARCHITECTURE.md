@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 50 sweep tests, each auditing one screen at the default text size and again at the largest, out of 112 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 50 sweep tests, each auditing one screen at the default text size and again at the largest, out of 113 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1716,6 +1716,21 @@ that survives leaving the screen, and any measurement of the real thing — the
 sizes above are §5's arithmetic, not a phone's.
 
 ### Emptying, and the name it got on 29 Aug 2026
+
+**And what it says on the last copy, since 5 Sep 2026.** Its warning said *"vie
+arkisto ensin"*, and the export at a cottage with no signal had just fetched
+none of the media and reassured that the files were still safe and would come
+along next time — while the wipe that followed forgets the identity and the
+key, after which the sealed voices on R2 can be neither found nor opened
+(founder's-eye review, finding #43). `FullCopy` (§5) now knows how many of the
+family's files are not on this phone, so the last copy's warning carries the
+number — *"…3 on vain palvelimella, eikä tyhjennyksen jälkeen niitä saa enää
+auki"* — and its button says *"Tyhjennä silti"*. The export's own alert stopped
+saying one sentence for three situations: while somebody else holds the
+archive the files will indeed be in the next export; on the last copy the export
+is not a complete copy and says so, and says not to empty the device before
+one is; on a local archive a file that is not here is not anywhere.
+`WipeTests` drives the warning with the copy held at three of twelve.
 
 *"Tyhjennä tämä laite"* was true and half the story. What follows the emptying
 is a **first launch**: `renewIdentity` takes a new identity with the family key

@@ -30,6 +30,30 @@ final class WipeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Tyhjennä"].exists, "the emptying itself is still offered")
     }
 
+    /// The last copy's warning used to say "vie arkisto ensin" while the export
+    /// at a cottage had just fetched nothing and reassured that the files would
+    /// come along next time — and there is no next time after the wipe forgets
+    /// the key (founder's-eye review, finding #43). Now the sentence carries the
+    /// number of files that exist only on the server, and the button says so.
+    /// `-copy waiting` holds the phone's copy at three of twelve.
+    func testEmptyingTheLastCopyNamesWhatItLoses() {
+        let app = launch(["-seed", "alone", "-copy", "waiting", "-tab", "people", "-screen", "settings"])
+
+        let wipe = app.buttons["Tyhjennä ja aloita alusta"]
+        XCTAssertTrue(wipe.waitForExistence(timeout: 10), "never arrived: Settings")
+        wipe.tap()
+
+        XCTAssertTrue(
+            app.staticTexts
+                .containing(NSPredicate(format: "label CONTAINS %@", "9 on vain palvelimella"))
+                .firstMatch.waitForExistence(timeout: 10),
+            "the wipe did not say how many files are only on the server"
+        )
+        XCTAssertTrue(app.buttons["Tyhjennä silti"].exists, "the emptying was not named for what it loses")
+        XCTAssertFalse(app.buttons["Tyhjennä"].exists, "the plain emptying was still offered")
+        app.buttons["Peruuta"].tap()
+    }
+
     /// A wipe that cannot leave must stop, not shrug. The result of the leave
     /// used to be discarded: a failed leave wiped the store and renewed the
     /// Keychain identity anyway, leaving a member row in the family forever

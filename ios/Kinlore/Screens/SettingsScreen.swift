@@ -47,11 +47,26 @@ struct SettingsScreen: View {
         return (session.family?.members.count ?? 0) > 1
     }
 
+    /// Photographs and recordings the family has that are not on this phone —
+    /// they exist only on the server, and after a wipe nothing can open them:
+    /// the identity and the key go with the store. `FullCopy` counts them.
+    private var missingLocally: Int {
+        guard let progress = sync?.fullCopy.progress else { return 0 }
+        return max(0, progress.total - progress.have)
+    }
+
     /// What emptying this device actually costs, which depends entirely on
     /// whether anyone else has a copy — and, for the last copy of a shared
     /// family, on the invites: the invitation text carries the family key, so
     /// a live code is join-and-read access to the archive this sentence just
     /// called gone. The wipe revokes them, and the sentence says so.
+    ///
+    /// And on what the phone actually holds. The last copy's warning said "vie
+    /// arkisto ensin" while the export at a cottage had just fetched nothing
+    /// and reassured that the files would come along next time — and there is
+    /// no next time after the wipe forgets the key (founder's-eye review,
+    /// finding #43). Now the sentence carries the number of files that are
+    /// only on the server, and the button says "silti".
     private var wipeWarning: String {
         // Every branch ends on the same sentence, and it is the one nothing
         // said before: the app does not come back to an emptied version of this
@@ -71,6 +86,10 @@ struct SettingsScreen: View {
                 + afterwards
         }
         if case .inFamily = session.mode {
+            if missingLocally > 0 {
+                return String(localized: "Tällä puhelimella ei ole kaikkia perheen kuvia ja ääniä: \(missingLocally) on vain palvelimella, eikä tyhjennyksen jälkeen niitä saa enää auki. Odota, että Perhe-näytön kopio on valmis, tai vie arkisto verkossa ensin.")
+                    + afterwards
+            }
             return "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne."
                 + afterwards
         }
@@ -333,8 +352,17 @@ struct SettingsScreen: View {
                 }
             }
 
-            Button("Tyhjennä", role: .destructive) {
-                Task { await wipe() }
+            // "Silti" when the sentence above has just said what is lost:
+            // the same act, named for what it is on this phone. Two buttons
+            // rather than a ternary — a ternary of literals is a String.
+            if case .inFamily = session.mode, !canLeave, missingLocally > 0 {
+                Button("Tyhjennä silti", role: .destructive) {
+                    Task { await wipe() }
+                }
+            } else {
+                Button("Tyhjennä", role: .destructive) {
+                    Task { await wipe() }
+                }
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
@@ -366,11 +394,33 @@ struct SettingsScreen: View {
             Button("Jaa silti") { isSharing = true }
             Button("Peruuta", role: .cancel) {}
         } message: {
-            Text(
-                missingFromExport == 1
-                    ? "Yksi kuva tai äänitys ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Se on yhä tallessa ja tulee mukaan seuraavaan vientiin."
-                    : "\(missingFromExport) kuvaa tai äänitystä ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Ne ovat yhä tallessa ja tulevat mukaan seuraavaan vientiin."
-            )
+            // Three truths, by whose copy this is. "Tulee mukaan seuraavaan
+            // vientiin" is true while somebody else holds the archive; on the
+            // last copy it was the reassurance before the wipe that made it
+            // false (finding #43), and on a local archive a file that is not
+            // here is not anywhere. Texts, not a ternary: a ternary of
+            // literals is a String and neither sentence had been looked up.
+            Group {
+                if canLeave {
+                    if missingFromExport == 1 {
+                        Text("Yksi kuva tai äänitys ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Se on yhä tallessa perheellä ja tulee mukaan seuraavaan vientiin.")
+                    } else {
+                        Text("\(missingFromExport) kuvaa tai äänitystä ei ollut saatavilla — todennäköisesti verkkoyhteyttä ei juuri nyt ole. Ne ovat yhä tallessa perheellä ja tulevat mukaan seuraavaan vientiin.")
+                    }
+                } else if case .inFamily = session.mode {
+                    if missingFromExport == 1 {
+                        Text("Yksi kuva tai äänitys ei ollut saatavilla. Se on vain perheen palvelimella, joten tämä vienti ei ole täydellinen kopio. Yritä uudelleen verkossa, äläkä tyhjennä laitetta ennen sitä.")
+                    } else {
+                        Text("\(missingFromExport) kuvaa tai äänitystä ei ollut saatavilla. Ne ovat vain perheen palvelimella, joten tämä vienti ei ole täydellinen kopio. Yritä uudelleen verkossa, äläkä tyhjennä laitetta ennen sitä.")
+                    }
+                } else {
+                    if missingFromExport == 1 {
+                        Text("Yhtä kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä siitä ole muuta kopiota.")
+                    } else {
+                        Text("\(missingFromExport) kuvaa tai äänitystä ei löytynyt tältä puhelimelta, eikä niistä ole muuta kopiota.")
+                    }
+                }
+            }
         }
     }
 
