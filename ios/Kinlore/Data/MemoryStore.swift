@@ -633,7 +633,7 @@ final class MemoryStore {
     /// Puts every row on this device into the outbox.
     ///
     /// One caller: a single-device archive being opened to a family
-    /// (`Session.enableFamilySharing`). Rows told before there was anywhere to
+    /// (`EnableSharingScreen`). Rows told before there was anywhere to
     /// send them were never queued — nothing queues for a server that does not
     /// exist — so without this the archive would sit on the phone while the app
     /// said it was shared, which is the silent failure this project keeps

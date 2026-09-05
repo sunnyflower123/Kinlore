@@ -334,3 +334,6 @@
 "Eri paikka" = "A different place";
 "Eri henkilö kuin %@" = "A different person from %@";
 "Eri paikka kuin %@" = "A different place from %@";
+
+// Opening a local archive to a family no longer hides the archive (5 Sep 2026).
+"Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty." = "You can still cancel until a family has been started or joined.";

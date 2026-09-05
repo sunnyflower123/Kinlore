@@ -8,6 +8,7 @@ import SwiftUI
 struct OnboardingScreen: View {
     @Environment(Session.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.dismiss) private var dismiss
 
     /// The code from an invite link, or nil.
     ///
@@ -26,6 +27,11 @@ struct OnboardingScreen: View {
     /// Cleared once it has been used, so that a code from a family she has since
     /// left cannot fill itself in over a fresh invitation.
     @Binding var prefilledCode: String?
+
+    /// Presented as a sheet over an archive kept to this phone, from
+    /// EnableSharingScreen: the fork gets a way to cancel, and the create form
+    /// stops offering "vain minulle", which is where the phone already is.
+    var fromLocalArchive = false
 
     @State private var route: Route?
     @State private var name = ""
@@ -75,7 +81,7 @@ struct OnboardingScreen: View {
             .navigationDestination(item: $route) { destination in
                 switch destination {
                 case .create:
-                    CreateFamilyForm(name: $name)
+                    CreateFamilyForm(name: $name, canStayAlone: !fromLocalArchive)
                 case .join:
                     JoinFamilyForm(name: $name, code: $code)
                 }
@@ -161,6 +167,14 @@ struct OnboardingScreen: View {
                 .controlSize(.large)
             }
 
+            // Over a local archive the fork is a sheet, and a sheet needs a way
+            // out an 80-year-old can find: the swipe is not one.
+            if fromLocalArchive {
+                Button("Peruuta") { dismiss() }
+                    .controlSize(.large)
+                    .elderTapTarget()
+            }
+
             Spacer(minLength: 0)
         }
     }
@@ -237,6 +251,8 @@ private struct WhereMemoriesGo: View {
 private struct CreateFamilyForm: View {
     @Environment(Session.self) private var session
     @Binding var name: String
+    /// False when reached from an archive already kept to this phone.
+    var canStayAlone = true
 
     @AppStorage(Elder.largerTextKey) private var largerText = false
 
@@ -293,6 +309,7 @@ private struct CreateFamilyForm: View {
             // Above the name rather than below it so that choosing the single
             // phone takes a field away underneath the finger rather than out
             // from under it.
+            if canStayAlone {
             Section {
                 // A type of its own rather than a `Bool`, because the section
                 // below is also an inline `Picker` over two cases and two `Bool`
@@ -318,6 +335,7 @@ private struct CreateFamilyForm: View {
             } footer: {
                 Text("Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen.")
                     .foregroundStyle(Elder.supporting)
+            }
             }
 
             Section {

@@ -483,7 +483,7 @@ attempts no transcription at all (§7's finding B4), so one picker answered out
 of habit turns off dictation, structure, family, invitations and the paywall,
 permanently, on that device.
 
-**Built:** `Session.enableFamilySharing()` and `EnableSharingScreen`, reached
+**Built:** `EnableSharingScreen`, reached
 from a Settings row that exists only where the choice was actually made
 (`isLocalByChoice`, which needs the flag *and* a backend address — a build with
 no address is local because there is nowhere to sync to, not because anybody

@@ -252,26 +252,6 @@ final class Session {
     /// The one way out of a single-device archive that does not cost the
     /// archive.
     ///
-    /// "Keiden kesken" is answered on the first form in the app, before anybody
-    /// knows what the app does, and until now the only thing that unmade it was
-    /// "Tyhjennä tämä laite" — an exit priced at every memory on the phone. The
-    /// cost of the mistake was not small either: this mode attempts no
-    /// transcription at all, so one picker answered out of habit turned the
-    /// product off permanently on that device.
-    ///
-    /// **One-way, and that is not a limitation but the truth.** There is no
-    /// route back: what has reached the family is on other people's phones and
-    /// cannot be recalled from here, and a switch that pretended otherwise
-    /// would be this app lying about somebody else's device.
-    ///
-    /// The rows already on the phone are the caller's to queue —
-    /// `SettingsScreen` owns the store, exactly as it does for wiping.
-    func enableFamilySharing() {
-        UserDefaults.standard.removeObject(forKey: localOnlyKey)
-        lastError = nil
-        mode = .needsFamily
-    }
-
     /// Refreshes the family details. A failure does not throw the user out:
     /// membership is local state, not the result of a network query.
     func refresh() async {
@@ -476,6 +456,17 @@ final class Session {
 
     private func store(familyID: String) {
         UserDefaults.standard.set(familyID, forKey: familyKey)
+        // The answer to "keiden kesken" is unmade here and nowhere else — when
+        // a family exists to send the archive to. It used to be unmade by the
+        // button on EnableSharingScreen, before the create or the join had
+        // been attempted: the mode went to .needsFamily on the tap, the root
+        // view became the onboarding fork, and a month of memories vanished
+        // from every screen until a network call succeeded — at a cottage with
+        // no signal, on every relaunch, under a sentence saying there was no
+        // way back (founder's-eye review, 3 Sep 2026, finding #117). Now the
+        // fork is a sheet over the archive, and a failed or cancelled attempt
+        // leaves the phone exactly as it was.
+        UserDefaults.standard.removeObject(forKey: localOnlyKey)
         mode = .inFamily(id: familyID)
     }
 

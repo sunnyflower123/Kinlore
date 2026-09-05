@@ -129,6 +129,38 @@ final class LocalModeTests: XCTestCase {
             app.buttons["Liity kutsulinkillä"].exists,
             "the fork arrived with only one way through it"
         )
+
+        // The far side is a sheet over the archive, not a wall in front of
+        // it. The backend here is a dead address, so the create fails the way
+        // a cottage with no signal fails — and nothing must have moved: the
+        // form stays, the fork can be left, and Settings is where it was,
+        // still offering the door, with the archive behind it.
+        app.buttons["Aloita perheen arkisto"].tap()
+        let name = app.textFields.firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 10), "never arrived: the create form")
+        name.tap()
+        name.typeText("Mummo")
+        let create = app.buttons["Luo arkisto"]
+        for _ in 0 ..< 4 where !create.exists { app.swipeUp() }
+        XCTAssertTrue(create.waitForExistence(timeout: 10), "never arrived: the create button")
+        create.tap()
+        XCTAssertTrue(create.waitForExistence(timeout: 15), "the failed create took the form away")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        let cancel = app.buttons["Peruuta"]
+        XCTAssertTrue(cancel.waitForExistence(timeout: 10), "the fork over an archive has no way out")
+        cancel.tap()
+
+        // The sheet is gone and the door's own screen is under it, still
+        // offering the door: nothing changed. One step back is Settings.
+        XCTAssertTrue(app.buttons["Ota perhe käyttöön"].waitForExistence(timeout: 10), "the phone stopped being local without a family")
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Vie arkisto"].waitForExistence(timeout: 10), "Settings did not come back")
+        app.tabBars.buttons["Muistot"].tap()
+        XCTAssertTrue(
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva")).firstMatch.waitForExistence(timeout: 10),
+            "the archive is no longer on screen"
+        )
     }
 
     /// And it is not offered where the choice was never made: a build with no

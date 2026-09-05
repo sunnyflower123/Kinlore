@@ -23,6 +23,9 @@ import SwiftUI
 struct EnableSharingScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var isOpening = false
 
     var body: some View {
         ScrollView {
@@ -47,13 +50,27 @@ struct EnableSharingScreen: View {
                     .elderBody()
                     .foregroundStyle(Elder.supporting)
 
+                // And the one thing that is not yet one-way: until a family
+                // exists, nothing has happened. The fork opens as a sheet over
+                // this archive, and the answer to "keiden kesken" is unmade
+                // only when the create or the join succeeds
+                // (`Session.store(familyID:)`). Before 5 Sep 2026 the button
+                // itself flipped the mode and the root view became the fork —
+                // and at a cottage with no signal, every relaunch landed there
+                // again, with the month's memories out of sight and this
+                // screen's last sentence saying there was no way back.
+                Text("Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty.")
+                    .elderBody()
+                    .foregroundStyle(Elder.supporting)
+
                 Button {
-                    // The rows first, the mode second. They were told while
-                    // there was nowhere to send them, so nothing ever queued
-                    // them; without this the archive would sit on the phone
-                    // while every screen said it was shared.
+                    // The rows first. They were told while there was nowhere
+                    // to send them, so nothing ever queued them; without this
+                    // the archive would sit on the phone while every screen
+                    // said it was shared. Harmless if the sheet is cancelled:
+                    // the queue only runs in a family.
                     store.markAllPending()
-                    session.enableFamilySharing()
+                    isOpening = true
                 } label: {
                     // Allowed to wrap, and the 60 pt minimum on the control
                     // rather than on the label: on the label it fights the
@@ -72,6 +89,17 @@ struct EnableSharingScreen: View {
         }
         .navigationTitle("Perhe")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isOpening) {
+            OnboardingScreen(prefilledCode: .constant(nil), fromLocalArchive: true)
+        }
+        // The family exists: the sheet has done its work, and so has this
+        // screen — the row that leads here is gone from Settings.
+        .onChange(of: session.isLocalByChoice) { _, isLocal in
+            if !isLocal {
+                isOpening = false
+                dismiss()
+            }
+        }
     }
 }
 

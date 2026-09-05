@@ -288,3 +288,6 @@
 "Eri paikka" = "Eri paikka";
 "Eri henkilö kuin %@" = "Eri henkilö kuin %@";
 "Eri paikka kuin %@" = "Eri paikka kuin %@";
+
+// Opening a local archive to a family no longer hides the archive (5 Sep 2026).
+"Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty." = "Voit vielä perua, kunnes perhe on perustettu tai siihen on liitytty.";

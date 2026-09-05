@@ -1578,7 +1578,7 @@ want of an address (`Session.isLocalByChoice` needs the `local_only` flag and a
 backend URL together). It opens `EnableSharingScreen`, which says what changes,
 says that the memories already on this phone go with it, and says that there is
 no way back — and then does it: `MemoryStore.markAllPending()` so the rows
-travel, `Session.enableFamilySharing()` so the mode returns to `.needsFamily`
+travel, the onboarding fork as a sheet over the archive, with `local_only` cleared only when a family exists (`Session.store(familyID:)`, 5 Sep 2026)
 and the onboarding fork comes back.
 
 One-way on purpose. What has reached the family is on other people's phones and
