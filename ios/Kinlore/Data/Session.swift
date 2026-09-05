@@ -19,7 +19,13 @@ final class Session {
         var id: String { code }
         let code: String
         let expiresAt: Double
+        /// Always 0 since 5 Sep 2026 — a code admits one person and the server
+        /// lists only the codes nobody has used — and still decoded, because
+        /// the server still sends it for the app that was built before.
         let usedCount: Int
+        /// Who the invitation was made for, as the inviter typed it. Absent from
+        /// a server that predates it.
+        let displayName: String?
     }
 
     struct Family: Decodable {
@@ -325,6 +331,25 @@ final class Session {
         }
     }
 
+    /// Whether the server heard the removal.
+    ///
+    /// The owner's remedy for a link that went astray — see
+    /// `FamilyClient.removeMember`. Like `revokeInvite`, a server that answers
+    /// `removed: false` is not a failure here: that person was already gone,
+    /// and the refresh shows the list as it is.
+    func removeMember(id: String) async -> Bool {
+        guard let client else { return false }
+        lastError = nil
+        do {
+            try await client.removeMember(id: id)
+            await refresh()
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Leaving
 
     /// Ends this device's membership. The memories stay with the family — see
@@ -438,9 +463,11 @@ final class Session {
                 Member(id: "demo-aino", displayName: "Aino", role: "member", joinedAt: now - 12 * day),
                 Member(id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day),
             ],
+            // Two open invitations, as the server lists them since a code
+            // admits one person: one made for somebody by name, one without.
             invites: alone ? [] : [
-                Invite(code: "demo-avoin", expiresAt: now + 6 * day, usedCount: 0),
-                Invite(code: "demo-kaytetty", expiresAt: now + 2 * day, usedCount: 2),
+                Invite(code: "demo-kaarina", expiresAt: now + 6 * day, usedCount: 0, displayName: "Kaarina"),
+                Invite(code: "demo-nimeton", expiresAt: now + 2 * day, usedCount: 0, displayName: nil),
             ]
         )
         // A free family with the month partly spent: the usage rows say a

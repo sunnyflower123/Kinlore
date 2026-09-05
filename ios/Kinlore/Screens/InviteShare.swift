@@ -66,7 +66,7 @@ struct InviteShareButton: View {
                         .font(.title2.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Text("Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon.")
+                    Text("Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon ja päästää sisään yhden ihmisen.")
                         .font(.subheadline)
                         .foregroundStyle(Elder.supporting)
                         .fixedSize(horizontal: false, vertical: true)

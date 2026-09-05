@@ -64,6 +64,11 @@ CREATE TABLE invite (
   created_by    TEXT NOT NULL REFERENCES member(id),
   expires_at    INTEGER NOT NULL,
   revoked_at    INTEGER,
+  -- Since 5 Sep 2026 a code admits one person: the join claims it with
+  -- `UPDATE … WHERE used_count = 0`, so on any row written since this is 0 or
+  -- 1, and the family view lists only the zeros. Older rows may carry a higher
+  -- number — it was recorded and compared to nothing, which is what made one
+  -- forwarded link a week-long key for a whole group chat.
   used_count    INTEGER NOT NULL DEFAULT 0,
   created_at    INTEGER NOT NULL,
   -- Who the invitation is for, written by whoever created it.

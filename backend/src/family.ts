@@ -113,45 +113,64 @@ export async function joinFamily(env: Env, input: JoinInput) {
 		.bind(input.memberID)
 		.first<{ id: string; family_id: string; left_at: number | null }>()
 
-	if (existing) {
-		if (existing.family_id !== invite.family_id) return { error: 'member_exists' as const }
-
-		// Somebody who left and was invited back. The row was kept so that the
-		// names on their memories still resolve, so coming back is undoing the
-		// mark rather than creating anything — and the name they just typed
-		// wins, because they typed it.
-		if (existing.left_at) {
-			await env.DB.batch([
-				env.DB.prepare(
-					'UPDATE member SET left_at = NULL, display_name = ?, last_seen_at = ? WHERE id = ?',
-				).bind(displayName, now(), input.memberID),
-				env.DB.prepare('UPDATE invite SET used_count = used_count + 1 WHERE code = ?').bind(
-					invite.code,
-				),
-			])
-			return { familyID: invite.family_id, role: 'member' as const }
-		}
-
+	if (existing && existing.family_id !== invite.family_id) {
+		return { error: 'member_exists' as const }
+	}
+	if (existing && !existing.left_at) {
 		// The same device rejoining the same family: not an error but a
-		// reinstall or an iCloud restore. Let it through.
+		// reinstall or an iCloud restore. Let it through — and through the
+		// code it came in by, which is why this stands before the claim below.
+		return { familyID: invite.family_id, role: 'member' as const }
+	}
+
+	// A code admits one person. `used_count` was recorded and compared to
+	// nothing, so a link forwarded on through a group chat was a week-long key
+	// for everybody in it — and passing one link around was the natural way
+	// for a family of eight to share the app (founder's-eye review, 3 Sep 2026,
+	// finding #33). The invitation already asks who it is for; now it is for
+	// exactly that person, and the family view lists only the codes nobody has
+	// used yet.
+	//
+	// Claimed with a conditional UPDATE rather than a read and a write, so two
+	// phones opening the same link in the same second cannot both get in. A
+	// used code answers in the same words as a wrong one, for the reason a
+	// revoked one does: a different answer would tell a guesser the code was
+	// real. If the write below then fails, the code stays claimed — a burned
+	// code is refused, which is the safe side, and the owner makes another.
+	const claim = await env.DB.prepare(
+		'UPDATE invite SET used_count = used_count + 1 WHERE code = ? AND used_count = 0',
+	)
+		.bind(invite.code)
+		.run()
+	if ((claim.meta.changes ?? 0) === 0) return { error: 'invalid_invite' as const }
+
+	// Somebody who left and was invited back. The row was kept so that the
+	// names on their memories still resolve, so coming back is undoing the
+	// mark rather than creating anything — and the name they just typed
+	// wins, because they typed it.
+	if (existing?.left_at) {
+		await env.DB.prepare(
+			'UPDATE member SET left_at = NULL, display_name = ?, last_seen_at = ? WHERE id = ?',
+		)
+			.bind(displayName, now(), input.memberID)
+			.run()
 		return { familyID: invite.family_id, role: 'member' as const }
 	}
 
 	const timestamp = now()
-	await env.DB.batch([
-		env.DB.prepare(
-			`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at, last_seen_at)
-			 VALUES (?, ?, ?, ?, 'member', ?, ?)`,
-		).bind(
+	await env.DB.prepare(
+		`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at, last_seen_at)
+		 VALUES (?, ?, ?, ?, 'member', ?, ?)`,
+	)
+		.bind(
 			input.memberID,
 			invite.family_id,
 			displayName,
 			await hashSecret(input.secret),
 			timestamp,
 			timestamp,
-		),
-		env.DB.prepare('UPDATE invite SET used_count = used_count + 1 WHERE code = ?').bind(invite.code),
-	])
+		)
+		.run()
 
 	return { familyID: invite.family_id, role: 'member' as const }
 }
@@ -247,6 +266,56 @@ export async function leaveFamily(env: Env, session: Session) {
 	return { left: true as const, newOwner: session.role === 'owner' ? remaining.id : null }
 }
 
+/// The owner ends somebody else's membership. **The memories stay**, exactly
+/// as when a member leaves on their own (`leaveFamily` above): the row is
+/// marked, never deleted, and the name on what they told keeps resolving.
+///
+/// This is the remedy for the invitation that reached the wrong person. Until
+/// 5 Sep 2026 there was none — the only way out of a family was one's own, so
+/// whoever tapped a forwarded link was in for good, reading every memory past
+/// and future (founder's-eye review, 3 Sep 2026, finding #32).
+///
+/// Two rules, and the reason there is no third:
+///
+///   - Every open invitation of the family goes with them. The invite text
+///     carries the family key, and the person being removed may hold any live
+///     link — being forwarded one is how the wrong person got in. The owner
+///     makes a fresh code for whoever was meant to have it, and the dialog on
+///     the phone says so.
+///   - Only the owner, and never the owner's own row: leaving is
+///     `leaveFamily`, which knows how to hand ownership on.
+///
+/// **The family key is not rotated, and that is a decision rather than a
+/// gap.** `authenticate` refuses a departed member on every route, so nothing
+/// sealed under the key reaches them again — and what is already on their
+/// phone no rotation could take back. Rotation would defend against a removed
+/// member obtaining ciphertext by some other road, and the only other road is
+/// a live invitation, which this revokes.
+export async function removeMember(env: Env, session: Session, memberID: string) {
+	if (session.role !== 'owner') return { error: 'not_owner' as const }
+	if (memberID === session.memberID) return { error: 'not_found' as const }
+
+	// Looked up first so that removing somebody who has already gone does not
+	// close the family's open invitations for nothing.
+	const target = await env.DB.prepare(
+		'SELECT id FROM member WHERE id = ? AND family_id = ? AND left_at IS NULL',
+	)
+		.bind(memberID, session.familyID)
+		.first<{ id: string }>()
+	if (!target) return { removed: false as const }
+
+	const timestamp = now()
+	await env.DB.batch([
+		env.DB.prepare(
+			`UPDATE member SET left_at = ?, role = 'member' WHERE id = ? AND family_id = ?`,
+		).bind(timestamp, memberID, session.familyID),
+		env.DB.prepare(
+			'UPDATE invite SET revoked_at = ? WHERE family_id = ? AND revoked_at IS NULL',
+		).bind(timestamp, session.familyID),
+	])
+	return { removed: true as const }
+}
+
 export async function getFamily(env: Env, session: Session) {
 	const family = await env.DB.prepare(
 		'SELECT id, name, entitlement, sync_seq FROM family WHERE id = ?',
@@ -266,16 +335,17 @@ export async function getFamily(env: Env, session: Session) {
 		.bind(session.familyID)
 		.all<{ id: string; display_name: string; role: string; created_at: number }>()
 
-	// Valid invites only. The owner sees whether a link is alive and how many
-	// people have used it — that is the only visibility into the security
-	// boundary.
+	// The invitations that still open the door: alive, and not yet used by
+	// the one person each admits. With the name it was made for, so the owner
+	// can tell two open codes apart — read back by the family that wrote it,
+	// which is not the unauthenticated lookup §4 refuses.
 	const invites = await env.DB.prepare(
-		`SELECT code, expires_at, used_count FROM invite
-		 WHERE family_id = ? AND revoked_at IS NULL AND expires_at > ?
+		`SELECT code, expires_at, used_count, display_name FROM invite
+		 WHERE family_id = ? AND revoked_at IS NULL AND expires_at > ? AND used_count = 0
 		 ORDER BY created_at DESC`,
 	)
 		.bind(session.familyID, now())
-		.all<{ code: string; expires_at: number; used_count: number }>()
+		.all<{ code: string; expires_at: number; used_count: number; display_name: string | null }>()
 
 	return {
 		id: family.id,
@@ -292,7 +362,11 @@ export async function getFamily(env: Env, session: Session) {
 		invites: (invites.results ?? []).map((i) => ({
 			code: i.code,
 			expiresAt: i.expires_at,
+			// Always 0 now, and still sent: an app built before 5 Sep 2026
+			// decodes it as a required field and would fail to read its own
+			// family without it.
 			usedCount: i.used_count,
+			displayName: i.display_name,
 		})),
 	}
 }

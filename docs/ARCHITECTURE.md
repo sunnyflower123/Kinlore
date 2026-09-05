@@ -460,8 +460,9 @@ An 80-year-old sees none of this. She gets a link from a grandchild and she is i
 POST /family              → create a family, the creator is the owner
 POST /family/invite       → create an invite code, valid for 7 days
 POST /family/join         → { code } adds the member
-GET  /family              → members, own role, invite link status
+GET  /family              → members, own role, the invitations still open
 DELETE /family/invite/:id → revoke a link
+DELETE /family/member?id= → the owner removes a member (5 Sep 2026)
 ```
 
 **The invite link is the entire security boundary.** Anyone who receives the
@@ -470,6 +471,30 @@ link sees all of the family's memories. Therefore:
 - The code is long and random, not meant to be read by a human — 16 random
   bytes, 128 bits, base64url. Guessing it is not a threat model
 - It expires, and the owner can revoke it at any time
+- **It admits one person** (since 5 Sep 2026). The join claims the code with
+  a conditional `UPDATE … WHERE used_count = 0`, so two phones opening the
+  same link in the same second cannot both get in; the second person through
+  is refused in the same words as a wrong code, because a used code confirmed
+  as used is a code confirmed as real. `used_count` had been recorded and
+  compared to nothing, so one link forwarded on through a group chat was a
+  week-long key for everybody in it (founder's-eye review, finding #33). The
+  invitation already asked who it was for (§11.3 in docs/UX.md); now it is for
+  exactly that person, and the same phone coming back — a reinstall, an iCloud
+  restore — still comes through the door it came in by
+- **The owner can close the door behind somebody** (since 5 Sep 2026).
+  `DELETE /family/member?id=` marks the row `left_at` exactly as leaving does
+  (§14): the memories stay, the name on them keeps resolving, and
+  `authenticate` refuses the identity on every route from then on. Until then
+  the only way out of a family was one's own, so whoever tapped a forwarded
+  link was in for good (finding #32). **Every open invitation of the family
+  goes with them**, because the invite text carries the family key and the
+  person being removed may hold any live link — being forwarded one is how
+  they got in — and the dialog on the phone says so. **The key is not
+  rotated**, and that is a decision: nothing sealed under it reaches a refused
+  identity again, what is already on their phone no rotation could take back,
+  and the only other road to the ciphertext is a live invitation, which the
+  removal has just closed. Only the owner, and never their own row — leaving
+  is `leaveFamily`, which knows how to hand ownership on
 - **Creating a family and joining one are rate limited**, per IP, with
   Cloudflare's `ratelimits` binding: 5 and 10 a minute. They are the only two
   routes in the Worker that write without a member identity, so they are the
@@ -478,7 +503,12 @@ link sees all of the family's memories. Therefore:
   above already answers
 - **The boundary is checked against the deployed Worker, not only a local
   one.** `scripts/invite-boundary-check.mjs` takes a URL; first production run
-  29 Aug 2026, twelve cases green. It had never been pointed there before, and
+  29 Aug 2026, twelve cases green. The thirteen cases added on 5 Sep 2026 —
+  one person per code, and the removal — have so far run only against the
+  local Worker, which meters the join door with the same numbers as
+  production does: the first run of them failed its last five with
+  `too_many_requests`, and the script now moves to a fresh synthetic address
+  at the ninth join locally and waits the minute out against production. It had never been pointed there before, and
   the first attempt failed on its first line — the script sends a synthetic
   `CF-Connecting-IP` so that seven checks in `verify.sh` do not starve each
   other's rate limit, on a comment claiming Cloudflare ignores a client-set
@@ -500,7 +530,10 @@ link sees all of the family's memories. Therefore:
 - The family view shows who has joined **and when**. The date was decoded from
   the server and never drawn until it was looked for: a stranger in the list is
   a question, and a stranger who arrived last Tuesday is an answer about which
-  link went astray. Invites show how many times each has been used beside it
+  link went astray — and, since 5 Sep 2026, a question the owner can act on
+  from the same row. The invitations listed are the ones still open, each
+  with the name it was made for; a used one is no longer open and no longer
+  listed
 
 **A missing binding allows the request and logs a warning**, which is the
 arguable half. Failing closed would mean one configuration mistake stops every
@@ -931,7 +964,9 @@ an app containing user content. The implementation is small:
 
 - A memory can be reported (a row in `report`)
 - A member can be blocked, hiding their memories from the blocker
-- The family owner can remove a member
+- The family owner can remove a member — **built 5 Sep 2026** (§4,
+  `DELETE /family/member`), not as moderation but as the only remedy for an
+  invitation that reached the wrong person. The other two stay out
 
 **This is a family's private channel, though, not a public network.** The real
 abuse risk is small and the solution matches: no notification centre and no
@@ -1709,7 +1744,9 @@ in a family, and they are genuinely separate — so the screen names both:
   dialog's sentence says it does. What it still cannot do is remove the D1
   rows and R2 objects themselves; with no members able to authenticate and no
   live codes, nothing can reach them, and server-side deletion stays a
-  deliberate non-feature beside member removal (§14's moderation pairing).
+  deliberate non-feature. Member removal, which used to stand beside it here
+  as the other one, was built on 5 Sep 2026 (§4): it turned out to be the only
+  remedy for an invitation that reached the wrong person.
 
 **Verified by opening it, 16 Aug 2026.** The export is the one output that
 leaves the app for good, and its promise — *"sen voi avata millä tahansa
@@ -1739,7 +1776,9 @@ feature this app should own. If it is ever needed, it belongs to the family
 owner and to a conversation, not to a member's settings screen.
 
 The pairing required by "every addition requires a removal" (CLAUDE.md):
-**moderation is formally out of v1.** `report` and `block` are in the schema for
+**moderation is formally out of v1**, with one exception made on 5 Sep 2026 —
+the owner can remove a member (§4), because without it a link forwarded to the
+wrong person was permanent. `report` and `block` are in the schema for
 Apple's rule 1.2, and §7 already said they could be cut entirely if the release
 is never made. It is not being made (PLAN.md §2), this is a family's private
 channel rather than a public network, and the schema keeps the tables for the

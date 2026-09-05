@@ -213,7 +213,10 @@ final class SilentFailureTests: XCTestCase {
     func testCreatingAnInviteSaysWhenItCannot() {
         let app = launch(["-seed", "family", "-tab", "people", "-screen", "family"])
 
+        // Below the fold since the member rows grew the owner's "Poista
+        // perheestä" (5 Sep 2026), and a List builds no row nobody can see.
         let invite = app.buttons["Kutsu perheenjäsen"]
+        for _ in 0 ..< 4 where !invite.exists { app.swipeUp() }
         XCTAssertTrue(invite.waitForExistence(timeout: 10), "never arrived: the family screen")
         invite.tap()
 

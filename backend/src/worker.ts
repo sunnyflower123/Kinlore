@@ -11,6 +11,7 @@ import {
 	getFamily,
 	joinFamily,
 	leaveFamily,
+	removeMember,
 	revokeInvite,
 } from './family'
 import { download, upload } from './media'
@@ -334,6 +335,23 @@ export default {
 				return 'error' in result ? json(result, 409) : json(result)
 			} catch (err) {
 				return failure(err, 'family-leave')
+			}
+		}
+
+		// The owner's remedy for an invitation that reached the wrong person.
+		// Like leaving, it ends a membership and not an identity, and the
+		// memories stay — see `removeMember`.
+		if (url.pathname === '/family/member' && request.method === 'DELETE') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const id = url.searchParams.get('id')
+			if (!id) return json({ error: 'missing_id' }, 400)
+			try {
+				const result = await removeMember(env, session, id)
+				return 'error' in result
+					? json(result, result.error === 'not_owner' ? 403 : 404)
+					: json(result)
+			} catch (err) {
+				return failure(err, 'member-remove')
 			}
 		}
 

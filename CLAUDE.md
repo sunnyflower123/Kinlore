@@ -394,11 +394,13 @@ node scripts/place-sync-check.mjs
 # drives the server's half. Needs `npx wrangler dev`.
 node scripts/sync-cursor-check.mjs
 
-# The invite link, which §4 calls the entire security boundary. Four rules that
+# The invite link, which §4 calls the entire security boundary. Six rules that
 # are silent when broken: a code expires, a code can be revoked, a code belongs
-# to one family, and a wrong code answers exactly like an expired or revoked one
-# — a different answer would tell a guesser they had found a real family.
-# Needs `npx wrangler dev`; leaves two throwaway families behind.
+# to one family, a code admits one person, the owner can close the door behind
+# somebody who should not have come through it, and a wrong code answers
+# exactly like an expired, revoked or used one — a different answer would tell
+# a guesser they had found a real family. Needs `npx wrangler dev`; leaves two
+# throwaway families behind.
 node scripts/invite-boundary-check.mjs
 
 # One purchase, one family. Loads the real schema.sql into an in-memory SQLite

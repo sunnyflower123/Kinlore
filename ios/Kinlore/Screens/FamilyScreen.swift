@@ -4,8 +4,16 @@ import SwiftUI
 ///
 /// The invite link is the entire security boundary: anyone who receives it sees
 /// all of the family's memories. That is why this screen shows who has joined
-/// and how many people have used the link — it is the only visibility into that
-/// boundary.
+/// and when, which invitations are still open and for whom — and, since 5 Sep
+/// 2026, gives the owner the one remedy for a link that went astray: *"Poista
+/// perheestä"* on every row but their own. It is the only visibility into that
+/// boundary, and the only hand on it.
+///
+/// Every sentence here that used to be a `String` — a ternary handed to `Text`,
+/// a computed `String` property — is a `Text` with a literal key now. A
+/// `String` is never looked up, and this screen showed *"Käytetty 2 kertaa"*
+/// and *"kaikki lähetetty klo 9.05"* on an English phone (founder's-eye
+/// review, 3 Sep 2026, finding #38).
 struct FamilyScreen: View {
     @Environment(Session.self) private var session
     @Environment(MemoryStore.self) private var store
@@ -17,6 +25,10 @@ struct FamilyScreen: View {
     /// offers, and a failure that looks like nothing happening is the answer
     /// the leave-family screen already refuses to give.
     @State private var revokeFailed = false
+    /// The member the owner is about to remove, while the dialog asks.
+    @State private var removing: Session.Member?
+    @State private var isConfirmingRemoval = false
+    @State private var removeFailed = false
 
     var body: some View {
         List {
@@ -42,8 +54,16 @@ struct FamilyScreen: View {
                             .foregroundStyle(Elder.supporting)
                     }
                     LabeledContent("Tila") {
-                        Text(family.entitlement == "archive" ? "Maksullinen" : "Ilmainen")
-                            .foregroundStyle(Elder.supporting)
+                        // Two keys, not one ternary: `Text(a ? "x" : "y")` is a
+                        // String and is never looked up.
+                        Group {
+                            if family.entitlement == "archive" {
+                                Text("Maksullinen")
+                            } else {
+                                Text("Ilmainen")
+                            }
+                        }
+                        .foregroundStyle(Elder.supporting)
                     }
                     // The same fact as the note on Muistot, in the place
                     // somebody comes to when they want to check rather than to
@@ -51,7 +71,7 @@ struct FamilyScreen: View {
                     // nothing waiting — "kaikki lähetetty" is the answer to the
                     // question, not the absence of one.
                     LabeledContent("Lähetys") {
-                        Text(syncText)
+                        syncText
                             .foregroundStyle(Elder.supporting)
                     }
                 } header: {
@@ -67,16 +87,24 @@ struct FamilyScreen: View {
                         // names is jargon aimed at the person least able to
                         // decode it. The app should have one word for one thing.
                         LabeledContent("Kertominen tässä kuussa") {
-                            Text(usage.aiSeconds.limit == nil
-                                ? "rajaton"
-                                : "\(usage.aiSeconds.used / 60) / \(usage.aiSeconds.limit! / 60) min")
-                                .foregroundStyle(Elder.supporting)
+                            Group {
+                                if let limit = usage.aiSeconds.limit {
+                                    Text("\(usage.aiSeconds.used / 60) / \(limit / 60) min")
+                                } else {
+                                    Text("rajaton")
+                                }
+                            }
+                            .foregroundStyle(Elder.supporting)
                         }
                         LabeledContent("Kuvat") {
-                            Text(usage.photos.limit == nil
-                                ? "rajaton"
-                                : "\(usage.photos.used) / \(usage.photos.limit!)")
-                                .foregroundStyle(Elder.supporting)
+                            Group {
+                                if let limit = usage.photos.limit {
+                                    Text("\(usage.photos.used) / \(limit)")
+                                } else {
+                                    Text("rajaton")
+                                }
+                            }
+                            .foregroundStyle(Elder.supporting)
                         }
 
                         // The second way in. The first is the moment a memory
@@ -100,7 +128,16 @@ struct FamilyScreen: View {
 
                 Section {
                     ForEach(family.members) { member in
-                        MemberRow(member: member, isYou: member.id == family.you.id)
+                        MemberRow(
+                            member: member,
+                            isYou: member.id == family.you.id,
+                            // The owner's remedy for a link that went astray,
+                            // on every row but their own: leaving is their own
+                            // road, and it knows how to hand ownership on.
+                            onRemove: family.you.role == "owner" && member.id != family.you.id
+                                ? { removing = member; isConfirmingRemoval = true }
+                                : nil
+                        )
                     }
                 } header: {
                     Text("Jäsenet")
@@ -139,7 +176,7 @@ struct FamilyScreen: View {
                     // scales like any other body text. The sentence that decides
                     // who sees a family's memories should not be the faintest,
                     // smallest, most truncated thing on the screen.
-                    Text("Kutsu on voimassa viikon. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten jaa se vain niille joille se kuuluu.")
+                    Text("Kutsu on voimassa viikon ja päästää sisään yhden ihmisen. Kuka tahansa linkin saanut näkee perheen kaikki muistot, joten lähetä se vain sille, jolle sen teit.")
                         .elderBody()
                         .foregroundStyle(Elder.supporting)
                 } header: {
@@ -162,7 +199,7 @@ struct FamilyScreen: View {
                     // the screen somebody opens *because* they are worried, and
                     // the general reassurance was the only thing here — while
                     // the app knew exactly how many tellings were still waiting.
-                    Text(offlineText)
+                    offlineText
                         .elderBody()
                         .foregroundStyle(Elder.supporting)
                 }
@@ -173,6 +210,45 @@ struct FamilyScreen: View {
             Button("Selvä", role: .cancel) {}
         } message: {
             Text(session.lastError ?? "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.")
+        }
+        // Confirmed, like every other removal in this app: it cannot be undone
+        // from here, and the person holding the phone may be 80. The message
+        // says the two things that are not obvious — what they told stays, and
+        // the open invitations go, because the invite text carries the family
+        // key and the person being removed may hold any live link.
+        //
+        // **An alert, not a `confirmationDialog`, and that was measured.** This
+        // was first written as a confirmation dialog like every other removal
+        // in the app, and the sweep's tap on *"Peruuta"* found no such button:
+        // on iOS 26 the dialog comes up as a popover anchored to the top of the
+        // list (`app.popovers.count == 1`, 240 pt wide, under the navigation
+        // bar), and a popover adaptation draws no cancel action at all. The
+        // sheet held "Poista perheestä" and nothing else; the only way out was
+        // a tap in the dimmed area beside it. Screenshotted 5 Sep 2026 on the
+        // Settings screen's own "Poistutaanko perheestä?", which presents the
+        // same way — so this is every confirmation in the app, not this one.
+        // An alert draws both buttons, and the way out is the one an
+        // 80-year-old can see.
+        .alert(
+            "Poistetaanko \(removing?.displayName ?? "") perheestä?",
+            isPresented: $isConfirmingRemoval
+        ) {
+            Button("Poista perheestä", role: .destructive) {
+                guard let member = removing else { return }
+                Task {
+                    if await !session.removeMember(id: member.id) {
+                        removeFailed = true
+                    }
+                }
+            }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("\(removing?.displayName ?? "") ei enää näe perheen muistoja eikä voi kertoa niitä. Hänen kertomansa muistot jäävät perheelle. Avoimet kutsut peruuntuvat samalla, joten tee uusi kutsu sille, jolle se kuuluu.")
+        }
+        .alert("Jäsentä ei voitu poistaa", isPresented: $removeFailed) {
+            Button("Selvä", role: .cancel) {}
+        } message: {
+            Text(session.lastError ?? "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii.")
         }
         // Room under the last row for the floating tab bar.
         //
@@ -194,22 +270,30 @@ struct FamilyScreen: View {
     /// The waiting case wins over the clock: a time from an hour ago beside
     /// three memories that never left would be a true sentence answering the
     /// wrong question.
-    private var syncText: String {
+    private var syncText: Text {
         let waiting = store.waitingToBeSent
-        if sync?.state == .syncing { return "lähetetään…" }
+        if sync?.state == .syncing { return Text("lähetetään…") }
         // The one sync state whose waiting never ends by itself. The likely
         // cause is the shared Keychain: emptying another phone on the same
         // Apple ID renews the identity there and takes this one's with it.
         if sync?.state == .refused {
-            return "lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta"
+            return Text("lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta")
         }
-        if waiting > 0 { return waiting == 1 ? "1 odottaa verkkoa" : "\(waiting) odottaa verkkoa" }
-        guard let at = sync?.lastSyncedAt else { return "kaikki lähetetty" }
-        return "kaikki lähetetty \(Self.moment(at))"
+        if waiting > 0 {
+            return waiting == 1 ? Text("1 odottaa verkkoa") : Text("\(waiting) odottaa verkkoa")
+        }
+        guard let at = sync?.lastSyncedAt else { return Text("kaikki lähetetty") }
+        // A time of day for today and a date for anything older; nobody needs
+        // the year of a sync. The phone's own locale spells both — it was a
+        // fixed `fi_FI` formatter writing "klo" into an English screen.
+        if Calendar.current.isDateInToday(at) {
+            return Text("kaikki lähetetty klo \(at.formatted(date: .omitted, time: .shortened))")
+        }
+        return Text("kaikki lähetetty \(at.formatted(date: .numeric, time: .shortened))")
     }
 
     /// The same thing said where the family details could not be fetched at all.
-    private var offlineText: String {
+    private var offlineText: Text {
         switch store.waitingToBeSent {
         // "Lähtevät itsestään", not "synkronoituvat" — the two branches below
         // this one have said it plainly all along, in the same property, and
@@ -217,28 +301,44 @@ struct FamilyScreen: View {
         // Lähetys row, "kaikki lähetetty", "odottaa lähetystä". A person who
         // has just been told the connection is gone should not have to decode
         // a verb from someone else's trade. See docs/ARCHITECTURE.md §21.
-        case 0: "Voit silti kertoa muistoja. Ne lähtevät itsestään kun yhteys palaa."
-        case 1: "Yksi kertomasi muisto odottaa lähetystä. Se lähtee itsestään kun yhteys palaa."
-        case let waiting: "\(waiting) kertomaasi muistoa odottaa lähetystä. Ne lähtevät itsestään kun yhteys palaa."
+        case 0: Text("Voit silti kertoa muistoja. Ne lähtevät itsestään kun yhteys palaa.")
+        case 1: Text("Yksi kertomasi muisto odottaa lähetystä. Se lähtee itsestään kun yhteys palaa.")
+        case let waiting: Text("\(waiting) kertomaasi muistoa odottaa lähetystä. Ne lähtevät itsestään kun yhteys palaa.")
         }
-    }
-
-    /// A time of day for today and a date for anything older. Nobody needs the
-    /// year of a sync, and "12.8. klo 9.05" is read at a glance.
-    private static func moment(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fi_FI")
-        formatter.dateFormat = Calendar.current.isDateInToday(date) ? "'klo' H.mm" : "d.M. 'klo' H.mm"
-        return formatter.string(from: date)
     }
 
 }
 
 private struct MemberRow: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let member: Session.Member
     let isYou: Bool
+    /// Present on the rows the owner may remove: everybody but themselves.
+    let onRemove: (() -> Void)?
 
+    /// Side by side normally, stacked at accessibility sizes — the same shape
+    /// as `InviteRow` below, for the same reason: a button that keeps a third
+    /// of the row leaves a name six characters wide at XXXL.
     var body: some View {
+        if let onRemove, typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 10) {
+                description
+                removeButton(onRemove)
+            }
+            .padding(.vertical, 4)
+        } else {
+            HStack(spacing: 12) {
+                description
+                if let onRemove {
+                    Spacer()
+                    removeButton(onRemove)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private var description: some View {
         HStack(spacing: 12) {
             // Decoration: the row says "Perustaja" or "Jäsen" in words right
             // beside it. Left visible to VoiceOver it read out
@@ -252,8 +352,14 @@ private struct MemberRow: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(isYou ? "\(member.displayName) (sinä)" : member.displayName)
-                    .font(.body.weight(.medium))
+                Group {
+                    if isYou {
+                        Text("\(member.displayName) (sinä)")
+                    } else {
+                        Text(member.displayName)
+                    }
+                }
+                .font(.body.weight(.medium))
                 // The date is half of what this list is for. §4 calls the invite
                 // link the entire security boundary and names four things that
                 // hold it up, one of them being that the family can see who has
@@ -261,13 +367,30 @@ private struct MemberRow: View {
                 // row has always decoded it, and nothing showed it. A stranger
                 // in the list is a question; a stranger who arrived last Tuesday
                 // is an answer about which link went astray and when.
-                Text("\(member.role == "owner" ? "Perustaja" : "Jäsen") · \(Self.joined(member.joinedAt))")
+                Text("\(roleName) · \(Self.joined(member.joinedAt))")
                     .font(.caption)
                     .foregroundStyle(Elder.supporting)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.vertical, 4)
+    }
+
+    /// Looked up on each branch. A ternary of two literals inside the
+    /// interpolation above was a String, and "Perustaja" reached an English
+    /// screen as it was.
+    private var roleName: String {
+        member.role == "owner" ? String(localized: "Perustaja") : String(localized: "Jäsen")
+    }
+
+    private func removeButton(_ action: @escaping () -> Void) -> some View {
+        Button("Poista perheestä", role: .destructive, action: action)
+            .font(.subheadline.weight(.medium))
+            // The system's destructive red measures 3.57:1 here; see the
+            // invite row's button for the measurement.
+            .foregroundStyle(Elder.destructive)
+            .elderTapTarget()
+            // Three rows may carry the same visible word. VoiceOver hears whose.
+            .accessibilityLabel("Poista \(member.displayName) perheestä")
     }
 
     /// A plain Finnish date. Not "2 viikkoa sitten": the question this answers
@@ -286,14 +409,14 @@ private struct InviteRow: View {
     let invite: Session.Invite
     let onRevoke: () -> Void
 
-    private var expiryText: String {
+    private var expiryText: Text {
         // Ceiling, not truncation: a just-created week-long invite read
         // "vanhenee 6 päivän päästä" directly above the row promising
         // "voimassa viikon" — a one-day contradiction on the screen that
         // exists so numbers can be checked.
         let days = Int(ceil((invite.expiresAt - Date().timeIntervalSince1970) / 86_400))
-        if days <= 0 { return "vanhenee tänään" }
-        return days == 1 ? "vanhenee huomenna" : "vanhenee \(days) päivän päästä"
+        if days <= 0 { return Text("vanhenee tänään") }
+        return days == 1 ? Text("vanhenee huomenna") : Text("vanhenee \(days) päivän päästä")
     }
 
     /// Side by side normally, stacked at accessibility sizes.
@@ -323,12 +446,19 @@ private struct InviteRow: View {
 
     private var description: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(invite.usedCount == 0
-                ? "Avoin kutsu"
-                : "Käytetty \(invite.usedCount) kertaa")
-                .font(.body)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(expiryText)
+            // Whom the code was made for. A code admits one person, so
+            // "käytetty 2 kertaa" is a sentence no row can say any more, and
+            // two open codes are told apart by the name the inviter typed.
+            Group {
+                if let name = invite.displayName?.trimmingCharacters(in: .whitespaces), !name.isEmpty {
+                    Text("Kutsu: \(name)")
+                } else {
+                    Text("Kutsu ilman nimeä")
+                }
+            }
+            .font(.body)
+            .fixedSize(horizontal: false, vertical: true)
+            expiryText
                 .font(.caption)
                 .foregroundStyle(Elder.supporting)
                 .fixedSize(horizontal: false, vertical: true)

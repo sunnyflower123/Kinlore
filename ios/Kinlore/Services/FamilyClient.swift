@@ -93,6 +93,21 @@ struct FamilyClient {
         )
     }
 
+    /// The owner ends somebody else's membership. The memories stay, and every
+    /// open invitation of the family is withdrawn with it — the invite text
+    /// carries the family key, and the person being removed may hold any live
+    /// link. See docs/ARCHITECTURE.md §4.
+    func removeMember(id: String) async throws {
+        struct Reply: Decodable { let removed: Bool }
+        let encoded = id.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? id
+        let _: Reply = try await send(
+            "family/member?id=\(encoded)",
+            method: "DELETE",
+            body: Optional<Int>.none,
+            authenticated: true
+        )
+    }
+
     /// Ends this device's membership. The memories stay with the family — see
     /// docs/ARCHITECTURE.md §14.
     func leave() async throws {
@@ -198,6 +213,8 @@ enum FamilyError: LocalizedError {
             return .message(String(localized: "Liian monta yritystä lyhyessä ajassa. Odota hetki ja yritä sitten uudelleen."))
         case "last_member":
             return .message(String(localized: "Olet perheen ainoa jäsen, joten perheestä ei voi poistua. Voit tyhjentää tämän laitteen."))
+        case "not_owner":
+            return .message(String(localized: "Vain perheen perustaja voi poistaa jäsenen."))
         default:
             return .message(status >= 500
                 ? String(localized: "Palvelimeen ei saada yhteyttä. Yritä hetken kuluttua uudelleen.")

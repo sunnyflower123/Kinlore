@@ -243,9 +243,21 @@ final class AccessibilitySweepTests: XCTestCase {
     /// `-mic denied` and `-screen result` were written to close, and this one had
     /// already let a button be renamed without being drawn.
     ///
-    /// Both invite rows are asked for by name. They read *"Avoin kutsu"* and
-    /// *"Käytetty 2 kertaa"* beside the same button, which is the length that
-    /// matters at the largest text size.
+    /// Both invite rows are asked for by name. They read *"Kutsu: Kaarina"* and
+    /// *"Kutsu ilman nimeä"* beside the same button, which is the length that
+    /// matters at the largest text size. Before that, the owner's *"Poista
+    /// perheestä"* on a member's row and the dialog behind it — asked for by the
+    /// label VoiceOver reads, because three rows may carry the same visible word
+    /// and the owner's own must not be one of them.
+    ///
+    /// One finding to know about before chasing it: on 5 Sep 2026 the top audit
+    /// reported *"Jäsen · 24.8.2026"* — Aino's caption, 14 pt tall at y 711, the
+    /// last row fully above the tab bar — as "Dynamic Type font sizes are
+    /// partially unsupported", once, at the default size, and not on the five
+    /// runs either side of it on the same code and the same private simulator.
+    /// The default-size simulation grows every row above it and pushes that
+    /// one under the bar, and the real largest size drew it in full every time.
+    /// Weather, by this file's own rule, unless it comes back.
     ///
     /// The rows are below the fold at both sizes — three sections sit above them
     /// — so this audits twice: the top as it opens, and the invites after a
@@ -281,8 +293,37 @@ final class AccessibilitySweepTests: XCTestCase {
                 app,
                 "Perhe ylälaita, \(isLargest ? "largest text size" : "default text size")"
             )
-            let open = reach(app.staticTexts["Avoin kutsu"], in: app, "the invite nobody has used")
-            reach(app.staticTexts["Käytetty 2 kertaa"], in: app, "the invite somebody has")
+            let remove = reach(
+                app.buttons["Poista Ville perheestä"], in: app, "the way to remove a member"
+            )
+            XCTAssertFalse(
+                app.buttons["Poista Minä perheestä"].exists,
+                "the owner was offered their own removal"
+            )
+            remove.tap()
+            let confirm = app.buttons["Poista perheestä"]
+            XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+            // The alert's words, with the name in them: the title and the
+            // message are format keys, and a key that did not resolve would
+            // read "%@" here and nowhere else.
+            require(app.staticTexts["Poistetaanko Ville perheestä?"], "the alert's title, with the name in it")
+            require(
+                app.staticTexts.matching(NSPredicate(
+                    format: "label BEGINSWITH %@", "Ville ei enää näe perheen muistoja"
+                )).firstMatch,
+                "the alert's message, with the name in it"
+            )
+            // The way out, by name. This line is what found that the app's
+            // confirmation dialogs come up on iOS 26 as popovers with no
+            // cancel action at all — see the alert in `FamilyScreen` for the
+            // measurement, and why this one is an alert.
+            let cancel = app.buttons["Peruuta"]
+            XCTAssertTrue(cancel.waitForExistence(timeout: 10), "the alert has no way out")
+            cancel.tap()
+            XCTAssertTrue(confirm.waitForNonExistence(timeout: 10), "the alert did not close on Peruuta")
+
+            let open = reach(app.staticTexts["Kutsu: Kaarina"], in: app, "the invite made for somebody by name")
+            reach(app.staticTexts["Kutsu ilman nimeä"], in: app, "the invite with no name on it")
             reach(app.buttons["Poista"].firstMatch, in: app, "the way to take an invite back")
             settle(open)
             // And then wait for the drawing, not only for the frame. This screen
