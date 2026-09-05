@@ -386,6 +386,29 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The note that says the server no longer knows this phone, with its way
+    /// back. Held still by `-sync refused`; the real state needs a Worker that
+    /// has forgotten the device.
+    ///
+    /// Twice: over an archive with photographs in it, and over an empty one —
+    /// the reader's phone the server forgot before anything arrived, which is
+    /// the case the note was written for and the branch that used to draw no
+    /// notes at all.
+    func testMemoriesRefused() throws {
+        try sweep(
+            "Muistot, palvelin ei tunnista",
+            arguments: ["-seed", "archive", "-tab", "memories", "-sync", "refused"]
+        ) { app, _ in
+            require(app.buttons["Liity uudella kutsulla"], "the way back for a refused device")
+        }
+        try sweep(
+            "Muistot tyhjänä, palvelin ei tunnista",
+            arguments: ["-seed", "empty", "-tab", "memories", "-sync", "refused"]
+        ) { app, _ in
+            require(app.buttons["Liity uudella kutsulla"], "the way back on an empty archive")
+        }
+    }
+
     /// The note that says a telling has not left the phone.
     ///
     /// It cannot be seeded: the demo archive is canned as already sent, so the

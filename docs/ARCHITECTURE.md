@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 47 sweep tests, each auditing one screen at the default text size and again at the largest, out of 109 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 49 sweep tests, each auditing one screen at the default text size and again at the largest, out of 111 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2671,6 +2671,25 @@ server has stopped knowing (a 401 — realistically the shared Keychain, after
 waiting for the network forever; it is its own sync state now, the gallery
 note stops promising it fixes itself, and the Perhe screen says what
 happened.
+
+**And that device had no way back** — found by the founder's-eye review of
+3 Sep 2026 (finding #57), fixed 5 Sep. The state showed on Muistot only inside
+the outbox note, so a reader's phone with nothing to send fell silent for good;
+the Perhe row four taps away had no action; and the documented way back,
+*"Poistu perheestä"* and then a new invitation, ran through the very server
+that was refusing the device — as did the wipe, which stops on a failed leave.
+Now Muistot carries the note whatever the outbox holds and whether or not the
+archive is empty, with *"Liity uudella kutsulla"*: the join form over the
+archive, calling `Session.rejoin`, which joins the same family again as a new
+member row and changes nothing on the phone — the rows, the key and the mode
+stay, and the next round goes through. The same family only: a lever-3
+invitation carries its family's key, and a key that differs is another
+family's and is refused before any request. A fresh link tapped on that device
+opens the same form with the code in it instead of the wrong-time alert, and
+the wipe skips the leave there is nothing to make. What it does not fix is the
+cause: two phones on one Apple ID share one identity by design (§4), so
+emptying either one renews the other's — that stays a design question, written
+down here rather than patched.
 
 **And a swipe deleted a relationship on the spot.** A swipe is easy to make by
 accident, `swipeActions` is invisible until it happens, and what it removed was

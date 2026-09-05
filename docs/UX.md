@@ -204,6 +204,11 @@ being mounted. Three cases:
   kutsulla."* / **"Selvä"**. (The server would refuse with `member_exists`
   anyway — `FamilyClient.swift:172-173` — this says it before a request is
   ever made, in the app's own words.)
+- **`.inFamily`, but the server has stopped knowing the device**
+  (`SyncEngine.State.refused`, since 5 Sep 2026) — the join form as a sheet over
+  the archive, code pre-filled, joining the same family again without touching
+  anything on the phone (`Session.rejoin`, ARCHITECTURE §20). The alert above
+  would send her to *"Poistu perheestä"*, which the same server refuses.
 - **`.local`** — the same shape: *"Tällä laitteella on jo oma arkisto."* /
   *"Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen — voit
   tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla."* / **"Selvä"**.

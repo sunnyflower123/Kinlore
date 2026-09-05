@@ -33,6 +33,11 @@ struct OnboardingScreen: View {
     /// stops offering "vain minulle", which is where the phone already is.
     var fromLocalArchive = false
 
+    /// Presented over an archive whose device the server has stopped knowing
+    /// (`SyncEngine.State.refused`): straight to the join form, which then
+    /// calls `Session.rejoin` rather than `join`. See docs/UX.md §4.1.
+    var rejoining = false
+
     @State private var route: Route?
     @State private var name = ""
     @State private var code = ""
@@ -83,11 +88,14 @@ struct OnboardingScreen: View {
                 case .create:
                     CreateFamilyForm(name: $name, canStayAlone: !fromLocalArchive)
                 case .join:
-                    JoinFamilyForm(name: $name, code: $code)
+                    JoinFamilyForm(name: $name, code: $code, rejoining: rejoining)
                 }
             }
         }
-        .onAppear { useInvite() }
+        .onAppear {
+            if rejoining { route = .join }
+            useInvite()
+        }
         // The link arriving while this screen is already open is the ordinary
         // case, not the exception.
         .onChange(of: prefilledCode) { _, _ in useInvite() }
@@ -169,7 +177,7 @@ struct OnboardingScreen: View {
 
             // Over a local archive the fork is a sheet, and a sheet needs a way
             // out an 80-year-old can find: the swipe is not one.
-            if fromLocalArchive {
+            if fromLocalArchive || rejoining {
                 Button("Peruuta") { dismiss() }
                     .controlSize(.large)
                     .elderTapTarget()
@@ -436,8 +444,11 @@ private struct CreateFamilyForm: View {
 
 private struct JoinFamilyForm: View {
     @Environment(Session.self) private var session
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
     @Binding var name: String
     @Binding var code: String
+    /// Joining the same family again from a device the server has forgotten.
+    var rejoining = false
 
     @AppStorage(Elder.largerTextKey) private var largerText = false
 
@@ -487,6 +498,16 @@ private struct JoinFamilyForm: View {
 
     var body: some View {
         Form {
+            if rejoining {
+                // Why this form is here at all, in the words of the note that
+                // opened it — and what it does not cost.
+                Section {
+                    Text("Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua.")
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
+                }
+            }
+
             Section {
                 TextField("Nimesi", text: $name)
                     .textInputAutocapitalization(.words)
@@ -601,10 +622,29 @@ private struct JoinFamilyForm: View {
             }
         }
         .navigationTitle("Liity perheeseen")
+        .onAppear {
+            // The name this phone already had in the family, so that joining
+            // again does not rename anybody. The joiner's own typing still
+            // wins, as ever.
+            if rejoining, name.isEmpty, let known = session.family?.you.displayName {
+                name = known
+            }
+        }
     }
 
     private func join() {
-        Task { await session.join(code: code, displayName: name) }
+        Task {
+            if rejoining {
+                // The sheet closes on success and the next round goes through
+                // at once — the state it clears is the reason the sheet opened.
+                if await session.rejoin(code: code, displayName: name) {
+                    sync?.isRejoining = false
+                    await sync?.sync()
+                }
+            } else {
+                await session.join(code: code, displayName: name)
+            }
+        }
     }
 }
 

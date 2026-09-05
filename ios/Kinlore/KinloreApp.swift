@@ -208,6 +208,13 @@ struct KinloreApp: App {
                     // the fragment that carries the family key is exercised
                     // rather than bypassed. See docs/SETUP.md.
                     if let raw = UserDefaults.standard.string(forKey: "invite") {
+                        // The engine is made by the task beside this one, and a
+                        // refused device is told apart by asking it. A real tap
+                        // arrives after launch and always finds it there; a
+                        // link fed at launch waits for it the same way.
+                        for _ in 0 ..< 40 where sync == nil {
+                            try? await Task.sleep(for: .milliseconds(50))
+                        }
                         if raw.hasPrefix("kinlore://"), let url = URL(string: raw) {
                             if let code = Self.inviteCode(from: url) {
                                 handle(inviteCode: code)
@@ -254,7 +261,15 @@ struct KinloreApp: App {
     private func handle(inviteCode: String) {
         switch session.mode {
         case .needsFamily: invitedCode = inviteCode
-        case .inFamily: linkNotice = .deviceInFamily
+        case .inFamily:
+            // A device the server has stopped knowing is the one case where a
+            // link into "its own" family is the right thing: the grandchild
+            // sent a fresh invitation, and this is it.
+            if sync?.state == .refused {
+                sync?.askToRejoin(code: inviteCode)
+            } else {
+                linkNotice = .deviceInFamily
+            }
         case .local: linkNotice = .deviceHasLocalArchive
         }
     }

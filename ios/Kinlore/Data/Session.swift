@@ -216,6 +216,39 @@ final class Session {
         }
     }
 
+    /// Joins the same family again, on a device the server has stopped
+    /// knowing (`SyncEngine.State.refused`). Nothing on this phone changes:
+    /// the rows stay, the key stays, the mode stays. What changes is on the
+    /// server — a new member row for this identity — and the next sync then
+    /// goes through.
+    ///
+    /// The same family only. The rows on this phone belong to it, and a code
+    /// for another family would push them into that one on the next sync. A
+    /// lever-3 invitation carries its family's key, so a key that differs
+    /// from this phone's is another family's and is refused before any
+    /// request; an invitation with no key (a family from before lever 3) is
+    /// checked against the family id the server answers with, and a join that
+    /// turns out to be elsewhere is left again at once.
+    func rejoin(code: String, displayName: String) async -> Bool {
+        guard case .inFamily(let currentID) = mode else { return false }
+        let parts = Self.split(shared: code)
+        let elsewhere = String(localized: "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä.")
+        if let key = parts.key, let current = FamilyKey.shareable(), key != current {
+            lastError = elsewhere
+            return false
+        }
+        var joined = false
+        await perform { client in
+            let result = try await client.join(code: parts.code, displayName: displayName)
+            if result.familyID != currentID {
+                try? await client.leave()
+                throw FamilyError.message(elsewhere)
+            }
+            joined = true
+        }
+        return joined && lastError == nil
+    }
+
     /// Splits `<code>#<key>` into its halves, tolerating either alone.
     ///
     /// Whitespace goes first: this string is read off a message and pasted, and

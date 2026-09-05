@@ -174,6 +174,39 @@ final class SilentFailureTests: XCTestCase {
         local.terminate()
     }
 
+    /// A device the server has stopped knowing — a 401 on every round, most
+    /// likely from "Tyhjennä tämä laite" on another phone of the same Apple ID
+    /// renewing the shared Keychain identity. It used to be a row on the Perhe
+    /// screen with no action, and the documented way back ran through "Poistu
+    /// perheestä", which the same server refuses (founder's-eye review,
+    /// finding #57). Now Muistot says so and offers the way back, and a fresh
+    /// link tapped on that device opens the same form with the code in it
+    /// instead of the wrong-time alert. `-sync refused` holds the state; the
+    /// real one needs a Worker that has forgotten the device.
+    func testARefusedDeviceIsOfferedAWayBack() {
+        let app = launch(["-seed", "family", "-tab", "memories", "-sync", "refused"])
+        let back = app.buttons["Liity uudella kutsulla"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10), "a refused device was met with silence on Muistot")
+        back.tap()
+        XCTAssertTrue(
+            app.textFields["Kutsukoodi"].waitForExistence(timeout: 10),
+            "the way back did not open the join form"
+        )
+        app.terminate()
+
+        let linked = launch(["-seed", "family", "-tab", "memories", "-sync", "refused", "-invite", "demo-code"])
+        let field = linked.textFields["Kutsukoodi"]
+        XCTAssertTrue(
+            field.waitForExistence(timeout: 10),
+            "a link on a refused device was answered with the wrong-time alert"
+        )
+        XCTAssertEqual(field.value as? String, "demo-code", "the code did not travel into the form")
+        XCTAssertFalse(
+            linked.alerts["Tämä laite kuuluu jo perheeseen"].exists,
+            "the refused device was told it already belongs to a family"
+        )
+    }
+
     /// The family key rides the invite link as its `#`-fragment (lever 3), and
     /// the parser used to read query items only — which a fragment never
     /// reaches. The one thing a *tapped* link delivered was membership in a

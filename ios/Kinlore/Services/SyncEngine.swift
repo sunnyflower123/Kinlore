@@ -28,6 +28,25 @@ final class SyncEngine {
     private(set) var state: State = .idle
     private(set) var lastSyncedAt: Date?
 
+    /// The way back from `.refused`: a new invitation, joined without losing
+    /// anything on this phone (`Session.rejoin`). Asked for by the note on
+    /// Muistot or by a tapped link, presented by `KinloreApp`. Until 5 Sep
+    /// 2026 the only mention of a refused device was a row on the Perhe screen
+    /// with no action, and the documented way back ran through "Poistu
+    /// perheestä" — which the same server refuses (founder's-eye review,
+    /// finding #57).
+    var isRejoining = false
+    var rejoinCode: String?
+
+    func askToRejoin(code: String? = nil) {
+        rejoinCode = code
+        isRejoining = true
+    }
+
+    /// `-sync refused` holds the state still for the audit and the tests: the
+    /// real one needs a Worker that has forgotten this device.
+    private var isHeld = false
+
     /// Photographs the free tier refused this round.
     ///
     /// Counted rather than swallowed: the refusal is an answer about the
@@ -55,6 +74,10 @@ final class SyncEngine {
         // — some fetched, the rest waiting for Wi-Fi — for the audit.
         if UserDefaults.standard.string(forKey: "copy") == "waiting" {
             fullCopy.hold(progress: .init(have: 3, total: 12), halt: .expensiveNetwork)
+        }
+        if UserDefaults.standard.string(forKey: "sync") == "refused" {
+            state = .refused
+            isHeld = true
         }
         #endif
     }
@@ -99,7 +122,7 @@ final class SyncEngine {
 
     /// One round. Safe to call often — overlapping calls are ignored.
     func sync() async {
-        guard isEnabled, !isRunning, let base = AppServices.apiBaseURL else { return }
+        guard isEnabled, !isRunning, !isHeld, let base = AppServices.apiBaseURL else { return }
         isRunning = true
         state = .syncing
         defer { isRunning = false }

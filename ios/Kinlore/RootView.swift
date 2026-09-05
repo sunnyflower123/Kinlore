@@ -4,6 +4,7 @@ import SwiftUI
 /// Telling is in the middle and is the default — the app opens on what it exists
 /// for, not on a list.
 struct RootView: View {
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
     private enum Tab: Hashable {
         case memories, tell, people
 
@@ -94,6 +95,26 @@ struct RootView: View {
             Button("Selvä") { store.acknowledgeUnreadableArchive() }
         } message: {
             Text("Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen.")
+        }
+        // The way back for a device the server has stopped knowing: the join
+        // form over the archive, with nothing on this phone at stake. Asked
+        // for by the note on Muistot or by a tapped link; see
+        // `SyncEngine.askToRejoin` and `Session.rejoin`. Here and not on the
+        // App, because a View's body is where a change on the engine is
+        // certain to be seen.
+        .sheet(isPresented: Binding(
+            get: { sync?.isRejoining ?? false },
+            set: { if !$0 { sync?.isRejoining = false } }
+        )) {
+            if let sync {
+                OnboardingScreen(
+                    prefilledCode: Binding(
+                        get: { sync.rejoinCode },
+                        set: { sync.rejoinCode = $0 }
+                    ),
+                    rejoining: true
+                )
+            }
         }
     }
 }

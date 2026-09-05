@@ -98,7 +98,16 @@ struct GalleryScreen: View {
                     // its content exists and is on its way. The invitation —
                     // "Lisää vanha valokuva…" — is a false sentence there, for
                     // exactly as long as the first pull takes.
-                    if isAwaitingFamilyContent { arrivalState } else { emptyState }
+                    //
+                    // The refused note above either, because an empty archive
+                    // is exactly where a reader's phone the server has
+                    // forgotten stands: nothing arrived, nothing will, and the
+                    // invitation to photograph an album is the wrong sentence.
+                    VStack(spacing: 0) {
+                        RefusedNote()
+                            .padding([.horizontal, .top], Elder.screenPadding)
+                        if isAwaitingFamilyContent { arrivalState } else { emptyState }
+                    }
                 } else {
                     content
                 }
@@ -404,6 +413,13 @@ struct GalleryScreen: View {
                     // engine has known this from the beginning and nothing asked it.
                     SyncNote()
 
+                    // And the device the server has stopped knowing — a 401,
+                    // not weather. It showed only inside SyncNote, and only
+                    // while something waited to be sent: a reader's phone with
+                    // an empty outbox fell silent for good (founder's-eye
+                    // review, finding #57).
+                    RefusedNote()
+
                     // And the one refusal that is not a waiting-for-network
                     // state: the free tier's photo ceiling, which used to be
                     // swallowed whole — the refused photograph looked normal
@@ -553,6 +569,50 @@ private struct SyncNote: View {
     /// this app: a phone on its own, or something on its way up.
     private func symbol(_ state: SyncEngine.State) -> String {
         state == .syncing ? "arrow.up.circle" : "iphone"
+    }
+}
+
+/// "The server no longer knows this phone."
+///
+/// Not a waiting state, so it gets no waiting sentence: nothing fixes it by
+/// itself. The words say what happened and what it costs, and the button is
+/// the way back — a new invitation, joined without losing anything on this
+/// phone (`Session.rejoin`). Until 5 Sep 2026 the only mention was a row on
+/// the Perhe screen with no action, four taps away, and the documented way
+/// back ran through "Poistu perheestä", which the same server refuses.
+private struct RefusedNote: View {
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
+
+    var body: some View {
+        if let sync, sync.state == .refused {
+            VStack(alignment: .leading, spacing: 12) {
+                Label(
+                    "Perheen palvelin ei enää tunnista tätä puhelinta. Uudet muistot eivät saavu, eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa.",
+                    systemImage: "iphone.slash"
+                )
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+
+                Button {
+                    sync.askToRejoin()
+                } label: {
+                    Label("Liity uudella kutsulla", systemImage: "person.badge.plus")
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                }
+                // The 60 pt minimum on the control and not on the label inside
+                // it: on the label it fights the button style over the box the
+                // text goes in, and the audit reported the label as clipped on
+                // the empty archive — `InviteShare` records the same lesson.
+                .buttonStyle(.bordered)
+                .elderTapTarget()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        }
     }
 }
 

@@ -7,6 +7,7 @@ import SwiftUI
 struct SettingsScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
 
     @State private var exportURL: URL?
     @State private var exportStatus: String?
@@ -57,6 +58,14 @@ struct SettingsScreen: View {
         // screen, it comes back to its first. That is what makes this the way
         // to walk the whole thing again, and it was invisible.
         let afterwards = " Sovellus avautuu ensimmäiselle näytölle."
+        // A device the server has stopped knowing cannot leave — the same
+        // server refuses it — and until 5 Sep 2026 that meant it could not be
+        // emptied either: the wipe stops on a failed leave. There is nothing
+        // to leave; the wipe says so and goes ahead.
+        if canLeave, sync?.state == .refused {
+            return String(localized: "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla.")
+                + afterwards
+        }
         if canLeave {
             return "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla."
                 + afterwards
@@ -406,7 +415,7 @@ struct SettingsScreen: View {
         // ghost counted against the last-member check, and the invites it
         // made stayed alive. The comment above described the exact invariant
         // the discard was violating.
-        if canLeave {
+        if canLeave, sync?.state != .refused {
             guard await session.leaveFamily() else {
                 failure = Failure(
                     title: "Perheestä ei voitu poistua",
