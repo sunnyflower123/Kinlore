@@ -35,7 +35,24 @@ final class TellViewModel {
         case failed(String)
     }
 
-    private(set) var phase: Phase = .idle
+    private(set) var phase: Phase = .idle {
+        didSet { UIApplication.shared.isIdleTimerDisabled = Self.keepsScreenAwake(phase) }
+    }
+
+    /// The screen stays on while the phone is listening, writing down,
+    /// organising or asking — not only while recording. The recorder kept it
+    /// on for the recording alone and let go in `stop()`, so a teller who set
+    /// the phone down after a long story let it lock during the upload, iOS
+    /// suspended the app, the request died, and the text she had waited for
+    /// became "valmistuu myöhemmin" for no reason she was given (founder's-eye
+    /// review, 3 Sep 2026, finding #21). Decided from the phase, in one place:
+    /// the recorder's own toggles still run and agree with it.
+    private static func keepsScreenAwake(_ phase: Phase) -> Bool {
+        switch phase {
+        case .recording, .transcribing, .organizing, .asking: true
+        default: false
+        }
+    }
 
     /// The text of a memory being typed.
     var draft = ""

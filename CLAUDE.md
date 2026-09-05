@@ -424,6 +424,14 @@ node scripts/webhook-revocation-check.mjs
 # somebody's account. After touching entitlement.ts.
 node scripts/entitlement-sync-check.mjs
 
+# The transcription's output budget. `complete()` sends no cap unless told
+# one, and the route's default is low: a long telling came back cut off, was
+# rejected whole, and after three attempts the catch-up gave up on it. The
+# budget is the hallucination bound turned into tokens, and both ways of being
+# wrong are silent. Runs on Node's own type stripping — no build, no Worker,
+# no key. After touching budget.ts or transcribe.ts.
+node scripts/transcribe-budget-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after

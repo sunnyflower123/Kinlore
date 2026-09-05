@@ -260,12 +260,25 @@ struct RemoteTranscriptionService: TranscriptionService {
                 seconds: Self.duration(of: audioURL),
                 lang: SpokenLanguage.current
             ),
-            timeout: 180
+            timeout: Self.transcriptionTimeout(seconds: Self.duration(of: audioURL))
         )
         guard !reply.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw RemoteError.emptyResult
         }
         return reply.text
+    }
+
+    /// How long to wait for the text. The comment on `post` says it — the
+    /// transcription takes as long as the audio — and a fixed 180 s said the
+    /// opposite: anything past a few minutes timed out on the client while the
+    /// server went on transcribing and paying, and the catch-up then paid again
+    /// (founder's-eye review, 3 Sep 2026, finding #20). A minute for the upload
+    /// and the queue, then twice the length of the recording; never under the
+    /// old 180 s, and capped at fifteen minutes, past which a dropped connection
+    /// is the likelier story — and a timeout is "about the moment" to the
+    /// catch-up, retried and not counted against the recording.
+    static func transcriptionTimeout(seconds: Double?) -> TimeInterval {
+        min(max(180, 60 + 2 * (seconds ?? 0)), 900)
     }
 
     /// Read from the file rather than the recorder's clock: if audio ever comes

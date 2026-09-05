@@ -12,6 +12,7 @@
 /// the model describing Finnish speech, not documentation. See CLAUDE.md.
 
 import { complete, type Message } from './openrouter'
+import { MAX_WORDS_PER_SECOND, WORD_ALLOWANCE, outputBudget } from './budget'
 import type { Lang } from './extract'
 import type { Env } from './worker'
 
@@ -45,21 +46,6 @@ Return the plain text with no quotation marks and no explanation. If you hear no
 /// Words per second above which a transcript cannot be genuine — per language,
 /// because the same story is not the same number of words.
 ///
-/// Finnish is agglutinative: one long word carries what English needs three or
-/// four for. Measured on this project's own paired samples, the same telling is
-/// 27 Finnish words in 13.24 s and 35 English words in 11.61 s — 2.04 against
-/// 3.01 words a second, and 30 % more words in English for identical content.
-///
-/// So one ceiling cannot mean the same thing twice. Four leaves Finnish twice
-/// the headroom it needs and English only a third more than it uses, which is
-/// not a margin — an excited speaker crosses it and has a real telling thrown
-/// away as a fabrication. Six keeps English the same ratio to its measured rate
-/// that four keeps for Finnish.
-const MAX_WORDS_PER_SECOND: Record<Lang, number> = { fi: 4, en: 6 }
-/// A flat allowance for short recordings, so that a three-second clip is not
-/// rejected because the speaker got two more words in than expected.
-const WORD_ALLOWANCE = 20
-
 /// Detects hallucination. On poor audio the model does not fall silent — it
 /// pours out a wall of text nobody said. We measured one model producing 135
 /// times as many words as reality contained.
@@ -100,7 +86,11 @@ export async function transcribe(
 	// guess at words it did not hear, because the speaker may no longer be
 	// around to ask.
 	const text = (
-		await complete(env, messages, { model: env.MODEL_TRANSCRIBE, temperature: 0 })
+		await complete(env, messages, {
+			model: env.MODEL_TRANSCRIBE,
+			temperature: 0,
+			maxTokens: outputBudget(seconds, lang),
+		})
 	).trim()
 
 	if (looksHallucinated(text, seconds, lang)) {
