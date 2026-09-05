@@ -386,6 +386,17 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The recording that could not be kept, said on the screen that used to
+    /// say the opposite. `-audio-lost` holds the failure still.
+    func testTellRecordingLost() throws {
+        try sweep(
+            "Kerro, nauhoitus ei tallentunut",
+            arguments: ["-seed", "empty", "-defer", "once", "-audio-lost", "YES"]
+        ) { app, _ in
+            require(app.staticTexts["Nauhoitusta ei saatu talteen"], "the lost recording, said")
+        }
+    }
+
     /// The note that says the server no longer knows this phone, with its way
     /// back. Held still by `-sync refused`; the real state needs a Worker that
     /// has forgotten the device.

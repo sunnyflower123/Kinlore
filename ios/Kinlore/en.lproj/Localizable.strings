@@ -430,3 +430,6 @@
 "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua." = "The server no longer recognises this phone. When you join with a new invitation, the memories on the phone stay and the family's new ones start arriving again.";
 "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä." = "This invitation is to another family. The memories on this phone belong to their own family.";
 "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla." = "The server no longer recognises this phone, so the family cannot be left: the memories are removed from this device only. The family's memories stay with the others.";
+"Nauhoitusta ei saatu talteen" = "The recording could not be kept";
+"Puhelin ei saanut äänitystä talteen. Vapauta tilaa puhelimesta ja kerro uudelleen, tai kirjoita muisto itse nyt, kun se on vielä mielessä." = "The phone could not keep the recording. Free up room on the phone and tell it again, or write the memory yourself now, while it is still in mind.";
+"Äänitystä ei saatu talteen tälle puhelimelle. Kertomasi on tallessa tekstinä." = "The recording could not be kept on this phone. What you told is kept as text.";

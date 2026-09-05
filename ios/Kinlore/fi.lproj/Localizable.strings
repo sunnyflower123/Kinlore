@@ -384,3 +384,6 @@
 "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua." = "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua.";
 "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä." = "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä.";
 "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla." = "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla.";
+"Nauhoitusta ei saatu talteen" = "Nauhoitusta ei saatu talteen";
+"Puhelin ei saanut äänitystä talteen. Vapauta tilaa puhelimesta ja kerro uudelleen, tai kirjoita muisto itse nyt, kun se on vielä mielessä." = "Puhelin ei saanut äänitystä talteen. Vapauta tilaa puhelimesta ja kerro uudelleen, tai kirjoita muisto itse nyt, kun se on vielä mielessä.";
+"Äänitystä ei saatu talteen tälle puhelimelle. Kertomasi on tallessa tekstinä." = "Äänitystä ei saatu talteen tälle puhelimelle. Kertomasi on tallessa tekstinä.";

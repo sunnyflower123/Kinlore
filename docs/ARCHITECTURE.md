@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 49 sweep tests, each auditing one screen at the default text size and again at the largest, out of 111 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 50 sweep tests, each auditing one screen at the default text size and again at the largest, out of 112 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2690,6 +2690,19 @@ the wipe skips the leave there is nothing to make. What it does not fix is the
 cause: two phones on one Apple ID share one identity by design (§4), so
 emptying either one renews the other's — that stays a design question, written
 down here rather than patched.
+
+**And a recording that could not be kept was called kept.** `persistAudio`
+moves the file out of the temporary directory, and until 5 Sep 2026 a failed
+move returned nil: the memory was saved without its audio, the row looked like
+every other voice memory, and the screen said *"Äänesi on tallessa"* over a
+file that was gone — rule 3 broken in silence on the one input the app calls
+irreplaceable (founder's-eye review, finding #58). The move is tried again as a
+copy, and nil is an answer now: a telling with no words and no recording is
+not saved at all and the screen says *"Nauhoitusta ei saatu talteen"* with
+*"Kirjoita se itse"* beside it while the words are still in mind; a telling
+whose words arrived is saved as text and the result says the recording did
+not. `-audio-lost` drives both in `SilentFailureTests`, and the sweep measures
+the screen.
 
 **And a swipe deleted a relationship on the spot.** A swipe is easy to make by
 accident, `swipeActions` is invisible until it happens, and what it removed was

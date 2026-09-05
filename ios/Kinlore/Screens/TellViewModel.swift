@@ -241,6 +241,15 @@ final class TellViewModel {
     /// wall (findings #68, #24).
     private(set) var savedBecauseOfQuota = false
 
+    /// The recording could not be kept: the move out of the temporary
+    /// directory failed, and so did the copy. Until 5 Sep 2026 that returned
+    /// nil, the memory was saved without its audio, and the screen said
+    /// *"Äänesi on tallessa"* over a file that was gone — rule 3 broken in
+    /// silence on the one input the app calls irreplaceable (founder's-eye
+    /// review, finding #58). Now the screens say so, and a telling with no
+    /// words and no recording is not saved at all.
+    private(set) var audioLost = false
+
     func stopAndProcess() async {
         guard let url = recorder.stop() else {
             // A recording under a second is an accident, not a memory. In the
@@ -566,6 +575,16 @@ final class TellViewModel {
     /// an event of its own. The text is left empty, and
     /// `isAwaitingTranscription` tells the UI that transcription is pending.
     private func saveAudioOnly(audioURL: URL, duration: TimeInterval) {
+        guard let audioName = Self.persistAudio(from: audioURL) else {
+            // No words, and now no recording: a memory with neither is a row
+            // reading "Ääni tallessa" over nothing. The screen says what
+            // happened instead, the question stays open, and "Kirjoita se
+            // itse" is the way to keep the telling while it is still in mind.
+            audioLost = true
+            savedMemoryID = nil
+            return
+        }
+        audioLost = false
         let home = target ?? {
             // Untitled on purpose. The title comes from the place and the time
             // in what was said, and nothing has read the speech yet — a
@@ -582,7 +601,7 @@ final class TellViewModel {
             subjectID: home.id,
             authorName: store.authorName,
             body: "",
-            audioFilename: Self.persistAudio(from: audioURL),
+            audioFilename: audioName,
             audioDuration: duration,
             source: .voice
         )
@@ -693,6 +712,8 @@ final class TellViewModel {
         placedSubject = home
 
         let audioName = audioURL.flatMap(Self.persistAudio(from:))
+        // The words are here; the recording is not. Saved as text, and said.
+        audioLost = audioURL != nil && audioName == nil
 
         let memory = Memory(
             subjectID: home.id,
@@ -795,15 +816,31 @@ final class TellViewModel {
     /// Moves the audio out of the temporary directory into a permanent one.
     /// Grandmother's voice is itself the inheritance, so it is not left in a
     /// place the system is allowed to empty.
+    ///
+    /// A move that fails is tried again as a copy — the two fail for different
+    /// reasons — and nil means the bytes could not be kept, which every caller
+    /// now treats as an answer rather than as a detail (`audioLost`). The
+    /// realistic cause is the temporary file being gone: the move is a rename
+    /// on the same volume and needs no room, and a phone with no room fails
+    /// the recording itself first.
     private static func persistAudio(from url: URL) -> String? {
-        let destination = URL.documentsDirectory.appendingPathComponent(url.lastPathComponent)
-        do {
-            try? FileManager.default.removeItem(at: destination)
-            try FileManager.default.moveItem(at: url, to: destination)
-            return destination.lastPathComponent
-        } catch {
+        #if DEBUG
+        // `-audio-lost YES`: holds the failure still for the tests. The real
+        // one needs the system to have emptied tmp under a live telling.
+        if UserDefaults.standard.bool(forKey: "audio-lost") {
+            try? FileManager.default.removeItem(at: url)
             return nil
         }
+        #endif
+        let destination = URL.documentsDirectory.appendingPathComponent(url.lastPathComponent)
+        try? FileManager.default.removeItem(at: destination)
+        if (try? FileManager.default.moveItem(at: url, to: destination)) != nil {
+            return destination.lastPathComponent
+        }
+        if (try? FileManager.default.copyItem(at: url, to: destination)) != nil {
+            return destination.lastPathComponent
+        }
+        return nil
     }
 
     // MARK: - Name correction

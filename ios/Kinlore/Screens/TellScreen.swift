@@ -1449,6 +1449,17 @@ private struct ResultView: View {
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
             }
+
+            // The words arrived and the recording did not. Rule 3 broken, and
+            // said — the row used to look like every other voice memory.
+            if model.audioLost {
+                Label(
+                    "Äänitystä ei saatu talteen tälle puhelimelle. Kertomasi on tallessa tekstinä.",
+                    systemImage: "waveform.slash"
+                )
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+            }
         }
     }
 
@@ -1833,18 +1844,28 @@ private struct AudioSavedView: View {
         VStack(spacing: 24) {
             Spacer(minLength: 0)
 
-            Image(systemName: "waveform.circle.fill")
+            // The one case this screen must not open on its usual sentence:
+            // the recording could not be kept (`TellViewModel.audioLost`).
+            // Two titles rather than a ternary — a ternary of literals is a
+            // String and is never looked up.
+            Image(systemName: model.audioLost ? "exclamationmark.triangle" : "waveform.circle.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.tint)
+                .foregroundStyle(model.audioLost ? Elder.proposal : Color.accentColor)
                 // Decoration: the title beside it says the same thing in words.
                 // Left visible, VoiceOver reads out the symbol's own name — the
                 // defect the onboarding mark and the member rows had already.
                 .accessibilityHidden(true)
 
-            Text("Äänesi on tallessa")
-                .font(.title.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            Group {
+                if model.audioLost {
+                    Text("Nauhoitusta ei saatu talteen")
+                } else {
+                    Text("Äänesi on tallessa")
+                }
+            }
+            .font(.title.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
 
             // Three truths for one screen: a mode where no text is ever
             // coming, the month's minutes, and a deferral the catch-up will
@@ -1855,7 +1876,9 @@ private struct AudioSavedView: View {
             // Three `Text`s and not a ternary: a ternary of literals is a
             // String, and neither of the two here had ever been looked up.
             Group {
-                if !model.canTranscribe {
+                if model.audioLost {
+                    Text("Puhelin ei saanut äänitystä talteen. Vapauta tilaa puhelimesta ja kerro uudelleen, tai kirjoita muisto itse nyt, kun se on vielä mielessä.")
+                } else if !model.canTranscribe {
                     Text("Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.")
                 } else if model.savedBecauseOfQuota {
                     let date = Session.nextFreeMinutes().formatted(.dateTime.day().month(.wide))
@@ -1913,11 +1936,19 @@ private struct AudioSavedView: View {
                 Button {
                     if model.target == nil { model.reset() } else { dismiss() }
                 } label: {
-                    Text(model.target == nil ? "Selvä" : "Valmis")
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity)
-                        .elderTapTarget()
+                    // Two labels rather than a ternary: a ternary of literals
+                    // is a String, and "Selvä" was never looked up here.
+                    Group {
+                        if model.target == nil {
+                            Text("Selvä")
+                        } else {
+                            Text("Valmis")
+                        }
+                    }
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
                 }
                 .controlSize(.large)
 
@@ -1925,7 +1956,9 @@ private struct AudioSavedView: View {
                 // did not mean to keep is not any more meant once the quota
                 // happened to interrupt it — and here the memory is a recording
                 // with no text, which is the hardest kind to find and remove
-                // afterwards.
+                // afterwards. Not when nothing was saved: there is no memory
+                // to remove, and the button would promise one.
+                if !model.audioLost {
                 Button {
                     isConfirmingDiscard = true
                 } label: {
@@ -1938,6 +1971,7 @@ private struct AudioSavedView: View {
                 }
                 .foregroundStyle(Elder.destructive)
                 .controlSize(.large)
+                }
             }
 
             Spacer(minLength: 0)

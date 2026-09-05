@@ -207,6 +207,42 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The recording that could not be kept. `persistAudio` swallowed the
+    /// failure and returned nil: the memory was saved without its audio and the
+    /// screen said *"Äänesi on tallessa"* over a file that was gone — rule 3
+    /// broken in silence on the one input the app calls irreplaceable
+    /// (founder's-eye review, finding #58). `-audio-lost` holds the failure
+    /// still; the real one needs the system to empty tmp under a telling.
+    func testALostRecordingIsSaidNotClaimedKept() {
+        // No words either: nothing is saved, and the screen says so. `-defer
+        // once` records two seconds by itself and defers the text.
+        let deferred = launch(["-seed", "empty", "-defer", "once", "-audio-lost", "YES"])
+        XCTAssertTrue(
+            deferred.staticTexts["Nauhoitusta ei saatu talteen"].waitForExistence(timeout: 30),
+            "a lost recording was not said"
+        )
+        XCTAssertFalse(deferred.staticTexts["Äänesi on tallessa"].exists, "a lost recording was called kept")
+        XCTAssertFalse(deferred.buttons["Poista tämä muisto"].exists, "a memory that was never saved was offered for removal")
+        deferred.terminate()
+
+        // The words arrived, the recording did not: saved as text, and said.
+        // A real telling through the stub — the button, two seconds, the stop.
+        let transcribed = launch(["-seed", "empty", "-audio-lost", "YES"])
+        let record = transcribed.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 10), "never arrived: the record button")
+        record.tap()
+        XCTAssertTrue(transcribed.staticTexts["Kuuntelen"].waitForExistence(timeout: 15), "the recording did not start")
+        Thread.sleep(forTimeInterval: 2)
+        transcribed.buttons["Lopeta kertominen"].tap()
+        XCTAssertTrue(transcribed.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "the telling was not saved as text")
+        XCTAssertTrue(
+            transcribed.staticTexts
+                .containing(NSPredicate(format: "label CONTAINS %@", "Äänitystä ei saatu talteen"))
+                .firstMatch.waitForExistence(timeout: 10),
+            "the missing recording was not said on the result"
+        )
+    }
+
     /// The family key rides the invite link as its `#`-fragment (lever 3), and
     /// the parser used to read query items only — which a fragment never
     /// reaches. The one thing a *tapped* link delivered was membership in a
