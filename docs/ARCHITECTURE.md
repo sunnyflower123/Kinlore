@@ -503,12 +503,13 @@ link sees all of the family's memories. Therefore:
   above already answers
 - **The boundary is checked against the deployed Worker, not only a local
   one.** `scripts/invite-boundary-check.mjs` takes a URL; first production run
-  29 Aug 2026, twelve cases green. The thirteen cases added on 5 Sep 2026 —
-  one person per code, and the removal — have so far run only against the
-  local Worker, which meters the join door with the same numbers as
-  production does: the first run of them failed its last five with
-  `too_many_requests`, and the script now moves to a fresh synthetic address
-  at the ninth join locally and waits the minute out against production. It had never been pointed there before, and
+  29 Aug 2026, twelve cases green; 5 Sep 2026, 25 of 25, the same evening the
+  thirteen cases for one person per code and the owner's removal were
+  deployed. The local Worker meters the join door with the same numbers as
+  production does — the first local run of the fourteen joins failed its
+  last five with `too_many_requests` — so the script moves to a fresh
+  synthetic address at the ninth join locally, and against production waits
+  the minute out, which the run's log says while it does. It had never been pointed there before, and
   the first attempt failed on its first line — the script sends a synthetic
   `CF-Connecting-IP` so that seven checks in `verify.sh` do not starve each
   other's rate limit, on a comment claiming Cloudflare ignores a client-set

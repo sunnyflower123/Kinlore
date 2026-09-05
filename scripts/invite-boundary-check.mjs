@@ -43,8 +43,10 @@
 // And against the deployed Worker, which is where the boundary actually has to
 // hold. First production run 29 Aug 2026, 12/12 — and the first time this was
 // ever pointed there, which is how the `CF-Connecting-IP` claim below was
-// found to be false. It writes into the production database like any other
-// caller: two families and their members stay behind.
+// found to be false. Second, 5 Sep 2026, 25/25, minutes after the single-use
+// and removal rules were deployed, with the one-minute wait at the ninth
+// join. It writes into the production database like any other caller: two
+// families and their members stay behind.
 //
 //   node scripts/invite-boundary-check.mjs https://memorize.arkiste.workers.dev
 
