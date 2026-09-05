@@ -2624,6 +2624,20 @@ a fact somebody had confirmed about their own family. It asks now — and the
 dialog says the relationship can be added back from the same card, because the
 recovery exists and is not obvious.
 
+**And every confirmation in the app had lost its cancel button** — found
+5 Sep 2026, when the family sweep tapped *"Peruuta"* on the new member-removal
+dialog and no such button existed. On iOS 26 a `confirmationDialog` attached
+to a list comes up as a popover anchored to the list's top edge, 240 pt wide
+under the navigation bar, and a popover adaptation draws no cancel action: the
+Settings screen's *"Poistutaanko perheestä?"* was screenshotted with *"Poistu
+perheestä"* as its only button, the way out being a tap in the dimmed area
+that nothing on screen mentioned. Eleven dialogs presented that way, and no
+test had ever tapped a cancel button, so every one of them passed. All of them
+are alerts now: an alert draws both buttons, and the way out is one the person
+rule 1 is about can see and VoiceOver can name. The alerts themselves are not
+audited — measured, that reports iOS's own capped scaling on the alert's title
+and message and nothing of ours — and the screens under them are.
+
 The other half of that finding is left alone on purpose: the gesture is still
 the only way to reach the removal. Relationships arrive as proposals from the
 extraction and are added from a picker, both of which are the grandchild's end

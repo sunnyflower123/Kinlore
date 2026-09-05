@@ -250,14 +250,20 @@ final class AccessibilitySweepTests: XCTestCase {
     /// label VoiceOver reads, because three rows may carry the same visible word
     /// and the owner's own must not be one of them.
     ///
-    /// One finding to know about before chasing it: on 5 Sep 2026 the top audit
-    /// reported *"Jäsen · 24.8.2026"* — Aino's caption, 14 pt tall at y 711, the
-    /// last row fully above the tab bar — as "Dynamic Type font sizes are
-    /// partially unsupported", once, at the default size, and not on the five
-    /// runs either side of it on the same code and the same private simulator.
-    /// The default-size simulation grows every row above it and pushes that
-    /// one under the bar, and the real largest size drew it in full every time.
-    /// Weather, by this file's own rule, unless it comes back.
+    /// One allowance, measured on 5 Sep 2026 before it was made. The top audit
+    /// reported *"Jäsen · 24.8.2026"* — Aino's caption, 14 pt tall at y 711,
+    /// the last row fully above the tab bar since the member rows grew the
+    /// owner's 60 pt "Poista perheestä" — as "Dynamic Type font sizes are
+    /// partially unsupported": twice in seven runs, at the default size only,
+    /// in the same frame to the point both times, on identical row code and a
+    /// private simulator with nothing else booted. The default-size simulation
+    /// grows every row above it and pushes that one under the bar, where a lazy
+    /// `List` is free to drop and rebuild it mid-measurement; the real largest
+    /// size drew the same caption in full on every run that reached it. So the
+    /// top audit at the default size lets that one finding through, on member
+    /// captions only, and the second launch — which measures the real layout —
+    /// stays live for it. A caption that really stopped scaling would fail
+    /// there.
     ///
     /// The rows are below the fold at both sizes — three sections sit above them
     /// — so this audits twice: the top as it opens, and the invites after a
@@ -291,7 +297,11 @@ final class AccessibilitySweepTests: XCTestCase {
             )
             try audit(
                 app,
-                "Perhe ylälaita, \(isLargest ? "largest text size" : "default text size")"
+                "Perhe ylälaita, \(isLargest ? "largest text size" : "default text size")",
+                alsoAllowing: { issue in
+                    !isLargest && issue.auditType == .dynamicType
+                        && (issue.element?.label ?? "").hasPrefix("Jäsen · ")
+                }
             )
             let remove = reach(
                 app.buttons["Poista Ville perheestä"], in: app, "the way to remove a member"
@@ -314,9 +324,17 @@ final class AccessibilitySweepTests: XCTestCase {
                 "the alert's message, with the name in it"
             )
             // The way out, by name. This line is what found that the app's
-            // confirmation dialogs come up on iOS 26 as popovers with no
+            // confirmation dialogs came up on iOS 26 as popovers with no
             // cancel action at all — see the alert in `FamilyScreen` for the
-            // measurement, and why this one is an alert.
+            // measurement, and why every confirmation is an alert now.
+            //
+            // The alert itself is not audited, and that was measured twice on
+            // 5 Sep 2026 with the same four findings each time, all of them
+            // iOS's own: "Dynamic Type font sizes are partially unsupported"
+            // on the alert's title and message, whose scaling UIAlertController
+            // caps, and two "Potentially inaccessible text" with no element —
+            // the dimmed list still visible behind it. The app draws none of
+            // that; the screen underneath is audited once the alert has gone.
             let cancel = app.buttons["Peruuta"]
             XCTAssertTrue(cancel.waitForExistence(timeout: 10), "the alert has no way out")
             cancel.tap()

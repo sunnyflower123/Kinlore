@@ -64,10 +64,9 @@ struct TellScreen: View {
         // The same words as the in-screen discard, and the same manners: the
         // recorder keeps running while the question is open, so saying no
         // costs nothing.
-        .confirmationDialog(
+        .alert(
             "Hylätäänkö tämä kertominen?",
-            isPresented: $isConfirmingClose,
-            titleVisibility: .visible
+            isPresented: $isConfirmingClose
         ) {
             Button("Hylkää", role: .destructive) {
                 model?.discardRecording()
@@ -886,10 +885,9 @@ private struct RecordingView: View {
         // costs nothing: the telling carries on where it left off. Stopping
         // first and asking afterwards would make the safe answer the expensive
         // one.
-        .confirmationDialog(
+        .alert(
             "Hylätäänkö tämä kertominen?",
-            isPresented: $isConfirmingDiscard,
-            titleVisibility: .visible
+            isPresented: $isConfirmingDiscard
         ) {
             Button("Hylkää", role: .destructive) { model.discardRecording() }
             Button("Jatka kertomista", role: .cancel) {}
@@ -1397,10 +1395,9 @@ private struct ResultView: View {
             }
             .padding(Elder.screenPadding)
         }
-        .confirmationDialog(
+        .alert(
             "Poistetaanko tämä muisto?",
-            isPresented: $isConfirmingDiscard,
-            titleVisibility: .visible
+            isPresented: $isConfirmingDiscard
         ) {
             Button("Poista", role: .destructive) {
                 model.discardSavedMemory()
@@ -1762,10 +1759,9 @@ private struct ProposalRow: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Poista \(subject.title)")
-            .confirmationDialog(
+            .alert(
                 "Poistetaanko \(subject.title)?",
-                isPresented: $isConfirmingReject,
-                titleVisibility: .visible
+                isPresented: $isConfirmingReject
             ) {
                 Button("Poista", role: .destructive, action: onReject)
                 Button("Peruuta", role: .cancel) {}
@@ -1819,10 +1815,9 @@ private struct AudioSavedView: View {
         .paywallSheet(isPresented: $isShowingPaywall)
         // The meter has just moved; every note that reads it should know.
         .task { if model.savedBecauseOfQuota { await session.refresh() } }
-        .confirmationDialog(
+        .alert(
             "Poistetaanko tämä muisto?",
-            isPresented: $isConfirmingDiscard,
-            titleVisibility: .visible
+            isPresented: $isConfirmingDiscard
         ) {
             Button("Poista", role: .destructive) {
                 model.discardSavedMemory()

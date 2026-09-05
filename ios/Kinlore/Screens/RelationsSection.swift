@@ -118,10 +118,9 @@ private struct RelativeRow: View {
         // spot. The relationship can be added back from the same card, which is
         // why the dialog says so — the recovery is not obvious, and telling
         // somebody about it costs one sentence.
-        .confirmationDialog(
+        .alert(
             "Poistetaanko sukulaisuus?",
-            isPresented: $isConfirmingRemoval,
-            titleVisibility: .visible
+            isPresented: $isConfirmingRemoval
         ) {
             Button("Poista", role: .destructive) {
                 if let relation { store.removeRelation(id: relation.id) }

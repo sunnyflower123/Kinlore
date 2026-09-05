@@ -250,10 +250,20 @@ struct SettingsScreen: View {
             }
             #endif
         }
-        .confirmationDialog(
+        // Alerts, not confirmation dialogs — here and at every other
+        // confirmation in the app, since 5 Sep 2026. Measured before it was
+        // changed: on iOS 26 a `confirmationDialog` attached to a list comes up
+        // as a popover anchored to the list's top edge, 240 pt wide under the
+        // navigation bar, and a popover adaptation draws no cancel action at
+        // all. This dialog was screenshotted with "Poistu perheestä" as its
+        // only button; the way out was a tap in the dimmed area beside it,
+        // which nothing on screen said. The sweep's tap on "Peruuta" in
+        // FamilyScreen found it; no test had ever tapped a cancel button. An
+        // alert draws both buttons, and the way out is one an 80-year-old can
+        // see and VoiceOver can name.
+        .alert(
             "Poistutaanko perheestä?",
-            isPresented: $isConfirmingLeave,
-            titleVisibility: .visible
+            isPresented: $isConfirmingLeave
         ) {
             Button("Poistu perheestä", role: .destructive) {
                 Task {
@@ -281,10 +291,9 @@ struct SettingsScreen: View {
         } message: {
             Text("Et enää näe perheen uusia muistoja etkä voi kertoa niitä. Kertomasi muistot jäävät perheelle.")
         }
-        .confirmationDialog(
+        .alert(
             "Tyhjennetäänkö tämä laite?",
-            isPresented: $isConfirmingWipe,
-            titleVisibility: .visible
+            isPresented: $isConfirmingWipe
         ) {
             // The way out, above the way through. The warning has always told
             // somebody with no other copy to export first, and then offered

@@ -538,10 +538,9 @@ struct SubjectDetailScreen: View {
         }
         .navigationTitle(current.displayTitle)
         .navigationBarTitleDisplayMode(.large)
-        .confirmationDialog(
+        .alert(
             removalTitle,
-            isPresented: $isConfirmingRemoval,
-            titleVisibility: .visible
+            isPresented: $isConfirmingRemoval
         ) {
             Button("Poista", role: .destructive) {
                 store.remove(subjectID: subject.id)
@@ -704,10 +703,9 @@ private struct MemoryRow: View {
             }
         }
         .padding(.vertical, 6)
-        .confirmationDialog(
+        .alert(
             "Poistetaanko tämä muisto?",
-            isPresented: $isConfirmingRemoval,
-            titleVisibility: .visible
+            isPresented: $isConfirmingRemoval
         ) {
             Button("Poista", role: .destructive) {
                 // A moment that held only this telling goes with it, and the

@@ -105,10 +105,9 @@ struct CorrectNameSheet: View {
             // thing to look at first, and the keyboard arrives when it is
             // wanted.
             .onAppear { name = subject.title }
-            .confirmationDialog(
+            .alert(
                 "Yhdistetäänkö kortit?",
-                isPresented: $isConfirmingMerge,
-                titleVisibility: .visible
+                isPresented: $isConfirmingMerge
             ) {
                 Button("Yhdistä", role: .destructive) { save() }
                 Button("Peruuta", role: .cancel) {}
