@@ -24,6 +24,14 @@ enum ArchiveExport {
         let missingMedia: Int
     }
 
+    /// `Muistoarkisto-2026-09-05.zip`. The date, so that the copy a family
+    /// makes every year does not write over the last one in the folder it
+    /// keeps them in (founder's-eye review, finding #88). ISO order, because
+    /// the folder sorts it and no locale is asked.
+    static func zipName(for date: Date) -> String {
+        "Muistoarkisto-\(date.formatted(.iso8601.year().month().day())).zip"
+    }
+
     /// Builds the zip and returns its location in the temporary directory. The
     /// caller hands it to the share sheet; the system cleans it up afterwards.
     ///
@@ -56,6 +64,9 @@ enum ArchiveExport {
             $0.deletedAt == nil && ($0.imageFilename != nil || $0.r2Key != nil)
         }
         for (index, subject) in subjectsWithPhotos.enumerated() {
+            // "Peruuta" on the Settings row cancels the task; the half-built
+            // folder is removed by the next build.
+            try Task.checkCancellation()
             progress(String(localized: "Kootaan kuvia \(index + 1)/\(subjectsWithPhotos.count)"))
             guard let filename = await MediaLoader.imageFilename(
                 for: subject, store: store, session: session
@@ -63,7 +74,7 @@ enum ArchiveExport {
                 missing += 1
                 continue
             }
-            if copy(filename, into: photos) {
+            if link(filename, into: photos) {
                 photoNames[subject.id] = filename
             } else {
                 missing += 1
@@ -77,6 +88,7 @@ enum ArchiveExport {
             $0.audioFilename != nil || $0.audioR2Key != nil
         }
         for (index, memory) in memoriesWithAudio.enumerated() {
+            try Task.checkCancellation()
             progress(String(localized: "Kootaan ääniä \(index + 1)/\(memoriesWithAudio.count)"))
             guard let filename = await MediaLoader.audioFilename(
                 for: memory, store: store, session: session
@@ -84,7 +96,7 @@ enum ArchiveExport {
                 missing += 1
                 continue
             }
-            if copy(filename, into: audio) {
+            if link(filename, into: audio) {
                 audioNames[memory.id] = filename
             } else {
                 missing += 1
@@ -102,23 +114,33 @@ enum ArchiveExport {
         try store.exportJSON().write(to: root.appendingPathComponent("arkisto.json"))
 
         progress(String(localized: "Pakataan"))
-        return Export(zip: try zip(root), missingMedia: missing)
+        try Task.checkCancellation()
+        // Off the main actor: zipping a family's gigabyte takes as long as it
+        // takes, and the screen showing "Pakataan" has to keep drawing it.
+        let name = zipName(for: .now)
+        let zip = try await Task.detached(priority: .userInitiated) {
+            try Self.zip(root, named: name)
+        }.value
+        return Export(zip: zip, missingMedia: missing)
     }
 
-    /// Copies a media file into the export. A missing file is skipped rather
-    /// than fatal: one photo that failed to download must not cost the family
-    /// the other two hundred.
-    private static func copy(_ filename: String, into directory: URL) -> Bool {
+    /// Puts a media file into the export without copying its bytes.
+    ///
+    /// A hard link costs nothing and takes no room — the export folder and the
+    /// media store are on the same volume — and the zip reads the bytes
+    /// through it. Until 5 Sep 2026 this was a copy: for a family's archive of
+    /// a gigabyte, a second gigabyte on the phone before the zip took a third,
+    /// on the old phone least able to spare it (founder's-eye review, finding
+    /// #88). A volume that will not link still gets its copy. A missing file
+    /// is skipped rather than fatal: one photo that failed to download must
+    /// not cost the family the other two hundred.
+    private static func link(_ filename: String, into directory: URL) -> Bool {
         let source = MediaStore.url(for: filename)
         let destination = directory.appendingPathComponent(filename)
         guard FileManager.default.fileExists(atPath: source.path) else { return false }
         try? FileManager.default.removeItem(at: destination)
-        do {
-            try FileManager.default.copyItem(at: source, to: destination)
-            return true
-        } catch {
-            return false
-        }
+        if (try? FileManager.default.linkItem(at: source, to: destination)) != nil { return true }
+        return (try? FileManager.default.copyItem(at: source, to: destination)) != nil
     }
 
     // MARK: - Zipping
@@ -127,28 +149,33 @@ enum ArchiveExport {
     ///
     /// `NSFileCoordinator` with `.forUploading` hands back a zipped copy of the
     /// directory — the same mechanism the share sheet uses for a folder. The
-    /// copy is only valid inside the block, so it is copied out before the
-    /// block returns.
-    private static func zip(_ folder: URL) throws -> URL {
-        let destination = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(folder.lastPathComponent).zip")
+    /// zip is only valid inside the block, so it is **moved** out before the
+    /// block returns — moved and not copied, because for a gigabyte the copy
+    /// was a second gigabyte of temporary space on the phone. A move that
+    /// fails falls back to the copy.
+    nonisolated private static func zip(_ folder: URL, named name: String) throws -> URL {
+        let destination = FileManager.default.temporaryDirectory.appendingPathComponent(name)
         try? FileManager.default.removeItem(at: destination)
 
         var coordinatorError: NSError?
-        var copyError: Error?
+        var moveError: Error?
         NSFileCoordinator().coordinate(
             readingItemAt: folder,
             options: [.forUploading],
             error: &coordinatorError
         ) { zipped in
             do {
-                try FileManager.default.copyItem(at: zipped, to: destination)
+                try FileManager.default.moveItem(at: zipped, to: destination)
             } catch {
-                copyError = error
+                do {
+                    try FileManager.default.copyItem(at: zipped, to: destination)
+                } catch {
+                    moveError = error
+                }
             }
         }
         if let coordinatorError { throw coordinatorError }
-        if let copyError { throw copyError }
+        if let moveError { throw moveError }
         return destination
     }
 

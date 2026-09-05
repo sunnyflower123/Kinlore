@@ -11,6 +11,8 @@ struct SettingsScreen: View {
     @State private var exportURL: URL?
     @State private var exportStatus: String?
     @State private var isExporting = false
+    /// The running export, so that "Peruuta" beside the progress can end it.
+    @State private var exportTask: Task<Void, Never>?
     @State private var isSharing = false
     /// How many photographs or recordings the export could not include, and
     /// whether that is waiting to be said before the share sheet opens. The
@@ -124,7 +126,7 @@ struct SettingsScreen: View {
 
             Section {
                 Button {
-                    Task { await export() }
+                    exportTask = Task { await export() }
                 } label: {
                     if isExporting {
                         HStack(spacing: 12) {
@@ -139,6 +141,15 @@ struct SettingsScreen: View {
                     }
                 }
                 .disabled(isExporting)
+                // A way out of a long export. A family's archive takes as long
+                // to gather as it takes, and until 5 Sep 2026 the only way to
+                // stop one was to leave the screen and hope.
+                if isExporting {
+                    Button("Peruuta", role: .cancel) {
+                        exportTask?.cancel()
+                    }
+                    .elderTapTarget()
+                }
             } header: {
                 // A List styles its own headers and footers below the contrast
                 // minimum. Saying the colour out loud is the only way to raise
@@ -163,6 +174,12 @@ struct SettingsScreen: View {
                     // Say what comes out, in the words of somebody who will
                     // open it on a computer years from now.
                     Text("Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.")
+                    // Not here: "Viety viimeksi 5.9.2026." One more line in
+                    // this footer pushed the leave section's footer to y 729
+                    // and the wipe row below the fold at the default size —
+                    // three audit findings and one failing test, 5 Sep 2026,
+                    // the same wall §14 records for the row that was reverted
+                    // on 29 Aug. This List is at its height limit.
                 }
                 .foregroundStyle(Elder.supporting)
             }
@@ -303,7 +320,7 @@ struct SettingsScreen: View {
             // a single-device archive this is the tap that ends the archive.
             if !canLeave {
                 Button("Vie arkisto ensin") {
-                    Task { await export() }
+                    exportTask = Task { await export() }
                 }
             }
 
@@ -367,6 +384,8 @@ struct SettingsScreen: View {
             let size = (try? FileManager.default.attributesOfItem(atPath: export.zip.path)[.size]) ?? 0
             print("[export] wrote \(export.zip.path) (\(size) bytes, \(export.missingMedia) missing)")
             #endif
+        } catch is CancellationError {
+            // Asked for. Nothing to report; the next build starts clean.
         } catch {
             failure = Failure(
                 title: "Arkiston vienti ei onnistunut",

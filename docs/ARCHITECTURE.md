@@ -1682,6 +1682,39 @@ Four decisions:
 - **`NSFileCoordinator(.forUploading)` does the zipping**, so no dependency is
   added for one archive format.
 
+And four more since 5 Sep 2026, from the review's finding #88 — *the export does
+not carry a real family's archive, and nobody is ever told to run it*:
+
+- **The zip carries its date.** `Muistoarkisto-2026-09-05.zip`, ISO order, so
+  the copy a family makes every year does not write over the last one in the
+  folder they keep them in. `export-check.mjs` picks the newest by name.
+- **The media are hard-linked into the export, not copied.** The export folder
+  and the media store share a volume, so a link costs nothing and takes no
+  room, and the zip reads the bytes through it. For an archive of a gigabyte
+  the copy was a second gigabyte on the phone before the zip took a third, on
+  the old phone least able to spare it. A volume that will not link still gets
+  a copy. And the coordinator's zip is **moved** out of its block rather than
+  copied, for the same gigabyte.
+- **The zip is made off the main actor**, so *"Pakataan"* keeps drawing while
+  a family's gigabyte is packed, and **"Peruuta" ends a running export** —
+  the loops check for cancellation between files, and the next build starts
+  clean. Until then the only way to stop one was to leave the screen and hope.
+- **And one that was built and taken out the same evening.** *"Viety
+  viimeksi 5.9.2026."* under the export row — when the last copy left, which an
+  archive that has grown for a year since should tell the person about to make
+  one. One line in that footer pushed the leave section's footer to y 729 and
+  the wipe row below the fold at the default size: three audit findings and
+  `WipeTests` failing to find *"Tyhjennä ja aloita alusta"*, the same wall the
+  section below records for the row reverted on 29 Aug. This `List` is at its
+  height limit, and the line went. So the "nobody is told" half of the finding
+  stays open: nothing in the app says when the last copy left or that one is
+  due. The phone is a full copy of its own since §5's `FullCopy`; the export is
+  the copy that leaves the phone, and it is still made on nobody's prompting.
+
+What is still not built from that finding: a resumable export in the background
+that survives leaving the screen, and any measurement of the real thing — the
+sizes above are §5's arithmetic, not a phone's.
+
 ### Emptying, and the name it got on 29 Aug 2026
 
 *"Tyhjennä tämä laite"* was true and half the story. What follows the emptying

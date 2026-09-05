@@ -22,7 +22,7 @@
 // that), and DEVELOPER_DIR pointing at the full Xcode as everywhere else here.
 
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, existsSync, statSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, existsSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -130,9 +130,15 @@ waitFor(14)
 }
 
 const container = simctl('get_app_container', udid, BUNDLE, 'data')
-const zip = join(container, 'tmp', 'Muistoarkisto.zip')
-check('the export wrote a file', existsSync(zip), zip)
-if (!existsSync(zip)) process.exit(1)
+// The zip carries its date — Muistoarkisto-2026-09-05.zip — so a family's
+// yearly copies do not write over each other. The newest is the one just made.
+const tmp = join(container, 'tmp')
+const zips = existsSync(tmp)
+	? readdirSync(tmp).filter((name) => /^Muistoarkisto-\d{4}-\d{2}-\d{2}\.zip$/.test(name)).sort()
+	: []
+const zip = zips.length ? join(tmp, zips[zips.length - 1]) : join(tmp, 'Muistoarkisto-<date>.zip')
+check('the export wrote a file with the date in its name', zips.length > 0, zip)
+if (!zips.length) process.exit(1)
 
 const out = mkdtempSync(join(tmpdir(), 'kinlore-export-'))
 execFileSync('unzip', ['-q', zip, '-d', out])
