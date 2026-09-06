@@ -49,5 +49,33 @@ final class DateTests: XCTestCase {
             app.buttons["1950-luku"].waitForExistence(timeout: 10),
             "the decade did not reach the card, or was rounded into something else"
         )
+
+        // And the grid now stands in that order: the dated photograph under
+        // its decade. Until 6 Sep 2026 the date reached the card and sorted
+        // nothing (founder's-eye review, finding #10).
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let heading = app.staticTexts["1950-luku"]
+        for _ in 0 ..< 4 where !heading.exists { app.swipeUp() }
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), "the grid did not group the photograph by its decade")
+    }
+
+    /// The row a family reads says when it was told. The export printed the
+    /// day beside every telling from the first; the card never did (finding
+    /// #9), so a story told last week and one told first looked the same.
+    func testATellingSaysWhenItWasTold() {
+        let app = launch(["-seed", "archive", "-tab", "memories"])
+        let photo = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Valokuva")
+        ).firstMatch
+        for _ in 0 ..< 4 where !photo.exists { app.swipeUp() }
+        XCTAssertTrue(photo.waitForExistence(timeout: 10), "never arrived: the photo tile")
+        photo.tap()
+
+        // The fixture's telling was made now, so the day is today's, in the
+        // phone's own short form.
+        let today = Date.now.formatted(date: .numeric, time: .omitted)
+        let line = app.staticTexts["Mummo · \(today)"]
+        for _ in 0 ..< 4 where !line.exists { app.swipeUp() }
+        XCTAssertTrue(line.waitForExistence(timeout: 10), "the telling does not say when it was told")
     }
 }

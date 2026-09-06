@@ -983,7 +983,7 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
-        guard ["archive", "unseen", "deck", "blind", "related"].contains(seed) else { return }
+        guard ["archive", "unseen", "deck", "blind", "related", "dated"].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -1089,7 +1089,10 @@ final class MemoryStore {
         // memory, so the deck finds nothing and the tab keeps the blank button
         // that most tests launch into. A card appearing on their idle screen
         // would change what every one of them is looking at.
-        if seed == "deck" {
+        // `-seed dated` is the deck's three undated photographs plus the
+        // archive's one, dated to the fifties: the grid's decade heading and
+        // its basket for the undated, on one screen, for the sweep.
+        if seed == "deck" || seed == "dated" {
             // Three, so that the deck's patience — also three — is what ends a
             // run of pushes rather than the archive simply running out. Two
             // different endings that look identical on screen, and only one of
@@ -1123,6 +1126,13 @@ final class MemoryStore {
         // and a second run of the same test would otherwise start with the
         // card already spent.
         UserDefaults.standard.removeObject(forKey: BlindConfirmation.answeredKey)
+        if seed == "dated", let index = subjects.firstIndex(where: { $0.id == photo.id }) {
+            subjects[index].dateHint = DateHint(
+                start: Calendar.current.date(from: DateComponents(year: 1955, month: 1, day: 1)),
+                end: nil,
+                precision: .decade
+            )
+        }
         questions = mummoAsks
         // `-seed related`: the archive with one confirmed relationship, Eeva
         // and Kalle as spouses (and Toivo, above). NameCorrectionTests merges

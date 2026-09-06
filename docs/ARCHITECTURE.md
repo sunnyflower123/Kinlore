@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 52 sweep tests, each auditing one screen at the default text size and again at the largest, out of 118 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 53 sweep tests, each auditing one screen at the default text size and again at the largest, out of 120 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1311,6 +1311,29 @@ Built, in the order they were built:
     machine's guess must not walk over a person's knowledge. This one is the
     person.
 
+    **And since 6 Sep 2026 the date sorts something.** Until then it reached
+    the card and nothing else: every browse query ordered by `createdAt`, so
+    the grid stood in the order the album happened to be scanned, and "show
+    me the fifties" had no answer on the one screen built for finding
+    (founder's-eye review, finding #10). The grid now groups dated
+    photographs by decade, oldest decade first and oldest first within it,
+    and the ones nobody has dated follow under *"Ilman ajankohtaa"*, newest
+    scanned first as before; a grid with no dates in it is exactly as it
+    was, because a heading over the whole archive saying nobody has dated it
+    would be a reproach. The moments list orders the same way. The decade is
+    interpolated as a `String`: an integer in a `Text` is formatted for the
+    locale, and Finnish groups thousands, so the heading read *"1 950-luku"*
+    and the test looking for *"1950-luku"* found nothing. `-seed dated` is
+    the one archive with a date in it, for the sweep; the plain one stays
+    undated so DateTests can give one and then find the heading.
+
+    The row under it says when the telling was made — *"Mummo · 5.9.2026"*
+    in the device's own short form — which the export had printed beside
+    every telling from the first day and the card never had (finding #9). And
+    the first sweep to put untold photographs with real pictures on the grid
+    found the tile's *"Kerro"* badge failing contrast on all three: a frosted
+    capsule takes its colour from the photograph under it. It is opaque now.
+
 Not built:
 
 13. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
@@ -1985,6 +2008,15 @@ those same categories, which is how the contrast problem survived this long.
   the same colours that pass at every other size. Checked on screen: what fails
   is the overlap, not the colour. The rule is contrast-only and requires a real
   frame intersection, so it cannot quietly excuse a genuinely faint label.
+  Above the bar, the strip its scroll-edge effect reaches into is not excused
+  either but *measured*: a contrast finding there is answered by counting the
+  element's pixels (`ContrastMeter`, `AccessibilityPolicy.fadeReach`). The
+  strip is 120 pt since 6 Sep 2026, 60 before, and it was widened only after
+  two findings outside it were measured first — the grid's *"Ilman
+  ajankohtaa"* heading 83 pt above the bar and the blind card's *"Sanni"*
+  button 104 pt above it, both at the largest size, 10.4:1 and 15.2:1 on
+  screen against a 4.5:1 minimum. The second had been failing at HEAD on a
+  quiet machine, on a screen nothing that day had touched.
 - The guessing round's truncated preview (§13): a teaser, whole text one tap
   away, all of it in the accessibility label.
 - `Lisää sukulainen`, where a `Menu` reports a label frame smaller than the text

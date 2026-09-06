@@ -268,7 +268,20 @@ enum AccessibilityPolicy {
     /// and not the forgiveness: everything in it is still decided by
     /// `ContrastMeter`, so a genuinely faint label inside it goes on failing,
     /// now with its measured ratio printed beside it.
-    static let fadeReach: CGFloat = 60
+    ///
+    /// 120 pt since 6 Sep 2026, measured before it was widened, as the note
+    /// above asks. Two findings at the largest size sat outside the 60 pt
+    /// strip and were reported as colours: the grid's *"Ilman ajankohtaa"*
+    /// heading, `Elder.supporting`, ending 83 pt above the bar, and the blind
+    /// card's *"Sanni"* name button, primary text, ending 104 pt above it —
+    /// the second on a screen this session had not touched, failing at HEAD
+    /// the same way on a quiet machine. With the strip at 120 the meter
+    /// answered both from their pixels: 10.37:1 and 15.17:1 (and *"Aino"*
+    /// beside it, 14.95:1), against a 4.5:1 minimum. So the XXXL bar's effect
+    /// reaches further than 60 pt, and what fails there is the fade and not
+    /// the text. 120 is the value that was run, not a rounder number nobody
+    /// measured.
+    static let fadeReach: CGFloat = 120
 
     /// `ContentUnavailableView` sizes its own title and description, and it caps
     /// their growth. These are its labels, not ours. The empty states matter in

@@ -453,3 +453,7 @@
 "Perheen muistoja ei saatu haettua" = "The family's memories could not be fetched";
 "Yhteyttä ei nyt saatu. Mikään ei ole kadonnut: haetaan uudelleen itsestään, kun verkko palaa." = "No connection just now. Nothing is lost: it will be fetched again by itself when the network is back.";
 "Hae nyt uudelleen" = "Fetch again now";
+
+// Muistot: the photographs by decade (6 Sep 2026).
+"%@-luku" = "%@s";
+"Ilman ajankohtaa" = "Without a date";

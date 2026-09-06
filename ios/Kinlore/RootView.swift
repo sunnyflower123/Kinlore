@@ -663,6 +663,10 @@ private struct MemoryRow: View {
         return "Ääni tallessa — teksti valmistuu myöhemmin"
     }
 
+    private static func told(_ date: Date) -> String {
+        date.formatted(date: .numeric, time: .omitted)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if memory.isAwaitingTranscription {
@@ -683,9 +687,17 @@ private struct MemoryRow: View {
                 // perheeltä row: who told this matters most exactly when
                 // several members write on one subject, and it was the
                 // smallest text in the whole reading loop.
-                Text(memory.authorName)
+                // And when. The export has printed the day beside every
+                // telling since the first one, and the row a family actually
+                // reads never did (founder's-eye review, finding #9): a
+                // grandchild on a card in year three could not tell the story
+                // told last week from the one told first. The device's own
+                // short form, so an English phone is not handed a Finnish
+                // date; the family screen's member row still is.
+                Text("\(memory.authorName) · \(Self.told(memory.createdAt))")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 // The original audio is part of the product, not a step towards it.
                 if memory.audioFilename != nil || memory.audioR2Key != nil {

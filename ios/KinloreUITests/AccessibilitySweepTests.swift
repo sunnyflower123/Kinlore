@@ -444,6 +444,20 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The grid by decade: one dated photograph under "1950-luku", three
+    /// undated under their own heading. `-seed dated` is the only archive
+    /// with a date in it; the plain one has none on purpose, so DateTests can
+    /// give one.
+    func testMemoriesByDecade() throws {
+        try sweep(
+            "Muistot, vuosikymmenet",
+            arguments: ["-seed", "dated", "-tab", "memories"]
+        ) { app, _ in
+            require(app.staticTexts["1950-luku"], "the decade heading")
+            require(app.staticTexts["Ilman ajankohtaa"], "the heading over the undated")
+        }
+    }
+
     /// The note that says a telling has not left the phone.
     ///
     /// It cannot be seeded: the demo archive is canned as already sent, so the

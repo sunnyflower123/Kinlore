@@ -407,3 +407,8 @@
 "Perheen muistoja ei saatu haettua" = "Perheen muistoja ei saatu haettua";
 "Yhteyttä ei nyt saatu. Mikään ei ole kadonnut: haetaan uudelleen itsestään, kun verkko palaa." = "Yhteyttä ei nyt saatu. Mikään ei ole kadonnut: haetaan uudelleen itsestään, kun verkko palaa.";
 "Hae nyt uudelleen" = "Hae nyt uudelleen";
+
+
+// Muistot: the photographs by decade (6 Sep 2026).
+"%@-luku" = "%@-luku";
+"Ilman ajankohtaa" = "Ilman ajankohtaa";

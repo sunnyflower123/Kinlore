@@ -41,7 +41,74 @@ struct GalleryScreen: View {
     }
 
     private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
-    private var events: [Subject] { store.subjects(of: .event, matching: query) }
+    private var events: [Subject] { Self.byDate(store.subjects(of: .event, matching: query)) }
+
+    /// The photographs by decade — the one order a family thinks in, and the
+    /// one nothing here used. `dateHint` is asked for by a sheet of its own
+    /// and, until 6 Sep 2026, sorted nothing: the grid was in the order the
+    /// album happened to be scanned (founder's-eye review, finding #10), and
+    /// "show me the fifties" had no answer on a screen whose whole point is
+    /// finding. Dated photographs come first, oldest decade first and oldest
+    /// first within it; the ones nobody has dated follow under a heading of
+    /// their own, newest scanned first as before. When nothing is dated the
+    /// grid is exactly as it was — a heading over the whole archive saying
+    /// nobody has dated it would be a reproach, not a section.
+    private struct PhotoGroup: Identifiable {
+        enum Heading: Equatable {
+            case decade(Int)
+            case undated
+        }
+
+        let heading: Heading?
+        let photos: [Subject]
+
+        var id: String {
+            switch heading {
+            case .decade(let decade): "decade-\(decade)"
+            case .undated: "undated"
+            case nil: "all"
+            }
+        }
+    }
+
+    private var photoGroups: [PhotoGroup] {
+        let dated = photos.compactMap { photo -> (photo: Subject, start: Date)? in
+            guard let hint = photo.dateHint, hint.precision != .unknown, let start = hint.start else {
+                return nil
+            }
+            return (photo, start)
+        }
+        guard !dated.isEmpty else { return [PhotoGroup(heading: nil, photos: photos)] }
+        let calendar = Calendar.current
+        let byDecade = Dictionary(grouping: dated) { calendar.component(.year, from: $0.start) / 10 * 10 }
+        var groups = byDecade.keys.sorted().map { decade in
+            PhotoGroup(
+                heading: .decade(decade),
+                photos: (byDecade[decade] ?? []).sorted { $0.start < $1.start }.map(\.photo)
+            )
+        }
+        let datedIDs = Set(dated.map(\.photo.id))
+        let undated = photos.filter { !datedIDs.contains($0.id) }
+        if !undated.isEmpty {
+            groups.append(PhotoGroup(heading: .undated, photos: undated))
+        }
+        return groups
+    }
+
+    /// The dated moments in the order they happened, oldest first; the
+    /// undated after them, newest told first as before. Same finding as the
+    /// grid above, on the list under it.
+    private static func byDate(_ subjects: [Subject]) -> [Subject] {
+        let dated = subjects.compactMap { subject -> (subject: Subject, start: Date)? in
+            guard let hint = subject.dateHint, hint.precision != .unknown, let start = hint.start else {
+                return nil
+            }
+            return (subject, start)
+        }
+        .sorted { $0.start < $1.start }
+        let datedIDs = Set(dated.map(\.subject.id))
+        return dated.map(\.subject) + subjects.filter { !datedIDs.contains($0.id) }
+    }
     /// Places the family has spoken about.
     ///
     /// They arrive the same way people do — named inside a memory, created as a
@@ -499,12 +566,17 @@ struct GalleryScreen: View {
                 if !photos.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         SectionHeading("Kuvat")
-                        LazyVGrid(columns: columns, spacing: 10) {
-                            ForEach(photos) { photo in
-                                NavigationLink(value: photo) {
-                                    PhotoTile(subject: photo)
+                        ForEach(photoGroups) { group in
+                            if let heading = group.heading {
+                                groupHeading(heading)
+                            }
+                            LazyVGrid(columns: columns, spacing: 10) {
+                                ForEach(group.photos) { photo in
+                                    NavigationLink(value: photo) {
+                                        PhotoTile(subject: photo)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -524,6 +596,24 @@ struct GalleryScreen: View {
             }
             .padding(Elder.screenPadding)
         }
+    }
+
+    /// A decade, or the basket for what nobody has dated. A header for
+    /// VoiceOver too, so the decades can be walked by heading.
+    private func groupHeading(_ heading: PhotoGroup.Heading) -> some View {
+        Group {
+            switch heading {
+            // A String, not the Int: an integer interpolated into a
+            // `Text` is formatted for the locale, and Finnish groups
+            // thousands — the heading read "1 950-luku" and the test
+            // looking for "1950-luku" found nothing.
+            case .decade(let decade): Text("\(String(decade))-luku")
+            case .undated: Text("Ilman ajankohtaa")
+            }
+        }
+        .font(.headline)
+        .foregroundStyle(Elder.supporting)
+        .accessibilityAddTraits(.isHeader)
     }
 
     /// One section, one row type, whatever kind of subject is in it.
@@ -836,7 +926,14 @@ private struct PhotoTile: View {
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(.ultraThinMaterial, in: Capsule())
+            // Opaque, not a material. The capsule sits on a photograph, and a
+            // frosted one takes its colour from whatever is under it: the
+            // first sweep to put untold photographs with real pictures on
+            // this grid (6 Sep 2026, the decades) read "Kerro" as failing
+            // contrast on all three. The system background under the primary
+            // text is the one pair whose contrast does not depend on the
+            // picture, in either appearance.
+            .background(Color(.systemBackground), in: Capsule())
             .padding(8)
         }
         .task {
