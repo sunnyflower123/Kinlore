@@ -37,6 +37,10 @@
 
 import { randomUUID, randomBytes } from 'node:crypto'
 
+// Against the deployed Worker — first production run 6 Sep 2026, 14/14, the
+// evening the move rule was deployed. Leaves one throwaway family behind.
+//
+//   node scripts/memory-rules-check.mjs https://memorize.arkiste.workers.dev
 const API = process.argv[2] ?? 'http://localhost:8787'
 // Every check knocks on the same two unauthenticated doors, and creating a
 // family is limited to five a minute per address (worker.ts). Seven scripts run
@@ -44,12 +48,21 @@ const API = process.argv[2] ?? 'http://localhost:8787'
 // they were starving each other: whichever ran last failed with "could not
 // create a family: 429", which reads like a broken Worker and is not one.
 //
-// So each run knocks from an address of its own. Cloudflare sets
-// `CF-Connecting-IP` from the connection itself and ignores what the client
-// sends, so this changes nothing in production — it only stops the checks from
-// spending each other's allowance locally.
+// So each local run knocks from an address of its own.
+//
+// **Local only.** The sentence that stood here said Cloudflare sets
+// `CF-Connecting-IP` from the connection and ignores what the client sends. It
+// does not: the edge refuses the request outright with `403 error code: 1000`
+// before the Worker is reached — measured on the invite check on 29 Aug 2026,
+// and this script carried the same false sentence until it was pointed at
+// production on 6 Sep 2026. Against production the run pays the real rate
+// limit, which one family and two joins fit inside.
+const isLocalWorker = /^https?:\/\/(localhost|127\.0\.0\.1)\b/.test(API)
 const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
-const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
+const json = {
+	'content-type': 'application/json',
+	...(isLocalWorker ? { 'CF-Connecting-IP': household } : {}),
+}
 
 let failures = 0
 

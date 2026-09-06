@@ -2718,7 +2718,10 @@ and takes an auto-made moment with it when nothing is left under it, exactly as
 taking the telling back does. The server's memory upsert now carries
 `subject_id` from the author — it never had, so a move would have stayed on one
 phone — and `memory-rules-check.mjs` presses on both halves: the teller moves
-it, another member cannot move it back.
+it, another member cannot move it back. Deployed 6 Sep 2026 (`f7643e4d`), and
+the check ran against production straight after, 14 of 14 — the first time it
+was ever pointed there, which is how it was found to be sending the local-only
+`CF-Connecting-IP` header the invite check had already stopped sending.
 
 **And a recording that could not be kept was called kept.** `persistAudio`
 moves the file out of the temporary directory, and until 5 Sep 2026 a failed
