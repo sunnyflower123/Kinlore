@@ -26,6 +26,12 @@ import Observation
 ///   - Three failures in a row end the round. The next sync starts another,
 ///     from wherever this one stopped.
 ///   - One round at a time.
+///   - The store is written once per ten files and once at the end of a
+///     round, not once per file. Recording a filename used to save the whole
+///     archive: 150 files wrote a 5.4 MB JSON 150 times, measured 6 Sep 2026
+///     (ARCHITECTURE §5), and a family's real archive would have written
+///     tens of gigabytes of JSON to copy a few of media. A phone killed
+///     mid-round fetches at most nine files again.
 ///
 /// Compiled on its own by the check, which is why the network, the disk, the
 /// fetch and the store arrive as closures rather than as frameworks.
@@ -72,8 +78,12 @@ final class FullCopy {
         var fetch: (String) async -> Data?
         /// Bytes and an extension in, a filename out.
         var save: (Data, String) -> String?
-        /// The filename, written back to the row it belongs to.
+        /// The filename, written back to the row it belongs to — in memory.
+        /// Nothing reaches the disk until `flush`.
         var record: (Item, String) -> Void
+        /// Writes the rows to disk. Called every `filesPerFlush` recorded
+        /// files and once more at the end of a round that recorded any.
+        var flush: () -> Void
         var networkIsCheap: () -> Bool
         /// Bytes free on the phone, or nil when the phone will not say.
         var freeBytes: () -> Int64?
@@ -82,6 +92,7 @@ final class FullCopy {
     /// One gigabyte. The copy is a copy, not the thing the phone is for.
     static let diskFloor: Int64 = 1_000_000_000
     static let failuresThatEndARound = 3
+    static let filesPerFlush = 10
 
     private(set) var progress = Progress(have: 0, total: 0)
     private(set) var halt: Halt = .none
@@ -113,6 +124,10 @@ final class FullCopy {
         measure()
         halt = .none
         var failuresInARow = 0
+        var unflushed = 0
+        // Every way out of the loop below — done, expensive, full, failed —
+        // writes what the round recorded since its last flush.
+        defer { if unflushed > 0 { ports.flush() } }
 
         for item in ports.items().sorted(by: Self.order) where !isHere(item) {
             guard ports.networkIsCheap() else {
@@ -136,6 +151,11 @@ final class FullCopy {
             failuresInARow = 0
             ports.record(item, filename)
             progress.have += 1
+            unflushed += 1
+            if unflushed >= Self.filesPerFlush {
+                ports.flush()
+                unflushed = 0
+            }
         }
     }
 

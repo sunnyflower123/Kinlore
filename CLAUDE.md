@@ -367,8 +367,9 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
-# Wi-Fi only, never the last gigabyte, three failures ending a round — so the
-# phone is a copy of the archive and not a window onto one (docs/RECOVERY.md).
+# Wi-Fi only, never the last gigabyte, three failures ending a round, the
+# store written every tenth file rather than every file — so the phone is a
+# copy of the archive and not a window onto one (docs/RECOVERY.md).
 # Every rule is silent when wrong: a copy that never starts looks exactly like
 # one that is complete. Run it after touching FullCopy.swift.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \

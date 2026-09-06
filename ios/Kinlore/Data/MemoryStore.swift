@@ -866,16 +866,19 @@ final class MemoryStore {
 
     /// The local cache of downloaded media. Not marked dirty: the filename is
     /// device specific and is none of the server's business.
-    func setLocalImage(subjectID: String, filename: String) {
+    /// `saving: false` is for the full copy, which records files by the
+    /// hundred and writes the archive once per ten of them (`FullCopy`); a
+    /// view fetching one file on demand keeps the default.
+    func setLocalImage(subjectID: String, filename: String, saving: Bool = true) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].imageFilename = filename
-        save()
+        if saving { save() }
     }
 
-    func setLocalAudio(memoryID: String, filename: String) {
+    func setLocalAudio(memoryID: String, filename: String, saving: Bool = true) {
         guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
         memories[index].audioFilename = filename
-        save()
+        if saving { save() }
     }
 
     /// Forgets where sync had got to, without touching a single row.

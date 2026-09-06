@@ -735,15 +735,21 @@ was asked, which was this round's: the copy halted as *waiting for Wi-Fi* on
 a Wi-Fi machine, the family screen said so, and nothing in the check script
 could have seen it, because the network arrives there as a closure. The
 engine warms the monitor at init now. The second run copied all 150 files,
-82 MB, in about fifteen seconds — and wrote the store's 5.4 MB JSON 150 times
-over, once per file, because `setLocalImage` and `setLocalAudio` each save.
-On the simulator that is about 60 ms a file. On a five-year-old phone it is
-several times that, and for the archive above it is roughly 30 GB of JSON
-written to copy 2–4 GB of media, on the main actor, with the screen
-stuttering for as long as it takes. **Not fixed**: a round could flush every
-tenth file instead of every file, at the cost of fetching up to nine again
-on a phone killed mid-round. Worth doing before a real family has a thousand
-files, and not before it has ten.
+82 MB, in ten to fifteen seconds — and wrote the store's 5.4 MB JSON 150
+times over, once per file, because `setLocalImage` and `setLocalAudio` each
+saved. For the archive above that is roughly 30 GB of JSON written to copy
+2–4 GB of media, on the main actor. **So the round writes in batches now**:
+the filename is recorded in memory (`saving: false`), and the store is
+written every tenth file and once more at the end of any round that recorded
+anything, whichever way it ended — a phone killed mid-round fetches at most
+nine files again and leaves at most nine unreferenced files behind, which the
+next wipe removes. The third run, same seed: 150 files in six to seven
+seconds, fifteen writes of the store instead of 150, every one of the 150
+filenames in the file afterwards. The fetch through the Worker is the larger
+half of the per-file cost on this machine; on an old phone the encode is the
+half that would have grown. `full-copy-check.swift` holds the batching with
+the same fake phone: at ten, at twenty and at the end, once for exactly ten,
+never for nothing, and once for a round that failures or the network ended.
 
 **In the MVP the file passes through the Worker.** At the sizes above that is
 entirely sufficient. Presigned URLs are the right answer for larger files, but

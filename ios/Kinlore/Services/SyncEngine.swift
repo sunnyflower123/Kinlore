@@ -132,10 +132,11 @@ final class SyncEngine {
             save: { data, ext in MediaStore.saveRaw(data, extension: ext) },
             record: { item, filename in
                 switch item.kind {
-                case .audio: store.setLocalAudio(memoryID: item.id, filename: filename)
-                case .photo: store.setLocalImage(subjectID: item.id, filename: filename)
+                case .audio: store.setLocalAudio(memoryID: item.id, filename: filename, saving: false)
+                case .photo: store.setLocalImage(subjectID: item.id, filename: filename, saving: false)
                 }
             },
+            flush: { store.save() },
             networkIsCheap: { NetworkPrice.isCheap },
             freeBytes: {
                 let values = try? URL.documentsDirectory.resourceValues(

@@ -22,6 +22,10 @@ enum FullCopyCheck {
         var files: Set<String> = []
         var fetched: [String] = []
         var recorded: [(String, String)] = []
+        var flushes = 0
+        /// Called after every fetch with the count so far; a check can change
+        /// the phone under a running round.
+        var afterFetch: ((Int) -> Void)?
         /// What each fetch answers, in order; past the end, everything succeeds.
         var answers: [Bool] = []
         var cheap = true
@@ -36,6 +40,7 @@ enum FullCopyCheck {
                 exists: { self.files.contains($0) },
                 fetch: { key in
                     self.fetched.append(key)
+                    self.afterFetch?(self.fetched.count)
                     if let delay = self.delay { try? await Task.sleep(for: delay) }
                     let ok = self.fetched.count <= self.answers.count
                         ? self.answers[self.fetched.count - 1]
@@ -56,6 +61,7 @@ enum FullCopyCheck {
                         )
                     }
                 },
+                flush: { self.flushes += 1 },
                 networkIsCheap: { self.cheap },
                 freeBytes: { self.free }
             )
@@ -159,6 +165,49 @@ enum FullCopyCheck {
             check("failures with successes between them do not end the round",
                   copy.halt == .none && copy.progress.have == 2 && phone.fetched.count == 4,
                   "\(copy.halt) \(copy.progress) \(phone.fetched.count)")
+        }
+
+        print("— the store is written in batches, not once per file —")
+        do {
+            let phone = Phone((0 ..< 25).map { photo("p\($0)") })
+            let copy = FullCopy(ports: phone.ports)
+            await copy.run()
+            check("twenty-five files are recorded twenty-five times",
+                  phone.recorded.count == 25, "\(phone.recorded.count)")
+            check("and written three times: at ten, at twenty, and at the end",
+                  phone.flushes == 3, "\(phone.flushes)")
+        }
+        do {
+            let phone = Phone((0 ..< 10).map { photo("p\($0)") })
+            let copy = FullCopy(ports: phone.ports)
+            await copy.run()
+            check("exactly ten files are written once, not once more at the end",
+                  phone.flushes == 1, "\(phone.flushes)")
+        }
+        do {
+            let phone = Phone([photo("a", here: "media-a.jpg")])
+            phone.files.insert("media-a.jpg")
+            let copy = FullCopy(ports: phone.ports)
+            await copy.run()
+            check("a round with nothing to fetch writes nothing", phone.flushes == 0, "\(phone.flushes)")
+        }
+        do {
+            let phone = Phone((0 ..< 7).map { audio("v\($0)") })
+            phone.answers = [true, true, true, true, false, false, false]
+            let copy = FullCopy(ports: phone.ports)
+            await copy.run()
+            check("a round ended by failures still writes the four it kept",
+                  copy.halt == .failures && phone.recorded.count == 4 && phone.flushes == 1,
+                  "\(copy.halt) \(phone.recorded.count) \(phone.flushes)")
+        }
+        do {
+            let phone = Phone((0 ..< 7).map { audio("v\($0)") })
+            phone.afterFetch = { count in if count == 3 { phone.cheap = false } }
+            let copy = FullCopy(ports: phone.ports)
+            await copy.run()
+            check("a round the network ended still writes the three it kept",
+                  copy.halt == .expensiveNetwork && phone.recorded.count == 3 && phone.flushes == 1,
+                  "\(copy.halt) \(phone.recorded.count) \(phone.flushes)")
         }
 
         print("— one round at a time —")
