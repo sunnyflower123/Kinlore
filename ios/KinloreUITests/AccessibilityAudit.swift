@@ -33,8 +33,18 @@ struct ContrastMeter {
     ///
     /// Percentiles rather than the extremes: a glyph's edge pixels are
     /// anti-aliased into the background, and one stray pixel of either would
-    /// decide the answer. The 5th and 95th are the ink and the paper of an
-    /// ordinary label.
+    /// decide the answer. The 95th is the paper of any label; the ink is the
+    /// **2nd**, and it was the 5th until 6 Sep 2026. A frame is often a tap
+    /// target rather than a word: the invite row's *"Poista"* is a 60 × 60 pt
+    /// target around a 15 pt word, some three per cent ink, and the 5th
+    /// percentile landed past the ink on its anti-aliased fringe — 1.59:1 for
+    /// a colour that is 6.4:1 on screen, reported as the tab bar's fade
+    /// because it happened to sit near it. Measured on that frame and four
+    /// text-sized ones in the same run: 5th / 2nd / 1st percentile gave
+    /// 1.59 / 6.40 / 6.43 on the target and 17.4 / 17.8 / 18.1, 20.9 / 20.9 /
+    /// 21.0, 9.3 / 9.4 / 9.6 and 14.95 / 15.3 / 15.3 on the words. The 2nd
+    /// agrees with the 5th wherever the frame is a word and finds the ink
+    /// where it is a target; the 1st is one stray pixel away on a small frame.
     ///
     /// **Nil is not a pass.** It means the frame could not be measured — off the
     /// screenshot, or too small to hold a glyph — and the caller reports the
@@ -82,7 +92,7 @@ struct ContrastMeter {
         }
         guard luminances.count >= 16 else { return nil }
         luminances.sort()
-        let dark = luminances[luminances.count / 20]
+        let dark = luminances[max(1, luminances.count / 50)]
         let light = luminances[luminances.count - 1 - luminances.count / 20]
         return (light + 0.05) / (dark + 0.05)
     }
@@ -179,6 +189,16 @@ extension XCTestCase {
         // measured is reported rather than forgiven: the point of measuring is
         // to keep the net tight, and an uncertainty resolved in the app's favour
         // is the net with a hole in it.
+        // The picture the findings were made on, kept when asked for:
+        // `TEST_RUNNER_KINLORE_AUDIT_SHOT=/some/dir/prefix` on the xcodebuild
+        // line writes one PNG per audit that reported anything. It is what
+        // told a frame full of paper from a word in the fade on 6 Sep 2026,
+        // and it costs nothing when the variable is not set.
+        if let shot = ProcessInfo.processInfo.environment["KINLORE_AUDIT_SHOT"],
+           !found.isEmpty || !deferred.isEmpty {
+            let name = context.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "/", with: "_")
+            try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(shot)-\(name).png"))
+        }
         if !deferred.isEmpty {
             let meter = ContrastMeter(app: app)
             for (line, frame) in deferred {
@@ -432,6 +452,21 @@ enum AccessibilityPolicy {
         // is not a colour anybody can see. The same reasoning as the tab bar
         // below, from the other end.
         if issue.auditType == .contrast, let frame = issue.element?.frame, frame.minY < 0 {
+            return true
+        }
+
+        // **Text seen through the floating tab bar.** Element detection reads
+        // the rendered picture and asks the tree for an element under each
+        // word it finds; a word under the translucent bar is drawn and has
+        // its element, and the bar is what the hit-test answers. The finding
+        // arrives with no element at all, which is also why nothing could
+        // ever be done about it. Measured 6 Sep 2026 on the Perhe screen's
+        // audit picture: the two findings were the invite footer's lines
+        // under the bar, and nothing else on the screen was unaccounted for.
+        // Only with no element and only under a bar: a word with an element
+        // is still judged, and a screen without a bar has nothing to see
+        // through.
+        if issue.auditType == .elementDetection, issue.element == nil, !tabBar.isNull {
             return true
         }
 
