@@ -346,6 +346,22 @@ final class MemoryStore {
         save()
     }
 
+    /// A name somebody typed in, for a photograph or a moment.
+    ///
+    /// Overwrites, like `setDateHint` below and for the same reason: `describe`
+    /// speaks for the extraction and fills only an empty field, and this is
+    /// the person. Until 6 Sep 2026 a photograph's name was whatever its first
+    /// telling left — a place and a year, or nothing — and no screen could
+    /// change it (founder's-eye review, finding #12). People and places keep
+    /// `rename`, which knows about merging two cards; a photograph has nothing
+    /// to merge with.
+    func setTitle(subjectID: String, title: String) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].title = title
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
     /// A date somebody typed in, or cleared.
     ///
     /// Unlike `describe`, this **overwrites**. That one fills empty fields only,

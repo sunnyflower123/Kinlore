@@ -515,7 +515,7 @@ private struct JoinFamilyForm: View {
                 Text("Kuka sinä olet")
                     .foregroundStyle(Elder.supporting)
             } footer: {
-                Text("Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi.")
+                Text("Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin.")
                     .foregroundStyle(Elder.supporting)
             }
 

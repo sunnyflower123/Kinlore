@@ -162,7 +162,6 @@
 "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "On a grandparent's phone the text is larger. You can change this later in Settings.";
 "Puhelimen oma tekstikoko on tätä vahvempi." = "The phone's own text size overrides this.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "This appears beside your memories, so the family knows who told them.";
-"Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi." = "This appears beside your memories. You can leave it empty if whoever invited you already wrote your name.";
 "%@ · %@" = "%@ · %@";
 
 /* --- Where the memories live: this phone, or the family ------------------ */
@@ -461,3 +460,12 @@
 // Muistot: the photo tile, read aloud (6 Sep 2026).
 "%@, ei vielä muistoja" = "%@, no memories yet";
 "%@, %lld muistoa" = "%@, %lld memories";
+
+// A name typed by hand: the photograph, the moment, oneself (6 Sep 2026).
+"Anna kuvalle nimi" = "Name this photograph";
+"Vaihda kuvan nimi" = "Change the photograph's name";
+"Vaihda nimi" = "Change name";
+"Nimeä kuva" = "Name the photograph";
+"Nimeä hetki" = "Name the moment";
+"Nimi ei nyt vaihtunut. Yritä uudelleen, kun verkkoyhteys toimii." = "The name did not change just now. Try again when the network is working.";
+"Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin." = "This is shown beside your memories. You can leave it empty if the inviter wrote your name in. The name can be changed later.";

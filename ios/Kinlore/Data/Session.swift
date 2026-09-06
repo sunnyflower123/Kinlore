@@ -383,6 +383,25 @@ final class Session {
         }
     }
 
+    /// The member's own name, changed. Lives on the server only: the server
+    /// resolves every author's name from the member row at pull time, so
+    /// this reaches the family's tellings — this phone's too — on the next
+    /// pull, and `family` is refreshed so the Perhe screen agrees at once.
+    /// Until 6 Sep 2026 the name was written at the join and never again
+    /// (founder's-eye review, finding #64).
+    func rename(displayName: String) async -> Bool {
+        guard let client else { return false }
+        lastError = nil
+        do {
+            _ = try await client.rename(displayName: displayName)
+            await refresh()
+            return true
+        } catch {
+            lastError = error.localizedDescription
+            return false
+        }
+    }
+
     // MARK: - Leaving
 
     /// Ends this device's membership. The memories stay with the family — see

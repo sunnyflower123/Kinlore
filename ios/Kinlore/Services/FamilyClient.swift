@@ -108,6 +108,20 @@ struct FamilyClient {
         )
     }
 
+    /// This member's own name, changed on the server — where every telling's
+    /// author is resolved from it, so the family sees it on their next pull.
+    func rename(displayName: String) async throws -> String {
+        struct Body: Encodable { let displayName: String }
+        struct Reply: Decodable { let displayName: String }
+        let reply: Reply = try await send(
+            "family/me",
+            method: "PATCH",
+            body: Body(displayName: displayName),
+            authenticated: true
+        )
+        return reply.displayName
+    }
+
     /// Ends this device's membership. The memories stay with the family — see
     /// docs/ARCHITECTURE.md §14.
     func leave() async throws {

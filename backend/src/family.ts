@@ -291,6 +291,26 @@ export async function leaveFamily(env: Env, session: Session) {
 /// phone no rotation could take back. Rotation would defend against a removed
 /// member obtaining ciphertext by some other road, and the only other road is
 /// a live invitation, which this revokes.
+/// A member's own name, changed.
+///
+/// The name is stored once, on the member row, and every telling's author is
+/// resolved from it at pull time (`sync.ts`) — so a name changed here is the
+/// name beside every memory this member ever told, on every phone, after its
+/// next pull. Until 6 Sep 2026 nothing wrote the column after the join, and a
+/// joiner who left the form's name empty on a code made without one was
+/// "Perheenjäsen" for good (founder's-eye review, finding #64). Only one's
+/// own: there is no route to rename anybody else.
+export async function renameMember(env: Env, session: Session, displayName: string) {
+	const name = displayName.trim().slice(0, 80)
+	if (!name) return { error: 'empty_name' as const }
+	await env.DB.prepare(
+		'UPDATE member SET display_name = ? WHERE id = ? AND family_id = ? AND left_at IS NULL',
+	)
+		.bind(name, session.memberID, session.familyID)
+		.run()
+	return { displayName: name }
+}
+
 export async function removeMember(env: Env, session: Session, memberID: string) {
 	if (session.role !== 'owner') return { error: 'not_owner' as const }
 	if (memberID === session.memberID) return { error: 'not_found' as const }

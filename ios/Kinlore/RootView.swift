@@ -330,6 +330,7 @@ struct SubjectDetailScreen: View {
     @State private var isAsking = false
     @State private var isCorrectingName = false
     @State private var isDating = false
+    @State private var isRenaming = false
     @State private var isConfirmingRemoval = false
 
     /// The subject as the store has it now, rather than as it was when this
@@ -351,6 +352,13 @@ struct SubjectDetailScreen: View {
     /// Whether "when did this happen" is a question this subject can answer.
     private var datable: Bool {
         current.kind == .photo || current.kind == .event
+    }
+
+    private var nameRowText: LocalizedStringKey {
+        if current.kind == .photo {
+            return current.title.isEmpty ? "Anna kuvalle nimi" : "Vaihda kuvan nimi"
+        }
+        return "Vaihda nimi"
     }
 
     /// Whether this card can be deleted: only while nothing has been told
@@ -435,6 +443,27 @@ struct SubjectDetailScreen: View {
                         HStack(spacing: 10) {
                             Image(systemName: "calendar")
                             Text(current.dateHint?.displayText ?? "Lisää ajankohta")
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .foregroundStyle(Elder.supporting)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .elderTapTarget()
+                    }
+
+                    // And the name, the same way. The card could date the
+                    // picture and not name it: the title was whatever the
+                    // first telling left, and the tile on Muistot reads the
+                    // title aloud, so thirty untitled photographs were thirty
+                    // "Valokuva" (finding #12). A row and not the toolbar
+                    // pencil the person card has, for the reason the date row
+                    // gives: a toolbar button's text barely grows.
+                    Button {
+                        isRenaming = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "pencil")
+                            Text(nameRowText)
                                 .font(.body)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -607,6 +636,15 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isDating) {
             DateSheet(subject: current)
+        }
+        .sheet(isPresented: $isRenaming) {
+            NameSheet(
+                title: current.kind == .photo ? "Nimeä kuva" : "Nimeä hetki",
+                initial: current.title
+            ) { name in
+                store.setTitle(subjectID: current.id, title: name)
+                return true
+            }
         }
         .sheet(isPresented: $isCorrectingName) {
             CorrectNameSheet(subject: current) { merged in

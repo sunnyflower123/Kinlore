@@ -144,7 +144,6 @@
 "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.";
 "Puhelimen oma tekstikoko on tätä vahvempi." = "Puhelimen oma tekstikoko on tätä vahvempi.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi.";
-"Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi." = "Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsun lähettäjä kirjoitti nimesi valmiiksi.";
 "%@ · %@" = "%@ · %@";
 "Keiden kesken" = "Keiden kesken";
 "Vain minulle, tälle puhelimelle" = "Vain minulle, tälle puhelimelle";
@@ -416,3 +415,12 @@
 // Muistot: the photo tile, read aloud (6 Sep 2026).
 "%@, ei vielä muistoja" = "%@, ei vielä muistoja";
 "%@, %lld muistoa" = "%@, %lld muistoa";
+
+// A name typed by hand: the photograph, the moment, oneself (6 Sep 2026).
+"Anna kuvalle nimi" = "Anna kuvalle nimi";
+"Vaihda kuvan nimi" = "Vaihda kuvan nimi";
+"Vaihda nimi" = "Vaihda nimi";
+"Nimeä kuva" = "Nimeä kuva";
+"Nimeä hetki" = "Nimeä hetki";
+"Nimi ei nyt vaihtunut. Yritä uudelleen, kun verkkoyhteys toimii." = "Nimi ei nyt vaihtunut. Yritä uudelleen, kun verkkoyhteys toimii.";
+"Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin." = "Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin.";

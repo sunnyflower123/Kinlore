@@ -156,6 +156,42 @@ try {
 		JSON.stringify(hersFromServer.memories?.find((m) => m.id === his)?.author_name),
 	)
 
+	// --- He changes his own name ---------------------------------------------
+	//
+	// The name lives on the member row and every telling's author is read
+	// from it, so one change reaches every memory he ever told, on her phone
+	// too, on her next pull. Nothing wrote this column after the join until
+	// 6 Sep 2026.
+	{
+		const response = await fetch(`${API}/family/me`, {
+			method: 'PATCH',
+			headers: { ...json, ...grandchild.auth },
+			body: JSON.stringify({ displayName: '  Ville-pappa  ' }),
+		})
+		const renamed = await response.json().catch(() => ({}))
+		check('a member can change their own name', response.status === 200, JSON.stringify(renamed))
+		check('and it is stored trimmed', renamed.displayName === 'Ville-pappa', JSON.stringify(renamed))
+		const family = await get('/family', grandmother.auth)
+		check(
+			'the family sees the new name',
+			family.members?.some((m) => m.displayName === 'Ville-pappa'),
+			JSON.stringify(family.members?.map((m) => m.displayName)),
+		)
+		const pulled = await get('/sync?since=0', grandmother.auth)
+		check(
+			'and his old telling now carries it',
+			pulled.memories?.find((m) => m.id === his)?.author_name === 'Ville-pappa',
+			JSON.stringify(pulled.memories?.find((m) => m.id === his)?.author_name),
+		)
+		const empty = await fetch(`${API}/family/me`, {
+			method: 'PATCH',
+			headers: { ...json, ...grandchild.auth },
+			body: JSON.stringify({ displayName: '   ' }),
+		})
+		check('an empty name is refused', empty.status === 400, `answered ${empty.status}`)
+		grandchild.name = 'Ville-pappa'
+	}
+
 	// --- She tells something -------------------------------------------------
 
 	const hers = randomUUID()

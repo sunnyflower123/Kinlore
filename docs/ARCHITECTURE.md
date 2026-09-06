@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 53 sweep tests, each auditing one screen at the default text size and again at the largest, out of 121 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 55 sweep tests, each auditing one screen at the default text size and again at the largest, out of 125 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -544,6 +544,19 @@ link sees all of the family's memories. Therefore:
   and not for a wrong one is precisely the oracle the rule below denies. So the
   name travels one way. It buys the one thing worth buying on that path — the
   80-year-old joining from a link types nothing at all. See docs/UX.md §11.3
+- **A member can change their own name**, since 6 Sep 2026, behind the pencil
+  on the Perhe screen — the same symbol the person card uses for *"Korjaa
+  nimi"*. `PATCH /family/me` writes `member.display_name`, which every
+  telling's author is resolved from at pull time, so one change reaches every
+  memory that member ever told, on every phone, on its next pull;
+  `family-sync-check.mjs` pins that, the trimming, and the refusal of an empty
+  name. One's own only: there is no route to rename anybody else. Until then
+  the name was written at the join and never again, and a joiner who left the
+  form empty on a code made without a name was *"Perheenjäsen"* for good
+  (founder's-eye review, finding #64). Not a row on the member list: one
+  row's worth of height on the owner's row moved the list's resting place so
+  its last invite row sat twelve points above the bar, and the bar's own
+  item changes no geometry
 - The family view shows who has joined **and when**. The date was decoded from
   the server and never drawn until it was looked for: a stranger in the list is
   a question, and a stranger who arrived last Tuesday is an answer about which
@@ -1346,6 +1359,13 @@ Built, in the order they were built:
     found the tile's *"Kerro"* badge failing contrast on all three: a frosted
     capsule takes its colour from the photograph under it. It is opaque now.
 
+    **And a name by hand**, since 6 Sep 2026: *"Anna kuvalle nimi"* on the
+    photograph's card beside the date row, *"Vaihda nimi"* on a moment's, the
+    same `NameSheet` the Perhe screen's pencil opens for one's own name.
+    `MemoryStore.setTitle` overwrites, as `setDateHint` does and for the same
+    reason: this is the person, not the extraction. The card could date the
+    picture and not name it; the title was whatever the first telling left.
+
     **The tile reads its name.** A photograph has inherited a title from its
     first telling since 15 Aug 2026 — the place and the time that were said,
     `Extraction.suggestedTitle`, filled only into an empty field — and the
@@ -2040,7 +2060,19 @@ those same categories, which is how the contrast problem survived this long.
   ajankohtaa"* heading 83 pt above the bar and the blind card's *"Sanni"*
   button 104 pt above it, both at the largest size, 10.4:1 and 15.2:1 on
   screen against a 4.5:1 minimum. The second had been failing at HEAD on a
-  quiet machine, on a screen nothing that day had touched.
+  quiet machine, on a screen nothing that day had touched. The meter's ink
+  is the 2nd percentile of a frame's pixels since the same day, from the
+  5th: a 60 × 60 pt tap target around a 15 pt word is about three per cent
+  ink, and the 5th percentile fell past it onto the fringe — the invite
+  row's *"Poista"* read 1.59:1 that way and 6.4:1 at the 2nd, on a colour
+  that is 6.4:1; on four word-sized frames in the same run the two
+  percentiles agreed to within a tenth. The numbers are in `ContrastMeter`.
+- **Text seen through the floating tab bar.** Element detection reads the
+  picture and asks for an element under each word; under the translucent bar
+  the bar is what answers, and the finding arrives with no element at all.
+  Measured on the Perhe screen's audit picture, 6 Sep 2026: the two findings
+  were the invite footer's lines under the bar. Allowed only with no element
+  and only under a bar — a word with an element is still judged.
 - The guessing round's truncated preview (§13): a teaser, whole text one tap
   away, all of it in the accessibility label.
 - `Lisää sukulainen`, where a `Menu` reports a label frame smaller than the text

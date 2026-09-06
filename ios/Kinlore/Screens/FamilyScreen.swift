@@ -29,6 +29,7 @@ struct FamilyScreen: View {
     @State private var removing: Session.Member?
     @State private var isConfirmingRemoval = false
     @State private var removeFailed = false
+    @State private var isRenamingSelf = false
 
     var body: some View {
         List {
@@ -249,6 +250,28 @@ struct FamilyScreen: View {
             Button("Peruuta", role: .cancel) {}
         } message: {
             Text("\(removing?.displayName ?? "") ei enää näe perheen muistoja eikä voi kertoa niitä. Hänen kertomansa muistot jäävät perheelle. Avoimet kutsut peruuntuvat samalla, joten tee uusi kutsu sille, jolle se kuuluu.")
+        }
+        // One's own name, changed — behind the pencil the person card uses
+        // for "Korjaa nimi", so one symbol means one act across the app. Not
+        // a row: the members list rests, at the default size, with its last
+        // invite row twelve points above the tab bar, and one row's worth of
+        // height on the owner's row put that row into the deep fade, measured
+        // at 1.59:1 (6 Sep 2026). The bar's own item changes no geometry.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isRenamingSelf = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .elderTapTarget()
+                }
+                .accessibilityLabel("Vaihda nimi")
+            }
+        }
+        .sheet(isPresented: $isRenamingSelf) {
+            NameSheet(title: "Vaihda nimi", initial: session.family?.you.displayName ?? "") { name in
+                await session.rename(displayName: name)
+            }
         }
         .alert("Jäsentä ei voitu poistaa", isPresented: $removeFailed) {
             Button("Selvä", role: .cancel) {}

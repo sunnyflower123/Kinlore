@@ -444,6 +444,30 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The name sheet, opened from a photograph's card. Same shape as the
+    /// correction sheet and the same care: the field is not focused, so the
+    /// sheet can be waited for.
+    func testNamePhotoSheet() throws {
+        try sweep("Nimeä kuva", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
+            reach(photoTile(in: app), in: app, "the photo tile").tap()
+            reach(app.buttons["Anna kuvalle nimi"], in: app, "the way to name the photograph").tap()
+            require(app.buttons["Tallenna"], "the name sheet")
+            XCTAssertTrue(hasStoppedDrawing(app), "the name sheet was still being drawn when the audit ran")
+        }
+    }
+
+    /// The same sheet for one's own name, from the Perhe screen.
+    func testRenameSelfSheet() throws {
+        try sweep(
+            "Perhe, oma nimi",
+            arguments: ["-seed", "family", "-tab", "people", "-screen", "family"]
+        ) { app, _ in
+            reach(app.buttons["Vaihda nimi"], in: app, "the way to change one's own name").tap()
+            require(app.buttons["Tallenna"], "the name sheet")
+            XCTAssertTrue(hasStoppedDrawing(app), "the name sheet was still being drawn when the audit ran")
+        }
+    }
+
     /// The grid by decade: one dated photograph under "1950-luku", three
     /// undated under their own heading. `-seed dated` is the only archive
     /// with a date in it; the plain one has none on purpose, so DateTests can

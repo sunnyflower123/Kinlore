@@ -12,6 +12,7 @@ import {
 	joinFamily,
 	leaveFamily,
 	removeMember,
+	renameMember,
 	revokeInvite,
 } from './family'
 import { download, upload } from './media'
@@ -335,6 +336,20 @@ export default {
 				return 'error' in result ? json(result, 409) : json(result)
 			} catch (err) {
 				return failure(err, 'family-leave')
+			}
+		}
+
+		// One's own name, changed. The reply carries the name as stored, so the
+		// app shows what the family will see rather than what was typed.
+		if (url.pathname === '/family/me' && request.method === 'PATCH') {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const body = await readJSON<{ displayName?: string }>(request)
+			if (typeof body?.displayName !== 'string') return json({ error: 'bad_request' }, 400)
+			try {
+				const result = await renameMember(env, session, body.displayName)
+				return 'error' in result ? json(result, 400) : json(result)
+			} catch (err) {
+				return failure(err, 'family-rename')
 			}
 		}
 
