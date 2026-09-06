@@ -550,7 +550,9 @@ link sees all of the family's memories. Therefore:
   telling's author is resolved from at pull time, so one change reaches every
   memory that member ever told, on every phone, on its next pull;
   `family-sync-check.mjs` pins that, the trimming, and the refusal of an empty
-  name. One's own only: there is no route to rename anybody else. Until then
+  name — 16/16 against production on 6 Sep 2026 (`6812b0d4`), the script's
+  first production run. One's own only: there is no route to rename anybody
+  else. Until then
   the name was written at the join and never again, and a joiner who left the
   form empty on a code made without a name was *"Perheenjäsen"* for good
   (founder's-eye review, finding #64). Not a row on the member list: one

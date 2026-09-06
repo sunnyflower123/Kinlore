@@ -125,7 +125,8 @@ cd backend && npx wrangler rollback
 ```
 
 Versions are kept per deploy since 15 Aug 2026; 5 Sep 2026 is `c29f528d`,
-6 Sep 2026 is `f7643e4d`. Code only — rolling back does not touch D1 or R2.
+6 Sep 2026 is `f7643e4d` (the move rule) and `6812b0d4` (the rename). Code
+only — rolling back does not touch D1 or R2.
 
 ## The copies, in the order to trust them
 
