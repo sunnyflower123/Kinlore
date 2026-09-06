@@ -106,7 +106,13 @@ struct GalleryScreen: View {
                     VStack(spacing: 0) {
                         RefusedNote()
                             .padding([.horizontal, .top], Elder.screenPadding)
-                        if isAwaitingFamilyContent { arrivalState } else { emptyState }
+                        if isAwaitingFamilyContent {
+                            arrivalState
+                        } else if isMissingFamilyContent {
+                            notArrivedState
+                        } else {
+                            emptyState
+                        }
                     }
                 } else {
                     content
@@ -269,6 +275,22 @@ struct GalleryScreen: View {
         return store.syncSeq == 0
     }
 
+    /// The first pull after joining failed, and nothing has arrived.
+    ///
+    /// The case between the two around it, and until 6 Sep 2026 it fell
+    /// through to the invitation: the state after a failed round is
+    /// `waitingForNetwork`, not `syncing`, so a joiner whose kitchen Wi-Fi
+    /// dropped under the first pull was told the archive was empty and asked
+    /// to photograph an album — the second archive beside the family's that
+    /// the arrival state exists to prevent (founder's-eye review, finding
+    /// #63). The cursor at zero is what says no reply has ever been applied;
+    /// a family that genuinely has nothing answers the pull, the engine goes
+    /// idle, and the invitation is the true screen again.
+    private var isMissingFamilyContent: Bool {
+        guard let sync, sync.isEnabled, sync.state == .waitingForNetwork else { return false }
+        return store.syncSeq == 0
+    }
+
     /// Shown in place of the empty state during that first pull. No button on
     /// purpose: the content is on its way, and the one wrong thing to offer a
     /// joiner is a way to start building a second archive beside it.
@@ -286,6 +308,48 @@ struct GalleryScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(Elder.screenPadding)
+    }
+
+    /// Shown in place of the invitation when that first pull failed. The words
+    /// say what happened and that it fixes itself — the engine watches the
+    /// network come back — and the button is for the person standing in the
+    /// kitchen: the same round, a tap sooner. Same shape as the invitation
+    /// below it, for the same audit reasons.
+    private var notArrivedState: some View {
+        VStack(spacing: 22) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "wifi.exclamationmark")
+                .font(.system(size: 56))
+                .foregroundStyle(.tint)
+                .accessibilityHidden(true)
+
+            Text("Perheen muistoja ei saatu haettua")
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text("Yhteyttä ei nyt saatu. Mikään ei ole kadonnut: haetaan uudelleen itsestään, kun verkko palaa.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+
+            Button {
+                Task { await sync?.sync() }
+            } label: {
+                Text("Hae nyt uudelleen")
+                    .font(.body.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+
+            Spacer(minLength: 0)
+        }
+        .padding(Elder.screenPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// The invitation, and no longer a `ContentUnavailableView`.

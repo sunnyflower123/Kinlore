@@ -235,6 +235,17 @@ consumes it and opens on **Muistot**. Two states of that first view:
   `ProgressView` + *"Haetaan perheen muistoja…"*. It replaces
   *"Ei vielä kuvia"* only in this window; a genuinely empty family archive
   falls through to the existing invitation once the pull has answered.
+- **The first pull failed** (store empty, cursor still 0, engine waiting for
+  the network): a state of its own since 6 Sep 2026 — *"Perheen muistoja ei
+  saatu haettua"*, a sentence that nothing is lost and that it fetches again
+  by itself, and *"Hae nyt uudelleen"*. Until then this case fell through to
+  the invitation: `waitingForNetwork` is not `syncing`, so a joiner whose
+  Wi-Fi dropped under the first pull was told the archive was empty and
+  asked to photograph an album — the second archive beside the family's that
+  the waiting state above exists to prevent (founder's-eye review, finding
+  #63). The engine now retries when the network path comes back
+  (ARCHITECTURE §3), and the button is the same round a tap sooner. A family
+  that genuinely has nothing answers the pull, and lands on the invitation.
 - **Pull done**: the grid and lists as today, newest first — and the newest
   telling with audio is the emotional landing: the row's
   *"Kuuntele omalla äänellä"* is already the strongest control this app has.

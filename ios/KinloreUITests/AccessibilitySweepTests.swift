@@ -432,6 +432,18 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The joiner's first pull, failed: the state between arriving and empty.
+    /// Real failure, not a held one — see `SilentFailureTests`.
+    func testMemoriesNotArrived() throws {
+        try sweep(
+            "Muistot, ensimmäinen haku epäonnistui",
+            arguments: ["-seed", "empty", "-tab", "memories", "-family_id", "demo"],
+            api: "http://127.0.0.1:9"
+        ) { app, _ in
+            require(app.buttons["Hae nyt uudelleen"], "the way to fetch again")
+        }
+    }
+
     /// The note that says a telling has not left the phone.
     ///
     /// It cannot be seeded: the demo archive is canned as already sent, so the

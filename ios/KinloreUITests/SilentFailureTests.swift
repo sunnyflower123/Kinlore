@@ -207,6 +207,31 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The joiner whose first pull failed. The state after a failed round is
+    /// `waitingForNetwork`, not `syncing`, so Muistot fell through to the empty
+    /// archive's invitation and asked her to photograph an album — a second
+    /// archive beside the family's (founder's-eye review, finding #63). Real
+    /// failure rather than a held state: an address with nothing behind it
+    /// refuses the connection at once, and the engine, the cursor and the
+    /// screen do the rest.
+    func testAFailedFirstPullIsSaidNotShownAsEmpty() {
+        let app = launch(
+            ["-seed", "empty", "-tab", "memories", "-family_id", "demo"],
+            api: "http://127.0.0.1:9"
+        )
+        let said = app.staticTexts["Perheen muistoja ei saatu haettua"]
+        XCTAssertTrue(said.waitForExistence(timeout: 10), "a failed first pull was not said")
+        XCTAssertFalse(app.staticTexts["Ei vielä kuvia"].exists, "a failed first pull was shown as an empty archive")
+        XCTAssertFalse(app.buttons["Kuvaa vanha valokuva"].exists, "the joiner was asked to photograph an album")
+        let again = app.buttons["Hae nyt uudelleen"]
+        XCTAssertTrue(again.exists, "no way to fetch again")
+        again.tap()
+        // The round fails again, and the sentence stays true rather than
+        // turning into the invitation on the way.
+        XCTAssertTrue(said.waitForExistence(timeout: 10), "the retry turned a failed pull into an empty archive")
+        XCTAssertFalse(app.buttons["Kuvaa vanha valokuva"].exists, "the retry offered the album")
+    }
+
     /// The recording that could not be kept. `persistAudio` swallowed the
     /// failure and returned nil: the memory was saved without its audio and the
     /// screen said *"Äänesi on tallessa"* over a file that was gone — rule 3

@@ -61,6 +61,22 @@ final class SyncEngine {
     /// `FullCopy`. Started after every successful round, in the background.
     let fullCopy: FullCopy
 
+    /// The network coming back, watched — for the phone that never left the
+    /// hand.
+    ///
+    /// The lifecycle triggers retry when the phone is picked up again, and
+    /// ARCHITECTURE.md §3 decided against timers on purpose. A joiner standing
+    /// in a kitchen whose Wi-Fi dropped under the first pull is neither case:
+    /// the family's memories are one round away, and until 6 Sep 2026 that
+    /// round waited for her to put the phone down and pick it up again
+    /// (founder's-eye review, finding #63). The path changing is an event the
+    /// system delivers, like the foreground — so it is watched, and acted on
+    /// only while a round is being waited for: an idle phone's network
+    /// flapping costs nothing, and a refused device is not the network's.
+    private let networkReturn = NWPathMonitor()
+    /// The monitor's first report is the current path, not a change.
+    private var hasSeenNetworkPath = false
+
     private let store: MemoryStore
     private let session: Session
     private var isRunning = false
@@ -69,6 +85,19 @@ final class SyncEngine {
         self.store = store
         self.session = session
         fullCopy = FullCopy(ports: Self.ports(store: store, session: session))
+        networkReturn.pathUpdateHandler = { [weak self] path in
+            let isBack = path.status == .satisfied
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                guard self.hasSeenNetworkPath else {
+                    self.hasSeenNetworkPath = true
+                    return
+                }
+                guard isBack, self.state == .waitingForNetwork else { return }
+                await self.sync()
+            }
+        }
+        networkReturn.start(queue: DispatchQueue(label: "kinlore.network-return"))
         #if DEBUG
         // `-copy waiting` holds the family screen's row in its longest state
         // — some fetched, the rest waiting for Wi-Fi — for the audit.

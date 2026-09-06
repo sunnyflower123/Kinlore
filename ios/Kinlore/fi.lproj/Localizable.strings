@@ -402,3 +402,8 @@
 "Paikat" = "Paikat";
 "Tapahtumat" = "Tapahtumat";
 "Muisto on nyt kohteessa **%@**" = "Muisto on nyt kohteessa **%@**";
+
+// Muistot: the joiner's first pull, failed (6 Sep 2026).
+"Perheen muistoja ei saatu haettua" = "Perheen muistoja ei saatu haettua";
+"Yhteyttä ei nyt saatu. Mikään ei ole kadonnut: haetaan uudelleen itsestään, kun verkko palaa." = "Yhteyttä ei nyt saatu. Mikään ei ole kadonnut: haetaan uudelleen itsestään, kun verkko palaa.";
+"Hae nyt uudelleen" = "Hae nyt uudelleen";

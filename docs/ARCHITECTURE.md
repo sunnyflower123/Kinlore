@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 51 sweep tests, each auditing one screen at the default text size and again at the largest, out of 114 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 52 sweep tests, each auditing one screen at the default text size and again at the largest, out of 118 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -233,6 +233,20 @@ argument left unwired. It is event-driven (the app watches the outbox grow),
 so the no-timer decision above stands untouched; the cottage phone kept
 foregrounded with no signal still waits for a lifecycle moment, which that
 decision knowingly accepts.
+
+**Since 6 Sep 2026 the network coming back is a trigger too**, the same
+argument a fourth time. A joiner standing in a kitchen whose Wi-Fi dropped
+under the first pull had a phone that never left her hand, the family's
+memories one round away, and Muistot showing the empty archive's invitation
+to photograph an album (founder's-eye review, finding #63) — until she put the
+phone down and picked it up again. `SyncEngine` watches the path with an
+`NWPathMonitor` and starts a round when it becomes satisfied, **only while the
+engine is in `waitingForNetwork`**: an idle phone's network flapping costs
+nothing, and a refused device (§4) is not the network's to fix. It is
+event-driven like the outbox trigger, so the no-timer decision stands; the
+cottage phone in the paragraph above still waits for its signal, but no
+longer for a lifecycle moment after it. What Muistot shows in the meantime is
+the third state in docs/UX.md §4.3.
 
 The one row the outbox deliberately holds back is a memory whose audio has not
 reached R2 yet: the server would refuse it, and a refused row is cleared from
