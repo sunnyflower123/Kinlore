@@ -948,11 +948,19 @@ private struct PhotoTile: View {
             }.value
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(
-            store.memories(for: subject.id).isEmpty
-                ? "Valokuva, ei vielä muistoja"
-                : "Valokuva, \(store.memories(for: subject.id).count) muistoa"
-        )
+        // The photograph's own name first, when it has one. A telling that
+        // named a place or a time gives its photograph a title
+        // (`Extraction.suggestedTitle`, since 15 Aug 2026), and the tile
+        // never read it out: thirty tiles were thirty "Valokuva" to VoiceOver
+        // (founder's-eye review, finding #12). An untitled one still is.
+        .accessibilityLabel(tileLabel)
+    }
+
+    private var tileLabel: LocalizedStringKey {
+        let count = store.memories(for: subject.id).count
+        return count == 0
+            ? "\(subject.displayTitle), ei vielä muistoja"
+            : "\(subject.displayTitle), \(count) muistoa"
     }
 }
 

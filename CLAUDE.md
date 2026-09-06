@@ -69,6 +69,14 @@ touching anything.** Since 30 Aug 2026:
 - **English is the default because the app is presented, judged and filmed in
   it.** A Finnish phone still gets Finnish. Nothing in the app switches
   language; it follows the device.
+- **A runtime `String` is looked up only if you look it up.** `Text`,
+  `navigationTitle` and `accessibilityLabel` localise a *literal*; handed a
+  `String` variable they show it verbatim. So a fallback name that lives in a
+  computed property — `Subject.displayTitle`'s *"Valokuva"*, `SubjectKind.label`
+  — must be built with `String(localized:)`. Both keys sat in both tables from
+  30 Aug 2026 and an English phone still read "Valokuva" on every untitled
+  photograph until 6 Sep, and the check above could not see it: it counts keys,
+  not lookups.
 
 Two things stay Finnish even though no user reads them, and each has a reason:
 

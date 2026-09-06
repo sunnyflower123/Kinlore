@@ -457,3 +457,7 @@
 // Muistot: the photographs by decade (6 Sep 2026).
 "%@-luku" = "%@s";
 "Ilman ajankohtaa" = "Without a date";
+
+// Muistot: the photo tile, read aloud (6 Sep 2026).
+"%@, ei vielä muistoja" = "%@, no memories yet";
+"%@, %lld muistoa" = "%@, %lld memories";

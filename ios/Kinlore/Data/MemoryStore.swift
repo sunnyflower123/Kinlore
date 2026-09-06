@@ -1132,6 +1132,11 @@ final class MemoryStore {
                 end: nil,
                 precision: .decade
             )
+            // And a title, the way a telling that named a place leaves one:
+            // the one fixture photograph whose tile reads as more than
+            // "Valokuva". The plain archive's stays untitled, because every
+            // sweep that taps the tile finds it by that word.
+            subjects[index].title = "Mökin ranta"
         }
         questions = mummoAsks
         // `-seed related`: the archive with one confirmed relationship, Eeva

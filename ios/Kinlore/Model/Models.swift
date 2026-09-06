@@ -25,12 +25,18 @@ enum SubjectKind: String, Codable, CaseIterable {
     }
 
     /// The name shown in the UI. Finnish, because the app's language is Finnish.
+    /// Looked up, not literal: this is a runtime `String`, and a `Text` or
+    /// a `navigationTitle` given a `String` shows it verbatim. Until 6 Sep
+    /// 2026 an English phone read "Kuva" and "Henkilö" wherever a subject had
+    /// no title of its own — the same leak as `displayTitle` below, and the
+    /// one `scripts/localisation-check.mjs` cannot see, because the keys
+    /// were in both tables all along and nothing ever asked for them.
     var label: String {
         switch self {
-        case .photo: "Kuva"
-        case .person: "Henkilö"
-        case .place: "Paikka"
-        case .event: "Tapahtuma"
+        case .photo: String(localized: "Kuva")
+        case .person: String(localized: "Henkilö")
+        case .place: String(localized: "Paikka")
+        case .event: String(localized: "Tapahtuma")
         }
     }
 }
@@ -122,11 +128,11 @@ struct Subject: Identifiable, Codable, Hashable {
     var displayTitle: String {
         if !title.isEmpty { return title }
         switch kind {
-        case .photo: return "Valokuva"
+        case .photo: return String(localized: "Valokuva")
         // An event goes untitled only while its memory is waiting for its text:
         // the name comes from the place and the time in what was said, and
         // nothing has read that yet. Until then it is exactly what it says.
-        case .event: return "Kerrottu muisto"
+        case .event: return String(localized: "Kerrottu muisto")
         default: return kind.label
         }
     }

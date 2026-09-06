@@ -1334,6 +1334,18 @@ Built, in the order they were built:
     found the tile's *"Kerro"* badge failing contrast on all three: a frosted
     capsule takes its colour from the photograph under it. It is opaque now.
 
+    **The tile reads its name.** A photograph has inherited a title from its
+    first telling since 15 Aug 2026 — the place and the time that were said,
+    `Extraction.suggestedTitle`, filled only into an empty field — and the
+    tile never read it out: thirty tiles were thirty *"Valokuva"* to
+    VoiceOver, and to an English phone as well, because `displayTitle`'s
+    fallback was a bare `String` (finding #12; CLAUDE.md, Language). The label
+    is *"Mökin ranta, 2 muistoa"* now and *"Valokuva, …"* only when there is no
+    name. What was not built is a title from the names or the words in a
+    telling with no place or time in it: a person's name there is usually an
+    unconfirmed proposal, and a proposal on a tile is rule 4 inverted; and
+    nothing renames a photograph yet, so a wrong caption would be for keeps.
+
 Not built:
 
 13. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
