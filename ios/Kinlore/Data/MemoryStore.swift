@@ -128,6 +128,16 @@ final class MemoryStore {
     /// gave it — searching titles alone would find least on exactly the archive
     /// that most needs finding.
     ///
+    /// **And who and where the memories name**, since 6 Sep 2026. The words
+    /// are what was heard; the mentions are what the family made of them —
+    /// a name corrected on its card, two cards merged into one — and until
+    /// then the search read only the first: a photograph whose telling was
+    /// about grandmother, corrected from "Aino" to "Kaarina" the day after,
+    /// was still found by the wrong name and never by the right one
+    /// (founder's-eye review, finding #5). `subject(id:)` follows a merge to
+    /// its survivor and answers nothing for a rejected proposal, so a name
+    /// the family refused finds nothing either.
+    ///
     /// An empty query is not a filter: everything comes back, so the screen does
     /// not have to know whether a search is running.
     func subjects(of kind: SubjectKind, matching query: String) -> [Subject] {
@@ -136,8 +146,11 @@ final class MemoryStore {
         guard !needle.isEmpty else { return all }
         return all.filter { subject in
             subject.displayTitle.localizedCaseInsensitiveContains(needle)
-                || memories(for: subject.id).contains {
-                    $0.body.localizedCaseInsensitiveContains(needle)
+                || memories(for: subject.id).contains { memory in
+                    memory.body.localizedCaseInsensitiveContains(needle)
+                        || memory.mentionedSubjectIDs.contains { id in
+                            self.subject(id: id)?.title.localizedCaseInsensitiveContains(needle) ?? false
+                        }
                 }
         }
     }
@@ -1072,7 +1085,11 @@ final class MemoryStore {
                 audioR2Key: "demo-audio-that-is-not-there",
                 audioDuration: 42,
                 source: .voice,
-                mentionedSubjectIDs: [aino.id]
+                // Puumala too, and the body never says the word: the search
+                // over mentions is only testable on a name the words do not
+                // carry. The place stays a card nobody has told anything on —
+                // `memories(for:)` is what the row and the card read.
+                mentionedSubjectIDs: [aino.id, puumala.id]
             ),
             // The decoys need memories of their own, or they are bare names and
             // the round answers itself.

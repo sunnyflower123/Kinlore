@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 53 sweep tests, each auditing one screen at the default text size and again at the largest, out of 120 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 53 sweep tests, each auditing one screen at the default text size and again at the largest, out of 121 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1237,6 +1237,18 @@ Built, in the order they were built:
     query runs over the subject's own title and the text of every memory on it,
     in `MemoryStore.subjects(of:matching:)`, so both screens ask the same
     question of the same rule.
+
+    **And over who and where those memories name**, since 6 Sep 2026. The
+    words are what was heard; the mentions are what the family made of them —
+    a name corrected on its card (§17), two cards merged into one — and the
+    search read only the words: a photograph whose telling was about
+    grandmother, corrected from "Aino" to "Kaarina" the day after, was still
+    found by the wrong name and never by the right one (founder's-eye review,
+    finding #5). A mention resolves through `subject(id:)`, which follows a
+    merge to its survivor and answers nothing for a rejected proposal, so a
+    name the family refused finds nothing. The fixture's telling on the
+    photograph names Puumala without saying the word, which is the only way
+    the rule can be tested apart from the words.
 
     Out of the way by design: `.searchable` keeps the field above the list until
     somebody pulls down. The grandchild looking for one name in forty finds it;

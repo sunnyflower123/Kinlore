@@ -48,6 +48,26 @@ final class SearchTests: XCTestCase {
         )
     }
 
+    /// The photograph is found by who and where its story names, not only by
+    /// the words. The fixture's telling mentions Puumala and never says the
+    /// word: the mention is what the family made of the words — a name
+    /// corrected, two cards merged — and until 6 Sep 2026 a photograph was
+    /// found by the name that was heard and never by the one that was fixed.
+    func testTheGalleryFindsAPhotoByWhoItMentions() {
+        let app = launch(["-seed", "archive", "-tab", "memories"])
+        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "the gallery")
+
+        search("Puumala", in: app)
+
+        let photo = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Valokuva")
+        ).firstMatch
+        XCTAssertTrue(
+            photo.waitForExistence(timeout: 5),
+            "the photo whose story names the place was not found by it"
+        )
+    }
+
     /// A search that finds nothing is a different emptiness from an archive
     /// nobody has filled, and it must not offer the invitation meant for the
     /// second one.
