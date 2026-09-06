@@ -710,13 +710,42 @@ a row end a round and the next sync starts another from where it stopped; one
 round at a time. The family screen's *"Kopio tällä puhelimella"* row carries
 the number, because a copy that never started looks exactly like one that is
 complete. `scripts/full-copy-check.swift` holds those rules with the network,
-the disk and the fetch handed in as closures. What it does not check is the
-weight: a family of 3 000 photographs at 300 kB and 2 000 recordings at 200 kB
-is about 1.3 GB per phone, and the store writes its JSON once per file fetched
-— measured on nothing yet, and worth measuring before the first real family.
+the disk and the fetch handed in as closures.
 
-**In the MVP the file passes through the Worker.** Photos are about 300 kB
-(downscaled to 2048 px) and 90 seconds of audio about 200 kB, so that is
+**What it weighs — measured 6 Sep 2026.** The sizes this section used to
+quote were guesses, and both were low. One minute of voice as `AudioRecorder`
+writes it (AAC, 22.05 kHz, mono, medium quality) is **268 kB** — 4.5 kB/s, so
+90 seconds is 403 kB and not 200 — measured by writing 60 s of speech-like
+signal through `AVAudioFile` with the recorder's own settings. A photograph as
+`MediaStore` stores it (2048 px, JPEG 0.85) is **340–990 kB** from a
+12-megapixel original: 342 kB for a smooth synthetic album page, 987 kB for
+the same page with film grain at every pixel, and a photographed print lands
+between the two; no real photograph was on the machine to measure. So the
+family this paragraph used to imagine — 3 000 photographs and 2 000 tellings
+of 90 seconds — is **2–3.8 GB per phone**, not 1.3.
+
+The copy was then run against a real Worker for the first time: a seeded
+family of 100 photographs, 50 recordings and 1 900 text tellings on
+`wrangler dev`, joined from a fresh private simulator through the invite
+form, with the app's container watched from the shell every five seconds.
+**The first run fetched nothing.** `NWPathMonitor.currentPath` is
+`unsatisfied` from `start()` until the monitor's first report — 1 ms later,
+measured — and `NetworkPrice` started its monitor on the first question it
+was asked, which was this round's: the copy halted as *waiting for Wi-Fi* on
+a Wi-Fi machine, the family screen said so, and nothing in the check script
+could have seen it, because the network arrives there as a closure. The
+engine warms the monitor at init now. The second run copied all 150 files,
+82 MB, in about fifteen seconds — and wrote the store's 5.4 MB JSON 150 times
+over, once per file, because `setLocalImage` and `setLocalAudio` each save.
+On the simulator that is about 60 ms a file. On a five-year-old phone it is
+several times that, and for the archive above it is roughly 30 GB of JSON
+written to copy 2–4 GB of media, on the main actor, with the screen
+stuttering for as long as it takes. **Not fixed**: a round could flush every
+tenth file instead of every file, at the cost of fetching up to nine again
+on a phone killed mid-round. Worth doing before a real family has a thousand
+files, and not before it has ten.
+
+**In the MVP the file passes through the Worker.** At the sizes above that is
 entirely sufficient. Presigned URLs are the right answer for larger files, but
 right now they would only add moving parts.
 

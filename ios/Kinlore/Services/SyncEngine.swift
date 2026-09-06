@@ -85,6 +85,8 @@ final class SyncEngine {
         self.store = store
         self.session = session
         fullCopy = FullCopy(ports: Self.ports(store: store, session: session))
+        // Before any round can ask it — see `NetworkPrice.warm`.
+        NetworkPrice.warm()
         networkReturn.pathUpdateHandler = { [weak self] path in
             let isBack = path.status == .satisfied
             Task { @MainActor [weak self] in
@@ -290,6 +292,17 @@ final class SyncEngine {
 /// Whether the current path is one a family would want an archive fetched
 /// over. Cellular and hotspots are "expensive" in the system's own word, and
 /// Low Data Mode is "constrained"; either one stops the full copy.
+///
+/// **A monitor answers wrongly until its first report.** `currentPath` is
+/// `unsatisfied` from `start()` until the first update arrives — 1 ms later
+/// on a machine that was on Wi-Fi the whole time, measured 6 Sep 2026 — and
+/// the monitor used to be started by the first question it was asked. That
+/// question was the joiner's first copy: the round after joining fetched
+/// nothing, halted as "waiting for Wi-Fi" on a Wi-Fi phone, and the family
+/// screen said so until the next sync. Found by running the copy against a
+/// real Worker for the first time (ARCHITECTURE §5), which the check script
+/// cannot: the network arrives there as a closure. So the engine warms the
+/// monitor at init, long before any round can complete.
 @MainActor
 enum NetworkPrice {
     private static let monitor: NWPathMonitor = {
@@ -297,6 +310,12 @@ enum NetworkPrice {
         monitor.start(queue: DispatchQueue(label: "kinlore.network-price"))
         return monitor
     }()
+
+    /// Starts the monitor so that its first report has arrived by the time
+    /// `isCheap` is asked.
+    static func warm() {
+        _ = monitor
+    }
 
     static var isCheap: Bool {
         let path = monitor.currentPath

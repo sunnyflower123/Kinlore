@@ -74,17 +74,23 @@ family screen's *"Kopio tällä puhelimella"* row says whether it has finished �
 and in every export made since. Nothing re-uploads them — there is no import —
 so the recovery is a member's phone or export, kept.
 
-Today two objects sit there and nothing real is at risk. **Before the first
-real family** (Phase E, the grandparent's phone, 15–24 Sep 2026) a copy off
-this account has to exist, and the shape it should take is known: an R2 API
-token, and
+Today two objects sit there. A copy off this account was the first thing this
+page asked for on 5 Sep 2026, and the same evening's `FullCopy` changed the
+arithmetic: every phone that meets Wi-Fi holds the bytes, the teller's phone
+held the original before it was ever uploaded, the media directory is in
+Documents and travels in the phone's own backup, and the export writes it
+opened, readable with no app and no key. A copy of R2 is sealed bytes — without
+a phone's key it opens nothing — so it earns its keep in exactly one case: the
+account is gone, every phone's copy is gone, and a key survives somewhere.
+That is a year-three question (who runs the Worker after the hackathon), not a
+September one, and **it was decided against for now on 6 Sep 2026**. The
+shape, for the day it is decided the other way: an R2 API token, and
 
 ```bash
 rclone sync r2:memorize-media <another-provider>:kinlore-media-copy
 ```
 
-on a calendar, monthly. It is not set up, not automated and has not been run,
-and it is the largest thing missing from this page.
+on a calendar, monthly.
 
 ### 3. The account, the login or the card is gone
 
@@ -130,19 +136,22 @@ Versions are kept per deploy since 15 Aug 2026; 5 Sep 2026 is `c29f528d`,
 | `backend/backups/*.sql` | D1 only, content sealed | no, once made | `npm run db:export`, by hand |
 | D1 Time Travel | D1, the last 7 or 30 days | yes | Cloudflare, continuously |
 | Worker versions | code, not data | yes | every deploy |
-| — | R2 objects, off the account | — | **not built** |
+| — | R2 objects, off the account | — | **not built** — decided against for now, see 2 |
 
 ## What this page still cannot say
 
-- **No copy of R2 off the account.** The command is above; the token, the
-  second provider and the calendar are not.
+- **No copy of R2 off the account**, by decision (6 Sep 2026, under 2). The
+  phones are the copies; the day that changes is the day somebody other than
+  a hobbyist runs the Worker.
 - **No schedule** for the dump. Run it after every deploy and before every
   hand-typed statement; that is the whole procedure today.
 - **No rehearsal** of either restore. The Time Travel restore and the dump
   import have not been run against anything.
-- **The phone's copy needs Wi-Fi.** Since 5 Sep 2026 every member's phone
-  fetches the whole archive after every sync (finding #86, built), but only
-  over a cheap network: a phone that lives on cellular holds what it viewed
-  and nothing more, and the family screen's row says so. The weight of a real
-  family's archive on an old phone — roughly 1.3 GB at the sizes in
-  ARCHITECTURE §5 — has not been measured.
+- **The phone's copy needs Wi-Fi, and it is heavier than this page said.**
+  Since 5 Sep 2026 every member's phone fetches the whole archive after every
+  sync (finding #86, built), but only over a cheap network: a phone that lives
+  on cellular holds what it viewed and nothing more, and the family screen's
+  row says so. A family of 3 000 photographs and 2 000 tellings is 2–3.8 GB
+  per phone at the sizes measured on 6 Sep 2026, not 1.3, and the copy writes
+  the store's JSON once per file (ARCHITECTURE §5). Measured on a simulator
+  against a local Worker; an old phone has not been.
