@@ -338,6 +338,34 @@ about the concept.
 being asked, and whether she believed the memory was saved. Both are worth a line
 in the notes the same evening, while it is still true rather than remembered.
 
+**And one question for the room rather than for her**, added 9 Sep 2026. Ask
+whoever else is there, in these words:
+
+> *"Kun te olitte siinä tilaisuudessa muistelemassa — mikä olisi saanut teidät
+> kertomaan?"*
+
+The question has an antecedent and it is where this whole product came from: a
+memorial for a grandmother, about twenty-five people, plenty of photographs on
+the table, and nobody able to tell any of it properly. That is §1's premise one
+level up — a room that knows collectively and cannot get it out — and it is the
+densest hour of memory a family ever has.
+
+Ask it because of what it is *not*. It does not ask what the app should do,
+which is a question people answer with features they have seen elsewhere. It
+asks **what was in the way**, in a room they were actually in, and the answer is
+a fact about people rather than a preference about software. Nobody in this
+project knows it yet, including the person who was there.
+
+It costs nothing: the visit is already in the schedule, and unlike the
+recordings this needs no setup, no clock and no transcript — one line in the
+same evening's notes. Write down their words, not the paraphrase.
+
+What hangs on it: whether the gathering is a *mode* this app should ever have
+(one phone round a table, one photograph, several tellings — `memories(for:)`
+already models it and no screen does), and whether the group size this is
+metered for, four to eight, is the right size at all. Both are large decisions
+and neither should be made from a founder's memory of one afternoon.
+
 ## 9. The core of monetisation
 
 **The payer is not the beneficiary.** Grandmother does not buy a subscription —
