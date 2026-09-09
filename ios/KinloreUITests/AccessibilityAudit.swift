@@ -366,6 +366,24 @@ enum AccessibilityPolicy {
         "Kenen puhelin tämä on",
     ]
 
+    /// The photo card's empty state: the sentence, and the delete button that
+    /// shares its `VStack`. The last two things in that `List`.
+    ///
+    /// Kept apart from the two sets above because the finding arrives from the
+    /// other end. Those are reported by the audit's *default-size* simulation
+    /// and audit clean at a real AccessibilityXXXL; these are reported at the
+    /// real largest size, which is the half that would normally mean a defect.
+    /// So they were measured harder rather than filed faster.
+    private static let photoCardEmptyStateText: Set<String> = [
+        "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.",
+        // Only the photograph's word. `removalButton` has three — "Poista
+        // henkilö" and "Poista paikka" are the same construction on the same
+        // screen and are very likely the same finding, and neither has been
+        // measured, so neither is here. A red person card is a measurement to
+        // make, not a line to add.
+        "Poista kuva",
+    ]
+
     static func isDeliberate(
         _ issue: XCUIAccessibilityAuditIssue,
         tabBar: CGRect,
@@ -586,6 +604,37 @@ enum AccessibilityPolicy {
         }
 
         if issue.auditType == .dynamicType, listHeaderAndFooterText.contains(label) {
+            return true
+        }
+
+        // **The photo card's empty state.** Measured 9 Sep 2026 per the
+        // protocol above, on a private simulator, and measured again after the
+        // parchment migration rewrote both this screen and `Elder.swift` under
+        // it — the first numbers were taken on the old surface and are not
+        // quoted here, because they are not the ones that are true now.
+        //
+        //   * In place: 5/5 red at the largest size, the two labels below.
+        //   * Moved up, by hiding the "Kerro tästä muisto" section above them
+        //     — their own code untouched, not a character: 3/3 clean.
+        //   * Given 88 pt of clear space below instead: 3/3 red, and the
+        //     reported frames identical to the point.
+        //   * Their own typography replaced: a different and worse finding, at
+        //     the default size.
+        //
+        // The finding follows where the words sit and nothing else, which is
+        // the signature this file names above — and the padding run is the
+        // sharpest form of it, since space below is exactly what an element
+        // that could not grow would need.
+        //
+        // Screenshotted at AccessibilityXXXL before being listed: the sentence
+        // wraps to six lines and ends in "puhua.", and "Poista kuva" is drawn
+        // whole above the bar. Nothing is truncated — which is what the
+        // protocol asks, and what would have made this a defect instead.
+        //
+        // Two labels and one audit type. Anything else on that screen still
+        // fails, and words genuinely lost would still be caught as clipping,
+        // which this same test checks on every run.
+        if issue.auditType == .dynamicType, photoCardEmptyStateText.contains(label) {
             return true
         }
 
