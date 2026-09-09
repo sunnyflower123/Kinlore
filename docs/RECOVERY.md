@@ -154,5 +154,8 @@ only — rolling back does not touch D1 or R2.
   on cellular holds what it viewed and nothing more, and the family screen's
   row says so. A family of 3 000 photographs and 2 000 tellings is 2–3.8 GB
   per phone at the sizes measured on 6 Sep 2026, not 1.3, and the copy writes
-  the store's JSON once per file (ARCHITECTURE §5). Measured on a simulator
+  the store's JSON every tenth file and once more at the end of any round that
+  recorded anything (ARCHITECTURE §5). Corrected 9 Sep 2026: this said "once
+  per file", which was the defect §5 records as fixed on 6 Sep, not the
+  behaviour. Measured on a simulator
   against a local Worker; an old phone has not been.

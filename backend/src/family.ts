@@ -118,8 +118,15 @@ export async function joinFamily(env: Env, input: JoinInput) {
 	}
 	if (existing && !existing.left_at) {
 		// The same device rejoining the same family: not an error but a
-		// reinstall or an iCloud restore. Let it through — and through the
-		// code it came in by, which is why this stands before the claim below.
+		// reinstall or an iCloud restore. Let it through, and without claiming
+		// the code — which is why this stands before the claim below.
+		//
+		// Corrected 9 Sep 2026: this used to say "through the code it came in
+		// by". It does not. The only test above is that the invite belongs to
+		// the family the device is already in, so ANY live code of that family
+		// works and none is consumed. Nothing enforces the narrower invariant
+		// the old comment asserted, and nothing needs to — the device is
+		// already a member, so the code is not what is admitting it.
 		return { familyID: invite.family_id, role: 'member' as const }
 	}
 
@@ -266,6 +273,26 @@ export async function leaveFamily(env: Env, session: Session) {
 	return { left: true as const, newOwner: session.role === 'owner' ? remaining.id : null }
 }
 
+/// A member's own name, changed.
+///
+/// The name is stored once, on the member row, and every telling's author is
+/// resolved from it at pull time (`sync.ts`) — so a name changed here is the
+/// name beside every memory this member ever told, on every phone, after its
+/// next pull. Until 6 Sep 2026 nothing wrote the column after the join, and a
+/// joiner who left the form's name empty on a code made without one was
+/// "Perheenjäsen" for good (founder's-eye review, finding #64). Only one's
+/// own: there is no route to rename anybody else.
+export async function renameMember(env: Env, session: Session, displayName: string) {
+	const name = displayName.trim().slice(0, 80)
+	if (!name) return { error: 'empty_name' as const }
+	await env.DB.prepare(
+		'UPDATE member SET display_name = ? WHERE id = ? AND family_id = ? AND left_at IS NULL',
+	)
+		.bind(name, session.memberID, session.familyID)
+		.run()
+	return { displayName: name }
+}
+
 /// The owner ends somebody else's membership. **The memories stay**, exactly
 /// as when a member leaves on their own (`leaveFamily` above): the row is
 /// marked, never deleted, and the name on what they told keeps resolving.
@@ -291,26 +318,9 @@ export async function leaveFamily(env: Env, session: Session) {
 /// phone no rotation could take back. Rotation would defend against a removed
 /// member obtaining ciphertext by some other road, and the only other road is
 /// a live invitation, which this revokes.
-/// A member's own name, changed.
 ///
-/// The name is stored once, on the member row, and every telling's author is
-/// resolved from it at pull time (`sync.ts`) — so a name changed here is the
-/// name beside every memory this member ever told, on every phone, after its
-/// next pull. Until 6 Sep 2026 nothing wrote the column after the join, and a
-/// joiner who left the form's name empty on a code made without one was
-/// "Perheenjäsen" for good (founder's-eye review, finding #64). Only one's
-/// own: there is no route to rename anybody else.
-export async function renameMember(env: Env, session: Session, displayName: string) {
-	const name = displayName.trim().slice(0, 80)
-	if (!name) return { error: 'empty_name' as const }
-	await env.DB.prepare(
-		'UPDATE member SET display_name = ? WHERE id = ? AND family_id = ? AND left_at IS NULL',
-	)
-		.bind(name, session.memberID, session.familyID)
-		.run()
-	return { displayName: name }
-}
-
+/// This comment sat above `renameMember` until 9 Sep 2026, documenting the
+/// wrong function while `removeMember` had none.
 export async function removeMember(env: Env, session: Session, memberID: string) {
 	if (session.role !== 'owner') return { error: 'not_owner' as const }
 	if (memberID === session.memberID) return { error: 'not_found' as const }

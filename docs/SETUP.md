@@ -171,11 +171,27 @@ audience:
    `kSecAttrSynchronizable` flag. iCloud Keychain syncs it between the user's
    devices — this does not require an iCloud entitlement, so it works on a free
    account.
-2. The backend issues a member id for this identity.
+2. That UUID **is** the member id — the client mints it and sends it in the body
+   of `POST /family` or `POST /family/join`, and the Worker only ever reads
+   `body.memberID`. Nothing server-side issues an id. (Corrected 9 Sep 2026;
+   this used to say the backend issued one.) The Worker's half is the *secret*:
+   the device generates 32 random bytes, the server stores only their SHA-256 in
+   `member.secret_hash`, and every request afterwards is
+   `Bearer <member_id>.<secret>`.
 3. You join a family with an invite link. No email, no password, no login screen.
 
 **An 80-year-old never hits a login wall** — she gets a link from a grandchild
 and she is in. That is precisely the point where this audience normally drops out.
+
+**What that flag also carries, said plainly since 9 Sep 2026.** `Keychain.query(_:)`
+builds one query shape for all three entries — `member_id`, `device_secret` and
+`family_key` — and every one is `kSecAttrSynchronizable`. So the secret that
+authenticates *and the key that decrypts* travel to every device signed into the
+same Apple ID. This section, and ARCHITECTURE §4's "The identity survives
+deleting the app", both presented that as resilience only. It is also a second
+way in: whoever holds the Apple account holds the archive, with no invitation.
+That is the right trade for an audience who will lose a phone before they lose
+an Apple ID, and it should be a known trade rather than a surprise.
 
 The honest downside: losing the device loses the identity if iCloud Keychain is
 off. The mitigation: the family owner can re-invite, and nobody loses memories —

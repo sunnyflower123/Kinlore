@@ -130,7 +130,11 @@ one counter is plenty.
 ### 2.3 Memories are appended, not edited
 
 `memory` is effectively append-only. Only the author can edit or delete their
-own, and the sole automatic edit is the text update made by name correction.
+own, and the automatic edits are the text update made by name correction and
+two that move a telling rather than change its words: `MemoryStore.split(mention:in:)`,
+and the author re-homing their own telling onto another card, which the server
+permits explicitly (added 5 Sep 2026). Both rewrite `subject_id` and neither
+touches `body`. Corrected 9 Sep 2026, where this said "the sole automatic edit".
 
 This removes conflicts almost entirely: two people cannot edit the same memory.
 It is also the right product rule — nobody gets to tidy up what grandmother said.
@@ -180,6 +184,18 @@ seq         INTEGER NOT NULL   -- granted by the server, per family
 deleted_at  INTEGER            -- soft delete, so deletion propagates
 ```
 
+**Except one, and it is the one that matters.** `mention` has neither column,
+and no `family_id` either — `schema.sql` declares exactly `memory_id`,
+`subject_id`, `confidence` and a primary key on the first two. That is true of
+the four tables the DTOs name and false of the fifth, which is reached through
+the memory it hangs off rather than pulled in its own right.
+
+What follows from it: **a mention cannot be un-said across sync.** The only
+mention write in the codebase is `INSERT OR IGNORE INTO mention` in `sync.ts`,
+so a merge that re-points a name on one phone leaves the old edge standing on
+every other phone for ever. There is no delete path for a mention in either
+language. Corrected 9 Sep 2026; the sentence above had said "every".
+
 Soft deletion is mandatory: a hard delete never reaches the other device, which
 would go on showing the deleted row forever.
 
@@ -214,6 +230,22 @@ the rows themselves are read from the store when the payload is built. Ids
 rather than queued operations, because every operation here is an upsert of a
 whole row — a row changed twice before a push should travel once, in its final
 state.
+
+**The queue is emptied on the reply, not on the outcome, and that is worth
+knowing before trusting it.** Written down 9 Sep 2026. `clearPending` subtracts
+the ids in the payload as it was built, unconditionally — a write that landed
+during the request stays queued, which is the case it was written for, but a row
+the server *declined* is subtracted too. And the reply cannot tell them apart:
+`accepted` counts the statements the Worker built, not the rows D1 changed, so a
+row skipped by a guard inside an upsert is reported the same as one that was
+stored. The client therefore cannot distinguish a stored row from a refused one
+even in principle, and a silently dropped row is never retried.
+
+The guards that can skip a row are few and each is deliberate — an empty body,
+a memory with neither text nor an uploaded recording, another member's telling —
+so this is a narrow hole rather than a general one. It is a hole all the same,
+and §3 used to describe it as if it applied only to the untranscribed-memory
+case.
 
 **The queue is drained when the app is opened, when it comes back to the
 foreground — and, since 23 Aug 2026, the moment a write lands in it**, not on
@@ -368,13 +400,37 @@ anything.
 |-----------|------------|
 | Two memories on the same subject | No conflict, both are kept |
 | The same memory edited on two devices | Impossible: only the author edits |
-| A subject renamed on two devices | The higher `seq` wins |
+| A subject renamed on two devices | The push that arrives second wins — see below |
 | One confirms, the other does not | Confirmation always wins (§2.4) |
 | One merges, the other adds | The merge redirects, nothing is lost (§2.5) |
 | One deletes a memory, the other reads it | Only the author can delete |
 
-Everything else is resolved by the higher `seq`. There are deliberately few
-rules — every extra rule is a place where data can silently go wrong.
+Everything else is resolved by the push that arrives second. There are
+deliberately few rules — every extra rule is a place where data can silently go
+wrong.
+
+**Both of those rows used to say "the higher `seq` wins", and that was a
+tautology dressed as a rule.** Corrected 9 Sep 2026. `seq` is granted at
+*arrival* — one number per request, `UPDATE family SET sync_seq = sync_seq + 1`
+— so "the higher seq" and "arrived later" are the same sentence. No comparison
+of any kind happens in the upsert: `title = excluded.title` is unconditional in
+`sync.ts`, and it is the one subject column that is not `COALESCE`-protected.
+
+**What the old wording hid.** A device that read a title, went offline, and
+pushes afterwards arrives *later* and therefore wins — reverting somebody
+else's rename. And because the coordinate rule keys off the title changing, the
+revert takes the resolved point with it: the `CASE WHEN excluded.title IS NOT
+subject.title` clause sees a change and nulls `lat`/`lon`. The ordinary way in
+is not even an edit — confirming a person re-pushes that subject with whatever
+title the confirming device is holding.
+
+Nothing catches this. `subject-rules-check.mjs` covers the coordinates, the
+dates, one-way confirmation, merge stickiness and rejection revival, and has no
+case for a stale title. Recorded rather than fixed: last-write-wins is the right
+default for a four-to-eight person family, and the honest fix is a check that
+would have to decide what "stale" means without a clock (§2.2 says why there is
+no clock). It is written down here so the next person meets it as a known edge
+rather than as a mystery.
 
 ### The second push, checked
 
@@ -477,12 +533,25 @@ POST /family              → create a family, the creator is the owner
 POST /family/invite       → create an invite code, valid for 7 days
 POST /family/join         → { code } adds the member
 GET  /family              → members, own role, the invitations still open
-DELETE /family/invite/:id → revoke a link
+DELETE /family/invite?code= → revoke a link
 DELETE /family/member?id= → the owner removes a member (5 Sep 2026)
 ```
 
 **The invite link is the entire security boundary.** Anyone who receives the
 link sees all of the family's memories. Therefore:
+
+*Read strictly, that sentence stopped being true when lever 3 shipped, and it
+is corrected here rather than below because everything that follows depends on
+it.* **There is a second credential, and it is an Apple account.**
+`Keychain.query(_:)` in `Identity.swift` builds one query shape for all three
+entries — `member_id`, `device_secret` and `family_key` — and every one of them
+carries `kSecAttrSynchronizable`. So the member secret that authenticates and
+the family key that decrypts both travel to every device signed into the same
+Apple ID. That is the mechanism "The identity survives deleting the app" below
+is about, and it is presented there purely as resilience, which is half the
+story: it is also a way in. Nothing in the app or the docs said so until
+9 Sep 2026. Whoever holds the Apple account holds the archive, invitation or
+no invitation.
 
 - The code is long and random, not meant to be read by a human — 16 random
   bytes, 128 bits, base64url. Guessing it is not a threat model
@@ -661,6 +730,21 @@ late code tells a guesser they have found a family; a member of another family
 cannot be pulled across; and a stranger cannot revoke somebody else's invite,
 nor does the attempt damage it.
 
+**"The same words" holds for a caller with no member row, and that is the
+caller the rule was written against.** Qualified 9 Sep 2026, because the prose
+had claimed it without limit. One class of caller can tell the answers apart: a
+device that already belongs to *another* family gets `member_exists` 409 for a
+valid code and `invalid_invite` 404 for a fake one (`family.ts`), so it learns
+whether a code is real. The check script asserts that distinction on purpose,
+which is why the two disagreed until this paragraph existed.
+
+It is a leak and it is priced. What it hands over is existence, to somebody who
+cannot spend it — the same 409 that tells them the code is real is the refusal
+that keeps them out, and a fresh install, which is what a guesser actually has,
+gets the identical three words every time. The alternative is answering a
+returning device with a lie, and §11.3 in `docs/UX.md` is about the cost of
+unclear refusals to exactly this audience.
+
 Ageing a code past its expiry has no route and should not have one, so that case
 reaches into the local D1 directly — which is also where the check taught its
 author something. Pointed at a second Worker on another port it aged the
@@ -705,6 +789,25 @@ GET  /media/:key     → download (checks family membership)
 The local filename and the R2 key are **different fields** (`imageFilename` and
 `r2Key`). The same photo has a different filename on each device but the same
 key, so one field would not be enough.
+
+**The bytes in that bucket are sealed, and this section did not say so until
+9 Sep 2026.** Everything below — the routes, the byte-for-byte check, the whole
+`Checked` subsection — was written as though a plain file passes through the
+Worker, and `grep seal` over these 120 lines returned nothing. It does not.
+`SyncEngine` seals every photograph and every recording under the family key
+before upload, and `MediaLoader` opens them on the way back; what R2 holds is
+`Data("k1.".utf8)` followed by an AES-GCM envelope. `docs/RECOVERY.md` had the
+fact right — *"Photographs and audio, sealed"* — so the architecture section
+that owns media was the only place it was missing.
+
+Three consequences that belong here rather than in §10 of the plan. The file is
+**not re-encoded**: sealing is an envelope, so what a family gets back is the
+exact recording, which is what rule 3 is about. The size ceiling is measured
+against the **sealed** body, not the original. And a seal that fails uploads the
+plaintext rather than dropping the file — the right trade against rule 3, and a
+silent one: nothing anywhere checks per object whether the bytes in R2 are
+actually sealed, and an unsealed object is shape-identical to a pre-lever-3 one
+because `FamilyCrypto.open` passes unmarked bytes straight through.
 
 Upload happens **before push**, so rows travel with their keys. Otherwise the
 other device would see the memory but not the photo it belongs to.
@@ -757,8 +860,12 @@ saved. For the archive above that is roughly 30 GB of JSON written to copy
 the filename is recorded in memory (`saving: false`), and the store is
 written every tenth file and once more at the end of any round that recorded
 anything, whichever way it ended — a phone killed mid-round fetches at most
-nine files again and leaves at most nine unreferenced files behind, which the
-next wipe removes. The third run, same seed: 150 files in six to seven
+nine files again and leaves at most nine unreferenced files behind. **Nothing
+removes those** — corrected 9 Sep 2026, where this used to say the next wipe
+did. `MemoryStore.wipe()` deletes the files named by a surviving row and then
+removes the store JSON; a file no row names is reachable from nothing and is
+never deleted by anything in the app. Nine stray files after a killed round is
+a small enough bill to accept, and it is a bill rather than nothing. The third run, same seed: 150 files in six to seven
 seconds, fifteen writes of the store instead of 150, every one of the 150
 filenames in the file afterwards. The fetch through the Worker is the larger
 half of the per-file cost on this machine; on an old phone the encode is the
@@ -836,13 +943,43 @@ it current without the app having to be opened.
 | Situation | Behaviour |
 |-----------|-----------|
 | Subscription ends | The family returns to the free tier. **Nothing is deleted.** Existing photos and audio remain and stay readable; the limits apply only to new content. |
-| The payer leaves the family | The right lapses on the next webhook. Another member can buy. |
-| Two payers | The longest expiry wins. Both are shown in the family view. |
+| The payer leaves the family | Nothing happens at the moment they leave — see the row below the table. Another member can buy. |
+| Two payers | The longest expiry wins. Neither is shown anywhere. |
 | Refund | The webhook drops the right immediately. There is no REFUND event: it arrives as CANCELLATION with `cancel_reason: CUSTOMER_SUPPORT`, which is the only cancellation that revokes. |
 | Auto-renew switched off | Nothing, until the EXPIRATION event ends the period that was paid for. This was assumed wrong once — a plain CANCELLATION revoked at once, locking the family out of a paid month — and `webhook-revocation-check.mjs` now pins the split. |
 
 The rule **"downgrade never deletes"** is absolute. A family that loses memories
 when the payment ends never comes back, and that is not a product worth building.
+
+**Two rows in that table were wrong, and one of them is a defect rather than a
+sentence.** Both corrected 9 Sep 2026.
+
+*Two payers.* "Both are shown in the family view" was never built. `getFamily`
+selects `id, name, entitlement, sync_seq` and returns no payer at all, and the
+Perhe screen draws one row, *"Tila: Maksullinen / Ilmainen"*. Nothing anywhere
+names who is paying. The arithmetic half — longest expiry wins — is real code.
+
+*The payer leaves.* **Leaving does not lapse anything.** `leaveFamily` writes
+`invite.revoked_at`, `member.left_at`, the leaver's role and the new owner's
+role, and touches `member.rc_app_user_id`, `family.payer_id` and
+`family.entitlement` in none of its statements; `removeMember` is the same. So
+the family keeps the paid tier until a revoking webhook happens to arrive on its
+own schedule — which is the safer direction of the two, and is not what the
+table promised.
+
+The other direction is not safe, and nobody had written it down. **The departed
+payer's customer id stays bound to their old family's member row for ever**, and
+`syncEntitlement` refuses a customer id that belongs to another family with a
+409 `customer_belongs_to_another_family` *before* it calls RevenueCat. So a
+person who leaves one family and joins another cannot make their subscription
+work in the new one, at all, and the error they would see is about a family they
+are no longer in. Nothing releases the binding: the only `NULL`ing of
+`rc_app_user_id` is the restore path inside a family.
+
+Recorded rather than fixed — it needs a decision about what a purchase follows,
+the person or the family, and §6 has been arguing that both ways since PLAN §9.
+The one-line version of the fix, when it is made, is that leaving must release
+the binding the same way the restore path does.
 
 ### After the money
 
@@ -1023,6 +1160,25 @@ slot already denied stays denied.
 `usage_counter` is checked **before** the OpenRouter call and incremented after
 it. The client's counter is not trusted — it can be edited.
 
+**Half of that last sentence is true, and the half that is not is the meter
+itself.** Corrected 9 Sep 2026. What the server does not trust is the client's
+*tier*: `isPaid` reads `family.entitlement` from D1 and no request can claim it.
+What it does trust is the client's *number*. `recordAISeconds` is handed
+`payload.seconds ?? 0` — the duration the app read off its own file — and
+`checkAISeconds` compares the stored total against the limit, so both the meter
+and the hallucination guard in `budget.ts` are driven by a field the caller
+supplies and may simply omit. An omitted `seconds` rounds to zero, and
+`recordAISeconds` returns before it writes anything.
+
+So a client that stops sending the field transcribes without ever spending a
+second of the family's month. Nothing at runtime notices;
+`transcribe-budget-check.mjs` exercises the arithmetic and not the absent-field
+path. The Worker already has the byte length in hand at the size gate, which is
+what a bound would be derived from. Recorded rather than fixed: the honest
+version costs one clamp, and it belongs beside a decision about what the meter
+is for — the invite link is currently the only thing between this and an open
+transcription endpoint billed to `OPENROUTER_API_KEY`.
+
 Two devices calling at the same time can overshoot the limit slightly. That is
 acceptable: the alternative is locking, which would cost more than a few extra
 seconds of speech.
@@ -1090,8 +1246,8 @@ Built, in the order they were built:
 1. **Onboarding** — two options: "Start the family archive" or "Join with a
    link". Nothing else. One screen.
 
-   The form behind the first one asks two things, and the second one is not
-   about the family: **whose phone is this.** Setting up takes a grandchild a
+   The form behind the first one asks three things — who it is between, the
+   name, and, last and not about the family at all: **whose phone is this.** Setting up takes a grandchild a
    few minutes; the using is done for years by somebody who has never opened
    iOS Settings and will not be told to, and the answer sets the smallest text
    the app will draw (`Elder.textFloor`, a floor and never a ceiling — iOS's
@@ -1141,11 +1297,23 @@ Built, in the order they were built:
 5. **Relationships** — "add parent / spouse / sibling" from the person card. An
    unconfirmed relationship shows as a proposal.
 6. **Paywall** — RevenueCat's own, not a hand-built one: it is configured
-   remotely, so prices and wording change without shipping a build. Two ways in,
-   both of which only exist when a RevenueCat key is configured — a dead button
-   is worse than no button. The primary one is the moment a memory finishes,
-   where perceived value peaks; the second is the family view, so a grandchild
-   looking at the limits does not have to go and dictate something to find it.
+   remotely, so prices and wording change without shipping a build. Every way in
+   only exists when a RevenueCat key is configured — a dead button is worse than
+   no button, and `paywallSheet(isPresented:)` returns the view unchanged
+   without one, so today there are zero buttons rather than broken ones. The
+   primary way in is the moment a memory finishes, where perceived value peaks;
+   the second is the family view, so a grandchild looking at the limits does not
+   have to go and dictate something to find it.
+
+   **It is no longer two.** Corrected 9 Sep 2026: the entry points grew with the
+   quota notes on Muistot, each of which acquired a button of its own, and the
+   deferred telling has one too. Rather than a count that goes stale — it moved
+   between two readings of this file on the same day, while another session was
+   editing `GalleryScreen.swift` — the way to know is
+   `grep -rn "\.paywallSheet(" ios/Kinlore/Screens/`. What matters is the shape
+   the count keeps: three of them are quota walls reached from the two things
+   `quota.ts` meters, and only the rhythm-gated card is an offer. None of them
+   is on the path of telling something, which is rule 2 in the layout.
    **Closing the paywall is not the end of the purchase**: `syncPurchase` is
    what turns one person's subscription into the family's entitlement (§6).
 
@@ -1419,8 +1587,10 @@ demo.
 
 Added after the inventory above: the follow-up questions the extraction
 already produces are now asked aloud. One button on the result screen starts
-the loop — the app reads the top question with the device's own Finnish voice
-(`InterviewVoice`), starts recording when the sentence ends, and the answer
+the loop — the app reads out the question the ladder selected, in the voice of
+whichever language is being spoken (`InterviewVoice` follows `SpokenLanguage`,
+so an English phone gets its own English voice), starts recording when the
+sentence ends, and the answer
 runs through the same transcribe → extract → save pipeline as any other
 memory, which yields the next question. Ninety seconds of telling becomes a
 guided conversation, and no hand touches the screen until "Riittää tältä erää".
@@ -1497,9 +1667,13 @@ Some people cannot start with "tell me about this photo". The first thing this
 app asks of a person has to be small enough that failing at it is impossible —
 and it has to grow as they get used to being asked.
 
-Today it does neither. Questions are not selected at all: `openQuestions` takes
-the three oldest unanswered ones and the interview loop takes
-`newQuestions.first`, whichever the model happened to emit first. Extraction
+*This paragraph describes the state before the ladder was built; the table at
+the end of this section is what shipped. Marked as past 9 Sep 2026, because it
+was written in the present tense and a reader met it as current.* It did
+neither. Questions were not selected at all: `openQuestions` took the three
+oldest unanswered ones and the interview loop took `newQuestions.first`,
+whichever the model happened to emit first. Both go through
+`QuestionLadder.select` now. Extraction
 aims its questions "at the gaps" (`extract.ts`), and a gap question is almost
 always *"Millainen ihminen Aino oli?"* — a three-sentence answer. Worst of all,
 a photo nobody has spoken about yet has **no questions at all**, so the first
@@ -2674,8 +2848,24 @@ subject titles, question text, and the R2 bytes. In the clear: the family's
 own name and its members' display names, timestamps and the carefully kept
 dates with their precision (rule 5), subject kinds, memory sources and audio
 lengths, sequence numbers, relationships, the mention graph — which memory
-names which subject, with the model's confidence — and points for places.
+names which subject — and points for places.
 Anyone weighing the app against that list is weighing the truth.
+
+**Corrected 9 Sep 2026, in one claim and several omissions.** The mention graph
+does *not* travel "with the model's confidence", as this paragraph said until
+now. `mention.confidence` is declared in the schema and written by nothing: the
+push binds `(memory_id, subject_id)` and stops. `relation.confidence` is dead
+in the same way. Every synced mention and relation row carries a NULL there, so
+what a dump yields is the edge and not the model's opinion of it — which is
+less than the paragraph promised, in the direction that favours the family.
+
+Also in the clear, and absent from the list above: a question's `level` and
+`status` (its text is sealed, its place on the ladder is not), the `author_id`
+on questions and memories, `subject.merged_into` — which is the merge graph, so
+a dump shows that two cards were decided to be one person even though it cannot
+read either name — and `subject.r2_key`, which is the family id and a UUID.
+None of them is a surprise given the design; the point of this paragraph is
+that the list is complete, and it was not.
 
 ## 19. The telling that was not meant
 
@@ -2977,7 +3167,7 @@ mean one thing.
 
 The survey was mechanical: every `.buttonStyle(.borderedProminent)` in the app,
 mapped to the view that owns it rather than to the file. Every screen had exactly
-one — the gallery, the person card, the guessing sheet, the ask sheet, the
+one — the gallery, the person card, the ask sheet, the
 onboarding, the refused microphone, the failure screen, the saved-audio screen.
 
 **Except the result screen, which had three**, and four on a free archive:

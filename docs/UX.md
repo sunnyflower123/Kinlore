@@ -103,7 +103,7 @@ this document designs is composed from state the app already has:
 | joined via invite vs created | derivable at join time | founder vs invited |
 | tellings by others newer than last seen | **new**: `memories.lastSeenSeq`, device-local | something to read |
 | `usage.isPaid` | yes | offer or thank |
-| *"Kenen puhelin tämä on"* | yes, create form only | text floor |
+| *"Kenen puhelin tämä on"* | yes, **both forms** since 17 Aug 2026 | text floor |
 
 And the direct answer to the question this document was commissioned by —
 *how does opening-and-buying differ from being-shared-to*: in exactly three

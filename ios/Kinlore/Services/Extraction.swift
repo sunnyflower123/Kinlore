@@ -62,7 +62,16 @@ struct ExtractedQuestion: Equatable, Hashable {
 struct MentionedEntity: Equatable, Hashable {
     var name: String
     var kind: SubjectKind
-    /// The LLM's confidence. Below 1.0 is created as an unconfirmed proposal.
+    /// The LLM's confidence that it parsed the name correctly — not that the
+    /// person is right, which no model can know.
+    ///
+    /// **Nothing reads it.** The threshold this comment described until
+    /// 9 Sep 2026 does not exist: `findOrCreateSubject` is called with
+    /// `confirmed: false` unconditionally, so every mentioned person and place
+    /// arrives as a proposal whatever the model claims. That is rule 4 enforced
+    /// more strictly than the schema and the prompt describe, and it is the
+    /// right way round — a model confident about a misheard name is exactly the
+    /// case §17 exists for.
     var confidence: Double
 }
 

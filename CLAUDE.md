@@ -190,8 +190,18 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
     answered that by coming up empty and letting the next `save()` write
     empty over the family's only local copy. So a new persisted field is
     `Optional`, or `Snapshot`'s hand-written `init(from:)` reads it
-    `IfPresent`; `schemaVersion` says what wrote the file; a file that still
-    cannot be read is moved aside, never overwritten, and the app says so.
+    `IfPresent`; a file that still cannot be read is moved aside, never
+    overwritten, and the app says so.
+
+    **Two halves of that are narrower than they read, corrected 9 Sep 2026.**
+    The `init(from:)` escape exists only for the ten keys `Snapshot` itself
+    declares. A field added to `Subject`, `Memory`, `Relation` or
+    `FollowUpQuestion` gets neither protection — `Models.swift` has no
+    hand-written decoder anywhere, so those four use the synthesized `Codable`
+    this rule is a warning about. **For them, `Optional` is not the preferred
+    option; it is the only one.** And `schemaVersion` is written and decoded
+    and read by nothing: it is a record of what wrote the file, available to a
+    future migration, not a mechanism that does anything today.
     `-store outdated` and `-store unreadable` drive the two UI tests in
     `SilentFailureTests` that keep this true — run them after touching
     `Snapshot` or any persisted model.
@@ -409,6 +419,30 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/lever3-roundtrip-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
   ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
   && /tmp/lever3-roundtrip-check http://localhost:8787
+
+# Whether a browser can read this archive at all. Every argument for reaching
+# anyone off an iPhone — an Android relative, the universal link ARCHITECTURE §4
+# has wanted since August, any web surface at all — rests on one claim about
+# lever 3: that WebCrypto opens what CryptoKit sealed. That claim was reasoning,
+# and it was used in BOTH directions before it was measured — once to argue a web
+# surface is impossible, which it is not. Measured 8 Sep 2026: 9 of 9, both
+# directions. `webcrypto.subtle` is the same API a page gets, so what passes here
+# passes in Safari; there is no library and no polyfill, because a helper would
+# be a second implementation and the check would be measuring the helper.
+#
+# The one nobody expected: the browser can REPRODUCE the deterministic nonce
+# (HMAC-SHA256 of the plaintext, truncated to 12 bytes), so a web client could
+# write a title without `sync.ts` reading every push as a rename. Reading never
+# needed that. It came free.
+#
+# Costs nothing — no Worker, no key, no network. Run it after touching
+# FamilyCrypto.swift, and before believing anything about a web client.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/webcrypto-interop-check \
+  scripts/webcrypto-interop-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
+  && /tmp/webcrypto-interop-check emit \
+   | node scripts/webcrypto-interop-check.mjs /tmp/kinlore-webcrypto-return.json \
+  && /tmp/webcrypto-interop-check verify /tmp/kinlore-webcrypto-return.json
 
 # Place coordinates through sync. Checks the four rules that are silent when
 # broken: a resolved point round-trips, a device that has not looked the name up

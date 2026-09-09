@@ -1,8 +1,11 @@
 /// Storing photos and audio in R2.
 ///
-/// The file passes through the Worker. A downscaled photo is about 300 kB and 90
-/// seconds of audio about 200 kB, so presigned URLs would add moving parts
-/// without benefit. See docs/ARCHITECTURE.md §5.
+/// The file passes through the Worker. A downscaled photo is 340–990 kB and 90
+/// seconds of audio is 403 kB — both measured 6 Sep 2026, and both larger than
+/// the figures this comment carried until 9 Sep 2026 (300 kB and 200 kB, which
+/// docs/ARCHITECTURE.md §5 had already withdrawn). They are still small enough
+/// that presigned URLs would add moving parts without benefit, which is why the
+/// conclusion did not change when the numbers did. See §5.
 
 import type { Session } from './auth'
 import type { Env } from './worker'
