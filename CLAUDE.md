@@ -320,9 +320,24 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # reads like a broken Xcode and is not one. Run the list before copying a
 # runtime id out of any document, including this one.
 #
+# RUN IT IN FINNISH. The tests query the accessibility tree by the words on
+# screen, and those words are Finnish — `staticTexts["Uutta perheeltä"]`,
+# `buttons["Kysy perheeltä"]`. The app's default is English, so a run without
+# these two flags fails on tests that are not broken, which is the same wasted
+# hour as a shared simulator and looks exactly as convincing.
+#
+# Measured 8 Sep 2026: `testResultWithKnownNames` looks for "Tutut nimet",
+# en.lproj translates that key to "Familiar names", and the test failed on an
+# English device and passed on a Finnish one, same commit, minutes apart. It
+# was one test then because most Finnish on screen was not being looked up at
+# all. Fixing the gallery's four unlooked-up strings the next day made it
+# several, which is the fix working — the app now answers in the device's
+# language, so the tests have to ask in the app's.
+#
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
-  -destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" test
+  -destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" \
+  -testLanguage fi -testRegion FI test
 
 # Backend locally
 cd backend && npx wrangler dev
