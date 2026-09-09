@@ -622,7 +622,7 @@ struct GalleryScreen: View {
     /// the same row of the same table — the point the whole `subject` design
     /// rests on. A second row type for places would have been the beginning of
     /// the parallel implementations CLAUDE.md forbids.
-    private func listSection(_ title: String, of subjects: [Subject]) -> some View {
+    private func listSection(_ title: LocalizedStringKey, of subjects: [Subject]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeading(title)
             ForEach(subjects) { subject in
@@ -779,8 +779,20 @@ private struct RefusedNote: View {
 /// the photo is safe and say when it travels, and nothing here is a modal or
 /// a badge. The count comes from the engine's last round; going paid re-syncs
 /// at once (`KinloreApp`), which is what clears it.
+///
+/// **One of those two acts is now offered.** The note kept the `SyncNote`
+/// register for three weeks after `MinutesQuotaNote` below it left it: the
+/// same ceiling shape, the same words about being safe, and — alone of the
+/// two — no way up. The comment above had named the act since 17 Aug 2026
+/// and the screen did not carry it, which is a worse silence than the one
+/// that note was written to end, because a family that would have paid for
+/// the room reads only that there is none.
 private struct PhotoQuotaNote: View {
     @Environment(SyncEngine.self) private var sync: SyncEngine?
+    @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
+
+    @State private var isShowingPaywall = false
 
     private var refused: Int {
         #if DEBUG
@@ -793,21 +805,82 @@ private struct PhotoQuotaNote: View {
         return sync?.photosOverQuota ?? 0
     }
 
+    /// Whether this note is the one that carries the way up.
+    ///
+    /// The two ceilings are independent — twenty photographs is a total, ten
+    /// minutes is a month — so a family can sit under both at once, and both
+    /// notes stand in the same column. Two identical buttons a finger apart
+    /// is a worse screen than the one this fix started from, at the text size
+    /// rule 1 asks for most of all.
+    ///
+    /// So the offer belongs to `MinutesQuotaNote` whenever it shows. Its claim
+    /// is the stronger one: paying is the *only* act that brings the month's
+    /// text sooner, while a photograph can also be made room for by deleting
+    /// another. This note carries the button in the case that had none.
+    private var carriesTheOffer: Bool {
+        guard !session.isPaid, RevenueCatPurchases.configuredKey != nil else { return false }
+        return !(session.isOutOfMinutes && tellingsAwaitingText(store) > 0)
+    }
+
     var body: some View {
         if refused > 0 {
-            Label(
-                refused == 1
-                    ? "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on."
-                    : "\(refused) kuvaa ei mahtunut ilmaiseen arkistoon. Ne ovat tallessa tässä puhelimessa ja lähtevät perheelle kun tilaa on.",
-                systemImage: "photo.on.rectangle.angled"
-            )
-            .elderBody()
-            .foregroundStyle(Elder.supporting)
+            VStack(alignment: .leading, spacing: 12) {
+                // Two labels rather than a ternary, for the reason TellScreen
+                // already carries beside "Selvä": a ternary of literals is a
+                // String, and a String is not looked up. Neither table had
+                // ever seen these two sentences, so an English phone read the
+                // Finnish — found by launching `-photos-refused 1` in English
+                // and looking, which is the only thing that finds this class.
+                // `localisation-check.mjs` passes either way; it counts keys.
+                Group {
+                    if refused == 1 {
+                        Label(
+                            "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on.",
+                            systemImage: "photo.on.rectangle.angled"
+                        )
+                    } else {
+                        Label(
+                            "\(refused) kuvaa ei mahtunut ilmaiseen arkistoon. Ne ovat tallessa tässä puhelimessa ja lähtevät perheelle kun tilaa on.",
+                            systemImage: "photo.on.rectangle.angled"
+                        )
+                    }
+                }
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+
+                if carriesTheOffer {
+                    Button("Avaa koko arkisto") { isShowingPaywall = true }
+                        .buttonStyle(.borderless)
+                        .font(.body.weight(.semibold))
+                        .elderTapTarget()
+                }
+            }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
             .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+            .paywallSheet(isPresented: $isShowingPaywall)
         }
     }
+}
+
+/// Recordings still without their text — the month's ceiling, counted.
+///
+/// Shared because `PhotoQuotaNote` above has to know whether the note below
+/// it is showing before it offers the same purchase twice. Two copies of
+/// this filter would drift, and the one that drifted would be the copy that
+/// only decides whether a button appears — which no test looks at directly.
+@MainActor
+private func tellingsAwaitingText(_ store: MemoryStore) -> Int {
+    #if DEBUG
+    // `-minutes-out <n>`: holds this state still for the audit, with
+    // `Session.isOutOfMinutes` forced by the same argument.
+    if let forced = UserDefaults.standard.string(forKey: "minutes-out").flatMap(Int.init) {
+        return forced
+    }
+    #endif
+    return store.told.filter {
+        $0.isAwaitingTranscription && !TranscriptionAttempts.hasGivenUp(on: $0.id)
+    }.count
 }
 
 /// "These are waiting on the month's telling, and this is when it comes back."
@@ -827,18 +900,7 @@ private struct MinutesQuotaNote: View {
 
     @State private var isShowingPaywall = false
 
-    private var waiting: Int {
-        #if DEBUG
-        // `-minutes-out <n>`: holds this state still for the audit, with
-        // `Session.isOutOfMinutes` forced by the same argument.
-        if let forced = UserDefaults.standard.string(forKey: "minutes-out").flatMap(Int.init) {
-            return forced
-        }
-        #endif
-        return store.told.filter {
-            $0.isAwaitingTranscription && !TranscriptionAttempts.hasGivenUp(on: $0.id)
-        }.count
-    }
+    private var waiting: Int { tellingsAwaitingText(store) }
 
     var body: some View {
         if session.isOutOfMinutes, waiting > 0 {
@@ -878,9 +940,18 @@ private struct MinutesQuotaNote: View {
     }
 }
 
+/// A section's title.
+///
+/// `LocalizedStringKey` and not `String`, which is the whole of it: `Text`
+/// looks up a literal and shows a variable verbatim, so a heading that
+/// passed through a `String` parameter on its way here was never looked up.
+/// Three of the four read Finnish on an English phone until 9 Sep 2026 —
+/// and *"Paikat"* did it while sitting in `en.lproj` as "Places", translated
+/// and never asked for, which is why neither table being short could have
+/// caught this. `localisation-check.mjs` counts keys, not lookups.
 private struct SectionHeading: View {
-    let text: String
-    init(_ text: String) { self.text = text }
+    let text: LocalizedStringKey
+    init(_ text: LocalizedStringKey) { self.text = text }
 
     var body: some View {
         Text(text)
