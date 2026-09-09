@@ -114,6 +114,7 @@ struct CorrectNameSheet: View {
             } message: {
                 Text("Perheessä on jo \(existing?.displayTitle ?? ""). Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua.")
             }
+            .elderSurface()
         }
     }
 

@@ -100,7 +100,7 @@ struct InviteShareButton: View {
                         .textInputAutocapitalization(.words)
                         .font(.body)
                         .padding(12)
-                        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+                        .elderCard(radius: 16)
 
                     // Says what the name buys, because otherwise it reads as
                     // one more field to fill in — and the whole reason it is
@@ -152,6 +152,13 @@ struct InviteShareButton: View {
             .padding(Elder.screenPadding)
             .navigationTitle("Kutsu")
             .navigationBarTitleDisplayMode(.inline)
+            // The ground only. Everything else this sheet is owed — the serif
+            // on "Kutsu on valmis", the code at a size somebody can read
+            // across a kitchen table — is phase E and is not this commit's.
+            // The paper is, because a white sheet in a parchment app is a
+            // screen that looks broken rather than unfinished, and this one is
+            // in a take.
+            .elderSurface()
         }
     }
 

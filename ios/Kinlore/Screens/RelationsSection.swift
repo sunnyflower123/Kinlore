@@ -192,6 +192,7 @@ private struct RelationPicker: View {
                     Button("Peruuta") { dismiss(); onDone() }
                 }
             }
+            .elderSurface()
         }
     }
 }

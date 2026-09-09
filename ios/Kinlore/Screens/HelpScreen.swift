@@ -107,6 +107,7 @@ struct HelpScreen: View {
             )
         }
         .navigationTitle("Näin tämä toimii")
+        .elderSurface()
     }
 
     /// A heading and a few plain sentences. Nothing is folded away behind a

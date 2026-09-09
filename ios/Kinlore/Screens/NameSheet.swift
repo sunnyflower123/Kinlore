@@ -97,6 +97,7 @@ struct NameSheet: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .elderSurface()
         }
     }
 }

@@ -47,6 +47,12 @@ struct TellScreen: View {
                 ProgressView()
             }
         }
+        // Here and not on `IdleView`, which is where it went first and looked
+        // right: the idle screen is one of nine phases this `Group` switches
+        // between, so the paper stopped the moment she pressed the button and
+        // the whole telling — listening, transcribing, the result — played on
+        // white. Four recorded takes said so; nothing on the idle screen did.
+        .elderSurface()
         .toolbar {
             if onClose != nil {
                 ToolbarItem(placement: .topBarLeading) {
@@ -637,7 +643,11 @@ private struct IdleView: View {
                     Text(title)
                 }
             }
-            .font(.largeTitle.weight(.semibold))
+            // The serif, and this is the one line on the screen that gets it:
+            // the question is what the screen is about, and everything else
+            // here — the reassurance, the starter, the counter — stays in SF
+            // where an 80-year-old reads it at arm's length.
+            .font(Elder.display(.largeTitle))
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
 
@@ -737,7 +747,7 @@ private struct IdleView: View {
                                 Spacer(minLength: 0)
                             }
                             .padding(14)
-                            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+                            .elderCard()
                         }
                         .buttonStyle(.plain)
                     }
@@ -856,7 +866,7 @@ private struct WritingView: View {
             }
             .frame(maxHeight: .infinity)
             .padding(10)
-            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+            .elderCard(radius: 16)
         }
     }
 }
@@ -910,7 +920,9 @@ private struct RecordingView: View {
             // it.
             if let question = model.question {
                 Text(question.text)
-                    .font(.title3.weight(.semibold))
+                    // The same serif it wore on the screen before this one:
+                    // it is the same question, still being answered.
+                    .font(Elder.display(.title3))
                     .foregroundStyle(Elder.supporting)
                     .multilineTextAlignment(.center)
                     .lineSpacing(Elder.lineSpacing)
@@ -1000,7 +1012,15 @@ private struct Waveform: View {
                 ForEach(0 ..< count, id: \.self) { index in
                     let level = level(at: index, of: count)
                     Capsule()
-                        .fill(Elder.recording.gradient)
+                        // Ink, not the disc's colour. The line and the button
+                        // were the same red, which spent the one loud colour
+                        // on the screen twice; with the line in ink the disc
+                        // is the only red thing and reads as the control. As
+                        // a graphic it is judged at 3:1 and measures far
+                        // above it — `.primary` is what the rest of this app
+                        // calls its ink, and it is a shade darker than the
+                        // token.
+                        .fill(Color.primary.gradient)
                         .frame(
                             width: width,
                             height: max(3, CGFloat(level) * geometry.size.height)
@@ -1524,7 +1544,7 @@ private struct ResultView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+                .elderCard(radius: 16)
             }
         }
     }
@@ -1720,7 +1740,7 @@ private struct MemoryCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 20))
+        .elderCard(radius: 20)
     }
 }
 
@@ -1812,7 +1832,7 @@ private struct ProposalRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
-        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+        .elderCard(radius: 16)
     }
 }
 
@@ -2135,15 +2155,20 @@ private struct RecordButton: View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Elder.recording.gradient)
+                    .fill(Elder.wax.gradient)
                     .shadow(
-                        color: Elder.recording.opacity(isRecording ? 0.5 : 0.25),
+                        color: Elder.wax.opacity(isRecording ? 0.5 : 0.25),
                         radius: isRecording ? 28 : 14
                     )
 
                 Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                     .font(.system(size: isRecording ? 60 : 72))
-                    .foregroundStyle(.white)
+                    // Cream on wax measures 5.59:1, where white on the system
+                    // red measured ~3.55:1. The glyph clears the *text*
+                    // minimum now and not merely the 3:1 a graphic is judged
+                    // by — and it is still a mic and still a stop, which is
+                    // what actually carries the state.
+                    .foregroundStyle(Elder.cream)
                     .contentTransition(.symbolEffect(.replace))
             }
             .frame(width: Elder.recordButtonSize, height: Elder.recordButtonSize)

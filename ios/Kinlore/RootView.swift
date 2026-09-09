@@ -120,6 +120,7 @@ struct RootView: View {
                 )
             }
         }
+        .elderSurface()
     }
 }
 
@@ -186,8 +187,19 @@ struct PeopleScreen: View {
                         NavigationLink(value: person) {
                             PersonRow(subject: person)
                         }
+                        // On the ROW, not on the list. Hung on the list it
+                        // does nothing at all, which is how a white stripe
+                        // survived three attempts at painting it: the
+                        // screen around it went parchment and the rows
+                        // stayed the system's own white.
+                        //
+                        // Paper and not `Elder.card`: a plain list's rows run
+                        // from margin to margin, and a card that touches both
+                        // edges is a band rather than a card.
+                        .listRowBackground(Elder.paper)
                     }
                     .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
             .navigationTitle("Ihmiset")
@@ -265,6 +277,7 @@ struct PeopleScreen: View {
                 }
             }
             #endif
+            .elderSurface()
         }
     }
 }
@@ -654,6 +667,7 @@ struct SubjectDetailScreen: View {
                 if merged { dismiss() }
             }
         }
+        .elderSurface()
     }
 
     @ViewBuilder
@@ -848,7 +862,7 @@ private struct MemoryTextSheet: View {
                     .font(.body)
                     .lineSpacing(Elder.lineSpacing)
                     .padding(12)
-                    .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+                    .elderCard(radius: 16)
                     .focused($isFocused)
                     .accessibilityLabel("Muiston teksti")
 

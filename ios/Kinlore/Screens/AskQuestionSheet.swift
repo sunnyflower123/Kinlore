@@ -38,7 +38,7 @@ struct AskQuestionSheet: View {
                 .font(.body)
                 .lineSpacing(Elder.lineSpacing)
                 .padding(12)
-                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 16))
+                .elderCard(radius: 16)
                 .focused($isFocused)
 
                 Text("Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen.")
@@ -83,6 +83,7 @@ struct AskQuestionSheet: View {
             .navigationTitle(subject.displayTitle)
             .navigationBarTitleDisplayMode(.inline)
             .onAppear { isFocused = true }
+            .elderSurface()
         }
     }
 

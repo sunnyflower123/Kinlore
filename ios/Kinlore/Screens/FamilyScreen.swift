@@ -291,6 +291,7 @@ struct FamilyScreen: View {
         .task { await session.refresh() }
         .refreshable { await session.refresh() }
         .paywallSheet(isPresented: $isShowingPaywall)
+        .elderSurface()
     }
 
     /// What the sync has actually managed, in one line.

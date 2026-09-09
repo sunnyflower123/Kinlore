@@ -323,6 +323,7 @@ struct GalleryScreen: View {
                     ? "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen."
                     : "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen.")
             }
+            .elderSurface()
         }
     }
 
@@ -699,7 +700,7 @@ private struct SyncNote: View {
                 .foregroundStyle(Elder.supporting)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
-                .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+                .elderCard()
         }
     }
 
@@ -765,7 +766,7 @@ private struct RefusedNote: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+            .elderCard()
         }
     }
 }
@@ -857,7 +858,7 @@ private struct PhotoQuotaNote: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+            .elderCard()
             .paywallSheet(isPresented: $isShowingPaywall)
         }
     }
@@ -934,7 +935,7 @@ private struct MinutesQuotaNote: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+            .elderCard()
             .paywallSheet(isPresented: $isShowingPaywall)
         }
     }
@@ -1004,7 +1005,7 @@ private struct PhotoTile: View {
             // contrast on all three. The system background under the primary
             // text is the one pair whose contrast does not depend on the
             // picture, in either appearance.
-            .background(Color(.systemBackground), in: Capsule())
+            .background(Elder.card, in: Capsule())
             .padding(8)
         }
         .task {
@@ -1069,7 +1070,7 @@ private struct NewTellingRow: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
-        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        .elderCard()
         .accessibilityElement(children: .combine)
     }
 }
@@ -1104,7 +1105,7 @@ private struct SubjectRow: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
-        .background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+        .elderCard()
         .accessibilityElement(children: .combine)
     }
 

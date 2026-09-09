@@ -91,6 +91,7 @@ struct OnboardingScreen: View {
                     JoinFamilyForm(name: $name, code: $code, rejoining: rejoining)
                 }
             }
+            .elderSurface()
         }
         .onAppear {
             if rejoining { route = .join }

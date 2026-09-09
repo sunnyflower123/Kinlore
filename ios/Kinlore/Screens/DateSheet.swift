@@ -76,6 +76,7 @@ struct DateSheet: View {
             ScrollViewReader { proxy in
                 form(proxy)
             }
+            .elderSurface()
         }
     }
 

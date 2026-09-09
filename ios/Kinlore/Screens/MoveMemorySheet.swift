@@ -86,6 +86,7 @@ struct MoveMemorySheet: View {
                     .padding(Elder.screenPadding)
                     .background(.bar)
             }
+            .elderSurface()
         }
     }
 }

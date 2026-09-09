@@ -63,6 +63,52 @@ enum Elder {
 
     static let screenPadding: CGFloat = 24
 
+    // MARK: - The surface
+    //
+    // Warm paper instead of white. Every ratio below is WCAG 2.1, measured
+    // 9 Sep 2026 against the surface named — the same arithmetic the
+    // accessibility audit applies, and the reason these are seven asset
+    // entries rather than seven hex literals in Swift: a colour that lives in
+    // one place can be re-measured, and one that is typed at fourteen call
+    // sites cannot.
+    //
+    // **They carry no dark variant, and that is a decision rather than an
+    // omission.** The app pins `.preferredColorScheme(.light)` for all of v1
+    // (KinloreApp.swift) because `destructive` lands at ≈2.6:1 and the accent
+    // at ≈2.7:1 on a dark ground — under the minimum on exactly the labels
+    // rule 1 exists for. Half a dark system, surfaces done and controls not,
+    // is the unmeasured second appearance that comment rejects. The pair to
+    // start from when somebody does the whole piece of work, measured the same
+    // day: paper `#17120F`, card `#221B16`, text `cream` (16.1:1 on that
+    // card), proposal `#E8734A` (5.65:1), affirmative `#5FBE7E` (7.40:1).
+
+    /// The screen behind everything. 15.17:1 under primary text.
+    static let paper = Color("Paper")
+
+    /// Cards, sheets and rows — a shade lighter than the paper they sit on, so
+    /// the edge is visible without a border doing the work. 16.81:1 under
+    /// primary text.
+    static let card = Color("Card")
+
+    /// A hairline, and only ever a hairline: ink at 16 % measures **1.39:1**.
+    /// Never text, and never the only edge of a control — a border this quiet
+    /// is a suggestion of a boundary, not a boundary.
+    static let rule = Color("Rule")
+
+    /// The recording control's fill. Sealing wax rather than iOS's red, and
+    /// the swap is a contrast *gain*: `cream` on this measures **5.59:1**,
+    /// where white on the system red measures ~3.55:1. That clears the text
+    /// minimum and not merely the 3:1 a graphic is judged by, so the disc
+    /// could carry a word if it ever had to. It measures 5.12:1 against
+    /// `paper` itself, so the disc is also plainly an object on the page.
+    ///
+    /// The glyph still says it: a mic is a mic and a stop is a stop whatever
+    /// the colour does.
+    static let wax = Color("Wax")
+
+    /// What goes on top of `wax` or ink. 16.56:1 on ink, 5.59:1 on wax.
+    static let cream = Color("Cream")
+
     /// Text that is quieter than the main line but still meant to be read.
     ///
     /// Not `.secondary`. iOS's secondary label is 60 % of a label that is itself
@@ -80,24 +126,38 @@ enum Elder {
     ///
     /// Not `.orange`. iOS's own orange measures 2.2:1 against white — the
     /// *lowest* contrast anywhere in the app, on the one label that asks the
-    /// family to check something. #C2410C measures 5.2:1 and is still plainly
-    /// orange next to the grey of a confirmed row.
+    /// family to check something.
+    ///
+    /// **#C2410C stood here until the ground stopped being white.** It
+    /// measures 5.18:1 on white and **4.49:1 on `paper`** — under the 4.5:1
+    /// minimum, on the one label whose whole job is to be noticed. It is the
+    /// same trap the docs page fell into with the same hex, and it was caught
+    /// here before the parchment shipped rather than after. #B23C0B measures
+    /// **5.14:1 on paper**, 5.70:1 on card, 5.93:1 on white, and is still
+    /// plainly orange next to the grey of a confirmed row.
     ///
     /// The shape of the icon carries the same meaning, and it always will:
     /// encoding a state in colour alone is an accessibility failure, and this
     /// app's user is precisely the one who suffers from it.
-    static let proposal = Color(red: 0.761, green: 0.255, blue: 0.047)
+    static let proposal = Color("Proposal")
 
     /// "This went right": a memory saved, a person recognised, a name confirmed.
     ///
     /// Not `.green`. iOS's green measures about 1.8:1 against white — worse than
     /// the orange that started the whole contrast measurement (§15), and it was
     /// carrying *"Muisto tallennettu"*, the line that tells somebody their
-    /// telling is safe. #1E7A3A measures 5.4:1 and is unmistakably still green.
+    /// telling is safe.
+    ///
+    /// #1E7A3A stood here and, unlike `proposal`, it did not fail on paper —
+    /// 4.67:1, above the minimum by a sixth of a step. Darkened to #B23C0B's
+    /// neighbour #1B7136 anyway, which measures **5.26:1 on paper** and
+    /// 5.83:1 on card, because a margin that thin is spent by the next change
+    /// of ground rather than by anything anybody would notice, and this is the
+    /// change of ground that spent `proposal`'s.
     ///
     /// As everywhere else here, the shape says it too: the checkmark is a
     /// checkmark whatever the colour does.
-    static let affirmative = Color(red: 0.118, green: 0.478, blue: 0.227)
+    static let affirmative = Color("Affirmative")
 
     /// Emptying the device, leaving the family — the actions that cannot be
     /// undone.
@@ -107,14 +167,39 @@ enum Elder {
     /// measures 6.5:1 and is unmistakably still a warning.
     static let destructive = Color(red: 0.702, green: 0.149, blue: 0.118)
 
-    /// The record button's fill, and the waveform's. The one place iOS's own
-    /// red is allowed, and the reason is the shape it is on: a 200 pt disc with
-    /// a white glyph is a graphic, judged by the 3:1 non-text minimum rather
-    /// than text's 4.5:1, and white on this red measures about 3.5:1. The same
-    /// red under a *label* fails — that case is `destructive` above. Red is
-    /// also the one colour every recorder ever made has taught this user, and
-    /// the glyph — mic or stop — carries the meaning whatever the colour does.
-    static let recording = Color.red
+    // `recording` — iOS's own red — stood here and had all three of its call
+    // sites taken, by `wax` for the disc and `.primary` for the waveform. It
+    // was defended as a graphic judged at the 3:1 non-text minimum, which was
+    // true and was not the best available: white on it measured ~3.55:1 where
+    // cream on `wax` measures 5.59:1. Deleted rather than left unused, because
+    // a token nothing draws goes on arguing its case to whoever reads it next.
+    //
+    // What it was right about is kept: red is the colour every recorder ever
+    // made has taught this user, and `wax` is still unmistakably red.
+
+    /// Headings, questions and names — the serif, and never body text.
+    ///
+    /// The film reads a serif from two metres; she reads the app at arm's
+    /// length, and an 80-year-old's body text stays in SF where Apple has
+    /// spent decades on the legibility. So this is for the one line a screen
+    /// is about, and the rest of the screen does not change.
+    ///
+    /// New York, which ships with the system: a real serif, drawn to sit
+    /// beside SF, and already Dynamic Type's. The film's own Instrument Serif
+    /// would need a font file in the bundle and `UIAppFonts` in
+    /// `project.yml` — neither expensive, but the file is not in this
+    /// repository and fetching one is not this commit's to do.
+    ///
+    /// **A text style and not a point size, which is the whole safety of
+    /// it.** Both ways of writing a serif here fail rule 1 silently in the
+    /// same way — `.custom(_:size:)` without `relativeTo:` stops answering
+    /// the text-size setting, and so does a bare point size. Naming the style
+    /// cannot be wrong that way. It is also the idiom already in this
+    /// codebase: `.system(.title2, design: .monospaced)` is how the recording
+    /// counter is drawn.
+    static func display(_ style: Font.TextStyle) -> Font {
+        .system(style, design: .serif)
+    }
 }
 
 extension View {
@@ -133,6 +218,60 @@ extension View {
         } else {
             buttonStyle(.bordered)
         }
+    }
+
+    /// Parchment behind a screen.
+    ///
+    /// Two things and not one, because a `List` or a `Form` paints its own
+    /// opaque grey and would simply cover anything put behind it —
+    /// `.scrollContentBackground(.hidden)` is what makes the paper reachable.
+    /// It is harmless on a screen that only stacks views, which is why every
+    /// root can take the same call instead of each one deciding.
+    ///
+    /// **Put it INSIDE a `NavigationStack`, never around one.** A stack paints
+    /// its own opaque ground over anything hung behind it, and the failure is
+    /// silent in the worst way: the cards on the screen turn cream, the screen
+    /// itself stays white, and it looks like a colour that was chosen. Both
+    /// tabs that have a stack were shipped that way for an hour and only a
+    /// screenshot said so.
+    ///
+    /// **This paints the ground and not the rows.** A grouped list's rows keep
+    /// the system's white on the parchment, which is what every `List` and
+    /// `Form` in this app looks like now; only the `.plain` list on Ihmiset
+    /// needed more, and it says so at its own call site. `Elder.card` is a
+    /// fifth of a per-cent lighter than white, and threading
+    /// `.listRowBackground` through every `Section` of nine screens to buy
+    /// that is a sweep this phase would not survive. It cannot be bought any
+    /// other way either: `.listRowBackground` hung on a `List` — or anywhere
+    /// above one — does **nothing at all**, silently, which is how nine of
+    /// them sat here looking like they worked.
+    func elderSurface() -> some View {
+        scrollContentBackground(.hidden)
+            .background(Elder.paper)
+    }
+
+    /// The one card in the app.
+    ///
+    /// `.background(.quaternary.opacity(0.3), in: RoundedRectangle(...))` was
+    /// written fourteen times across seven files, at three different radii and
+    /// two different opacities, because there was nowhere to put it once. It
+    /// is one call now so that the next screen cannot invent a fifteenth, and
+    /// so that a change of ground is a change to one line rather than a
+    /// fourteen-file sweep — which is exactly what this modifier's first
+    /// commit was.
+    ///
+    /// The border is not decoration and must not be dropped. `Elder.rule`
+    /// measures **1.39:1**, far under anything WCAG would call a boundary, so
+    /// what actually separates a card from the paper it lies on is the
+    /// `card`/`paper` step itself; the hairline only makes the corner legible.
+    /// A card whose only edge is a shadow has no edge at all for somebody
+    /// looking at it through cataracts.
+    func elderCard(radius: CGFloat = 14) -> some View {
+        background(Elder.card, in: RoundedRectangle(cornerRadius: radius))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius)
+                    .strokeBorder(Elder.rule, lineWidth: 1)
+            )
     }
 
     /// Ensures a control is large enough regardless of the size of its content.

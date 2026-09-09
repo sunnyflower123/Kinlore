@@ -100,6 +100,7 @@ struct EnableSharingScreen: View {
                 dismiss()
             }
         }
+        .elderSurface()
     }
 }
 

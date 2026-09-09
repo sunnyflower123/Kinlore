@@ -422,6 +422,7 @@ struct SettingsScreen: View {
                 }
             }
         }
+        .elderSurface()
     }
 
     private func export() async {
