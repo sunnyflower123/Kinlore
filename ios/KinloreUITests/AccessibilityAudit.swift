@@ -34,7 +34,8 @@ struct ContrastMeter {
     /// Percentiles rather than the extremes: a glyph's edge pixels are
     /// anti-aliased into the background, and one stray pixel of either would
     /// decide the answer. The 95th is the paper of any label; the ink is the
-    /// **2nd**, and it was the 5th until 6 Sep 2026. A frame is often a tap
+    /// **1st** — the 5th until 6 Sep 2026, the 2nd until 10 Sep, and the
+    /// measurement that moved it each time is beside the line itself below. A frame is often a tap
     /// target rather than a word: the invite row's *"Poista"* is a 60 × 60 pt
     /// target around a 15 pt word, some three per cent ink, and the 5th
     /// percentile landed past the ink on its anti-aliased fringe — 1.59:1 for
@@ -92,7 +93,31 @@ struct ContrastMeter {
         }
         guard luminances.count >= 16 else { return nil }
         luminances.sort()
-        let dark = luminances[max(1, luminances.count / 50)]
+        // The **1st**, and it was the 2nd until 10 Sep 2026. The same failure
+        // as the 5th before it, one size of frame further out: the blind
+        // card's name buttons are 354 x 60 pt tap targets around a four-letter
+        // word, so the ink is between one and two per cent of the frame and
+        // the 2nd percentile landed just past it. "Eeva" was reported at
+        // 1.53:1 against a 4.5:1 minimum, on a screen where it is black on a
+        // pale pill. Measured on that card's own audit picture, 1062 x 180 px:
+        //
+        //   0.1st / 0.5th   18.22:1   the ink, which is what it really is
+        //   1st              8.18:1   ink and fringe — a pass, and honest
+        //   2nd              1.53:1   the pill
+        //   3rd / 5th / 10th 1.52:1   the pill
+        //
+        // **0.5 would have found the true colour and is still not taken.** A
+        // blank strip of parchment on the same picture — no ink at all, the
+        // frame this meter must go on failing — measures 1.00:1 at the 10th,
+        // 2.16 at the 2nd, 3.08 at the 1st, and **16.01:1 at the 0.5th**,
+        // where a handful of stray dark pixels at the frame's edge would
+        // become "readable text". The 1st is the last percentile that finds
+        // the ink in a sparse target and still fails a frame with none.
+        //
+        // The change can only raise a ratio — a darker `dark` over the same
+        // `light` — so it cannot invent a finding; it can only stop one. That
+        // is the direction that needs the control above, not a test run.
+        let dark = luminances[max(1, luminances.count / 100)]
         let light = luminances[luminances.count - 1 - luminances.count / 20]
         return (light + 0.05) / (dark + 0.05)
     }
