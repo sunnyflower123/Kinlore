@@ -48,6 +48,28 @@ xcrun simctl privacy "$SIM" grant microphone com.kinlore.app  # no Allow popup o
 xcrun simctl io "$SIM" recordVideo --codec h264 scene.mov
 ```
 
+**The hand is a UI test.** A launch argument puts the app in a state; it
+cannot press anything, and the submission has to show the app *working*. The
+simulator panel that would do the pressing needs `sudo xcode-select` and there
+is no sudo on this machine, so `ios/KinloreUITests/FilmDriver.swift` does it:
+five scenes that tap through the loop, the invitation, a person, the return and
+a place, walking slowly enough to be read. It runs only on a simulator whose
+name contains "film", so an ordinary test run pays nothing for it, and it
+passes neither `-testLanguage fi` nor `-testRegion FI` — filming is the one
+case that wants the device's own English.
+
+```bash
+xcrun simctl io "$SIM" recordVideo --codec h264 take.mov &
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
+  -destination "id=$SIM" \
+  -only-testing:KinloreUITests/FilmDriver/testFilmTheTelling test
+kill -INT %1
+```
+
+One scene per invocation: two in one recording puts the springboard, and the
+runner's own install, in the middle of the take.
+
 Between takes, three rules the dry run paid for:
 
 1. **`terminate` and an immediate `launch` race.** The launch fails silently
@@ -59,7 +81,14 @@ Between takes, three rules the dry run paid for:
    (it speaks, records and finishes a round), and a live stop-press reaches
    the result ~3.6 s later (1.4 s transcribe + 2.2 s extract). Wait before
    rolling, and cut with margin.
-3. **A fresh start is an erase, not an uninstall** — the identity lives in
+3. **The 9:41 status bar invents accessibility findings.** Measured 9 Sep
+   2026: with `simctl status_bar override` applied, `testFamily` and
+   `testMemoriesWithContent` failed 3/3 on plain black headings that measure
+   18.7:1 — impossible — and both pass on a device without it, same commit.
+   The override is wanted for filming and must be **cleared before auditing**
+   (`xcrun simctl status_bar "$SIM" clear`). Anybody who runs the sweep on the
+   filming device is chasing ghosts.
+4. **A fresh start is an erase, not an uninstall** — the identity lives in
    the simulator's keychain. `xcrun simctl shutdown "$SIM" && xcrun simctl
    erase "$SIM"`, boot, reinstall, re-apply the status bar and mic grant.
 
@@ -205,5 +234,12 @@ silently.
 4. Decide stub or live per scene — the recipes above run either way.
 5. `xcrun simctl list devices | grep -c "(Booted)"` — a starved machine
    drops frames the same way it invents test failures (CLAUDE.md).
-6. Check the Devpost form's video requirements (length, host) before editing
-   to a length; the rules are the form's, not this file's.
+6. The Devpost rules, read 5 Sep 2026 from
+   `revenuecat-shipaton-2026.devpost.com/rules`: the video *"should be less
+   than two (2) minutes. Judges are not required to watch beyond two
+   minutes"*, must be public on **YouTube or Vimeo**, must show *"the Project
+   functioning on the device for which it was built"*, and may carry no
+   third-party trademarks or copyrighted music. RevenueCat's own pitching
+   post still says three minutes; it is older than the rules, and the rules
+   are what the form enforces. Re-read the page before the final cut — it is
+   somebody else's document and can change.
