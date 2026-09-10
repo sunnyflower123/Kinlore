@@ -1660,7 +1660,9 @@ private struct UpsellCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Ilmainen arkisto", systemImage: "sparkles")
-                .font(.headline)
+                // The serif, like every other card title that names what the
+                // card is about.
+                .font(Elder.display(.title3))
 
             if let minutes = minutesLeft, let photos = usage.photos.remaining {
                 Text("Kertomista tässä kuussa jäljellä noin \(minutes) minuuttia, ja kuville tilaa \(photos).")
@@ -1688,7 +1690,12 @@ private struct UpsellCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+        // The same cream as every other card. It was a tinted panel, which
+        // put a blue ground under a blue button and made the one offer on the
+        // screen the loudest thing on a warm page. What marks it as an offer
+        // is the prominent button inside it — ARCHITECTURE §22 gives a screen
+        // exactly one — and not a second colour saying the same thing.
+        .elderCard(radius: 18)
         .paywallSheet(isPresented: $isShowingPaywall)
     }
 }
@@ -1705,7 +1712,9 @@ private struct InviteCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Perheen arkisto", systemImage: "person.2")
-                .font(.headline)
+                // The serif, like every other card title that names what the
+                // card is about.
+                .font(Elder.display(.title3))
 
             Text("Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa.")
                 .elderBody()
@@ -1718,7 +1727,12 @@ private struct InviteCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
-        .background(.tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 18))
+        // The same cream as every other card. It was a tinted panel, which
+        // put a blue ground under a blue button and made the one offer on the
+        // screen the loudest thing on a warm page. What marks it as an offer
+        // is the prominent button inside it — ARCHITECTURE §22 gives a screen
+        // exactly one — and not a second colour saying the same thing.
+        .elderCard(radius: 18)
     }
 }
 

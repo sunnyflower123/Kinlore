@@ -63,7 +63,7 @@ struct InviteShareButton: View {
             VStack(alignment: .leading, spacing: 16) {
                 if let code {
                     Text("Kutsu on valmis")
-                        .font(.title2.weight(.semibold))
+                        .font(Elder.display(.title2))
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text("Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon ja päästää sisään yhden ihmisen.")
@@ -93,7 +93,7 @@ struct InviteShareButton: View {
                         .elderTapTarget()
                 } else {
                     Text("Kenelle kutsu menee?")
-                        .font(.title2.weight(.semibold))
+                        .font(Elder.display(.title2))
                         .fixedSize(horizontal: false, vertical: true)
 
                     TextField("Nimi", text: $name)
