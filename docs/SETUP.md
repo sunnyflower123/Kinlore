@@ -155,17 +155,17 @@ before typing anything.
 
 ## What is NOT needed
 
-- **Apple: nothing.** No $99 account, no Sign in with Apple, no APNs certificate.
+- **Apple: nothing beyond Xcode.** No $99 account, no Sign in with Apple, no
+  APNs certificate — the app builds, runs and is tested on a free account.
 - **Google / Firebase:** nothing.
 - **Email service:** nothing, because authentication is device based.
 - **OneSignal:** dropped from scope along with push notifications.
 
 ## Authentication without a login screen
 
-A paid Apple Developer account is available, so Sign in with Apple, push, iCloud
-and App Groups **would** be technically possible. Authentication is still done
-without them — not because of a constraint, but because it is better for this
-audience:
+Sign in with Apple, push, iCloud and App Groups **would** all be technically
+possible here. Authentication is still done without them — not because of a
+constraint, but because it is better for this audience:
 
 1. On first launch a UUID is generated and stored in the Keychain with the
    `kSecAttrSynchronizable` flag. iCloud Keychain syncs it between the user's

@@ -184,10 +184,10 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
    `date_start`/`date_end` with precision `decade`. Do not force a date.
 6. **No login screen.** Identity is a UUID in the Keychain
-   (`kSecAttrSynchronizable`); you join a family through an invite link. A paid
-   Apple account exists, so Sign in with Apple *would* be possible — it is still
-   not used as a gate, at most as an optional account recovery for a paying
-   member in v1.1. See [docs/SETUP.md](docs/SETUP.md).
+   (`kSecAttrSynchronizable`); you join a family through an invite link. Sign in
+   with Apple *would* be possible and is still not used as a gate, at most as an
+   optional account recovery for a paying member in v1.1.
+   See [docs/SETUP.md](docs/SETUP.md).
 7. **`OPENROUTER_API_KEY` lives only as a Worker secret.** The app uploads audio
    and text to the Worker; the Worker calls OpenRouter. The repo is public —
    check `.dev.vars` before every push.

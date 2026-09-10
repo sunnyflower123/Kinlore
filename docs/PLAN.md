@@ -136,13 +136,14 @@ question is whether an 80-year-old's real voice, in a real kitchen, comes back
 well enough to be recognised, and that the three recordings which answer it come
 from here. A real kitchen means being in the room — **and in the room, Xcode
 installs the build onto her phone directly.** No App Store Connect, no review,
-and on the paid account the build keeps working for about a year rather than the
-seven days a free account allows.
+nothing between the build and her phone but a cable.
 
 What it costs instead, so that it is not a surprise on the day: her phone has to
 be paired to this Mac once, over a cable, and **Developer Mode has to be turned
 on in her Settings** — which takes her passcode and a restart of her phone. That
-is done with her, once, before anything is installed.
+is done with her, once, before anything is installed. A build installed this way
+also expires eventually and has to be put on again, which costs another visit
+rather than another submission — the right way round for this.
 
 The fallback, if a visit turns out to be impossible, is TestFlight with her as an
 external tester and a day or two of review built into the schedule. It is written
