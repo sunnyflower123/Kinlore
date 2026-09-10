@@ -5,6 +5,7 @@
 /// audio and text always travel through here.
 
 import { authenticate } from './auth'
+import { boundedSeconds } from './budget'
 import {
 	createFamily,
 	createInvite,
@@ -400,10 +401,17 @@ export default {
 
 				if (!session) return json({ error: 'unauthorized' }, 401)
 
+				// The duration the client claims, clamped to what the bytes can
+				// hold. Used for all three of the things that trusted the raw
+				// field — the meter, the hallucination ceiling and the token
+				// budget — so there is one number and no way to charge one
+				// duration while budgeting another. See `boundedSeconds`.
+				const seconds = boundedSeconds(payload.seconds, payload.audio.length)
+
 				// The quota is checked BEFORE the expensive call. If the limit
 				// is reached, the app saves the audio anyway and transcribes it
 				// later — the recording is never discarded.
-				const denial = await checkAISeconds(env, session, payload.seconds ?? 0)
+				const denial = await checkAISeconds(env, session, seconds)
 				if (denial) return json(denial, 402)
 
 				try {
@@ -411,10 +419,10 @@ export default {
 						env,
 						payload.audio,
 						payload.format ?? 'm4a',
-						payload.seconds,
+						seconds,
 						spokenLanguage(payload.lang),
 					)
-					await recordAISeconds(env, session, payload.seconds ?? 0)
+					await recordAISeconds(env, session, seconds)
 					return json({ text })
 				} catch (err) {
 					return failure(err, 'transcribe')
