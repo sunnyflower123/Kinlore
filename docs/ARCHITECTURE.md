@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 55 sweep tests, each auditing one screen at the default text size and again at the largest, out of 129 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 55 sweep tests, each auditing one screen at the default text size and again at the largest, out of 130 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2723,12 +2723,30 @@ the list only *"if it could be pointed to on a map by name"*. What was missing
 was the point itself.
 
 `subject` now carries three more columns — `lat`, `lon`, `geo_precision` — filled
-in by `PlaceResolver` on the device. **There is no map screen yet, and that is
+in by `PlaceResolver` on the device. **There is no map screen, and that is
 deliberate**: the columns and the lookup cost an hour, a map costs a phase (see
 PLAN.md §5), and the archive that is being recorded this week is the one a map
 would eventually draw. Data first, so that the family's places accumulate while
 the decision is still open. A place is already openable like any other subject
-(§8); what it does not have is a position on anything.
+(§8).
+
+**Since 10 Sep 2026 it also has a position on its own card**, and the
+distinction is the whole of why that was allowed. `PlaceMapCard` draws the
+stored coordinate on the subject that owns it; it is not a screen of places and
+you cannot browse to it. Native MapKit, so no key, no account, no quota — and
+**no location permission either**, because it renders a coordinate the archive
+already holds and never asks where the phone is.
+
+This paragraph used to end *"what it does not have is a position on anything"*,
+which was true for three weeks and is the sentence a reader would have trusted.
+Corrected here rather than deleted, because the reason it stopped being true is
+the argument the rest of this section makes: **precision decides what is
+drawn.** A pin only for `exact`; a circle at the right scale for `town` and
+`region`; nothing at all for `unknown`, because an empty map of the wrong sea
+looks like an answer. `GeoPrecision.deservesAPin` and `mapSpanMetres` hold the
+numbers so they are a fact about the precision rather than a choice inside a
+view, and `scripts/place-map-check.swift` asserts them without a simulator or a
+network.
 
 ### Why the device and not the Worker
 
