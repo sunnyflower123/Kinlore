@@ -3,8 +3,11 @@ node_modules/
 .wrangler/
 .dev.vars
 
-# Machine-local Claude Code settings, nothing shareable.
+# Machine-local Claude Code settings, nothing shareable. launch.json points at
+# a dev-server script under this machine's scratchpad, so it is broken anywhere
+# else and carries a session id nobody needs.
 .claude/settings.local.json
+.claude/launch.json
 
 # XcodeGen generates these from project.yml — not under version control.
 ios/*.xcodeproj
