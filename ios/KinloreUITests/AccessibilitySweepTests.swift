@@ -1056,6 +1056,38 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// A place's own screen, which is the photo screen plus a map.
+    ///
+    /// `PlaceMapCard` shipped without one of these. The fixture was built for
+    /// it — the demo archive gives Puumala a coordinate expressly so the card
+    /// is reachable from a seeded launch, and says so in its own comment — and
+    /// then the sweep that was supposed to use it was never written, so a new
+    /// screen carrying a full-bleed map, a wax circle over it and a spoken
+    /// label went out with nothing measuring any of them. The count stayed at
+    /// 57 across the commit that added the screen, which is the only sign
+    /// there was.
+    ///
+    /// The map's own label is what proves arrival, and it has to be the
+    /// circle's rather than the pin's: Puumala is a municipality, so rule 5
+    /// says the card draws an area. A run that found the pin's wording here
+    /// would mean the precision had been rounded somewhere on the way.
+    func testPlaceDetail() throws {
+        try sweep("Paikan kartta", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
+            let row = app.buttons
+                .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
+                .firstMatch
+            reach(row, in: app, "the place's row in Muistot").tap()
+            let map = require(
+                app.otherElements["Suunnilleen tällä seudulla kartalla"],
+                "the place card's map"
+            )
+            // A map draws itself over several frames, and the tiles arrive
+            // from a cache rather than instantly. Auditing mid-draw is how the
+            // gallery's tiles once reported colours nothing had drawn.
+            settle(map)
+        }
+    }
+
     /// The way out of a misheard name. A sheet with a text field on it is the
     /// shape most likely to stop working at the largest size, and this one has
     /// to keep working: it is the only correction the archive offers once the

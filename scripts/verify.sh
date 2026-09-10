@@ -112,6 +112,31 @@ family_crypto() {
 		&& "$OUT/family-crypto-check"
 }
 
+# Rule 5 turned into a picture. A pin asserts a point, and a municipality is
+# not one — so what may be drawn is arithmetic over `GeoPrecision`, and it is
+# wrong in the one way a screenshot cannot show: a pin on the wrong doorstep
+# looks exactly as confident as a pin on the right one.
+place_map() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/place-map-check" scripts/place-map-check.swift \
+		ios/Kinlore/Model/Models.swift \
+		&& "$OUT/place-map-check"
+}
+
+# Whether a browser can open what the phone sealed — the claim every argument
+# for reaching an Android relative rests on, and one that was used in both
+# directions before anybody measured it. `webcrypto.subtle` is the same API a
+# page gets, so what passes here passes in Safari. No Worker, no key, no
+# network.
+webcrypto_interop() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/webcrypto-interop-check" scripts/webcrypto-interop-check.swift \
+		ios/Kinlore/Services/FamilyCrypto.swift \
+		&& "$OUT/webcrypto-interop-check" emit \
+		| node scripts/webcrypto-interop-check.mjs "$OUT/webcrypto-return.json" \
+		&& "$OUT/webcrypto-interop-check" verify "$OUT/webcrypto-return.json"
+}
+
 echo
 echo "Invariants"
 run "the paid archive is offered on a rhythm" upsell_rhythm
@@ -136,6 +161,15 @@ run "the purchase is verified rather than believed" node scripts/entitlement-syn
 # spent, which matters twice here: the one thing a check must never do is send
 # a family's words upstream to prove they are being protected.
 run "no request offers the memories for training" node scripts/data-collection-check.mjs
+# The three below were run by hand and by nothing else, and each costs nothing
+# — no simulator, no Worker, no key, no network. That is the whole argument for
+# moving them here, and it is `family_crypto`'s argument above, made once
+# already by a check that had quietly stopped compiling for a week: an
+# instruction to run something "after touching X" is not a check, it is a
+# reminder, and it is only as good as whoever last read it.
+run "only a point may be drawn as a point" place_map
+run "a long telling is given room to come back" node scripts/transcribe-budget-check.mjs
+run "a browser can open what the phone sealed" webcrypto_interop
 
 # --- What the documents say about the code ----------------------------------
 

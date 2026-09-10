@@ -1230,24 +1230,47 @@ struct BlindCardView: View {
                     // audit has already measured that accent at 3.52:1 against
                     // a 4.5:1 minimum. The border says it is a control and the
                     // weight invites; the colour was doing neither job.
+                    // **Filled, and the fill is the point.** These were
+                    // `.bordered` over the old white ground, and the parchment
+                    // took their edge away: a bordered capsule measures
+                    // **1.53:1** against `Elder.paper`, where WCAG 1.4.11 asks
+                    // 3:1 of anything that has to read as a control. The words
+                    // inside were never the problem — black on that capsule is
+                    // 11.9:1 — which is why it looked fine and why only a
+                    // measurement found it. Ink against the paper is 15.17:1
+                    // and cream on ink 16.56:1, so the button now has an edge
+                    // for somebody who cannot pick a pale grey capsule out of
+                    // a pale ground.
+                    //
+                    // Four filled buttons rather than one, which is the shape
+                    // ARCHITECTURE §22 usually forbids. It holds here because
+                    // they are not four actions competing to be the primary
+                    // one: they are one question's four answers, and none of
+                    // them may look more likely than the others — rule 4's
+                    // whole point is that the proposal sits unmarked among
+                    // them.
                     ForEach(card.names) { name in
                         Button {
                             answer(card, chose: name)
                         } label: {
                             Text(name.displayTitle)
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(.primary)
                                 .multilineTextAlignment(.center)
                                 .fixedSize(horizontal: false, vertical: true)
                                 .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .foregroundStyle(Elder.cream)
                         }
-                        .buttonStyle(.bordered)
-                        // On the Button and not on the Text inside it, which
-                        // was the first attempt and did nothing: a bordered
-                        // button paints its label from the tint after the label
-                        // has been built, so `foregroundStyle` underneath it is
-                        // overwritten and the names came out blue anyway.
-                        .tint(.primary)
+                        // `.plain` with a capsule of our own, and not
+                        // `.borderedProminent` with a tint. The prominent
+                        // style picks its own label colour out of the tint
+                        // after the label is built — the same overwrite that
+                        // once turned these names blue under `.bordered` — so
+                        // the one thing that must be certain here, cream on
+                        // ink, would have been the system's decision rather
+                        // than ours.
+                        .buttonStyle(.plain)
+                        .background(Color.primary, in: Capsule())
                         .elderTapTarget()
                     }
                 }
@@ -1273,18 +1296,23 @@ struct BlindCardView: View {
                 // on its being read; this sentence is the whole answer to what
                 // she just did, and a screen that moves on by itself while an
                 // 80-year-old is still reading it has taken the answer away.
+                // Filled like the four names above it, and for the same
+                // measurement: a `.bordered` capsule has a 1.53:1 edge against
+                // the parchment where 3:1 is asked of a control. It was the
+                // only other button in the app wearing that shape.
                 Button {
                     onDone()
                 } label: {
                     Text("Jatka")
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(.primary)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(Elder.cream)
                 }
-                .buttonStyle(.bordered)
-                .tint(.primary)
+                .buttonStyle(.plain)
+                .background(Color.primary, in: Capsule())
                 .elderTapTarget()
             }
 

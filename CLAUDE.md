@@ -290,6 +290,26 @@ shows changes you did not make, leave them alone and say so.
 
 ## Commands
 
+**Most of the checks below are also one command.** `./scripts/verify.sh` runs
+every invariant in this repository that costs nothing — and it is what CI's
+Invariants job runs, so it is the same green a stranger sees. It skips only
+what it says it skips: anything that spends OpenRouter credit, the UI suite
+unless `KINLORE_TEST_SIM` names a simulator of your own, and `geo-check.swift`,
+which measures somebody else's gazetteer over the network. With a
+`npx wrangler dev` running it picks up the eleven backend checks too.
+
+It is listed here because it was not, and the cost of that is the reason
+`family_crypto` sits inside it: that check had stopped **compiling** a week
+before anybody noticed, because its instruction said to run it after touching
+a file nobody had touched. An instruction to run something by hand is a
+reminder rather than a check, and it is only as good as whoever last read it.
+The individual commands below are still worth having — they are what you run
+while working on one thing — but the run before a commit is this one:
+
+```bash
+./scripts/verify.sh
+```
+
 ```bash
 # Generate the iOS project. Run this after changing project.yml — and also
 # after ADDING OR REMOVING A SOURCE FILE. XcodeGen globs the sources when it
