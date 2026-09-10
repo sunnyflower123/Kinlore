@@ -16,19 +16,41 @@ do not re-research it:
   verified at submission; a student ID or letter of enrolment is accepted when
   the domain is not on the JetBrains/swot list.
 
-**One requirement is still unmet: the repository is private.** Measured 16 Aug
-2026 — `api.github.com/repos/sunnyflower123/Kinlore` answers 404 unauthenticated
-while `git ls-remote` works with credentials, which is what GitHub does for a
-private repo. Next Gen asks for *"a link to your public, open-source code
-repository, including an open-source license file"*, so this blocks the
-submission rather than merely looking untidy, and every claim in this file about
-the repo being a shop window assumes the change has been made.
+**The repository is private, and stays private until submission. That is a
+decision, not a task left undone** — decided 9 Sep 2026, and this paragraph
+exists because the file used to read as an overdue chore and every session
+dutifully raised it again. Do not raise it again.
 
-Making it public is safe and was checked rather than assumed: `.dev.vars` is in
-`.gitignore`, has never been committed, and no key-shaped string appears
-anywhere in history. It is one setting, not a cleanup. Doing it early also makes
-GitHub Actions free, which is why `ci.yml` runs its expensive half only on pull
-requests today.
+Next Gen's rule, quoted from the rules page rather than paraphrased: *"The
+repository must be public and open source by including an open source license
+file. This license should be detectable and visible at the top of the repository
+page."* It applies to Next Gen alone; no other category asks for a repository.
+
+The dates that set the window, read from the same page on 9 Sep 2026:
+submission closes **30 Sep 23:45 PDT**, judging runs **1–13 Oct**, and winners
+are announced **21 Oct**. So the obligatory exposure is the fourteen days from
+submission to the end of judging — which is what made the timing a free choice
+rather than a risk to sit on.
+
+**Flip it on 28 Sep, the internal buffer, not on the 30th.** Two things can only
+be seen once the repo is public and neither should be met for the first time on
+a deadline evening: whether GitHub actually *detects* the licence and shows it
+at the top of the page, and whether Pages serves `docs/index.html` — whose four
+links into the repository answer 404 until the moment it flips. A minute-long
+dry run, public and straight back to private, settles both at no cost.
+
+Nothing about safety is holding it: `.dev.vars` is in `.gitignore`, has never
+been committed, and no key-shaped string appears anywhere in history. It is one
+setting, not a cleanup. What it costs to wait is that GitHub Actions stays paid
+until then — which is why `ci.yml` runs its expensive half only on pull requests
+— and that Pages is off, so the page nobody can reach yet is also the DSA
+contact surface. Both are priced and accepted.
+
+Two consequences for anything written here in the meantime. Everything in this
+file about the repo being a shop window is about the day it opens, not today.
+And a public repository publishes its **history**, not merely its head — so what
+goes into a commit now is as permanent as what goes into `main`, and unbuilt
+plans belong outside the repository entirely.
 
 **The schedule is built around school:** the heaviest work (backbone + magic
 moment) happens 4–10 Aug during the holiday, not alongside school. When time

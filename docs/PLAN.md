@@ -109,7 +109,7 @@ began — that was backwards.
 
 | Phase | Days | Goal | Capacity |
 |-------|------|------|----------|
-| **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. Swot check. RevenueCat account + Test Store. GitHub public + licence. | holiday |
+| **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. Swot check. RevenueCat account + Test Store. ~~GitHub public + licence~~ — moved to 28 Sep on purpose, see §5 row 4. | holiday |
 | **B** | 4–10 Aug | **Backbone + magic moment.** Photo picking, memories, dictation → transcription → extraction → follow-up questions. The last week of the holiday goes to the hardest part. | holiday, full |
 | — | **~11 Aug** | **School starts** | |
 | **C** | 11–31 Aug | Person cards + relationships. Confirmation UI for proposals was dropped in favour of the guessing round, which was then cut itself — see §4.1. | evenings |
@@ -197,7 +197,10 @@ It will. This is decided in advance so that nobody has to choose while exhausted
 1. The magic moment (dictation → extraction → follow-up questions)
 2. RevenueCat Test Store + paywall — a rule requirement, but small work
 3. The demo video
-4. Repo in English + OSS licence visible in GitHub's About section
+4. Repo in English + OSS licence visible in GitHub's About section — **on
+   28 Sep, and deliberately not before** (CLAUDE.md's opening carries the dates
+   and the reason; §3 scheduled it in phase A and that schedule is superseded,
+   not slipped)
 
 **Cut in this order, from the bottom up:**
 
