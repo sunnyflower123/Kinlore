@@ -76,6 +76,35 @@ struct DateHint: Codable, Hashable {
 /// accuracy nobody ever had — rule 5, uncertainty is stored, not rounded.
 enum GeoPrecision: String, Codable {
     case exact, town, region, unknown
+
+    /// How wide a map of this has to be, in metres — and nil where there must
+    /// be no map at all.
+    ///
+    /// The rule above, turned into the only number a view needs, and kept
+    /// here rather than in the view because it is a fact about the precision
+    /// and not about the drawing. `scripts/place-map-check.swift` asserts it
+    /// without a simulator, because every way of being wrong here is quiet: a
+    /// pin on the wrong house looks exactly as confident as a pin on the right
+    /// one, and an `unknown` place drawn at any span at all is a map of
+    /// somewhere the app was never told about.
+    ///
+    /// The spans are the scale each answer was given at. A street address is
+    /// worth a kilometre and a half; a municipality — which is what MapKit
+    /// returns for most of what somebody says out loud — fourteen; a region
+    /// seventy. They are deliberately generous: a span too wide says "around
+    /// here", and a span too narrow says something the archive does not know.
+    var mapSpanMetres: Double? {
+        switch self {
+        case .exact: 1_500
+        case .town: 14_000
+        case .region: 70_000
+        case .unknown: nil
+        }
+    }
+
+    /// Whether a point may be drawn as a point. Only the answer that actually
+    /// is one.
+    var deservesAPin: Bool { self == .exact }
 }
 
 /// Where a place is, once its name has been looked up.

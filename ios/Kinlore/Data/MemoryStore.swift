@@ -1063,7 +1063,21 @@ final class MemoryStore {
         // own. It is here so the accessibility sweep actually covers the Paikat
         // section and its invitation — an empty subject is the row with the
         // colour on it, and colour is the thing eyes cannot check.
-        let puumala = Subject(id: "demo-puumala", kind: .place, title: "Puumala")
+        //
+        // It carries a coordinate, and the coordinate is a prop like the rest
+        // of the fixture: `PlaceResolver` refuses to look anything up under a
+        // seed on purpose (a UI run launches the app dozens of times and a
+        // gazetteer request has no business inside a contrast measurement), so
+        // without one the place card's map is unreachable from every seeded
+        // launch — which is to say from the accessibility sweep and from every
+        // recorded take. `.town` and not `.exact`: Puumala is a municipality,
+        // and what the card draws for it is a circle rather than a pin.
+        let puumala = Subject(
+            id: "demo-puumala",
+            kind: .place,
+            title: "Puumala",
+            place: PlaceHint(latitude: 61.5236, longitude: 28.1806, precision: .town)
+        )
         // Somebody the extraction proposed and a human rejected. The row is kept
         // so the rejection can travel to the rest of the family, and it must
         // never be shown again — which is the half of soft deletion that can go

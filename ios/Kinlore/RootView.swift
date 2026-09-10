@@ -288,15 +288,11 @@ private struct PersonRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // The icon conveys state through its shape, not colour alone:
-            // encoding meaning in colour only is an accessibility failure, and
-            // this app's user is precisely the one who suffers from it.
-            Image(systemName: subject.confirmed
-                ? "person.crop.circle"
-                : "person.crop.circle.badge.questionmark")
-                .font(.title2)
-                .foregroundStyle(subject.confirmed ? Elder.supporting : Elder.proposal)
-                .frame(width: 34)
+            // Their initial rather than the same grey head five times over.
+            // The state still travels by shape and not by colour alone —
+            // `SubjectAvatar` carries the badge the symbol here used to, and
+            // the row says it in words underneath either way.
+            SubjectAvatar(subject: subject)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(subject.displayTitle)
@@ -423,6 +419,21 @@ struct SubjectDetailScreen: View {
             if subject.kind == .photo {
                 Section {
                     photoView
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+            }
+
+            // Where it is, for a place the lookup found. Under the name and
+            // above everything told about it, because the map answers "where"
+            // and the memories answer "what happened there".
+            //
+            // `current` and not `subject`: correcting a place's name clears
+            // its coordinate (`PlaceResolver`), and this screen has to show
+            // the archive as it is now rather than as it was when it opened.
+            if current.kind == .place, current.place != nil {
+                Section {
+                    PlaceMapCard(subject: current)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 }

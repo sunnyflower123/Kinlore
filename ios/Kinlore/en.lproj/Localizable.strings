@@ -478,3 +478,9 @@
 "Nimeä hetki" = "Name the moment";
 "Nimi ei nyt vaihtunut. Yritä uudelleen, kun verkkoyhteys toimii." = "The name did not change just now. Try again when the network is working.";
 "Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin." = "This is shown beside your memories. You can leave it empty if the inviter wrote your name in. The name can be changed later.";
+
+/* A place's map. What is spoken depends on what is drawn: a pin is only ever
+   for an exact answer, and a circle stands for a municipality or a region —
+   rule 5, uncertainty is stored rather than rounded, said out loud. */
+"Tarkka sijainti kartalla" = "Exact location on the map";
+"Suunnilleen tällä seudulla kartalla" = "Roughly in this area, on the map";

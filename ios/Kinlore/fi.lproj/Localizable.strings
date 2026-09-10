@@ -433,3 +433,7 @@
 "Nimeä hetki" = "Nimeä hetki";
 "Nimi ei nyt vaihtunut. Yritä uudelleen, kun verkkoyhteys toimii." = "Nimi ei nyt vaihtunut. Yritä uudelleen, kun verkkoyhteys toimii.";
 "Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin." = "Tämä näkyy muistojesi vieressä. Voit jättää tyhjäksi, jos kutsuja kirjoitti nimesi. Nimen voi vaihtaa myöhemmin.";
+
+/* A place's map — see en.lproj. */
+"Tarkka sijainti kartalla" = "Tarkka sijainti kartalla";
+"Suunnilleen tällä seudulla kartalla" = "Suunnilleen tällä seudulla kartalla";

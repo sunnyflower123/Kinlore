@@ -1740,7 +1740,9 @@ private struct MemoryCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        .elderCard(radius: 20)
+        // A block and not a card: this is what the telling became, and the one
+        // card on the screen worth a thickness.
+        .elderBlock(radius: 20)
     }
 }
 
@@ -1832,7 +1834,10 @@ private struct ProposalRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)
-        .elderCard(radius: 16)
+        // The rows a person acts on. The slab makes them read as separate
+        // things to press rather than as bands of one list — the film's
+        // "blocks", which is what the user asked for by that name.
+        .elderBlock(radius: 16)
     }
 }
 

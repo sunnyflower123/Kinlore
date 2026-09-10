@@ -150,6 +150,20 @@ final class FilmDriver: XCTestCase {
         beat(4.0) // the question waits to be answered aloud
     }
 
+    /// 5 · The place: a name somebody said out loud, and where the gazetteer
+    /// put it.
+    ///
+    /// The fixture's Puumala carries a coordinate at `.town` precision, so
+    /// what this films is the circle and not a pin — which is the case worth
+    /// filming, because it is rule 5 drawn rather than argued.
+    func testFilmThePlace() throws {
+        let app = try roll(["-seed", "archive", "-tab", "memories"])
+        beat(1.6)
+        let place = try reveal(app, app.buttons, ["Puumala"])
+        place.tap()
+        beat(4.5)
+    }
+
     // MARK: - The hand
 
     private struct NeverArrived: Error, CustomStringConvertible {

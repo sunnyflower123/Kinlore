@@ -1045,10 +1045,17 @@ private struct NewTellingRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: subject.kind.symbolName)
-                .font(.title2)
-                .foregroundStyle(Elder.supporting)
-                .frame(width: 34)
+            // A person gets their initial; a place and an event keep their
+            // symbol, because a pin and a calendar say what kind of thing the
+            // row is where a letter in a circle would not.
+            if subject.kind == .person {
+                SubjectAvatar(subject: subject)
+            } else {
+                Image(systemName: subject.kind.symbolName)
+                    .font(.title2)
+                    .foregroundStyle(Elder.supporting)
+                    .frame(width: 34)
+            }
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(subject.displayTitle)
@@ -1083,10 +1090,17 @@ private struct SubjectRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Image(systemName: subject.kind.symbolName)
-                .font(.title2)
-                .foregroundStyle(Elder.supporting)
-                .frame(width: 34)
+            // A person gets their initial; a place and an event keep their
+            // symbol, because a pin and a calendar say what kind of thing the
+            // row is where a letter in a circle would not.
+            if subject.kind == .person {
+                SubjectAvatar(subject: subject)
+            } else {
+                Image(systemName: subject.kind.symbolName)
+                    .font(.title2)
+                    .foregroundStyle(Elder.supporting)
+                    .frame(width: 34)
+            }
 
             VStack(alignment: .leading, spacing: 3) {
                 // An event whose memory is still waiting for its text has no

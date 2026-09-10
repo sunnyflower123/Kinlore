@@ -109,6 +109,17 @@ enum Elder {
     /// What goes on top of `wax` or ink. 16.56:1 on ink, 5.59:1 on wax.
     static let cream = Color("Cream")
 
+    /// The slab a card sits on: the same cream, two steps darker, offset down
+    /// and to the right with no blur at all.
+    ///
+    /// A printed thing has thickness, and this is the whole of it. It is
+    /// decoration and nothing rests on it — the card's own hairline is still
+    /// what draws the edge (`elderCard`), because a shadow is not a boundary
+    /// for somebody looking through cataracts. So these two are the only
+    /// colours here with no contrast ratio beside them: no text is ever drawn
+    /// on either.
+    static let block = Color("Block")
+
     /// Text that is quieter than the main line but still meant to be read.
     ///
     /// Not `.secondary`. iOS's secondary label is 60 % of a label that is itself
@@ -272,6 +283,31 @@ extension View {
                 RoundedRectangle(cornerRadius: radius)
                     .strokeBorder(Elder.rule, lineWidth: 1)
             )
+    }
+
+    /// A card with a thickness: the same card, on a hard slab.
+    ///
+    /// The offset is 5 x 7 points with a blur of zero, which is what makes it
+    /// read as a printed block rather than as a floating panel — a blurred
+    /// shadow is a screen's idea of depth and a slab is a page's. The rows on
+    /// the result screen and the card they sit under are the two places it
+    /// belongs, because those are the ones a person acts on.
+    ///
+    /// It adds nothing to the *edge*: `elderCard` keeps its hairline
+    /// underneath, and the rule that a shadow may never be the only boundary
+    /// of a control is the reason this is a `background` and not a
+    /// replacement.
+    ///
+    /// Give it room. The slab reaches 7 points past the card, so a container
+    /// with less padding than that clips it — `Elder.screenPadding` is 24 and
+    /// every screen this is used on has it.
+    func elderBlock(radius: CGFloat = 14) -> some View {
+        elderCard(radius: radius)
+            .background {
+                RoundedRectangle(cornerRadius: radius)
+                    .fill(Elder.block)
+                    .offset(x: 5, y: 7)
+            }
     }
 
     /// Ensures a control is large enough regardless of the size of its content.
