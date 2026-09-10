@@ -458,6 +458,28 @@ finished.**
   returns in v1.1, read `ARCHITECTURE.md` §18 first: the lookup always
   answers, a confident wrong answer is indistinguishable from a right one,
   and a map that draws every answer as a pin publishes guesses as fact.
+
+  **The decision stands, and something narrower shipped anyway — 10 Sep 2026.**
+  A place subject's own card now draws its stored coordinate (`PlaceMapCard`).
+  That is not the row above being overturned: what was refused is *a map of the
+  places*, a screen you go to and browse, and there is still no such screen.
+  What shipped reads a column on one subject that was already being collected,
+  on a card that already existed.
+
+  **And the condition this row set is the reason it was allowed.** The sentence
+  above is not a prohibition, it is a prohibition with a gate — read §18 first,
+  because a map that draws every answer as a pin publishes guesses as fact. The
+  gate was honoured rather than argued past: a pin only for `exact`, a circle at
+  the right scale for `town` and `region`, and **nothing at all for `unknown`**,
+  because an empty map of the wrong sea reads as an answer. The numbers sit on
+  `GeoPrecision` rather than in the view, and `scripts/place-map-check.swift`
+  asserts them with no simulator and no network. That is rule 5 made visible
+  instead of rounded away.
+
+  **The payment is not reneged.** This row's removal bought the *"Uutta
+  perheeltä"* section, and what it spent was the §5 row 7 slot — which is still
+  empty, because a card is not a phase. If a browsable map is ever proposed
+  again, it owes its own removal and this paragraph is not a precedent for it.
 - **Prices.** Free: 1 family / ~20 photos / ~10 AI minutes per month. Paid:
   ~€9.99/month or €59.99/year. Nominal on the Test Store, but considered.
 
