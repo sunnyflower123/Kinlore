@@ -2847,13 +2847,24 @@ machine lookup instead of a machine-heard name. Nothing in the app confirms
 one, and since 10 Sep 2026 `PlaceMapCard` draws one anyway. **What decides the
 shape is precision, not confirmation**: `deservesAPin` is `precision ==
 .exact`, so an exact hit gets a `Marker` and anything vaguer a `MapCircle`
-sized to its span. A wrong `exact` — `Karjala` resolved to the village in
-Mynämäki — is therefore drawn as a pin that reads like a record, which is the
-one thing this paragraph asked the map not to do, written before there was a
-map to ask it of. Recorded as an open gap on 11 Sep 2026 rather than quietly
-dropped: the confirmation it wants has to come from a human who knows which
-Karjala it was, and anything else buries a guess in the archive as fact, which
-is the failure mode this whole architecture is built to avoid.
+sized to its span.
+
+**The requirement above is unimplemented — and, measured 11 Sep 2026,
+currently unreachable.** `.exact` needs `placemark.thoroughfare`, a street,
+and a name somebody says out loud does not come back as one. Sixteen farm,
+house and hamlet names through the shipping `PlaceLookup` — `Koivula`,
+`Mäkelä`, `Rantala`, `Mummola`, `Karjala` among them — returned sixteen
+`town`, no thoroughfare, and not one pin. **The table of wrong answers above
+is a table of circles.** The only `.exact` in this section is `Mannerheimintie
+1, Helsinki`, which is a street because the speaker said a street.
+
+So rule 5 is doing rule 4's work here, and it is doing it by accident rather
+than by design — which is the reason to write it down instead of leaning on
+it. Whoever changes `precision(of:)`, or adds `.pointOfInterest` to
+`resultTypes` so that a hairdresser named Koivula can win, is the person who
+opens this, and nothing at all would tell them. The confirmation the paragraph
+asks for — from a human who knows which Karjala it was — still does not exist,
+and `PlaceHint` has no field to hold it.
 
 ### When it runs
 
