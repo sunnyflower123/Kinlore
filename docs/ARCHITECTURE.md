@@ -2859,12 +2859,17 @@ is a table of circles.** The only `.exact` in this section is `Mannerheimintie
 1, Helsinki`, which is a street because the speaker said a street.
 
 So rule 5 is doing rule 4's work here, and it is doing it by accident rather
-than by design — which is the reason to write it down instead of leaning on
-it. Whoever changes `precision(of:)`, or adds `.pointOfInterest` to
-`resultTypes` so that a hairdresser named Koivula can win, is the person who
-opens this, and nothing at all would tell them. The confirmation the paragraph
-asks for — from a human who knows which Karjala it was — still does not exist,
-and `PlaceHint` has no field to hold it.
+than by design — which is the reason to check it rather than lean on it.
+`geo-check.swift` carries the measurement as its fourth claim: twelve names
+said out loud, not one of them a street. Whoever changes `precision(of:)`, or
+adds `.pointOfInterest` to `resultTypes` so that a hairdresser named Koivula
+can win the query, turns that claim red — and CLAUDE.md already sends anybody
+who touches `PlaceLookup.swift` to run it, which is as close to automatic as a
+check that costs a network round trip gets here. The confirmation the
+paragraph asks for — from a human who knows which Karjala it was — still does
+not exist, and `PlaceHint` has no field to hold it. What the check buys is not
+the rule; it is that the day the rule starts mattering is a day somebody is
+told.
 
 ### When it runs
 

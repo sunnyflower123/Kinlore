@@ -4,13 +4,18 @@
 //     -parse-as-library -o /tmp/geo-check scripts/geo-check.swift \
 //     ios/Kinlore/Services/PlaceLookup.swift && /tmp/geo-check
 //
-// §18 says three things that are not about this app at all: that a Finnish
+// §18 says four things that are not about this app at all: that a Finnish
 // municipality resolves to itself, that Karelian places resolve across the
-// border rather than being dragged into Finland, and that the lookup answers
-// confidently wrong for a name that is both a region and a village. All three
-// are claims about somebody else's gazetteer, and they can stop being true
-// without a line of this repo changing — which is the failure mode a document
-// has: it goes on being believed.
+// border rather than being dragged into Finland, that the lookup answers
+// confidently wrong for a name that is both a region and a village, and — the
+// fourth, added 11 Sep 2026 — that a name somebody SAYS OUT LOUD never comes
+// back precise enough to be drawn as a point. All four are claims about
+// somebody else's gazetteer, and they can stop being true without a line of
+// this repo changing — which is the failure mode a document has: it goes on
+// being believed.
+//
+// The fourth is the one that is load-bearing rather than descriptive. See the
+// comment above `spokenNames`.
 //
 // It compiles the REAL ios/Kinlore/Services/PlaceLookup.swift. The two types
 // below are the minimum stubs that file needs, copied from Models.swift — the
@@ -64,6 +69,36 @@ let claims = [
               + "with a single result, rather than to the region a grandmother means"),
 ]
 
+/// The fourth claim, and the only one about a SET of names rather than one.
+///
+/// §18 wrote a requirement for the day a map existed — *an unconfirmed place
+/// must not be drawn as a pin that reads like a record* — and `PlaceMapCard`
+/// shipped on 10 Sep 2026 without it. `deservesAPin` reads `precision`, and
+/// nothing anywhere reads whether a human ever agreed to the coordinate;
+/// `PlaceHint` has no field to hold that.
+///
+/// **What keeps it from mattering is this gazetteer, not the app.** `.exact`
+/// needs `placemark.thoroughfare`, and a name somebody says out loud — a farm,
+/// a house, a hamlet — does not come back as a street. Measured 11 Sep 2026:
+/// sixteen of sixteen came back `town`, `Karjala` and `Mummola` among them.
+///
+/// So rule 5 is doing rule 4's work here **by accident**, and this is the alarm
+/// on the accident. A failure here does not mean the lookup got worse. It means
+/// a confidently wrong village can now be drawn as a point, and §18's last
+/// paragraph has to be answered with code rather than with a measurement.
+///
+/// Whoever changes `precision(of:)`, or adds `.pointOfInterest` to
+/// `resultTypes` so a hairdresser named Koivula can win the query, is the
+/// person this is waiting for.
+///
+/// Which precision earns a pin is `place-map-check.swift`'s half to keep,
+/// against the real `Models.swift`. This half owns the other one: how precise
+/// a spoken name can get. Neither is enough alone.
+let spokenNames = [
+    "Koivula", "Mäkelä", "Rantala", "Peltola", "Kotiranta", "Sillanpää",
+    "Mummola", "Anttila", "Heikkilä", "Nurmela", "Ahola", "Toivola",
+]
+
 @main
 enum GeoCheck {
     static func main() async {
@@ -91,6 +126,27 @@ enum GeoCheck {
             // Paced, because MapKit throttles a burst and a throttled reply
             // looks exactly like "no such place".
             try? await Task.sleep(for: .milliseconds(400))
+        }
+
+        var pinned: [String] = []
+        for name in spokenNames {
+            guard let hint = await PlaceLookup.find(name) else {
+                unresolved += 1
+                print("  ??   \(name): unresolved — no network, or the name is gone")
+                continue
+            }
+            if hint.precision == .exact { pinned.append(name) }
+            try? await Task.sleep(for: .milliseconds(400))
+        }
+        if pinned.isEmpty {
+            print("  ok   \(spokenNames.count) names said out loud, not one of them a "
+                + "street — so none can be drawn as a point")
+        } else {
+            failures += 1
+            print("  FAIL \(pinned.count) of \(spokenNames.count) came back exact: "
+                + pinned.joined(separator: ", "))
+            print("       §18's last paragraph is load-bearing now: an unconfirmed "
+                + "place can be drawn as a pin, and nothing checks confirmation")
         }
 
         if unresolved > 0 {
