@@ -452,7 +452,7 @@ Then the two about who is speaking: the author is taken from the session and
 never from the payload, and a member of the same family cannot rewrite what
 somebody else said. Last, that a deletion survives a stale push.
 
-Eleven assertions, and none of them is visible when it breaks. A memory whose
+Twenty-one assertions, and none of them is visible when it breaks. A memory whose
 raw transcript has quietly gone looks like a memory.
 
 **Shown to be load-bearing**, in a throwaway worktree with its own Worker and
@@ -502,12 +502,12 @@ from an old copy, for ever. So clearing now sends `unknown` rather than nothing
 instead of an absence. **En tiedä is an answer**, which is the same principle the
 question ladder rests on.
 
-Ten assertions, and the neighbours in that statement are checked beside it:
+Nine assertions, and the neighbours in that statement are checked beside it:
 confirmation is one-way, a merge is sticky, a rejection cannot be revived.
 
 **Shown to be load-bearing** without a mutation, because the bug was real: run
 against `origin/main` before the fix, on a Worker and database of its own, the
-two date cases went red and the other eight stayed green.
+two date cases went red and the other seven stayed green.
 
 ### Why JSON and not SQLite
 
@@ -1042,7 +1042,7 @@ that answers like RevenueCat and keeps the request — the same technique
 here: the request that proves the payer's account is protected must not be the
 request that sends it somewhere.
 
-Twenty-nine checks, and the ones worth naming:
+Thirty checks, and the ones worth naming:
 
 - **A purchase RevenueCat has never heard of unlocks nothing.** This is the
   request an attacker makes and also the request a confused app makes, and it
@@ -1110,7 +1110,7 @@ that. The binding *moves* within a family, released from the old row first.
 RevenueCat, none of which exists on this machine. The guard in TypeScript cannot
 be run here at all; the database rule can, and it is the half that still holds
 when the guard is wrong. Run with the index made non-unique again, two of its
-seven checks fail, which is how it was shown to be worth having.
+six checks fail, which is how it was shown to be worth having.
 
 ### Where the paywall goes
 
@@ -1435,7 +1435,7 @@ Built, in the order they were built:
     only about keeping the voice for the family, and it says both things now.
 
     The other two are what somebody asks before trusting an app with their
-    family: who can see this, and can I get it back out. Six short sections, no
+    family: who can see this, and can I get it back out. Nine short sections, no
     disclosure triangles — a person who opened a help page is already looking
     for the answer, and making them hunt twice is how help becomes decoration.
 
@@ -1978,7 +1978,7 @@ One zip through the share sheet:
 |---|---|
 | `muistot.html` | Every memory under its subject, dates as they were told, photos inline, audio playable |
 | `kuvat/`, `aani/` | The originals, byte for byte — audio is never re-encoded, here least of all |
-| `arkisto.json` | The store exactly as it sits on disk |
+| `arkisto.json` | The archive as a model — subjects, memories, questions, relations; the outbox and the sync cursor left out |
 
 Four decisions:
 
@@ -2234,7 +2234,9 @@ was still usable; that redundancy is what a colour fix should never be allowed
 to replace.
 
 A fourth default belongs with them: **iOS red measures 3.6:1**, and it labels
-*"Tyhjennä tämä laite"* — the one button in the app that destroys an archive.
+*"Tyhjennä ja aloita alusta"* — the one button in the app that destroys an
+archive, called *"Tyhjennä tämä laite"* when this was measured and renamed on
+29 Aug 2026.
 `Elder.destructive` `#B3261E` measures 6.5:1 and is unmistakably still a warning.
 
 ### The rest
@@ -2369,7 +2371,8 @@ The other three were `.green`, which the rule does not name and which is worse
 than the orange that started all of this: **1.8:1** against white, carrying
 *"Muisto tallennettu"* — the line that tells somebody their telling is safe — the
 confirm tick on a proposal, and *"Oikein. Hän oli Aino."* at the end of a round.
-`Elder.affirmative` is #1E7A3A at **5.4:1**, still unmistakably green.
+`Elder.affirmative` is `#1B7136` at **5.26:1 on the paper**, still unmistakably
+green. `#1E7A3A` stood here until the ground became parchment.
 
 None of the three was ever measured, and the reason is worth more than the fix:
 **the audit had never opened those screens.** The result screen had no sweep case

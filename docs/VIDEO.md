@@ -70,7 +70,7 @@ kill -INT %1
 One scene per invocation: two in one recording puts the springboard, and the
 runner's own install, in the middle of the take.
 
-Between takes, three rules the dry run paid for:
+Between takes, four rules the dry run paid for:
 
 1. **`terminate` and an immediate `launch` race.** The launch fails silently
    and the screen keeps showing the previous state — five identical
