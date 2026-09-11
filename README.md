@@ -234,16 +234,40 @@ by decision ([PLAN.md §2](docs/PLAN.md)).
 ## The cloud question, unanswered in public
 
 Who hands a dead parent's voice to somebody's server? What is true today, rather
-than what is comfortable: the words of every memory are D1 columns, and the
-audio leaves the phone even with R2 disabled, because transcription happens in
-the Worker. A local-only mode already exists in the code (`Session.mode`), but
-onboarding does not yet offer it, and the only place the user is told the audio
-travels is the microphone prompt — which comes *after* the archive is created.
+than what is comfortable.
 
-So the barrier is the order, not the architecture. The three levers, priced, are
-the last item in [PLAN.md §10](docs/PLAN.md). End-to-end encryption is the only
-real answer and is incompatible with server-side transcription; it is named as a
-v1.1 direction rather than quietly omitted.
+**What the server cannot read.** Since 24 Aug 2026 the memory bodies, the raw
+transcripts, the subject titles, the question text and the bytes in R2 — the
+photographs and the voices — are sealed on the phone before they sync. The key
+never reaches the Worker; between people it crosses only inside the invite text.
+`scripts/lever3-roundtrip-check.swift` puts two identities through a real
+deployment and checks both halves: that what lands in D1 and R2 is sealed, and
+that the second phone opens it byte for byte.
+
+**What it can still read** is the more useful half, and
+[`ARCHITECTURE.md` §18](docs/ARCHITECTURE.md#18-places-on-a-map--the-three-columns-and-what-they-cannot-promise)
+lists it exhaustively rather than in outline: the family's own name and its
+members' display names, timestamps, the dates with their precision, audio
+lengths, relationships, the graph of which memory names which subject, and the
+coordinates of places. That last one is a decided leak and not an oversight —
+for a family's most-told places a coordinate is the name in different clothes —
+and the argument for keeping it in v1 is written down beside it.
+
+**The audio still leaves the phone**, even with R2 disabled, because
+transcription happens in the Worker. End-to-end in the strict sense — a server
+that never holds the plaintext at all — is incompatible with server-side
+transcription, and sealing at rest does not close that hole. A local-only mode
+already exists in the code (`Session.mode`), but onboarding does not yet offer
+it, and the only place the user is told the audio travels is the microphone
+prompt — which comes *after* the archive is created. That barrier is the order
+rather than the architecture; the three levers, priced, are the last item in
+[PLAN.md §10](docs/PLAN.md).
+
+**And there is a second credential: an Apple account.** `family_key` carries
+`kSecAttrSynchronizable`, so it reaches every device signed into the same Apple
+ID. The resilience and the way in are one mechanism, and
+[`ARCHITECTURE.md` §4](docs/ARCHITECTURE.md#4-identity-and-family) says so
+instead of presenting only the half that flatters.
 
 What the repo does guarantee: `OPENROUTER_API_KEY` exists only as a Worker
 secret, `provider: { data_collection: "deny" }` is unconditional and never a
