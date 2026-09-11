@@ -367,11 +367,29 @@ enum QuestionLadder {
         return stamp > 0 ? Date(timeIntervalSince1970: stamp) : nil
     }
 
+    /// The step back after a long absence — and it is only ever a step BACK.
+    ///
+    /// `max(1.5, value - 1)` was the whole of this until 11 Sep 2026, and the
+    /// floor it was reaching for turned into a promotion at the bottom of the
+    /// ladder: a beginner sitting at 1.0 came back from three weeks away at
+    /// **1.5**. That is dormancy's own reason inverted — "being asked
+    /// something hard on the way back is how a returning user stops
+    /// returning" — applied to the one person most likely not to return. And
+    /// it stuck: the next `record` reads `comfort`, so the raised value is
+    /// written back, and at 1.5 `rounded()` is 2, so her answers to the
+    /// naming questions the app actually offers her stop counting toward the
+    /// streak. She is asked harder questions and earns nothing for answering
+    /// them.
+    ///
+    /// `min` over the top of it. The floor still does what it was for —
+    /// somebody who was at 4 comes back at 3, not at the bottom — and nobody
+    /// is moved up the ladder by staying away from it.
+    /// `scripts/question-ladder-check.swift` holds both halves.
     private static func decayed(_ value: Double, lastAnswered: Date?) -> Double {
         guard let lastAnswered,
               Date.now.timeIntervalSince(lastAnswered) > dormancy
         else { return value }
-        return max(1.5, value - 1)
+        return min(value, max(1.5, value - 1))
     }
 
     private static func clamp(_ value: Double) -> Double {

@@ -90,6 +90,19 @@ full_copy() {
 		&& "$OUT/full-copy-check"
 }
 
+# Which question the app decides to put in front of an 80-year-old. A
+# staircase over three UserDefaults keys, and both ways of being wrong are
+# silent: the wall that makes an elderly teller give up, and the run of naming
+# questions somebody has long outgrown. Added 11 Sep 2026, and it found a
+# defect on its first run — three weeks away PROMOTED a beginner, which is
+# dormancy's own reason inverted on the person least likely to come back.
+question_ladder() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/question-ladder-check" scripts/question-ladder-check.swift \
+		ios/Kinlore/Services/QuestionLadder.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/question-ladder-check"
+}
+
 # Hermetic in a different way: it loads the shipping schema.sql into an
 # in-memory SQLite and asks the database itself. No Worker, no D1, no
 # RevenueCat — and the TypeScript guard it backs up cannot be run on this
@@ -149,6 +162,7 @@ echo "Invariants"
 # green. Takes about a third of a second.
 run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
+run "nobody is asked more than they can answer" question_ladder
 run "the family's bytes end up on every phone" full_copy
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "one purchase unlocks one family" entitlement_binding

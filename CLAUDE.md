@@ -456,6 +456,23 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/upsell-rhythm-check.swift ios/Kinlore/Services/UpsellRhythm.swift \
   && /tmp/upsell-rhythm-check
 
+# Which question the app puts in front of an 80-year-old. A transformed
+# up/down staircase over three UserDefaults keys, and both ways of being wrong
+# are silent: the reflective question offered too early, which is where an
+# elderly teller decides this app is not for them, and the naming question
+# still being asked to somebody who has told stories for a month. Neither
+# fails a build, neither shows in a screenshot, and the accessibility suite
+# reads what is on screen rather than why that question is the one on it.
+#
+# Written 11 Sep 2026 because 380 lines of this had no check while
+# UpsellRhythm's four did — and it found a defect on its first run. Run it
+# after touching QuestionLadder.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/question-ladder-check \
+  scripts/question-ladder-check.swift ios/Kinlore/Services/QuestionLadder.swift \
+  ios/Kinlore/Model/Models.swift \
+  && /tmp/question-ladder-check
+
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
 # Wi-Fi only, never the last gigabyte, three failures ending a round, the
