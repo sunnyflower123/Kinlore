@@ -62,7 +62,7 @@ An honest inventory, not a wish list:
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
 | Places, reachable rather than only stored | **Done and tested**, see §8 |
-| Coordinates for places — stored, nothing drawn yet | **Done**, see §18 |
+| Coordinates for places — drawn on the place's own card | **Done**, see §18 |
 | Correcting a misheard name afterwards | **Done and tested**, see §17 |
 | Soft deletion — a rejection that is final | **Done and tested**, see §3 |
 | A telling taken back — mid-recording, or after it is saved | **Done and tested**, see §19 |
@@ -190,11 +190,15 @@ and no `family_id` either — `schema.sql` declares exactly `memory_id`,
 the four tables the DTOs name and false of the fifth, which is reached through
 the memory it hangs off rather than pulled in its own right.
 
-What follows from it: **a mention cannot be un-said across sync.** The only
-mention write in the codebase is `INSERT OR IGNORE INTO mention` in `sync.ts`,
-so a merge that re-points a name on one phone leaves the old edge standing on
-every other phone for ever. There is no delete path for a mention in either
-language. Corrected 9 Sep 2026; the sentence above had said "every".
+What followed from it until 11 Sep 2026: **a mention could not be un-said
+across sync.** The only mention write was `INSERT OR IGNORE INTO mention` in
+`sync.ts`, so a merge that re-pointed a name on one phone left the old edge
+standing on every other phone for ever. Corrected 9 Sep 2026; the sentence
+above had said "every". **A mention is now stored as the set the client
+sent.** `sync.ts` deletes the edges a push omits before re-inserting the ones
+it names, scoped by an `EXISTS` to the pusher's own family, and the Swift half
+queues every memory whose `mentionedSubjectIDs` it remapped — so `rename` and
+`split` both travel. `memory-rules-check.mjs` asserts it.
 
 Soft deletion is mandatory: a hard delete never reaches the other device, which
 would go on showing the deleted row forever.
@@ -1134,8 +1138,11 @@ checked by `scripts/upsell-rhythm-check.swift` rather than by looking.
 is shared: while the family is one person it carries the invitation instead —
 *"yksi maksaja avaa sen koko perheelle"* was a false sentence with nobody to
 open it for, and the invitation itself lived four levels deep in Settings.
-`UpsellRhythm.card` decides which card, the rhythm above decides when the slot
-shows at all, and the check script covers both halves. The argument is
+`UpsellRhythm.card` decides which card and `UpsellRhythm.slotShows` decides
+whether the slot shows at all — but only the paid archive keeps the rhythm
+above. The invitation ignores it and waits on one thing instead, `case
+.invite: !proposalsRemaining`, so it shows on every finished telling that left
+no name unanswered. The check script covers both halves. The argument is
 docs/UX.md §3.2.
 
 **Two defects the check script could not see, found 23 Aug 2026.** Both lived
@@ -2198,7 +2205,7 @@ audit in one sentence.
 |---|---|---|
 | iOS blue `#007AFF` on white | **4.0:1** | `AccentColor` `#0B57D0` — **6.4:1** |
 | `.secondary` label | **≈4.2:1** | `Elder.supporting`, 75 % of primary — **≈6.6:1** |
-| iOS orange `#FF9500` on white | **2.2:1** | `Elder.proposal` `#C2410C` — **5.2:1** |
+| iOS orange `#FF9500` on white | **2.2:1** | `Elder.proposal` `#B23C0B` — **5.14:1 on the paper** |
 
 Each is one place rather than thirty. The accent colour is an asset catalog
 entry, so every tinted button and every tinted line of text moved at once; the
@@ -2206,8 +2213,12 @@ other two are constants in `Elder.swift` next to the tap target size, where the
 next person will find them.
 
 The orange one is worth naming. It marks *"the AI proposed this, nobody has
-confirmed it"* — the single label in the app whose entire job is to make someone
-stop and check — and it had the **lowest contrast of anything on screen**. The
+confirmed it"* — the single label in the app whose entire job is to make
+someone stop and check — and it had the **lowest contrast of anything on
+screen**. It has been fixed twice, which is the lesson: `#C2410C` answered the
+measurement above on white, and when the ground became parchment it measured
+4.43:1 against it and was under the minimum again. `#B23C0B` is 5.14:1 on the
+paper it actually sits on. A colour is a ratio against a ground, not a value. The
 shape of the icon has always carried the same meaning, which is why the screen
 was still usable; that redundancy is what a colour fix should never be allowed
 to replace.
@@ -2817,20 +2828,26 @@ accept `Mummola` and reject `Viipuri → Vyborg`, which is the one answer on the
 list that is most worth having.
 
 So a stored coordinate is **a proposal, not a fact** — rule 4, applied to a
-machine lookup instead of a machine-heard name. Today nothing in the app
-confirms one, because nothing displays one. **When a map is built, an
-unconfirmed place must not be drawn as a pin that reads like a record**, and the
-confirmation has to come from a human who knows which Karjala it was. Anything
-else buries a guess in the archive as fact, which is the failure mode this whole
-architecture is built to avoid.
+machine lookup instead of a machine-heard name. Nothing in the app confirms
+one, and since 10 Sep 2026 `PlaceMapCard` draws one anyway. **What decides the
+shape is precision, not confirmation**: `deservesAPin` is `precision ==
+.exact`, so an exact hit gets a `Marker` and anything vaguer a `MapCircle`
+sized to its span. A wrong `exact` — `Karjala` resolved to the village in
+Mynämäki — is therefore drawn as a pin that reads like a record, which is the
+one thing this paragraph asked the map not to do, written before there was a
+map to ask it of. Recorded as an open gap on 11 Sep 2026 rather than quietly
+dropped: the confirmation it wants has to come from a human who knows which
+Karjala it was, and anything else buries a guess in the archive as fact, which
+is the failure mode this whole architecture is built to avoid.
 
 ### When it runs
 
 At launch and on every return to the foreground, after sync — a place another
 device has already resolved arrives with the pull, and looking it up again would
 be work for an answer we now have. A place told *during* a session is therefore
-resolved on the next sweep rather than immediately, which costs nothing while
-nothing displays a coordinate. Telling must never wait on a lookup.
+resolved on the next sweep rather than immediately, so its card carries no map
+until the app is next opened or brought back to the foreground. Telling must
+never wait on a lookup.
 
 ### Sync
 
@@ -2871,8 +2888,9 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
   pair as one opaque blob, keep null as the only server-visible state — and it
   is recorded here so it is a decision to revisit rather than a discovery to
   make twice.
-- Nothing displays a coordinate yet (§18 above), so what accumulates before
-  v1.1 is bounded and re-sealable by the same sweep that resolved it.
+- Only `PlaceMapCard` reads a coordinate, and it reads the local archive
+  rather than D1, so what accumulates before v1.1 is bounded and re-sealable
+  by the same sweep that resolved it.
 
 `InviteShare`'s doc comment beside the invite text already says the smaller
 thing lever 3 promises about the key; this paragraph is where the whole of
@@ -3140,8 +3158,9 @@ act. What follows is the vocabulary as it stands, arrived at by reading every
 
 | The act | The word | Where |
 |---------|----------|-------|
-| Leave, having done the thing | **Valmis** | The result screen, the guessing card after the reveal |
-| Leave, without doing it | **Sulje** | A sheet's toolbar, the guessing card before the reveal |
+| Leave, having done the thing | **Valmis** | The result screen, the camera, the share sheet, the Tell screen opened from a photo |
+| Leave, without doing it | **Sulje** | A sheet's toolbar |
+| Move on, having answered | **Jatka** | The blind card, after the answer is shown |
 | I have read this notice | **Selvä** | The export alert, the skipped-photo note, the saved-audio screen in free dictation |
 | Back out of a dialog | **Peruuta** | Every confirmation |
 | Take a thing away | **Poista** | A memory, a person, a relationship, an invite |

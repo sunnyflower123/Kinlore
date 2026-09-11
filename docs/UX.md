@@ -396,10 +396,13 @@ re-litigate them:
   a section already carries the act.)
 - **A role picker or "elder mode".** Roles are derived (§2). A mode switch is
   a setting a family would have to discover, set, and get wrong.
-- **Family rename, member rename.** The family is *"Perhe"* by decision
-  (`OnboardingScreen.swift:399-410`); a member's name is set once at join.
-  A "change my name" row is P2 at most — attribution is the one argument for
-  it, and a typo made at join is its one honest use case.
+- **Family rename.** A family is named when it is created and no route
+  changes it afterwards — there is no `UPDATE family SET name` anywhere —
+  and *"Perhe"* is what `family.ts` falls back to when nobody typed one.
+  *Member rename was refused here and shipped on 6 Sep 2026 anyway*
+  (`Session.rename` → `PATCH /family/me`, the pencil on the Perhe screen):
+  the typo made at join, called its one honest use case here, turned out to
+  be the case attribution could not live with.
 - **Photo delete / full-screen viewer.** Real gaps, out of scope here; the
   quota already frees a slot on delete server-side, but the control belongs
   to a considered moderation/ownership design, not to this arc.

@@ -182,9 +182,13 @@ it, and a family archive dies unread more often than unrecorded.
 *was* the confirmation UI and a better one — a card with the name already on it
 gets tapped "yes" without being read, a blind guess cannot be. That argument was
 right, and it was the reason the standalone "confirm this proposal" screen was
-never built. So confirmation is now the orange proposal row and nothing else,
-which is the weaker instrument the old section rejected. Rule 4 in CLAUDE.md
-says so plainly rather than inheriting the old sentence.
+never built. So confirmation was the orange proposal row and nothing else —
+the weaker instrument the old section rejected — until 30 Aug 2026, when the
+blind card took the stronger half back in a cheaper shape: the photograph the
+name was heard in, four names, the proposal unmarked among them
+(`BlindConfirmation`, ARCHITECTURE §23). Rule 4 in CLAUDE.md carries both now,
+with the orange row as the weaker of the two and the answer to a name that
+arrived with no face to put in front of anybody.
 
 Why it went anyway: §5 fixed the order in advance so nobody has to choose while
 exhausted, and levers 2 and 3 of §10 are two additions that owed a removal. This
