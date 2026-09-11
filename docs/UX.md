@@ -403,9 +403,12 @@ re-litigate them:
   (`Session.rename` → `PATCH /family/me`, the pencil on the Perhe screen):
   the typo made at join, called its one honest use case here, turned out to
   be the case attribution could not live with.
-- **Photo delete / full-screen viewer.** Real gaps, out of scope here; the
-  quota already frees a slot on delete server-side, but the control belongs
-  to a considered moderation/ownership design, not to this arc.
+- **Full-screen photo viewer.** A real gap, still out of scope here.
+  *Photo delete was the other half of this bullet and shipped on 4 Sep 2026*
+  (52cf270), in the one shape that needs no moderation design to settle
+  first: the row appears only while `store.memories(for:)` is empty, so a
+  photograph anybody has told about cannot be taken away from them. The
+  quota frees its slot server-side either way.
 
 ## 9. Order, cost, and what each item pays
 

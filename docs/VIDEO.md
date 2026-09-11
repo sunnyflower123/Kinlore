@@ -123,12 +123,15 @@ The card on the result screen, then the share sheet.
   -seed alone -defer structure -screen interview -tellings-since-upsell 2
   ```
 
-  All four arguments are load-bearing, and the dry run proved it by filming
-  their absence: the offer slot only fills when the telling proposed **no
-  names** (`-defer structure`) and the rhythm counter is due
-  (`-tellings-since-upsell 2` — the threshold is 3, the launch makes it),
-  and only an alone family offers the invitation. A plain `-screen result`
-  shows proposals and **no card at all**.
+  Three of the four are load-bearing and the fourth is inert, which filming
+  their absence could not tell apart: the offer slot only fills when the
+  telling proposed **no names** (`-defer structure`), and only an alone
+  family offers the invitation (`-seed alone`). `-tellings-since-upsell 2`
+  sets a counter the invitation never reads — `slotShows` answers
+  `case .invite: !proposalsRemaining` and takes the rhythm only for the paid
+  archive card — so it changes nothing in this shot. Harmless to leave in
+  the line; just not proof of anything. A plain `-screen result` shows
+  proposals and **no card at all**.
 - **The share sheet is live-path only.** Creating an invite asks the Worker;
   in the stub state the tap answers honestly with *"Kutsua ei voitu luoda"* —
   the same shared button and nil-client path `SilentFailureTests` pins from

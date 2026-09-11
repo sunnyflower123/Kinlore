@@ -269,8 +269,10 @@ A second skill sits beside it in `~/.claude/skills/` and is deliberately **not**
 checked in: [ui-ux-pro-max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
 (MIT), 3.3 MB of design reference across 47 files. One file of it earns its keep
 here — `data/ux-guidelines.csv`, 119 rules, 30 of them about accessibility and
-motion — and it earns it against [docs/index.html](docs/index.html), the one
-surface in this project with no test of its own. The app is not the customer:
+motion — and it earns it against [docs/index.html](docs/index.html), which
+when this was written on 28 Aug 2026 was the one surface in this project with
+no check of its own. `scripts/page-check.mjs` arrived two days later and runs
+in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
 contrast rows, against the 56 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.

@@ -466,12 +466,17 @@ A first attempt at that second mutation deleted the `?` along with the test and
 broke the bind count, so every case failed at once — which measures nothing.
 When a mutation reddens everything, suspect the mutation.
 
-Adding it also showed that the suite had grown into its own rate limit. Creating
-a family is five a minute per address, and the seven checks that need one create
-eleven between them, so whichever ran last failed with `429` — a message that
-reads like a broken Worker and is not one. Each check now knocks from an address
-of its own via `CF-Connecting-IP`, which Cloudflare sets from the connection and
-ignores from the client, so it is local only. Seven scripts, twice through with
+Adding it also showed that the suite had grown into its own rate limit.
+Creating a family is five a minute per address, and the seven checks that need
+one create eleven between them, so whichever ran last failed with `429` — a
+message that reads like a broken Worker and is not one. Each check now knocks
+from an address of its own via `CF-Connecting-IP`, and it is **local only** —
+though not for the reason this sentence used to give. It said Cloudflare sets
+the header from the connection and ignores what the client sends. It does not:
+the edge refuses a request carrying a client-set `CF-Connecting-IP` outright,
+with `403 error code: 1000`, before the Worker is reached. Measured on the
+invite check, 29 Aug 2026; `memory-rules-check.mjs` carries the same
+correction beside the code that acts on it. Seven scripts, twice through with
 no pause: green both times.
 
 ### The second push of a subject, and what it cost
@@ -1291,10 +1296,11 @@ Built, in the order they were built:
    **The screen nothing could measure.** Every row on it is drawn from what the
    Worker sends, so a device without a backend reaches the offline note instead
    — which meant no test and no screenshot run had ever rendered the invite
-   rows, and a button on one of them was renamed (§21) without anything drawing
-   it once. `-seed family` (DEBUG) gives `Session` a canned family with no
-   network: three members, one used invite and one open one, a part-spent free
-   quota. Same hole as `-mic denied` and `-screen result`, same shape of answer.
+   rows, and a button on one of them was renamed (§21) without anything
+   drawing it once. `-seed family` (DEBUG) gives `Session` a canned family
+   with no network: three members, two open invitations — one made out to a
+   name, one not — and a part-spent free quota. Same hole as `-mic denied` and
+   `-screen result`, same shape of answer.
 
    The first audit that reached it found three defects, and the worst was the
    sentence that carries §4's whole security boundary: *"kuka tahansa linkin
@@ -1717,11 +1723,15 @@ Levels 1–2 have the property the whole design rests on: they can be answered
 with a three-second dictation or a typed word. That is a genuinely small
 experiment, and it needs no new UI — both paths already exist.
 
-**Starters** fill the blank-button gap. A subject with no memories offers two or
-three level-1 questions derived from its `kind`, with no LLM call, no network
-and no AI minutes. They are **not stored and not synced**: thirty imported
-photographs would otherwise put ninety rows into the family's open-question list
-and make the list worthless. A starter is a prompt, not a debt.
+**Starters** fill the blank-button gap. A subject with no memories offers
+**two** questions derived from its `kind` — `starterQuestions(for:)` takes the
+first two — with no LLM call, no network and no AI minutes. Their level is
+written out beside each text rather than read off it, so a reworded starter
+cannot quietly become harder than the one place in the app that promises an
+easy question: a photo and a person open at `.naming`, a place at `.fact`.
+They are **not stored and not synced**: thirty imported photographs would
+otherwise put sixty rows into the family's open-question list and make the
+list worthless. A starter is a prompt, not a debt.
 
 ### The algorithm: a staircase, not a model
 
@@ -2150,7 +2160,7 @@ that matters.
 carried the outbox — which rows this phone had not pushed — and the server's
 ordering cursor. Facts about one phone's sync on one afternoon, in the file a
 family opens in twenty years, which said `dirtyGuesses` at them. It has its own
-shape now: subjects, memories, questions, relations, guesses.
+shape now: subjects, memories, questions, relations.
 
 **Deliberately not built: deleting your own memories out of the family.** Rule 3
 keeps the original audio because the speaker may no longer be around to ask, and
@@ -2262,13 +2272,15 @@ those same categories, which is how the contrast problem survived this long.
   ajankohtaa"* heading 83 pt above the bar and the blind card's *"Sanni"*
   button 104 pt above it, both at the largest size, 10.4:1 and 15.2:1 on
   screen against a 4.5:1 minimum. The second had been failing at HEAD on a
-  quiet machine, on a screen nothing that day had touched. The meter's ink
-  is the 2nd percentile of a frame's pixels since the same day, from the
-  5th: a 60 × 60 pt tap target around a 15 pt word is about three per cent
-  ink, and the 5th percentile fell past it onto the fringe — the invite
-  row's *"Poista"* read 1.59:1 that way and 6.4:1 at the 2nd, on a colour
-  that is 6.4:1; on four word-sized frames in the same run the two
-  percentiles agreed to within a tenth. The numbers are in `ContrastMeter`.
+  quiet machine, on a screen nothing that day had touched. The meter's ink is
+  the **1st** percentile of a frame's pixels — the 5th until that day, the 2nd
+  until 10 Sep 2026: a 60 × 60 pt tap target around a 15 pt word is about
+  three per cent ink, and the 5th percentile fell past it onto the fringe —
+  the invite row's *"Poista"* read 1.59:1 that way and 6.4:1 at the 2nd, on a
+  colour that is 6.4:1. The 1st is the last percentile that still finds the
+  ink in a sparse target and still fails a frame with none, which is the
+  property that matters and the one the audit records. The numbers are in
+  `ContrastMeter`.
 - **Text seen through the floating tab bar.** Element detection reads the
   picture and asks for an element under each word; under the translucent bar
   the bar is what answers, and the finding arrives with no element at all.
@@ -3384,8 +3396,12 @@ rather than by a test. `.buttonStyle(.bordered)` paints its label from the tint
 four names arrived in the system blue — the colour rule 1 names outright, in the
 band where the audit has measured that accent at 3.52:1. And at the outer
 stack's 24 pt spacing the fifth row, the way past a face she cannot place, was
-drawn underneath the floating tab bar at the *ordinary* text size. 18 pt and a
-`.tint(.primary)`.
+drawn underneath the floating tab bar at the *ordinary* text size. 18 pt, and
+`.buttonStyle(.plain)` over a `Color.primary` capsule with `Elder.cream` on it
+— not a tint. A tinted style picks its label colour out of the tint *after*
+the label is built, which is the overwrite that turned the names blue in the
+first place, so the one thing that has to be certain here would have been the
+system's decision rather than ours.
 
 **The card is held in state, not recomputed.** It was a computed property first,
 and that was wrong in a way only the *correct* answer showed: confirming writes
