@@ -404,12 +404,29 @@ final class MemoryStore {
                 && $0.title.compare(trimmed, options: .caseInsensitive) == .orderedSame
         }) {
             // References move immediately, so the local view stays coherent...
-            for i in memories.indices where memories[i].subjectID == subjectID {
-                memories[i].subjectID = existing.id
-            }
+            //
+            // Both kinds of reference are counted as they are moved, the way
+            // `split` counts them. The outbox used to be filled from
+            // `subjectID == existing.id` instead, which is a different set:
+            // it caught every telling filed under the survivor, including
+            // ones this merge never touched, and it missed the telling that
+            // is filed somewhere else and only *mentions* the old card. That
+            // one was remapped on this phone and queued nowhere — and
+            // because it was not queued, the next pull's `applyRemote`
+            // overwrote it with the server's row and the mention went back
+            // to the tombstone. A correction that undoes itself one sync
+            // later, with nothing on any screen to say so (10 Sep 2026).
+            var touched: Set<String> = []
             for i in memories.indices {
-                memories[i].mentionedSubjectIDs = memories[i].mentionedSubjectIDs.map {
-                    $0 == subjectID ? existing.id : $0
+                if memories[i].subjectID == subjectID {
+                    memories[i].subjectID = existing.id
+                    touched.insert(memories[i].id)
+                }
+                if memories[i].mentionedSubjectIDs.contains(subjectID) {
+                    memories[i].mentionedSubjectIDs = memories[i].mentionedSubjectIDs.map {
+                        $0 == subjectID ? existing.id : $0
+                    }
+                    touched.insert(memories[i].id)
                 }
             }
             // ...but the row is NOT deleted. Another device that is offline may
@@ -418,9 +435,7 @@ final class MemoryStore {
             // forwarding address solves that and makes the merge reversible.
             // See docs/ARCHITECTURE.md §2.5.
             subjects[index].mergedInto = existing.id
-            dirtyMemories.formUnion(
-                memories.filter { $0.subjectID == existing.id }.map(\.id)
-            )
+            dirtyMemories.formUnion(touched)
             // The relationships move too. They did not, until 4 Sep 2026:
             // `relatives(of:)` reads this side of every edge by raw id, so a
             // confirmed spouse of the tombstoned card simply vanished from
@@ -668,17 +683,67 @@ final class MemoryStore {
     // the same private(set) fields as every other write. The transfer types are
     // in MemoryStore+Sync.swift: those are the contract with the server.
 
+    /// One request's worth of the outbox, and never more.
+    ///
+    /// The number is `MAX_ROWS` in `backend/src/sync.ts`, which slices every
+    /// table to it and writes no more than that. Offering more used to mean
+    /// `clearPending` acknowledged rows the server had never stored: the
+    /// payload was uncapped, 600 memories went up, 500 were written, and all
+    /// 600 came out of the outbox. The remaining 100 existed on one phone,
+    /// were never offered again, and the engine's state read `.idle` —
+    /// the silent shape this project keeps finding. Found and fixed
+    /// 10 Sep 2026.
+    ///
+    /// The rest is not lost, it is next: `SyncEngine` pushes until this comes
+    /// back empty, the way the pull loop already drains a capped reply.
+    ///
+    /// **Nothing checks this, and the reason is worth writing down rather
+    /// than leaving as a gap somebody rediscovers.** The Swift checks in
+    /// `scripts/` compile one service file against a harness; this file
+    /// imports UIKit, so it cannot be built for macOS that way, and XCUITest
+    /// drives the app rather than calling this. `memory-rules-check.mjs`
+    /// pins the server's half — that a push of more than `MAX_ROWS` really
+    /// does store only `MAX_ROWS` — so what is unchecked is narrowly this
+    /// number agreeing with that one. Change either and change both.
+    static let maxRowsPerPush = 500
+
     /// The rows to push. An empty payload means there is nothing to send.
     ///
     /// A memory the server would refuse is deliberately left out rather than
     /// sent and dropped: see `Memory.isPushable`. It stays in the outbox and
     /// goes on the next round, once its audio has a key.
     func pendingPayload() -> SyncPayload {
-        SyncPayload(
-            subjects: subjects.filter { dirtySubjects.contains($0.id) }.map(\.dto),
-            memories: memories.filter { dirtyMemories.contains($0.id) && $0.isPushable }.map(\.dto),
-            questions: questions.filter { dirtyQuestions.contains($0.id) }.map(\.dto),
-            relations: relations.filter { dirtyRelations.contains($0.id) }.map(\.dto)
+        let cap = Self.maxRowsPerPush
+        let pendingSubjects = subjects.filter { dirtySubjects.contains($0.id) }
+
+        // While the subjects alone do not fit, the request carries subjects
+        // and nothing else.
+        //
+        // A memory, a question and a relation all point at a subject by id,
+        // and `schema.sql` makes every one of those a foreign key. SQLite's
+        // `ON CONFLICT` clause does not cover a foreign key — `INSERT OR
+        // IGNORE` will not swallow one — so a single row pointing at a
+        // subject the server has not got aborts `env.DB.batch` and takes the
+        // whole push with it. The client then gets a 502, clears nothing,
+        // and builds the identical request next round: a sync wedged for
+        // good while the screen says only "waiting for the network".
+        //
+        // Splitting a push at the cap is exactly what could produce that
+        // pointer — a memory in this request naming a subject that fell into
+        // the next one. Draining the subjects first means the subject is
+        // either already on the server or in this very request, which is the
+        // condition the foreign key is asking about. It costs one extra
+        // round on the one archive big enough to need it.
+        guard pendingSubjects.count <= cap else {
+            return SyncPayload(subjects: pendingSubjects.prefix(cap).map(\.dto))
+        }
+
+        return SyncPayload(
+            subjects: pendingSubjects.map(\.dto),
+            memories: memories.filter { dirtyMemories.contains($0.id) && $0.isPushable }
+                .prefix(cap).map(\.dto),
+            questions: questions.filter { dirtyQuestions.contains($0.id) }.prefix(cap).map(\.dto),
+            relations: relations.filter { dirtyRelations.contains($0.id) }.prefix(cap).map(\.dto)
         )
     }
 

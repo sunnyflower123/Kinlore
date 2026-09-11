@@ -170,15 +170,35 @@ final class SyncEngine {
 
             // 1. Push our own work, sealed. PLAN.md §10 lever 3.
             //
+            // A loop, for the reason the pull below is one: the server caps
+            // every table of one request at `MemoryStore.maxRowsPerPush` and
+            // writes no more than that. `pendingPayload` hands out at most
+            // that much, so what is offered and what is stored are the same
+            // set — which is the whole invariant `clearPending` rests on. It
+            // did not hold until 10 Sep 2026: the payload was uncapped, the
+            // server sliced the overflow away without saying so, and the
+            // outbox was emptied of the rows that never arrived. An archive
+            // opened to a family for the first time (`markAllPending`) is
+            // exactly the case that overflows, and it is also the one case
+            // where every row in it is the only copy.
+            //
             // `clearPending` is given the payload as it was built rather than
             // as it was sent: it clears the outbox by row id, and the sealed
             // copy carries the same ids — but reading the plaintext one here
             // keeps it obvious that nothing downstream of the seal is expected
             // to be readable.
-            let payload = store.pendingPayload()
-            if !payload.isEmpty {
+            //
+            // The bound is the same kind of stop as the pull's: each round
+            // clears what it sent, so the loop ends on its own, and 40 rounds
+            // is twenty thousand rows of one table — far past any family
+            // archive, and a ceiling rather than a schedule.
+            var pushes = 0
+            while pushes < 40 {
+                let payload = store.pendingPayload()
+                if payload.isEmpty { break }
                 _ = try await client.push(sealing(payload))
                 store.clearPending(payload)
+                pushes += 1
                 // The cursor does not move here. The push reply's number is
                 // the family-global counter, and jumping to it would step
                 // past anything the others committed since this device last

@@ -389,12 +389,71 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 			),
 		)
 
-		for (const subjectID of memory.mentions ?? []) {
+		// The mentions are a SET, so they are stored as one: what the push
+		// does not name is removed. `INSERT OR IGNORE` alone made this half a
+		// sync — a name could be added to a telling and never taken off it —
+		// and the two corrections that exist to take one off both broke on it
+		// (10 Sep 2026):
+		//
+		//   - "ei tuo Matti" (`MemoryStore.split`) points the telling at a
+		//     fresh card. The server kept the old row, the pull handed back
+		//     both, and `applyRemote` overwrote the local list with the pair.
+		//     The telling then named the two people the correction exists to
+		//     tell apart, on every phone including the one that corrected it.
+		//   - A rename that merges two cards remaps the mention the same way
+		//     and used to leave the memory naming the tombstone and the
+		//     survivor at once.
+		//
+		// A missing `mentions` is left alone rather than read as "none": the
+		// field is optional in the payload, and a client that does not send
+		// it is not saying the telling names nobody.
+		//
+		// Only the author's own, like the row above it. `EXISTS` rather than
+		// a read, so it stays one batch — and it sees the insert earlier in
+		// this same batch, which is what makes a brand-new memory work. The
+		// cap is D1's hundred bound parameters: the pull batches its `IN` at
+		// 100 for the same reason, and no real telling names fifty people.
+		if (memory.mentions) {
+			const wanted = [
+				...new Set(memory.mentions.filter((id) => typeof id === 'string' && id)),
+			].slice(0, 50)
+			const mine = 'SELECT 1 FROM memory WHERE id = ? AND author_id = ? AND family_id = ?'
+			const keep = wanted.map(() => '?').join(',')
 			statements.push(
 				env.DB.prepare(
-					'INSERT OR IGNORE INTO mention (memory_id, subject_id) VALUES (?, ?)',
-				).bind(memory.id, subjectID),
+					`DELETE FROM mention WHERE memory_id = ?
+					 ${wanted.length > 0 ? `AND subject_id NOT IN (${keep})` : ''}
+					 AND EXISTS (${mine})`,
+				).bind(memory.id, ...wanted, memory.id, session.memberID, family),
 			)
+			// The subject has to be there, and it has to be OURS.
+			//
+			// `mention.subject_id` is a foreign key, and SQLite's `ON
+			// CONFLICT` clause does not cover one — `INSERT OR IGNORE` will
+			// not swallow a violation the way it swallows a duplicate. So a
+			// mention naming a subject the server has not got does not skip
+			// a row, it aborts `env.DB.batch` and takes the whole push with
+			// it: 502, nothing written, nothing cleared, and the identical
+			// request rebuilt next round. A sync wedged for good behind one
+			// stale id, with the screen saying only "waiting for the
+			// network". The client no longer produces such an id (subjects
+			// drain before the rows that point at them, `MemoryStore
+			// .pendingPayload`); this is the half that does not depend on
+			// the client being right.
+			//
+			// `family_id` in the same breath because it costs nothing here
+			// and closes a gap of its own: nothing else stopped a payload
+			// from hanging one family's memory on another family's subject.
+			const knownSubject =
+				'SELECT 1 FROM subject WHERE id = ? AND family_id = ?'
+			for (const subjectID of wanted) {
+				statements.push(
+					env.DB.prepare(
+						`INSERT OR IGNORE INTO mention (memory_id, subject_id)
+						 SELECT ?, ? WHERE EXISTS (${mine}) AND EXISTS (${knownSubject})`,
+					).bind(memory.id, subjectID, memory.id, session.memberID, family, subjectID, family),
+				)
+			}
 		}
 	}
 

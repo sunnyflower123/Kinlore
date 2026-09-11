@@ -296,6 +296,167 @@ try {
 		check('another member cannot move it back', m?.subject_id === elsewhere, JSON.stringify(m?.subject_id))
 	}
 
+	console.log('— the names in a telling are a set, not a pile —')
+	{
+		// `INSERT OR IGNORE INTO mention` only ever added, and the client
+		// treats `mentions` as a list it replaces. So a name could be put on a
+		// telling and never taken off it, and the two corrections that exist
+		// to take one off both quietly failed (found 10 Sep 2026):
+		//
+		//   - "ei tuo Matti" (`MemoryStore.split`) points the telling at a
+		//     fresh card. The server kept the old row, the pull handed back
+		//     both, and `applyRemote` overwrote the local list with the pair —
+		//     so the telling named the two people the correction exists to
+		//     tell apart, on every phone including the one that corrected it.
+		//   - A rename that merges two cards left the telling naming the
+		//     tombstone and the survivor at once.
+		//
+		// Both are silent in this repo's usual way: the app draws a name, and
+		// the name is wrong in the direction rule 4 cares about most.
+		const [aino, puumala, matti, toinenMatti] = [
+			randomUUID(), randomUUID(), randomUUID(), randomUUID(),
+		]
+		await push(mummo, {
+			subjects: [
+				{ id: aino, kind: 'person', title: 'Aino', created_at: now },
+				{ id: puumala, kind: 'place', title: 'Puumala', created_at: now },
+				{ id: matti, kind: 'person', title: 'Matti', created_at: now },
+				{ id: toinenMatti, kind: 'person', title: 'Matti', created_at: now },
+			],
+		})
+
+		const named = randomUUID()
+		const mentionsOf = async (id) => ((await memories(mummo)).get(id)?.mentions ?? []).sort()
+		await push(mummo, {
+			memories: [
+				{
+					id: named,
+					subject_id: subject,
+					body: 'Aino ja Matti olivat Puumalassa.',
+					mentions: [aino, matti, puumala],
+					created_at: now,
+				},
+			],
+		})
+		check(
+			'a telling arrives with everyone it named',
+			(await mentionsOf(named)).join() === [aino, matti, puumala].sort().join(),
+			JSON.stringify(await mentionsOf(named)),
+		)
+
+		// The correction itself: Matti becomes the other Matti, and the first
+		// one is no longer in the telling at all.
+		await push(mummo, {
+			memories: [
+				{
+					id: named,
+					subject_id: subject,
+					body: 'Aino ja Matti olivat Puumalassa.',
+					mentions: [aino, toinenMatti, puumala],
+					created_at: now,
+				},
+			],
+		})
+		const afterSplit = await mentionsOf(named)
+		check(
+			'"ei tuo Matti" puts the new card in',
+			afterSplit.includes(toinenMatti),
+			JSON.stringify(afterSplit),
+		)
+		check(
+			'and takes the old one out, which is the whole correction',
+			!afterSplit.includes(matti),
+			JSON.stringify(afterSplit),
+		)
+		check(
+			'while everybody the telling still names stays',
+			afterSplit.includes(aino) && afterSplit.includes(puumala),
+			JSON.stringify(afterSplit),
+		)
+
+		// A push that says nothing about the names is not a push that says
+		// there are none: the field is optional, and an older client does not
+		// send it.
+		await push(mummo, {
+			memories: [
+				{ id: named, subject_id: subject, body: 'Aino ja Matti olivat Puumalassa.', created_at: now },
+			],
+		})
+		check(
+			'a push with no mentions field leaves them alone',
+			(await mentionsOf(named)).length === 3,
+			JSON.stringify(await mentionsOf(named)),
+		)
+
+		// The removal is a write like any other, so it is the author's alone.
+		// Without this the DELETE would be a way for anybody in the family to
+		// strip the names off what somebody else told — silently, and worse
+		// than the bug it replaced.
+		const { body: invite } = await send('/family/invite', { method: 'POST', headers: mummo.auth })
+		const kolmas = person('Kolmas')
+		await send('/family/join', {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({
+				memberID: kolmas.memberID,
+				secret: kolmas.secret,
+				displayName: kolmas.name,
+				code: invite.code,
+			}),
+		})
+		await push(kolmas, {
+			memories: [
+				{ id: named, subject_id: subject, body: 'Aino ja Matti olivat Puumalassa.', mentions: [], created_at: now },
+			],
+		})
+		check(
+			'another member cannot strip the names off it',
+			(await mentionsOf(named)).length === 3,
+			JSON.stringify(await mentionsOf(named)),
+		)
+	}
+
+	console.log('— a push is capped, and the cap is a number two files share —')
+	{
+		// `MAX_ROWS` in sync.ts slices every table of a push and writes no
+		// more. `MemoryStore.maxRowsPerPush` on the Swift side offers no more
+		// than that for exactly this reason: until 10 Sep 2026 the client
+		// offered its whole outbox, the server sliced the overflow away
+		// without saying so, and `clearPending` emptied the outbox of the rows
+		// that were never stored. An archive opened to a family for the first
+		// time is the case that overflows, and every row in it is the only
+		// copy.
+		//
+		// The Swift half cannot be checked from here — MemoryStore.swift
+		// imports UIKit and does not compile into a harness. This pins the
+		// number it has to agree with, so a change on one side has something
+		// to fail against.
+		const MAX_ROWS = 500
+		const overflowing = Array.from({ length: MAX_ROWS + 5 }, () => randomUUID())
+		await push(mummo, {
+			subjects: overflowing.map((id) => ({
+				id, kind: 'person', title: 'Ylivuoto', created_at: now,
+			})),
+		})
+		// Paged, because the pull caps a reply at the same number: asking once
+		// would count the reply's cap rather than what was written, and the
+		// check would pass for the wrong reason.
+		const stored = new Set()
+		let since = 0
+		for (let page = 0; page < 10; page += 1) {
+			const { body } = await send(`/sync?since=${since}`, { headers: mummo.auth })
+			for (const s of body.subjects ?? []) stored.add(s.id)
+			since = body.seq
+			if (!body.more) break
+		}
+		const arrived = overflowing.filter((id) => stored.has(id)).length
+		check(
+			`a push of ${MAX_ROWS + 5} rows stores exactly ${MAX_ROWS} of them`,
+			arrived === MAX_ROWS,
+			`${arrived} arrived`,
+		)
+	}
+
 	console.log('— and what was taken away stays away —')
 	{
 		await push(mummo, {
