@@ -139,6 +139,15 @@ webcrypto_interop() {
 
 echo
 echo "Invariants"
+# First, because it is the only failure here that cannot be undone by the next
+# commit. The repository goes public on 28 Sep and publishes its history rather
+# than its head, so a key committed today and deleted tomorrow is published
+# anyway. Rule 7's instruction was "check .dev.vars before every push", which is
+# a reminder rather than a check; this is the check. It scans the tree, every
+# blob that has ever existed, and the two halves of the mechanism — and tests
+# its own matcher against a specimen of each shape, so it cannot go quietly
+# green. Takes about a third of a second.
+run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "the family's bytes end up on every phone" full_copy
 run "a wrong key opens nothing, a title seals stably" family_crypto
