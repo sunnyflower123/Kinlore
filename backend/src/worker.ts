@@ -392,7 +392,15 @@ export default {
 				} catch {
 					return json({ error: 'invalid_json' }, 400)
 				}
-				if (!payload.audio) return json({ error: 'missing_audio' }, 400)
+				// `typeof`, not truthiness. The field is typed `string` and
+				// arrives from `request.json()`, so a number gets through the
+				// old check with `.length` undefined — and `boundedSeconds`
+				// then divides by undefined and hands back the NaN that turns
+				// the hallucination ceiling off. Both halves of that hole are
+				// closed, here and in `budget.ts`.
+				if (typeof payload.audio !== 'string' || !payload.audio) {
+					return json({ error: 'missing_audio' }, 400)
+				}
 
 				// Base64 inflates the size by roughly a third.
 				if (payload.audio.length > MAX_AUDIO_BYTES * 1.37) {
@@ -408,13 +416,20 @@ export default {
 				// duration while budgeting another. See `boundedSeconds`.
 				const seconds = boundedSeconds(payload.seconds, payload.audio.length)
 
-				// The quota is checked BEFORE the expensive call. If the limit
-				// is reached, the app saves the audio anyway and transcribes it
-				// later — the recording is never discarded.
-				const denial = await checkAISeconds(env, session, seconds)
-				if (denial) return json(denial, 402)
-
 				try {
+					// The quota is checked BEFORE the expensive call. If the
+					// limit is reached, the app saves the audio anyway and
+					// transcribes it later — the recording is never discarded.
+					//
+					// Inside the wrapper, like `/media`'s `checkPhotoCount`
+					// and unlike its own previous self. Two D1 reads live in
+					// here, and outside the `try` a database hiccup escaped
+					// the handler entirely: the runtime answered a bare 500
+					// instead of rule 9's one shape, which is the shape the
+					// app, `RemoteError` and the rule are all written against.
+					const denial = await checkAISeconds(env, session, seconds)
+					if (denial) return json(denial, 402)
+
 					const text = await transcribe(
 						env,
 						payload.audio,
@@ -422,7 +437,29 @@ export default {
 						seconds,
 						spokenLanguage(payload.lang),
 					)
-					await recordAISeconds(env, session, seconds)
+
+					// The meter is written with the words already in hand, and
+					// it is not allowed to take them away.
+					//
+					// It used to be an ordinary `await` inside this try, so a
+					// D1 failure on the counter turned a transcription that
+					// had SUCCEEDED — and had already been paid for upstream —
+					// into a 502 with the text discarded. The app then counted
+					// that against the recording (`isAboutTheMoment` puts a
+					// 5xx on the recording's side), uploaded the same audio
+					// again, paid again, and after three rounds gave up on a
+					// transcript it had held twice.
+					//
+					// So the failure is recorded and swallowed. Under-counting
+					// a family's minutes is a cost this project can carry;
+					// losing what somebody just said is the one it cannot.
+					try {
+						await recordAISeconds(env, session, seconds)
+					} catch (err) {
+						const detail = err instanceof Error ? `${err.name}: ${err.message}` : typeof err
+						console.error(`[transcribe] the meter refused the seconds — ${detail}`)
+					}
+
 					return json({ text })
 				} catch (err) {
 					return failure(err, 'transcribe')

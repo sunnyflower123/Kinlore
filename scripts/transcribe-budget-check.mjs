@@ -67,5 +67,36 @@ check('and the budget that comes out of it is bounded too',
 
 check('an empty body claims nothing', boundedSeconds(undefined, 0), boundedSeconds(undefined, 0) === 0)
 
+// `seconds` is typed and not checked: it comes off `request.json()`, so it can
+// be a string, an object, or a NaN wearing the `number` annotation. Every one
+// of those used to propagate through the clamp and come back NaN — and NaN is
+// FALSY, which is the whole of the damage. `looksHallucinated` opens with
+// `if (!seconds …) return false`, so the guard against a model inventing a
+// memory nobody told switched itself off for anybody who sent `"90"` instead
+// of `90`. Nothing was logged and the transcription looked perfect.
+//
+// So the assertion is not "it returns something sensible" but the two things
+// the rest of the code reads off it: the value is a real number, and it is
+// above zero, because those are exactly the two tests that decide whether the
+// ceiling runs at all.
+for (const [label, rubbish] of [
+  ['a numeric string', '90'],
+  ['a word', 'abc'],
+  ['NaN itself', NaN],
+  ['Infinity', Infinity],
+  ['negative Infinity', -Infinity],
+  ['an object', {}],
+  ['an array', []],
+  ['a boolean', true],
+  ['null', null],
+]) {
+  const seconds = boundedSeconds(rubbish, NINETY_SECONDS_B64)
+  check(`${label} as a duration still leaves the ceiling on`,
+    seconds, Number.isFinite(seconds) && seconds > 0)
+}
+
+check('a claim that is not a number is charged the byte floor, like an omitted one',
+  boundedSeconds('90', NINETY_SECONDS_B64), boundedSeconds('90', NINETY_SECONDS_B64) === omitted)
+
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

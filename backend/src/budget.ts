@@ -56,11 +56,27 @@ const MIN_BYTES_PER_SECOND = 1_000
 /// the same way.
 const BASE64_INFLATION = 1.37
 
+/// `claimed` is TYPED and not checked, which is not the same thing. It comes
+/// out of `request.json()`, so a string, an object or a NaN all arrive here
+/// wearing `number | undefined`. Every one of them propagates through the
+/// `Math.max`/`Math.min` below and comes out NaN — and NaN is falsy, which is
+/// where the damage is: `looksHallucinated` opens with `if (!seconds …) return
+/// false`, so the guard against a model inventing a memory nobody told simply
+/// turns off, silently, for anyone who sends `{"seconds": "90"}`. Measured
+/// 10 Sep 2026: `boundedSeconds('abc', 100000)` returned NaN, the ceiling was
+/// skipped, the output budget fell back to its 4096 default, and
+/// `recordAISeconds` bound NaN into the meter because NaN is not `=== 0`.
+///
+/// Anything that is not a finite number is an absent claim, which the clamp
+/// below already knows what to do with: the bytes then set the floor. This is
+/// the file whose whole subject is that the caller can lie about `seconds`,
+/// and "not a number" was the one lie it did not cover.
 export function boundedSeconds(claimed: number | undefined, base64Length: number): number {
+	const asked = typeof claimed === 'number' && Number.isFinite(claimed) ? claimed : 0
 	const bytes = base64Length / BASE64_INFLATION
 	const atLeast = bytes / MAX_BYTES_PER_SECOND
 	const atMost = bytes / MIN_BYTES_PER_SECOND
-	return Math.min(Math.max(claimed ?? 0, atLeast), atMost)
+	return Math.min(Math.max(asked, atLeast), atMost)
 }
 
 /// How many tokens the transcript of `seconds` of speech can need, at most.
