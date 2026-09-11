@@ -127,15 +127,27 @@ function archive() {
 				.get(id),
 		customerOf: (id) => db.prepare('SELECT rc_app_user_id FROM member WHERE id = ?').get(id)
 			.rc_app_user_id,
+		expiryOf: (id) => db.prepare('SELECT entitlement_expires_at FROM member WHERE id = ?')
+			.get(id).entitlement_expires_at,
 		bind: (memberID, customerID) =>
 			db.prepare('UPDATE member SET rc_app_user_id = ? WHERE id = ?').run(customerID, memberID),
-		paidThrough: (payer, seconds) =>
+		// A member who already has a subscription running. Since 10 Sep 2026
+		// that fact lives on the member's own row and the family's columns
+		// are what `applyEntitlement` derives from it, so the fixture writes
+		// both — writing only the family row is the half-migrated state the
+		// ALTER in schema.sql carries a backfill for, and a state no code
+		// path can produce.
+		paidThrough: (payer, seconds) => {
+			db
+				.prepare('UPDATE member SET entitlement_expires_at = ? WHERE id = ?')
+				.run(seconds, payer)
 			db
 				.prepare(
 					`UPDATE family SET entitlement = 'archive', payer_id = ?, entitlement_expires_at = ?
 					 WHERE id = 'perhe'`,
 				)
-				.run(payer, seconds),
+				.run(payer, seconds)
+		},
 	}
 }
 
@@ -294,14 +306,24 @@ try {
 		// another member of the same family restored the purchase.
 		// `onRestoreCompleted` exists for this, and the unique index means the
 		// binding has to MOVE rather than be added.
-		const { env, family, bind, customerOf } = archive()
+		const { env, family, bind, customerOf, paidThrough, expiryOf } = archive()
 		bind('mummo', 'cust-1')
+		paidThrough('mummo', now() + 60 * 86_400)
 		revenueCat(entitled(inDays(30)))
 		const result = await syncEntitlement(env, session('lapsenlapsi'), 'cust-1')
 		check(
 			'a restore inside the family moves the binding',
 			customerOf('lapsenlapsi') === 'cust-1' && customerOf('mummo') === null,
 			`lapsenlapsi ${customerOf('lapsenlapsi')}, mummo ${customerOf('mummo')}`,
+		)
+		// And the date moves with it. Left behind, it is the same
+		// subscription counted twice in the family's MAX — and the copy
+		// nothing can revoke, because a webhook finds its payer by
+		// `rc_app_user_id` and this row no longer has one.
+		check(
+			'and the date it justified goes with it',
+			expiryOf('mummo') === null,
+			`mummo ${expiryOf('mummo')}`,
 		)
 		check(
 			'and the archive stays open through it',

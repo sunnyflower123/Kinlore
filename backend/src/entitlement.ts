@@ -19,45 +19,68 @@ const now = () => Math.floor(Date.now() / 1000)
 /// Sets the family's entitlement. The only place that writes
 /// `family.entitlement`.
 ///
-/// **A downgrade never deletes anything.** When the subscription ends the family
-/// returns to the free tier: existing photos and audio remain and stay readable,
-/// the limits apply only to new content. A family that loses memories when the
-/// payment ends never comes back, and that is not a product worth building.
+/// Two payers: the longest expiry wins. The family must not lose the right
+/// because one member cancels theirs earlier.
+///
+/// **That sentence stood here while the code could not keep it**, and the
+/// reason was that only the winner was stored. A second payer's date was
+/// compared against `family.entitlement_expires_at`, found nearer, and
+/// dropped on the floor — so it was not a rival any more, it was gone. When
+/// the recorded payer's own EXPIRATION then arrived, `payer_id` matched, the
+/// keep-the-longer branch did not apply, and the family went free with
+/// somebody else's subscription still running and still being charged for.
+/// One grandchild on an annual plan and one on a monthly plan is enough:
+/// every monthly renewal was discarded for eleven months, and the twelfth
+/// event locked the family out. It came back only when the second payer next
+/// happened to open the app (found 10 Sep 2026).
+///
+/// So each payer's date now lives on their own member row and the family's is
+/// derived: the furthest date anybody in the family holds. `family.payer_id`
+/// and `family.entitlement_expires_at` stay as the answer everything else
+/// reads (`quota.isPaid`, `getFamily`), and this is the only writer of them.
+///
+/// **A downgrade never deletes anything.** When the subscription ends the
+/// family returns to the free tier: existing photos and audio remain and stay
+/// readable, the limits apply only to new content. A family that loses
+/// memories when the payment ends never comes back, and that is not a product
+/// worth building.
 export async function applyEntitlement(
 	env: Env,
 	familyID: string,
 	payerID: string | null,
 	expiresAt: number | null,
 ): Promise<{ entitlement: string; expiresAt: number | null }> {
-	const current = await env.DB.prepare(
-		'SELECT payer_id, entitlement_expires_at FROM family WHERE id = ?',
+	// What this event says about the member it is about, and nothing else. A
+	// revocation writes NULL, which drops them out of the MAX below rather
+	// than ending anybody else's.
+	if (payerID) {
+		await env.DB.prepare(
+			'UPDATE member SET entitlement_expires_at = ? WHERE id = ? AND family_id = ?',
+		)
+			.bind(expiresAt, payerID, familyID)
+			.run()
+	}
+
+	// The family's right, read rather than remembered.
+	const furthest = await env.DB.prepare(
+		`SELECT id, entitlement_expires_at FROM member
+		 WHERE family_id = ? AND entitlement_expires_at IS NOT NULL
+		 ORDER BY entitlement_expires_at DESC LIMIT 1`,
 	)
 		.bind(familyID)
-		.first<{ payer_id: string | null; entitlement_expires_at: number | null }>()
+		.first<{ id: string; entitlement_expires_at: number }>()
 
-	// Two payers: the longest expiry wins. The family must not lose the right
-	// because one member cancels theirs earlier.
-	const existing = current?.entitlement_expires_at ?? null
-	const keepExisting =
-		existing !== null &&
-		existing > now() &&
-		(expiresAt === null || existing > expiresAt) &&
-		current?.payer_id !== payerID
-
-	const winner = keepExisting
-		? { payer: current?.payer_id ?? null, expires: existing }
-		: { payer: payerID, expires: expiresAt }
-
-	const active = winner.expires !== null && winner.expires > now()
+	const expires = furthest?.entitlement_expires_at ?? null
+	const active = expires !== null && expires > now()
 	const entitlement = active ? 'archive' : 'free'
 
 	await env.DB.prepare(
 		`UPDATE family SET entitlement = ?, payer_id = ?, entitlement_expires_at = ? WHERE id = ?`,
 	)
-		.bind(entitlement, active ? winner.payer : null, winner.expires, familyID)
+		.bind(entitlement, active ? (furthest?.id ?? null) : null, expires, familyID)
 		.run()
 
-	return { entitlement, expiresAt: winner.expires }
+	return { entitlement, expiresAt: expires }
 }
 
 // ---------------------------------------------------------------- verification
@@ -150,8 +173,18 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 	// or somebody else restored the purchase — the case `onRestoreCompleted`
 	// exists for. The binding moves rather than being refused, because the
 	// family is the same and the index allows only one holder.
+	//
+	// The date goes with the binding, and that is not tidiness. Since
+	// `applyEntitlement` sums the family's right as a MAX over the members'
+	// own dates, a date left behind on the old holder is the SAME
+	// subscription counted a second time — and the second copy answers to no
+	// webhook, because the webhook finds a payer by `rc_app_user_id` and
+	// this row no longer has one. A refund would then revoke the live half
+	// and leave the family paid until the ghost's date passed.
 	if (bound && bound.id !== session.memberID) {
-		await env.DB.prepare('UPDATE member SET rc_app_user_id = NULL WHERE id = ?')
+		await env.DB.prepare(
+			'UPDATE member SET rc_app_user_id = NULL, entitlement_expires_at = NULL WHERE id = ?',
+		)
 			.bind(bound.id)
 			.run()
 	}

@@ -84,15 +84,29 @@ function paidFamily() {
 		`INSERT INTO family (id, name, created_at, entitlement, payer_id, entitlement_expires_at)
 		 VALUES ('perhe', 'Perhe', 0, 'archive', 'maksaja', ?)`,
 	).run(paidThrough)
+	// The payer's own date on the payer's own row, which is where
+	// `applyEntitlement` reads it from since 10 Sep 2026. The family row
+	// beside it is the answer it derives, not the source — seeding only the
+	// family row is precisely the half-migrated state the ALTER in
+	// schema.sql carries a backfill for.
 	db.prepare(
-		`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at, rc_app_user_id)
-		 VALUES ('maksaja', 'perhe', 'Ville', 'x', 'owner', 0, 'cust-1')`,
-	).run()
+		`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at,
+		                     rc_app_user_id, entitlement_expires_at)
+		 VALUES ('maksaja', 'perhe', 'Ville', 'x', 'owner', 0, 'cust-1', ?)`,
+	).run(paidThrough)
 	const family = () =>
 		db
-			.prepare('SELECT entitlement, entitlement_expires_at FROM family WHERE id = ?')
+			.prepare('SELECT entitlement, entitlement_expires_at, payer_id FROM family WHERE id = ?')
 			.get('perhe')
-	return { env: { DB: d1(db) }, family }
+	const join = (id, customer, expires) =>
+		db
+			.prepare(
+				`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at,
+				                     rc_app_user_id, entitlement_expires_at)
+				 VALUES (?, 'perhe', 'Toinen', 'x', 'member', 0, ?, ?)`,
+			)
+			.run(id, customer, expires)
+	return { env: { DB: d1(db) }, family, join }
 }
 
 const event = (type, extra = {}) => ({ type, app_user_id: 'cust-1', ...extra })
@@ -151,6 +165,62 @@ try {
 		await handleWebhook(env, event('TRANSFER'))
 		check('and a transfer away', family().entitlement === 'free',
 			JSON.stringify(family()))
+	}
+
+	console.log('— and a second payer is not forgotten —')
+	{
+		// One grandchild on an annual plan, one on a monthly. The comment on
+		// `applyEntitlement` has always said the longest expiry wins and the
+		// family must not lose the right when one member cancels earlier —
+		// and until 10 Sep 2026 only the winner was stored, so the monthly
+		// renewals were compared, found nearer, and dropped. Eleven of them.
+		// Then the annual one expired, `payer_id` matched, and the family
+		// went free with a live subscription still being charged for.
+		//
+		// The sequence below is that year in four events.
+		const annual = now + 300 * 86_400
+		const monthly = now + 30 * 86_400
+		const { env, family, join } = paidFamily()
+		// The annual payer is 'maksaja'; give them their real date.
+		await handleWebhook(env, event('RENEWAL', { expiration_at_ms: annual * 1000 }))
+		join('kuukausittain', 'cust-2', null)
+
+		// The monthly payer renews. The family's date must not move nearer.
+		await handleWebhook(env, {
+			type: 'RENEWAL',
+			app_user_id: 'cust-2',
+			expiration_at_ms: monthly * 1000,
+		})
+		check(
+			'a nearer renewal does not shorten the family’s right',
+			family().entitlement_expires_at === annual,
+			JSON.stringify(family()),
+		)
+
+		// ...but it must not be thrown away either, which is the whole bug.
+		await handleWebhook(env, event('EXPIRATION'))
+		const after = family()
+		check(
+			'and when the further subscription ends, the nearer one holds the family',
+			after.entitlement === 'archive' && after.entitlement_expires_at === monthly,
+			JSON.stringify(after),
+		)
+		check(
+			'with the paying member named as the payer',
+			after.payer_id === 'kuukausittain',
+			JSON.stringify(after),
+		)
+
+		// The last one out does turn the light off.
+		await handleWebhook(env, {
+			type: 'EXPIRATION',
+			app_user_id: 'cust-2',
+		})
+		check(
+			'and when the last one ends, the family really does go free',
+			family().entitlement === 'free' && family().payer_id === null,
+			JSON.stringify(family()),
+		)
 	}
 
 	console.log('— and the door itself —')

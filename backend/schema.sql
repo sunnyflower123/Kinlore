@@ -36,6 +36,29 @@ CREATE TABLE member (
   secret_hash   TEXT NOT NULL,
   -- Only on the payer. RevenueCat's webhooks land on this.
   rc_app_user_id TEXT,
+  -- When THIS member's own subscription runs out, or NULL if they have none.
+  --
+  -- `family.entitlement_expires_at` beside it is the answer, and this is the
+  -- working. Until 10 Sep 2026 only the answer was stored, so a second payer's
+  -- date was compared, found nearer, and thrown away — and when the recorded
+  -- payer's own date then arrived, the family went free with somebody's live
+  -- subscription still running. A grandchild on an annual plan and one on a
+  -- monthly plan is not an exotic case; it is the case `applyEntitlement`'s
+  -- own comment says it is handling.
+  --
+  -- The family's right is the furthest date anybody in it holds, so it is a
+  -- MAX over this column and no longer a comparison against a single stored
+  -- winner. For an existing database, the ALTER and the backfill that keeps a
+  -- paying family paying across the change — without the second statement the
+  -- next event recomputes a family whose members all read NULL and takes the
+  -- tier away:
+  --
+  --   ALTER TABLE member ADD COLUMN entitlement_expires_at INTEGER;
+  --   UPDATE member SET entitlement_expires_at = (
+  --     SELECT f.entitlement_expires_at FROM family f WHERE f.id = member.family_id
+  --   ) WHERE id IN (SELECT payer_id FROM family WHERE payer_id IS NOT NULL);
+  --
+  entitlement_expires_at INTEGER,
   role          TEXT NOT NULL DEFAULT 'member',  -- 'owner' | 'member'
   -- The member's own person card in the tree. A member is a subject just as
   -- much as a dead relative is.
