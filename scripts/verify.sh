@@ -191,39 +191,58 @@ run "a browser can open what the phone sealed" webcrypto_interop
 # This checks nothing about the prose. It counts the two claims that can be
 # counted, and it fails if the sentence they live in was reworded away, because
 # a check that has quietly stopped checking is the thing this file exists for.
-# Both documents state the counts, in different words, and README.md was already
-# a version behind ARCHITECTURE.md when this was written. So both are checked:
-# one file carrying the truth is exactly how the other one gets to keep lying.
+# All three documents state the counts, in different words, and README.md was
+# already a version behind ARCHITECTURE.md when this was written. So all three
+# are checked: one file carrying the truth is exactly how another gets to keep
+# lying.
+#
+# CLAUDE.md joined the list on 11 Sep 2026, and it is the argument against a
+# flag that is global rather than per-file. It said "32 accessibility audits" —
+# exactly right at 9aa6c07 on 28 Aug 2026, when `try sweep(` counted 32 — and
+# was 24 behind by the time anybody counted, because this function read the
+# other two files and never opened the one every session reads first. So each
+# document must now state a count of its own: a sentence reworded away in one
+# of them can no longer hide behind another still carrying it.
 doc_counts() {
-	local bad=0 seen_tests=0 seen_sweeps=0
+	local bad=0 seen_tests=0 seen_sweeps=0 seen_here
 	local tests sweeps doc said
 
 	tests=$(grep -rhE '^[[:space:]]+func test' ios/KinloreUITests/*.swift | wc -l | tr -d ' ')
 	sweeps=$(grep -cE 'try sweep\(' ios/KinloreUITests/AccessibilitySweepTests.swift)
 
-	for doc in docs/ARCHITECTURE.md README.md; do
+	for doc in docs/ARCHITECTURE.md README.md CLAUDE.md; do
+		seen_here=0
+
 		said=$(grep -oE '[0-9]+ UI tests' "$doc" | head -1 | grep -oE '^[0-9]+')
 		if [ -n "$said" ]; then
 			seen_tests=1
+			seen_here=1
 			[ "$said" = "$tests" ] || {
 				echo "$doc says $said UI tests. Counted in ios/KinloreUITests: $tests"
 				bad=1
 			}
 		fi
 
-		said=$(grep -oE '[0-9]+ (of them an accessibility sweep|sweep tests)' "$doc" \
+		said=$(grep -oE '[0-9]+ (of them an accessibility sweep|sweep tests|accessibility (sweeps|audits))' "$doc" \
 			| head -1 | grep -oE '^[0-9]+')
 		if [ -n "$said" ]; then
 			seen_sweeps=1
+			seen_here=1
 			[ "$said" = "$sweeps" ] || {
 				echo "$doc says $said sweep tests. Counted sweep() calls: $sweeps"
 				bad=1
 			}
 		fi
+
+		[ "$seen_here" = 1 ] || {
+			echo "$doc states neither count any more"
+			bad=1
+		}
 	done
 
-	# Silence is the failure this is really guarding against: if both sentences
-	# were reworded away, everything above passes while checking nothing.
+	# Silence is the failure this is really guarding against. The per-document
+	# guard above catches one file going quiet; these two catch every file
+	# going quiet at once, which would otherwise pass while checking nothing.
 	[ "$seen_tests" = 1 ] || { echo "no document states a UI test count any more"; bad=1; }
 	[ "$seen_sweeps" = 1 ] || { echo "no document states a sweep count any more"; bad=1; }
 

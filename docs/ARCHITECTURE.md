@@ -1163,21 +1163,36 @@ it. The client's counter is not trusted — it can be edited.
 **Half of that last sentence is true, and the half that is not is the meter
 itself.** Corrected 9 Sep 2026. What the server does not trust is the client's
 *tier*: `isPaid` reads `family.entitlement` from D1 and no request can claim it.
-What it does trust is the client's *number*. `recordAISeconds` is handed
-`payload.seconds ?? 0` — the duration the app read off its own file — and
-`checkAISeconds` compares the stored total against the limit, so both the meter
-and the hallucination guard in `budget.ts` are driven by a field the caller
-supplies and may simply omit. An omitted `seconds` rounds to zero, and
-`recordAISeconds` returns before it writes anything.
+What it trusted until 10 Sep 2026 was the client's *number*. `recordAISeconds`
+was handed `payload.seconds ?? 0` — the duration the app read off its own file —
+so both the meter and the hallucination guard in `budget.ts` ran on a field the
+caller supplies and may simply omit. An omitted `seconds` rounded to zero and
+`recordAISeconds` returned before writing anything, so a client that stopped
+sending the field transcribed without ever spending a second of the family's
+month.
 
-So a client that stops sending the field transcribes without ever spending a
-second of the family's month. Nothing at runtime notices;
-`transcribe-budget-check.mjs` exercises the arithmetic and not the absent-field
-path. The Worker already has the byte length in hand at the size gate, which is
-what a bound would be derived from. Recorded rather than fixed: the honest
-version costs one clamp, and it belongs beside a decision about what the meter
-is for — the invite link is currently the only thing between this and an open
-transcription endpoint billed to `OPENROUTER_API_KEY`.
+**The bytes are the one thing the caller cannot lie about, because the Worker
+counted them.** `boundedSeconds` in `budget.ts` clamps the claim between what
+that many bytes can hold at 40 kB/s and what they can hold at 1 kB/s — both
+deliberately generous, since the app's own files sit at 4.5 kB/s — and
+`worker.ts` hands that one number to all three things that trusted the raw
+field: the meter, the hallucination ceiling and the token budget. There is no
+longer a way to charge one duration while budgeting another.
+
+Hardened the next day, because the field is typed and not checked: a string,
+an object or a NaN all arrive wearing `number | undefined`, and every one of
+them used to propagate through the clamp and come back NaN — NaN is falsy, so
+`looksHallucinated` opened with `if (!seconds …) return false` and the guard
+against an invented memory turned off silently for anyone sending `{"seconds":
+"90"}`. Anything that is not a finite number is now an absent claim, which the
+clamp already knows how to price.
+
+**It is a bound and not a measurement**, and that difference is the honest part:
+knowing the real duration means decoding the audio, which this Worker will not
+do. An omitted `seconds` on ninety seconds of speech is charged about ten
+seconds rather than nothing, so what is left is a discount and not a free pass.
+`transcribe-budget-check.mjs` covers the omitted, zero, string and NaN paths
+beside the arithmetic.
 
 Two devices calling at the same time can overshoot the limit slightly. That is
 acceptable: the alternative is locking, which would cost more than a few extra

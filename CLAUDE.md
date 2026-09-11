@@ -272,7 +272,8 @@ here — `data/ux-guidelines.csv`, 119 rules, 30 of them about accessibility and
 motion — and it earns it against [docs/index.html](docs/index.html), the one
 surface in this project with no test of its own. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 32 accessibility audits that already run here.
+contrast rows, against the 56 accessibility sweeps that already run here, each
+auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false
 alarm**: ten headings and no `<h1>` at all, so a screen reader navigating by
