@@ -554,6 +554,29 @@ final class AccessibilitySweepTests: XCTestCase {
     /// the same screen with no proposals on it at all.
     /// The result screen with a familiar name on it: the `related` fixture
     /// knows Toivo, and the canned telling names him.
+    /// **If this one is red, read this before touching it.** It went red
+    /// inside a full class on 9–10 Sep 2026 and passed 5/5 on its own, and
+    /// the cause is neither the wait nor the scroll — both were tried and
+    /// measured, and both failed:
+    ///
+    ///   * `reach` at the default size too: still red, inside `reach`.
+    ///   * A wait on every `reach` attempt, 18 s in all: still red.
+    ///
+    /// Screenshotted at the failure instead: **the app was on Muistot**,
+    /// under "Uutta perheeltä", and the result screen had never opened.
+    /// `-screen result` is read by `TellScreen` and by nothing else, so it
+    /// only happens on a launch that lands on Kerro — and this fixture gives
+    /// the app reasons not to. `-seed related` leaves tellings this phone has
+    /// not seen, which opens Muistot on purpose (docs/UX.md §6), and the
+    /// arrival flag does the same. Both live in `UserDefaults`, which
+    /// survives between launches of one install, so what the class did before
+    /// this test decides which screen it gets.
+    ///
+    /// **`-tab tell` is not the fix, and was measured before being rejected.**
+    /// It makes this test deterministic and turns `testTell` red instead —
+    /// twice in a row, where it had been green in four class runs. The state
+    /// the class leaves behind is the defect; pinning one test's tab only
+    /// moves which test inherits it.
     func testResultWithKnownNames() throws {
         try sweep(
             "Tulos, tutut nimet",
