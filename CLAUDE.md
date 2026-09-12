@@ -323,6 +323,15 @@ still went in carrying four of somebody else's — `docs/ARCHITECTURE.md`,
 ignores the index, so a concurrent `git add` cannot leak into it. Anything
 already staged stays staged and stays theirs.
 
+**A file git has never seen is the one gap in that.** The pathspec is matched
+against tracked paths, so a brand-new file fails the whole commit with
+`pathspec … did not match any file(s) known to git` — and on 12 Sep 2026 that
+left the work uncommitted while the `git push` on the next line shipped
+somebody else's commit instead. Register it first and then commit by path as
+usual: `git add -N <newfile>` records the path without staging content, which
+is exactly enough for the pathspec to find it and still take the working-tree
+version.
+
 **Two more things that bite in the same place.** `git commit --amend` with no
 pathspec picks the index up again — use `--only -- <paths>`. And
 `.git/COMMIT_EDITMSG` belongs to whoever committed last, which may not be you:
