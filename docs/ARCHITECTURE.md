@@ -1135,12 +1135,42 @@ behaviour — accelerated renewals, at most five, then cancellation — read fro
 their documentation on 1 Sep and observed here on the 12th. VIDEO.md's fifth
 scene depends on that clock: buy on filming night, not before.
 
-**What has not been configured, and is not code.** No paywall is drawn in
-RevenueCat's dashboard, so `PaywallView` falls back to their own placeholder —
-pink, in English, with their cat and the words *"No Paywall configured"*. The
-products are there (two, monthly and yearly) and the purchase completes
-through it, so nothing is blocked; but VIDEO.md's fifth scene would film that
-screen as it stands, and rule 1 says colours come from `Elder.swift`.
+**The paywall's own design, drawn the same day.** Until it was, `PaywallView`
+fell back to RevenueCat's placeholder — pink, in English, with their cat and
+the words *"No Paywall configured"* — which is what VIDEO.md's fifth scene
+would have filmed.
+
+The cause was not a wrong setting. **There was no paywall in the project at
+all**, and the useful check is RevenueCat's own answer rather than the
+dashboard's view: `/v1/subscribers/x/offerings` lists a `paywall_components`
+key on the offering when one is attached, and omitted it. It still answers
+that question in one line and needs no app and no simulator.
+
+What it says is the app's vocabulary and not new words, because §21's rule is
+that a new word is a new thing to an 80-year-old: *"Open the whole archive"* as
+both the title and the button, the same words the button behind it already
+uses; *"No limits, and one payer opens it for the whole family"*; and
+**rule 2 said out loud on the money screen** — *"Telling is always free. It is
+never limited."* The palette is `Elder.swift`'s: `#F6EEDF` ground, `#FFFAF0`
+cards, `#1C1917` text, `#0B57D0` for the one blue button. RevenueCat's red
+appears nowhere, and neither does a testimonial — there are no users to quote.
+
+**Measured from the app's pixels rather than the editor's preview**, because
+the editor cannot show either thing: text 15.17:1, white on the blue 6.39:1,
+the discount label's blue on cream 6.14:1, package rows 96 pt and the button
+84 pt against `Elder.minTapTarget`'s 60.
+
+At the very largest accessibility size the package rows sit below the fold and
+the screen scrolls to them. That was raised here as a defect and withdrawn:
+the app's **own** Kerro screen does the same with its record button at that
+size, with its shortened sentence and its 150 pt button cap already in effect,
+and `IdleView`'s comment records that as a considered trade-off rather than an
+oversight. The paywall is consistent with the app; there is nothing to fix that
+would not also be a change to the app.
+
+**One thing that cannot be fixed from here:** the prices read *9,99 US$* and
+*79,99 US$*. Test Store has no currencies, real ones need App Store products,
+and §2.1 closed that route on 24 Aug. It will be visible on the video.
 
 **One thing measured on the way, recorded because it is invisible.**
 `quota.ts` reads `SELECT entitlement FROM family` and nothing in
