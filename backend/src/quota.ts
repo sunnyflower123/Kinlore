@@ -12,6 +12,7 @@
 
 import type { Session } from './auth'
 import type { Env } from './worker'
+import { reconcileStaleEntitlement } from './entitlement.ts'
 
 export type QuotaDenial = {
 	error: 'quota_exceeded'
@@ -27,11 +28,34 @@ function period(): string {
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 }
 
+/// Whether the family has the paid archive.
+///
+/// One word decides it, and for most of this project's life only that word was
+/// read. The date beside it was written and never compared, which is safe
+/// exactly as long as the webhook always arrives — and when it does not, the
+/// word says `archive` for ever over a date months in the past (ARCHITECTURE
+/// §6). So the date is read here too, as a **tripwire and not as the answer**:
+/// a stored state that cannot be true is the one case where the word is not
+/// evidence, and the fix is to ask RevenueCat rather than to guess in either
+/// direction.
+///
+/// `reconcileStaleEntitlement` answers null when it could not ask, and null
+/// means *keep what you had*. That is deliberate and it is the whole safety
+/// property: an unreachable RevenueCat must not end a month somebody paid for.
 async function isPaid(env: Env, familyID: string): Promise<boolean> {
-	const row = await env.DB.prepare('SELECT entitlement FROM family WHERE id = ?')
+	const row = await env.DB.prepare(
+		'SELECT entitlement, entitlement_expires_at FROM family WHERE id = ?',
+	)
 		.bind(familyID)
-		.first<{ entitlement: string }>()
-	return row?.entitlement === 'archive'
+		.first<{ entitlement: string; entitlement_expires_at: number | null }>()
+
+	if (row?.entitlement !== 'archive') return false
+
+	// Null is perpetual, not absent — there is nothing stale about it.
+	const expires = row.entitlement_expires_at
+	if (expires === null || expires > Math.floor(Date.now() / 1000)) return true
+
+	return (await reconcileStaleEntitlement(env, familyID)) ?? true
 }
 
 // ---------------------------------------------------------------- AI minutes

@@ -646,6 +646,17 @@ node scripts/webhook-revocation-check.mjs
 # somebody's account. After touching entitlement.ts.
 node scripts/entitlement-sync-check.mjs
 
+# And the state neither of those can produce. `quota.isPaid` gated the paid
+# archive on one word, and only an event could change it — the device stops
+# reporting once `hasActivePurchase` goes false, which is exactly when the news
+# matters — so a webhook that never arrived left a family paid for ever over a
+# date months in the past. The tier is now re-asked when the stored one cannot
+# be true, and the failure mode is the point: missing keys, no bound customer
+# or an unreachable RevenueCat all answer "keep what you had", which is paid.
+# Ending a month somebody paid for is the mistake this file already made once.
+# After touching entitlement.ts or quota.ts.
+node scripts/entitlement-reconcile-check.mjs
+
 # The transcription's output budget. `complete()` sends no cap unless told
 # one, and the route's default is low: a long telling came back cut off, was
 # rejected whole, and after three attempts the catch-up gave up on it. The

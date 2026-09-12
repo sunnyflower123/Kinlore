@@ -131,6 +131,20 @@ async function fetchActiveEntitlements(env: Env, customerID: string): Promise<Ac
 	return data.items ?? []
 }
 
+/// The furthest date a set of active entitlements reaches, in seconds.
+///
+/// Extracted when reconciliation became a second caller. It is four lines and
+/// two of them are conversions that must not diverge: `expires_at` arrives in
+/// milliseconds, and **null means perpetual rather than absent** — read the
+/// other way round it turns a lifetime purchase into no purchase at all.
+function furthestExpiry(items: ActiveEntitlement[]): number | null {
+	return items.reduce<number | null>((max, item) => {
+		if (item.expires_at === null) return Number.MAX_SAFE_INTEGER
+		const seconds = Math.floor(item.expires_at / 1000)
+		return max === null ? seconds : Math.max(max, seconds)
+	}, null)
+}
+
 /// A purchase reported by the app is verified and spread to the family.
 export async function syncEntitlement(env: Env, session: Session, customerID: string) {
 	if (!env.RC_SECRET_KEY || !env.RC_PROJECT_ID) {
@@ -162,12 +176,7 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 	// Any active entitlement unlocks the archive. The app has a single paid
 	// tier, so it is not worth binding to the shape of the identifier —
 	// RevenueCat v2 returns an internal id rather than the lookup key.
-	const furthest = items.reduce<number | null>((max, item) => {
-		// expires_at is in milliseconds, and null means a perpetual entitlement.
-		if (item.expires_at === null) return Number.MAX_SAFE_INTEGER
-		const seconds = Math.floor(item.expires_at / 1000)
-		return max === null ? seconds : Math.max(max, seconds)
-	}, null)
+	const furthest = furthestExpiry(items)
 
 	// The same family, a different member: the buyer reinstalled, changed phone,
 	// or somebody else restored the purchase — the case `onRestoreCompleted`
@@ -197,6 +206,70 @@ export async function syncEntitlement(env: Env, session: Session, customerID: st
 
 	const result = await applyEntitlement(env, session.familyID, session.memberID, furthest)
 	return { ...result, verified: true }
+}
+
+/// The family's tier, re-derived from RevenueCat when the stored one cannot be
+/// believed.
+///
+/// `quota.isPaid` gates the paid tier on one word, and only an event can change
+/// that word: `syncEntitlementIfPurchased` on the device guards on
+/// `hasActivePurchase`, which goes false the moment the subscription lapses, so
+/// the app stops reporting exactly when the news matters. **The webhook is
+/// therefore the only path that can ever take the tier away**, and until
+/// 12 Sep 2026 a webhook that never arrived left a family paid for ever with a
+/// date months in the past. Nothing read that date; §6 records the measurement.
+///
+/// **It fires only in a state that should not exist**: the word says `archive`
+/// and the date has already passed. A working webhook never produces that, so
+/// in ordinary operation this costs one more column on a query `isPaid` was
+/// making anyway and no request at all.
+///
+/// **And it never downgrades on a failure.** Missing keys, a payer with no
+/// bound customer, an unreachable RevenueCat — each returns null, the stored
+/// answer stands, and the stored answer is *paid*. Locking a family out of a
+/// month somebody paid for is the mistake this file already made once, with the
+/// CANCELLATION set that `webhook-revocation-check.mjs` now pins; a
+/// reconciliation that can repeat it is worse than none. Only RevenueCat saying
+/// so is allowed to end a tier.
+///
+/// Every member holding a customer id is asked, not only `family.payer_id`:
+/// `applyEntitlement` takes the MAX across the family, so a second payer who
+/// renewed while the webhook was missing must be counted too. In practice that
+/// is one request.
+///
+/// - Returns: the fresh answer, or **null when it could not be asked** — which
+///   the caller must read as "keep what you had" and not as "not paid".
+export async function reconcileStaleEntitlement(
+	env: Env,
+	familyID: string,
+): Promise<boolean | null> {
+	if (!env.RC_SECRET_KEY || !env.RC_PROJECT_ID) return null
+
+	const holders = await env.DB.prepare(
+		'SELECT id, rc_app_user_id FROM member WHERE family_id = ? AND rc_app_user_id IS NOT NULL',
+	)
+		.bind(familyID)
+		.all<{ id: string; rc_app_user_id: string }>()
+
+	const rows = holders.results ?? []
+	if (rows.length === 0) return null
+
+	let applied: { entitlement: string } | null = null
+	for (const holder of rows) {
+		let items: ActiveEntitlement[]
+		try {
+			items = await fetchActiveEntitlements(env, holder.rc_app_user_id)
+		} catch {
+			// The shape and nothing else: this path's own rule is that a
+			// subscriber's identifiers stay out of the log (rule 9).
+			console.log('[entitlement] reconcile deferred, upstream unreachable')
+			return applied ? applied.entitlement === 'archive' : null
+		}
+		applied = await applyEntitlement(env, familyID, holder.id, furthestExpiry(items))
+	}
+
+	console.log(`[entitlement] reconciled a stale family \u2192 ${applied?.entitlement}`)
+	return applied ? applied.entitlement === 'archive' : null
 }
 
 // ---------------------------------------------------------------- webhook

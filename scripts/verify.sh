@@ -178,6 +178,12 @@ run "a cancelled payer keeps the paid month" node scripts/webhook-revocation-che
 # were each caught before this line was added, including one that made the run
 # print its own green closing sentence and then a stack trace.
 run "the purchase is verified rather than believed" node scripts/entitlement-sync-check.mjs
+# And the state neither of those two can produce: the word says paid and the
+# date has passed, which only a missed webhook makes. Both halves are silent
+# when wrong — a reconciliation that never fires looks like one with nothing to
+# do, and one that downgrades on a timeout looks like a subscription that
+# ended. Seven deliberate breakages, seven caught, before this line was added.
+run "a stale tier is re-asked, not guessed" node scripts/entitlement-reconcile-check.mjs
 # Rule 8, without making the request. `complete()` is imported straight out of
 # openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
 # something that keeps the body. Nothing leaves the machine and nothing is

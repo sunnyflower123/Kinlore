@@ -1179,10 +1179,40 @@ date is written and never compared. So the paid tier is gated by a word that
 only an event can change — and the app cannot supply that event either:
 `syncEntitlementIfPurchased` guards on `hasActivePurchase`, which is false once
 the subscription lapses, so the device stops reporting exactly when the news
-matters. **The webhook is the only path that can ever take the tier away.** It
-works, as of today; the point is that if it stops, nothing notices, and the
-family stays paid with a date months in the past. Whether that is worth a
-periodic reconciliation is a §6 decision and is not taken here.
+matters. **The webhook was the only path that could ever take the tier away.**
+It works, as of today; the point was that if it stopped, nothing noticed, and
+the family stayed paid with a date months in the past.
+
+**Answered the same day, and not by either of the two obvious answers.** Making
+the date authoritative would have been the opposite mistake: a webhook running
+an hour late would end a month somebody paid for, which is what the assumed
+CANCELLATION set already did once. Leaving the word authoritative is what the
+paragraph above describes. So the tier is neither trusted nor distrusted — it
+is **re-asked**, and only in the state that says it must be wrong.
+
+`quota.isPaid` now reads the date beside the word as a **tripwire rather than
+an answer**. A date in the future, or null for a perpetual entitlement, is the
+end of it: no request, and one more column on a query it was making anyway. A
+date that has passed under the word `archive` cannot be true, and
+`reconcileStaleEntitlement` asks RevenueCat instead of guessing.
+
+**Its failure mode is the whole safety property.** Missing keys, a payer with
+no bound customer, an unreachable RevenueCat — each answers null, null means
+*keep what you had*, and what you had is paid. Only RevenueCat saying nothing
+is active ends a tier. And every member holding a customer id is asked rather
+than `family.payer_id` alone, because `applyEntitlement` takes the MAX across
+the family and a second payer who renewed while the webhook was missing has to
+count.
+
+`scripts/entitlement-reconcile-check.mjs` pins all of it over the shipping
+schema with `fetch` replaced — twenty-two checks, and **seven deliberate
+breakages, seven caught**: reading only the word, reconciling unconditionally,
+reading a perpetual date as stale, downgrading on a failure, asking only one
+holder, putting the ids in the log, and reconciling a family that was never
+paid. Two of those seven were built wrong the first time — one never applied at
+all and reported a green run, the other broke the query's parameters instead of
+narrowing it — which is worth recording because a mutation that does not mutate
+proves exactly nothing and looks identical to one that does.
 
 ### One purchase, one family
 
