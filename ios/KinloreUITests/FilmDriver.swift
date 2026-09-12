@@ -85,7 +85,16 @@ final class FilmDriver: XCTestCase {
         let app = try roll(["-seed", "film-untold", "-sample", "film", "-tab", "tell"])
         beat(2.2) // the picture and its question are read before anybody presses anything
         try tap(app.buttons, ["Aloita kertominen", "Start telling"])
-        beat(8.5) // she talks, and the line fills with her voice
+        // The first press on a fresh simulator raises iOS's microphone prompt
+        // and nothing else, and the stop button then "never arrives" 25 s
+        // later, which reads like a broken screen. Measured 12 Sep 2026 on a
+        // watcher that forgot the grant. Say what it is instead.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        if springboard.alerts.firstMatch.waitForExistence(timeout: 1.5) {
+            XCTFail("the microphone prompt is up — grant it before rolling: xcrun simctl privacy <sim> grant microphone com.kinlore.app (docs/VIDEO.md)")
+            return
+        }
+        beat(7.0) // she talks, and the line fills with her voice: 8.5 s with the check above
         try tap(app.buttons, ["Lopeta kertominen", "Stop telling"])
         // The stub waits on purpose: ~1.4 s transcribing, 2.2 s extracting.
         _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 40)
