@@ -52,8 +52,9 @@ xcrun simctl io "$SIM" recordVideo --codec h264 scene.mov
 cannot press anything, and the submission has to show the app *working*. The
 simulator panel that would do the pressing needs `sudo xcode-select` and there
 is no sudo on this machine, so `ios/KinloreUITests/FilmDriver.swift` does it:
-five scenes that tap through the loop, the invitation, a person, the return and
-a place, walking slowly enough to be read. It runs only on a simulator whose
+eight scenes that tap through the loop, the invitation, a person, the return,
+a place — and, for the v16 cut, the blind card, the paywall and a proposal row
+alone — walking slowly enough to be read. It runs only on a simulator whose
 name contains "film", so an ordinary test run pays nothing for it, and it
 passes neither `-testLanguage fi` nor `-testRegion FI` — filming is the one
 case that wants the device's own English.
@@ -219,6 +220,40 @@ header field has a matching trap — `isAuthorizedWebhook` compares the whole
 header against `RC_WEBHOOK_SECRET` by length and then byte for byte, so a
 field typed as `Bearer <secret>` against a secret of `<secret>` is refused
 silently.
+
+## The v16 takes
+
+The v16 cut (the video project's `SCRIPT-v16.md`, shot list in `SHOOT-v16.md`)
+films five things for real and draws the rest, and three of the five need a
+state no seed above provides. `-seed film` is `-seed blind` with the film's
+people and the film's words: a proposal heard in the telling about the one
+photograph, three confirmed people who were not — exactly three, because the
+blind card takes its decoys from them in store order — Toivo confirmed and
+named, Puumala at `.town`. `-seed film-untold` is the same archive a minute
+earlier, the photograph not yet spoken about, for filming the telling into.
+The photograph comes from `Documents/film-photo.jpg` in the app's container
+when the shooting day has put one there:
+
+```bash
+cp <the film's photograph> \
+  "$(xcrun simctl get_app_container "$SIM" com.kinlore.app data)/Documents/film-photo.jpg"
+```
+
+- **The blind card** — `testFilmTheBlindCard`, `-seed film -tab tell`. Taps
+  the name the app did not propose; the take ends on the app's own sentence,
+  *"Thank you. This stays open for now."*, and nothing green.
+- **The paywall** — `testFilmThePaywall`, scene 5's arguments. The key
+  cannot travel through the runner, so it goes into the app's defaults once:
+  `xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>`.
+  The purchase button is RevenueCat's and is matched by the usual words;
+  the first keyed run is the check.
+- **The proposal row alone** — `testFilmTheRowAlone`, `-seed film -tab
+  people`. A separate launch from the paywall on purpose: the offer needs a
+  result with no proposals, so the two never share a screen.
+
+The names in the seed and the driver — the proposal, and the answer — are
+placeholders until the film's own voice clip has been run through the real
+pipeline and the name it misheard is known (SHOOT-v16.md §1).
 
 ## Before filming night, in one list
 

@@ -164,6 +164,80 @@ final class FilmDriver: XCTestCase {
         beat(4.5)
     }
 
+    // MARK: - The v16 takes (SHOOT-v16.md in the video project)
+
+    /// The names the film seed deals: the one the app proposed, which the
+    /// driver must never tap — that would be the app confirming its own guess
+    /// by proxy — and the one a person who knows the photograph says. Both
+    /// mirror `-seed film` in MemoryStore, and both are placeholders until the
+    /// measurement SHOOT-v16.md §1 describes.
+    private static let filmProposal = "Elli"
+    private static let filmAnswer = "Helmi"
+
+    /// 6 · The blind card: the photograph a name was heard in, four names with
+    /// the app's guess unmarked among them, and an answer the app had not
+    /// proposed. What the take has to show is what the app then says — its
+    /// one sentence, and nothing green: it did not know either.
+    func testFilmTheBlindCard() throws {
+        let app = try roll(["-seed", "film", "-tab", "tell"])
+        _ = try find(app.staticTexts, ["Who is this?", "Kuka tässä on?"], timeout: 30)
+        beat(6.5) // the picture, the question and the four names, read before anything is chosen
+        try tap(app.buttons, [Self.filmAnswer])
+        _ = try find(
+            app.staticTexts,
+            ["Thank you. This stays open for now.", "Kiitos. Tämä jää toistaiseksi avoimeksi."],
+            timeout: 20
+        )
+        beat(7.0) // the sentence is the last image of the scene
+    }
+
+    /// 7 · The paywall: the offer on a result that proposed no names, the real
+    /// RevenueCat paywall with its price, the Test Store purchase, and the
+    /// app's thank-you. The card grows its button only with a key, and the
+    /// runner cannot pass one (VIDEO.md §5), so put the public Test Store key
+    /// in the app's own defaults before rolling:
+    ///
+    ///     xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>
+    ///
+    /// Without it the card has no button and this fails on the first `find`,
+    /// which is the right outcome for a take that would have shown nothing.
+    ///
+    /// The purchase button belongs to RevenueCat's template, so its label is
+    /// whatever the dashboard says that day; the list below is the usual
+    /// words, matched by prefix. Not verified against a live paywall when
+    /// written (12 Sep 2026): the first run on a keyed simulator is the check.
+    func testFilmThePaywall() throws {
+        let app = try roll([
+            "-seed", "family",
+            "-defer", "structure",
+            "-screen", "interview",
+            "-tellings-since-upsell", "2",
+        ])
+        _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 60)
+        beat(2.4)
+        let open = try reveal(app, app.buttons, ["Open the whole archive", "Avaa koko arkisto"])
+        open.tap()
+        beat(2.6) // the paywall, and its price, read before anything is bought
+        try tap(app.buttons, ["Subscribe", "Continue", "Purchase", "Buy", "Start", "Tilaa", "Osta", "Jatka"], timeout: 30)
+        _ = try find(
+            app.staticTexts,
+            ["Thank you — the payment went through", "Kiitos — maksu meni läpi"],
+            timeout: 40
+        )
+        beat(3.0)
+    }
+
+    /// 8 · The proposal row, alone: a name still waiting for a person, and no
+    /// offer anywhere near it. This is the rule `UpsellRhythm` keeps — never
+    /// against a name — filmed as the absence it is. A separate launch from
+    /// scene 7 on purpose: the offer needs a result with no proposals, so the
+    /// two cannot share a screen, which is the point.
+    func testFilmTheRowAlone() throws {
+        let app = try roll(["-seed", "film", "-tab", "people"])
+        _ = try reveal(app, app.buttons, [Self.filmProposal])
+        beat(8.0)
+    }
+
     // MARK: - The hand
 
     private struct NeverArrived: Error, CustomStringConvertible {

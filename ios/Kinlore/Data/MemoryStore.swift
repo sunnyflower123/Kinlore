@@ -1072,6 +1072,21 @@ final class MemoryStore {
         return MediaStore.save(imageData: data)
     }
 
+    /// The film's own photograph for `-seed film`, if the shooting day put one
+    /// in the app's Documents folder as `film-photo.jpg` (the video project's
+    /// SHOOT-v16.md says how); the plain generated one otherwise, so the seed
+    /// never fails to build a card for want of a picture. Saved through
+    /// `MediaStore` like any photograph, so nothing downstream is a special
+    /// case.
+    private static func filmPhotoFile() -> String? {
+        if let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+           let data = try? Data(contentsOf: documents.appendingPathComponent("film-photo.jpg")),
+           let saved = MediaStore.save(imageData: data) {
+            return saved
+        }
+        return demoPhotoFile()
+    }
+
     func seedDemoArchiveIfRequested() {
         // `-seed empty` is the other half: the empty states are a screen each,
         // and on a device that has ever been used they are unreachable.
@@ -1095,7 +1110,7 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
-        guard ["archive", "unseen", "deck", "blind", "related", "dated"].contains(seed) else { return }
+        guard ["archive", "unseen", "deck", "blind", "related", "dated", "film", "film-untold"].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -1139,7 +1154,7 @@ final class MemoryStore {
             id: "demo-photo",
             kind: .photo,
             title: "",
-            imageFilename: seed == "blind" ? Self.demoPhotoFile() : nil
+            imageFilename: seed == "blind" ? Self.demoPhotoFile() : seed?.hasPrefix("film") == true ? Self.filmPhotoFile() : nil
         )
         // A place with nothing said about it yet, which is the ordinary state of
         // a place: it is named inside somebody's memory and gets a card of its
@@ -1241,6 +1256,75 @@ final class MemoryStore {
             Memory(id: "demo-memory-sanni", subjectID: sanni.id, authorID: "demo-mummo",
                    authorName: "Mummo", body: "Sanni hoiti kauppaa.", source: .typed),
         ]
+        // `-seed film` and `-seed film-untold`: the archive the demo video's
+        // takes are shot from (docs/VIDEO.md, the v16 takes). The blind card
+        // needs exactly what `-seed blind` gives it — a proposal heard in a
+        // telling about a photograph that has a picture — but with the film's
+        // people and the film's words, so that the four names on the card are
+        // the four the narration says, and the transcript on screen is the one
+        // her voice reads. `film-untold` is the same archive a minute earlier:
+        // the photograph nobody has spoken about yet, which is what the Kerro
+        // tab's card is drawn from, so the telling can be filmed into it.
+        //
+        // The names are placeholders until the measurement SHOOT-v16.md §1
+        // describes: the proposal is whatever the real pipeline heard for the
+        // sister's name when the film's own voice clip was run through it, and
+        // it is never invented here. Exactly three confirmed people are not
+        // named in the telling, because `BlindConfirmation` takes its decoys
+        // from them in store order and a fourth would push the film's names
+        // off the card; Toivo is named in it, and is therefore never a decoy.
+        //
+        // English, unlike the rest of this fixture, because the film is shot in
+        // English and the words on a filmed screen have to be the words on its
+        // soundtrack. The picture comes from `filmPhotoFile()`.
+        if seed == "film" || seed == "film-untold" {
+            let told = seed == "film"
+            let proposal = Subject(id: "demo-film-proposal", kind: .person, title: "Elli", confirmed: false)
+            let helmi = Subject(id: "demo-film-helmi", kind: .person, title: "Helmi")
+            let filmAino = Subject(id: "demo-film-aino", kind: .person, title: "Aino")
+            let liisa = Subject(id: "demo-film-liisa", kind: .person, title: "Liisa")
+            let filmToivo = Subject(id: "demo-film-toivo", kind: .person, title: "Toivo")
+            var filmPhoto = photo
+            // The thirties, as a decade: rule 5 on the one photograph the film
+            // is about. Only once it has been told about — before that the
+            // picture is as undated as it was in the album.
+            if told {
+                filmPhoto.dateHint = DateHint(
+                    start: Calendar.current.date(from: DateComponents(year: 1930, month: 1, day: 1)),
+                    end: nil,
+                    precision: .decade
+                )
+            }
+            subjects = [helmi, filmAino, liisa, filmToivo, filmPhoto, puumala] + (told ? [proposal] : [])
+            let telling = "That's Puumala, at the jetty. Elli and Toivo. It was the thirties, I was small then."
+            memories = [
+                // The decoys need memories of their own, or they are bare names
+                // and the round answers itself.
+                Memory(id: "demo-film-memory-helmi", subjectID: helmi.id, authorID: "demo-mummo",
+                       authorName: "Grandma", body: "Helmi was her sister.", source: .typed),
+                Memory(id: "demo-film-memory-aino", subjectID: filmAino.id, authorID: "demo-mummo",
+                       authorName: "Grandma", body: "Aino lived next door.", source: .typed),
+                Memory(id: "demo-film-memory-liisa", subjectID: liisa.id, authorID: "demo-mummo",
+                       authorName: "Grandma", body: "Liisa kept the shop.", source: .typed),
+            ] + (told ? [
+                Memory(
+                    id: "demo-film-telling",
+                    subjectID: filmPhoto.id,
+                    authorID: "demo-mummo",
+                    authorName: "Grandma",
+                    body: telling,
+                    rawTranscript: telling,
+                    source: .voice,
+                    mentionedSubjectIDs: [proposal.id, filmToivo.id, puumala.id]
+                ),
+            ] : [])
+            // Which cards were pushed aside outlives a launch by design (see
+            // the deck seed below); the untold photograph has to be offered
+            // again on every take.
+            if !told {
+                UserDefaults.standard.removeObject(forKey: Deck.skippedKey)
+            }
+        }
         // `-seed deck`: the archive plus one photograph nobody has spoken
         // about, which is what the Kerro tab's card is drawn from. The plain
         // archive deliberately has none — every photograph in it carries a
