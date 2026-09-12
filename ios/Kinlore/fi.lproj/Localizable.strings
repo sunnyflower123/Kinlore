@@ -454,3 +454,45 @@
 /* A place's map — see en.lproj. */
 "Tarkka sijainti kartalla" = "Tarkka sijainti kartalla";
 "Suunnilleen tällä seudulla kartalla" = "Suunnilleen tällä seudulla kartalla";
+
+/* --- The failure paths, 12 Sep 2026 — see en.lproj. */
+" Sovellus avautuu ensimmäiselle näytölle." = " Sovellus avautuu ensimmäiselle näytölle.";
+"Arkiston vienti ei onnistunut" = "Arkiston vienti ei onnistunut";
+"Aseta seuraava kuva näkyviin." = "Aseta seuraava kuva näkyviin.";
+"Aseta vanha valokuva näkyviin ja paina." = "Aseta vanha valokuva näkyviin ja paina.";
+"Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa." = "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.";
+"Kamera ei ole käytössä" = "Kamera ei ole käytössä";
+"Kertomasi muistot ovat vain tässä laitteessa." = "Kertomasi muistot ovat vain tässä laitteessa.";
+"Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.";
+"Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista." = "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista.";
+"Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla." = "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla.";
+"Liitä vielä saamasi kutsukoodi." = "Liitä vielä saamasi kutsukoodi.";
+"Lisää ajankohta" = "Lisää ajankohta";
+"Lähetetään perheelle…" = "Lähetetään perheelle…";
+"Milloin nämä olivat?" = "Milloin nämä olivat?";
+"Milloin tämä oli?" = "Milloin tämä oli?";
+"Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne." = "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne.";
+"Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne." = "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne.";
+"Nauhoitus ei käynnistynyt." = "Nauhoitus ei käynnistynyt.";
+"Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen." = "Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen.";
+"Perheestä ei voitu poistua" = "Perheestä ei voitu poistua";
+"Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään." = "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään.";
+"Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla." = "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla.";
+"Puheesta ei saatu sanoja." = "Puheesta ei saatu sanoja.";
+"Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen. Voit tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla." = "Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen. Voit tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla.";
+"Tällä laitteella on jo oma arkisto" = "Tällä laitteella on jo oma arkisto";
+"Tämä laite kuuluu jo perheeseen" = "Tämä laite kuuluu jo perheeseen";
+"Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa." = "Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa.";
+"Tässä laitteessa ei ole kameraa" = "Tässä laitteessa ei ole kameraa";
+"Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista." = "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista.";
+"Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen." = "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen.";
+"Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen." = "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen.";
+"Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä." = "Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.";
+"Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa." = "Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa.";
+"Yritä uudelleen, kun verkkoyhteys toimii." = "Yritä uudelleen, kun verkkoyhteys toimii.";
+"Yritä uudelleen, kun verkkoyhteys toimii. Laitetta ei tyhjennetty." = "Yritä uudelleen, kun verkkoyhteys toimii. Laitetta ei tyhjennetty.";
+"Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa." = "Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa.";
+"Vastaus koskee kaikkia %lld kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta." = "Vastaus koskee kaikkia %lld kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta.";
+"%lld kuvaa jäi tuomatta. Voit yrittää niitä uudelleen." = "%lld kuvaa jäi tuomatta. Voit yrittää niitä uudelleen.";
+"%lld muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä." = "%lld muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.";
+"%lld muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa." = "%lld muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa.";

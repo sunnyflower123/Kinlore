@@ -320,8 +320,8 @@ struct GalleryScreen: View {
                 Button("Selvä") { isReportingSkipped = false }
             } message: {
                 Text(skipped == 1
-                    ? "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen."
-                    : "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen.")
+                    ? String(localized: "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen.")
+                    : String(localized: "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen."))
             }
             .elderSurface()
         }
@@ -705,19 +705,19 @@ private struct SyncNote: View {
     }
 
     private func text(waiting: Int, state: SyncEngine.State) -> String {
-        if state == .syncing { return "Lähetetään perheelle…" }
+        if state == .syncing { return String(localized: "Lähetetään perheelle…") }
         // A refused identity does not get the network's promise: "lähtee
         // itsestään kun verkko palaa" was said for a 401 too, indefinitely,
         // while no push could ever succeed. The full account is on the Perhe
         // screen; this line stays true and points there.
         if state == .refused {
             return waiting == 1
-                ? "Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä."
-                : "\(waiting) muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä."
+                ? String(localized: "Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.")
+                : String(localized: "\(waiting) muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.")
         }
         return waiting == 1
-            ? "Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa."
-            : "\(waiting) muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa."
+            ? String(localized: "Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa.")
+            : String(localized: "\(waiting) muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa.")
     }
 
     /// The shape carries the same meaning as the words, as everywhere else in

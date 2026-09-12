@@ -65,8 +65,8 @@ struct CorrectNameSheet: View {
                     // wording inside a story — the same trade the correction at
                     // telling time already makes when re-extraction fails.
                     Text(existing == nil
-                        ? "Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen."
-                        : "Perheessä on jo \(existing?.displayTitle ?? ""). Kortit yhdistetään, ja tämän muistot siirtyvät sinne.")
+                        ? String(localized: "Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen.")
+                        : String(localized: "Perheessä on jo \(existing?.displayTitle ?? ""). Kortit yhdistetään, ja tämän muistot siirtyvät sinne."))
                         .foregroundStyle(Elder.supporting)
                 }
 

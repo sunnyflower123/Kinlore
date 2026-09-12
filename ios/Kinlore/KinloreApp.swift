@@ -37,19 +37,17 @@ struct KinloreApp: App {
 
         var title: String {
             switch self {
-            case .deviceInFamily: "Tämä laite kuuluu jo perheeseen"
-            case .deviceHasLocalArchive: "Tällä laitteella on jo oma arkisto"
+            case .deviceInFamily: String(localized: "Tämä laite kuuluu jo perheeseen")
+            case .deviceHasLocalArchive: String(localized: "Tällä laitteella on jo oma arkisto")
             }
         }
 
         var message: String {
             switch self {
             case .deviceInFamily:
-                "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua "
-                    + "perheestä Asetuksista ja liittyä sitten kutsulla."
+                String(localized: "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla.")
             case .deviceHasLocalArchive:
-                "Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen. "
-                    + "Voit tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla."
+                String(localized: "Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen. Voit tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla.")
             }
         }
     }

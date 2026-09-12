@@ -215,7 +215,7 @@ struct FamilyScreen: View {
         .alert("Kutsua ei voitu perua", isPresented: $revokeFailed) {
             Button("Selvä", role: .cancel) {}
         } message: {
-            Text(session.lastError ?? "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.")
+            Text(session.lastError ?? String(localized: "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii."))
         }
         // Confirmed, like every other removal in this app: it cannot be undone
         // from here, and the person holding the phone may be 80. The message

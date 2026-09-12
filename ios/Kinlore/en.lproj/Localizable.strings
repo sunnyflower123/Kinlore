@@ -511,3 +511,59 @@
    rule 5, uncertainty is stored rather than rounded, said out loud. */
 "Tarkka sijainti kartalla" = "Exact location on the map";
 "Suunnilleen tällä seudulla kartalla" = "Roughly in this area, on the map";
+
+/* --- The failure paths, 12 Sep 2026 --------------------------------------
+   Every one of these was Finnish on an English phone, and the check could not
+   see one of them: each sat in a ternary, an assignment or a returned String
+   rather than as the argument of a Text. They are almost all errors, alerts
+   and empty states — which is why the demo video surfaced only four of this
+   kind. The happy path is the one that gets demonstrated, and nobody
+   demonstrates a failure.
+
+   Found with a scan over every Finnish literal in the Swift source minus the
+   two tables, not by opening screens: 338 literals, 254 already held, 84 in
+   neither. Of the 84 the ones that stay Finnish are data rather than
+   interface — QuestionLadder's matching patterns, the seed fixture's told
+   content, and the author names and extracted questions that are WRITTEN INTO
+   THE ARCHIVE, where an English word would be somebody's record of their own
+   family. */
+" Sovellus avautuu ensimmäiselle näytölle." = " The app opens on its first screen.";
+"Arkiston vienti ei onnistunut" = "The archive could not be exported";
+"Aseta seuraava kuva näkyviin." = "Put the next picture in view.";
+"Aseta vanha valokuva näkyviin ja paina." = "Put an old photograph in view and press.";
+"Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa." = "An uncertain answer is the right answer. The app keeps it as it is and does not guess at anything more exact.";
+"Kamera ei ole käytössä" = "The camera is not available";
+"Kertomasi muistot ovat vain tässä laitteessa." = "The memories you have told are on this device only.";
+"Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "The invitation is still valid. Try again when the connection is working.";
+"Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista." = "Photographing needs permission to use the camera. You can give it in the phone's settings — or pick pictures from the phone's own photos.";
+"Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla." = "A device can belong to one family at a time. You can leave the family in Settings and then join with an invitation.";
+"Liitä vielä saamasi kutsukoodi." = "Paste in the invitation code you were sent.";
+"Lisää ajankohta" = "Add a date";
+"Lähetetään perheelle…" = "Sending to the family…";
+"Milloin nämä olivat?" = "When were these?";
+"Milloin tämä oli?" = "When was this?";
+"Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne." = "The memories are deleted for good and open invitations are cancelled. Export the archive first if you want to keep them.";
+"Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne." = "The memories are deleted for good. Export the archive first if you want to keep them.";
+"Nauhoitus ei käynnistynyt." = "The recording never started.";
+"Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen." = "The name is corrected on this card and among the relatives. The text of the memories already told stays as it was.";
+"Perheestä ei voitu poistua" = "The family could not be left";
+"Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään." = "Leaving the family does not delete the memories you told. They stay in the family's archive, because what is told is meant to outlast the one who told it.";
+"Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla." = "You leave the family and this device's memories are deleted. The family's memories stay with the others.";
+"Puheesta ei saatu sanoja." = "No words could be made out of the speech.";
+"Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen. Voit tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla." = "You were invited to a family. This phone's archive is a separate one. You can empty the device in Settings and then join with the invitation.";
+"Tällä laitteella on jo oma arkisto" = "This device already has an archive of its own";
+"Tämä laite kuuluu jo perheeseen" = "This device already belongs to a family";
+"Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa." = "This month's telling time is used up. Your voice is kept all the same.";
+"Tässä laitteessa ei ole kameraa" = "This device has no camera";
+"Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista." = "You can still add old photographs from the phone's own pictures.";
+"Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen." = "The family's service could not be reached. Try again in a moment.";
+"Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen." = "One picture was not brought in. You can try it again.";
+"Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä." = "One memory is still on this phone only. Sending does not work right now — see the Family screen.";
+"Yksi muisto on vielä vain tässä puhelimessa. Se lähtee perheelle itsestään kun verkko palaa." = "One memory is still on this phone only. It goes to the family by itself when the connection returns.";
+"Yritä uudelleen, kun verkkoyhteys toimii." = "Try again when the connection is working.";
+"Yritä uudelleen, kun verkkoyhteys toimii. Laitetta ei tyhjennetty." = "Try again when the connection is working. The device was not emptied.";
+"Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa." = "Try again. If it keeps failing, the device may be out of space.";
+"Vastaus koskee kaikkia %lld kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta." = "The answer covers all %lld pictures. You can change one picture's date later from its own card.";
+"%lld kuvaa jäi tuomatta. Voit yrittää niitä uudelleen." = "%lld pictures were not brought in. You can try them again.";
+"%lld muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä." = "%lld memories are still on this phone only. Sending does not work right now — see the Family screen.";
+"%lld muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa." = "%lld memories are still on this phone only. They go to the family by themselves when the connection returns.";

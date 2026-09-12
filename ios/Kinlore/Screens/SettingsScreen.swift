@@ -72,7 +72,7 @@ struct SettingsScreen: View {
         // said before: the app does not come back to an emptied version of this
         // screen, it comes back to its first. That is what makes this the way
         // to walk the whole thing again, and it was invisible.
-        let afterwards = " Sovellus avautuu ensimmäiselle näytölle."
+        let afterwards = String(localized: " Sovellus avautuu ensimmäiselle näytölle.")
         // A device the server has stopped knowing cannot leave — the same
         // server refuses it — and until 5 Sep 2026 that meant it could not be
         // emptied either: the wipe stops on a failed leave. There is nothing
@@ -82,7 +82,7 @@ struct SettingsScreen: View {
                 + afterwards
         }
         if canLeave {
-            return "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla."
+            return String(localized: "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla.")
                 + afterwards
         }
         if case .inFamily = session.mode {
@@ -90,10 +90,10 @@ struct SettingsScreen: View {
                 return String(localized: "Tällä puhelimella ei ole kaikkia perheen kuvia ja ääniä: \(missingLocally) on vain palvelimella, eikä tyhjennyksen jälkeen niitä saa enää auki. Odota, että Perhe-näytön kopio on valmis, tai vie arkisto verkossa ensin.")
                     + afterwards
             }
-            return "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne."
+            return String(localized: "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne.")
                 + afterwards
         }
-        return "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne."
+        return String(localized: "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne.")
             + afterwards
     }
 
@@ -278,8 +278,8 @@ struct SettingsScreen: View {
                 // The distinction between the two is the whole design of this
                 // screen, so it is spelled out rather than implied by the names.
                 Text(canLeave
-                    ? "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään."
-                    : "Kertomasi muistot ovat vain tässä laitteessa.")
+                    ? String(localized: "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään.")
+                    : String(localized: "Kertomasi muistot ovat vain tässä laitteessa."))
                     .foregroundStyle(Elder.supporting)
             }
         }
@@ -319,9 +319,9 @@ struct SettingsScreen: View {
                         // refusal that looks like nothing happening is the
                         // worst possible answer to a deliberate act.
                         failure = Failure(
-                            title: "Perheestä ei voitu poistua",
+                            title: String(localized: "Perheestä ei voitu poistua"),
                             message: session.lastError
-                                ?? "Yritä uudelleen, kun verkkoyhteys toimii."
+                                ?? String(localized: "Yritä uudelleen, kun verkkoyhteys toimii.")
                         )
                         return
                     }
@@ -448,8 +448,8 @@ struct SettingsScreen: View {
             // Asked for. Nothing to report; the next build starts clean.
         } catch {
             failure = Failure(
-                title: "Arkiston vienti ei onnistunut",
-                message: "Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa."
+                title: String(localized: "Arkiston vienti ei onnistunut"),
+                message: String(localized: "Yritä uudelleen. Jos vika toistuu, laitteessa voi olla tila lopussa.")
             )
         }
     }
@@ -469,9 +469,9 @@ struct SettingsScreen: View {
         if canLeave, sync?.state != .refused {
             guard await session.leaveFamily() else {
                 failure = Failure(
-                    title: "Perheestä ei voitu poistua",
+                    title: String(localized: "Perheestä ei voitu poistua"),
                     message: session.lastError
-                        ?? "Yritä uudelleen, kun verkkoyhteys toimii. Laitetta ei tyhjennetty."
+                        ?? String(localized: "Yritä uudelleen, kun verkkoyhteys toimii. Laitetta ei tyhjennetty.")
                 )
                 return
             }

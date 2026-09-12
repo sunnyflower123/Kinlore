@@ -107,8 +107,8 @@ struct DateSheet: View {
                         .foregroundStyle(Elder.supporting)
                 } footer: {
                     Text(single == nil
-                        ? "Vastaus koskee kaikkia \(subjects.count) kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta."
-                        : "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.")
+                        ? String(localized: "Vastaus koskee kaikkia \(subjects.count) kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta.")
+                        : String(localized: "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa."))
                         .foregroundStyle(Elder.supporting)
                 }
 
@@ -149,7 +149,7 @@ struct DateSheet: View {
                         .foregroundStyle(Elder.supporting)
                 }
             }
-            .navigationTitle(single == nil ? "Milloin nämä olivat?" : "Milloin tämä oli?")
+            .navigationTitle(single == nil ? String(localized: "Milloin nämä olivat?") : String(localized: "Milloin tämä oli?"))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 load()

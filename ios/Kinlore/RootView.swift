@@ -494,7 +494,7 @@ struct SubjectDetailScreen: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "calendar")
-                            Text(current.dateHint?.displayText ?? "Lisää ajankohta")
+                            Text(current.dateHint?.displayText ?? String(localized: "Lisää ajankohta"))
                                 .font(.body)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

@@ -36,7 +36,7 @@ struct InviteShareButton: View {
         .alert("Kutsua ei voitu luoda", isPresented: $couldNotCreate) {
             Button("Selvä", role: .cancel) {}
         } message: {
-            Text(session.lastError ?? "Yritä uudelleen, kun verkkoyhteys toimii.")
+            Text(session.lastError ?? String(localized: "Yritä uudelleen, kun verkkoyhteys toimii."))
         }
         .sheet(isPresented: $isSharing, onDismiss: reset) { sheet }
     }

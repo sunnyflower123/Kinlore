@@ -231,7 +231,7 @@ final class TellViewModel {
             try recorder.start()
             phase = .recording
         } catch {
-            phase = .failed("Nauhoitus ei käynnistynyt.")
+            phase = .failed(String(localized: "Nauhoitus ei käynnistynyt."))
         }
     }
 

@@ -55,14 +55,14 @@ struct CameraScreen: View {
                     capturing
                 case .denied:
                     wayOut(
-                        title: "Kamera ei ole käytössä",
-                        detail: "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista.",
+                        title: String(localized: "Kamera ei ole käytössä"),
+                        detail: String(localized: "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista."),
                         offersSettings: true
                     )
                 case .unavailable:
                     wayOut(
-                        title: "Tässä laitteessa ei ole kameraa",
-                        detail: "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista.",
+                        title: String(localized: "Tässä laitteessa ei ole kameraa"),
+                        detail: String(localized: "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista."),
                         offersSettings: false
                     )
                 }
@@ -136,8 +136,8 @@ struct CameraScreen: View {
     private var hint: String {
         if justSaved { return "Tallennettu. Kuvaa seuraava." }
         return captured == 0
-            ? "Aseta vanha valokuva näkyviin ja paina."
-            : "Aseta seuraava kuva näkyviin."
+            ? String(localized: "Aseta vanha valokuva näkyviin ja paina.")
+            : String(localized: "Aseta seuraava kuva näkyviin.")
     }
 
     private func shoot() async {

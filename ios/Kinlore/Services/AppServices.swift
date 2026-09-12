@@ -134,8 +134,8 @@ enum RemoteError: LocalizedError {
     /// is still available to whoever is debugging, in `debugText` below.
     var errorDescription: String? {
         switch self {
-        case .badStatus: "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen."
-        case .emptyResult: "Puheesta ei saatu sanoja."
+        case .badStatus: String(localized: "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen.")
+        case .emptyResult: String(localized: "Puheesta ei saatu sanoja.")
         case .quotaExceeded(let kind, _, let limit):
             kind == "photos"
                 ? "Ilmaisessa arkistossa on tilaa \(limit) kuvalle."
@@ -149,7 +149,7 @@ enum RemoteError: LocalizedError {
                 // What is *not* said here matters as much: the telling itself
                 // is safe. Rule 2 is that telling is never paywalled, and a
                 // quota stops the writing-down rather than the voice.
-                : "Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa."
+                : String(localized: "Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa.")
         }
     }
 
