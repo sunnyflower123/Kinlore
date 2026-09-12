@@ -457,6 +457,23 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # on the list — the one most likely to be a real regression, and argued to be
 # one — was the least close to failing.
 #
+# **The method has one blind spot, and the avatar is the example of it.** The
+# 95th and 1st percentiles are taken *inside the element's frame*, so the
+# arithmetic can only see text against what is behind the text. It cannot see
+# WCAG 1.4.11 — a shape against the ground *outside* its frame — because
+# that ground is not in the crop. Both numbers are worth having, and they
+# are not the same check.
+#
+# That avatar reads 9.54:1 because it was measured after the fix for exactly
+# that blind spot. Before it, the same disc was `Elder.card` on `Elder.paper`:
+# **1.11:1** against the ground, while its letter measured 20.18:1 — text
+# comfortably fine, shape invisible. The letter was never the defect and the
+# audit's finding on it was never believed; what was argued was an A/B, not
+# novelty (`testPeople` green at `9c5bac6`, red at `42b3c99`, same simulator
+# minutes apart, and the fill the one variable that flipped it: card red 4/4,
+# clear green 3/3, ink green 2/2). Novelty is indeed not a measurement — and
+# neither is a passing text ratio, when the thing that failed was an edge.
+#
 #   xcrun simctl create kinlore-tests \
 #     com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
 #     com.apple.CoreSimulator.SimRuntime.iOS-26-5
