@@ -167,9 +167,15 @@ final class FilmDriver: XCTestCase {
     ///
     /// The fixture's Puumala carries a coordinate at `.town` precision, so
     /// what this films is the circle and not a pin — which is the case worth
-    /// filming, because it is rule 5 drawn rather than argued. The film's
-    /// archive, so the telling that named the place is listed under its
-    /// card; held for the six seconds the v16 cut keeps the card on screen.
+    /// filming, because it is rule 5 drawn rather than argued. Held for the
+    /// six seconds the v16 cut keeps the card on screen.
+    ///
+    /// Under the map the card says nobody has told anything yet, and that is
+    /// the app and not the seed: the telling that named Puumala was told
+    /// about the photograph, so it is filed under the photograph
+    /// (`TellViewModel.placeSubject`), and a place lists only what was told
+    /// about it. Measured on the take of 12 Sep 2026; this comment used to
+    /// claim the telling was listed under the card.
     func testFilmThePlace() throws {
         let app = try roll(["-seed", "film", "-tab", "memories"])
         beat(1.6)
