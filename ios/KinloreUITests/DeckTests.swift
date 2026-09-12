@@ -1,6 +1,10 @@
 import XCTest
 
-/// The card on the Kerro tab.
+/// The card on the Kerro tab — and, since 12 Sep 2026, what the tab is allowed
+/// to put in front of somebody at all: a photograph the family added, a
+/// question a person asked, or the plain button. Never a name the extraction
+/// heard, never a question it thought of. Those stay beside the telling they
+/// came from.
 ///
 /// The screen it replaced said *"Kerro mitä muistat"* over a button, which is
 /// a blank page — and a blank page is the most reliable way there is to get
@@ -129,6 +133,64 @@ final class DeckTests: XCTestCase {
             "finishing did not return to the idle screen"
         )
         XCTAssertFalse(app.buttons["Valmis"].exists, "a Valmis appeared on the way back")
+    }
+
+    /// A name is never a card.
+    ///
+    /// People nobody had spoken about were cards until 12 Sep 2026, ranked
+    /// after the photographs — and the names that reach the table are mostly
+    /// the extraction's, unconfirmed. The founder met one on the second
+    /// launch: *"Kerro hänestä – Toivo"*, a name nobody had vouched for, asked
+    /// about as if it were somebody. The plain archive carries exactly that
+    /// case: Aino, unconfirmed and untold, and no photograph left to offer.
+    func testTheDeckNeverOffersAName() {
+        let app = launch(["-seed", "archive", "-tab", "tell"])
+
+        XCTAssertTrue(
+            app.staticTexts["Kerro mitä muistat"].waitForExistence(timeout: 15),
+            "never arrived: the Tell screen"
+        )
+        XCTAssertFalse(
+            app.staticTexts.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Kerro hänestä")
+            ).firstMatch.exists,
+            "the deck put a name in front of her"
+        )
+        XCTAssertFalse(app.buttons["En muista tätä"].exists, "a way past a card that must not exist")
+    }
+
+    /// And the front screen carries none of the model's questions.
+    ///
+    /// A telling leaves two or three follow-ups open, and until 12 Sep 2026
+    /// they stood on the idle screen under *"Tai vastaa aiempaan kysymykseen"*
+    /// — questions the app had thought of by itself, on the screen somebody
+    /// opens cold. They are still asked, by the interview loop and on the
+    /// subject's own Tell screen; this screen is for a person's question
+    /// (`testAFamilyQuestionOutranksTheDeck`) or the plain button.
+    func testTheFrontScreenCarriesNoneOfTheModelsQuestions() {
+        let app = launch(["-seed", "archive", "-tab", "tell", "-screen", "result"])
+
+        let another = app.buttons["Kerro toinen muisto"]
+        XCTAssertTrue(another.waitForExistence(timeout: 30), "never arrived: the result screen")
+        for _ in 0 ..< 4 where !another.isHittable { app.swipeUp() }
+        another.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Kerro mitä muistat"].waitForExistence(timeout: 10),
+            "finishing did not return to the plain button"
+        )
+        XCTAssertFalse(
+            app.staticTexts["Tai vastaa aiempaan kysymykseen"].exists,
+            "the model's follow-ups are on the front screen"
+        )
+        // The canned telling names Toivo, whom the archive did not have: an
+        // unconfirmed, untold person, which is the exact card that must not be.
+        XCTAssertFalse(
+            app.staticTexts.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Kerro hänestä")
+            ).firstMatch.exists,
+            "a name the telling produced became a card"
+        )
     }
 
     /// The pack goes on from photograph to photograph — past the telling's

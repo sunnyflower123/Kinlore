@@ -3,11 +3,12 @@ import Foundation
 /// Fills in the coordinates of the places a family has talked about.
 ///
 /// The archive stores places the way they were told: a name somebody said out
-/// loud, "Puumala", "Sortavala", "Kannus". This walks the ones nobody has looked
-/// up and caches the point on the subject, so that the places in a family's
-/// memories can one day be drawn on a map without anybody being asked to pin
-/// anything. The lookup itself is `PlaceLookup`; what is here is the part that
-/// touches the archive.
+/// loud, "Puumala", "Sortavala", "Kannus". This walks the confirmed ones nobody
+/// has looked up and caches the point on the subject, so that the places in a
+/// family's memories can one day be drawn on a map without anybody being asked
+/// to pin anything. The lookup itself is `PlaceLookup`; what is here is the
+/// part that touches the archive. Confirmed only: `placesAwaitingCoordinates`
+/// says why.
 ///
 /// See docs/ARCHITECTURE.md §18 — including what a stored point does NOT mean.
 @MainActor

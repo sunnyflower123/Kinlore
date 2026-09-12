@@ -48,16 +48,25 @@ enum Deck {
     /// button it has always had, and an archive with nothing left to ask about
     /// is an archive somebody has told a great deal into.
     ///
-    /// Photographs before people, and both before nothing. A photograph is the
-    /// stronger card because it asks without a name in it: the picture does the
-    /// remembering. A person's card has only the name, which is a smaller
-    /// prompt for a harder question.
+    /// Photographs, and nothing else. A photograph asks without a name in it —
+    /// the picture does the remembering — and it is something a person in the
+    /// family put here on purpose.
+    ///
+    /// **People were cards too until 12 Sep 2026**, ranked after the
+    /// photographs, and a person's card is a name and a question: *"Kerro
+    /// hänestä – Toivo"*, *"Kuka Toivo oli sinulle?"*. The names that reach
+    /// this table arrive mostly from the extraction, unconfirmed, and the
+    /// founder met exactly that on the second launch — a name nobody had
+    /// vouched for, asked about as if it were somebody. Rule 4 says an
+    /// unconfirmed name is never fact; the front screen asserting it as a
+    /// subject was the same mistake one step earlier. What this costs is a
+    /// deck that runs out sooner, and nil is a real answer here.
     static func next(in store: MemoryStore) -> Subject? {
         guard skipsThisSession < patience else { return nil }
         let skipped = Set(UserDefaults.standard.stringArray(forKey: skippedKey) ?? [])
-        let wanting = store.subjects(of: .photo).filter { store.isEmpty($0) }
-            + store.subjects(of: .person).filter { store.isEmpty($0) }
-        return wanting.first { !skipped.contains($0.id) }
+        return store.subjects(of: .photo)
+            .filter { store.isEmpty($0) }
+            .first { !skipped.contains($0.id) }
     }
 
     /// *"En muista tätä."* Recorded rather than discarded: it is information,

@@ -303,7 +303,10 @@ Two shapes, one derivation:
 
 - **The teller returns.** Kerro, as today: the big button, and at most two
   question cards chosen by the ladder, a person-asked question pinned first.
-  Nothing changes.
+  Nothing changes. *Revised 12 Sep 2026:* the cards are a person's questions
+  only. The extraction's follow-ups stay beside the telling they came from and
+  on their subject's own Tell screen; the front screen never shows what the
+  model thought of by itself (ARCHITECTURE §12).
 - **The reader returns.** New, and the smallest instrument that answers
   finding 7: **"Uutta perheeltä"** — a section at the top of Muistot listing
   tellings by *other* members this phone has not seen, author and subject on

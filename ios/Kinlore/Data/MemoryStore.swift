@@ -541,10 +541,16 @@ final class MemoryStore {
     /// rejection: neither is its own place any more, and resolving one would
     /// spend a lookup on a name the family has already taken back. See
     /// docs/ARCHITECTURE.md §19.
+    ///
+    /// **Confirmed places only, since 12 Sep 2026.** A place the extraction
+    /// heard and nobody has vouched for is a guess, and a coordinate under a
+    /// guess is the guess drawn on a map. The lookup waits for the
+    /// confirmation; the next sweep after it — launch, foreground, a sync —
+    /// picks the place up.
     func placesAwaitingCoordinates() -> [Subject] {
         subjects.filter {
-            $0.kind == .place && $0.mergedInto == nil && $0.deletedAt == nil
-                && $0.place == nil && !$0.title.isEmpty
+            $0.kind == .place && $0.confirmed && $0.mergedInto == nil
+                && $0.deletedAt == nil && $0.place == nil && !$0.title.isEmpty
         }
     }
 

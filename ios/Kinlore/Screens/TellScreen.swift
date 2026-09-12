@@ -507,9 +507,19 @@ private struct IdleView: View {
     /// 80-year-old is ever handed offered nothing at all beside the button. The
     /// ladder had its bottom rung built for a photo and missing for the first
     /// launch; `openingQuestions()` is that rung.
+    ///
+    /// **Only questions a person asked, since 12 Sep 2026.** The extraction's
+    /// follow-ups stood here too, under *"Tai vastaa aiempaan kysymykseen"*,
+    /// and after one telling that was three questions the app had thought of
+    /// by itself on the screen somebody opens cold. They keep every other
+    /// place they are offered — the interview loop asks them the moment the
+    /// telling ends, and the Tell screen opened from their subject lists them
+    /// below — and this screen carries a family member's question alone.
     private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
         guard let target = model.target else {
-            let open = store.openQuestions(limit: 2, excludingAuthor: session.identity.memberID)
+            let open = store.openQuestions(
+                limit: 2, excludingAuthor: session.identity.memberID, onlyAuthored: true
+            )
             return open.isEmpty ? (store.openingQuestions(), true) : (open, false)
         }
         let own = store.openQuestions(

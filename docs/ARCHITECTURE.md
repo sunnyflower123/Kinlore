@@ -1911,6 +1911,15 @@ fortnight is a worse failure than a question one level too high. Never more than
 one of them, and never the last slot — so a hard one always arrives beside an
 easy way out.
 
+And since 12 Sep 2026 a person's question is the *only* kind the Kerro tab's
+idle screen offers. The extraction's follow-ups stood there too, under *"Tai
+vastaa aiempaan kysymykseen"*, and after one telling that was three questions
+the app had thought of by itself on the screen somebody opens cold. They are
+still asked — the interview loop asks them the moment the telling ends, and
+the Tell screen opened from their subject lists them — but the front screen
+carries what a person asked, or nothing.
+`testTheFrontScreenCarriesNoneOfTheModelsQuestions` pins it.
+
 ### What was rejected
 
 | Alternative | Why not |
@@ -2903,6 +2912,13 @@ would eventually draw. Data first, so that the family's places accumulate while
 the decision is still open. A place is already openable like any other subject
 (§8).
 
+**Confirmed places only, since 12 Sep 2026.** `placesAwaitingCoordinates`
+skips a place nobody has vouched for. A name the extraction heard is a guess
+until somebody confirms it, and a coordinate under a guess is the guess drawn
+on a map — rule 4's mistake, one step further along. The lookup waits for the
+confirmation and the next sweep picks the place up; nothing on screen waits
+for it either way.
+
 **Since 10 Sep 2026 it also has a position on its own card**, and the
 distinction is the whole of why that was allowed. `PlaceMapCard` draws the
 stored coordinate on the subject that owns it; it is not a screen of places and
@@ -3518,8 +3534,15 @@ the moment the telling ends, the Tell screen opened from that photograph
 offers them again, and the idle screen returns to them once the deck has
 nothing left. `testTheDeckGoesOnPastTheTellingsOwnQuestions` pins it.
 
-Otherwise: photographs nobody has spoken about, then people nobody has spoken
-about — free from the `subject` table, which is where that decision pays.
+Otherwise: photographs nobody has spoken about, free from the `subject` table,
+which is where that decision pays. **People stopped being cards on 12 Sep
+2026.** They ranked after the photographs, and a person's card is a name and a
+question — *"Kerro hänestä – Toivo"*, *"Kuka Toivo oli sinulle?"* — where the
+name is mostly the extraction's and unconfirmed. The founder met exactly that
+on the second launch: a name nobody had vouched for, asked about as if it were
+somebody. Rule 4 says an unconfirmed name is never fact; the front screen
+asserting it as a subject was the same mistake one step earlier.
+`testTheDeckNeverOffersAName` pins it, on the plain archive's Aino.
 
 **And it stops.** `Deck.patience` is three pushes aside per session. This is
 the failure mode the whole idea has to be designed against and it is a silent
