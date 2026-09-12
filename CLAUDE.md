@@ -359,6 +359,30 @@ is a measurement of somebody else's half-finished work, not of HEAD. Every
 number in this session that meant anything was taken in a worktree pinned to a
 commit.
 
+**A third version bites without anybody changing your files: a long script
+reads itself from disk as it runs.** On 12 Sep 2026 a full `verify.sh` died
+after two and a half minutes with
+
+    ./scripts/verify.sh: line 350: syntax error near unexpected token `}'
+
+on a file that parses perfectly, then and now. Its mtime was inside the run —
+another session edited it while bash was part-way through, and bash resumed
+reading at a byte offset that no longer meant what it had. **The error names a
+line that is fine**, which is what makes it expensive: the first instinct is to
+go and read line 350. A full run belongs in a worktree for that reason alone,
+before any argument about whose half-finished work is in the tree.
+
+**And one trap in answering a red audit from a picture.** The PNG that
+`TEST_RUNNER_KINLORE_AUDIT_SHOT` writes is taken *after* the audit has
+finished — `AccessibilityAudit.swift` says so at "Now that the audit is
+finished, one screenshot answers all of them", and it is the settled screen.
+So it proves what the colour **is**; it cannot show what the audit **saw**.
+Measuring one at 18.21:1 and concluding the audit was simply wrong is a step
+the picture does not support, and it was taken on 12 Sep 2026 before the
+cheaper check was run: the same test passed on its own minutes later. **A red
+audit that does not reproduce alone has already answered the question** — the
+arithmetic is for the one that does.
+
 ## Commands
 
 **Most of the checks below are also one command.** `./scripts/verify.sh` runs
