@@ -381,8 +381,26 @@ struct RemoteExtractionService: ExtractionService {
                 // An unknown kind is dropped rather than guessed as a person:
                 // a wrong relative is worse than a missing one.
                 guard let kind = SubjectKind(rawValue: mention.kind) else { return nil }
+                // And a name that is not one. Every entry here becomes a
+                // `subject` row — `findOrCreateSubject` takes what it is
+                // handed — so an empty name is a person the family is asked
+                // to confirm, drawn as "Henkilö" because `displayTitle` falls
+                // back to the kind. The trim is the half with teeth: "Aino "
+                // and "Aino" are two titles to the comparison that decides
+                // whether a name is somebody already here, so a stray space
+                // is a duplicate card by another road.
+                //
+                // `normaliseMentions` in extract.ts does this too, and this
+                // is not that guard repeated for tidiness. The Worker is
+                // deployed on its own schedule and the app is built against
+                // whichever version happens to be live — on 12 Sep 2026 that
+                // was six days behind the repository. A client that only
+                // holds when the server is current is a client that does not
+                // hold.
+                let name = mention.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !name.isEmpty else { return nil }
                 return MentionedEntity(
-                    name: mention.name,
+                    name: name,
                     kind: kind,
                     confidence: mention.confidence
                 )

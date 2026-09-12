@@ -323,6 +323,40 @@ function parseStructured(raw: string): ExtractionResult {
 	throw new Error('Extraction returned invalid JSON')
 }
 
+/// The names the model heard, with the ones that are not names taken out.
+///
+/// The schema asks for a string and does not ask for a non-empty one, and the
+/// client turns every entry here into a `subject` row: `findOrCreateSubject`
+/// is handed the name whatever it is, so `{"name": "", "kind": "person"}`
+/// becomes a person the family is asked to confirm, drawn as *"Henkilö"*
+/// because `displayTitle` falls back to the kind when the title is empty.
+/// Rule 4 is that a wrong person is worse than a missing one; a person with
+/// no name at all is the same failure with nothing to recognise.
+///
+/// Trimmed in the same pass, and that is the half with teeth. `Aino ` and
+/// `Aino` are two different titles to `findOrCreateSubject`, which compares
+/// them to decide whether a name is somebody the archive already has — so a
+/// stray space is the duplicate card the whole base-form requirement exists
+/// to prevent, arriving by a different road (found 11 Sep 2026).
+function normaliseMentions(raw: unknown): ExtractionResult['mentions'] {
+	if (!Array.isArray(raw)) return []
+	return raw.flatMap((item): ExtractionResult['mentions'] => {
+		if (typeof item !== 'object' || item === null) return []
+		const { name, kind, confidence } = item as {
+			name?: unknown
+			kind?: unknown
+			confidence?: unknown
+		}
+		if (typeof name !== 'string') return []
+		const trimmed = name.trim()
+		// An unknown kind is dropped rather than guessed at, the same rule the
+		// client already applies to it: a place filed as a person joins the
+		// family tree.
+		if (!trimmed || (kind !== 'person' && kind !== 'place')) return []
+		return [{ name: trimmed, kind, confidence: typeof confidence === 'number' ? confidence : 0 }]
+	})
+}
+
 /// Questions as the model actually returned them.
 ///
 /// Two deviations are tolerated rather than fatal, because a question is worth
@@ -396,7 +430,7 @@ export async function extract(
 			// applied here. Four questions overwhelm an elderly user, two do not
 			// carry the story forward.
 			parsed.questions = normaliseQuestions(parsed.questions).slice(0, 3)
-			parsed.mentions = parsed.mentions ?? []
+			parsed.mentions = normaliseMentions(parsed.mentions)
 			return parsed
 		} catch (err) {
 			lastError = err

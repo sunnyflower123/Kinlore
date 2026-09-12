@@ -14,6 +14,15 @@ enum MediaStore {
 
     private static let thumbnailDimension = 600
 
+    /// The two shapes of name this store writes.
+    ///
+    /// Constants rather than literals at the two call sites, because
+    /// `deleteAll` below matches on them: a prefix that drifted would leave
+    /// that sweep silently finding nothing, which is the failure it exists to
+    /// prevent. Sharing them makes the drift impossible instead of checkable.
+    private static let photoPrefix = "photo-"
+    private static let mediaPrefix = "media-"
+
     static func url(for filename: String) -> URL {
         URL.documentsDirectory.appendingPathComponent(filename)
     }
@@ -25,7 +34,7 @@ enum MediaStore {
     /// would otherwise crash the app on an older device.
     static func save(imageData: Data) -> String? {
         guard let downsized = downsample(imageData, to: maxDimension) else { return nil }
-        let filename = "photo-\(UUID().uuidString).jpg"
+        let filename = "\(photoPrefix)\(UUID().uuidString).jpg"
         do {
             try downsized.write(to: url(for: filename), options: .atomic)
             return filename
@@ -42,7 +51,7 @@ enum MediaStore {
     /// audio must never be re-encoded, because the original recording is the
     /// product rather than an intermediate step.
     static func saveRaw(_ data: Data, extension ext: String) -> String? {
-        let filename = "media-\(UUID().uuidString).\(ext)"
+        let filename = "\(mediaPrefix)\(UUID().uuidString).\(ext)"
         do {
             try data.write(to: url(for: filename), options: .atomic)
             return filename
@@ -65,6 +74,42 @@ enum MediaStore {
 
     static func delete(filename: String) {
         try? FileManager.default.removeItem(at: url(for: filename))
+    }
+
+    /// Every file this store has ever written, whether or not a row still
+    /// points at it. For "Tyhjennä tämä laite" and nothing else.
+    ///
+    /// `MemoryStore.wipe` used to delete media by walking the rows'
+    /// `imageFilename` and `audioFilename`, which is every file the archive
+    /// knows about and not every file on the disk. `FullCopy` writes the bytes
+    /// first and records the filename in memory, flushing to disk once per ten
+    /// files — so a phone killed mid-round leaves up to nine of the family's
+    /// photographs and recordings referenced by nothing. A sweep by row could
+    /// not see them, and they outlived a dialog that says the memories are
+    /// gone. Found 11 Sep 2026 reading `FullCopy` against `wipe`.
+    ///
+    /// **Three prefixes, because there are three writers**, and this file is
+    /// only two of them. A recording made on this phone keeps the name
+    /// `AudioRecorder` gave it in the temporary directory — the move in
+    /// `TellViewModel.persistAudio` does not rename it — so it is a
+    /// `memory-` file and not a `media-` one. A sweep with the two local
+    /// prefixes looked complete, deleted the imported photographs and the
+    /// downloaded copies, and left behind every recording the family had
+    /// made: the one kind of file rule 3 is actually about. Caught by
+    /// reading the writers rather than by any check, which is the honest
+    /// account of it.
+    ///
+    /// Matched by prefix rather than by extension: `kinlore-store.json` and
+    /// `preview-store.json` live in the same directory and are their owner's
+    /// to delete, not this sweep's.
+    static func deleteAll() {
+        let prefixes = [photoPrefix, mediaPrefix, AudioRecorder.orphanPrefix]
+        let documents = URL.documentsDirectory
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: documents.path)
+        else { return }
+        for name in names where prefixes.contains(where: name.hasPrefix) {
+            try? FileManager.default.removeItem(at: documents.appendingPathComponent(name))
+        }
     }
 
     // MARK: - Downscaling

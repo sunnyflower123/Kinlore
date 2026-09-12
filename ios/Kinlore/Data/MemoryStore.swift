@@ -1012,12 +1012,14 @@ final class MemoryStore {
     /// server, in a local archive they are gone. That sentence belongs there
     /// rather than here, but this is the code it is describing.
     func wipe() {
-        for filename in subjects.compactMap(\.imageFilename) {
-            MediaStore.delete(filename: filename)
-        }
-        for filename in memories.compactMap(\.audioFilename) {
-            MediaStore.delete(filename: filename)
-        }
+        // Every media file on the disk, not every one the rows name. Those
+        // are different sets: `FullCopy` saves the bytes and records the
+        // filename in memory, flushing once per ten files, so a phone killed
+        // mid-round holds up to nine of the family's photographs and voices
+        // that no row points at. Walking `imageFilename` and `audioFilename`
+        // could not reach them, and they survived a dialog saying the
+        // memories were gone (11 Sep 2026). See `MediaStore.deleteAll`.
+        MediaStore.deleteAll()
         subjects = []
         memories = []
         questions = []

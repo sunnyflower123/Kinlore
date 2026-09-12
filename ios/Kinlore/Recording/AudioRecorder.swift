@@ -199,7 +199,18 @@ final class AudioRecorder {
 
     /// The recording's filename shape, shared with the launch-time sweep
     /// below: what start() writes is what the sweep looks for.
-    static let orphanPrefix = "memory-"
+    ///
+    /// And with `MediaStore.deleteAll`, which is the other end of the same
+    /// fact: `TellViewModel.persistAudio` moves the file into Documents under
+    /// the name given here, so a recording made on this phone is not a
+    /// `media-` file and a sweep that looked only for those would leave every
+    /// one of them behind — grandmother's voice, which is the thing rule 3 is
+    /// about.
+    ///
+    /// `nonisolated` because a string constant needs no actor, the same
+    /// reason `Session.arrivalPendingKey` carries it: `MediaStore` is not on
+    /// the main actor and has to be able to read this.
+    nonisolated static let orphanPrefix = "memory-"
 
     private func tick() {
         guard let recorder else { return }
