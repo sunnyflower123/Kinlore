@@ -214,11 +214,20 @@ extension XCTestCase {
         // measured is reported rather than forgiven: the point of measuring is
         // to keep the net tight, and an uncertainty resolved in the app's favour
         // is the net with a hole in it.
-        // The picture the findings were made on, kept when asked for:
+        // A picture of the screen, kept when asked for:
         // `TEST_RUNNER_KINLORE_AUDIT_SHOT=/some/dir/prefix` on the xcodebuild
         // line writes one PNG per audit that reported anything. It is what
         // told a frame full of paper from a word in the fade on 6 Sep 2026,
         // and it costs nothing when the variable is not set.
+        //
+        // **It is taken here, after the audit has finished**, so it is the
+        // settled screen and not necessarily the one the audit judged. It
+        // answers what colour was drawn; it cannot show what the audit saw on
+        // a screen that was still drawing. This comment used to call it "the
+        // picture the findings were made on", and on 12 Sep 2026 a red finding
+        // was measured from one at 18.21:1 and called the audit's mistake —
+        // when the cheaper answer, that the test passed on its own, had not
+        // been asked yet (CLAUDE.md, beside the worktree rule).
         if let shot = ProcessInfo.processInfo.environment["KINLORE_AUDIT_SHOT"],
            !found.isEmpty || !deferred.isEmpty {
             let name = context.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "/", with: "_")
