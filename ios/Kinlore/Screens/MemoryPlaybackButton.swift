@@ -59,14 +59,14 @@ struct MemoryPlaybackButton: View {
 
     private var label: String {
         if let failure { return failure }
-        if isPlaying { return "Soi…" }
-        guard let seconds = memory.audioDuration else { return "Kuuntele omalla äänellä" }
-        return "Kuuntele omalla äänellä · \(Int(seconds)) s"
+        if isPlaying { return String(localized: "Soi…") }
+        guard let seconds = memory.audioDuration else { return String(localized: "Kuuntele omalla äänellä") }
+        return String(localized: "Kuuntele omalla äänellä · \(Int(seconds)) s")
     }
 
     private var accessibilityLabel: String {
         if let failure { return failure }
-        return isPlaying ? "Lopeta kuuntelu" : "Kuuntele omalla äänellä"
+        return isPlaying ? String(localized: "Lopeta kuuntelu") : String(localized: "Kuuntele omalla äänellä")
     }
 
     private func toggle() async {

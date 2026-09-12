@@ -211,6 +211,27 @@
 "Vuosi" = "Year";
 "En tiedä" = "I do not know";
 
+/* --- Four strings the demo video found, 11 Sep 2026 ----------------------
+   Every one of these was on screen in English-language footage, in Finnish,
+   and scripts/localisation-check.mjs could not see any of them: a ternary's
+   literal is not the argument, a String returned from a computed property is
+   never looked up, and `searchable(prompt:)` is not one of the initialisers
+   the check knows. The call sites were changed so that four of these are now
+   shapes it CAN see; "%@-luku", "%lld muistoa" and the one with a duration in
+   it stay invisible to it, because it does not check interpolated keys at all.
+   "%@-luku" is one key for three call sites — Models, DateSheet and the
+   gallery heading all pass the decade as a String rather than an Int, so none
+   of them groups the thousands. */
+"Soi…" = "Playing…";
+"Lopeta kuuntelu" = "Stop listening";
+"Kuuntele omalla äänellä" = "Listen in their own voice";
+"Kuuntele omalla äänellä · %lld s" = "Listen in their own voice · %lld s";
+"Ajankohta ei tiedossa" = "Date not known";
+"%@-luku" = "%@s";
+"Etsi" = "Search";
+"1 muisto" = "1 memory";
+"%lld muistoa" = "%lld memories";
+
 /* --- The questions asked before something cannot be undone ---------------
    Every one of these is a confirmation dialog's title, and every one of them
    was missing until scripts/localisation-check.mjs was written and run. They

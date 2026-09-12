@@ -14,7 +14,9 @@ struct RootView: View {
         ///
         /// Development and screenshot aid: `-tab memories` or `-tab people` as
         /// a launch argument opens the given tab directly, so screenshots can be
-        /// taken without any tapping. DEBUG builds only.
+        /// taken without any tapping. `-screen` does the same by itself — it
+        /// opens the tab its destination lives in, because a TabView does not
+        /// build a tab nobody has looked at. DEBUG builds only.
         static func initial(newFromFamily: Bool) -> Tab {
             #if DEBUG
             switch UserDefaults.standard.string(forKey: "tab") {
@@ -24,6 +26,24 @@ struct RootView: View {
             // archive with tellings from others waiting — which otherwise wins
             // the first tab.
             case "tell": return .tell
+            default: break
+            }
+            // `-screen` names a destination that lives inside ONE tab, and a
+            // TabView builds a tab's content only once that tab is shown. The
+            // task that reads it sits in PeopleScreen, so on a launch that
+            // opens Kerro — the default — it never runs at all, and
+            // `-screen person` quietly does nothing. The Kerro values
+            // (`starter`, `write`, `interview`, `interviewed`, `result`) have
+            // always worked, and only because Kerro is the default; every
+            // value behind another tab needed `-tab` beside it, which the
+            // comment above this function never said. So the aid opens the
+            // tab that owns the screen. An explicit `-tab` still wins, because
+            // a caller naming both means it (FilmDriver names both).
+            switch UserDefaults.standard.string(forKey: "screen") {
+            case "person", "family", "settings", "export", "help", "sharing":
+                return .people
+            case "camera":
+                return .memories
             default: break
             }
             #endif
@@ -212,7 +232,7 @@ struct PeopleScreen: View {
             // cut in half at the largest size — and what the search actually
             // covers is spelled out where it matters, on the screen that comes
             // back with nothing.
-            .searchable(text: $query, prompt: "Etsi")
+            .searchable(text: $query, prompt: Text("Etsi"))
             .navigationDestination(for: Subject.self) { subject in
                 SubjectDetailScreen(subject: subject)
             }
@@ -314,9 +334,17 @@ private struct PersonRow: View {
                         .font(.subheadline.weight(.semibold))
                 } else {
                     let count = store.memories(for: subject.id).count
-                    Text(count == 1 ? "1 muisto" : "\(count) muistoa")
-                        .font(.subheadline)
-                        .foregroundStyle(Elder.supporting)
+                    // A ternary hides the literal from SwiftUI's key lookup and from
+                    // scripts/localisation-check.mjs alike; as its own Text it is a key.
+                    Group {
+                        if count == 1 {
+                            Text("1 muisto")
+                        } else {
+                            Text("\(count) muistoa")
+                        }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
                 }
             }
         }
@@ -561,8 +589,16 @@ struct SubjectDetailScreen: View {
                     // A List styles its own headers and footers below the
                     // contrast minimum. Saying the colour out loud is the only
                     // way to raise it.
-                    Text(memories.count == 1 ? "1 muisto" : "\(memories.count) muistoa")
-                        .foregroundStyle(Elder.supporting)
+                    // A ternary hides the literal from SwiftUI's key lookup and from
+                    // scripts/localisation-check.mjs alike; as its own Text it is a key.
+                    Group {
+                        if memories.count == 1 {
+                            Text("1 muisto")
+                        } else {
+                            Text("\(memories.count) muistoa")
+                        }
+                    }
+                    .foregroundStyle(Elder.supporting)
                 }
             }
 

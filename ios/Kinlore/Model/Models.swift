@@ -54,17 +54,17 @@ struct DateHint: Codable, Hashable {
 
     /// Human-readable form that states the uncertainty honestly.
     var displayText: String {
-        guard let start else { return "Ajankohta ei tiedossa" }
+        guard let start else { return String(localized: "Ajankohta ei tiedossa") }
         let year = Calendar.current.component(.year, from: start)
         switch precision {
-        case .decade: return "\(year / 10 * 10)-luku"
+        case .decade: return String(localized: "\(String(year / 10 * 10))-luku")
         case .year: return "\(year)"
         case .month, .day:
             let f = DateFormatter()
             f.locale = Locale(identifier: "fi_FI")
             f.dateFormat = precision == .day ? "d.M.yyyy" : "LLLL yyyy"
             return f.string(from: start)
-        case .unknown: return "Ajankohta ei tiedossa"
+        case .unknown: return String(localized: "Ajankohta ei tiedossa")
         }
     }
 }

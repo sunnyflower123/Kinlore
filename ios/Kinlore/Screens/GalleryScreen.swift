@@ -214,7 +214,7 @@ struct GalleryScreen: View {
             .onDisappear {
                 isReturningFromCard = !path.isEmpty
             }
-            .searchable(text: $query, prompt: "Etsi")
+            .searchable(text: $query, prompt: Text("Etsi"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     // A menu rather than two buttons: the bar has room for one
@@ -1145,9 +1145,17 @@ private struct SubjectRow: View {
             Label("Kerro tästä", systemImage: "mic.fill")
                 .font(.subheadline.weight(.semibold))
         } else {
-            Text(count == 1 ? "1 muisto" : "\(count) muistoa")
-                .font(.subheadline)
-                .foregroundStyle(Elder.supporting)
+            // A ternary hides the literal from SwiftUI's key lookup and from
+            // scripts/localisation-check.mjs alike; as its own Text it is a key.
+            Group {
+                if count == 1 {
+                    Text("1 muisto")
+                } else {
+                    Text("\(count) muistoa")
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(Elder.supporting)
         }
     }
 }

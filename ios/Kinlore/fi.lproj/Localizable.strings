@@ -179,6 +179,17 @@
 "Vuosikymmen" = "Vuosikymmen";
 "Vuosi" = "Vuosi";
 "En tiedä" = "En tiedä";
+
+/* --- Four strings the demo video found, 11 Sep 2026 — see en.lproj. */
+"Soi…" = "Soi…";
+"Lopeta kuuntelu" = "Lopeta kuuntelu";
+"Kuuntele omalla äänellä" = "Kuuntele omalla äänellä";
+"Kuuntele omalla äänellä · %lld s" = "Kuuntele omalla äänellä · %lld s";
+"Ajankohta ei tiedossa" = "Ajankohta ei tiedossa";
+"%@-luku" = "%@-luku";
+"Etsi" = "Etsi";
+"1 muisto" = "1 muisto";
+"%lld muistoa" = "%lld muistoa";
 "Hylätäänkö tämä kertominen?" = "Hylätäänkö tämä kertominen?";
 "Poistetaanko tämä muisto?" = "Poistetaanko tämä muisto?";
 "Poistetaanko sukulaisuus?" = "Poistetaanko sukulaisuus?";

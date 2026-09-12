@@ -28,6 +28,29 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The screenshot aid that quietly pointed at the wrong screen.
+    ///
+    /// `-screen` names a destination that lives inside one tab, and a TabView
+    /// builds a tab's content only once that tab is shown. The task that reads
+    /// it sits in PeopleScreen, so on a launch that opened Kerro — the default —
+    /// it never ran, and `-screen person|family|settings|export|help|sharing`
+    /// did nothing at all. The Kerro values (`starter`, `write`, `interview`,
+    /// `interviewed`, `result`) worked throughout and hid it: the aid looked
+    /// half-working rather than broken, and a screenshot run came back with a
+    /// plausible wrong screen instead of an error. Fixed 12 Sep 2026 by opening
+    /// the tab the destination lives in; this is what keeps it fixed.
+    func testScreenOpensTheTabItsDestinationLivesIn() {
+        let app = launch(["-seed", "archive", "-screen", "person"])
+        XCTAssertTrue(
+            app.buttons["Kerro tästä muisto"].waitForExistence(timeout: 15),
+            "-screen person did not reach a person's card"
+        )
+        XCTAssertTrue(
+            app.tabBars.buttons["Ihmiset"].isSelected,
+            "-screen person reached a card without selecting the tab it lives in"
+        )
+    }
+
     /// A file this version cannot read is kept and said so — never an empty
     /// archive that the next save overwrites.
     func testAnUnreadableArchiveIsKeptAndSaidSo() {

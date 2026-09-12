@@ -126,7 +126,7 @@ struct DateSheet: View {
                     switch sureness {
                     case .decade:
                         ForEach(Self.decades, id: \.self) { start in
-                            choice("\(String(start))-luku", isCurrent: isStored(.decade, start)) {
+                            choice(String(localized: "\(String(start))-luku"), isCurrent: isStored(.decade, start)) {
                                 save(decade: start)
                             }
                             .id(start)
