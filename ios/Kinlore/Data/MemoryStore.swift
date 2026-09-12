@@ -1161,21 +1161,34 @@ final class MemoryStore {
             title: "Puumala",
             place: PlaceHint(latitude: 61.5236, longitude: 28.1806, precision: .town)
         )
-        // **Confirmed, and the only place here — so no test has ever drawn an
-        // unconfirmed one.** Since 12 Sep 2026 a place carries the proposal
-        // badge on its symbol and its row says *"Ehdotus — vahvista paikka"*
-        // underneath (ARCHITECTURE §18, and `SubjectRow` in GalleryScreen).
-        // Neither has rendered in a single sweep: every seeded launch reaches
-        // this fixture, and this fixture has vouched for its one place. A
-        // refactor can take both out and the suite stays green, which is the
-        // shape of failure this file exists to prevent.
+        // **Puumala is confirmed; Karjala below is not, and the pair is the
+        // point.** A place carries the proposal badge on its symbol and its
+        // row says *"Ehdotus — vahvista paikka"* underneath (ARCHITECTURE §18,
+        // `SubjectRow` in GalleryScreen) — and for a day neither rendered in a
+        // single test, because this fixture had one place and had vouched for
+        // it. Two places, two states, and every sweep now draws both.
         //
-        // The fix is a second place with `confirmed: false`, the way `rejected`
-        // below carries its own case for exactly this reason. It is not here
-        // because `-seed archive` is also the demo video's archive
-        // (docs/VIDEO.md): the extra row would be on camera in phase F, and
-        // that is a decision about the film rather than a fixture detail.
+        // The name is §18's own worked example rather than a pretty one.
+        // `Karjala` is what a grandmother says meaning the region, and the
+        // gazetteer answers with a village in Mynämäki — confidently, with a
+        // single result, and there is no cheap rule that separates it from a
+        // right answer. Measured through the shipping `PlaceLookup` on
+        // 11 Sep 2026 and again as `geo-check.swift`'s sixth claim, which is
+        // where the coordinate below comes from. `.town`, so the card draws a
+        // circle: a wrong answer that reads as a region is the honest shape
+        // for one, and rule 5 is doing rule 4's work there by accident.
         //
+        // It is on camera. `-seed archive` is also the demo video's archive
+        // (docs/VIDEO.md), so phase F films a row that says a name is still
+        // a proposal. That is the app telling the truth about what it heard,
+        // which is rule 4, and it was a decision rather than an oversight.
+        let karjala = Subject(
+            id: "demo-karjala",
+            kind: .place,
+            title: "Karjala",
+            place: PlaceHint(latitude: 60.838, longitude: 22.000, precision: .town),
+            confirmed: false
+        )
         // Somebody the extraction proposed and a human rejected. The row is kept
         // so the rejection can travel to the rest of the family, and it must
         // never be shown again — which is the half of soft deletion that can go
@@ -1192,7 +1205,7 @@ final class MemoryStore {
         // him, which is how the result screen's "Tutut nimet" row is reached
         // by a test — the plain archive knows nobody the samples mention.
         let toivo = Subject(id: "demo-toivo", kind: .person, title: "Toivo")
-        subjects = [aino, eeva, kalle, sanni, photo, puumala, rejected]
+        subjects = [aino, eeva, kalle, sanni, photo, puumala, karjala, rejected]
             + (seed == "related" ? [toivo] : [])
         memories = [
             Memory(
