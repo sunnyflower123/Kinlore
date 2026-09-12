@@ -468,6 +468,15 @@ final class MemoryStore {
                     confirmed: old.confirmed
                 )
             }
+            // A confirmed card corrected onto a proposal confirms the
+            // proposal: a person has just said that this somebody, whom the
+            // family already vouched for, is Aino. Until 12 Sep 2026 the
+            // survivor kept the proposal's flag, which left the family's
+            // confirmed spouse waiting behind the people list's door as a
+            // name nobody had checked.
+            if subjects[index].confirmed, !existing.confirmed {
+                confirm(subjectID: existing.id)
+            }
         } else {
             subjects[index].title = trimmed
             // The coordinates were the answer to the old name. "Sortavala"

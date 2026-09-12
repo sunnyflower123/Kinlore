@@ -171,12 +171,24 @@ struct PeopleScreen: View {
     /// there is one code path rather than two.
     @State private var query = ""
 
-    private var people: [Subject] { store.subjects(of: .person, matching: query) }
+    /// Confirmed people only, since 12 Sep 2026. A name the extraction heard
+    /// and nobody has vouched for is not on this list: it waits behind one
+    /// quiet row at the bottom (`HeardNamesScreen`), with the sentence it was
+    /// heard in. The orange "Ehdotus" row used to stand among the family,
+    /// which put a guess beside the people it was a guess about.
+    private var people: [Subject] {
+        store.subjects(of: .person, matching: query).filter(\.confirmed)
+    }
+
+    /// The names waiting behind the door.
+    private var heard: [Subject] {
+        store.subjects(of: .person).filter { !$0.confirmed }
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
             Group {
-                if store.subjects(of: .person).isEmpty {
+                if store.subjects(of: .person).filter(\.confirmed).isEmpty, heard.isEmpty {
                     ContentUnavailableView {
                         Label("Ei vielä ihmisiä", systemImage: "person.2")
                     } description: {
@@ -191,7 +203,7 @@ struct PeopleScreen: View {
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
                     }
-                } else if people.isEmpty {
+                } else if people.isEmpty, !query.isEmpty {
                     // A search that found nobody is a different emptiness from
                     // a family nobody has spoken about yet, and it says so in
                     // its own words rather than in the invitation's.
@@ -203,7 +215,8 @@ struct PeopleScreen: View {
                             .foregroundStyle(Elder.supporting)
                     }
                 } else {
-                    List(people) { person in
+                    List {
+                        ForEach(people) { person in
                         NavigationLink(value: person) {
                             PersonRow(subject: person)
                         }
@@ -217,6 +230,11 @@ struct PeopleScreen: View {
                         // from margin to margin, and a card that touches both
                         // edges is a band rather than a card.
                         .listRowBackground(Elder.paper)
+                        }
+
+                        if !heard.isEmpty {
+                            heardRow
+                        }
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -235,6 +253,9 @@ struct PeopleScreen: View {
             .searchable(text: $query, prompt: Text("Etsi"))
             .navigationDestination(for: Subject.self) { subject in
                 SubjectDetailScreen(subject: subject)
+            }
+            .navigationDestination(for: HeardNamesRoute.self) { _ in
+                HeardNamesScreen()
             }
             .navigationDestination(for: FamilyRoute.self) { _ in
                 FamilyScreen()
@@ -300,6 +321,36 @@ struct PeopleScreen: View {
             .elderSurface()
         }
     }
+
+    /// One quiet row for the names the extraction heard and nobody has
+    /// checked. A count and a chevron, nothing orange: the list above is the
+    /// family, and this is the door to what is not yet.
+    private var heardRow: some View {
+        NavigationLink(value: HeardNamesRoute()) {
+            // An HStack rather than a Label, and fixedSize on the Text
+            // itself: as a Label's title the sentence was measured clipped
+            // at the default size — one line, cut with an ellipsis — on the
+            // audit's first run. Two literal keys rather than a ternary,
+            // which would be a String and never looked up.
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Image(systemName: "ear")
+                    .foregroundStyle(Elder.supporting)
+                Group {
+                    if heard.count == 1 {
+                        Text("1 nimi odottaa tarkistusta")
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text("\(heard.count) nimeä odottaa tarkistusta")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .font(.body.weight(.medium))
+                .multilineTextAlignment(.leading)
+            }
+            .padding(.vertical, 6)
+        }
+        .listRowBackground(Elder.paper)
+    }
 }
 
 private struct PersonRow: View {
@@ -318,13 +369,10 @@ private struct PersonRow: View {
                 Text(subject.displayTitle)
                     .font(.body.weight(.medium))
 
-                // Two different things, two different signals. Orange plus the
-                // word "Ehdotus" = check this. Blue plus a microphone = do this.
-                if !subject.confirmed {
-                    Text("Ehdotus — vahvista henkilö")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Elder.proposal)
-                } else if store.memories(for: subject.id).isEmpty {
+                // Only confirmed people reach this row since 12 Sep 2026; the
+                // orange "Ehdotus" line that stood here first is behind the
+                // door at the bottom of the list (`HeardNamesScreen`).
+                if store.memories(for: subject.id).isEmpty {
                     // A gap is not hidden but shown as an invitation.
                     // Not tinted — the same call as the gallery's row and the
                     // guessing round's card: blue on this grey only nearly
@@ -452,20 +500,11 @@ struct SubjectDetailScreen: View {
                 }
             }
 
-            // Where it is, for a place the lookup found. Under the name and
-            // above everything told about it, because the map answers "where"
-            // and the memories answer "what happened there".
-            //
-            // `current` and not `subject`: correcting a place's name clears
-            // its coordinate (`PlaceResolver`), and this screen has to show
-            // the archive as it is now rather than as it was when it opened.
-            if current.kind == .place, current.place != nil {
-                Section {
-                    PlaceMapCard(subject: current)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                }
-            }
+            // No map on a place's card in v1 — decided 12 Sep 2026 with the
+            // rest of "yksi kerronta, yksi muisto". `PlaceMapCard` drew the
+            // looked-up coordinate here from 10 Sep; the coordinates keep
+            // accumulating for confirmed places (ARCHITECTURE §18), and the
+            // card is v1.1's to bring back.
 
             // The date, and the way to put one there. It used to be a label that
             // appeared only when the extraction had heard a year — so a
@@ -766,6 +805,16 @@ private struct MemoryRow: View {
         date.formatted(date: .numeric, time: .omitted)
     }
 
+    /// The names this telling heard that nobody has checked. Answered here,
+    /// on the telling itself, since 12 Sep 2026 — where the sentence they came
+    /// from is. They used to be answered nowhere but the result screen, and
+    /// then sat as orange rows among the family's people for good.
+    private var heardHere: [Subject] {
+        memory.mentionedSubjectIDs
+            .compactMap { store.subject(id: $0) }
+            .filter { !$0.confirmed && $0.deletedAt == nil }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if memory.isAwaitingTranscription {
@@ -779,6 +828,27 @@ private struct MemoryRow: View {
             } else {
                 Text(memory.body)
                     .elderBody()
+            }
+
+            if !heardHere.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Kuulin nämä")
+                        .font(.subheadline.weight(.semibold))
+                    // No sentence here: the whole telling stands right above,
+                    // and quoting a line of it back doubled the row — the
+                    // photo card grew a page and the ask button fell out of a
+                    // sweep's reach. The door and the result, where the text
+                    // is not beside the name, keep the sentence.
+                    ForEach(heardHere) { subject in
+                        HeardNameRow(
+                            subject: subject,
+                            sentence: nil,
+                            onConfirm: { store.confirm(subjectID: subject.id) },
+                            onReject: { store.remove(subjectID: subject.id) }
+                        )
+                    }
+                }
+                .padding(.top, 4)
             }
 
             HStack(spacing: 12) {

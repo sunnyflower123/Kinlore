@@ -2943,6 +2943,12 @@ you cannot browse to it. Native MapKit, so no key, no account, no quota — and
 **no location permission either**, because it renders a coordinate the archive
 already holds and never asks where the phone is.
 
+**Withdrawn from v1 on 12 Sep 2026.** The card draws no map until v1.1 —
+decision 9.2 of the first-run plan, taken with the rest of *"yksi kerronta,
+yksi muisto"* — and the lookup itself now waits for a confirmation (above).
+`PlaceMapCard` and `scripts/place-map-check.swift` stay, used by no screen,
+for the day it returns; the coordinates keep accumulating meanwhile.
+
 This paragraph used to end *"what it does not have is a position on anything"*,
 which was true for three weeks and is the sentence a reader would have trusted.
 Corrected here rather than deleted, because the reason it stopped being true is
@@ -3516,6 +3522,19 @@ recall on the row where a wrong name is caught — with the rows to check first
 and the familiar names quieter below them, exactly as before. Two questions
 show rather than three; the third is stored and the loop asks it.
 `ResultScreenTests` pins it.
+
+**And the lists, the same day.** Ihmiset lists confirmed people only; the
+names the extraction heard and nobody has checked wait behind one quiet row
+at the bottom — *"2 nimeä odottaa tarkistusta"* — on a screen of
+their own (`HeardNamesScreen`), each with the sentence it was heard in and
+the two answers the result screen's row already had, *Vahvista* and
+*Poista*; the name opens the card, where *Korjaa nimi* is. The orange
+*"Ehdotus"* row that stood among the family is gone from both lists: Muistot
+shows confirmed places only, and a moment is told apart by its first words
+under its day. The telling itself carries *"Kuulin nämä"* on its row, so a
+proposal ignored at the result is answered where the sentence is rather than
+nowhere. And a place's card draws no map in v1 (§18). `HeardNamesTests` pins
+the three.
 
 Measured: `testResult` and `testResultWithProposals`, both text sizes, green —
 which is what checks the new `.bordered` labels against the contrast minimum,

@@ -116,7 +116,12 @@ struct GalleryScreen: View {
     /// card could not be opened at all. Its memories were invisible, its starter
     /// questions could never be asked, and "Kysy perheeltä" could not be used on
     /// it. A subject nobody can reach is not part of the archive.
-    private var places: [Subject] { store.subjects(of: .place, matching: query) }
+    /// Confirmed places only, since 12 Sep 2026: a place the extraction heard
+    /// and nobody has vouched for is a merkintä inside the telling, answered
+    /// on the memory's own row, and not a card among the family's places.
+    private var places: [Subject] {
+        store.subjects(of: .place, matching: query).filter(\.confirmed)
+    }
 
     /// What is typed in the search field.
     @State private var query = ""
@@ -1114,6 +1119,20 @@ private struct SubjectRow: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
 
+    /// The first words of a telling, whole words up to about sixty characters,
+    /// with an ellipsis when there is more.
+    static func opening(of text: String, limit: Int = 60) -> String {
+        let words = text.split(separator: " ")
+        var out = ""
+        for word in words {
+            let next = out.isEmpty ? String(word) : out + " " + word
+            if next.count > limit { break }
+            out = next
+        }
+        if out.isEmpty { out = String(text.prefix(limit)) }
+        return out.count < text.count ? out + "…" : out
+    }
+
     var body: some View {
         HStack(spacing: 14) {
             // A person gets their initial; a place and an event keep their
@@ -1122,29 +1141,15 @@ private struct SubjectRow: View {
             if subject.kind == .person {
                 SubjectAvatar(subject: subject)
             } else {
-                // The badge belongs on the symbol too. It lives inside
-                // `SubjectAvatar`, and the split above is a decision about
-                // AVATARS — an initial tells two people apart where a pin
-                // says what kind of row this is — so until 12 Sep 2026 an
-                // unconfirmed place carried no mark at all while an
-                // unconfirmed person carried one here and three on the people
-                // list. Nobody decided that; it fell out of the avatar.
-                ZStack(alignment: .bottomTrailing) {
-                    Image(systemName: subject.kind.symbolName)
-                        .font(.title2)
-                        .foregroundStyle(Elder.supporting)
-                        .frame(width: 34)
-
-                    if !subject.confirmed {
-                        Image(systemName: "questionmark.circle.fill")
-                            .font(.footnote)
-                            .foregroundStyle(Elder.proposal)
-                            // Its own plate, so the badge does not sit half on
-                            // the symbol and half on the paper and read as
-                            // neither.
-                            .background(Circle().fill(Elder.paper).padding(-1))
-                    }
-                }
+                // No badge: nothing unconfirmed reaches this row since 12 Sep
+                // 2026 — places are listed confirmed only, and an event is
+                // made by a person. The question-mark plate that stood here
+                // for one day marked the unconfirmed place this list no
+                // longer holds.
+                Image(systemName: subject.kind.symbolName)
+                    .font(.title2)
+                    .foregroundStyle(Elder.supporting)
+                    .frame(width: 34)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1176,15 +1181,21 @@ private struct SubjectRow: View {
     @ViewBuilder
     private var subtitle: some View {
         let count = store.memories(for: subject.id).count
-        // Ahead of the count, the way `PersonRow` orders the same two things:
-        // shape and colour carry it in the badge, this carries it in words,
-        // which is rule 1 and the contract `SubjectAvatar` states. Only a
-        // place reaches it — `extract.ts` proposes `person` and `place` and
-        // nothing else, so an event on this row was made by a human.
-        if !subject.confirmed {
-            Text("Ehdotus — vahvista paikka")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(Elder.proposal)
+        // A moment is told apart by its first words: since 12 Sep 2026 a free
+        // dictation is shown under its day rather than under a title the model
+        // wrote, and five told on one day are five rows saying the same date
+        // without this line. The "Ehdotus — vahvista paikka" branch stood
+        // here until the same day; only confirmed places are listed now.
+        if subject.kind == .event,
+           let words = store.memories(for: subject.id).first(where: { !$0.body.isEmpty })?.body {
+            // Cut in the words, not by the frame: a `lineLimit` was measured
+            // as "Text clipped" by the audit, which is right — an ellipsis
+            // the layout adds is text the reader cannot reach. An ellipsis
+            // in the string is not.
+            Text(verbatim: Self.opening(of: words))
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+                .fixedSize(horizontal: false, vertical: true)
         } else if count == 0 {
             // The microphone says what to do, so the meaning does not rest on
             // the colour alone.

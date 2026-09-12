@@ -118,11 +118,13 @@ final class BlindConfirmationTests: XCTestCase {
         app.tabBars.buttons["Ihmiset"].tap()
         XCTAssertTrue(
             app.staticTexts["Aino"].waitForExistence(timeout: 10),
-            "never arrived: the people list"
+            "never arrived: the people list, with the recognised person on it"
         )
+        // The list is the confirmed family; a name still waiting sits behind
+        // one row at the bottom, and nothing is left waiting.
         XCTAssertFalse(
-            app.staticTexts["Ehdotus — vahvista henkilö"].exists,
-            "the person was recognised and is still only a proposal"
+            app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch.exists,
+            "the person was recognised and is still waiting behind the door"
         )
     }
 
@@ -146,10 +148,12 @@ final class BlindConfirmationTests: XCTestCase {
         app.buttons["Jatka"].tap()
 
         app.tabBars.buttons["Ihmiset"].tap()
-        XCTAssertTrue(
-            app.staticTexts["Ehdotus — vahvista henkilö"].waitForExistence(timeout: 10),
-            "a name that was not recognised confirmed the proposal anyway"
-        )
+        // Still waiting: not on the list, behind the door (12 Sep 2026).
+        let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
+        XCTAssertTrue(door.waitForExistence(timeout: 10), "a name that was not recognised confirmed the proposal anyway")
+        XCTAssertFalse(app.staticTexts["Aino"].exists, "an unconfirmed name is on the family's list")
+        door.tap()
+        XCTAssertTrue(app.staticTexts["Aino"].waitForExistence(timeout: 10), "the waiting name is not behind the door")
     }
 
     /// *"En muista"* is an answer, not a refusal.

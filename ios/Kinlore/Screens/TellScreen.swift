@@ -1625,13 +1625,7 @@ private struct ResultView: View {
     /// ("Matin" for Matti) gets no sentence rather than a wrong one.
     private func heard(_ subject: Subject) -> String? {
         guard let text = model.result?.body ?? model.transcript else { return nil }
-        let name = subject.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return nil }
-        let sentences = text.split(whereSeparator: { ".!?\n".contains($0) })
-        guard let hit = sentences.first(where: { $0.localizedCaseInsensitiveContains(name) })
-        else { return nil }
-        let trimmed = hit.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : "”\(trimmed)”"
+        return HeardSentence.find(subject.title, in: text)
     }
 
     private var knownSection: some View {

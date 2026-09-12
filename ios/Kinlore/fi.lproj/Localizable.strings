@@ -67,12 +67,15 @@
 "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.";
 "Korjaa nimi" = "Korjaa nimi";
 "Korjaa nimet myös muistoon" = "Korjaa nimet myös muistoon";
+"Kuullut nimet" = "Kuullut nimet";
+"1 nimi odottaa tarkistusta" = "1 nimi odottaa tarkistusta";
+"%lld nimeä odottaa tarkistusta" = "%lld nimeä odottaa tarkistusta";
+"Nämä nimet kuultiin kerronnassa. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Nämä nimet kuultiin kerronnassa. Emme lisää sukuun ketään jota et ole hyväksynyt.";
+"Kaikki kuullut nimet on tarkistettu." = "Kaikki kuullut nimet on tarkistettu.";
 "Vahvista" = "Vahvista";
 "Hylkää" = "Hylkää";
 "En muista" = "En muista";
 "En muista tätä" = "En muista tätä";
-"Ehdotus — vahvista henkilö" = "Ehdotus — vahvista henkilö";
-"Ehdotus — vahvista paikka" = "Ehdotus — vahvista paikka";
 "Vahvista %@" = "Vahvista %@";
 "Poista %@" = "Poista %@";
 "Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva." = "Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.";

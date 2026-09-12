@@ -181,8 +181,13 @@ final class TakingBackTests: XCTestCase {
     func testAPersonNobodyHasToldAboutCanBeDeleted() {
         let app = launch(["-seed", "archive", "-tab", "people"])
 
+        // Aino is a name nobody has checked, so since 12 Sep 2026 she is
+        // behind the door at the bottom of the list rather than on it.
+        let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
+        XCTAssertTrue(door.waitForExistence(timeout: 10), "never arrived: the people list's door")
+        door.tap()
         let aino = app.staticTexts["Aino"]
-        XCTAssertTrue(aino.waitForExistence(timeout: 10), "never arrived: the people list")
+        XCTAssertTrue(aino.waitForExistence(timeout: 10), "never arrived: the names heard")
         aino.tap()
 
         let remove = app.buttons["Poista henkilö"]
@@ -194,9 +199,9 @@ final class TakingBackTests: XCTestCase {
         XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
         confirm.tap()
 
-        // Back on the list, and she is not on it.
-        XCTAssertTrue(app.navigationBars["Ihmiset"].waitForExistence(timeout: 10), "did not get back to the people list")
-        XCTAssertFalse(app.staticTexts["Aino"].exists, "the deleted person is still on the list")
+        // Back behind the door, and she is not there either.
+        XCTAssertTrue(app.navigationBars["Kuullut nimet"].waitForExistence(timeout: 10), "did not get back to the names heard")
+        XCTAssertFalse(app.staticTexts["Aino"].exists, "the deleted person is still listed")
     }
 
     /// The other half: a recording abandoned while it is still running.

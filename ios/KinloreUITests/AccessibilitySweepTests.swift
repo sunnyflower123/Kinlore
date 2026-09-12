@@ -819,7 +819,20 @@ final class AccessibilitySweepTests: XCTestCase {
 
     func testPeople() throws {
         try sweep("Ihmiset", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
-            require(app.staticTexts["Aino"], "a person in the demo archive")
+            require(app.staticTexts["Eeva"], "a person in the demo archive")
+            // And the door: the fixture's Aino is a name nobody has checked,
+            // and since 12 Sep 2026 she waits behind this row, not on the list.
+            require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door to the names heard")
+        }
+    }
+
+    /// The names heard and not yet checked, one screen behind the people
+    /// list: each with the sentence it was heard in and its two answers. A
+    /// new screen, so it is measured at both sizes before it is called done.
+    func testHeardNames() throws {
+        try sweep("Kuullut nimet", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+            require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
+            require(app.buttons["Vahvista Aino"], "the name heard, with its answer")
         }
     }
 
@@ -888,7 +901,9 @@ final class AccessibilitySweepTests: XCTestCase {
     /// the card can be deleted: the fixture's Aino.
     func testPersonCardWithoutAStory() throws {
         try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
-            require(app.staticTexts["Aino"], "the people list").tap()
+            // Through the door: a name nobody has checked is not on the list.
+            require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
+            require(app.staticTexts["Aino"], "the name heard").tap()
             reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person")
         }
     }
@@ -1122,35 +1137,26 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// A place's own screen, which is the photo screen plus a map.
+    /// A place's own screen: the photo screen without a picture, and since
+    /// 12 Sep 2026 without a map.
     ///
-    /// `PlaceMapCard` shipped without one of these. The fixture was built for
-    /// it — the demo archive gives Puumala a coordinate expressly so the card
-    /// is reachable from a seeded launch, and says so in its own comment — and
-    /// then the sweep that was supposed to use it was never written, so a new
-    /// screen carrying a full-bleed map, a wax circle over it and a spoken
-    /// label went out with nothing measuring any of them. The count stayed at
-    /// 57 across the commit that added the screen, which is the only sign
-    /// there was.
-    ///
-    /// The map's own label is what proves arrival, and it has to be the
-    /// circle's rather than the pin's: Puumala is a municipality, so rule 5
-    /// says the card draws an area. A run that found the pin's wording here
-    /// would mean the precision had been rounded somewhere on the way.
+    /// From 10 to 12 Sep this audited `PlaceMapCard` — a full-bleed map, a
+    /// wax circle over it and a spoken label, and the fixture gives Puumala a
+    /// coordinate expressly so that card was reachable from a seeded launch.
+    /// The map left v1 with decision 9.2 of the first-run plan (ARCHITECTURE
+    /// §18); the card stays, and so does this sweep of it, because a screen
+    /// that lost its largest element is a screen whose layout changed.
     func testPlaceDetail() throws {
-        try sweep("Paikan kartta", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
+        try sweep("Paikan kortti", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             let row = app.buttons
                 .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
                 .firstMatch
             reach(row, in: app, "the place's row in Muistot").tap()
-            let map = require(
-                app.otherElements["Suunnilleen tällä seudulla kartalla"],
-                "the place card's map"
+            require(app.buttons["Kerro tästä muisto"], "the place's own screen")
+            XCTAssertFalse(
+                app.otherElements["Suunnilleen tällä seudulla kartalla"].exists,
+                "the map is back on the card before v1.1"
             )
-            // A map draws itself over several frames, and the tiles arrive
-            // from a cache rather than instantly. Auditing mid-draw is how the
-            // gallery's tiles once reported colours nothing had drawn.
-            settle(map)
         }
     }
 

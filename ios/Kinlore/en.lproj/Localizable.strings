@@ -75,12 +75,15 @@
 "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Write the name again if I heard it wrong. Nobody joins the family without your approval.";
 "Korjaa nimi" = "Correct the name";
 "Korjaa nimet myös muistoon" = "Correct the names in the memory too";
+"Kuullut nimet" = "Names heard";
+"1 nimi odottaa tarkistusta" = "1 name waiting to be checked";
+"%lld nimeä odottaa tarkistusta" = "%lld names waiting to be checked";
+"Nämä nimet kuultiin kerronnassa. Emme lisää sukuun ketään jota et ole hyväksynyt." = "These names were heard in a telling. Nobody joins the family tree unless you say so.";
+"Kaikki kuullut nimet on tarkistettu." = "Every name heard has been checked.";
 "Vahvista" = "Confirm";
 "Hylkää" = "Reject";
 "En muista" = "I do not remember";
 "En muista tätä" = "I do not remember this";
-"Ehdotus — vahvista henkilö" = "A proposal — confirm this person";
-"Ehdotus — vahvista paikka" = "A proposal — confirm this place";
 "Vahvista %@" = "Confirm %@";
 "Poista %@" = "Remove %@";
 "Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva." = "The ones marked in orange are the app's proposals. Confirm only the ones you know to be right — a wrong relationship is worse than a missing one.";

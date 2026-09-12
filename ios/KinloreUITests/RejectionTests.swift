@@ -57,12 +57,18 @@ final class RejectionTests: XCTestCase {
         let app = launch(["-seed", "archive", "-tab", "people"])
 
         XCTAssertTrue(
-            app.staticTexts["Aino"].waitForExistence(timeout: 10),
+            app.staticTexts["Eeva"].waitForExistence(timeout: 10),
             "the people list, so that the absence below means something"
         )
         XCTAssertFalse(
             app.staticTexts["Skotlanti"].exists,
             "a rejected person is kept only so the rejection can travel, and must not be shown"
         )
+        // Nor behind the door, where the names still waiting are.
+        let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
+        XCTAssertTrue(door.waitForExistence(timeout: 10), "never arrived: the door")
+        door.tap()
+        XCTAssertTrue(app.staticTexts["Aino"].waitForExistence(timeout: 10), "never arrived: the names heard")
+        XCTAssertFalse(app.staticTexts["Skotlanti"].exists, "a rejected person is behind the door")
     }
 }
