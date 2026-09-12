@@ -567,3 +567,13 @@
 "%lld kuvaa jäi tuomatta. Voit yrittää niitä uudelleen." = "%lld pictures were not brought in. You can try them again.";
 "%lld muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä." = "%lld memories are still on this phone only. Sending does not work right now — see the Family screen.";
 "%lld muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa." = "%lld memories are still on this phone only. They go to the family by themselves when the connection returns.";
+
+/* --- The record button's own voice, 12 Sep 2026 --------------------------
+   The label and the hint on the one control this app exists for, both in a
+   ternary and so neither looked up. VoiceOver read them in Finnish to an
+   English listener — on the largest button on the first screen, which rule 1
+   is about before it is about anything else. */
+"Lopeta kertominen" = "Stop telling";
+"Aloita kertominen" = "Start telling";
+"Tallentaa muiston" = "Saves the memory";
+"Nauhoittaa puheesi ja tallentaa sen muistoksi" = "Records your voice and keeps it as a memory";

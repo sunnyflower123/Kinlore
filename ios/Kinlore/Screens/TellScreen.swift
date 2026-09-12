@@ -2255,8 +2255,8 @@ private struct RecordButton: View {
             .scaleEffect(pulse ? 1.04 : 1.0)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isRecording ? "Lopeta kertominen" : "Aloita kertominen")
-        .accessibilityHint(isRecording ? "Tallentaa muiston" : "Nauhoittaa puheesi ja tallentaa sen muistoksi")
+        .accessibilityLabel(isRecording ? String(localized: "Lopeta kertominen") : String(localized: "Aloita kertominen"))
+        .accessibilityHint(isRecording ? String(localized: "Tallentaa muiston") : String(localized: "Nauhoittaa puheesi ja tallentaa sen muistoksi"))
         .onAppear { pulse = isRecording }
         .onChange(of: isRecording) { _, recording in
             guard recording else {

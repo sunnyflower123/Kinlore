@@ -496,3 +496,9 @@
 "%lld kuvaa jäi tuomatta. Voit yrittää niitä uudelleen." = "%lld kuvaa jäi tuomatta. Voit yrittää niitä uudelleen.";
 "%lld muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä." = "%lld muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.";
 "%lld muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa." = "%lld muistoa on vielä vain tässä puhelimessa. Ne lähtevät perheelle itsestään kun verkko palaa.";
+
+/* --- The record button's own voice, 12 Sep 2026 — see en.lproj. */
+"Lopeta kertominen" = "Lopeta kertominen";
+"Aloita kertominen" = "Aloita kertominen";
+"Tallentaa muiston" = "Tallentaa muiston";
+"Nauhoittaa puheesi ja tallentaa sen muistoksi" = "Nauhoittaa puheesi ja tallentaa sen muistoksi";
