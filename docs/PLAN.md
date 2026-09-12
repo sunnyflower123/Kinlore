@@ -566,15 +566,25 @@ finished.**
   they buy; it is written down so that nobody reads the webhook's
   `no_expiration` as a defect, or the missing grant as covered.
 
-  What is left is the dashboard, not the repository: `lifetime` back as a
-  non-consumable at 80, `yearly` at 50, `monthly` out of the `default`
-  offering, and the paywall drawn the same day (ARCHITECTURE §6) redrawn
-  with the two packages and their sentences in both languages — the words
-  live outside `localisation-check.mjs` and every audit, so the English one
-  is screenshotted by hand before filming. §6's paragraph on the paywall
-  describes the two-package version with its discount label and its
-  9,99 / 79,99 US$; it is rewritten when the dashboard is, and §1's paywall
-  row with it.
+  **Done in the dashboard the same evening, with one thing learnt on the
+  way.** A Test Store product's price is fixed when the product is created
+  — the form says so, and the product page has no control to change it —
+  so a new price is a new product. `yearly_50` (a yearly subscription at
+  50) and `lifetime_80` (a non-consumable at 80) were created, attached to
+  the entitlement, and put into the `default` offering's `$rc_annual` and
+  `$rc_lifetime` packages; the `$rc_monthly` package was removed. The old
+  `yearly` (79.99), `lifetime` (99.99) and `monthly` (9.99) products still
+  exist, attached to no offering, and can be archived once nothing refers
+  to them. The paywall drawn that morning (ARCHITECTURE §6) was redrawn as
+  a draft with the two packages — *"The archive, for ever / One payment.
+  It never ends."* above *"A year for the family / Billed once a year"*,
+  the badge on the first — and given a Finnish locale that uses the app's
+  own words where it has them (*"Avaa koko arkisto"*, *"Kertominen on
+  aina ilmaista. Sitä ei rajoiteta koskaan."*). Those words live outside
+  `localisation-check.mjs` and every audit, so the English screen is
+  screenshotted by hand before filming. Publishing the draft is a button
+  the developer presses; §6's paragraph on the paywall is rewritten from
+  the pixels once it has been, and §1's paywall row with it.
 
   Whether fifty or eighty is too much for a first purchase cannot be
   answered here: there are no users, and no money moves before a store
