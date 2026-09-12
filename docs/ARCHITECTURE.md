@@ -3417,6 +3417,27 @@ duplicated as strings in `AccessibilityPolicy.systemEmptyStateText`, because a
 the label. Change the sentence on the screen and that list changes with it, or
 `testPeopleEmpty` goes red. That is the coupling working.
 
+**Three words are reserved**, which is the one kind of row the table above
+cannot hold: an act that must not get a word. Counted in both `.strings`
+tables on 12 Sep 2026.
+
+- **"Jaa" points inward, always.** The verb appears three times — *"Jaa
+  kutsu"*, *"Jaa silti"*, and *"jaa se vain omille"* in the note under the
+  invite — and every one of them hands something to the family. It is never
+  the word for making something public. A third meaning would teach her that
+  the word she has learnt also publishes things, and there is no unlearning
+  that.
+- **"Tarina" is not used at all.** Zero in both tables. A *tarina* is told for
+  effect, or made up; what this app collects is *muistoja*, and the difference
+  is the product.
+- **"Vanhus" appears nowhere she can see.** Zero in both tables. Nobody wants
+  to be called one, and the app has never needed the word: its strings say
+  *isovanhempi* — a relation, not an age — and since 12 Sep 2026 the site says
+  the same in English, *a grandmother*, where it used to say *an old person*.
+  The developer documents still describe the primary user by age. They
+  describe her to an engineer and do not address her, which is a different
+  register.
+
 ---
 
 ## 22. The one blue button
