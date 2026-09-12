@@ -80,6 +80,7 @@
 "En muista" = "I do not remember";
 "En muista tätä" = "I do not remember this";
 "Ehdotus — vahvista henkilö" = "A proposal — confirm this person";
+"Ehdotus — vahvista paikka" = "A proposal — confirm this place";
 "Vahvista %@" = "Confirm %@";
 "Poista %@" = "Remove %@";
 "Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva." = "The ones marked in orange are the app's proposals. Confirm only the ones you know to be right — a wrong relationship is worse than a missing one.";

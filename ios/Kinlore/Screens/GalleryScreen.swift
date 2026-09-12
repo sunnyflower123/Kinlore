@@ -1051,10 +1051,29 @@ private struct NewTellingRow: View {
             if subject.kind == .person {
                 SubjectAvatar(subject: subject)
             } else {
-                Image(systemName: subject.kind.symbolName)
-                    .font(.title2)
-                    .foregroundStyle(Elder.supporting)
-                    .frame(width: 34)
+                // The badge belongs on the symbol too. It lives inside
+                // `SubjectAvatar`, and the split above is a decision about
+                // AVATARS — an initial tells two people apart where a pin
+                // says what kind of row this is — so until 12 Sep 2026 an
+                // unconfirmed place carried no mark at all while an
+                // unconfirmed person carried one here and three on the people
+                // list. Nobody decided that; it fell out of the avatar.
+                ZStack(alignment: .bottomTrailing) {
+                    Image(systemName: subject.kind.symbolName)
+                        .font(.title2)
+                        .foregroundStyle(Elder.supporting)
+                        .frame(width: 34)
+
+                    if !subject.confirmed {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(Elder.proposal)
+                            // Its own plate, so the badge does not sit half on
+                            // the symbol and half on the paper and read as
+                            // neither.
+                            .background(Circle().fill(Elder.paper).padding(-1))
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1096,10 +1115,29 @@ private struct SubjectRow: View {
             if subject.kind == .person {
                 SubjectAvatar(subject: subject)
             } else {
-                Image(systemName: subject.kind.symbolName)
-                    .font(.title2)
-                    .foregroundStyle(Elder.supporting)
-                    .frame(width: 34)
+                // The badge belongs on the symbol too. It lives inside
+                // `SubjectAvatar`, and the split above is a decision about
+                // AVATARS — an initial tells two people apart where a pin
+                // says what kind of row this is — so until 12 Sep 2026 an
+                // unconfirmed place carried no mark at all while an
+                // unconfirmed person carried one here and three on the people
+                // list. Nobody decided that; it fell out of the avatar.
+                ZStack(alignment: .bottomTrailing) {
+                    Image(systemName: subject.kind.symbolName)
+                        .font(.title2)
+                        .foregroundStyle(Elder.supporting)
+                        .frame(width: 34)
+
+                    if !subject.confirmed {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(Elder.proposal)
+                            // Its own plate, so the badge does not sit half on
+                            // the symbol and half on the paper and read as
+                            // neither.
+                            .background(Circle().fill(Elder.paper).padding(-1))
+                    }
+                }
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -1131,7 +1169,16 @@ private struct SubjectRow: View {
     @ViewBuilder
     private var subtitle: some View {
         let count = store.memories(for: subject.id).count
-        if count == 0 {
+        // Ahead of the count, the way `PersonRow` orders the same two things:
+        // shape and colour carry it in the badge, this carries it in words,
+        // which is rule 1 and the contract `SubjectAvatar` states. Only a
+        // place reaches it — `extract.ts` proposes `person` and `place` and
+        // nothing else, so an event on this row was made by a human.
+        if !subject.confirmed {
+            Text("Ehdotus — vahvista paikka")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Elder.proposal)
+        } else if count == 0 {
             // The microphone says what to do, so the meaning does not rest on
             // the colour alone.
             // Not tinted, for the third time in this app and for the reason

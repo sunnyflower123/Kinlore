@@ -56,9 +56,9 @@ An honest inventory, not a wish list:
 | Media to R2 (`/media`) | **Done and checked**, see §5 — the round trip and the isolation, against wrangler's local bucket |
 | Quotas (`/usage`, limits on the server) | **Done and checked**, see §7 — the counting and rule 2; not the transcription path itself |
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
-| RevenueCat, shared family entitlement | **Built and checked without a key** — the binding rule, the webhook's revocation rules and the REST verification all run against the shipping schema with RevenueCat replaced, see §6. What still needs a key is the part a key is actually for: a real purchase, a real event with a real signature, and the paywall screen |
+| RevenueCat, shared family entitlement | **Done and driven end to end in production, 12 Sep 2026** — the binding rule, the webhook's revocation rules and the REST verification run against the shipping schema with RevenueCat replaced (§6); and on a Test Store key a real purchase reached `family.entitlement`, and a signed `INITIAL_PURCHASE` reached the deployed Worker. The row below is what is left |
 | Audio playback, open questions, relationships | **Done and tested** |
-| Paywall | Built — unverified, needs a RevenueCat key |
+| Paywall | **Built and reached** — the key configures the SDK and the sheet opens; the purchase completes. It draws RevenueCat's *"No Paywall configured"* placeholder, because no paywall is designed in their dashboard. That is dashboard work, not code, and VIDEO.md's fifth scene is currently pointed at it |
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
 | Places, reachable rather than only stored | **Done and tested**, see §8 |
@@ -1081,6 +1081,61 @@ not one.
 What this does **not** check, and no amount of it could: a real Test Store key,
 a real purchase, a real webhook signature, and the paywall screen. Those are
 still the first things to do the day a key exists.
+
+### Driven end to end, 12 Sep 2026
+
+The section above proved the logic with RevenueCat replaced. This is the day it
+ran against the real one, and the row in §1 changed because of these two
+measurements rather than because the code looked right.
+
+**A purchase reached `family.entitlement`.** A Test Store purchase on a
+simulator, and the production row went from `free` with no payer to
+`archive`, `payer_id` set, `entitlement_expires_at` set — and `member.
+entitlement_expires_at` with it, which is `c519132`'s column getting its first
+real value. The baseline was measured first: ten families, all free, no bound
+payer. So the row could not have been old.
+
+**And a signed event reached the deployed Worker.** From `wrangler tail`:
+
+    POST .../webhook/revenuecat — Ok @ 14:40:57
+    (log) [entitlement] INITIAL_PURCHASE → archive
+
+That line is the one that cannot be faked, and the reason is worth keeping.
+`Ok` rather than 401 means the Authorization header matched `RC_WEBHOOK_SECRET`
+byte for byte. `INITIAL_PURCHASE` is RevenueCat's own event-type string, and
+`handleWebhook` is the only thing in this repository that logs it —
+`syncEntitlement` logs nothing on success. So the line cannot have come from
+the app's own path, which was already proven and is a different claim.
+
+**Two things had to be got wrong first, and both are the same mistake.**
+
+A watcher polled D1 for the entitlement changing and called that proof. It is
+not: a new purchase reaches `applyEntitlement` through the app's
+`syncPurchase` as well as through the webhook, so a changed row says *one of
+the two* worked. Then the same watcher saw `archive → free`, announced *"the
+downward path is proven end to end"* — and that transition was a hand-typed
+`UPDATE` clearing the stale row four minutes earlier. **A D1 row does not
+record who wrote it.** The Worker's log does, which is why the proof above is
+a log line and not a row.
+
+**What has not been configured, and is not code.** No paywall is drawn in
+RevenueCat's dashboard, so `PaywallView` falls back to their own placeholder —
+pink, in English, with their cat and the words *"No Paywall configured"*. The
+products are there (two, monthly and yearly) and the purchase completes
+through it, so nothing is blocked; but VIDEO.md's fifth scene would film that
+screen as it stands, and rule 1 says colours come from `Elder.swift`.
+
+**One thing measured on the way, recorded because it is invisible.**
+`quota.ts` reads `SELECT entitlement FROM family` and nothing in
+`backend/src/` outside this file reads `entitlement_expires_at` at all. The
+date is written and never compared. So the paid tier is gated by a word that
+only an event can change — and the app cannot supply that event either:
+`syncEntitlementIfPurchased` guards on `hasActivePurchase`, which is false once
+the subscription lapses, so the device stops reporting exactly when the news
+matters. **The webhook is the only path that can ever take the tier away.** It
+works, as of today; the point is that if it stops, nothing notices, and the
+family stays paid with a date months in the past. Whether that is worth a
+periodic reconciliation is a §6 decision and is not taken here.
 
 ### One purchase, one family
 
@@ -2865,11 +2920,28 @@ said out loud, not one of them a street. Whoever changes `precision(of:)`, or
 adds `.pointOfInterest` to `resultTypes` so that a hairdresser named Koivula
 can win the query, turns that claim red — and CLAUDE.md already sends anybody
 who touches `PlaceLookup.swift` to run it, which is as close to automatic as a
-check that costs a network round trip gets here. The confirmation the
-paragraph asks for — from a human who knows which Karjala it was — still does
-not exist, and `PlaceHint` has no field to hold it. What the check buys is not
-the rule; it is that the day the rule starts mattering is a day somebody is
-told.
+check that costs a network round trip gets here. The confirmation this
+paragraph asks for — from a human who knows which *Karjala* it was — still
+does not exist. That is a judgement about the coordinate, and `PlaceHint` has
+no field to hold one. What the check buys is not the rule; it is that the day
+the rule starts mattering is a day somebody is told.
+
+**The subject above the coordinate does carry a confirmation, though, and
+nothing was reading it.** Every place the extraction hears is created
+`confirmed: false`, exactly as a person is — `extract.ts` proposes `person`
+and `place` and nothing else — and the Tell result offers it in the same
+orange row, where it can be confirmed or corrected. After that one moment the
+state was invisible: `SubjectRow` drew `SubjectAvatar`, which is where the
+badge lives, only for `.person`, so a place nobody had vouched for looked
+exactly like one somebody had, and its card drew a map either way.
+
+That was not decided. It fell out of a decision about **avatars** — an initial
+tells two people apart on a list of five where a pin only says what kind of
+row it is — and the badge happened to live inside the thing that was switched
+off. Corrected 12 Sep 2026: the badge is on the symbol as well, on both rows
+that carry one, and `SubjectRow` says *"Ehdotus — vahvista paikka"* underneath
+it. Shape and words, which is what `SubjectAvatar`'s own contract asks for and
+what rule 1 means by not resting on colour.
 
 ### When it runs
 
