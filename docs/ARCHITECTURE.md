@@ -71,7 +71,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 56 sweep tests, each auditing one screen at the default text size and again at the largest, out of 142 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 57 sweep tests, each auditing one screen at the default text size and again at the largest, out of 146 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2371,7 +2371,7 @@ audit in one sentence.
 
 | Default | Measured | Replaced with |
 |---|---|---|
-| iOS blue `#007AFF` on white | **4.0:1** | `AccentColor` `#0B57D0` — **6.4:1** |
+| iOS blue `#007AFF` on white | **4.0:1** | `AccentColor` `#0B57D0` — **5.54:1 on the paper** |
 | `.secondary` label | **≈4.2:1** | `Elder.supporting`, 75 % of primary — **≈6.6:1** |
 | iOS orange `#FF9500` on white | **2.2:1** | `Elder.proposal` `#B23C0B` — **5.14:1 on the paper** |
 
@@ -2395,7 +2395,10 @@ A fourth default belongs with them: **iOS red measures 3.6:1**, and it labels
 *"Tyhjennä ja aloita alusta"* — the one button in the app that destroys an
 archive, called *"Tyhjennä tämä laite"* when this was measured and renamed on
 29 Aug 2026.
-`Elder.destructive` `#B3261E` measures 6.5:1 and is unmistakably still a warning.
+`Elder.destructive` `#B3261E` measures 5.67:1 on the paper, 6.28:1 on card, and is
+unmistakably still a warning. It read 6.5:1 here until 12 Sep 2026 — the number on
+white, the same trap the orange above fell into, and the last ratio in this
+section still quoted against a ground the app does not have.
 
 ### The rest
 
