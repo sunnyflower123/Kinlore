@@ -62,6 +62,10 @@ CREATE TABLE member (
   role          TEXT NOT NULL DEFAULT 'member',  -- 'owner' | 'member'
   -- The member's own person card in the tree. A member is a subject just as
   -- much as a dead relative is.
+  --
+  -- Declared and unused: as of 12 Sep 2026 nothing in backend/src or in the
+  -- app writes or reads this column, so the link it describes does not exist
+  -- yet. Measured with grep over both trees, not assumed from the comment.
   person_subject_id TEXT REFERENCES subject(id),
   created_at    INTEGER NOT NULL,
   last_seen_at  INTEGER,
