@@ -294,17 +294,40 @@ Colours come from `Elder.swift` in the app and the six tokens in `kinlore.css`
 on the page — and neumorphism and glassmorphism are low-contrast by
 construction, which is rule 1 inverted.
 
-## Git — stage only what you changed yourself
+## Git — commit by path, because the index is shared
 
 Several sessions often work in this worktree at once, on `main`, and a commit is
 pushed to the public repo within minutes. A commit here is published by default,
 not local.
 
-**Stage files by path, only the ones you changed yourself.** Never `git add -A`,
-`git add .` or `git commit -a`: they sweep up another session's half-finished
-work, and it has already happened — one piece of work ended up split across
-three commits whose messages were about something else entirely. If `git status`
-shows changes you did not make, leave them alone and say so.
+**Commit the paths you changed yourself, in one command:**
+
+```bash
+git commit -F <message-file> -- ios/Kinlore/Design/SubjectAvatar.swift
+```
+
+Never `git add -A`, `git add .` or `git commit -a`: they sweep up another
+session's half-finished work, and it has happened — one piece of work ended up
+split across three commits whose messages were about something else entirely.
+If `git status` shows changes you did not make, leave them alone and say so.
+
+**`git add <path>` and then `git commit` is not enough, and that is the part
+this rule used to get wrong.** There is one index and every session shares it,
+so the gap between staging and committing is a hole: on 12 Sep 2026 a commit
+staged exactly one file, verified it with `git diff --cached --name-only`, and
+still went in carrying four of somebody else's — `docs/ARCHITECTURE.md`,
+`GalleryScreen.swift` and both `.strings` tables — because that session ran
+`git add` in between. The check passed and the commit was wrong anyway.
+
+`git commit -- <paths>` takes the working-tree content of those paths and
+ignores the index, so a concurrent `git add` cannot leak into it. Anything
+already staged stays staged and stays theirs.
+
+**Two more things that bite in the same place.** `git commit --amend` with no
+pathspec picks the index up again — use `--only -- <paths>`. And
+`.git/COMMIT_EDITMSG` belongs to whoever committed last, which may not be you:
+repairing the commit above by restoring that file put somebody else's message
+on it. Keep your message in a file of your own.
 
 ## Commands
 
