@@ -175,7 +175,16 @@ enum Elder {
     ///
     /// Not `.red`. iOS's red measures 3.6:1 against white, and these are the
     /// labels a person most needs to read correctly before tapping. #B3261E
-    /// measures 6.5:1 and is unmistakably still a warning.
+    /// measures **5.67:1 on `paper`** and 6.28:1 on card, and is unmistakably
+    /// still a warning.
+    ///
+    /// It said 6.5:1 until 12 Sep 2026, which is the number on **white** —
+    /// the exact trap the top of this section warns about, where #C2410C is
+    /// 5.2:1 on white and 4.43:1 on the parchment this project actually uses.
+    /// Nothing was wrong with the colour: it clears the minimum on both
+    /// grounds the app has. What was wrong was the evidence for it, quoted
+    /// against a background that does not exist here — and it was the only
+    /// shipped colour in this file still measured that way.
     static let destructive = Color(red: 0.702, green: 0.149, blue: 0.118)
 
     // `recording` — iOS's own red — stood here and had all three of its call

@@ -196,6 +196,15 @@ run "no request offers the memories for training" node scripts/data-collection-c
 # already by a check that had quietly stopped compiling for a week: an
 # instruction to run something "after touching X" is not a check, it is a
 # reminder, and it is only as good as whoever last read it.
+# The twenty-five contrast ratios written into Elder.swift, measured against
+# the assets the app ships. Rule 1 says contrast is the one thing eyes cannot
+# check, and those numbers are the argument for every colour in the app —
+# nothing verified any of them until 12 Sep 2026. `page-check.mjs` already
+# does this for the six tokens in kinlore.css; the palette had no equivalent.
+# The audit reads real pixels and is better, and it needs a quiet machine:
+# three runs in a row proved it cannot be trusted under load. This answers at
+# any load, so the two are not alternatives.
+run "the palette still measures what it claims" node scripts/palette-contrast-check.mjs
 run "only a point may be drawn as a point" place_map
 run "a long telling is given room to come back" node scripts/transcribe-budget-check.mjs
 # The two pure functions between the model's JSON and the family's archive.

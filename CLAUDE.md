@@ -756,6 +756,29 @@ node scripts/transcribe-budget-check.mjs
 # extract.ts.
 node scripts/extract-shaping-check.mjs
 
+# The palette against its own argument. Elder.swift carries twenty-five
+# contrast ratios in its comments — "15.17:1 under primary text", "5.59:1 on
+# wax", "1.39:1, never text" — and they are the justification for every colour
+# in the app under rule 1. Nothing verified them until 12 Sep 2026: edit one
+# hex in Assets.xcassets and every sentence around it becomes a lie, silently,
+# in the file whose whole job is to be believed. `page-check.mjs` already does
+# this for the six tokens in kinlore.css.
+#
+# It checks both directions — the computed ratio against the written number,
+# and the written number still being in the file — so an edited asset and an
+# edited sentence each fail, and the two can only move together on purpose.
+#
+# It does NOT replace the accessibility audit, which reads the pixels iOS
+# actually drew and so catches pairs nobody wrote down. It complements it: the
+# audit needs a quiet machine and three runs in a row on 12 Sep proved it
+# cannot be trusted under load, while this costs nothing and answers at any
+# load. Anything built on `Color.primary` is deliberately out of scope — that
+# is the system's colour, not this repo's, and asserting a guess about it
+# would be a check that goes green for the wrong reason.
+#
+# After touching Elder.swift or any .colorset.
+node scripts/palette-contrast-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after
