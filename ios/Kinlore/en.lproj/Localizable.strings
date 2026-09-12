@@ -447,6 +447,9 @@
 "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii." = "They are still in the family. Try again when the connection works.";
 "Vain perheen perustaja voi poistaa jäsenen." = "Only the family's founder can remove a member.";
 "Kopio tällä puhelimella" = "Copy on this phone";
+"Tila" = "Status";
+"Lähetys" = "Sending";
+"Kertominen tässä kuussa" = "Telling this month";
 "ei vielä kuvia eikä ääniä" = "no photographs or voices yet";
 "haetaan, %lld / %lld" = "fetching, %lld / %lld";
 "kaikki tallessa" = "everything is here";

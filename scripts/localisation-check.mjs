@@ -69,7 +69,7 @@ function swiftFiles(dir) {
 // attempt swallowed a doc comment whole and reported it as an untranslated
 // string. Two patterns cost one more line and cannot do that.
 const SHOWN = [
-  String.raw`(?:Text|Button|Label|Toggle|TextField|SecureField`
+  String.raw`(?:Text|Button|LabeledContent|Label|Toggle|TextField|SecureField`
     + String.raw`|navigationTitle|accessibilityLabel|accessibilityHint|alert|confirmationDialog)`
     + String.raw`\s*\(\s*"((?:[^"\\]|\\.)*)"`,
   String.raw`String\(localized:\s*"((?:[^"\\]|\\.)*)"`,
