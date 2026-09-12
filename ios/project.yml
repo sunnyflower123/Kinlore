@@ -47,6 +47,25 @@ schemes:
     archive:
       config: Release
 
+  # The same app against the real backend, for testing with one's own voice.
+  #
+  # A DEBUG build without `-api` runs on stubs by design (AppServices), and the
+  # stub is convincing: on 12 Sep 2026 a telling about a photograph came back
+  # as the sample about Puumala, and nothing on the phone said why. This scheme
+  # is the one to pick in Xcode when the words on the screen have to be the
+  # words that were said. It costs OpenRouter credit and writes to the live
+  # database, which is the point. Everything in CLAUDE.md keeps building and
+  # testing `Kinlore`: the tests pass `-api` themselves, so no test can reach
+  # production through this. See docs/SETUP.md.
+  Kinlore Production:
+    build:
+      targets:
+        Kinlore: all
+    run:
+      config: Debug
+      commandLineArguments:
+        "-api https://memorize.arkiste.workers.dev": true
+
 targets:
   Kinlore:
     type: application

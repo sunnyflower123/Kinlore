@@ -294,9 +294,9 @@ struct TellScreen: View {
             case .asking:
                 AskingView(model: model)
             case .done:
-                ResultView(model: model)
+                ResultView(model: model, onClose: onClose)
             case .savedWithoutTranscript:
-                AudioSavedView(model: model)
+                AudioSavedView(model: model, onClose: onClose)
             case .needsMicrophone:
                 MicrophoneDeniedView(model: model)
             case .failed(let message):
@@ -1374,9 +1374,12 @@ struct BlindCardView: View {
 // MARK: - Result
 
 private struct ResultView: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(Session.self) private var session
     let model: TellViewModel
+    /// The presenter's way out, when there is a presenter: the same closure
+    /// "Sulje" calls, and nil on the tab. Whether this screen offers *Valmis*
+    /// is read off this and nothing else — see the button.
+    let onClose: (() -> Void)?
 
     @State private var isConfirmingDiscard = false
     @State private var isMoving = false
@@ -1451,12 +1454,20 @@ private struct ResultView: View {
                     .elderTapTarget()
 
                     // When telling about a photo the screen is presented
-                    // modally, so there has to be a way back to the photo.
-                    // `initialTarget`, not `target`: an interview moves the
-                    // latter even in free dictation, and the tab screen must
-                    // not grow a close button that closes nothing.
-                    if model.initialTarget != nil {
-                        Button("Valmis") { dismiss() }
+                    // modally, so there has to be a way back to the photo —
+                    // and the tab screen must not grow a close button that
+                    // closes nothing.
+                    //
+                    // Read off the presenter, not the subject. Until 12 Sep
+                    // 2026 this asked `initialTarget != nil`, which was the
+                    // same question while only a sheet ever had a subject; the
+                    // deck gave the tab one on 29 Aug, and from then on a
+                    // telling about its card ended on a *Valmis* that called
+                    // `dismiss()` on a view nobody had presented. Nothing
+                    // reports that: a button that does nothing raises no
+                    // error, and it was found by a thumb.
+                    if let onClose {
+                        Button("Valmis") { onClose() }
                             .controlSize(.large)
                             .frame(maxWidth: .infinity)
                             .elderTapTarget()
@@ -1485,7 +1496,9 @@ private struct ResultView: View {
                 model.discardSavedMemory()
                 // Told about a photo or a person, this screen is a sheet on top
                 // of that card, and there is nothing left here to return to.
-                if model.initialTarget != nil { dismiss() }
+                // On the tab the discard has already reset the screen, and the
+                // card comes back by itself.
+                onClose?()
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
@@ -1921,9 +1934,11 @@ private struct ProposalRow: View {
 /// The quota was full or the network was down. This is not an error screen: the
 /// user did nothing wrong and lost nothing.
 private struct AudioSavedView: View {
-    @Environment(\.dismiss) private var dismiss
     @Environment(Session.self) private var session
     let model: TellViewModel
+    /// As on the result screen: the presenter's closure, nil on the tab. It
+    /// decides which of two words the last button carries (ARCHITECTURE §21).
+    let onClose: (() -> Void)?
 
     @State private var isConfirmingDiscard = false
     @State private var isShowingPaywall = false
@@ -1953,7 +1968,7 @@ private struct AudioSavedView: View {
         ) {
             Button("Poista", role: .destructive) {
                 model.discardSavedMemory()
-                if model.initialTarget != nil { dismiss() }
+                onClose?()
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
@@ -2054,13 +2069,19 @@ private struct AudioSavedView: View {
                     .controlSize(.large)
                 }
 
+                // *Valmis* closes the sheet this screen is on; *Selvä*, on the
+                // tab where there is nothing to close, returns to telling. By
+                // the presenter and not by `target`: the deck gives the tab a
+                // subject too, and read off that this was a *Valmis* whose
+                // `dismiss()` had nothing to dismiss — on the screen that
+                // tells somebody their voice is safe, with no other way off it.
                 Button {
-                    if model.target == nil { model.reset() } else { dismiss() }
+                    if let onClose { onClose() } else { model.reset() }
                 } label: {
                     // Two labels rather than a ternary: a ternary of literals
                     // is a String, and "Selvä" was never looked up here.
                     Group {
-                        if model.target == nil {
+                        if onClose == nil {
                             Text("Selvä")
                         } else {
                             Text("Valmis")

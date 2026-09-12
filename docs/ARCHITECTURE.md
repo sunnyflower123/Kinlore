@@ -3338,7 +3338,7 @@ act. What follows is the vocabulary as it stands, arrived at by reading every
 
 | The act | The word | Where |
 |---------|----------|-------|
-| Leave, having done the thing | **Valmis** | The result screen, the camera, the share sheet, the Tell screen opened from a photo |
+| Leave, having done the thing | **Valmis** | The result and saved-audio screens when the Tell screen is a sheet, the camera, the share sheet — never on the Kerro tab, which has nothing to close |
 | Leave, without doing it | **Sulje** | A sheet's toolbar |
 | Move on, having answered | **Jatka** | The blind card, after the answer is shown |
 | I have read this notice | **Selvä** | The export alert, the skipped-photo note, the saved-audio screen in free dictation |
@@ -3357,6 +3357,15 @@ work is finished, the second that it never started, the third that nothing was
 being asked of her at all. The saved-audio screen chooses between the first and
 the third by whether it was opened as a sheet — which looks like a wobble in the
 code and is the right word in both cases.
+
+*By whether it was opened as a sheet* is the presenter's closure, and since
+12 Sep 2026 both screens read exactly that. Before, they read the subject: a
+telling with a subject was a sheet, because only a sheet ever had one — until
+the deck (§23, 29 Aug) gave the Kerro tab a subject too. From then
+on a telling about the deck's card ended on a *Valmis* whose `dismiss()` had
+nothing to dismiss, and the saved-audio screen, which has no other way off it,
+held the same dead button. Found by a thumb on a phone; `DeckTests` now asks
+both sides of the rule.
 
 **Perhe is not suku.** *Perhe* is the people who use this app together: who can
 see the memories, who gets the invite link, whose entitlement is shared. *Suku*
@@ -3431,7 +3440,7 @@ perceived value peaks (§8.6). A card is its own decision. If a second card
 ever appears on one screen, this exception is the thing to re-open.
 
 Two things this rule is **not**. It is not "one button per screen": the result
-screen still offers *Valmis* and *Poista tämä muisto*, quietly, because a screen
+screen still offers *Valmis* (on a sheet) and *Poista tämä muisto*, quietly, because a screen
 that hides its way out is worse than one that ranks its actions. And it is not a
 shared vertical position across screens — that is held constant only through
 idle → recording → asking, where the record button must not move because those

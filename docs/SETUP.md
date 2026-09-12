@@ -63,11 +63,20 @@ development does not stop when the Worker is broken, and so no test, demo or
 screenshot run ever talks to production by accident.
 
 A **Release** build defaults to production (`https://memorize.arkiste.workers.dev`,
-baked into `AppServices` on deploy day, 24 Aug 2026 — docs/UX.md §7). So a
-phone that should behave like a real install runs the Release configuration
-(Xcode: Product → Scheme → Edit Scheme → Run → Build Configuration), or a
-DEBUG build with `-api https://memorize.arkiste.workers.dev` in the scheme —
-remembering that scheme arguments only apply to launches Xcode makes.
+baked into `AppServices` on deploy day, 24 Aug 2026 — docs/UX.md §7).
+
+**To test with your own voice, run the `Kinlore Production` scheme.** It is
+the `Kinlore` scheme with `-api https://memorize.arkiste.workers.dev` already
+among its arguments, and it exists because the stub is convincing: on 12 Sep
+2026 a telling about a photograph came back as the sample about Puumala, and
+nothing on the screen said the words were not the teller's. The console does
+say so (`[kinlore] backend: not configured — using stubs`), but nobody reads
+the console on a phone. Pick the scheme in Xcode's scheme menu and run; the
+transcription and the structure are then the real ones, and they cost
+OpenRouter credit. Add `-rcKey <Test Store key>` to the same scheme's
+arguments to have the paywall and the purchase there too. Scheme arguments
+apply only to launches Xcode makes; an install without Xcode gets the Release
+configuration, which needs no argument.
 
 ### Health check
 

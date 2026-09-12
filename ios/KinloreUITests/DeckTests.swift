@@ -92,4 +92,79 @@ final class DeckTests: XCTestCase {
             "an empty archive offered a way past a card it does not have"
         )
     }
+
+    /// A telling about the card ends where the deck can go on — never on a
+    /// button that goes nowhere.
+    ///
+    /// The result screen's *Valmis* closes the sheet a photo's card opens the
+    /// Tell screen on, and it used to appear whenever the telling had a
+    /// subject, because only a sheet ever had one. The deck gave the tab a
+    /// subject on 29 Aug 2026; from then on a telling about its card ended on
+    /// a *Valmis* whose `dismiss()` had nothing to dismiss — a tap, and the
+    /// same screen. Found by a thumb on 12 Sep 2026, and by nothing else: a
+    /// button that does nothing raises no error and fails no audit.
+    func testFinishingACardTellingOffersNoDeadDoneButton() {
+        // `-screen result` runs a canned telling through the stub pipeline on
+        // whatever subject the Tell screen opened on — here the deck's card.
+        let app = launch(["-seed", "deck", "-screen", "result"])
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "never arrived: the result screen"
+        )
+        XCTAssertFalse(
+            app.buttons["Valmis"].exists,
+            "the tab grew a Valmis that closes nothing"
+        )
+
+        let another = app.buttons["Kerro toinen muisto"]
+        for _ in 0 ..< 4 where !another.isHittable { app.swipeUp() }
+        XCTAssertTrue(another.waitForExistence(timeout: 10), "never arrived: the way on")
+        another.tap()
+
+        // The card that has been told about gives way to the next one — the
+        // fixture has three — and the screen is the deck's again.
+        XCTAssertTrue(
+            app.staticTexts["Kuka tässä kuvassa on?"].waitForExistence(timeout: 10),
+            "finishing did not return to the deck"
+        )
+    }
+
+    /// The other side of the same rule: where the Tell screen *is* a sheet,
+    /// *Valmis* is there and closes it. Read off the presenter, not the
+    /// subject — which is the whole of the fix above, and this is what keeps
+    /// it from being fixed back the other way.
+    func testDoneOnAPhotographsSheetReturnsToThePhotograph() {
+        // `-screen result` is read by every Tell screen, so it runs the canned
+        // telling inside the sheet the photo's card opens.
+        let app = launch(["-seed", "archive", "-tab", "memories", "-screen", "result"])
+
+        let photo = app.buttons.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Valokuva")
+        ).firstMatch
+        for _ in 0 ..< 4 where !photo.exists { app.swipeUp() }
+        XCTAssertTrue(photo.waitForExistence(timeout: 15), "never arrived: the photo tile")
+        photo.tap()
+
+        let tell = app.buttons["Kerro tästä muisto"]
+        for _ in 0 ..< 4 where !tell.isHittable { app.swipeUp() }
+        XCTAssertTrue(tell.waitForExistence(timeout: 10), "never arrived: the photo's card")
+        tell.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "never arrived: the result screen in the sheet"
+        )
+        let done = app.buttons["Valmis"]
+        for _ in 0 ..< 4 where !done.isHittable { app.swipeUp() }
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "the sheet's result screen has no Valmis")
+        done.tap()
+
+        // The sheet is gone and the photo's card is back.
+        XCTAssertTrue(tell.waitForExistence(timeout: 10), "Valmis did not close the sheet")
+        XCTAssertFalse(
+            app.staticTexts["Muisto tallennettu"].exists,
+            "the result screen is still up"
+        )
+    }
 }
