@@ -1055,61 +1055,95 @@ private struct NewTellingRow: View {
     let memory: Memory
     let subject: Subject
 
-    var body: some View {
-        HStack(spacing: 14) {
-            // A person gets their initial; a place and an event keep their
-            // symbol, because a pin and a calendar say what kind of thing the
-            // row is where a letter in a circle would not.
-            if subject.kind == .person {
-                SubjectAvatar(subject: subject)
-            } else {
-                // The badge belongs on the symbol too. It lives inside
-                // `SubjectAvatar`, and the split above is a decision about
-                // AVATARS — an initial tells two people apart where a pin
-                // says what kind of row this is — so until 12 Sep 2026 an
-                // unconfirmed place carried no mark at all while an
-                // unconfirmed person carried one here and three on the people
-                // list. Nobody decided that; it fell out of the avatar.
-                ZStack(alignment: .bottomTrailing) {
-                    Image(systemName: subject.kind.symbolName)
-                        .font(.title2)
-                        .foregroundStyle(Elder.supporting)
-                        .frame(width: 34)
+    @Environment(\.dynamicTypeSize) private var typeSize
 
-                    if !subject.confirmed {
-                        Image(systemName: "questionmark.circle.fill")
-                            .font(.footnote)
-                            .foregroundStyle(Elder.proposal)
-                            // Its own plate, so the badge does not sit half on
-                            // the symbol and half on the paper and read as
-                            // neither.
-                            .background(Circle().fill(Elder.paper).padding(-1))
+    /// Side by side normally, stacked at accessibility sizes.
+    ///
+    /// The initial grows with the text — 112 points of a 402-point screen at
+    /// XXXL — and what it left beside it was too narrow for a five-letter
+    /// name: *"Mum"* / *"mo"* / *"kertoi"*, broken down the side of the
+    /// circle. Nothing clipped and every audit passed, which is `InviteRow`'s
+    /// lesson again: the audit measures contrast, growth and targets, not
+    /// whether a word has been cut in half. Found by looking at the audit's
+    /// own screenshot on 12 Sep 2026, not by anything that ran.
+    var body: some View {
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        avatar
+                        Spacer()
+                        chevron
                     }
+                    words
+                }
+            } else {
+                HStack(spacing: 14) {
+                    avatar
+                    words
+                    Spacer()
+                    chevron
                 }
             }
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(subject.displayTitle)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.primary)
-                // "Kertoi" — the act this whole app is named after, in the
-                // past tense; the author's name is the reason to tap (§11's
-                // argument, read in the other direction).
-                Text("\(memory.authorName) kertoi")
-                    .font(.subheadline)
-                    .foregroundStyle(Elder.supporting)
-            }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Elder.supporting)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 14)
         .elderCard()
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var avatar: some View {
+        // A person gets their initial; a place and an event keep their
+        // symbol, because a pin and a calendar say what kind of thing the
+        // row is where a letter in a circle would not.
+        if subject.kind == .person {
+            SubjectAvatar(subject: subject)
+        } else {
+            // The badge belongs on the symbol too. It lives inside
+            // `SubjectAvatar`, and the split above is a decision about
+            // AVATARS — an initial tells two people apart where a pin
+            // says what kind of row this is — so until 12 Sep 2026 an
+            // unconfirmed place carried no mark at all while an
+            // unconfirmed person carried one here and three on the people
+            // list. Nobody decided that; it fell out of the avatar.
+            ZStack(alignment: .bottomTrailing) {
+                Image(systemName: subject.kind.symbolName)
+                    .font(.title2)
+                    .foregroundStyle(Elder.supporting)
+                    .frame(width: 34)
+
+                if !subject.confirmed {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(Elder.proposal)
+                        // Its own plate, so the badge does not sit half on
+                        // the symbol and half on the paper and read as
+                        // neither.
+                        .background(Circle().fill(Elder.paper).padding(-1))
+                }
+            }
+        }
+    }
+
+    private var words: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(subject.displayTitle)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.primary)
+            // "Kertoi" — the act this whole app is named after, in the
+            // past tense; the author's name is the reason to tap (§11's
+            // argument, read in the other direction).
+            Text("\(memory.authorName) kertoi")
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+        }
+    }
+
+    private var chevron: some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Elder.supporting)
     }
 }
 
