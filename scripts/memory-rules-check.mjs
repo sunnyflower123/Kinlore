@@ -417,7 +417,26 @@ try {
 	}
 
 	console.log('— a push is capped, and the cap is a number two files share —')
-	{
+	// LOCAL ONLY, and the reason is a cost rather than a risk.
+	//
+	// This case writes 500 rows to prove that the 505 it offered were sliced,
+	// and in a local database that is a throwaway file. Run against
+	// production on 12 Sep 2026 it put 500 `Ylivuoto` subjects into the real
+	// D1 and took it from 532 kB to 733 kB — inside a throwaway family and
+	// invisible to every real one, but junk that then had to be deleted by
+	// hand from the database this project's whole recovery story is about.
+	// The case was written for `verify.sh` and its production cost was not
+	// thought about.
+	//
+	// Nothing is lost by skipping it there: `MAX_ROWS` is a constant in
+	// sync.ts, not a fact about a deployment, so the local run measures the
+	// same slice the deployed Worker performs. That is not true of the
+	// mention cases above — those are SQL, and D1 enforces a
+	// hundred-bound-parameter limit local SQLite does not — which is why
+	// those still run everywhere and this one does not.
+	if (!isLocalWorker) {
+		console.log('  skip  the 500-row cap — local only, it would leave 500 rows behind')
+	} else {
 		// `MAX_ROWS` in sync.ts slices every table of a push and writes no
 		// more. `MemoryStore.maxRowsPerPush` on the Swift side offers no more
 		// than that for exactly this reason: until 10 Sep 2026 the client
