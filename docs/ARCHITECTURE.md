@@ -58,7 +58,7 @@ An honest inventory, not a wish list:
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
 | RevenueCat, shared family entitlement | **Done and driven end to end in production, 12 Sep 2026** — the binding rule, the webhook's revocation rules and the REST verification run against the shipping schema with RevenueCat replaced (§6); and on a Test Store key a real purchase reached `family.entitlement`, and a signed `INITIAL_PURCHASE` reached the deployed Worker. The row below is what is left |
 | Audio playback, open questions, relationships | **Done and tested** |
-| Paywall | **Built and reached** — the key configures the SDK and the sheet opens; the purchase completes. It draws RevenueCat's *"No Paywall configured"* placeholder, because no paywall is designed in their dashboard. That is dashboard work, not code, and VIDEO.md's fifth scene is currently pointed at it |
+| Paywall | **Built, reached and drawn** — the key configures the SDK, the sheet opens and the purchase completes, and since 12 Sep 2026 the design in RevenueCat's dashboard is the app's own words and palette (§6). What it showed when this row was written, the same evening, is the pre-decision pair — `monthly` and `yearly` at 9,99 and 79,99 US$ — and PLAN §10 has since decided on a year at 50 and the archive for ever at 80, with no monthly plan. Redrawing it is dashboard work, not code, and VIDEO.md's fifth scene films whichever is there |
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
 | Places, reachable rather than only stored | **Done and tested**, see §8 |
@@ -1171,6 +1171,19 @@ would not also be a change to the app.
 **One thing that cannot be fixed from here:** the prices read *9,99 US$* and
 *79,99 US$*. Test Store has no currencies, real ones need App Store products,
 and §2.1 closed that route on 24 Aug. It will be visible on the video.
+
+**Superseded the same evening, and not yet redrawn.** PLAN §10 decided the
+prices on 12 Sep 2026: a year at 50 and the archive for ever at 80, each
+bought once, and no monthly plan. The paragraphs above describe the paywall
+as it still is — two packages, a discount label, 9,99 and 79,99 US$ — and
+they stay until the dashboard has `lifetime` back as a non-consumable,
+`yearly` at 50 and `monthly` out of the `default` offering, when they are
+rewritten from the pixels again rather than from the plan. One consequence
+lives in this file and is easy to misread: `handleWebhook` ignores a
+`NON_RENEWING_PURCHASE`, deliberately, because the event carries no expiry
+and a null must not end a tier the event was not about — so the perpetual
+purchase is granted through `/entitlement/sync` and reconciliation, never
+through the webhook. PLAN §10 carries the arithmetic.
 
 **One thing measured on the way, recorded because it is invisible.**
 `quota.ts` reads `SELECT entitlement FROM family` and nothing in
