@@ -39,6 +39,28 @@ import XCTest
 /// tests now with the same shape, both ending in unattributable findings —
 /// which strengthens the suspicion above without confirming it, and keeps the
 /// instruction the same: reproduce alone before believing a company red.
+///
+/// **`testMemoriesNewFromFamily` is a third, and it breaks the pattern the
+/// other two set.** Measured 12 Sep 2026: four consecutive runs of that test
+/// *alone*, same binary, same private simulator, no other test in the run —
+/// **passed, passed, failed, failed**. So "green alone and red in company" is
+/// not the shape here. It flips alone, and its finding names an element and a
+/// frame (`Contrast failed — "K"`, the avatar) where the other two named
+/// nothing.
+///
+/// One honest difference from the 16 Aug measurement, which was taken on a
+/// quiet machine: this one was not. The simulator was private but the host was
+/// carrying four or five other booted devices and sat at 18–40 % idle
+/// throughout. That does not explain a *pass* — starvation invents failures,
+/// not passes — so the two greens are real and the flakiness is real, but
+/// whether a quiet host would show the same ratio is untested.
+///
+/// **The cost of this one was paid before it was measured.** It was used twice
+/// as evidence about a change to `SubjectAvatar` — once to conclude a fix had
+/// worked, once to conclude a different fix had broken something — and both
+/// readings were noise. `testPeople` covers the same component and did
+/// discriminate cleanly, four runs to four. Until somebody re-measures this
+/// test on a quiet host, do not let it arbitrate a change on its own.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 
