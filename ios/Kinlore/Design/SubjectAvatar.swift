@@ -40,17 +40,44 @@ struct SubjectAvatar: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Circle()
-                .fill(Elder.card)
+                // **Filled dark, and the fill is the whole of the fix.** A
+                // cream disc on parchment measures **1.11:1** — `card` and
+                // `paper` are nearly the same colour, which is the point of
+                // them everywhere else — so a portrait was a letter floating
+                // on the page with no shape around it. WCAG 1.4.11 asks 3:1
+                // of anything that has to read as a shape.
+                //
+                // The ring was tried first and is not enough: `rule` is ink at
+                // 16 %, 1.26:1 against the paper, and its own doc comment says
+                // it is "a hairline, and only ever a hairline… never the only
+                // edge of a control" — it was the only edge here. Even
+                // `supporting` as a ring left `testPeople` red four times out
+                // of four, because the disc behind it still did not read.
+                //
+                // A dark fill is also the only answer that works on BOTH
+                // grounds. This avatar sits on `paper` in the people list and
+                // on `card` in the gallery's rows, so any pale fill is
+                // invisible on one of them; ink at 75 % clears 3:1 against
+                // each.
+                //
+                // **An unconfirmed subject was accidentally fine all along**,
+                // which is how this hid: its ring is `proposal` at 5.14:1 and
+                // two points wide, so the one portrait that looked like a
+                // portrait was the one the app is least sure about. It keeps
+                // that ring, and the badge, and the words in the row.
+                .fill(Elder.supporting)
                 .overlay(
                     Circle().strokeBorder(
-                        subject.confirmed ? Elder.rule : Elder.proposal,
-                        lineWidth: subject.confirmed ? 1 : 2
+                        subject.confirmed ? Color.clear : Elder.proposal,
+                        lineWidth: subject.confirmed ? 0 : 2
                     )
                 )
                 .overlay {
                     Text(initial)
                         .font(Elder.display(.title3))
-                        .foregroundStyle(.primary)
+                        // Cream on ink, the same pair the record button and
+                        // the blind card's answers use.
+                        .foregroundStyle(Elder.cream)
                         // The letter is inside a circle; a long-descender
                         // glyph at the largest sizes would otherwise touch it.
                         .minimumScaleFactor(0.6)
