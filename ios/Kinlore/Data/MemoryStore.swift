@@ -162,13 +162,23 @@ final class MemoryStore {
     /// question they are shown does not press the button again. Passing a
     /// subject narrows it to that photo's or that person's own questions.
     /// See docs/ARCHITECTURE.md §12.
+    ///
+    /// `onlyAuthored`: questions a person asked, and none the extraction
+    /// made. The deck's and the blind cards' guards ask this (ARCHITECTURE
+    /// §23): a family member's question outranks a card, the telling's own
+    /// follow-ups do not. Counted, they took the pack off the screen after
+    /// its first telling, until the follow-ups were answered — and a deck
+    /// meant to go from photograph to photograph stopped at one. Decided
+    /// 12 Sep 2026.
     func openQuestions(
         limit: Int = 3,
         for subjectID: String? = nil,
-        excludingAuthor: String? = nil
+        excludingAuthor: String? = nil,
+        onlyAuthored: Bool = false
     ) -> [FollowUpQuestion] {
         let open = questions.filter { question in
             guard !question.answered else { return false }
+            if onlyAuthored, question.authorID == nil { return false }
             // A question whose subject is no longer there has nothing left to be
             // answered about: the person was rejected, or the telling that
             // created the subject was taken back. It would otherwise keep being

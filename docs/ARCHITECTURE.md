@@ -3505,6 +3505,19 @@ It did, for one commit; `VideoSceneTests` caught it, because the demo video's
 fourth scene is that question being answered aloud. `DeckTests` now says it
 directly rather than leaving the rule to a film.
 
+**A family member's, and nobody else's — decided 12 Sep 2026.** The guard
+counted every open question, and the extraction makes two or three from each
+telling, so the first card told about took the deck off the screen until its
+own follow-ups were answered: a pack meant to go from photograph to photograph
+stopped at one, and nothing failed, because the blank button with questions
+under it is a screen this app has. Found by the test written for the dead
+*Valmis* (§21), which expected the next card and met the questions. Now
+`openQuestions(onlyAuthored:)` is what the deck and both blind cards ask. The
+follow-ups lose this one screen and nothing else: the interview loop asks them
+the moment the telling ends, the Tell screen opened from that photograph
+offers them again, and the idle screen returns to them once the deck has
+nothing left. `testTheDeckGoesOnPastTheTellingsOwnQuestions` pins it.
+
 Otherwise: photographs nobody has spoken about, then people nobody has spoken
 about — free from the `subject` table, which is where that decision pays.
 

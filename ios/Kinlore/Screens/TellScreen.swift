@@ -321,10 +321,22 @@ struct TellScreen: View {
     /// It disappeared for one commit, and `VideoSceneTests` caught it — the
     /// demo video's fourth scene is that question being answered aloud, which
     /// is why the scene is pinned by a test at all.
+    ///
+    /// **The telling's own follow-up questions do not outrank it.** Until
+    /// 12 Sep 2026 the guard counted every open question, and the extraction
+    /// makes two or three from each telling — so the first card told about
+    /// took the deck off the screen until its follow-ups were answered, and a
+    /// pack meant to go from photograph to photograph stopped at one. Nothing
+    /// failed: the blank button with questions under it is a screen this app
+    /// has. The follow-ups lose this one screen and nothing else — the
+    /// interview loop asks them the moment the telling ends, the Tell screen
+    /// opened from that photograph offers them again, and the idle screen
+    /// returns to them once the deck has nothing left to offer.
     private var deckCard: Subject? {
         guard usesDeck,
               store.openQuestions(
-                  limit: 1, excludingAuthor: session.identity.memberID
+                  limit: 1, excludingAuthor: session.identity.memberID,
+                  onlyAuthored: true
               ).isEmpty
         else { return nil }
         return Deck.next(in: store)
@@ -349,7 +361,8 @@ struct TellScreen: View {
         // (founder's-eye review, 3 Sep 2026, findings #75, #83).
         guard usesDeck, !UserDefaults.standard.bool(forKey: Elder.largerTextKey),
               store.openQuestions(
-                  limit: 1, excludingAuthor: session.identity.memberID
+                  limit: 1, excludingAuthor: session.identity.memberID,
+                  onlyAuthored: true
               ).isEmpty
         else { return nil }
         return BlindConfirmation.next(in: store)

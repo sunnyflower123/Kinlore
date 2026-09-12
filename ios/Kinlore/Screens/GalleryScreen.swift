@@ -197,8 +197,14 @@ struct GalleryScreen: View {
                     return
                 }
                 newFromFamily = NewFromFamily.unseen(in: store, me: session.identity.memberID)
+                // The same guard as the Kerro tab's card: a family member's
+                // question outranks it, the extraction's follow-ups do not
+                // (TellScreen's `deckCard`, ARCHITECTURE §23).
                 if largerText, blind == nil,
-                   store.openQuestions(limit: 1, excludingAuthor: session.identity.memberID).isEmpty {
+                   store.openQuestions(
+                       limit: 1, excludingAuthor: session.identity.memberID,
+                       onlyAuthored: true
+                   ).isEmpty {
                     blind = BlindConfirmation.next(in: store)
                 }
                 // The baseline is not written while the first pull is still
