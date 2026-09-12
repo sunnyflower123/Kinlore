@@ -60,10 +60,43 @@ struct TellScreen: View {
                 }
             }
         }
+        // The interview is the one phase that can outlive this view, and a
+        // swipe is how it did.
+        //
+        // `ask` speaks the question from an unstructured `Task` — the button's
+        // own, not this view's `.task`, so a dismissal does not cancel it —
+        // and when the speaking ends it starts recording, checking only
+        // `isInterviewing` and the phase. "Sulje" clears both through
+        // `endInterview`; a swipe cleared neither. So the microphone opened on
+        // a screen that was no longer there, and nothing stopped it again:
+        // neither the recorder nor the model has a `deinit`, and `stop()` is
+        // the only thing that re-enables the idle timer or invalidates the
+        // 50 ms ticker. The screen stopped sleeping for the rest of the
+        // launch — and the recording went on into `tmp`, where the next
+        // launch's `RecordingRecovery.sweep` adopts anything over a second as
+        // a memory. That sweep exists to rescue a telling the app was killed
+        // under; here it would file whatever the room said after she put the
+        // phone down into the family's shared archive. Found 12 Sep 2026.
+        //
+        // Ending the interview rather than blocking the swipe: `.asking` is
+        // the app talking, and it is exactly the moment somebody may want
+        // out. Rule 1 does not spend an 80-year-old's patience on a gesture
+        // that can simply be made safe. `endInterview` is the same thing
+        // "Sulje" already does — the voice stops, the unanswered question is
+        // recorded as a skip, `isInterviewing` goes false so the pending
+        // `ask` never reaches `startRecording`, and the question stays open.
+        //
+        // Guarded on the phase and not on `isInterviewing`, which is also
+        // true mid-answer: `leaveInterview` narrows `showsUpsell`, and an
+        // ordinary disappearance has no business touching that.
+        .onDisappear {
+            if model?.phase == .asking { model?.endInterview() }
+        }
         // A swipe must not do what "Sulje" is guarded against. Only the two
         // phases where an exit loses words are pinned: transcribing and
         // organizing finish on their own after a dismissal (the task holds the
-        // model), and the interview between rounds has nothing unsaved.
+        // model), and the interview between rounds has nothing unsaved — now
+        // that the disappearance above ends it.
         .interactiveDismissDisabled(
             onClose != nil && (model?.phase == .recording || model?.phase == .writing)
         )
