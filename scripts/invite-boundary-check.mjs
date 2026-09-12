@@ -449,7 +449,10 @@ try {
 } catch (error) {
 	failures += 1
 	console.log(`\n  FAIL ${error.message}`)
-	console.log('       Is the Worker running? cd backend && npx wrangler dev')
+	console.log(`       Nothing answered at ${API}.`)
+	console.log('       cd backend && npx wrangler dev — and if 8787 was already')
+	console.log('       taken, wrangler chose another port and said so on its Ready')
+	console.log('       line. Pass that url as this script\'s first argument.')
 }
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
