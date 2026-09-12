@@ -88,7 +88,7 @@ final class SilentFailureTests: XCTestCase {
         let note = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Yksi kertomus odottaa tekstiä")).firstMatch
         XCTAssertTrue(note.waitForExistence(timeout: 10), "the gallery did not count the waiting telling")
 
-        let row = app.staticTexts["Kerrottu muisto"].firstMatch
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
         XCTAssertTrue(

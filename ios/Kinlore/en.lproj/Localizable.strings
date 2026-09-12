@@ -71,7 +71,7 @@
 "Avaa asetukset" = "Open Settings";
 
 /* --- What comes back: names to check, questions to answer ---------------- */
-"Kuulinko nimet oikein?" = "Did I hear the names right?";
+"Kuulin nämä" = "I heard these";
 "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Write the name again if I heard it wrong. Nobody joins the family without your approval.";
 "Korjaa nimi" = "Correct the name";
 "Korjaa nimet myös muistoon" = "Correct the names in the memory too";
@@ -199,14 +199,12 @@
    These are not literals in a SwiftUI initialiser, so they reach the table
    only because the call site hands the Finnish over as a LocalizedStringKey.
    The Finnish is still the key; there is no second copy of it anywhere. */
-"Sijoitin sen kohteeseen **%@**" = "I filed it under **%@**";
-"Lisäsin sen kohteeseen **%@**" = "I added it to **%@**";
 "Kuva" = "Photograph";
 "Henkilö" = "Person";
 "Paikka" = "Place";
 "Tapahtuma" = "Event";
 "Valokuva" = "Photograph";
-"Kerrottu muisto" = "A told memory";
+"Kerrottu %@" = "Told on %@";
 "%@ · korjattu" = "%@ · corrected";
 "Vuosikymmen" = "Decade";
 "Vuosi" = "Year";

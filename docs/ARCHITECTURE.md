@@ -3467,6 +3467,22 @@ idle → recording → asking, where the record button must not move because tho
 three states are one act with one control, and the comment in `AskingView` says
 so.
 
+**Since 12 Sep 2026 the screen claims nothing it inferred.** It opened with
+where the AI had filed the memory — *"Sijoitin sen kohteeseen Kesä
+Puumalassa"*, a moment it had also named from the first place and the date —
+and that was one telling asserted as an arrangement: the founder's second
+launch showed an archive that knew a summer, a lake and two people from a
+minute of speech. Now a telling names nothing (`TellViewModel.placeSubject`):
+a photograph keeps its own name or none, a free dictation is its own moment
+shown under its day (*"Kerrottu 12.9.2026"*, `Subject.displayTitle`), and
+*"Nimeä hetki"* and *"Siirrä toiselle kortille"* are the person's. Only a move
+the person made is announced. The names stand under one heading, *"Kuulin
+nämä"*, each with the sentence it was heard in — recognition rather than
+recall on the row where a wrong name is caught — with the rows to check first
+and the familiar names quieter below them, exactly as before. Two questions
+show rather than three; the third is stored and the loop asks it.
+`ResultScreenTests` pins it.
+
 Measured: `testResult` and `testResultWithProposals`, both text sizes, green —
 which is what checks the new `.bordered` labels against the contrast minimum,
 the one thing eyes cannot check (§15). The no-questions branch was also read off

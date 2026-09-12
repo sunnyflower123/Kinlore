@@ -54,7 +54,7 @@ final class OrganisingFailureTests: XCTestCase {
         // no place and no year to name it after — and it is listed as such.
         app.tabBars.buttons["Muistot"].tap()
         XCTAssertTrue(
-            app.staticTexts["Kerrottu muisto"].waitForExistence(timeout: 10),
+            app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch.waitForExistence(timeout: 10),
             "the memory is not in the archive"
         )
     }

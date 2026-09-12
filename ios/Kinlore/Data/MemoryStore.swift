@@ -339,16 +339,14 @@ final class MemoryStore {
         save()
     }
 
-    /// Fills in a subject's details from what was told about it.
+    /// Fills in a subject's date from what was told about it.
     ///
-    /// **Only empty fields are filled.** A title written by a human, or a date
-    /// brought by an earlier memory, is not overwritten — a later dictation must
-    /// not silently change what the family has already agreed on.
-    func describe(subjectID: String, title: String?, dateHint: DateHint?) {
+    /// **Only an empty field is filled.** A date brought by an earlier memory
+    /// is not overwritten — a later dictation must not silently change what
+    /// the family has already agreed on. It took a title too until 12 Sep
+    /// 2026; a telling names nothing now (`TellViewModel.placeSubject`).
+    func describe(subjectID: String, dateHint: DateHint?) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
-        if let title, subjects[index].title.isEmpty {
-            subjects[index].title = title
-        }
         if let dateHint, subjects[index].dateHint == nil {
             subjects[index].dateHint = dateHint
         }

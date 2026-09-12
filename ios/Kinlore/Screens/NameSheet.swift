@@ -4,9 +4,10 @@ import SwiftUI
 ///
 /// Two places open it, since 6 Sep 2026, and they were the two names in the
 /// archive nothing could change after the fact. A photograph's title was
-/// whatever its first telling left — a place and a year (`Extraction.
-/// suggestedTitle`), or nothing — and the card had a way to date the picture
-/// but none to name it. And a member's own name was written once, at the
+/// whatever its first telling left — a place and a year, until 12 Sep 2026,
+/// when a telling stopped naming anything and this sheet became the only way
+/// a picture or a moment gets a name — and the card had a way to date the
+/// picture but none to name it. And a member's own name was written once, at the
 /// join, and never again: a joiner who left the form's name empty on a code
 /// made without one was *"Perheenjäsen"* beside every telling for good
 /// (founder's-eye review, findings #12 and #64).

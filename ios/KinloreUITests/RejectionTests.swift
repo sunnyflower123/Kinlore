@@ -29,7 +29,7 @@ final class RejectionTests: XCTestCase {
         let app = launch(["-seed", "empty", "-screen", "result"])
 
         XCTAssertTrue(
-            app.staticTexts["Kuulinko nimet oikein?"].waitForExistence(timeout: 30),
+            app.staticTexts["Kuulin nämä"].waitForExistence(timeout: 30),
             "never arrived: the proposals"
         )
         let crosses = app.buttons.matching(NSPredicate(

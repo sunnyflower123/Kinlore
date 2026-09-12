@@ -620,7 +620,7 @@ final class AccessibilitySweepTests: XCTestCase {
             "Tulos, nimiehdotukset",
             arguments: ["-seed", "empty", "-screen", "result"]
         ) { app, _ in
-            require(app.staticTexts["Kuulinko nimet oikein?"], "the proposals")
+            require(app.staticTexts["Kuulin nämä"], "the names heard")
         }
     }
 
@@ -822,7 +822,7 @@ final class AccessibilitySweepTests: XCTestCase {
             require(another, "the way on from the result screen")
             another.tap()
             app.tabBars.buttons["Muistot"].tap()
-            let row = app.staticTexts["Kerrottu muisto"].firstMatch
+            let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
             require(row, "the telling in the gallery")
             row.tap()
             // On screen for the audit: at the largest size it is below the fold.
@@ -857,7 +857,7 @@ final class AccessibilitySweepTests: XCTestCase {
             require(app.staticTexts["Muisto tallennettu"], "the result screen")
             reach(app.buttons["Kerro toinen muisto"], in: app, "the way on").tap()
             app.tabBars.buttons["Muistot"].tap()
-            require(app.staticTexts["Kerrottu muisto"].firstMatch, "the telling in the gallery").tap()
+            require(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch, "the telling in the gallery").tap()
             reach(app.buttons["Muokkaa tekstiä"], in: app, "the way to correct the text").tap()
             require(app.buttons["Tallenna"], "the sheet")
         }

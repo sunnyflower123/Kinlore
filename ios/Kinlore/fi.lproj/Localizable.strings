@@ -63,7 +63,7 @@
 "Mikrofoni ei ole käytössä" = "Mikrofoni ei ole käytössä";
 "Puhuminen tarvitsee luvan mikrofoniin. Voit antaa sen puhelimen asetuksista — tai kirjoittaa muiston nyt." = "Puhuminen tarvitsee luvan mikrofoniin. Voit antaa sen puhelimen asetuksista — tai kirjoittaa muiston nyt.";
 "Avaa asetukset" = "Avaa asetukset";
-"Kuulinko nimet oikein?" = "Kuulinko nimet oikein?";
+"Kuulin nämä" = "Kuulin nämä";
 "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.";
 "Korjaa nimi" = "Korjaa nimi";
 "Korjaa nimet myös muistoon" = "Korjaa nimet myös muistoon";
@@ -168,14 +168,12 @@
 "Viennistä puuttuu tiedostoja" = "Viennistä puuttuu tiedostoja";
 "Asetukset" = "Asetukset";
 "Näin tämä toimii" = "Näin tämä toimii";
-"Sijoitin sen kohteeseen **%@**" = "Sijoitin sen kohteeseen **%@**";
-"Lisäsin sen kohteeseen **%@**" = "Lisäsin sen kohteeseen **%@**";
 "Kuva" = "Kuva";
 "Henkilö" = "Henkilö";
 "Paikka" = "Paikka";
 "Tapahtuma" = "Tapahtuma";
 "Valokuva" = "Valokuva";
-"Kerrottu muisto" = "Kerrottu muisto";
+"Kerrottu %@" = "Kerrottu %@";
 "%@ · korjattu" = "%@ · korjattu";
 "Vuosikymmen" = "Vuosikymmen";
 "Vuosi" = "Vuosi";

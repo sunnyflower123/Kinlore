@@ -72,7 +72,7 @@ final class TakingBackTests: XCTestCase {
         // Free dictation filed the telling under a moment of its own; with
         // the structuring deferred that moment is still untitled.
         app.tabBars.buttons["Muistot"].tap()
-        let row = app.staticTexts["Kerrottu muisto"].firstMatch
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
 
@@ -153,7 +153,7 @@ final class TakingBackTests: XCTestCase {
         another.tap()
 
         app.tabBars.buttons["Muistot"].tap()
-        let row = app.staticTexts["Kerrottu muisto"].firstMatch
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
 

@@ -28,25 +28,9 @@ struct ExtractionResult: Equatable {
         ExtractionResult(body: transcript, mentions: [], dateHint: nil, questions: [])
     }
 
-    /// A title from the place and the time: "Puumalassa, 1950-luku".
-    ///
-    /// Nil if the speech yielded neither, because leaving a subject unnamed is
-    /// more honest than inventing a title out of nothing — and an untitled
-    /// subject is filled in by the next thing said about it.
-    ///
-    /// It lives on the result rather than in the Tell screen because naming a
-    /// subject after an extraction is the same rule wherever it happens: a
-    /// memory told just now, and one whose text arrived a week late.
-    func suggestedTitle(mentioned: [Subject]) -> String? {
-        var parts: [String] = []
-        if let place = mentioned.first(where: { $0.kind == .place }) {
-            parts.append(place.title)
-        }
-        if let dateHint, dateHint.precision != .unknown {
-            parts.append(dateHint.displayText)
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
-    }
+    // `suggestedTitle(mentioned:)` stood here until 12 Sep 2026 — *"Puumalassa,
+    // 1950-luku"*, from the first place and the date. A telling names nothing
+    // now: see `TellViewModel.placeSubject`.
 }
 
 /// A follow-up question and how much it asks of the teller, 1–5.

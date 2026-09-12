@@ -708,7 +708,7 @@ final class TellViewModel {
 
         // Free dictation needs a home. It is named after the place and the time
         // — precisely the organising the user would never do themselves.
-        let home = placeSubject(for: extracted, mentioned: mentioned)
+        let home = placeSubject(for: extracted)
         placedSubject = home
 
         let audioName = audioURL.flatMap(Self.persistAudio(from:))
@@ -791,25 +791,25 @@ final class TellViewModel {
     }
 
     /// Finds or creates the subject the memory belongs to.
-    private func placeSubject(for extracted: ExtractionResult, mentioned: [Subject]) -> Subject {
-        let suggested = extracted.suggestedTitle(mentioned: mentioned)
-
-        // A memory told about a photo belongs to that photo — no guessing. The
-        // photo also gets its name and date from what was told about it: exactly
-        // the organising nobody would do for thirty scanned photographs.
+    ///
+    /// **A telling names nothing, since 12 Sep 2026.** The subject used to be
+    /// titled from what was said — *"Puumalassa, 1950-luku"* — and free
+    /// dictations that produced the same title were gathered under one event.
+    /// Both were the app deciding, out of one telling, what a thing is called
+    /// and which tellings belong together; the founder met the result as
+    /// *"Sijoitin sen kohteeseen Kesä Puumalassa"*. Now a photograph keeps its
+    /// own name or none, every free dictation is its own moment shown under the
+    /// day it was told (`Subject.displayTitle`), and *"Nimeä hetki"* and
+    /// *"Siirrä toiselle kortille"* are how a person names and gathers. The
+    /// date stays: it is what was said, stored with its precision (rule 5),
+    /// and it names nothing.
+    private func placeSubject(for extracted: ExtractionResult) -> Subject {
+        // A memory told about a photo belongs to that photo — no guessing.
         if let target {
-            store.describe(subjectID: target.id, title: suggested, dateHint: extracted.dateHint)
+            store.describe(subjectID: target.id, dateHint: extracted.dateHint)
             return store.subject(id: target.id) ?? target
         }
-
-        // Free dictation needs a home. The same place and time gather the
-        // memories together instead of every dictation spawning its own
-        // disconnected event.
-        let title = suggested ?? "Kerrottu muisto"
-        if let existing = store.subjects(of: .event).first(where: { $0.title == title }) {
-            return existing
-        }
-        let subject = Subject(kind: .event, title: title, dateHint: extracted.dateHint)
+        let subject = Subject(kind: .event, title: "", dateHint: extracted.dateHint)
         store.add(subject)
         return subject
     }

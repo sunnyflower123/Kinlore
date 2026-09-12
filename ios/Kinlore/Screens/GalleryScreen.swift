@@ -1026,11 +1026,12 @@ private struct PhotoTile: View {
             }.value
         }
         .accessibilityElement(children: .combine)
-        // The photograph's own name first, when it has one. A telling that
-        // named a place or a time gives its photograph a title
-        // (`Extraction.suggestedTitle`, since 15 Aug 2026), and the tile
-        // never read it out: thirty tiles were thirty "Valokuva" to VoiceOver
-        // (founder's-eye review, finding #12). An untitled one still is.
+        // The photograph's own name first, when it has one. From 15 Aug to
+        // 12 Sep 2026 a telling that named a place or a time gave its
+        // photograph a title; since then only "Nimeä kuva" does, and the
+        // tile reads that out. It never used to: thirty tiles were thirty
+        // "Valokuva" to VoiceOver (founder's-eye review, finding #12). An
+        // untitled one still is.
         .accessibilityLabel(tileLabel)
     }
 

@@ -126,7 +126,9 @@ Everything else is one app. The difference is composed, never configured.
 
 The spine exists and is right: fork → *"Uusi arkisto"* (name, whose phone,
 keiden kesken, consent above the button) → Kerro with opening starters →
-first telling → result with *"Kuulinko nimet oikein?"* → rhythm-gated offer →
+first telling → result with *"Kuulin nämä"* (*"Kuulinko nimet oikein?"* until
+12 Sep 2026, when the screen stopped naming the moment and started showing the
+sentence each name was heard in — ARCHITECTURE §22) → rhythm-gated offer →
 RevenueCat paywall → *"Kiitos — maksu meni läpi"* recovery. Two changes.
 
 ### 3.1 The welcome sentence at large text — withdrawn, by an existing measurement

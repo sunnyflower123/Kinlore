@@ -1416,12 +1416,13 @@ private struct ResultView: View {
                     MemoryCard(text: body, memory: model.savedMemory)
                 }
 
-                if !model.proposals.isEmpty {
-                    proposalSection
-                }
-
-                if !model.known.isEmpty {
-                    knownSection
+                // One section for everything the telling named — people and
+                // places, the ones to check and the ones the family already
+                // has — each with the sentence it was heard in. *"Kuulin nämä"*
+                // rather than a question: the rows are the question, and
+                // nothing on them is asserted (12 Sep 2026).
+                if !model.proposals.isEmpty || !model.known.isEmpty {
+                    heardSection
                 }
 
                 if !model.newQuestions.isEmpty {
@@ -1541,32 +1542,25 @@ private struct ResultView: View {
                 .foregroundStyle(Elder.affirmative)
 
             if let placed = model.placedSubject {
-                // The most important piece of the result: where the AI filed
-                // the memory. Precisely the organising the user would never do
-                // themselves.
-                // Two branches rather than a ternary inside Text: a ternary of
-                // two interpolated literals resolves to String, and Text(String)
-                // is shown verbatim instead of being looked up. The sentence
-                // stayed Finnish in the English build until this was split.
-                Group {
-                    if model.movedByHand {
-                        Text("Muisto on nyt kohteessa **\(placed.displayTitle)**")
-                    } else if model.target == nil {
-                        Text("Sijoitin sen kohteeseen **\(placed.displayTitle)**")
-                    } else {
-                        Text("Lisäsin sen kohteeseen **\(placed.displayTitle)**")
-                    }
+                // Only a placement a person made is announced. The screen used
+                // to open with where the AI had filed the memory — *"Sijoitin
+                // sen kohteeseen Kesä Puumalassa"*, a moment it had also named
+                // — which is one telling asserted as an arrangement (12 Sep
+                // 2026). A telling about a photograph sits under that
+                // photograph and needs no sentence to say so; a free dictation
+                // is its own moment, shown under its day.
+                if model.movedByHand {
+                    Text("Muisto on nyt kohteessa **\(placed.displayTitle)**")
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
                 }
-                .elderBody()
-                .foregroundStyle(Elder.supporting)
 
-                // The correction for the sentence above. The AI's placement
-                // was the one thing on this screen nobody could correct
-                // until 5 Sep 2026 (finding #27): grandfather's war years
-                // filed under "Kesä Puumalassa" stayed there for good. Also
-                // for a telling started from a card: the deck offered Aino
-                // and grandmother talked about the cottage, and the card is
-                // wrong the same way.
+                // The way to file it somewhere else. The placement was the one
+                // thing on this screen nobody could correct until 5 Sep 2026
+                // (finding #27): grandfather's war years filed under "Kesä
+                // Puumalassa" stayed there for good. Also for a telling started
+                // from a card: the deck offered a photograph and grandmother
+                // talked about the cottage, and the card is wrong the same way.
                 if model.savedMemoryID != nil {
                     Button("Siirrä toiselle kortille") { isMoving = true }
                         .buttonStyle(.bordered)
@@ -1607,10 +1601,43 @@ private struct ResultView: View {
     /// split name becomes a proposal above, where it can be told apart and
     /// confirmed. Quiet, below the names that need checking: the common case
     /// is that the familiar name is right.
+    /// Everything the telling named, under one heading. The rows to check come
+    /// first; the familiar names follow, quieter.
+    private var heardSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Kuulin nämä")
+                .font(.headline)
+
+            if !model.proposals.isEmpty {
+                proposalSection
+            }
+            if !model.known.isEmpty {
+                knownSection
+            }
+        }
+    }
+
+    /// The sentence a name was heard in, from the text on this screen. A name
+    /// alone on a row asks her to remember where it came up; the sentence lets
+    /// her recognise it. Matched on the name as a prefix, which is what Finnish
+    /// inflection leaves intact most of the time — "Puumalassa" carries
+    /// "Puumala", "Ainon" carries "Aino" — and a name whose stem changes
+    /// ("Matin" for Matti) gets no sentence rather than a wrong one.
+    private func heard(_ subject: Subject) -> String? {
+        guard let text = model.result?.body ?? model.transcript else { return nil }
+        let name = subject.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return nil }
+        let sentences = text.split(whereSeparator: { ".!?\n".contains($0) })
+        guard let hit = sentences.first(where: { $0.localizedCaseInsensitiveContains(name) })
+        else { return nil }
+        let trimmed = hit.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : "”\(trimmed)”"
+    }
+
     private var knownSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Tutut nimet")
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
 
             Text("Perhe tuntee nämä jo. Jos joku niistä on eri henkilö kuin luulin, sano se nyt.")
                 .font(.subheadline)
@@ -1624,6 +1651,12 @@ private struct ResultView: View {
                     Text(subject.displayTitle)
                         .font(.body.weight(.medium))
                         .fixedSize(horizontal: false, vertical: true)
+                    if let heard = heard(subject) {
+                        Text(verbatim: heard)
+                            .font(.subheadline)
+                            .foregroundStyle(Elder.supporting)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     // Two buttons rather than a ternary label: a ternary of
                     // literals is a String and is never looked up.
                     if subject.kind == .place {
@@ -1648,9 +1681,6 @@ private struct ResultView: View {
 
     private var proposalSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Kuulinko nimet oikein?")
-                .font(.headline)
-
             // Speech recognition gets roughly one proper noun in three wrong,
             // and this is the only moment when the teller still remembers what
             // they said.
@@ -1662,6 +1692,7 @@ private struct ResultView: View {
             ForEach(model.proposals) { subject in
                 ProposalRow(
                     subject: subject,
+                    heard: heard(subject),
                     text: Binding(
                         get: { model.editedNames[subject.id] ?? subject.title },
                         set: { model.editedNames[subject.id] = $0 }
@@ -1703,7 +1734,10 @@ private struct ResultView: View {
             Text("Kysyisin vielä")
                 .font(.headline)
 
-            ForEach(model.newQuestions) { question in
+            // Two of the three. Three under the names was a wall; the third is
+            // still stored, and the interview loop and the subject's own Tell
+            // screen offer it (12 Sep 2026).
+            ForEach(model.newQuestions.prefix(2)) { question in
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
                         .foregroundStyle(.tint)
@@ -1859,6 +1893,8 @@ private struct MemoryCard: View {
 
 private struct ProposalRow: View {
     let subject: Subject
+    /// The sentence the name was heard in, when one was found.
+    let heard: String?
     @Binding var text: String
     let onConfirm: () -> Void
     let onReject: () -> Void
@@ -1900,6 +1936,15 @@ private struct ProposalRow: View {
                      : LocalizedStringKey(subject.kind.label))
                     .font(.caption)
                     .foregroundStyle(isEdited ? Color.accentColor : Elder.supporting)
+
+                // Where it was heard: recognition rather than recall, on the
+                // row where a wrong name is caught.
+                if let heard {
+                    Text(verbatim: heard)
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             // The field takes the room, not a Spacer. With one beside it the
             // field sized itself to the name it happened to arrive with — 110

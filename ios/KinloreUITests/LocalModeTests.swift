@@ -65,7 +65,7 @@ final class LocalModeTests: XCTestCase {
         // own sentence to get right.
         app.buttons["Selvä"].tap()
         app.tabBars.buttons["Muistot"].tap()
-        let card = app.staticTexts["Kerrottu muisto"]
+        let card = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "never arrived: the telling's card")
         card.tap()
         let row = app.staticTexts["Ääni tallessa — voit kirjoittaa tekstin itse"]

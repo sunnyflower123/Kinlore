@@ -158,10 +158,12 @@ struct Subject: Identifiable, Codable, Hashable {
         if !title.isEmpty { return title }
         switch kind {
         case .photo: return String(localized: "Valokuva")
-        // An event goes untitled only while its memory is waiting for its text:
-        // the name comes from the place and the time in what was said, and
-        // nothing has read that yet. Until then it is exactly what it says.
-        case .event: return String(localized: "Kerrottu muisto")
+        // A moment nobody has named is shown under the day it was told. It
+        // used to be named from the place and the time in what was said, and
+        // since 12 Sep 2026 a telling names nothing: the date is a fact about
+        // the telling, a title is a person's to give ("Nimeä hetki").
+        case .event:
+            return String(localized: "Kerrottu \(createdAt.formatted(date: .abbreviated, time: .omitted))")
         default: return kind.label
         }
     }

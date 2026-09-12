@@ -64,13 +64,10 @@ enum DeferredMemory {
         // The home is the one the audio already picked. It is not chosen again:
         // the memory has been sitting in the archive under that subject, and
         // moving it now would take it out from under whoever has been looking at
-        // it. The text only describes it better — and `describe` fills empty
-        // fields only, so a title somebody has since written by hand survives.
-        store.describe(
-            subjectID: home.id,
-            title: extracted.suggestedTitle(mentioned: mentioned),
-            dateHint: extracted.dateHint
-        )
+        // it. The text brings only the date — a title is never the telling's to
+        // give (`TellViewModel.placeSubject`) — and `describe` fills an empty
+        // field only, so a date somebody has since set by hand survives.
+        store.describe(subjectID: home.id, dateHint: extracted.dateHint)
 
         store.complete(
             memoryID: memory.id,
