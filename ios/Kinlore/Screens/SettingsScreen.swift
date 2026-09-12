@@ -90,7 +90,13 @@ struct SettingsScreen: View {
                 return String(localized: "Tällä puhelimella ei ole kaikkia perheen kuvia ja ääniä: \(missingLocally) on vain palvelimella, eikä tyhjennyksen jälkeen niitä saa enää auki. Odota, että Perhe-näytön kopio on valmis, tai vie arkisto verkossa ensin.")
                     + afterwards
             }
-            return String(localized: "Muistot poistetaan lopullisesti ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne.")
+            // Not "poistetaan lopullisesti". The server deletes nothing — the
+            // last member cannot leave, so the sealed rows and media stay for
+            // good — and what actually ends here is the ability to open them:
+            // the only key goes with the wipe (`renewIdentity`). Say that. The
+            // weaker "poistetaan tästä puhelimesta" would be wrong the other
+            // way, hiding the no-way-back that finding #43 was about.
+            return String(localized: "Tämä on perheen ainoa kopio. Tyhjennyksen jälkeen muistoja ei saa enää auki mistään, ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne.")
                 + afterwards
         }
         return String(localized: "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne.")
