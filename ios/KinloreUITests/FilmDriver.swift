@@ -167,13 +167,15 @@ final class FilmDriver: XCTestCase {
     ///
     /// The fixture's Puumala carries a coordinate at `.town` precision, so
     /// what this films is the circle and not a pin — which is the case worth
-    /// filming, because it is rule 5 drawn rather than argued.
+    /// filming, because it is rule 5 drawn rather than argued. The film's
+    /// archive, so the telling that named the place is listed under its
+    /// card; held for the six seconds the v16 cut keeps the card on screen.
     func testFilmThePlace() throws {
-        let app = try roll(["-seed", "archive", "-tab", "memories"])
+        let app = try roll(["-seed", "film", "-tab", "memories"])
         beat(1.6)
         let place = try reveal(app, app.buttons, ["Puumala"])
         place.tap()
-        beat(4.5)
+        beat(7.0)
     }
 
     // MARK: - The v16 takes (SHOOT-v16.md in the video project)
