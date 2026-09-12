@@ -194,16 +194,18 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
    This rule used to end "the repo is public — check `.dev.vars` before every
    push", which is a reminder and not a check, and it was the only one of these
    ten rules with nothing enforcing it. **`scripts/secret-check.mjs` enforces it
-   now**, first in `verify.sh` and in about a third of a second: the tree, every
-   blob that has ever existed, `.dev.vars` being both ignored and untracked, and
-   its own matcher against a specimen of each key shape so it cannot go quietly
-   green.
+   now**, first in `verify.sh` and in well under a second on a quiet machine:
+   the tree, every blob that has ever existed, `.dev.vars` being both ignored
+   and untracked, and its own matcher against a specimen of each key shape so
+   it cannot go quietly green.
 
    It is first in that file because it is the only failure here that the next
    commit cannot undo. **A public repository publishes its history, not its
    head** — so a key committed today and deleted tomorrow is published on 28 Sep
    regardless, and the only remedy left is rotating the key and rewriting every
-   commit after it. Measured 10 Sep 2026: 1370 blobs across 269 commits, clean.
+   commit after it. The check counts what it scanned on every run, so these
+   are records of runs rather than claims about now: 1370 blobs across 269
+   commits on 10 Sep 2026, 1414 across 287 on 12 Sep. Clean both times.
 8. **`provider: { data_collection: "deny" }` is unconditional**, never a
    per-call flag. The content is a family's memories of dead relatives. As a
    flag it would be forgotten on some call.

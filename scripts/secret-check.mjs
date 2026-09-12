@@ -12,7 +12,11 @@
 // cannot. The repository goes public on 28 Sep and publishes its *history*,
 // not merely its head — so a key committed today and deleted tomorrow is
 // still published, and the only remedy left is rotating the key and rewriting
-// 260-odd commits. A check that costs seven seconds against that is free.
+// 260-odd commits. Against that it is free: 0.34 s on a quiet machine, and
+// 2.3-10.9 s on a badly loaded one — measured both ways on 12 Sep 2026, the
+// second time at a load average of 863 with three simulators booted. The
+// number moves with the machine rather than with the repository, so do not
+// treat a slow run here as this check having grown.
 //
 // Three things, in the order they can go wrong:
 //
@@ -21,9 +25,10 @@
 //      matter what `.gitignore` says afterwards.
 //   2. The tree. No tracked file holds a key-shaped string right now, which
 //      is the commit about to be made.
-//   3. The history. No commit ever held one. CLAUDE.md states this as
-//      measured on 9 Sep 2026; nothing re-measured it, and every commit since
-//      was a chance to make it false.
+//   3. The history. No commit ever held one. CLAUDE.md asserted this in
+//      prose before anything re-measured it, and every commit since was a
+//      chance to make it false. Rule 7 now carries the count and the date it
+//      was taken, and this is what takes them.
 //
 // It also tests itself. A matcher that has quietly stopped matching is worse
 // than no matcher, because it reports green — so every pattern is run against
@@ -185,18 +190,6 @@ check(`no tracked file holds a key (${tracked.length} files)`, treeHit === null,
 
 process.stdout.write('\n— every commit that will be published —\n')
 
-// Every blob that has ever existed, each read once, rather than every
-// commit's rendered patch. It is both faster and wider: a blob reachable from
-// any branch or tag is here, and a file added and deleted in the same
-// afternoon still has its blob. Scanned one at a time and never joined into a
-// single string — these patterns are cheap on a file and expensive on a
-// hundred megabytes of one, which cost this check fifteen seconds before it
-// was measured.
-//
-// The matching stays in JavaScript rather than being handed to `grep`, which
-// would be faster still. macOS ships BSD grep and CI runs GNU grep, and the
-// two do not agree about `\b` — a check that quietly matches less on one of
-// the machines it runs on is the exact failure this file exists to prevent.
 // **One `git cat-file`, not one per blob.** Every blob that has ever existed
 // comes back in a single stream — which is both faster than rendering every
 // commit's patch and wider, because a blob reachable from any branch or tag is
