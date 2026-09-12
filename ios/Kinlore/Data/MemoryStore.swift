@@ -833,7 +833,23 @@ final class MemoryStore {
         advance(seq: reply.seq)
     }
 
-    func advance(seq: Int) {
+    /// The pull cursor, moved from a pull reply and from nothing else.
+    ///
+    /// **`private` is the rule, not the comment above `client.push`.** Three
+    /// defects lived in this number (23 Aug 2026, ARCHITECTURE §3) and every
+    /// one showed a working app while a telling silently never reached
+    /// another phone. The first of them was a cursor advanced from a *push*
+    /// reply, whose number is the family-global counter — taking it steps
+    /// past everything the others committed since this device last pulled,
+    /// and their tellings are then never fetched, on that round or any later
+    /// one, with nothing on any screen to say so.
+    ///
+    /// `sync-cursor-check.mjs` drives the server's half of that rule. This is
+    /// the client's half, and until 12 Sep 2026 it was held by a comment in
+    /// `SyncEngine` that whoever adds the next call site has to happen to
+    /// read. It has exactly one caller, three lines above; `private` is free
+    /// and makes the defect that actually happened unrepresentable.
+    private func advance(seq: Int) {
         guard seq > syncSeq else { return }
         syncSeq = seq
         save()
