@@ -45,8 +45,20 @@ struct StubTranscriptionService: TranscriptionService {
     /// second round a coin toss.
     @MainActor private static var next = 0
 
+    /// `-sample film`: the film's own telling, every time, instead of the
+    /// rotation. What her voice says on the soundtrack and what the screen
+    /// writes down have to be the same words, and a take has to come out the
+    /// same on every attempt. English, unlike the samples above, because the
+    /// film is shot in English. A placeholder until the shooting list's first
+    /// step (SHOOT-v16.md §1 in the video project) has replaced it with what
+    /// the real pipeline heard; `-seed film` writes the same sentence into
+    /// its fixture, and `StubExtractionService.filmResult` returns what was
+    /// made of it.
+    static let film = "That's Puumala, at the jetty. Elli and Toivo. It was the thirties, I was small then."
+
     func transcribe(audioURL: URL) async throws -> String {
         try await Task.sleep(for: simulatedDelay)
+        if UserDefaults.standard.string(forKey: "sample") == "film" { return Self.film }
         return await MainActor.run {
             defer { Self.next += 1 }
             return Self.samples[Self.next % Self.samples.count]

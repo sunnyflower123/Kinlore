@@ -69,27 +69,30 @@ final class FilmDriver: XCTestCase {
 
     // MARK: - The scenes (docs/UX.md §10, docs/VIDEO.md)
 
-    /// 1 · The founder's minute: the big button, the telling, and what the app
-    /// made of it — ending on a name being confirmed by a person, which is
-    /// rule 4 happening on camera.
+    /// 1 · The telling: the photograph's card and its question, the big
+    /// button, her telling, and what the app made of it — ending on one name
+    /// confirmed by a person and the other left open, which is rule 4
+    /// happening on camera.
     ///
-    /// The stub transcriber answers a launch's first round with `samples[0]`,
-    /// the Puumala text, so the words on screen are words the samples really
-    /// hold. That is VIDEO.md's honest stub trick; nothing is faked into the
-    /// view.
+    /// `-seed film-untold` is the film's archive a minute before she speaks,
+    /// so the Kerro tab offers the photograph; `-sample film` makes the stub
+    /// write down the film's own telling — the words her voice says on the
+    /// soundtrack — and return the extraction the pipeline gave them. The
+    /// listening runs longer than her clip (7.5 s): the film lays the voice
+    /// over the take, and the take must not stop first. The 10 Sep cut's
+    /// version of this scene ran on `-seed empty` and the rotating samples.
     func testFilmTheTelling() throws {
-        let app = try roll(["-seed", "empty"])
-        try tap(app.tabBars.buttons, ["Tell", "Kerro"])
-        beat(2.2) // the question is read before anybody presses anything
+        let app = try roll(["-seed", "film-untold", "-sample", "film", "-tab", "tell"])
+        beat(2.2) // the picture and its question are read before anybody presses anything
         try tap(app.buttons, ["Aloita kertominen", "Start telling"])
-        beat(6.0) // she talks, and the line fills with her voice
+        beat(8.5) // she talks, and the line fills with her voice
         try tap(app.buttons, ["Lopeta kertominen", "Stop telling"])
         // The stub waits on purpose: ~1.4 s transcribing, 2.2 s extracting.
         _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 40)
-        beat(3.4) // the transcript, in her own words
-        let confirm = try reveal(app, app.buttons, ["Vahvista", "Confirm"])
+        beat(3.4) // the transcript in her own words, and two names in amber
+        let confirm = try reveal(app, app.buttons, ["Confirm Toivo", "Vahvista Toivo"])
         confirm.tap()
-        beat(2.6)
+        beat(8.0) // Toivo confirmed, Elli still open: held, because the film holds it
     }
 
     /// 2 · The invitation: the offer slot on the result screen, and the

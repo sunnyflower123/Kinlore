@@ -137,6 +137,9 @@ struct StubExtractionService: ExtractionService {
         level: Int?
     ) async throws -> ExtractionResult {
         try await Task.sleep(for: simulatedDelay)
+        if let film = Self.filmResult(for: transcript, corrections: corrections, level: level) {
+            return film
+        }
 
         // The stub cannot inflect, so it only replaces the base form. The real
         // implementation handles inflection — here it is enough that the
@@ -163,6 +166,43 @@ struct StubExtractionService: ExtractionService {
             mentions: mentions,
             dateHint: Self.dateHint(in: text),
             questions: Self.questions(for: mentions, level: level)
+        )
+    }
+
+    // MARK: The film's sample
+
+    /// `-sample film`: what the pipeline made of the film's own telling,
+    /// played back verbatim — so a take shows a real extraction without a
+    /// network, and the same one on every attempt.
+    ///
+    /// The heuristics below cannot read that sentence, and it is worth
+    /// knowing why: "Elli and Toivo." starts a sentence, so its first name is
+    /// never a proper noun to them; "the thirties" is not a year; and "at the
+    /// jetty" puts the place in front of the wrong word. Cheap and visible in
+    /// development, and useless on camera, where the screen has to show what
+    /// the app really made of these words. Until SHOOT-v16.md §1 has been
+    /// done, the mentions and the decade here are the film's script rather
+    /// than a measurement, like the names in `-seed film`.
+    static func filmResult(for transcript: String, corrections: [NameCorrection], level: Int?) -> ExtractionResult? {
+        guard UserDefaults.standard.string(forKey: "sample") == "film" else { return nil }
+        let corrected = { (name: String) -> String in corrections.first { $0.from == name }?.to ?? name }
+        let mentions = [
+            MentionedEntity(name: corrected("Puumala"), kind: .place, confidence: 0.9),
+            MentionedEntity(name: corrected("Elli"), kind: .person, confidence: 0.6),
+            MentionedEntity(name: corrected("Toivo"), kind: .person, confidence: 0.8),
+        ]
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Helsinki") ?? .current
+        let decade = DateHint(
+            start: calendar.date(from: DateComponents(year: 1930, month: 1, day: 1)),
+            end: calendar.date(from: DateComponents(year: 1939, month: 1, day: 1)),
+            precision: .decade
+        )
+        return ExtractionResult(
+            body: tidy(transcript),
+            mentions: mentions,
+            dateHint: decade,
+            questions: questions(for: mentions, level: level)
         )
     }
 

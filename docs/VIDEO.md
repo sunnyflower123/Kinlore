@@ -239,6 +239,12 @@ cp <the film's photograph> \
   "$(xcrun simctl get_app_container "$SIM" com.kinlore.app data)/Documents/film-photo.jpg"
 ```
 
+- **The telling** — `testFilmTheTelling`, `-seed film-untold -sample film
+  -tab tell`. The stub writes down the film's own sentence
+  (`StubTranscriptionService.film`) and returns the extraction the pipeline
+  gave it (`StubExtractionService.filmResult`) — the heuristics cannot read
+  that sentence, and a take has to show what the app really made of the
+  words on its soundtrack. The listening runs 8.5 s, longer than her clip.
 - **The blind card** — `testFilmTheBlindCard`, `-seed film -tab tell`. Taps
   the name the app did not propose; the take ends on the app's own sentence,
   *"Thank you. This stays open for now."*, and nothing green.

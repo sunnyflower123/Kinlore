@@ -1295,8 +1295,10 @@ final class MemoryStore {
                     precision: .decade
                 )
             }
-            subjects = [helmi, filmAino, liisa, filmToivo, filmPhoto, puumala] + (told ? [proposal] : [])
-            let telling = "That's Puumala, at the jetty. Elli and Toivo. It was the thirties, I was small then."
+            // Before the telling, Toivo does not exist either: he is first
+            // named in it, and the result screen has to be able to propose him.
+            subjects = [helmi, filmAino, liisa, filmPhoto, puumala] + (told ? [proposal, filmToivo] : [])
+            let telling = StubTranscriptionService.film
             memories = [
                 // The decoys need memories of their own, or they are bare names
                 // and the round answers itself.
