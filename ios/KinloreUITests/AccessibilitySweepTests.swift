@@ -61,6 +61,27 @@ import XCTest
 /// readings were noise. `testPeople` covers the same component and did
 /// discriminate cleanly, four runs to four. Until somebody re-measures this
 /// test on a quiet host, do not let it arbitrate a change on its own.
+/// **`testNamePhotoSheet` is a fourth, and it failed in a way none of the
+/// others did.** Measured 12 Sep 2026: in a 138-test run it reported no
+/// finding at all — the audit itself gave up, `Code=-56 "Audit failed to
+/// complete in time"`, after 194 seconds. Alone, on a private simulator and
+/// pinned to the same commit in a worktree of its own, it passed three times:
+/// 44.4 s, 41.6 s, 54.7 s.
+///
+/// The shape is the first two tests' rather than the third's — green alone, red
+/// in company, the finding naming nothing. What is new is the failure mode. A
+/// timeout is the one red the pixel method in CLAUDE.md cannot answer, because
+/// a busy machine can make the audit report a colour that is not there but the
+/// colour it reports is still measurable; here there is no colour at all.
+///
+/// And the host was not starved. Four devices booted throughout, 34 s per test
+/// against the 25 s this suite has run at, and the tree clean before the build
+/// and after it. So an audit can run out of time under ordinary load, which is
+/// worth knowing separately from what eight booted devices do.
+///
+/// Three greens are not proof the test is sound: the third test above gave two
+/// greens before two reds. They are enough to say this red was not a
+/// measurement of the screen.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 
