@@ -410,6 +410,23 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 # on a private one, same commit, minutes apart. Do not chase a red audit before
 # checking which device it ran on.
 #
+# **And when the machine is never quiet, do not wait for it — measure the
+# pixels.** A busy machine can make the audit report a colour that is not
+# there; it cannot change the colour that was drawn. So a red contrast finding
+# is answerable from a screenshot at any load, with the same WCAG arithmetic
+# `ContrastMeter` runs inside the test: launch the screen with its own seed and
+# `-UIPreferredContentSizeCategoryName`, screenshot it, and take the 95th
+# percentile of the frame as the paper and the 1st as the ink.
+#
+# Measured 12 Sep 2026, after two hours of waiting for a window that never
+# came — three sessions were rendering the video and running simulators
+# throughout. A suite run that began at load 7 and ended at 472 reported three
+# contrast failures. From the pixels: "Jäsenet" 18.21:1, "Paikat" at XXXL
+# 20.18:1, and the new avatar initial "S" 9.54:1, against a 4.5:1 minimum. All
+# three were the machine. The measurement took minutes, and the newest element
+# on the list — the one most likely to be a real regression, and argued to be
+# one — was the least close to failing.
+#
 #   xcrun simctl create kinlore-tests \
 #     com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
 #     com.apple.CoreSimulator.SimRuntime.iOS-26-5
