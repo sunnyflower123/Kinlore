@@ -84,13 +84,13 @@ struct MemoryPlaybackButton: View {
             // The recording is not lost — it is in R2 and this phone could not
             // reach it. Saying "yritä uudelleen" matters more than saying why:
             // the next tap on a working connection simply works.
-            failure = "Ääntä ei saatu haettua — yritä uudelleen"
+            failure = String(localized: "Ääntä ei saatu haettua — yritä uudelleen")
             return
         }
         if !player.toggle(memoryID: memory.id, fileURL: MediaStore.url(for: filename)) {
             // A different thing entirely, and a retry will not help: the file is
             // here and it will not play.
-            failure = "Tätä äänitystä ei saatu soimaan"
+            failure = String(localized: "Tätä äänitystä ei saatu soimaan")
         }
     }
 }

@@ -232,6 +232,8 @@
 "Etsi" = "Search";
 "1 muisto" = "1 memory";
 "%lld muistoa" = "%lld memories";
+"Ääntä ei saatu haettua — yritä uudelleen" = "The recording could not be fetched — try again";
+"Tätä äänitystä ei saatu soimaan" = "This recording would not play";
 
 /* --- The questions asked before something cannot be undone ---------------
    Every one of these is a confirmation dialog's title, and every one of them

@@ -191,6 +191,8 @@
 "Etsi" = "Etsi";
 "1 muisto" = "1 muisto";
 "%lld muistoa" = "%lld muistoa";
+"Ääntä ei saatu haettua — yritä uudelleen" = "Ääntä ei saatu haettua — yritä uudelleen";
+"Tätä äänitystä ei saatu soimaan" = "Tätä äänitystä ei saatu soimaan";
 "Hylätäänkö tämä kertominen?" = "Hylätäänkö tämä kertominen?";
 "Poistetaanko tämä muisto?" = "Poistetaanko tämä muisto?";
 "Poistetaanko sukulaisuus?" = "Poistetaanko sukulaisuus?";
