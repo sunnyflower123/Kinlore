@@ -596,6 +596,26 @@ node scripts/entitlement-sync-check.mjs
 # no key. After touching budget.ts or transcribe.ts.
 node scripts/transcribe-budget-check.mjs
 
+# What the app is willing to believe a model said. Two pure functions between
+# the model's JSON and the family's archive, and both were wrong in ways
+# nothing reported: a mention with an empty name became a PERSON the family is
+# asked to confirm — drawn as "Henkilö", because `displayTitle` falls back to
+# the kind — and an untrimmed name became a second Aino, which is the
+# duplicate card the base-form requirement exists to prevent arriving by
+# another road. Neither shows in a screenshot.
+#
+# They were unreachable by any check until 12 Sep 2026, and not for want of
+# value: Node cannot resolve extract.ts's extensionless `./openrouter` import,
+# which is the whole reason `budget.ts` was carved out as a file with no
+# runtime imports. Writing `./openrouter.ts` and setting
+# `allowImportingTsExtensions` is the cheaper answer — esbuild bundles it
+# unchanged — and the same one word would unlock `transcribe.ts`, `family.ts`
+# and `worker.ts`, the only other modules Node still refuses.
+#
+# Costs nothing: no Worker, no key, no network, no model. After touching
+# extract.ts.
+node scripts/extract-shaping-check.mjs
+
 # Place lookup. Re-measures the claims in ARCHITECTURE.md §18 against the real
 # MapKit answers — they are claims about somebody else's gazetteer, and they can
 # stop being true without this repo changing. Needs a network; run it after

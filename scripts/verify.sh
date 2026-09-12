@@ -192,6 +192,13 @@ run "no request offers the memories for training" node scripts/data-collection-c
 # reminder, and it is only as good as whoever last read it.
 run "only a point may be drawn as a point" place_map
 run "a long telling is given room to come back" node scripts/transcribe-budget-check.mjs
+# The two pure functions between the model's JSON and the family's archive.
+# Unreachable by any check until 12 Sep 2026 — not for want of value but for
+# want of a loader, since Node cannot resolve extract.ts's extensionless
+# import. A `.ts` on that one specifier fixed it. Both were wrong: an empty
+# name became a person the family is asked to confirm, drawn as "Henkilö",
+# and an untrimmed one became a second Aino.
+run "a model cannot name a person nothing said" node scripts/extract-shaping-check.mjs
 run "a browser can open what the phone sealed" webcrypto_interop
 
 # --- What the documents say about the code ----------------------------------

@@ -16,7 +16,17 @@
 /// Which one is used follows WHO IS SPEAKING, not who is reading the screen —
 /// the app sends `lang` with the transcript. See PLAN.md §10.
 
-import { complete, UpstreamError, type Message } from './openrouter'
+// `.ts` on the specifier, and it is not a style choice: without it Node
+// cannot resolve this import, so nothing in this module could be loaded by
+// a check script — measured 11 Sep 2026 as `ERR_MODULE_NOT_FOUND`. That is
+// the whole reason `budget.ts` was carved out as a file with no runtime
+// imports at all. The extension is the cheaper answer: `tsconfig.json` sets
+// `allowImportingTsExtensions` (legal under `noEmit`), esbuild bundles it
+// unchanged, and `extract-shaping-check.mjs` can now import the two
+// functions below. The same one word would unlock `transcribe.ts`,
+// `family.ts` and `worker.ts`, which are the only other modules Node still
+// refuses.
+import { complete, UpstreamError, type Message } from './openrouter.ts'
 import type { Env } from './worker'
 
 export type Lang = 'fi' | 'en'
@@ -338,7 +348,7 @@ function parseStructured(raw: string): ExtractionResult {
 /// them to decide whether a name is somebody the archive already has — so a
 /// stray space is the duplicate card the whole base-form requirement exists
 /// to prevent, arriving by a different road (found 11 Sep 2026).
-function normaliseMentions(raw: unknown): ExtractionResult['mentions'] {
+export function normaliseMentions(raw: unknown): ExtractionResult['mentions'] {
 	if (!Array.isArray(raw)) return []
 	return raw.flatMap((item): ExtractionResult['mentions'] => {
 		if (typeof item !== 'object' || item === null) return []
@@ -364,7 +374,7 @@ function normaliseMentions(raw: unknown): ExtractionResult['mentions'] {
 /// schema) and a `level` that is missing or out of range. Both become
 /// `level: null`, and the client falls back to reading the level off the
 /// wording.
-function normaliseQuestions(raw: unknown): ExtractedQuestion[] {
+export function normaliseQuestions(raw: unknown): ExtractedQuestion[] {
 	if (!Array.isArray(raw)) return []
 	return raw.flatMap((item): ExtractedQuestion[] => {
 		if (typeof item === 'string') {

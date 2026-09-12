@@ -8,7 +8,12 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    // Legal under `noEmit`, and it is what lets a check script import a Worker
+    // module at all: Node cannot resolve an extensionless relative import, so
+    // `extract.ts` was reachable by nothing but the Worker itself. esbuild
+    // bundles the extension unchanged. See the comment on extract.ts's import.
+    "allowImportingTsExtensions": true
   },
   "include": ["src/**/*.ts"]
 }
