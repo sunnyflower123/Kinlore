@@ -498,26 +498,101 @@ finished.**
   perheeltä"* section, and what it spent was the §5 row 7 slot — which is still
   empty, because a card is not a phase. If a browsable map is ever proposed
   again, it owes its own removal and this paragraph is not a precedent for it.
-- **Prices.** Free: 1 family / ~20 photos / ~10 AI minutes per month. Paid:
-  ~€9.99/month or €59.99/year. Nominal on the Test Store, but considered.
+- ~~**Prices.**~~ **Decided 12 Sep 2026: two purchases, each made once — a
+  year at 50 € and the archive for ever at 80 €. The monthly plan goes.**
+  Free stays as it is and as `wrangler.jsonc` has it: 20 photographs in
+  total and 10 minutes of telling a month, per family. On the Test Store the
+  numbers are nominal and read in US dollars — it has no currencies
+  (ARCHITECTURE §6) — and they are what the paywall shows in the video.
 
-  **Two products, and a third was removed on 16 Aug 2026.** The Test Store had
-  `monthly`, `yearly` *and* `lifetime` in its `default` offering — the trio
-  RevenueCat proposes when a project is created, so `lifetime` arrived as a
-  default rather than as a decision. Nothing was broken by it: `entitlement.ts`
-  already reads a null `expires_at` as perpetual, deliberately. It was removed
-  because an undecided price is worse than a decided one, and because in *this*
-  product a single payment would open the archive for a whole family forever,
-  which is a promise that deserves an argument rather than a template.
+  This row read *"~€9.99/month or €59.99/year"*, and the monthly plan was
+  what was wrong with it. The photographs arrive in a burst — a shoebox is
+  digitised in a month — and after that what is left is telling, which the
+  free tier nearly covers, and reading, which is free for ever because a
+  downgrade never deletes (ARCHITECTURE §6). A sensible family pays for one
+  month and cancels, so a monthly plan earns from the family that forgets
+  to, and that is not a product this app wants to be.
 
-  The paywall is in the demo video. Three options, one of them unplanned, reads
-  as pricing left at its defaults — on a submission judged partly on *"technical
-  care in presentation"*.
+  **Metering was considered and refused** — photo packs, minute packs, a
+  price per unit — for three reasons. A photograph costs about a thousandth
+  of a cent a month to keep (R2, ~0.6 MB at 2048 px), so a price per
+  photograph prices nothing and makes a family count photographs at the
+  kitchen table, when the whole idea is *put everything in*. A price per
+  minute lands on the teller and not the payer (§9): *"minutes left"* would
+  sit on grandmother's screen, which keeps rule 2 to the letter and not in
+  spirit. And consumable credits are a ledger the backend does not have —
+  grants, pooling across the family, refunds, and a check for each — where
+  `entitlement.ts` is built for one tier and one date.
 
-  The case for bringing it back is real and is emotional rather than commercial:
-  *"this is forever"* suits an archive better than a monthly bill does. If that
-  wins later, **price it here first.** Do not let it return as a default a second
-  time.
+  **What the shape is for is a gift.** The category's two survivors,
+  Storyworth (59–199 $ a year) and Remento (99 $ a year), both sell a gift
+  year with a printed book at the end, and neither meters anything. Kinlore
+  has no book, so its year sits below theirs. Eighty once against fifty a
+  year is a ratio of 1.6, which is what makes the archive-for-ever the one
+  most people take, and that is the intended outcome: nothing to cancel and
+  nothing to lapse. Rounded prices because a gift is a rounded sum; Apple
+  has allowed rounded endings on every purchase type since 2023. Net of
+  Finnish VAT at 25.5 % and Apple's small-business commission at 15 %: 34 €
+  from the year, 54 € from the archive.
+
+  **The one running cost is telling, and a one-time price needs a ceiling
+  for it.** Transcription costs about 0.3 c a minute (Gemini 3.6 Flash
+  through OpenRouter: 0.75 $ per million audio tokens at 32 tokens a second,
+  plus the text out) and everything else rounds to nothing — a thousand
+  photographs are a cent a month. So the paid archive carries a fair-use
+  ceiling of **five hours of telling a month per family**, the same for both
+  purchases so that there is one rule. Worst case 10.8 € a year against the
+  54 € net, which the price covers for five years; a realistic twenty
+  minutes a month is 0.72 € a year, which it covers for decades. **The
+  ceiling is a sentence and not code.** Nothing enforces it: `quota.ts`
+  reads the paid tier as unlimited, so the offer card's *"Maksullisessa
+  arkistossa rajoja ei ole"* and the paywall's *"No limits"* are still true.
+  When it becomes one number in `quota.ts` (v1.1), both sentences change
+  with it and `quota-check.mjs` grows a case.
+
+  **The code for a perpetual purchase exists, and one path in it is worth
+  knowing.** `entitlement.ts` reads a null `expires_at` as perpetual, the
+  two-payer rule keeps the furthest date and a perpetual one is the
+  furthest, a refund revokes it through the webhook like any other
+  (CANCELLATION with `CUSTOMER_SUPPORT`), and `entitlement-sync-check.mjs`
+  pins the perpetual case. But **the webhook does not grant it**: a
+  `NON_RENEWING_PURCHASE` event carries no expiry, and `handleWebhook`
+  ignores an event with neither an expiry nor a revocation, deliberately, so
+  that a null cannot end a tier the event was not about. The
+  archive-for-ever is therefore granted by `/entitlement/sync` — the app
+  reports the purchase from the paywall, and again at launch and on
+  returning to the foreground — and by reconciliation, which asks
+  RevenueCat directly. That is enough, because the buyer is in the app when
+  they buy; it is written down so that nobody reads the webhook's
+  `no_expiration` as a defect, or the missing grant as covered.
+
+  What is left is the dashboard, not the repository: `lifetime` back as a
+  non-consumable at 80, `yearly` at 50, `monthly` out of the `default`
+  offering, and the paywall drawn the same day (ARCHITECTURE §6) redrawn
+  with the two packages and their sentences in both languages — the words
+  live outside `localisation-check.mjs` and every audit, so the English one
+  is screenshotted by hand before filming. §6's paragraph on the paywall
+  describes the two-package version with its discount label and its
+  9,99 / 79,99 US$; it is rewritten when the dashboard is, and §1's paywall
+  row with it.
+
+  Whether fifty or eighty is too much for a first purchase cannot be
+  answered here: there are no users, and no money moves before a store
+  listing (§2.1). What can be said is that the buyer has already seen the
+  app work on the free tier, that the offer appears after a finished telling
+  and never before, and that not buying loses nothing. The measurement is
+  phase E: ask the one real grandchild whether they would pay eighty once
+  for this, and write down their words rather than the paraphrase.
+
+  **History, kept because it explains the shape.** Two products stood here
+  from 16 Aug 2026, when a third was removed: the Test Store had `monthly`,
+  `yearly` *and* `lifetime` in its `default` offering — the trio RevenueCat
+  proposes when a project is created — so `lifetime` had arrived as a
+  default and not as a decision, and an undecided price is worse than a
+  decided one. The note left behind said the case for it was real and
+  emotional rather than commercial, *"this is forever"* suiting an archive
+  better than a monthly bill, and to price it here first if it ever won. It
+  won, and it is priced here.
 - **The cloud — custody, not only adoption.** Raised 15 Aug 2026 as a question
   about whether anyone would join: who hands a dead parent's voice to somebody's
   server? **Reopened 16 Aug 2026 as the larger half of the same question** —
