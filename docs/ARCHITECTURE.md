@@ -1118,6 +1118,23 @@ downward path is proven end to end"* — and that transition was a hand-typed
 record who wrote it.** The Worker's log does, which is why the proof above is
 a log line and not a row.
 
+**And then the real one arrived**, 27 minutes after the false claim, from the
+same tail:
+
+    (log) [entitlement] RENEWAL → archive      14:47:27, 14:51:30, 14:59:31, 15:03:31
+    (log) [entitlement] EXPIRATION → free      15:07:31
+
+D1 followed it: `free`, no payer, no date. So the downward path is proven too,
+and by the thing that can carry the claim — `revokes()` is the function that
+cost a family a paid month when it was assumed, and the rule
+`webhook-revocation-check.mjs` pins now holds against the real service and not
+only against an in-memory SQLite.
+
+Four renewals and then the end, which is RevenueCat's documented Test Store
+behaviour — accelerated renewals, at most five, then cancellation — read from
+their documentation on 1 Sep and observed here on the 12th. VIDEO.md's fifth
+scene depends on that clock: buy on filming night, not before.
+
 **What has not been configured, and is not code.** No paywall is drawn in
 RevenueCat's dashboard, so `PaywallView` falls back to their own placeholder —
 pink, in English, with their cat and the words *"No Paywall configured"*. The
