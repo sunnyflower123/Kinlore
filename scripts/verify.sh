@@ -369,10 +369,25 @@ elif [ -n "${KINLORE_TEST_SIM:-}" ]; then
 		# which reads like a broken build and is not one — the same shape as the
 		# accessibility failures CLAUDE.md warns about on a shared device. Keyed
 		# by the simulator, so two people running this at once get one each.
+		#
+		# IN FINNISH, and this file was running them in the device's own
+		# language until 12 Sep 2026. The tests query the accessibility tree by
+		# the words on screen and those words are Finnish; the app's default is
+		# English and follows the device. Counted on the day the flags were
+		# added: of the 121 distinct strings the suite asks for by name, 93
+		# translate to something else in en.lproj — "Tutut nimet" to "Familiar
+		# names", "Hylkää" to "Reject" — so on an English device most of the
+		# suite looks for text that is not there.
+		#
+		# The skip message below tells you to create a simulator, and a fresh
+		# one is English. So this file was handing somebody a device and then
+		# failing them on it, which is the same wasted hour CLAUDE.md describes
+		# for a shared device and looks exactly as convincing.
 		PATH="$XCODE/usr/bin:$PATH" DEVELOPER_DIR=$XCODE xcodebuild \
 			-project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
 			-destination "platform=iOS Simulator,id=$KINLORE_TEST_SIM" \
-			-derivedDataPath "$OUT/DerivedData-$KINLORE_TEST_SIM" test
+			-derivedDataPath "$OUT/DerivedData-$KINLORE_TEST_SIM" \
+			-testLanguage fi -testRegion FI test
 	}
 	# No count in the label: doc_counts above owns the numbers, and a label
 	# that carried its own copy sat seven behind before anyone noticed.
