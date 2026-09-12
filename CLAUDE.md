@@ -338,6 +338,27 @@ pathspec picks the index up again — use `--only -- <paths>`. And
 repairing the commit above by restoring that file put somebody else's message
 on it. Keep your message in a file of your own.
 
+**And do not edit a shared file to run an experiment.** Staging by path keeps
+another session's work out of your commit; it does nothing for their work on
+disk. On 12 Sep 2026 an accessibility finding was chased by editing
+`RootView.swift` in place — hide a section, run the audit, restore from a copy
+taken beforehand — and between the copy and the restore another session began
+migrating that same file. The restore wrote a pre-experiment version over their
+work. It survived only because they happened to write again immediately after,
+which is luck and not a method.
+
+An experiment that changes code belongs in a worktree of its own, which costs
+one command and leaves the shared tree untouched:
+
+    git worktree add --detach /tmp/try HEAD && (cd /tmp/try/ios && xcodegen generate)
+    # …edit, build and measure in /tmp/try…
+    git worktree remove --force /tmp/try
+
+The same rule answers a subtler version: a measurement taken in the shared tree
+is a measurement of somebody else's half-finished work, not of HEAD. Every
+number in this session that meant anything was taken in a worktree pinned to a
+commit.
+
 ## Commands
 
 **Most of the checks below are also one command.** `./scripts/verify.sh` runs
