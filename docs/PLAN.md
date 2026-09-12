@@ -312,8 +312,21 @@ than a risk that has been retired.
 Written before the day rather than on it, because half of what follows cannot be
 done afterwards at all.
 
-**Before the door.** The build is on her phone already (§3), Developer Mode is
-done, and there is something to write on. `scripts/asr-bench.mjs` says what it
+**Before the door.** This sentence used to assert the whole thing; it has two
+halves and only one of them can be checked from here.
+
+**The Mac's half is measured, 12 Sep 2026.** The app compiles for arm64 and
+Xcode resolves device signing by itself — `BUILD SUCCEEDED` both with signing
+skipped and with it required, from a `project.yml` that names no
+`DEVELOPMENT_TEAM` at all. That was worth measuring because **nothing in this
+project had ever been built for a device**: every build in its history targeted
+the simulator, so §3's promise that "in the room, Xcode installs the build onto
+her phone directly" rested on nobody having tried it.
+
+**Her half cannot be measured from here**, and it is the part to do with her,
+once, before anything is installed: the phone paired to this Mac over a cable,
+and Developer Mode turned on in her Settings — which takes her passcode and a
+restart of her phone. Plus there is something to write on. `scripts/asr-bench.mjs` says what it
 needs and has said so from the start: three real samples, and *"the correct text
 for each by hand"* beside them. `samples/` is gitignored — her voice does not go
 into a public repo.

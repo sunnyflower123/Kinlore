@@ -375,6 +375,24 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
   -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
   -destination "id=$SIM" build
 
+# The same app for a REAL device, which is how the phase E visit installs it
+# (PLAN.md §8) and which nothing had ever run until 12 Sep 2026 — every build
+# in this project's history targeted the simulator. Both halves pass: the code
+# compiles for arm64, and Xcode resolves signing on its own even though
+# project.yml names no DEVELOPMENT_TEAM. Run the first line to separate a
+# compile problem from a signing one; the second is the real thing.
+#
+# Do not grep this output for "error" — the RevenueCat package has files
+# called ErrorUtils.swift and BackendError.swift, and the paths alone produce
+# pages of false matches. Grep for '^\*\* BUILD' instead.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphoneos \
+  -destination 'generic/platform=iOS' \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
+  -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphoneos \
+  -destination 'generic/platform=iOS' build
+
 # Accessibility tests. VoiceOver reads the accessibility tree and XCUITest
 # queries the same tree, so this is how rule 1 is checked rather than asserted.
 # performAccessibilityAudit() also catches contrast, clipping and tap targets —
