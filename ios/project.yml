@@ -143,7 +143,8 @@ targets:
         # The app's blue. iOS's own #007AFF measures 4.0:1 against white, under
         # the 4.5:1 minimum, and the accessibility audit found it failing on
         # every tinted button and every tinted line of text in the app at once.
-        # #0B57D0 measures 6.4:1 and is one place to change rather than thirty.
+        # #0B57D0 measures 5.54:1 on the app's paper (6.4:1 on white) and is one
+        # place to change rather than thirty.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 
   # Accessibility is not a checklist item in this app, it is the product (rule 1
