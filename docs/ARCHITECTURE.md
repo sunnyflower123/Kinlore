@@ -2252,9 +2252,13 @@ in a family, and they are genuinely separate — so the screen names both:
   family would ask for "anything above 412" and silently receive nothing.
 - **Tyhjennä tämä laite.** The store, the media, the ladder's state and the
   Keychain identity. Afterwards the app is a fresh install. In a family the
-  memories are still on the server and rejoining brings them back; in a local
-  archive they are gone for good, and the screen says exactly that in those
-  words rather than in a generic warning.
+  memories are still on the server and rejoining brings them back — unless
+  this was the last copy: the server does not let the last member leave, so
+  the sealed rows stay, but the key and the identity go with the wipe and
+  nothing can open them again, which is what the dialog says since 12 Sep
+  2026 instead of *"poistetaan lopullisesti"*. In a local archive they are
+  gone for good, and the screen says exactly that in those words rather than
+  in a generic warning.
 
   It also **offers the export from inside the dialog** when nobody else has a
   copy. Saying "vie arkisto ensin" and then presenting one button, the
