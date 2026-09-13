@@ -149,8 +149,8 @@ struct RootView: View {
             }
         }
         // The first minute after "Luo arkisto", once, on the phone of whoever
-        // set the archive up: whose memories it is for, their card, and an
-        // invitation made out to them. The archive was bought for somebody
+        // set the archive up: whose memories it is for, their card, and how
+        // they will tell — an invitation, or this phone. The archive was bought for somebody
         // else's memories, and the Kerro tab behind this asks for the buyer's
         // own. A grandparent's phone skips it and keeps her button.
         .sheet(isPresented: $isShowingFirstMinute) {

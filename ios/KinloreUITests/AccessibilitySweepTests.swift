@@ -871,7 +871,7 @@ final class AccessibilitySweepTests: XCTestCase {
             field.tap()
             field.typeText("Mummo")
             require(app.buttons["Jatka"], "the way on").tap()
-            require(app.buttons["Kutsu perheenjäsen"], "the invitation step")
+            require(app.buttons["Tällä puhelimella"], "the step that asks how she will tell")
         }
     }
 

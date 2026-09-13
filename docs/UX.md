@@ -33,7 +33,9 @@ Three arrivals exist and they are barely different:
 **Changed 13 Sep 2026, for the second row.** After *"Luo arkisto"* on the phone
 of whoever set the archive up, `FirstMinuteSheet` now comes up over the Kerro
 tab: *"Kenen muistot haluat tallentaa?"*, a name that becomes a confirmed card,
-and an invitation made out to that name. Looking at the app as a buyer would,
+and *"Miten hän kertoo muistonsa?"* — her own phone, which sends an invitation
+made out to that name, or this phone, which is the answer for a grandmother
+with no smartphone. Looking at the app as a buyer would,
 the founder saw the first screen asking the buyer for their own memories when
 the archive had been bought for somebody else's. A grandparent's phone (the
 text floor) skips it and lands on her button as before. The table above stays

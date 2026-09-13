@@ -27,8 +27,10 @@ final class FirstMinuteTests: XCTestCase {
         app.buttons["Jatka"].tap()
 
         XCTAssertTrue(app.staticTexts["Mummo on nyt arkistossa"].waitForExistence(timeout: 10), "the second step")
-        XCTAssertTrue(app.buttons["Kutsu perheenjäsen"].exists, "no invitation offered for her")
-        app.buttons["Valmis"].tap()
+        XCTAssertTrue(app.buttons["Omalla puhelimellaan"].exists, "no invitation offered for her own phone")
+        // The answer for a grandmother with no smartphone: her card stays,
+        // and nothing is sent.
+        app.buttons["Tällä puhelimella"].tap()
 
         app.tabBars.buttons["Ihmiset"].tap()
         XCTAssertTrue(app.staticTexts["Mummo"].waitForExistence(timeout: 10), "her card is not among the people")

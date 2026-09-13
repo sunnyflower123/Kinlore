@@ -87,8 +87,8 @@ final class Session {
 
     /// Set when a family is created here, consumed by `RootView` on its first
     /// appearance: on the phone of whoever set the archive up, the first thing
-    /// after "Luo arkisto" is the question of whose memories it is for, and an
-    /// invitation made out to them. A grandparent's phone skips it and keeps
+    /// after "Luo arkisto" is the question of whose memories it is for, and how
+    /// that person will tell them. A grandparent's phone skips it and keeps
     /// her button. Device state, one-shot, never synced — the same shape as
     /// `arrivalPendingKey`, and set at the same moment. Since 13 Sep 2026.
     nonisolated static let firstMinutePendingKey = "first_minute_pending"

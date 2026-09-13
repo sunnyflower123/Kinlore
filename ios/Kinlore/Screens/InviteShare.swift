@@ -16,6 +16,11 @@ import SwiftUI
 struct InviteShareButton: View {
     @Environment(Session.self) private var session
 
+    /// The words on the button. The first minute answers its own question
+    /// with it — "Omalla puhelimellaan" beside "Tällä puhelimella" — and every
+    /// other screen keeps the button as it always was.
+    var title: LocalizedStringKey = "Kutsu perheenjäsen"
+
     /// Whom the invitation starts out made to, when the screen offering it
     /// already knows — the first minute's "whose memories" has just been
     /// answered. Empty everywhere else, which is the button as it always was.
@@ -34,7 +39,7 @@ struct InviteShareButton: View {
             name = suggestedName
             isSharing = true
         } label: {
-            Label("Kutsu perheenjäsen", systemImage: "person.badge.plus")
+            Label(title, systemImage: "person.badge.plus")
                 .font(.body.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .elderTapTarget()

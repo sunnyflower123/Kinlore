@@ -125,9 +125,12 @@
 "Pienennä" = "Zoom out";
 "Suurenna" = "Zoom in";
 "Kenen muistot haluat tallentaa?" = "Whose memories do you want to keep?";
-"Kirjoita hänen nimensä, niin hän saa oman kortin. Sitten voit kutsua hänet kertomaan omalla puhelimellaan." = "Write their name, and they get a card of their own. Then you can invite them to tell on their own phone.";
+"Kirjoita hänen nimensä, niin hän saa oman kortin. Hän voi kertoa omalla puhelimellaan tai tällä." = "Write their name, and they get a card of their own. They can tell on their own phone, or on this one.";
 "%@ on nyt arkistossa" = "%@ is in the archive now";
-"Kutsu hänet omalle puhelimelleen, niin hän voi kertoa muistonsa itse." = "Invite them onto their own phone, so they can tell their memories themselves.";
+"Miten hän kertoo muistonsa?" = "How will they tell their memories?";
+"Omalla puhelimellaan" = "On their own phone";
+"Tällä puhelimella" = "On this phone";
+"Jos hänellä ei ole älypuhelinta, hän voi kertoa tällä. Kutsun voi lähettää myöhemmin Asetuksista." = "If they have no smartphone, they can tell on this one. You can send the invitation later from Settings.";
 "Yhdistä" = "Merge";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "The family already has %@. The cards will be merged, and this one's memories will move there.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "The family already has %@. This card's memories will move to them, and the merge cannot be undone.";
