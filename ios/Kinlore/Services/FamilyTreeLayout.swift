@@ -264,7 +264,13 @@ enum FamilyTreeLayout {
                 if let a = parents[id], let b = parents[other], !Set(a).isDisjoint(with: b) { continue }
                 guard let ax = x[id], let bx = x[other], let r = row[id] else { continue }
                 let bar = Double(r) - 0.4
-                segments.append(Segment(x1: ax, y1: Double(r), x2: ax, y2: bar))
+                // Both drops run the same way, from the bar down. They ran
+                // opposite ways until 13 Sep 2026, and which sibling this loop
+                // meets first is a dictionary's order — random per process —
+                // so the same family came out as two different lists of lines
+                // that draw the same. The layout check caught it, in half of
+                // the runs of some processes and none of others.
+                segments.append(Segment(x1: ax, y1: bar, x2: ax, y2: Double(r)))
                 segments.append(Segment(x1: min(ax, bx), y1: bar, x2: max(ax, bx), y2: bar))
                 segments.append(Segment(x1: bx, y1: bar, x2: bx, y2: Double(r)))
             }
