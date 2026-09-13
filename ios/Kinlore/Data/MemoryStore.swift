@@ -1133,7 +1133,7 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
-        guard ["archive", "unseen", "deck", "blind", "related", "dated", "film", "film-untold"].contains(seed) else { return }
+        guard ["archive", "unseen", "deck", "blind", "related", "dated", "film", "film-untold", "film-tree"].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -1289,21 +1289,34 @@ final class MemoryStore {
         // the photograph nobody has spoken about yet, which is what the Kerro
         // tab's card is drawn from, so the telling can be filmed into it.
         //
-        // The names are placeholders until the measurement SHOOT-v16.md §1
-        // describes: the proposal is whatever the real pipeline heard for the
-        // sister's name when the film's own voice clip was run through it, and
-        // it is never invented here. Exactly three confirmed people are not
-        // named in the telling, because `BlindConfirmation` takes its decoys
-        // from them in store order and a fourth would push the film's names
-        // off the card; Toivo is named in it, and is therefore never a decoy.
+        // The two names the telling says are the two it heard — Helmi and
+        // Toivo — and Helmi is the proposal: the film's blind card is her name
+        // given by somebody who knows the photograph without being shown it,
+        // which is the strongest confirmation the app collects (rule 4).
+        // Until 13 Sep 2026 the proposal was a misheard "Elli" and the take
+        // ended on a name left open; the cut built on it had to explain a
+        // quiz. Exactly three confirmed people are not named in the telling,
+        // because `BlindConfirmation` takes its decoys from them in store
+        // order and a fourth would push the film's names off the card; Toivo
+        // is named in it, and is therefore never a decoy.
         //
         // English, unlike the rest of this fixture, because the film is shot in
         // English and the words on a filmed screen have to be the words on its
         // soundtrack. The picture comes from `filmPhotoFile()`.
-        if seed == "film" || seed == "film-untold" {
-            let told = seed == "film"
-            let proposal = Subject(id: "demo-film-proposal", kind: .person, title: "Elli", confirmed: false)
-            let helmi = Subject(id: "demo-film-helmi", kind: .person, title: "Helmi")
+        //
+        // `-seed film-tree` is the same archive after the blind card: Helmi
+        // confirmed, a card for Grandma herself, and the three confirmed
+        // relations the tree is drawn from (below, with the others) — the tree
+        // draws confirmed people and confirmed relations only, so `-seed film`
+        // draws nothing. Grandma stops the tree: the app has parent, spouse
+        // and sibling, and a grandchild drawn straight under her would be
+        // drawn as her child.
+        if seed == "film" || seed == "film-untold" || seed == "film-tree" {
+            let told = seed != "film-untold"
+            let treeShot = seed == "film-tree"
+            let proposal = Subject(id: "demo-film-proposal", kind: .person, title: "Helmi", confirmed: !treeShot)
+            let grandma = Subject(id: "demo-film-grandma", kind: .person, title: "Grandma")
+            let elli = Subject(id: "demo-film-elli", kind: .person, title: "Elli")
             let filmAino = Subject(id: "demo-film-aino", kind: .person, title: "Aino")
             let liisa = Subject(id: "demo-film-liisa", kind: .person, title: "Liisa")
             let filmToivo = Subject(id: "demo-film-toivo", kind: .person, title: "Toivo")
@@ -1318,15 +1331,16 @@ final class MemoryStore {
                     precision: .decade
                 )
             }
-            // Before the telling, Toivo does not exist either: he is first
-            // named in it, and the result screen has to be able to propose him.
-            subjects = [helmi, filmAino, liisa, filmPhoto, puumala] + (told ? [proposal, filmToivo] : [])
+            // Before the telling, neither Helmi nor Toivo exists: both are
+            // first named in it, and the result screen has to be able to
+            // propose them.
+            subjects = [elli, filmAino, liisa, filmPhoto, puumala] + (told ? [proposal, filmToivo] : []) + (treeShot ? [grandma] : [])
             let telling = StubTranscriptionService.film
             memories = [
                 // The decoys need memories of their own, or they are bare names
                 // and the round answers itself.
-                Memory(id: "demo-film-memory-helmi", subjectID: helmi.id, authorID: "demo-mummo",
-                       authorName: "Grandma", body: "Helmi was her sister.", source: .typed),
+                Memory(id: "demo-film-memory-elli", subjectID: elli.id, authorID: "demo-mummo",
+                       authorName: "Grandma", body: "Elli was her cousin.", source: .typed),
                 Memory(id: "demo-film-memory-aino", subjectID: filmAino.id, authorID: "demo-mummo",
                        authorName: "Grandma", body: "Aino lived next door.", source: .typed),
                 Memory(id: "demo-film-memory-liisa", subjectID: liisa.id, authorID: "demo-mummo",
@@ -1413,7 +1427,15 @@ final class MemoryStore {
         // XCUITest, and a fixture is a fact rather than a race.
         relations = seed == "related"
             ? [Relation(fromSubjectID: eeva.id, toSubjectID: kalle.id, kind: .spouseOf, confirmed: true)]
-            : []
+            : seed == "film-tree"
+                // The film's one family unit (the ids are the film block's):
+                // Helmi and Toivo a couple, both parents of Grandma.
+                ? [
+                    Relation(fromSubjectID: "demo-film-proposal", toSubjectID: "demo-film-toivo", kind: .spouseOf, confirmed: true),
+                    Relation(fromSubjectID: "demo-film-proposal", toSubjectID: "demo-film-grandma", kind: .parentOf, confirmed: true),
+                    Relation(fromSubjectID: "demo-film-toivo", toSubjectID: "demo-film-grandma", kind: .parentOf, confirmed: true),
+                ]
+                : []
         // Nothing is queued for the server: this archive is a fixture, and
         // pushing it into a real family would be a genuine mess.
         dirtySubjects = []

@@ -101,7 +101,7 @@ final class FilmDriver: XCTestCase {
         beat(3.4) // the transcript in her own words, and two names in amber
         let confirm = try reveal(app, app.buttons, ["Confirm Toivo", "Vahvista Toivo"])
         confirm.tap()
-        beat(8.0) // Toivo confirmed, Elli still open: held, because the film holds it
+        beat(8.0) // Toivo confirmed, Helmi still open: held, because the film holds it
     }
 
     /// 2 · The invitation: the offer slot on the result screen, and the
@@ -186,29 +186,44 @@ final class FilmDriver: XCTestCase {
 
     // MARK: - The v16 takes (SHOOT-v16.md in the video project)
 
-    /// The names the film seed deals: the one the app proposed, which the
-    /// driver must never tap — that would be the app confirming its own guess
-    /// by proxy — and the one a person who knows the photograph says. Both
-    /// mirror `-seed film` in MemoryStore, and both are placeholders until the
-    /// measurement SHOOT-v16.md §1 describes.
-    private static let filmProposal = "Elli"
-    private static let filmAnswer = "Helmi"
+    /// The name the film seed proposes, mirrored from `-seed film` in
+    /// MemoryStore. The blind card's take taps it — not the app confirming its
+    /// own guess by proxy, but the person who knows the photograph arriving at
+    /// the same name without being shown it, which is the confirmation rule 4
+    /// calls the strongest. Until 13 Sep 2026 the take tapped a name the app
+    /// had not proposed and ended on the question left open; the film built
+    /// on it had to explain a quiz, and the seed changed with it.
+    private static let filmProposal = "Helmi"
 
     /// 6 · The blind card: the photograph a name was heard in, four names with
-    /// the app's guess unmarked among them, and an answer the app had not
-    /// proposed. What the take has to show is what the app then says — its
-    /// one sentence, and nothing green: it did not know either.
+    /// the app's guess unmarked among them, and the name a person who knows
+    /// the picture gives. What the take has to show is what the app then
+    /// says — its one sentence, and the name a fact.
     func testFilmTheBlindCard() throws {
         let app = try roll(["-seed", "film", "-tab", "tell"])
         _ = try find(app.staticTexts, ["Who is this?", "Kuka tässä on?"], timeout: 30)
         beat(6.5) // the picture, the question and the four names, read before anything is chosen
-        try tap(app.buttons, [Self.filmAnswer])
+        try tap(app.buttons, [Self.filmProposal])
         _ = try find(
             app.staticTexts,
-            ["Thank you. This stays open for now.", "Kiitos. Tämä jää toistaiseksi avoimeksi."],
+            ["Thank you. Now we know who this is.", "Kiitos. Nyt tiedämme, kuka hän on."],
             timeout: 20
         )
         beat(7.0) // the sentence is the last image of the scene
+    }
+
+    /// 6b · The family tree, on a family member's phone, after the blind
+    /// confirmation: Helmi and Toivo as a couple, the bracket down to Grandma.
+    /// `-seed film-tree` is the film fixture with Helmi confirmed and the
+    /// three confirmed relations; the tree draws confirmed people and
+    /// confirmed relations only, so the same archive a minute earlier
+    /// (`-seed film`) draws nothing. `-screen tree` lands with the tree itself
+    /// (branch family-tree, 13 Sep 2026); until then this scene has no screen
+    /// to find.
+    func testFilmTheTree() throws {
+        let app = try roll(["-seed", "film-tree", "-tab", "people", "-screen", "tree"])
+        _ = try find(app.staticTexts, ["Family tree", "Sukupuu"], timeout: 30)
+        beat(8.0) // the film holds the tree while it grows out of the phone
     }
 
     /// 7 · The paywall: the offer on a result that proposed no names, the real

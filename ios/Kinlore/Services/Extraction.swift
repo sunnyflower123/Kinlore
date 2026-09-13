@@ -160,7 +160,7 @@ struct StubExtractionService: ExtractionService {
     /// network, and the same one on every attempt.
     ///
     /// The heuristics below cannot read that sentence, and it is worth
-    /// knowing why: "Elli and Toivo." starts a sentence, so its first name is
+    /// knowing why: "Helmi and Toivo." starts a sentence, so its first name is
     /// never a proper noun to them; "the thirties" is not a year; and "at the
     /// jetty" puts the place in front of the wrong word. Cheap and visible in
     /// development, and useless on camera, where the screen has to show what
@@ -172,7 +172,7 @@ struct StubExtractionService: ExtractionService {
         let corrected = { (name: String) -> String in corrections.first { $0.from == name }?.to ?? name }
         let mentions = [
             MentionedEntity(name: corrected("Puumala"), kind: .place, confidence: 0.9),
-            MentionedEntity(name: corrected("Elli"), kind: .person, confidence: 0.6),
+            MentionedEntity(name: corrected("Helmi"), kind: .person, confidence: 0.8),
             MentionedEntity(name: corrected("Toivo"), kind: .person, confidence: 0.8),
         ]
         var calendar = Calendar(identifier: .gregorian)

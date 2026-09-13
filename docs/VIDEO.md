@@ -246,8 +246,16 @@ cp <the film's photograph> \
   that sentence, and a take has to show what the app really made of the
   words on its soundtrack. The listening runs 8.5 s, longer than her clip.
 - **The blind card** — `testFilmTheBlindCard`, `-seed film -tab tell`. Taps
-  the name the app did not propose; the take ends on the app's own sentence,
-  *"Thank you. This stays open for now."*, and nothing green.
+  the name the app proposed — given by somebody who knows the photograph,
+  without being shown it — and the take ends on the app's own sentence,
+  *"Thank you. Now we know who this is."*
+- **The family tree** — `testFilmTheTree`, `-seed film-tree -tab people
+  -screen tree` (the screen argument lands with the tree itself, branch
+  family-tree). The film fixture with Helmi confirmed, a card for Grandma,
+  and three confirmed relations — Helmi and Toivo as a couple, both parents
+  of Grandma — because the tree draws confirmed people and confirmed
+  relations only; `-seed film` draws nothing. A family member's phone state:
+  the tree is not offered on a grandparent's phone or with VoiceOver on.
 - **The paywall** — `testFilmThePaywall`, scene 5's arguments. The key
   cannot travel through the runner, so it goes into the app's defaults once:
   `xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>`.
@@ -261,9 +269,10 @@ cp <the film's photograph> \
   a screen. The take of 12 Sep 2026 shows the row on the list itself, which
   the list stopped holding that evening; it has to be shot again.
 
-The names in the seed and the driver — the proposal, and the answer — are
-placeholders until the film's own voice clip has been run through the real
-pipeline and the name it misheard is known (SHOOT-v16.md §1).
+The telling names Helmi and Toivo, the stub hears both, and Helmi is the
+proposal the card asks about — since 13 Sep 2026; before that the proposal
+was a misheard *Elli* and the take ended on the question left open, which
+the film then had to explain as something other than a quiz.
 
 ## Before filming night, in one list
 

@@ -54,7 +54,7 @@ struct StubTranscriptionService: TranscriptionService {
     /// the real pipeline heard; `-seed film` writes the same sentence into
     /// its fixture, and `StubExtractionService.filmResult` returns what was
     /// made of it.
-    static let film = "That's Puumala, at the jetty. Elli and Toivo. It was the thirties, I was small then."
+    static let film = "That's Puumala, at the jetty. Helmi and Toivo. It was the thirties, I was small then."
 
     func transcribe(audioURL: URL) async throws -> String {
         try await Task.sleep(for: simulatedDelay)
