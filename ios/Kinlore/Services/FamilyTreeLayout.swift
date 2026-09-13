@@ -10,6 +10,8 @@ import Foundation
 ///
 /// Rows are generations, top to bottom. `x` is measured in person-widths, so a
 /// couple sits one apart and a gap between two families is one empty place.
+/// People related to nobody are placed too, below every family, so the whole
+/// family is in one picture (since 13 Sep 2026).
 ///
 /// Only what a human has confirmed should come in (rule 4): a proposal drawn
 /// into a picture of the family is the guess shown as fact. The caller filters;
@@ -45,8 +47,11 @@ enum FamilyTreeLayout {
     struct Result: Equatable {
         var placements: [String: Placement] = [:]
         /// People with no relationship to anybody drawn, in the order given.
-        /// They are not in the tree; the screen lists them beneath it.
+        /// They are placed below every family and have no lines.
         var unconnected: [String] = []
+        /// The first row of those people. The row above it is left empty for
+        /// the screen's caption. Nil when everybody is related to somebody.
+        var looseRow: Int?
         var rows = 0
         var width = 0.0
         var segments: [Segment] = []
@@ -194,8 +199,26 @@ enum FamilyTreeLayout {
             offset = rightEdge + 1
         }
 
-        for (id, value) in x { result.placements[id] = Placement(row: row[id]!, x: value) }
         result.width = max(0, offset - 1)
+
+        // Everybody related to nobody, below every family and as wide as the
+        // tree above them, never fewer than three to a row, with the row above
+        // them left empty for the screen's caption — under a tree or, when
+        // nobody is related yet, at the top. No lines, because nobody has said
+        // who they are to anyone.
+        if !result.unconnected.isEmpty {
+            let perRow = max(3, Int(result.width.rounded(.up)))
+            let first = result.rows + 1
+            result.looseRow = first
+            for (i, id) in result.unconnected.enumerated() {
+                row[id] = first + i / perRow
+                x[id] = Double(i % perRow)
+            }
+            result.rows = first + (result.unconnected.count + perRow - 1) / perRow
+            result.width = max(result.width, Double(min(result.unconnected.count, perRow)))
+        }
+
+        for (id, value) in x { result.placements[id] = Placement(row: row[id]!, x: value) }
 
         var segments: [Segment] = []
         var drawn = Set<String>()

@@ -282,6 +282,12 @@ extension XCTestCase {
         let app = XCUIApplication()
         app.launchArguments += ["-AppleLanguages", "(fi)", "-AppleLocale", "fi_FI"]
         app.launchArguments += ["-api", api] + arguments
+        // Ihmiset opens on the drawn tree on a family member's phone since
+        // 13 Sep 2026. Every test written before that is about the list, so
+        // the list is what a test gets unless it names `-people` itself.
+        if !arguments.contains("-people") {
+            app.launchArguments += ["-people", "list"]
+        }
         if let textSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", textSize]
         }

@@ -115,13 +115,40 @@ enum FamilyTreeLayoutCheck {
             check("a bar joins them", r.segments.contains { $0.y1 == $0.y2 && $0.y1 < Double(a?.row ?? 0) })
         }
 
-        print("— people nobody is related to are not drawn in the tree —")
+        // Since 13 Sep 2026 they are in the picture rather than in a list under
+        // it: a family is as big as everybody in it, related yet or not.
+        print("— people nobody is related to are drawn below the tree, apart —")
         do {
             let r = FamilyTreeLayout.layout(people: ["Aino", "Toivo", "Kaarina"], links: [parent("Aino", "Toivo")])
-            check("Kaarina is listed apart", r.unconnected == ["Kaarina"])
-            check("and not placed", r.placements["Kaarina"] == nil)
-            let alone = FamilyTreeLayout.layout(people: ["Aino"], links: [])
-            check("a tree of nobody related is empty", alone.placements.isEmpty && alone.rows == 0 && alone.unconnected == ["Aino"])
+            let k = r.placements["Kaarina"]
+            check("Kaarina is known as related to nobody", r.unconnected == ["Kaarina"])
+            check("and placed", k != nil)
+            check("below every generation, with a row between", k?.row == 3 && r.looseRow == 3, "\(String(describing: k)), looseRow \(String(describing: r.looseRow))")
+            check("the row between is empty, for the caption", !r.placements.values.contains { $0.row == 2 })
+            check("the rows count her", r.rows == 4)
+            check("no line reaches her", !r.segments.contains { $0.y1 >= 2 || $0.y2 >= 2 }, "\(r.segments)")
+            check("nobody shares a place", noOverlap(r))
+
+            // As many to a row as the tree is wide, never fewer than three.
+            let many = FamilyTreeLayout.layout(people: ["Eeva", "Kalle", "A", "B", "C", "D"], links: [spouse("Eeva", "Kalle")])
+            let loose = ["A", "B", "C", "D"].compactMap { many.placements[$0] }
+            check("four people related to nobody are all placed", loose.count == 4)
+            check("three to a row under a couple", loose.filter { $0.row == many.looseRow }.count == 3, "\(loose)")
+            check("and the fourth on the row below", many.placements["D"]?.row == (many.looseRow ?? -9) + 1)
+            check("in the order given", many.placements["A"]?.x == 0 && many.placements["C"]?.x == 2 && many.placements["D"]?.x == 0)
+            check("the width covers them", many.width >= 3)
+            check("nobody shares a place", noOverlap(many))
+
+            // With nobody related yet the caption still has its row, at the top.
+            let alone = FamilyTreeLayout.layout(people: ["Aino", "Toivo"], links: [])
+            check("nobody related sits under an empty top row", alone.looseRow == 1 && alone.placements["Aino"]?.row == 1 && alone.placements["Toivo"]?.row == 1)
+            check("side by side", alone.placements["Aino"]?.x == 0 && alone.placements["Toivo"]?.x == 1)
+            check("with no lines", alone.segments.isEmpty)
+            check("two rows, the first empty", alone.rows == 2 && !alone.placements.values.contains { $0.row == 0 })
+
+            let related = FamilyTreeLayout.layout(people: ["Eeva", "Kalle"], links: [spouse("Eeva", "Kalle")])
+            check("everybody related leaves nobody apart", related.looseRow == nil && related.unconnected.isEmpty)
+
             let empty = FamilyTreeLayout.layout(people: [], links: [])
             check("and no people is no tree", empty == FamilyTreeLayout.Result())
         }

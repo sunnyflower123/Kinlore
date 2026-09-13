@@ -119,9 +119,14 @@
 "Kuka on puoliso?" = "Who is the spouse?";
 "Kuka on sisarus?" = "Who is the sibling?";
 "Sukupuu" = "Family tree";
-"Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia." = "The family tree draws itself as relatives are added on people's cards.";
 "Ei vielä sukupuussa" = "Not in the tree yet";
-"Lisää sukulainen henkilön kortilta, niin hän tulee puuhun." = "Add a relative on their card to bring them into the tree.";
+"Napauta ihmistä, niin voit lisätä hänelle sukulaisen." = "Tap a person to add a relative for them.";
+"Luettelo" = "List";
+"Avaa kortti" = "Open card";
+"Lisää vanhempi" = "Add a parent";
+"Lisää lapsi" = "Add a child";
+"Lisää puoliso" = "Add a spouse";
+"Lisää sisarus" = "Add a sibling";
 "Pienennä" = "Zoom out";
 "Suurenna" = "Zoom in";
 "Kenen muistot haluat tallentaa?" = "Whose memories do you want to keep?";

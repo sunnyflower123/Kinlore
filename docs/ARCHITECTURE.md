@@ -1742,9 +1742,13 @@ Not built:
    card — the same information, at the largest text size and aloud with
    VoiceOver — and those lists are all a grandparent's phone and VoiceOver get.
    What made the drawing a trap was her phone, so the drawing is where her
-   phone does not go: behind a tree beside the gear on Ihmiset, `FamilyTreeView`
-   over `FamilyTreeLayout`, confirmed people and confirmed relationships only
-   (rule 4). Where somebody lands is arithmetic no screenshot can check, so
+   phone does not go: what Ihmiset opens on, titled *Sukupuu*, with the list
+   one tap away — `FamilyTreeView` over `FamilyTreeLayout`, confirmed people
+   and confirmed relationships only (rule 4). Everybody confirmed is in the
+   picture, with the people related to nobody drawn apart below it rather than
+   listed under it, and a person tapped in it takes a new relative through the
+   card's own `RelationPicker`, so the tree grows where it is looked at. Where
+   somebody lands is arithmetic no screenshot can check, so
    `scripts/family-tree-layout-check.swift` checks it: a child below her
    parents, a couple side by side, nobody sharing a place.
 

@@ -109,9 +109,14 @@
 "Kuka on puoliso?" = "Kuka on puoliso?";
 "Kuka on sisarus?" = "Kuka on sisarus?";
 "Sukupuu" = "Sukupuu";
-"Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia." = "Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia.";
 "Ei vielä sukupuussa" = "Ei vielä sukupuussa";
-"Lisää sukulainen henkilön kortilta, niin hän tulee puuhun." = "Lisää sukulainen henkilön kortilta, niin hän tulee puuhun.";
+"Napauta ihmistä, niin voit lisätä hänelle sukulaisen." = "Napauta ihmistä, niin voit lisätä hänelle sukulaisen.";
+"Luettelo" = "Luettelo";
+"Avaa kortti" = "Avaa kortti";
+"Lisää vanhempi" = "Lisää vanhempi";
+"Lisää lapsi" = "Lisää lapsi";
+"Lisää puoliso" = "Lisää puoliso";
+"Lisää sisarus" = "Lisää sisarus";
 "Pienennä" = "Pienennä";
 "Suurenna" = "Suurenna";
 "Kenen muistot haluat tallentaa?" = "Kenen muistot haluat tallentaa?";

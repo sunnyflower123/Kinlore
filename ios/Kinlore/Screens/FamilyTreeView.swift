@@ -1,16 +1,20 @@
 import SwiftUI
 
 /// The family drawn as a tree: a generation to a row, a line between a couple,
-/// and a bracket from parents down to their children.
+/// a bracket from parents down to their children — and, below them, everybody
+/// nobody has said anything about yet.
 ///
-/// On family members' phones, behind the tree beside the gear on Ihmiset, and
-/// nowhere else. A grandparent's phone (the text-floor signal)
-/// and VoiceOver keep the relationships as lists on each person's card, where
-/// they read at the largest size and aloud — a picture of lines is nothing to
-/// read. That was the whole case against drawing the tree when it was cut on
-/// 31 Jul 2026 (ARCHITECTURE §8), and it is why the cut was reversed on
-/// 13 Sep: the phone it was a trap for no longer sees it, and the person who
-/// set the archive up does.
+/// What Ihmiset opens on, on a family member's phone, since 13 Sep 2026, with
+/// the list one tap away (`PeopleScreen`). A grandparent's phone (the
+/// text-floor signal) and VoiceOver get the list, and the relationships as
+/// lists on each person's card, where they read at the largest size and aloud
+/// — a picture of lines is nothing to read. That was the whole case against
+/// drawing the tree (ARCHITECTURE §8, item 13), and it is why the cut could be
+/// reversed: the phone it was a trap for does not see it.
+///
+/// A person in the tree is tapped for what can be done from there: their card,
+/// or a relative added on the spot through the same `RelationPicker` the card
+/// uses, so the tree grows where it is looked at.
 ///
 /// Confirmed people and confirmed relationships only (rule 4): a proposal in a
 /// picture of the family is the guess drawn as fact. Where everybody lands is
@@ -19,9 +23,23 @@ import SwiftUI
 struct FamilyTreeView: View {
     @Environment(MemoryStore.self) private var store
 
+    /// Names heard and not yet checked. The door to them sits under the tree
+    /// as it sits under the list, so neither view hides them.
+    var heardCount = 0
+    /// Opens a person's card. The navigation stack belongs to Ihmiset.
+    var onOpen: (Subject) -> Void = { _ in }
+
     /// Pinch to zoom, and two buttons for a hand that cannot pinch.
     @State private var zoom: CGFloat = 1
     @GestureState private var pinch: CGFloat = 1
+
+    /// The person whose sheet is up, and what was asked of it. Acted on once
+    /// the sheet has gone, so a card or a second sheet never arrives under one
+    /// still on its way down.
+    @State private var chosen: Subject?
+    @State private var pendingOpen: Subject?
+    @State private var pendingRelative: RelativeRequest?
+    @State private var relative: RelativeRequest?
 
     /// One place and one generation, growing with the text inside them, so a
     /// name at a larger size does not run into its neighbour.
@@ -30,6 +48,9 @@ struct FamilyTreeView: View {
     /// The same base size and text style `SubjectAvatar` scales by, so the
     /// lines can find the middle of each disc at every text size.
     @ScaledMetric(relativeTo: .body) private var discSize: CGFloat = 48
+    /// The caption's own band above the people related to nobody, when
+    /// nobody is related yet and there is no tree above them.
+    @ScaledMetric(relativeTo: .headline) private var captionBand: CGFloat = 44
 
     /// From the top of a generation's row to the top of its discs.
     private static let rowInset: CGFloat = 8
@@ -65,49 +86,85 @@ struct FamilyTreeView: View {
         let scale = zoom * pinch
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 20) {
-                if result.placements.isEmpty {
-                    Text("Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia.")
-                        .elderBody()
-                        .foregroundStyle(Elder.supporting)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, Elder.screenPadding)
-                } else {
-                    // A reader, so a family narrower than the screen is drawn
-                    // in its middle rather than against the left edge. It needs
-                    // a height of its own: inside a vertical scroll view nothing
-                    // proposes one.
-                    GeometryReader { proxy in
-                        ScrollView(.horizontal) {
-                            canvas(result)
-                                .scaleEffect(scale, anchor: .topLeading)
-                                .frame(
-                                    width: width(of: result) * scale,
-                                    height: height(of: result) * scale,
-                                    alignment: .topLeading
-                                )
-                                .frame(minWidth: proxy.size.width, alignment: .center)
-                        }
+                // A reader, so a family narrower than the screen is drawn in
+                // its middle rather than against the left edge. It needs a
+                // height of its own: inside a vertical scroll view nothing
+                // proposes one.
+                GeometryReader { proxy in
+                    ScrollView(.horizontal) {
+                        canvas(result)
+                            .scaleEffect(scale, anchor: .topLeading)
+                            .frame(
+                                width: width(of: result) * scale,
+                                height: height(of: result) * scale,
+                                alignment: .topLeading
+                            )
+                            .frame(minWidth: proxy.size.width, alignment: .center)
                     }
-                    .frame(height: height(of: result) * scale)
-                    .simultaneousGesture(
-                        MagnifyGesture()
-                            .updating($pinch) { value, state, _ in state = value.magnification }
-                            .onEnded { value in zoom = clamped(zoom * value.magnification) }
-                    )
-
-                    zoomButtons
-                        .padding(.horizontal, Elder.screenPadding)
                 }
+                .frame(height: height(of: result) * scale)
+                .simultaneousGesture(
+                    MagnifyGesture()
+                        .updating($pinch) { value, state, _ in state = value.magnification }
+                        .onEnded { value in zoom = clamped(zoom * value.magnification) }
+                )
 
-                if !result.unconnected.isEmpty {
-                    unconnected(result.unconnected)
+                // Under the tree, not above it. Above, at the largest text size
+                // it took a quarter of the screen and pushed the first
+                // generation down behind the zoom buttons, where the sweep's
+                // tap on the first person never opened the sheet (13 Sep 2026).
+                Text("Napauta ihmistä, niin voit lisätä hänelle sukulaisen.")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Elder.screenPadding)
+
+                if heardCount > 0 {
+                    heardDoor
                         .padding(.horizontal, Elder.screenPadding)
                 }
             }
             .padding(.vertical, 12)
         }
-        .navigationTitle("Sukupuu")
+        // Fixed below the tree rather than scrolling after it. There, every
+        // tap moved the buttons down or up by a fifth of the tree, and the
+        // next tap in the same place landed on whatever had moved under it —
+        // on the first run of the tests, the door to the names heard.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            zoomButtons
+                .padding(.horizontal, Elder.screenPadding)
+                .padding(.vertical, 4)
+                .background(Elder.paper)
+        }
+        .sheet(item: $chosen, onDismiss: afterPersonSheet) { person in
+            TreePersonSheet(
+                person: person,
+                open: {
+                    pendingOpen = person
+                    chosen = nil
+                },
+                add: { kind, asChild in
+                    pendingRelative = RelativeRequest(person: person, kind: kind, asChild: asChild)
+                    chosen = nil
+                }
+            )
+        }
+        .sheet(item: $relative) { request in
+            RelationPicker(subject: request.person, kind: request.kind, asChild: request.asChild) {
+                relative = nil
+            }
+        }
         .elderSurface()
+    }
+
+    private func afterPersonSheet() {
+        if let person = pendingOpen {
+            pendingOpen = nil
+            onOpen(person)
+        } else if let request = pendingRelative {
+            pendingRelative = nil
+            relative = request
+        }
     }
 
     // MARK: - Drawing
@@ -127,6 +184,22 @@ struct FamilyTreeView: View {
             }
             .accessibilityHidden(true)
 
+            // In the empty row the layout leaves above the people related to
+            // nobody, standing on the bottom of that row so it stays with them
+            // at every text size. Shown with no tree above them too: then they
+            // are the whole family, and the caption says why nobody is joined.
+            if let looseRow = result.looseRow {
+                Text("Ei vielä sukupuussa")
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(
+                        width: width(of: result) - 20,
+                        height: rowHeight - Self.rowInset - topTrim(result),
+                        alignment: .bottomLeading
+                    )
+                    .offset(x: 10, y: CGFloat(looseRow - 1) * rowHeight)
+            }
+
             ForEach(people) { person in
                 if let place = result.placements[person.id] {
                     // By its top, not its centre: a name that wraps to two
@@ -134,7 +207,7 @@ struct FamilyTreeView: View {
                     node(person)
                         .offset(
                             x: point(place.x, Double(place.row)).x - nodeWidth / 2,
-                            y: CGFloat(place.row) * rowHeight + Self.rowInset
+                            y: CGFloat(place.row) * rowHeight + Self.rowInset - topTrim(result)
                         )
                 }
             }
@@ -143,7 +216,9 @@ struct FamilyTreeView: View {
     }
 
     private func node(_ person: Subject) -> some View {
-        NavigationLink(value: person) {
+        Button {
+            chosen = person
+        } label: {
             VStack(spacing: 6) {
                 SubjectAvatar(subject: person, size: 48)
                     // A paper disc under the ink one. `SubjectAvatar` fills
@@ -192,38 +267,20 @@ struct FamilyTreeView: View {
         }
     }
 
-    /// People nobody has joined to anyone yet. Not left out, just not in the
-    /// picture — and the way into it is on their own card.
-    private func unconnected(_ ids: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Ei vielä sukupuussa")
-                .font(.headline)
-                .fixedSize(horizontal: false, vertical: true)
-
-            ForEach(ids, id: \.self) { id in
-                if let person = store.subject(id: id) {
-                    NavigationLink(value: person) {
-                        HStack(spacing: 14) {
-                            SubjectAvatar(subject: person)
-                            Text(person.displayTitle)
-                                .font(.body.weight(.medium))
-                                .fixedSize(horizontal: false, vertical: true)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(Elder.supporting)
-                                .accessibilityHidden(true)
-                        }
-                        .elderTapTarget()
-                    }
-                    .buttonStyle(.plain)
-                }
+    /// The door `PeopleScreen` puts under the list, in the same words. Outside
+    /// a list a link draws no chevron of its own, so this one has one.
+    private var heardDoor: some View {
+        NavigationLink(value: HeardNamesRoute()) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                HeardNamesDoorLabel(count: heardCount)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(Elder.supporting)
+                    .accessibilityHidden(true)
             }
-
-            Text("Lisää sukulainen henkilön kortilta, niin hän tulee puuhun.")
-                .font(.subheadline)
-                .foregroundStyle(Elder.supporting)
-                .fixedSize(horizontal: false, vertical: true)
+            .elderTapTarget()
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Arithmetic
@@ -246,10 +303,90 @@ struct FamilyTreeView: View {
     }
 
     private func height(of result: FamilyTreeLayout.Result) -> CGFloat {
-        CGFloat(max(result.rows, 1)) * rowHeight
+        CGFloat(max(result.rows, 1)) * rowHeight - topTrim(result)
+    }
+
+    /// With nobody related yet there is no tree above the caption, and a whole
+    /// generation's height over one line of text is a hole at the top of the
+    /// screen, so everything below moves up by the difference. The lines need
+    /// no share of it: with nobody related there are none.
+    private func topTrim(_ result: FamilyTreeLayout.Result) -> CGFloat {
+        result.looseRow == 1 ? max(0, rowHeight - captionBand) : 0
     }
 
     private func clamped(_ value: CGFloat) -> CGFloat {
         min(max(value, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
     }
+}
+
+/// What can be done from a person in the tree: open their card, or add a
+/// relative for them without leaving the picture.
+///
+/// A sheet of plain buttons rather than a menu: a menu's rows barely grow with
+/// the text size, and no UI test here has been able to open one.
+private struct TreePersonSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let person: Subject
+    let open: () -> Void
+    let add: (RelationKind, Bool) -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(person.displayTitle)
+                        .font(Elder.display(.title2))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.bottom, 8)
+
+                    action("Avaa kortti") { open() }
+
+                    Text("Lisää sukulainen")
+                        .font(.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 12)
+
+                    action("Lisää vanhempi") { add(.parentOf, false) }
+                    action("Lisää lapsi") { add(.parentOf, true) }
+                    action("Lisää puoliso") { add(.spouseOf, false) }
+                    action("Lisää sisarus") { add(.siblingOf, false) }
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Sulje")
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
+                    }
+                    .padding(.top, 12)
+                }
+                .padding(Elder.screenPadding)
+            }
+            .elderSurface()
+        }
+    }
+
+    /// A title and nothing else: with an icon beside the words the audit has
+    /// measured rows like these as not following Dynamic Type. The width is
+    /// inside the label, so the whole row takes the tap. Outside it only the
+    /// words did, and a tap in the middle of the row met nothing (13 Sep 2026).
+    private func action(_ title: LocalizedStringKey, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
+            Text(title)
+                .font(.body.weight(.medium))
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .elderTapTarget()
+        }
+        .buttonStyle(.borderless)
+    }
+}
+
+/// A relative asked for from the tree, carried across the sheet that asked.
+private struct RelativeRequest: Identifiable {
+    let id = UUID()
+    let person: Subject
+    let kind: RelationKind
+    let asChild: Bool
 }

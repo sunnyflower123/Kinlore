@@ -5,8 +5,8 @@ import SwiftUI
 /// Lists, on every phone. A list carries the same information as a drawing,
 /// works at the largest text size and is readable with VoiceOver, which is why
 /// a grandparent's phone has only this. Since 13 Sep 2026 a family member's
-/// phone also draws the whole family (`FamilyTreeView`, behind the tree on
-/// Ihmiset); until then the drawing was a cut in the plan (PLAN.md §5).
+/// phone also draws the whole family (`FamilyTreeView`, what Ihmiset opens on
+/// there); until then the drawing was a cut in the plan (PLAN.md §5).
 struct RelationsSection: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
@@ -147,7 +147,10 @@ private struct RelativeRow: View {
 /// name is confirmed by the person who typed it, since rule 4 is about who
 /// vouches, and a name the family already has is the same card rather than a
 /// second one (`MemoryStore.addPerson`).
-private struct RelationPicker: View {
+///
+/// Not private since 13 Sep 2026: the drawn tree adds relatives through it too,
+/// so a card and the tree cannot come to disagree about how that is done.
+struct RelationPicker: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
@@ -159,8 +162,12 @@ private struct RelationPicker: View {
     @State private var isAddingSomeoneNew = false
     @State private var addedSomeoneNew = false
 
+    /// Confirmed people only, as on Ihmiset since 12 Sep 2026. A heard name
+    /// nobody has checked was offered here until 13 Sep, and picking one drew
+    /// nothing in the tree, which draws the confirmed only. Typing that name
+    /// under "Joku uusi" still reaches its card, and confirms it.
     private var candidates: [Subject] {
-        store.subjects(of: .person).filter { $0.id != subject.id }
+        store.subjects(of: .person).filter { $0.id != subject.id && $0.confirmed }
     }
 
     /// One whole sentence per kind rather than a word dropped into one:

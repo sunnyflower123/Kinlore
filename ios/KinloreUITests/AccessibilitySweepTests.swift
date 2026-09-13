@@ -851,12 +851,22 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// The drawn family tree, on a family member's phone, since 13 Sep 2026.
-    /// `-seed related` is the one fixture with a confirmed couple in it, and
-    /// Sanni, related to nobody, is listed beneath the drawing.
+    /// The drawn family tree: since 13 Sep 2026, what Ihmiset opens on, on a
+    /// family member's phone. `-seed related` is the one fixture with a
+    /// confirmed couple in it, and Sanni, related to nobody, is drawn beneath.
     func testFamilyTree() throws {
         try sweep("Sukupuu", arguments: ["-seed", "related", "-tab", "people", "-screen", "tree"]) { app, _ in
             require(app.buttons["Eeva"], "a person in the tree")
+            require(app.buttons["Luettelo"], "the way to the list")
+        }
+    }
+
+    /// What a person in the tree offers: their card, or a relative added on
+    /// the spot. A new sheet since 13 Sep 2026.
+    func testTreePersonSheet() throws {
+        try sweep("Sukupuu, henkilö", arguments: ["-seed", "related", "-tab", "people", "-people", "tree"]) { app, _ in
+            require(app.buttons["Eeva"], "a person in the tree").tap()
+            require(app.buttons["Avaa kortti"], "the person's sheet")
         }
     }
 

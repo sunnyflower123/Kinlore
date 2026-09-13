@@ -180,10 +180,6 @@ struct HelpRoute: Hashable {}
 /// Settings and offered only there. See `EnableSharingScreen`.
 struct SharingRoute: Hashable {}
 
-/// And for the drawn family tree, one step below Ihmiset, on a family member's
-/// phone only. See `FamilyTreeView`.
-struct FamilyTreeRoute: Hashable {}
-
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
 struct PeopleScreen: View {
@@ -207,6 +203,34 @@ struct PeopleScreen: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
     private var offersTree: Bool { !largerText && !voiceOverEnabled }
+
+    /// The tree first on a family member's phone, and the list one tap away
+    /// (13 Sep 2026: the founder wanted the family's picture to be what Ihmiset
+    /// opens on). Remembered per phone. A search is always answered as a list.
+    @AppStorage("people.showsList") private var prefersList = false
+
+    /// A family member's phone, nobody searching, and somebody confirmed to draw.
+    private var canDrawTree: Bool {
+        offersTree && query.isEmpty && store.subjects(of: .person).contains(where: \.confirmed)
+    }
+
+    private var showsTree: Bool {
+        guard canDrawTree else { return false }
+        #if DEBUG
+        // `-screen tree` for a screenshot or a film take, and `-people list`
+        // or `-people tree` for a test. Either holds for the whole launch, so
+        // the switch in the toolbar does nothing under it. The suite's launch
+        // helper passes `list` unless a test says otherwise, so the tests
+        // written about the list keep testing the list.
+        if UserDefaults.standard.string(forKey: "screen") == "tree" { return true }
+        switch UserDefaults.standard.string(forKey: "people") {
+        case "list": return false
+        case "tree": return true
+        default: break
+        }
+        #endif
+        return !prefersList
+    }
 
     /// Confirmed people only, since 12 Sep 2026. A name the extraction heard
     /// and nobody has vouched for is not on this list: it waits behind one
@@ -260,6 +284,8 @@ struct PeopleScreen: View {
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
                     }
+                } else if showsTree {
+                    FamilyTreeView(heardCount: heard.count, onOpen: { path.append($0) })
                 } else {
                     List {
                         ForEach(people) { person in
@@ -286,7 +312,10 @@ struct PeopleScreen: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .navigationTitle("Ihmiset")
+            // Named for what it shows. The tab is Ihmiset either way; the title
+            // says which of its two views is up. Both sides are keys: a ternary
+            // of two plain literals is a String, and is never looked up.
+            .navigationTitle(showsTree ? LocalizedStringKey("Sukupuu") : LocalizedStringKey("Ihmiset"))
             // Out of the way until it is wanted: iOS keeps the field hidden
             // above the list until somebody pulls down, which is the right
             // bargain here. The grandchild looking for one name in forty finds
@@ -315,9 +344,6 @@ struct PeopleScreen: View {
             .navigationDestination(for: SharingRoute.self) { _ in
                 EnableSharingScreen()
             }
-            .navigationDestination(for: FamilyTreeRoute.self) { _ in
-                FamilyTreeView()
-            }
             .toolbar {
                 // Settings belongs under People rather than as its own tab:
                 // three tabs is already the limit of what an 80-year-old holds
@@ -338,13 +364,28 @@ struct PeopleScreen: View {
                     }
                     .accessibilityLabel("Lisää henkilö")
                 }
-                if offersTree {
+                // The switch between the tree and the list, on the phones that
+                // have the tree. Two buttons rather than one with a ternary
+                // label: a ternary of two literals is a String, never looked up.
+                if canDrawTree {
                     ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink(value: FamilyTreeRoute()) {
-                            Image(systemName: "tree")
-                                .elderTapTarget()
+                        if showsTree {
+                            Button {
+                                prefersList = true
+                            } label: {
+                                Image(systemName: "list.bullet")
+                                    .elderTapTarget()
+                            }
+                            .accessibilityLabel("Luettelo")
+                        } else {
+                            Button {
+                                prefersList = false
+                            } label: {
+                                Image(systemName: "tree")
+                                    .elderTapTarget()
+                            }
+                            .accessibilityLabel("Sukupuu")
                         }
-                        .accessibilityLabel("Sukupuu")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -399,8 +440,6 @@ struct PeopleScreen: View {
                     // Both, so the screen has the back stack it really has.
                     path.append(SettingsRoute())
                     path.append(SharingRoute())
-                case "tree":
-                    path.append(FamilyTreeRoute())
                 default:
                     break
                 }
@@ -420,11 +459,17 @@ struct PeopleScreen: View {
     /// finding the person card's removal button met four times before it
     /// settled in this same shape.
     private var addPersonButton: some View {
-        Button("Lisää henkilö") { isAddingPerson = true }
-            .buttonStyle(.borderless)
-            .font(.body.weight(.medium))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .elderTapTarget()
+        // The width inside the label, so the whole row takes the tap and not
+        // only the words (found in the tree's sheet, 13 Sep 2026).
+        Button {
+            isAddingPerson = true
+        } label: {
+            Text("Lisää henkilö")
+                .font(.body.weight(.medium))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .elderTapTarget()
+        }
+        .buttonStyle(.borderless)
     }
 
     /// One quiet row for the names the extraction heard and nobody has
@@ -432,29 +477,40 @@ struct PeopleScreen: View {
     /// family, and this is the door to what is not yet.
     private var heardRow: some View {
         NavigationLink(value: HeardNamesRoute()) {
-            // An HStack rather than a Label, and fixedSize on the Text
-            // itself: as a Label's title the sentence was measured clipped
-            // at the default size — one line, cut with an ellipsis — on the
-            // audit's first run. Two literal keys rather than a ternary,
-            // which would be a String and never looked up.
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Image(systemName: "ear")
-                    .foregroundStyle(Elder.supporting)
-                Group {
-                    if heard.count == 1 {
-                        Text("1 nimi odottaa tarkistusta")
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        Text("\(heard.count) nimeä odottaa tarkistusta")
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .font(.body.weight(.medium))
-                .multilineTextAlignment(.leading)
-            }
-            .padding(.vertical, 6)
+            HeardNamesDoorLabel(count: heard.count)
+                .padding(.vertical, 6)
         }
         .listRowBackground(Elder.paper)
+    }
+}
+
+/// The words on the door to the names heard: under the list, and since
+/// 13 Sep 2026 under the tree as well, in one place so the two cannot come to
+/// say it differently.
+struct HeardNamesDoorLabel: View {
+    let count: Int
+
+    var body: some View {
+        // An HStack rather than a Label, and fixedSize on the Text
+        // itself: as a Label's title the sentence was measured clipped
+        // at the default size — one line, cut with an ellipsis — on the
+        // audit's first run. Two literal keys rather than a ternary,
+        // which would be a String and never looked up.
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Image(systemName: "ear")
+                .foregroundStyle(Elder.supporting)
+            Group {
+                if count == 1 {
+                    Text("1 nimi odottaa tarkistusta")
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("\(count) nimeä odottaa tarkistusta")
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .font(.body.weight(.medium))
+            .multilineTextAlignment(.leading)
+        }
     }
 }
 
