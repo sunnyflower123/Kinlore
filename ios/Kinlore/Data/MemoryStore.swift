@@ -1371,16 +1371,17 @@ final class MemoryStore {
         // soundtrack. The picture comes from `filmPhotoFile()`.
         //
         // `-seed film-tree` is the same archive after the blind card: Helmi
-        // confirmed, a card for Grandma herself, and the three confirmed
-        // relations the tree is drawn from (below, with the others) — the tree
-        // draws confirmed people and confirmed relations only, so `-seed film`
-        // draws nothing. Grandma stops the tree: the app has parent, spouse
-        // and sibling, and a grandchild drawn straight under her would be
-        // drawn as her child.
+        // confirmed and a card for Grandma herself, and no relation yet — the
+        // film's take adds the two on camera, on the tree (a spouse, a child),
+        // because that is how a name gets into the tree and the film has to
+        // show it. The tree draws confirmed people and confirmed relations
+        // only, so `-seed film` draws nothing. Grandma stops the tree: the app
+        // has parent, spouse and sibling, and a grandchild drawn straight
+        // under her would be drawn as her child.
         if seed == "film" || seed == "film-untold" || seed == "film-tree" {
             let told = seed != "film-untold"
             let treeShot = seed == "film-tree"
-            let proposal = Subject(id: "demo-film-proposal", kind: .person, title: "Helmi", confirmed: !treeShot)
+            let proposal = Subject(id: "demo-film-proposal", kind: .person, title: "Helmi", confirmed: treeShot)
             let grandma = Subject(id: "demo-film-grandma", kind: .person, title: "Grandma")
             let elli = Subject(id: "demo-film-elli", kind: .person, title: "Elli")
             let filmAino = Subject(id: "demo-film-aino", kind: .person, title: "Aino")
@@ -1493,15 +1494,7 @@ final class MemoryStore {
         // XCUITest, and a fixture is a fact rather than a race.
         relations = seed == "related"
             ? [Relation(fromSubjectID: eeva.id, toSubjectID: kalle.id, kind: .spouseOf, confirmed: true)]
-            : seed == "film-tree"
-                // The film's one family unit (the ids are the film block's):
-                // Helmi and Toivo a couple, both parents of Grandma.
-                ? [
-                    Relation(fromSubjectID: "demo-film-proposal", toSubjectID: "demo-film-toivo", kind: .spouseOf, confirmed: true),
-                    Relation(fromSubjectID: "demo-film-proposal", toSubjectID: "demo-film-grandma", kind: .parentOf, confirmed: true),
-                    Relation(fromSubjectID: "demo-film-toivo", toSubjectID: "demo-film-grandma", kind: .parentOf, confirmed: true),
-                ]
-                : []
+            : []
         // Nothing is queued for the server: this archive is a fixture, and
         // pushing it into a real family would be a genuine mess.
         dirtySubjects = []

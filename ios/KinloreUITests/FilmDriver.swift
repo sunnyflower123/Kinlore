@@ -215,17 +215,46 @@ final class FilmDriver: XCTestCase {
     }
 
     /// 6b · The family tree, on a family member's phone, after the blind
-    /// confirmation: Helmi and Toivo as a couple, the bracket down to Grandma.
-    /// `-seed film-tree` is the film fixture with Helmi confirmed and the
-    /// three confirmed relations; the tree draws confirmed people and
-    /// confirmed relations only, so the same archive a minute earlier
-    /// (`-seed film`) draws nothing. `-screen tree` lands with the tree itself
-    /// (branch family-tree, 13 Sep 2026); until then this scene has no screen
-    /// to find.
+    /// confirmation — and how a name gets into it, on camera. `-seed
+    /// film-tree` is the film fixture with Helmi confirmed, a card for Grandma
+    /// and no relation yet; the hand adds the two the way the app adds them:
+    /// Helmi's sheet on the tree, "Add a spouse", Toivo — the couple line is
+    /// there as the sheet goes down — then "Add a child", Grandma, and the
+    /// drop from Helmi's disc. Six taps. Relationships are only ever added by
+    /// a person (extraction proposes none), so this is the whole mechanism.
     func testFilmTheTree() throws {
         let app = try roll(["-seed", "film-tree", "-tab", "people", "-screen", "tree"])
         _ = try find(app.staticTexts, ["Family tree", "Sukupuu"], timeout: 30)
-        beat(8.0) // the film holds the tree while it grows out of the phone
+        beat(2.0) // nobody related yet: six people side by side, read first
+        try tap(app.buttons, ["Helmi"])
+        beat(0.35)
+        try tap(app.buttons, ["Add a spouse", "Lisää puoliso"])
+        beat(0.35)
+        try tapLast(app, "Toivo") // the picker's row, not his disc behind the sheet
+        beat(1.2) // the couple, and the line between them
+        try tap(app.buttons, ["Helmi"])
+        beat(0.35)
+        try tap(app.buttons, ["Add a child", "Lisää lapsi"])
+        beat(0.35)
+        try tapLast(app, "Grandma")
+        beat(8.0) // the drop to Grandma: held while the film grows the tree out of the phone
+    }
+
+    /// The last button with exactly this label: the picker's row rather than
+    /// the tree's disc behind it, which carries the same name — a plain tap
+    /// on the name fails as "multiple matching elements" (13 Sep 2026).
+    private func tapLast(_ app: XCUIApplication, _ label: String, timeout: TimeInterval = 20) throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        repeat {
+            let all = app.buttons.matching(NSPredicate(format: "label == %@", label)).allElementsBoundByIndex
+            // The disc behind the sheet is covered and not hittable; the row is.
+            if let row = all.last(where: { $0.isHittable }) {
+                row.tap()
+                return
+            }
+            Thread.sleep(forTimeInterval: 0.2)
+        } while Date() < deadline
+        throw NeverArrived(labels: [label])
     }
 
     /// 7 · The paywall: the offer on a result that proposed no names, the real

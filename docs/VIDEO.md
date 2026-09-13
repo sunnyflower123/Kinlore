@@ -250,12 +250,13 @@ cp <the film's photograph> \
   without being shown it — and the take ends on the app's own sentence,
   *"Thank you. Now we know who this is."*
 - **The family tree** — `testFilmTheTree`, `-seed film-tree -tab people
-  -screen tree` (the screen argument lands with the tree itself, branch
-  family-tree). The film fixture with Helmi confirmed, a card for Grandma,
-  and three confirmed relations — Helmi and Toivo as a couple, both parents
-  of Grandma — because the tree draws confirmed people and confirmed
-  relations only; `-seed film` draws nothing. A family member's phone state:
-  the tree is not offered on a grandparent's phone or with VoiceOver on.
+  -screen tree`. The film fixture with Helmi confirmed, a card for Grandma
+  and no relation yet: the hand adds two on camera, on the tree — Helmi's
+  sheet, "Add a spouse", Toivo; then "Add a child", Grandma — because
+  relationships are only ever added by a person and the film has to show
+  the mechanism. The tree draws confirmed people and confirmed relations
+  only; `-seed film` draws nothing. A family member's phone state: the tree
+  is not offered on a grandparent's phone or with VoiceOver on.
 - **The paywall** — `testFilmThePaywall`, scene 5's arguments. The key
   cannot travel through the runner, so it goes into the app's defaults once:
   `xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>`.
