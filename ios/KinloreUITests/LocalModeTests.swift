@@ -64,7 +64,7 @@ final class LocalModeTests: XCTestCase {
         // The memory row makes the same promise in the archive, and it has its
         // own sentence to get right.
         app.buttons["Selvä"].tap()
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         let card = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 10), "never arrived: the telling's card")
         card.tap()
@@ -156,7 +156,7 @@ final class LocalModeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Ota perhe käyttöön"].waitForExistence(timeout: 10), "the phone stopped being local without a family")
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(app.buttons["Vie arkisto"].waitForExistence(timeout: 10), "Settings did not come back")
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(
             app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva")).firstMatch.waitForExistence(timeout: 10),
             "the archive is no longer on screen"

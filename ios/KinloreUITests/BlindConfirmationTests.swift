@@ -41,7 +41,7 @@ final class BlindConfirmationTests: XCTestCase {
         let app = launch(["-seed", "blind", "-elder.largerText", "YES"])
         XCTAssertTrue(app.buttons["Aloita kertominen"].waitForExistence(timeout: 15), "her Kerro tab did not open on the button")
         XCTAssertFalse(app.staticTexts["Kuka tässä on?"].exists, "the card took her button")
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(app.staticTexts["Kuka tässä on?"].waitForExistence(timeout: 10), "the card is not on Muistot")
     }
 
@@ -55,7 +55,7 @@ final class BlindConfirmationTests: XCTestCase {
         // Muistot hands the next launch — the next test — a reader's phone
         // that opens on Muistot. Measured: the test after this one waited on
         // the Kerro tab's card that was never going to show.
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(app.staticTexts["Uutta perheeltä"].waitForExistence(timeout: 10), "the reading list did not open")
     }
 

@@ -26,7 +26,7 @@ final class SyncVisibilityTests: XCTestCase {
             "never arrived: a telling to be waiting for"
         )
 
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         let note = app.staticTexts
             .containing(NSPredicate(format: "label CONTAINS %@", "vain tässä puhelimessa"))
             .firstMatch
@@ -42,7 +42,7 @@ final class SyncVisibilityTests: XCTestCase {
     func testAnArchiveThatIsThroughSaysNothing() {
         let app = launch(["-seed", "archive", "-tab", "memories", "-family_id", "demo"], api: "http://127.0.0.1:9")
 
-        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "never arrived: the gallery")
+        XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "never arrived: the gallery")
         XCTAssertFalse(
             app.staticTexts
                 .containing(NSPredicate(format: "label CONTAINS %@", "tässä puhelimessa"))
@@ -92,7 +92,7 @@ final class SyncVisibilityTests: XCTestCase {
         // No `-tab` argument: the unseen tellings are themselves what opens
         // the app on Muistot.
         XCTAssertTrue(
-            app.navigationBars["Muistot"].waitForExistence(timeout: 10),
+            app.navigationBars["Albumi"].waitForExistence(timeout: 10),
             "unseen tellings did not open the app on Muistot"
         )
         XCTAssertTrue(
@@ -101,7 +101,7 @@ final class SyncVisibilityTests: XCTestCase {
         )
 
         app.tabBars.buttons["Kerro"].tap()
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
 
         let photo = app.buttons.matching(
             NSPredicate(format: "label BEGINSWITH %@", "Valokuva")

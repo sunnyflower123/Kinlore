@@ -52,7 +52,7 @@ final class OrganisingFailureTests: XCTestCase {
         // And in the archive rather than only on the screen that just made it.
         // An untitled home subject is what an unorganised memory gets — there is
         // no place and no year to name it after — and it is listed as such.
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(
             app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch.waitForExistence(timeout: 10),
             "the memory is not in the archive"

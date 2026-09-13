@@ -416,7 +416,7 @@ final class AccessibilitySweepTests: XCTestCase {
 
     func testMemoriesWithContent() throws {
         try sweep("Muistot", arguments: ["-seed", "archive", "-tab", "memories"]) { app, isLargest in
-            require(app.navigationBars["Muistot"], "the gallery")
+            require(app.navigationBars["Albumi"], "the gallery")
             // The gap that used to be here is closed. The guessing round's
             // card filled the screen at the largest text size and pushed the
             // grid below the fold, and a LazyVGrid does not build rows nobody
@@ -539,7 +539,7 @@ final class AccessibilitySweepTests: XCTestCase {
             api: "http://127.0.0.1:9"
         ) { app, _ in
             require(app.staticTexts["Muisto tallennettu"], "a telling to be waiting for")
-            app.tabBars.buttons["Muistot"].tap()
+            app.tabBars.buttons["Albumi"].tap()
             require(
                 app.staticTexts
                     .containing(NSPredicate(format: "label CONTAINS %@", "vain tässä puhelimessa"))
@@ -554,7 +554,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// screen that has the least room to spare.
     func testMemoriesSearching() throws {
         try sweep("Muistot, haku", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
-            require(app.navigationBars["Muistot"], "the gallery")
+            require(app.navigationBars["Albumi"], "the gallery")
             let field = app.searchFields.firstMatch
             for _ in 0 ..< 3 where !field.exists { app.swipeDown() }
             require(field, "the search field").tap()
@@ -855,7 +855,7 @@ final class AccessibilitySweepTests: XCTestCase {
             for _ in 0 ..< 4 where !another.exists { app.swipeUp() }
             require(another, "the way on from the result screen")
             another.tap()
-            app.tabBars.buttons["Muistot"].tap()
+            app.tabBars.buttons["Albumi"].tap()
             let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
             require(row, "the telling in the gallery")
             row.tap()
@@ -890,7 +890,7 @@ final class AccessibilitySweepTests: XCTestCase {
         ) { app, _ in
             require(app.staticTexts["Muisto tallennettu"], "the result screen")
             reach(app.buttons["Kerro toinen muisto"], in: app, "the way on").tap()
-            app.tabBars.buttons["Muistot"].tap()
+            app.tabBars.buttons["Albumi"].tap()
             require(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch, "the telling in the gallery").tap()
             reach(app.buttons["Muokkaa tekstiä"], in: app, "the way to correct the text").tap()
             require(app.buttons["Tallenna"], "the sheet")
@@ -1222,7 +1222,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// run can hold still, so the same seed forces it. See docs/UX.md §4.3.
     func testMemoriesArrival() throws {
         try sweep("Muistot, saapuminen", arguments: ["-seed", "arrival"]) { app, _ in
-            require(app.navigationBars["Muistot"], "the landing on Muistot")
+            require(app.navigationBars["Albumi"], "the landing on Muistot")
             require(
                 app.staticTexts
                     .containing(NSPredicate(format: "label CONTAINS %@", "Haetaan perheen muistoja"))
@@ -1301,7 +1301,7 @@ final class AccessibilitySweepTests: XCTestCase {
 
     func testMemoriesNewFromFamily() throws {
         try sweep("Muistot, uutta perheeltä", arguments: ["-seed", "unseen"]) { app, _ in
-            require(app.navigationBars["Muistot"], "the landing on Muistot")
+            require(app.navigationBars["Albumi"], "the landing on Muistot")
             require(app.staticTexts["Uutta perheeltä"], "the section heading")
             require(
                 app.buttons

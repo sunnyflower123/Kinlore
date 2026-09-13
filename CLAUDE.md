@@ -166,7 +166,7 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
 
    Since 5 Sep 2026 the card follows whose phone it is: on a reader's phone it
    stays on the Kerro tab; on a grandparent's (the text-floor signal) it sits
-   on Muistot in the reading loop, and her Kerro tab is the button and nothing
+   on Albumi (called Muistot until 13 Sep 2026) in the reading loop, and her Kerro tab is the button and nothing
    else (`BlindCardView`, one view in both places).
 
    The orange proposal row on the person list and in the Tell result is still

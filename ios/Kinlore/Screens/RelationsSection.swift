@@ -61,8 +61,11 @@ struct RelationsSection: View {
         store.hasUnconfirmedRelation(for: subject.id)
     }
 
+    /// A `LocalizedStringKey`, not a `String`. As a `String` the four captions
+    /// were shown exactly as written, so an English phone read "Vanhemmat"
+    /// under every parent until 13 Sep 2026.
     @ViewBuilder
-    private func group(_ title: String, _ people: [Subject]) -> some View {
+    private func group(_ title: LocalizedStringKey, _ people: [Subject]) -> some View {
         if !people.isEmpty {
             ForEach(people) { person in
                 RelativeRow(subject: subject, relative: person, groupTitle: title)
@@ -75,7 +78,7 @@ private struct RelativeRow: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
     let relative: Subject
-    let groupTitle: String
+    let groupTitle: LocalizedStringKey
 
     @State private var isConfirmingRemoval = false
 
@@ -150,6 +153,18 @@ private struct RelationPicker: View {
         store.subjects(of: .person).filter { $0.id != subject.id }
     }
 
+    /// One whole sentence per kind rather than a word dropped into one:
+    /// "Kuka on \(addLabel)?" was a key no table had, and English needs an
+    /// article Finnish does not.
+    private var title: LocalizedStringKey {
+        if asChild { return "Kuka on lapsi?" }
+        switch kind {
+        case .parentOf: return "Kuka on vanhempi?"
+        case .spouseOf: return "Kuka on puoliso?"
+        case .siblingOf: return "Kuka on sisarus?"
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -185,7 +200,7 @@ private struct RelationPicker: View {
                     }
                 }
             }
-            .navigationTitle(asChild ? "Kuka on lapsi?" : "Kuka on \(kind.addLabel.lowercased())?")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

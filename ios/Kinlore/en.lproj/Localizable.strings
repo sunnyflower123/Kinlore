@@ -108,6 +108,16 @@
 "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli." = "People gather here as they get talked about. What each of them was like is written down together.";
 "Lisää sukulainen" = "Add a relative";
 "Lapsi" = "Child";
+"Vanhempi" = "Parent";
+"Puoliso" = "Spouse";
+"Sisarus" = "Sibling";
+"Vanhemmat" = "Parents";
+"Lapset" = "Children";
+"Sisarukset" = "Siblings";
+"Kuka on lapsi?" = "Who is the child?";
+"Kuka on vanhempi?" = "Who is the parent?";
+"Kuka on puoliso?" = "Who is the spouse?";
+"Kuka on sisarus?" = "Who is the sibling?";
 "Yhdistä" = "Merge";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "The family already has %@. The cards will be merged, and this one's memories will move there.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "The family already has %@. This card's memories will move to them, and the merge cannot be undone.";
@@ -125,7 +135,7 @@
 "Kaikkia kuvia ei saatu tuotua" = "Not every photograph could be imported";
 
 /* --- Memories: the list, and losing one ---------------------------------- */
-"Muistot" = "Memories";
+"Albumi" = "Album";
 "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua." = "Nobody has told anything yet. Press the button above and start talking.";
 "Poista tämä muisto" = "Delete this memory";
 "Poista" = "Delete";

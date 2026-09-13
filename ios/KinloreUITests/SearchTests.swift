@@ -35,7 +35,7 @@ final class SearchTests: XCTestCase {
 
     func testTheGalleryFindsAPhotoByItsStory() {
         let app = launch(["-seed", "archive", "-tab", "memories"])
-        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "the gallery")
+        XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "the gallery")
 
         search("soudettiin", in: app)
 
@@ -55,7 +55,7 @@ final class SearchTests: XCTestCase {
     /// found by the name that was heard and never by the one that was fixed.
     func testTheGalleryFindsAPhotoByWhoItMentions() {
         let app = launch(["-seed", "archive", "-tab", "memories"])
-        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "the gallery")
+        XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "the gallery")
 
         search("Puumala", in: app)
 
@@ -73,7 +73,7 @@ final class SearchTests: XCTestCase {
     /// second one.
     func testNothingFoundSaysSoInItsOwnWords() {
         let app = launch(["-seed", "archive", "-tab", "memories"])
-        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "the gallery")
+        XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "the gallery")
 
         search("traktori", in: app)
 

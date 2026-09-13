@@ -3419,6 +3419,17 @@ other. **Ihmiset** is a third thing again — the list of person subjects, which
 what the tab is called, so the empty state under that tab now says *ihmiset* too
 rather than answering in a word the person did not tap.
 
+**Albumi, not Muistot, since 13 Sep 2026.** The tab where the family's
+photographs and tellings are looked at was called *Muistot*, and beside *Kerro*
+both names read as the place where the memories are: looking at the app as a
+buyer would, the founder could not say why there were two tabs. *Albumi* is the
+object a grandparent already knows, the photographs and what has been said about
+them; *Kerro* stays the place that picks what to speak about next. It holds the
+same things it did, so this is a clearer name for an old place rather than a new
+word for a new act. English says *Album*. Older text in this file, the other
+documents and the code's comments still calls it *Muistot*, and means the same
+tab.
+
 What the survey changed, in full: *"Mitätöi"* on an invite became *"Poista"* —
 the register of an authority annulling a document, in an app whose every other
 removal is *poista* — and the People empty state stopped calling its own list

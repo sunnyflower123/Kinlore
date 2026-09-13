@@ -268,7 +268,7 @@ extension XCTestCase {
     ///
     /// The language is pinned for the same kind of reason and it is newer. Every
     /// query in this suite names an element by its Finnish label — `buttons[
-    /// "Aloita perheen arkisto"]`, `tabBars.buttons["Muistot"]` — which was safe
+    /// "Aloita perheen arkisto"]`, `tabBars.buttons["Albumi"]` — which was safe
     /// while the app had exactly one language. It stopped being safe on
     /// 30 Aug 2026, when English was added: on a simulator set to English the
     /// app answers in English and every one of those queries finds nothing.

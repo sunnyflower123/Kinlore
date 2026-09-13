@@ -253,11 +253,12 @@ enum RelationKind: String, Codable, CaseIterable {
     var isSymmetric: Bool { self != .parentOf }
 
     /// How the relationship is named when adding it: "X is this person's ___".
+    /// Looked up here, because a `String` handed to a `Button` is shown as it is.
     var addLabel: String {
         switch self {
-        case .parentOf: "Vanhempi"
-        case .spouseOf: "Puoliso"
-        case .siblingOf: "Sisarus"
+        case .parentOf: String(localized: "Vanhempi")
+        case .spouseOf: String(localized: "Puoliso")
+        case .siblingOf: String(localized: "Sisarus")
         }
     }
 }

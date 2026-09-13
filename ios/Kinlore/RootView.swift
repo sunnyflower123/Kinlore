@@ -90,8 +90,11 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selection) {
+            // "Albumi", not "Muistot", since 13 Sep 2026. Beside "Kerro" both
+            // names read as the place where the memories are, and only one of
+            // the two is where they are looked at. See ARCHITECTURE §21.
             GalleryScreen()
-                .tabItem { Label("Muistot", systemImage: "photo.on.rectangle.angled") }
+                .tabItem { Label("Albumi", systemImage: "photo.on.rectangle.angled") }
                 .tag(Tab.memories)
 
             // The one Tell screen that is nobody's destination, and so the one

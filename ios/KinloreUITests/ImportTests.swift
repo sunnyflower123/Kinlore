@@ -55,7 +55,7 @@ final class ImportTests: XCTestCase {
             )
             app.navigationBars.buttons.firstMatch.tap()
             XCTAssertTrue(
-                app.navigationBars["Muistot"].waitForExistence(timeout: 10),
+                app.navigationBars["Albumi"].waitForExistence(timeout: 10),
                 "did not get back to the gallery"
             )
         }

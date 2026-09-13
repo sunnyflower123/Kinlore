@@ -49,7 +49,7 @@ final class ResultScreenTests: XCTestCase {
         let app = launch(["-seed", "empty", "-screen", "result"])
         XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
 
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery under its day")
         XCTAssertFalse(app.staticTexts["Kerrottu muisto"].exists, "the old placeholder is back")

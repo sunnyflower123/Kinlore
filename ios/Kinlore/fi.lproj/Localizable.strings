@@ -98,6 +98,16 @@
 "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli." = "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.";
 "Lisää sukulainen" = "Lisää sukulainen";
 "Lapsi" = "Lapsi";
+"Vanhempi" = "Vanhempi";
+"Puoliso" = "Puoliso";
+"Sisarus" = "Sisarus";
+"Vanhemmat" = "Vanhemmat";
+"Lapset" = "Lapset";
+"Sisarukset" = "Sisarukset";
+"Kuka on lapsi?" = "Kuka on lapsi?";
+"Kuka on vanhempi?" = "Kuka on vanhempi?";
+"Kuka on puoliso?" = "Kuka on puoliso?";
+"Kuka on sisarus?" = "Kuka on sisarus?";
 "Yhdistä" = "Yhdistä";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua.";
@@ -111,7 +121,7 @@
 "Valokuva, jossa on joku" = "Valokuva, jossa on joku";
 "Valokuva, josta ei ole vielä kerrottu" = "Valokuva, josta ei ole vielä kerrottu";
 "Kaikkia kuvia ei saatu tuotua" = "Kaikkia kuvia ei saatu tuotua";
-"Muistot" = "Muistot";
+"Albumi" = "Albumi";
 "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua." = "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.";
 "Poista tämä muisto" = "Poista tämä muisto";
 "Poista" = "Poista";

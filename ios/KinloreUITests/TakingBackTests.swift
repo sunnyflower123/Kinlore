@@ -44,7 +44,7 @@ final class TakingBackTests: XCTestCase {
         // And the archive is empty again — not merely missing the memory. Free
         // dictation made a subject to hold it, and a subject whose only telling
         // has been taken back is an empty card nobody can explain.
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(
             app.staticTexts["Ei vielä kuvia"].waitForExistence(timeout: 10),
             "the taken-back memory left something behind in the gallery"
@@ -71,7 +71,7 @@ final class TakingBackTests: XCTestCase {
 
         // Free dictation filed the telling under a moment of its own; with
         // the structuring deferred that moment is still untitled.
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
@@ -130,7 +130,7 @@ final class TakingBackTests: XCTestCase {
         confirm.tap()
 
         // Back in the gallery with one photo fewer — and the other still there.
-        XCTAssertTrue(app.navigationBars["Muistot"].waitForExistence(timeout: 10), "did not get back to the gallery")
+        XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "did not get back to the gallery")
         XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 10), "the other photo went too")
         XCTAssertEqual(tiles.count, 1, "the deleted photo is still in the gallery")
     }
@@ -152,7 +152,7 @@ final class TakingBackTests: XCTestCase {
         XCTAssertTrue(another.waitForExistence(timeout: 10), "never arrived: the way on")
         another.tap()
 
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
@@ -269,7 +269,7 @@ final class TakingBackTests: XCTestCase {
         )
         // Nothing was saved: no result screen went past, and the gallery is as
         // empty as it was before the button was pressed.
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(
             app.staticTexts["Ei vielä kuvia"].waitForExistence(timeout: 10),
             "an abandoned recording was saved anyway"

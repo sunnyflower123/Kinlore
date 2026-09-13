@@ -46,7 +46,7 @@ final class HeardNamesTests: XCTestCase {
         let app = launch(["-seed", "empty", "-screen", "result"])
         XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
 
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         XCTAssertTrue(app.staticTexts["Kerrotut hetket"].waitForExistence(timeout: 10), "never arrived: the gallery")
         XCTAssertFalse(app.staticTexts["Paikat"].exists, "a place nobody has checked became a card")
     }
@@ -57,7 +57,7 @@ final class HeardNamesTests: XCTestCase {
         let app = launch(["-seed", "empty", "-screen", "result"])
         XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
 
-        app.tabBars.buttons["Muistot"].tap()
+        app.tabBars.buttons["Albumi"].tap()
         let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()

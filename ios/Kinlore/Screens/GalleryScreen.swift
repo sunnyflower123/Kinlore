@@ -190,7 +190,7 @@ struct GalleryScreen: View {
                     content
                 }
             }
-            .navigationTitle("Muistot")
+            .navigationTitle("Albumi")
             .onAppear {
                 // A pop-back from a card is a visit already in progress, not
                 // a new arrival: the captured section stays, the seen-marking
