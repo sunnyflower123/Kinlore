@@ -180,7 +180,13 @@ final class Session {
             seedDemoFamily(alone: true)
             return
         default:
-            break
+            // `-you <card id>` with any store seed: a family whose "you" is
+            // linked to that card, as `PATCH /family/me` links it for real,
+            // for the tree's "Sinä" with no server behind it.
+            if UserDefaults.standard.string(forKey: "you") != nil {
+                seedDemoFamily()
+                return
+            }
         }
         #endif
         guard AppServices.apiBaseURL != nil else {
@@ -585,14 +591,15 @@ final class Session {
         let now = Date.now.timeIntervalSince1970
         let day: Double = 24 * 60 * 60
         mode = .inFamily(id: "demo-family")
+        let yourCard = UserDefaults.standard.string(forKey: "you")
         let you = Member(
-            id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day, personSubjectID: nil
+            id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day, personSubjectID: yourCard
         )
         family = Family(
             id: "demo-family",
             name: "Virtaset",
             entitlement: "free",
-            you: Family.You(id: "demo-you", role: "owner", displayName: "Minä", personSubjectID: nil),
+            you: Family.You(id: "demo-you", role: "owner", displayName: "Minä", personSubjectID: yourCard),
             members: alone ? [you] : [
                 you,
                 Member(

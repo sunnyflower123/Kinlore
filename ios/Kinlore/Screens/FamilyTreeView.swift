@@ -22,6 +22,7 @@ import SwiftUI
 /// `scripts/family-tree-layout-check.swift`; this view only draws it.
 struct FamilyTreeView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
 
     /// Names heard and not yet checked. The door to them sits under the tree
     /// as it sits under the list, so neither view hides them.
@@ -56,6 +57,13 @@ struct FamilyTreeView: View {
     private static let rowInset: CGFloat = 8
 
     private static let zoomRange: ClosedRange<CGFloat> = 0.4 ... 2.5
+
+    /// The card this phone's member is in the tree, followed through a merge,
+    /// or nil while the family's server links them to none (`Session.linkMe`).
+    private var yourCardID: String? {
+        guard let id = session.family?.you.personSubjectID else { return nil }
+        return store.subject(id: id)?.id
+    }
 
     /// Oldest card first, so the same family always grows from the same person.
     private var people: [Subject] {
@@ -92,7 +100,7 @@ struct FamilyTreeView: View {
                 // proposes one.
                 GeometryReader { proxy in
                     ScrollView(.horizontal) {
-                        canvas(result)
+                        canvas(result, you: yourCardID)
                             .scaleEffect(scale, anchor: .topLeading)
                             .frame(
                                 width: width(of: result) * scale,
@@ -169,7 +177,7 @@ struct FamilyTreeView: View {
 
     // MARK: - Drawing
 
-    private func canvas(_ result: FamilyTreeLayout.Result) -> some View {
+    private func canvas(_ result: FamilyTreeLayout.Result, you: String?) -> some View {
         ZStack(alignment: .topLeading) {
             // Under the people, and through the middle of their discs: every
             // disc has a paper backing, so a line meets it edge to edge, and
@@ -204,7 +212,7 @@ struct FamilyTreeView: View {
                 if let place = result.placements[person.id] {
                     // By its top, not its centre: a name that wraps to two
                     // lines must not lift its disc off the line it hangs on.
-                    node(person)
+                    node(person, isYou: person.id == you)
                         .offset(
                             x: point(place.x, Double(place.row)).x - nodeWidth / 2,
                             y: CGFloat(place.row) * rowHeight + Self.rowInset - topTrim(result)
@@ -215,7 +223,7 @@ struct FamilyTreeView: View {
         .frame(width: width(of: result), height: height(of: result), alignment: .topLeading)
     }
 
-    private func node(_ person: Subject) -> some View {
+    private func node(_ person: Subject, isYou: Bool) -> some View {
         Button {
             chosen = person
         } label: {
@@ -235,13 +243,22 @@ struct FamilyTreeView: View {
                     .font(.body.weight(.medium))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                // Which person in the family holds this phone, since 13 Sep
+                // 2026: a word under the name rather than a colour, so it does
+                // not rest on colour alone (rule 1).
+                if isYou {
+                    Text("Sinä")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             // No card behind the name. A card hid the line between a couple,
             // leaving a dash floating between two names (seen on 13 Sep 2026).
             .frame(width: nodeWidth, alignment: .top)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(person.displayTitle)
+        .accessibilityLabel(isYou ? Text("\(person.displayTitle), sinä") : Text(person.displayTitle))
     }
 
     private var zoomButtons: some View {

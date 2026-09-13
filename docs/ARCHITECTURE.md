@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 63 sweep tests, each auditing one screen at the default text size and again at the largest, out of 167 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 63 sweep tests, each auditing one screen at the default text size and again at the largest, out of 168 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1768,7 +1768,8 @@ Not built:
    and confirmed relationships only (rule 4). Everybody confirmed is in the
    picture, with the people related to nobody drawn apart below it rather than
    listed under it, and a person tapped in it takes a new relative through the
-   card's own `RelationPicker`, so the tree grows where it is looked at. Where
+   card's own `RelationPicker`, so the tree grows where it is looked at. The card this phone's member is
+   linked to says *Sinä* under the name (`member.person_subject_id`, §4). Where
    somebody lands is arithmetic no screenshot can check, so
    `scripts/family-tree-layout-check.swift` checks it: a child below her
    parents, a couple side by side, nobody sharing a place.

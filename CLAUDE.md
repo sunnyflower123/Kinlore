@@ -696,8 +696,10 @@ node scripts/sync-cursor-check.mjs
 # to one family, a code admits one person, the owner can close the door behind
 # somebody who should not have come through it, and a wrong code answers
 # exactly like an expired, revoked or used one — a different answer would tell
-# a guesser they had found a real family. Needs `npx wrangler dev`; leaves two
-# throwaway families behind.
+# a guesser they had found a real family. And since 13 Sep 2026 the card an
+# invitation names: its joiner is linked only to a live person card of the
+# invitation's own family, and a card not yet synced up never burns the code.
+# Needs `npx wrangler dev`; leaves two throwaway families behind.
 node scripts/invite-boundary-check.mjs
 
 # One purchase, one family. Loads the real schema.sql into an in-memory SQLite

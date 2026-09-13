@@ -30,6 +30,16 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Ei vielä sukupuussa"].exists, "the people related to nobody have no caption")
         XCTAssertFalse(app.buttons["Aino"].exists, "a name nobody has checked is drawn in the tree")
         XCTAssertTrue(app.buttons["Luettelo"].exists, "no way from the tree to the list")
+        XCTAssertFalse(app.staticTexts["Sinä"].exists, "somebody is marked as you on a phone linked to no card")
+    }
+
+    /// The card this phone's member is linked to says so. `-you` links the
+    /// demo family's "you" to Eeva's card, as `PATCH /family/me` does for real.
+    func testYourOwnCardSaysItIsYou() {
+        let app = launch(["-seed", "related", "-tab", "people", "-people", "tree", "-you", "demo-eeva"])
+        XCTAssertTrue(app.buttons["Eeva, sinä"].waitForExistence(timeout: 10), "your card does not say it is you")
+        XCTAssertTrue(app.staticTexts["Sinä"].exists, "no word under your name")
+        XCTAssertTrue(app.buttons["Kalle"].exists, "somebody else was marked as you as well")
     }
 
     /// The list is one tap away and the tree one tap back, whichever the phone
