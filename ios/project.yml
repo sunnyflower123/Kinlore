@@ -57,14 +57,21 @@ schemes:
   # database, which is the point. Everything in CLAUDE.md keeps building and
   # testing `Kinlore`: the tests pass `-api` themselves, so no test can reach
   # production through this. See docs/SETUP.md.
+  #
+  # Release, not Debug with `-api`, since 13 Sep 2026. An argument lives only
+  # as long as the process Xcode launched, so the same Debug binary opened from
+  # the phone's home screen had no address: stubs again, and no onboarding
+  # either, because the onboarding fork needs a backend. The phone this scheme
+  # was made for held all three stub samples that day, and its People tab the
+  # names in them. A Release build has the production address compiled in, so
+  # every launch is the same app. DEBUG-only arguments (`-seed`, `-screen`) do
+  # nothing here.
   Kinlore Production:
     build:
       targets:
         Kinlore: all
     run:
-      config: Debug
-      commandLineArguments:
-        "-api https://memorize.arkiste.workers.dev": true
+      config: Release
 
 targets:
   Kinlore:

@@ -65,18 +65,28 @@ screenshot run ever talks to production by accident.
 A **Release** build defaults to production (`https://memorize.arkiste.workers.dev`,
 baked into `AppServices` on deploy day, 24 Aug 2026 — docs/UX.md §7).
 
-**To test with your own voice, run the `Kinlore Production` scheme.** It is
-the `Kinlore` scheme with `-api https://memorize.arkiste.workers.dev` already
-among its arguments, and it exists because the stub is convincing: on 12 Sep
-2026 a telling about a photograph came back as the sample about Puumala, and
-nothing on the screen said the words were not the teller's. The console does
-say so (`[kinlore] backend: not configured — using stubs`), but nobody reads
-the console on a phone. Pick the scheme in Xcode's scheme menu and run; the
+**To test with your own voice, run the `Kinlore Production` scheme.** It
+builds the Release configuration, which has the production address compiled
+in, and it exists because the stub is convincing: on 12 Sep 2026 a telling
+about a photograph came back as the sample about Puumala, and nothing on the
+screen said the words were not the teller's. The console does say so
+(`[kinlore] backend: not configured — using stubs`), but nobody reads the
+console on a phone. Pick the scheme in Xcode's scheme menu and run; the
 transcription and the structure are then the real ones, and they cost
-OpenRouter credit. Add `-rcKey <Test Store key>` to the same scheme's
-arguments to have the paywall and the purchase there too. Scheme arguments
-apply only to launches Xcode makes; an install without Xcode gets the Release
-configuration, which needs no argument.
+OpenRouter credit.
+
+Until 13 Sep 2026 it was the Debug build with `-api` among its arguments, and
+this section said that an install without Xcode gets Release. The app Xcode
+installs is not that install. **Scheme arguments apply only to launches Xcode
+makes**: open the same app from the phone's home screen and it is a Debug
+build with no address — on stubs again, and with no onboarding either, since
+the onboarding fork exists only where there is a backend. The phone tested with
+this scheme held all three stub samples on 13 Sep, and its People tab listed the
+people named in them as family. A Release build has nothing to forget.
+
+`-rcKey <Test Store key>` among the scheme's arguments puts the paywall and the
+purchase there too, and it is still an argument: it applies to Xcode's
+launches and not to the home screen's.
 
 ### Health check
 
