@@ -85,6 +85,14 @@ final class Session {
     /// that reads it runs outside one.
     nonisolated static let arrivalPendingKey = "arrival_pending"
 
+    /// Set when a family is created here, consumed by `RootView` on its first
+    /// appearance: on the phone of whoever set the archive up, the first thing
+    /// after "Luo arkisto" is the question of whose memories it is for, and an
+    /// invitation made out to them. A grandparent's phone skips it and keeps
+    /// her button. Device state, one-shot, never synced — the same shape as
+    /// `arrivalPendingKey`, and set at the same moment. Since 13 Sep 2026.
+    nonisolated static let firstMinutePendingKey = "first_minute_pending"
+
     /// Whether this archive is one somebody chose to keep to this phone, as
     /// opposed to one that has no backend to sync to. The screens need the
     /// difference: only the first is a decision anybody made.
@@ -189,6 +197,9 @@ final class Session {
             // the worst of both — unreadable to a new device, and readable to a
             // dump.
             FamilyKey.create()
+            // Before the mode flips, for the reason `join` gives: the flip is
+            // what creates the root view, and the root view consumes this.
+            UserDefaults.standard.set(true, forKey: Self.firstMinutePendingKey)
             self.store(familyID: result.familyID)
         }
     }
@@ -463,8 +474,9 @@ final class Session {
         // set here would make "Tyhjennä tämä laite" the only door that does not
         // open either.
         UserDefaults.standard.removeObject(forKey: localOnlyKey)
-        // A wiped device has not just joined anything.
+        // A wiped device has not just joined anything, or created anything.
         UserDefaults.standard.removeObject(forKey: Self.arrivalPendingKey)
+        UserDefaults.standard.removeObject(forKey: Self.firstMinutePendingKey)
         family = nil
         usage = nil
         mode = AppServices.apiBaseURL == nil ? .local : .needsFamily

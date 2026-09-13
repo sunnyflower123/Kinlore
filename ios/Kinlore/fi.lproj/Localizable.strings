@@ -114,6 +114,10 @@
 "Lisää sukulainen henkilön kortilta, niin hän tulee puuhun." = "Lisää sukulainen henkilön kortilta, niin hän tulee puuhun.";
 "Pienennä" = "Pienennä";
 "Suurenna" = "Suurenna";
+"Kenen muistot haluat tallentaa?" = "Kenen muistot haluat tallentaa?";
+"Kirjoita hänen nimensä, niin hän saa oman kortin. Sitten voit kutsua hänet kertomaan omalla puhelimellaan." = "Kirjoita hänen nimensä, niin hän saa oman kortin. Sitten voit kutsua hänet kertomaan omalla puhelimellaan.";
+"%@ on nyt arkistossa" = "%@ on nyt arkistossa";
+"Kutsu hänet omalle puhelimelleen, niin hän voi kertoa muistonsa itse." = "Kutsu hänet omalle puhelimelleen, niin hän voi kertoa muistonsa itse.";
 "Yhdistä" = "Yhdistä";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua.";

@@ -860,6 +860,21 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The first minute after an archive is created, both of its steps: new
+    /// since 13 Sep 2026, and the first screen whoever sets the archive up sees.
+    func testFirstMinute() throws {
+        try sweep("Kenen muistot", arguments: ["-seed", "alone", "-first_minute_pending", "YES"]) { app, _ in
+            require(app.staticTexts["Kenen muistot haluat tallentaa?"], "the first step")
+        }
+        try sweep("Kenen muistot, kutsu", arguments: ["-seed", "alone", "-first_minute_pending", "YES"]) { app, _ in
+            let field = require(app.textFields.firstMatch, "the name field")
+            field.tap()
+            field.typeText("Mummo")
+            require(app.buttons["Jatka"], "the way on").tap()
+            require(app.buttons["Kutsu perheenjäsen"], "the invitation step")
+        }
+    }
+
     /// The memory row's own way out, which shows only on a telling of one's
     /// own. The fixture's memories are all Mummo's, so this one is told first
     /// and read back from its card, the way it would be the day after.

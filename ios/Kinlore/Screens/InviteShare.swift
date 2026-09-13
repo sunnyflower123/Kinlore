@@ -16,6 +16,11 @@ import SwiftUI
 struct InviteShareButton: View {
     @Environment(Session.self) private var session
 
+    /// Whom the invitation starts out made to, when the screen offering it
+    /// already knows — the first minute's "whose memories" has just been
+    /// answered. Empty everywhere else, which is the button as it always was.
+    var suggestedName = ""
+
     @State private var name = ""
     @State private var code: String?
     @State private var isSharing = false
@@ -26,6 +31,7 @@ struct InviteShareButton: View {
             // No network here any more. The sheet asks who the invitation is
             // for, and the code is made once that is answered — a code made
             // before the question could not carry the answer.
+            name = suggestedName
             isSharing = true
         } label: {
             Label("Kutsu perheenjäsen", systemImage: "person.badge.plus")

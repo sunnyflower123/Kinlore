@@ -124,6 +124,10 @@
 "Lisää sukulainen henkilön kortilta, niin hän tulee puuhun." = "Add a relative on their card to bring them into the tree.";
 "Pienennä" = "Zoom out";
 "Suurenna" = "Zoom in";
+"Kenen muistot haluat tallentaa?" = "Whose memories do you want to keep?";
+"Kirjoita hänen nimensä, niin hän saa oman kortin. Sitten voit kutsua hänet kertomaan omalla puhelimellaan." = "Write their name, and they get a card of their own. Then you can invite them to tell on their own phone.";
+"%@ on nyt arkistossa" = "%@ is in the archive now";
+"Kutsu hänet omalle puhelimelleen, niin hän voi kertoa muistonsa itse." = "Invite them onto their own phone, so they can tell their memories themselves.";
 "Yhdistä" = "Merge";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "The family already has %@. The cards will be merged, and this one's memories will move there.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "The family already has %@. This card's memories will move to them, and the merge cannot be undone.";

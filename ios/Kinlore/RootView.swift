@@ -80,6 +80,11 @@ struct RootView: View {
 
     @State private var selection: Tab
 
+    /// Whose phone this is, so the first minute is asked only of whoever set
+    /// the archive up, and whether it is being asked now.
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+    @State private var isShowingFirstMinute = false
+
     /// The caller decides whether unseen tellings are waiting, because it has
     /// the store and a `@State`'s initial value cannot ask the environment.
     /// Evaluated once per root-view identity, so a person's own tab choice is
@@ -142,6 +147,19 @@ struct RootView: View {
                     rejoining: true
                 )
             }
+        }
+        // The first minute after "Luo arkisto", once, on the phone of whoever
+        // set the archive up: whose memories it is for, their card, and an
+        // invitation made out to them. The archive was bought for somebody
+        // else's memories, and the Kerro tab behind this asks for the buyer's
+        // own. A grandparent's phone skips it and keeps her button.
+        .sheet(isPresented: $isShowingFirstMinute) {
+            FirstMinuteSheet()
+        }
+        .task {
+            guard UserDefaults.standard.bool(forKey: Session.firstMinutePendingKey) else { return }
+            UserDefaults.standard.removeObject(forKey: Session.firstMinutePendingKey)
+            if !largerText { isShowingFirstMinute = true }
         }
         .elderSurface()
     }

@@ -30,6 +30,15 @@ Three arrivals exist and they are barely different:
 | Fresh install, backend configured | `OnboardingScreen`: a fork with two buttons | create → Kerro tab |
 | Invite link or pasted code | `JoinFamilyForm`: name + code + consent | join → **Kerro tab** |
 
+**Changed 13 Sep 2026, for the second row.** After *"Luo arkisto"* on the phone
+of whoever set the archive up, `FirstMinuteSheet` now comes up over the Kerro
+tab: *"Kenen muistot haluat tallentaa?"*, a name that becomes a confirmed card,
+and an invitation made out to that name. Looking at the app as a buyer would,
+the founder saw the first screen asking the buyer for their own memories when
+the archive had been bought for somebody else's. A grandparent's phone (the
+text floor) skips it and lands on her button as before. The table above stays
+as it was measured.
+
 The findings, each measured on 17 Aug:
 
 1. **A real install shows no onboarding and no family.** `Session.init` reads
