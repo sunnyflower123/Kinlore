@@ -17,6 +17,12 @@ export type SubjectRow = {
 	kind: string
 	title: string | null
 	r2_key: string | null
+	// A photograph's confirmed colours, who said yes and when. The name is
+	// derived on read from `member.display_name`, like a memory's author's.
+	colour_r2_key: string | null
+	colour_confirmed_by: string | null
+	colour_confirmed_by_name?: string | null
+	colour_confirmed_at: number | null
 	// Where a place is, once its name has been looked up on a device. Null until
 	// something resolved it, and null again when the name is corrected.
 	lat: number | null
@@ -149,11 +155,17 @@ function completeUpTo(rows: { seq: number }[]): number | null {
 export async function pull(env: Env, session: Session, since: number) {
 	const family = session.familyID
 
+	// Prefixed throughout, because `member` has an `id` and a `created_at` of
+	// its own and the join would make both ambiguous.
 	const subjects = await env.DB.prepare(
-		`SELECT id, kind, title, r2_key, lat, lon, geo_precision,
-		        date_start, date_end, date_precision,
-		        confirmed, merged_into, created_at, deleted_at, seq
-		 FROM subject WHERE family_id = ? AND seq > ? ORDER BY seq LIMIT ?`,
+		`SELECT s.id, s.kind, s.title, s.r2_key, s.lat, s.lon, s.geo_precision,
+		        s.date_start, s.date_end, s.date_precision,
+		        s.confirmed, s.merged_into, s.created_at, s.deleted_at, s.seq,
+		        s.colour_r2_key, s.colour_confirmed_by, s.colour_confirmed_at,
+		        confirmer.display_name AS colour_confirmed_by_name
+		 FROM subject s
+		 LEFT JOIN member confirmer ON confirmer.id = s.colour_confirmed_by
+		 WHERE s.family_id = ? AND s.seq > ? ORDER BY s.seq LIMIT ?`,
 	)
 		.bind(family, since, MAX_ROWS)
 		.all<SubjectRow>()
@@ -252,16 +264,43 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		const lat = coordinate(subject.lat, 90)
 		const lon = coordinate(subject.lon, 180)
 		const hasPoint = lat !== null && lon !== null
+		// A colouring travels only with its file, its own member's name and a
+		// moment that has already happened. Anything short of that is sent on as
+		// nothing, which the upsert reads as "no opinion": a member cannot put
+		// somebody else's name on a yes, a key cannot point outside this family's
+		// own objects, and a moment in the future cannot lock one colouring
+		// against every later yes.
+		const colour =
+			subject.kind === 'photo' &&
+			typeof subject.colour_r2_key === 'string' &&
+			subject.colour_r2_key.startsWith(`${family}/`) &&
+			subject.colour_confirmed_by === session.memberID &&
+			typeof subject.colour_confirmed_at === 'number' &&
+			Number.isFinite(subject.colour_confirmed_at)
 		statements.push(
 			env.DB.prepare(
-				`INSERT INTO subject (id, family_id, kind, title, r2_key, lat, lon, geo_precision,
+				`INSERT INTO subject (id, family_id, kind, title, r2_key,
+				                      colour_r2_key, colour_confirmed_by, colour_confirmed_at,
+				                      lat, lon, geo_precision,
 				                      date_start, date_end,
 				                      date_precision, confirmed, merged_into, created_by,
 				                      created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   title = excluded.title,
 				   r2_key = COALESCE(excluded.r2_key, subject.r2_key),
+				   -- The newest yes wins, and it moves whole: the file, the name
+				   -- and the moment together, and only when the pushed moment is
+				   -- later than the stored one. A phone that never saw the
+				   -- colouring pushes nulls, and a NULL is never later than
+				   -- anything, so it changes nothing. SQLite reads every right-hand
+				   -- side against the row as it was, so the three agree.
+				   colour_r2_key = CASE WHEN excluded.colour_confirmed_at > COALESCE(subject.colour_confirmed_at, 0)
+				                        THEN excluded.colour_r2_key ELSE subject.colour_r2_key END,
+				   colour_confirmed_by = CASE WHEN excluded.colour_confirmed_at > COALESCE(subject.colour_confirmed_at, 0)
+				                              THEN excluded.colour_confirmed_by ELSE subject.colour_confirmed_by END,
+				   colour_confirmed_at = CASE WHEN excluded.colour_confirmed_at > COALESCE(subject.colour_confirmed_at, 0)
+				                              THEN excluded.colour_confirmed_at ELSE subject.colour_confirmed_at END,
 				   -- The coordinates answer the title, so they follow it. A device
 				   -- that has not looked the name up sends null and must not wipe
 				   -- what another one resolved — but when the title itself changes,
@@ -307,6 +346,9 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				subject.kind,
 				subject.title ?? null,
 				subject.r2_key ?? null,
+				colour ? subject.colour_r2_key : null,
+				colour ? session.memberID : null,
+				colour ? Math.min(subject.colour_confirmed_at as number, timestamp) : null,
 				hasPoint ? lat : null,
 				hasPoint ? lon : null,
 				hasPoint && subject.geo_precision && GEO_PRECISIONS.has(subject.geo_precision)

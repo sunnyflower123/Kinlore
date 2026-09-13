@@ -17,6 +17,9 @@ const MAX_BYTES = 10 * 1024 * 1024
 const TYPES: Record<string, { ext: string; contentType: string }> = {
 	photo: { ext: 'jpg', contentType: 'image/jpeg' },
 	audio: { ext: 'm4a', contentType: 'audio/mp4' },
+	// A photograph's colours as the family confirmed them: a JPEG of its own
+	// beside the photograph, sealed like it on the phone.
+	colour: { ext: 'jpg', contentType: 'image/jpeg' },
 }
 
 /// The key always starts with the family id. Access is still checked from the

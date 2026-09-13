@@ -150,6 +150,17 @@ CREATE TABLE subject (
 
   -- kind = 'photo'
   r2_key        TEXT,
+  -- The photograph's colours as the family confirmed them: an R2 object of
+  -- their own beside r2_key's photograph, never in its place, and only once
+  -- somebody has looked at a colouring and said yes. Who said it and when
+  -- travel with it: the newest yes wins, and a member can put only their own
+  -- name on one. For existing databases:
+  --   ALTER TABLE subject ADD COLUMN colour_r2_key TEXT;
+  --   ALTER TABLE subject ADD COLUMN colour_confirmed_by TEXT REFERENCES member(id);
+  --   ALTER TABLE subject ADD COLUMN colour_confirmed_at INTEGER;
+  colour_r2_key       TEXT,
+  colour_confirmed_by TEXT REFERENCES member(id),
+  colour_confirmed_at INTEGER,
 
   -- kind = 'place'
   --
@@ -296,16 +307,22 @@ CREATE INDEX idx_question_seq  ON prompt_question(family_id, seq);
 
 -- ---------------------------------------------------------------- quotas
 
--- Free tier meters. The photo count and AI minutes are limited; writing
--- memories never is — that is the entire value of the product.
--- Only AI minutes are per month. The photo count is derived straight from the
--- subject table: the limit is a total rather than a monthly cap, a deleted
--- photo frees its slot, and a separate counter would inevitably drift out of
--- step with reality.
+-- Free tier meters. The photo count, AI minutes and colourisations are
+-- limited; writing memories never is — that is the entire value of the product.
+-- AI minutes and colourisations are per month. The photo count is derived
+-- straight from the subject table: the limit is a total rather than a monthly
+-- cap, a deleted photo frees its slot, and a separate counter would inevitably
+-- drift out of step with reality.
 CREATE TABLE usage_counter (
   family_id     TEXT NOT NULL REFERENCES family(id) ON DELETE CASCADE,
   period        TEXT NOT NULL,        -- 'YYYY-MM' UTC
   ai_seconds    INTEGER NOT NULL DEFAULT 0,
+  -- Photographs coloured by the telling. A column of its own rather than more
+  -- seconds, so a grandchild's colouring never spends a grandmother's telling
+  -- minutes. For existing databases, BEFORE the Worker that reads it is
+  -- deployed — /usage selects it, and fails on a table without it:
+  --   ALTER TABLE usage_counter ADD COLUMN colourisations INTEGER NOT NULL DEFAULT 0;
+  colourisations INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (family_id, period)
 );
 

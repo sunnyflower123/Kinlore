@@ -13,6 +13,14 @@ struct SubjectDTO: Codable {
     var kind: String
     var title: String?
     var r2_key: String?
+    /// A photograph's confirmed colours: the object, who said yes and when.
+    /// Optional in both directions, like the coordinates below — a server that
+    /// has not been redeployed sends none of it, and most subjects have none.
+    /// The name is the server's, derived on read, and never sent.
+    var colour_r2_key: String?
+    var colour_confirmed_by: String?
+    var colour_confirmed_by_name: String?
+    var colour_confirmed_at: Double?
     /// A place's coordinates. Optional in both directions: a server that has not
     /// been redeployed does not send them, and most subjects are not places.
     var lat: Double?
@@ -195,6 +203,12 @@ extension Subject {
             kind: kind.rawValue,
             title: title,
             r2_key: r2Key,
+            // A yes travels with its file or not at all: until the upload has
+            // a key, the colours stay on this phone.
+            colour_r2_key: colourR2Key,
+            colour_confirmed_by: colourR2Key == nil ? nil : colourConfirmedByID,
+            colour_confirmed_by_name: nil,
+            colour_confirmed_at: colourR2Key == nil ? nil : colourConfirmedAt?.timeIntervalSince1970,
             lat: place?.latitude,
             lon: place?.longitude,
             geo_precision: place?.precision.rawValue,
@@ -220,11 +234,46 @@ extension Subject {
             r2Key: dto.r2_key,
             dateHint: Self.hint(from: dto),
             place: Self.place(from: dto),
+            colourR2Key: dto.colour_r2_key,
+            colourConfirmedByID: dto.colour_confirmed_by,
+            colourConfirmedByName: dto.colour_confirmed_by_name,
+            colourConfirmedAt: dto.colour_confirmed_at.map { Date(timeIntervalSince1970: $0) },
             confirmed: dto.confirmed == 1,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             mergedInto: dto.merged_into,
             deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
+    }
+
+    /// A pulled row laid over this phone's copy of it, as far as the colours go.
+    ///
+    /// The server keeps the newest yes (`sync.ts`), and a pull is its answer —
+    /// with two exceptions only this phone can keep. A row that says nothing
+    /// about colours takes nothing away: a Worker that has not been redeployed
+    /// sends none, and would otherwise wipe every colouring the family had
+    /// confirmed on the first pull after an update. And a yes this phone has
+    /// not uploaded yet is newer than anything the server can hold; it travels
+    /// on the next push, and is kept until then.
+    ///
+    /// Otherwise the pulled yes stands. Under the same key the file on this
+    /// phone is still its picture; under another key it is not, and it comes
+    /// back as `stale` for the caller to delete.
+    func withColours(from local: Subject) -> (row: Subject, stale: String?) {
+        var row = self
+        let pendingHere = local.colourImageFilename != nil && local.colourR2Key == nil
+        guard colourR2Key != nil, !pendingHere else {
+            row.colourImageFilename = local.colourImageFilename
+            row.colourR2Key = local.colourR2Key
+            row.colourConfirmedByID = local.colourConfirmedByID
+            row.colourConfirmedByName = local.colourConfirmedByName
+            row.colourConfirmedAt = local.colourConfirmedAt
+            return (row, nil)
+        }
+        guard colourR2Key != local.colourR2Key else {
+            row.colourImageFilename = local.colourImageFilename
+            return (row, nil)
+        }
+        return (row, local.colourImageFilename)
     }
 
     private static func hint(from dto: SubjectDTO) -> DateHint? {

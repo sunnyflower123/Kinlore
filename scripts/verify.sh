@@ -90,6 +90,31 @@ full_copy() {
 		&& "$OUT/full-copy-check"
 }
 
+# Colour from a model, brightness from the photograph. The one thing between
+# an image model's reply and a family's photograph, and all three of its
+# promises fail silently: a lock that kept the model's lightness still makes a
+# fine colour photograph with every face repainted, a reply whose shapes moved
+# still looks like one, and a ratio stretched instead of framed spends a
+# family's round on a refusal.
+colour_lock() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/colour-lock-check" scripts/colour-lock-check.swift \
+		ios/Kinlore/Services/ColourLock.swift \
+		&& "$OUT/colour-lock-check"
+}
+
+# The same colouring through sync, on the phone's side: a pull from a Worker
+# that was not redeployed must not wipe the family's confirmed colours, a yes
+# not yet uploaded must survive an older one arriving, and another phone's
+# newer yes must not be shown with this phone's old picture under it.
+colour_sync() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/colour-sync-check" scripts/colour-sync-check.swift \
+		ios/Kinlore/Services/FamilyCrypto.swift ios/Kinlore/Data/MemoryStore+Sync.swift \
+		ios/Kinlore/Model/Models.swift \
+		&& "$OUT/colour-sync-check"
+}
+
 # Which question the app decides to put in front of an 80-year-old. A
 # staircase over three UserDefaults keys, and both ways of being wrong are
 # silent: the wall that makes an elderly teller give up, and the run of naming
@@ -164,6 +189,8 @@ run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
 run "the family's bytes end up on every phone" full_copy
+run "a photograph keeps its face under new colours" colour_lock
+run "a confirmed colouring survives an older phone" colour_sync
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over
@@ -214,6 +241,11 @@ run "a long telling is given room to come back" node scripts/transcribe-budget-c
 # name became a person the family is asked to confirm, drawn as "Henkilö",
 # and an untrimmed one became a second Aino.
 run "a model cannot name a person nothing said" node scripts/extract-shaping-check.mjs
+# Colouring a photograph by what was told: what the model is told, what the
+# Worker believes came back, and a meter of its own, so that a grandchild's
+# colouring cannot use up a grandmother's telling minutes. None of the three
+# shows in a picture, and all of them cost nothing to check.
+run "a photograph is coloured by what was told" node scripts/colourise-check.mjs
 run "a browser can open what the phone sealed" webcrypto_interop
 
 # --- What the documents say about the code ----------------------------------
@@ -367,6 +399,11 @@ fi
 # Worker is started with no key, so the upstream call throws before it reaches
 # the network and the check costs nothing.
 run "a failure tells the app and the log nothing" node scripts/leak-check.mjs
+# The colouring route's doors, in the order they must open, through a Worker of
+# its own that has no key — so a request that gets past every door fails before
+# the network and costs nothing. Nothing told is refused, the meter answers
+# before the model, and a round that failed is not charged.
+run "no telling, no colour; no image, no charge" node scripts/colourise-route-check.mjs
 
 # --- The screens ------------------------------------------------------------
 

@@ -103,10 +103,34 @@ enum ArchiveExport {
             }
         }
 
+        // The colours the family confirmed, beside the photographs they colour.
+        // Each carries its palette in its own pixels, and the page says whose
+        // word the colours stand on.
+        var colourNames: [String: String] = [:]
+        let subjectsWithColours = store.subjects.filter {
+            $0.deletedAt == nil && ($0.colourImageFilename != nil || $0.colourR2Key != nil)
+        }
+        for (index, subject) in subjectsWithColours.enumerated() {
+            try Task.checkCancellation()
+            progress(String(localized: "Kootaan värikuvia \(index + 1)/\(subjectsWithColours.count)"))
+            guard let filename = await MediaLoader.colourFilename(
+                for: subject, store: store, session: session
+            ) else {
+                missing += 1
+                continue
+            }
+            if link(filename, into: photos) {
+                colourNames[subject.id] = filename
+            } else {
+                missing += 1
+            }
+        }
+
         progress(String(localized: "Kirjoitetaan arkistoa"))
         let page = html(
             store: store,
             photoNames: photoNames,
+            colourNames: colourNames,
             audioNames: audioNames,
             missingMedia: missing
         )
@@ -187,6 +211,7 @@ enum ArchiveExport {
     private static func html(
         store: MemoryStore,
         photoNames: [String: String],
+        colourNames: [String: String],
         audioNames: [String: String],
         missingMedia: Int
     ) -> String {
@@ -268,6 +293,16 @@ enum ArchiveExport {
 
             if let filename = photoNames[subject.id] {
                 out += "<img src=\"kuvat/\(escaped(filename))\" alt=\"\(escaped(subject.displayTitle))\">\n"
+            }
+            // Under the photograph and never in its place, captioned with whose
+            // word the colours stand on. The palette is in the image itself.
+            if let filename = colourNames[subject.id] {
+                let caption = subject.colourConfirmedByName.map {
+                    String(localized: "Värit kerronnan mukaan, vahvisti \($0)")
+                } ?? String(localized: "Värit kerronnan mukaan")
+                let described = String(localized: "Väritetty kuva. Värit ovat tekoälyn arvaus kerrotun mukaan.")
+                out += "<figure><img src=\"kuvat/\(escaped(filename))\" alt=\"\(escaped(described))\">"
+                out += "<figcaption class=\"meta\">\(escaped(caption))</figcaption></figure>\n"
             }
 
             // Confirmed relationships only. An unconfirmed one is a proposal,

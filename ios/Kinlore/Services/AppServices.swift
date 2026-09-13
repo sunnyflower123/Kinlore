@@ -109,6 +109,11 @@ enum AppServices {
         guard let base = apiBaseURL else { return StubExtractionService() }
         return RemoteExtractionService(baseURL: base, token: token)
     }
+
+    static func colourisation(token: @escaping () -> String) -> ColourisationService {
+        guard let base = apiBaseURL else { return StubColourisationService() }
+        return RemoteColourisationService(baseURL: base, token: token)
+    }
 }
 
 // MARK: - Shared request
@@ -137,7 +142,11 @@ enum RemoteError: LocalizedError {
         case .badStatus: String(localized: "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen.")
         case .emptyResult: String(localized: "Puheesta ei saatu sanoja.")
         case .quotaExceeded(let kind, _, let limit):
-            kind == "photos"
+            // Its own sentence, because the one about telling below would tell
+            // somebody who was colouring a photograph that their voice is safe.
+            kind == "colourisations"
+                ? String(localized: "Tämän kuukauden väritykset on käytetty.")
+                : kind == "photos"
                 ? "Ilmaisessa arkistossa on tilaa \(limit) kuvalle."
                 // Not "AI-minuutit", which is the one place that name survived
                 // after the family screen dropped it — and the worst place for
@@ -286,6 +295,42 @@ struct RemoteTranscriptionService: TranscriptionService {
     private static func duration(of url: URL) -> Double? {
         guard let player = try? AVAudioPlayer(contentsOf: url) else { return nil }
         return player.duration
+    }
+}
+
+// MARK: - Colourisation
+
+struct RemoteColourisationService: ColourisationService {
+    let baseURL: URL
+    let token: () -> String
+
+    private struct Request: Encodable {
+        /// The framed photograph as a base64 JPEG, the one shape the Worker takes.
+        let image: String
+        /// Newest first.
+        let told: [String]
+        /// One of `ColourLock.ratios`; the Worker drops any other.
+        let aspect: String
+    }
+
+    private struct Reply: Decodable {
+        let image: String
+    }
+
+    func colourise(canvas: Data, told: [String], aspect: String) async throws -> Data {
+        let reply: Reply = try await post(
+            "colourise",
+            baseURL: baseURL,
+            token: token(),
+            body: Request(image: canvas.base64EncodedString(), told: told, aspect: aspect),
+            // Nine to thirteen seconds a round, measured 13 Sep 2026; the rest
+            // is room for a slow upload from a cottage.
+            timeout: 120
+        )
+        guard let data = Data(base64Encoded: reply.image), !data.isEmpty else {
+            throw RemoteError.emptyResult
+        }
+        return data
     }
 }
 

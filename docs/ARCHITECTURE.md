@@ -29,7 +29,8 @@ and what found it.
 [12. The question ladder](#12-the-question-ladder) ·
 [14. Settings — taking the archive out, and leaving](#14-settings--taking-the-archive-out-and-leaving) ·
 [21. The words](#21-the-words) ·
-[22. The one blue button](#22-the-one-blue-button)
+[22. The one blue button](#22-the-one-blue-button) ·
+[24. Colours by the telling](#24-colours-by-the-telling)
 
 **Things that were wrong, and what it took to find them**
 [15. Contrast — the rule that was never measured](#15-contrast--the-rule-that-was-never-measured) ·
@@ -71,12 +72,13 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 57 sweep tests, each auditing one screen at the default text size and again at the largest, out of 146 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 58 sweep tests, each auditing one screen at the default text size and again at the largest, out of 152 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
 | Backup and recovery | **Written down and measured**, see docs/RECOVERY.md — Time Travel answers, the dump runs, R2 has no versioning, and nothing yet copies the media off the account |
 | The family's media on every phone, not only in R2 | **Done and checked**, see §5 — `FullCopy` after every sync, on Wi-Fi, voices first, with the number on the family screen |
+| Colouring a photograph by what was told about it | **Built and tested, not deployed**, see §24 — kept only after somebody answers yes; the Worker needs four D1 columns before it goes out, and the model was chosen on one photograph |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -3711,3 +3713,134 @@ to the store, the store is `@Observable`, the view rebuilds, the query says
 there is no card any more — and the card vanished under the finger that had just
 answered it, before its one sentence could be read. A wrong answer writes
 nothing and so kept its card, which is the same bug wearing the opposite face.
+
+## 24. Colours by the telling
+
+A black-and-white photograph holds no colours to bring back, and a model asked
+to add them is guessing — a confident, good-looking guess in the one shape
+nobody reads as a guess. So the app does not add them on its own. Somebody who
+has told something about the photograph asks, the model is given those words,
+and what comes back waits for a person to answer it. Decided and built on
+13 Sep 2026, a fortnight before submission and against PLAN §5's rule that an
+addition needs a removal; §5 carries it as the first thing to cut.
+
+### The flow
+
+A photograph's card offers **"Väritä kerronnan mukaan"** once something has been
+told about it (`colourable` in `SubjectDetailScreen`), and never on a
+grandparent's phone — the text-floor signal — because there the question has to
+come before the colours, and that card is not built. The footer under the button
+says what leaves the phone: the photograph and the memories told about it. It is
+the one place in the app a photograph leaves without being sealed first (lever
+3), and the words go with it the way a transcript does.
+
+So it is not offered at all on a phone whose archive was kept to itself. That
+phone's onboarding promised *"Muistot jäävät tähän puhelimeen"*, and the Worker
+refusing a phone with no family would come after the photograph had already
+left. The first build offered it there anyway, and nothing but reading the
+promise beside the gate found it; `ColourTests` holds it now, through the same
+`isLocalByChoice` that keeps transcription off that phone.
+
+`ColourSheet` shows the colouring and asks **"Näyttääkö tältä?"**:
+
+- **"Kyllä, tallenna värit"** keeps it, beside the photograph and never in its
+  place, with the name of whoever said yes.
+- **"Ei, kerron lisää"** opens the telling for the same photograph, and the next
+  colouring reads the correction first: the tellings go to the model newest
+  first, and its instruction says the first of two quotations that disagree is
+  the one to follow.
+- **"En tiedä"** keeps nothing. Rule 5 stores uncertainty rather than rounding it
+  into a yes.
+
+`ColourTests` holds all three by what the card shows afterwards, which is the
+one thing the question screen itself cannot show. The two answers that are not
+"Kyllä" are ink inside an ink outline rather than `.bordered`. The sheet first
+drew all three in the system blue, the blue §23 met on the blind card, and the
+audit failed two of them outright, "En tiedä" at 3.05:1. With the accent named
+it still reported "Ei, kerron lisää" on `.bordered`'s tinted wash as *nearly
+passed* — which is a failure that happens to be close.
+
+### What the model is trusted with, which is the hue
+
+`ColourLock` does not keep the model's picture. It keeps the photograph's own
+CIELAB `L` and takes only `a` and `b` from the reply, so every edge and every face
+keeps the original's lightness. On the measured reply the chosen model had moved
+the lightness of half the picture by more than three and a half points in a
+hundred, and of a twentieth of it by sixteen; with `L` put back, ninety-nine
+pixels in a hundred sat within a third of a point of the photograph. That was
+the probe's arithmetic. `colour-lock-check.swift` holds `ColourLock`'s own to a
+99th percentile of 1.5 and a largest difference of 6, over a reply painted
+brighter the way the measured ones were.
+
+That holds only while the reply's shapes sit where the photograph's do, so the
+edges are compared first — the correlation of two Sobel maps at 256 pixels wide
+— and below **0.85** a reply is refused rather than laid on. The line sits in
+the gap the measurement left: the two models that kept the picture scored 0.971
+and 0.964, the one that changed the shape of its frame by two per cent 0.683,
+and the one that redrew every face in it 0.125. A photograph whose ratio the
+model does not accept is centred on a canvas of the nearest ratio it does, and
+the grey is cut away again before anything is compared.
+
+The mark is in the pixels: a palette in the bottom-left corner of the kept
+image, because a caption does not travel with a screenshot or a print.
+
+### Cost, and whose allowance a round comes out of
+
+`google/gemini-3.1-flash-lite-image`, chosen by measurement against three others
+(the table is in `wrangler.jsonc`): **3.39 c a round**, read from the reply's own
+`usage.cost`. Every round counts, a "not quite" included, because each is a whole
+new image upstream. Five a month on the free tier, on a counter of their own —
+`usage_counter.colourisations`, never the telling minutes, because the payer is
+not the teller and a grandchild's colouring must not spend a grandmother's time
+to talk. Unlimited when paid, like telling.
+
+The route refuses before it spends: nothing told is a 400, a spent month is the
+meter's own 402 with no request upstream, and a round that failed upstream is
+not counted.
+
+### Sync
+
+A yes travels whole — the file, the confirmer and the moment — and only with its
+file: until the upload has a key, the colours stay on the phone. The server
+keeps the newest yes and nothing else. An older phone's push without the fields
+changes nothing, an older yes arriving late does not replace a newer one, a
+member can put only their own name on a yes, the key must be one of the family's
+own objects, and a moment in the future is held to now, so it cannot lock out
+every later yes. On the phone, `Subject.withColours` keeps the two things only
+the phone can: a pull that says nothing about colours — a Worker that has not
+been redeployed — takes nothing away, and a yes not yet uploaded is kept over
+whatever arrives. The file is sealed like the photograph (`media.ts`, kind
+`colour`), sits outside the photo limit, and `FullCopy` fetches it after the
+photographs.
+
+### Checked
+
+| Claim | Check |
+|---|---|
+| Only the hue is laid on, moved shapes are refused, a ratio is framed and not stretched | `colour-lock-check.swift` — 5 deliberate breakages, 5 caught |
+| What the model is told, what is believed back, the meter, and rule 8 on the image call | `colourise-check.mjs`, `data-collection-check.mjs` — 12 breakages, 12 caught |
+| The route's doors in order, and a failed round not charged | `colourise-route-check.mjs` |
+| Rule 9 on a failed colouring | `leak-check.mjs` |
+| The server's newest-yes rules | `subject-rules-check.mjs` — 6 breakages, 6 caught |
+| The phone's merge, and a yes sent only with its key | `colour-sync-check.swift` — 5 breakages, 5 caught |
+| The three answers, no offer on a phone kept to itself, and the sheet at both text sizes | `ColourTests` — the local-mode gate deleted, caught; `AccessibilitySweepTests.testColourSheet` |
+
+### Not yet
+
+- **One photograph is not a sample.** The model, the edge line and the cost were
+  all measured on one synthetic photograph. A grainy print may score below 0.85
+  and have a colouring refused that kept every edge; the first real family
+  photographs are the measurement that matters.
+- **The correcting round has not been measured.** The instruction's last
+  sentence, which of two disagreeing tellings to follow, was written after the
+  measurement, and no model has been shown a correction yet.
+- **Not deployed.** The Worker needs `usage_counter.colourisations` and the
+  three `subject` columns in D1 first — the `ALTER` statements are in
+  `schema.sql` beside the columns.
+- **No way to take a colouring back.** A later yes replaces an earlier one;
+  nothing removes one.
+- **The grandparent's own card**, where the question comes before any colour.
+- **The export and the full copy carry it by code, not by check.**
+  `export-check.mjs` and `full-copy-check.swift` were not extended.
+- **Paid colouring has no fair-use number** beside PLAN §10's five hours of
+  telling.

@@ -6,6 +6,7 @@
 
 import { authenticate } from './auth'
 import { boundedSeconds } from './budget'
+import { aspectRatio, colourise, toldText } from './colourise'
 import {
 	createFamily,
 	createInvite,
@@ -19,7 +20,14 @@ import {
 import { download, upload } from './media'
 import { extract, type Lang } from './extract'
 import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement'
-import { checkAISeconds, checkPhotoCount, recordAISeconds, usage } from './quota'
+import {
+	checkAISeconds,
+	checkColourisations,
+	checkPhotoCount,
+	recordAISeconds,
+	recordColourisation,
+	usage,
+} from './quota'
 import { pull, push } from './sync'
 import { transcribe } from './transcribe'
 
@@ -30,11 +38,13 @@ export interface Env {
 	MODEL_EXTRACT: string
 	MODEL_EXTRACT_FALLBACK: string
 	MODEL_TRANSCRIBE: string
+	MODEL_COLOURISE: string
 	RC_SECRET_KEY: string
 	RC_PROJECT_ID: string
 	RC_WEBHOOK_SECRET: string
 	FREE_PHOTO_LIMIT: string
 	FREE_AI_SECONDS_PER_MONTH: string
+	FREE_COLOURISATIONS_PER_MONTH: string
 	RC_ENTITLEMENT_ID: string
 	/// The two unauthenticated writes, metered. Optional on purpose — see
 	/// `withinRateLimit`.
@@ -76,6 +86,11 @@ async function readJSON<T>(request: Request): Promise<T | null> {
 /// compression — far beyond any single memory, but it stops a misbehaving client
 /// from sending a gigabyte.
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024
+
+/// The same bound for a photograph sent to be coloured. The phone keeps its
+/// photographs at 2048 px, measured at 340–990 kB (`media.ts`), so this is far
+/// past any real one and exists for the misbehaving client.
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024
 
 /// Meters the two routes that write without a member identity.
 ///
@@ -310,7 +325,8 @@ export default {
 				}
 				// Audio is not subject to the photo limit: the original audio
 				// is always uploaded, free tier included, because it is the
-				// core of the product.
+				// core of the product. Nor is a confirmed colouring, whose
+				// rounds were already counted on their way (`checkColourisations`).
 				return await upload(env, session, kind, await request.arrayBuffer())
 			} catch (err) {
 				return failure(err, 'media-upload')
@@ -507,6 +523,54 @@ export default {
 					return json(await extract(env, transcript, corrections, level, spokenLanguage(payload.lang)))
 				} catch (err) {
 					return failure(err, 'extract')
+				}
+			}
+
+			case '/colourise': {
+				let payload: { image?: unknown; told?: unknown; aspect?: unknown }
+				try {
+					payload = await request.json()
+				} catch {
+					return json({ error: 'invalid_json' }, 400)
+				}
+				// A JPEG, recognised by its first bytes: FF D8 FF is "/9j/" in
+				// base64. Every photograph is stored as one (`media.ts`), and the
+				// data URL this becomes has to name the type it carries.
+				if (typeof payload.image !== 'string' || !payload.image.startsWith('/9j/')) {
+					return json({ error: 'missing_image' }, 400)
+				}
+				if (payload.image.length > MAX_IMAGE_BYTES * 1.37) {
+					return json({ error: 'image_too_large' }, 413)
+				}
+				// Coloured by what was told, or not at all. A photograph nobody has
+				// said anything about would be painted by the model's guess alone,
+				// and a guess in the shape of a photograph is the one thing rule 4
+				// cannot let this route make.
+				const told = toldText(payload.told)
+				if (!told) return json({ error: 'missing_told' }, 400)
+
+				if (!session) return json({ error: 'unauthorized' }, 401)
+
+				try {
+					const denial = await checkColourisations(env, session)
+					if (denial) return json(denial, 402)
+
+					const image = await colourise(env, payload.image, told, aspectRatio(payload.aspect))
+
+					// Counted with the image in hand and not allowed to take it
+					// away, for the transcription meter's reason above: the round
+					// is already paid for upstream, and asking the app to repeat
+					// it would pay for it twice.
+					try {
+						await recordColourisation(env, session)
+					} catch (err) {
+						const detail = err instanceof Error ? `${err.name}: ${err.message}` : typeof err
+						console.error(`[colourise] the meter refused the round — ${detail}`)
+					}
+
+					return json({ image: image.data, type: image.type })
+				} catch (err) {
+					return failure(err, 'colourise')
 				}
 			}
 

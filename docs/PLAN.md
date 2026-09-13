@@ -221,6 +221,7 @@ It will. This is decided in advance so that nobody has to choose while exhausted
 
 | # | Target | How |
 |---|--------|-----|
+| 9 | **Colours by the telling** | Built 13 Sep 2026 by decision, as an addition with no removal beside it, which is exactly what §4.1 says an addition owes — so it is the first to go. Hiding it is one condition, `colourable` in `SubjectDetailScreen`; the Worker's route and its counter cost nothing while unused. ARCHITECTURE §24 |
 | 8 | ~~**Guessing round**~~ | **Cut 16 Aug 2026.** The isolation claim was half true: the two call sites really were one line each, but the round also owned two files, a model, a table, sync rows in both directions, a check script, a test file and 165 lines of §13 — about 1 100 lines in all. Budget a session, not a line |
 | 7 | Family tree / relationships | Person cards without edges |
 | 6 | Reporting and blocking | No longer mandatory without App Review |
@@ -545,11 +546,11 @@ finished.**
   Finnish VAT at 25.5 % and Apple's small-business commission at 15 %: 34 €
   from the year, 54 € from the archive.
 
-  **The one running cost is telling, and a one-time price needs a ceiling
-  for it.** Transcription costs about 0.3 c a minute (Gemini 3.6 Flash
+  **The running cost that matters is telling, and a one-time price needs a
+  ceiling for it.** Transcription costs about 0.3 c a minute (Gemini 3.6 Flash
   through OpenRouter: 0.75 $ per million audio tokens at 32 tokens a second,
-  plus the text out) and everything else rounds to nothing — a thousand
-  photographs are a cent a month. So the paid archive carries a fair-use
+  plus the text out) and everything else but colouring rounds to nothing — a
+  thousand photographs are a cent a month. So the paid archive carries a fair-use
   ceiling of **five hours of telling a month per family**, the same for both
   purchases so that there is one rule. Worst case 10.8 € a year against the
   54 € net, which the price covers for five years; a realistic twenty
@@ -559,6 +560,13 @@ finished.**
   arkistossa rajoja ei ole"* and the paywall's *"No limits"* are still true.
   When it becomes one number in `quota.ts` (v1.1), both sentences change
   with it and `quota-check.mjs` grows a case.
+
+  **Colouring is a second running cost, and on the paid archive it has no
+  ceiling either.** Added 13 Sep 2026 (ARCHITECTURE §24): about 3.4 c a
+  round, the price of eleven minutes of telling. The free tier gets five a
+  month on a counter of their own, and `quota.ts` reads the paid tier as
+  unlimited here as well. A hundred colourings are about 3 € of the archive's
+  54 € net; nothing yet stops a thousand.
 
   **The code for a perpetual purchase exists, and one path in it is worth
   knowing.** `entitlement.ts` reads a null `expires_at` as perpetual, the
@@ -635,6 +643,9 @@ finished.**
     Rule 7 puts the model key there and nowhere else. **No arrangement of the
     storage changes this**, which is the fact that rules out most of the easy
     answers below.
+  - So does a photograph somebody asks to colour, with the memories told about
+    it (`colourise.ts`, since 13 Sep 2026) — on that request only, said at the
+    button before anything is sent, and never from a phone kept to itself.
   - What keeps those words out of somebody's training set is one flag,
     `provider: { data_collection: "deny" }`, and rule 8 says it is unconditional
     rather than a per-call choice — "as a flag it would be forgotten on some
@@ -786,12 +797,16 @@ finished.**
      change; what that leaks is exactly what the comparison already needed.
 
      **It is not end-to-end, and it must not be called that where a user can
-     read it.** Three things stay outside it, each for a named reason:
+     read it.** Four things stay outside it, each for a named reason:
 
      - **Transcription still sends the recording in clear.** Rule 7 puts the
        model key in the Worker and a model cannot write down speech it cannot
        hear. What lever 3 changes is what is *left behind* — the rows and the
        objects, which is what a dump contains.
+     - **Colouring sends the photograph in clear**, with what was told about
+       it, for the same reason: a model cannot colour a picture it cannot see.
+       Only when somebody asks, and the colouring that is kept is sealed like
+       any photograph (ARCHITECTURE §24).
      - **The invitation carries the key**, so whatever app delivered that
        message has it. The server does not, which is the design; that is a
        smaller claim than end-to-end and `InviteShare` states it where the

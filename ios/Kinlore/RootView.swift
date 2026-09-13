@@ -414,6 +414,14 @@ struct SubjectDetailScreen: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var image: UIImage?
+    /// The family's confirmed colouring, drawn beside the photograph and never
+    /// in its place.
+    @State private var colourImage: UIImage?
+    @State private var isColouring = false
+    /// "Ei, kerron lisää" on the colour sheet: the telling opens once that
+    /// sheet has gone, because a sheet cannot be presented over a leaving one.
+    @State private var tellsAfterColouring = false
+    @AppStorage(Elder.largerTextKey) private var largerText = false
     @State private var isTelling = false
     @State private var isAsking = false
     @State private var isCorrectingName = false
@@ -465,6 +473,27 @@ struct SubjectDetailScreen: View {
             }
     }
 
+    /// Whether this photograph can be coloured by what was told about it: it is
+    /// on screen, something has been said about it, this is not the
+    /// grandparent's phone, and this phone was not told to keep its archive to
+    /// itself.
+    ///
+    /// Something told, because the Worker refuses a colouring with nothing to
+    /// go by — a guess in the shape of a photograph is rule 4's failure — and a
+    /// button that can only ever be refused is a broken button. Not on her phone
+    /// (the text-floor signal), because there the question has to come before
+    /// the colours, and the card that asks it first is not built. And not on a
+    /// phone kept to itself, whose onboarding promised "Muistot jäävät tähän
+    /// puhelimeen": colouring sends the photograph and those memories to the
+    /// Worker, and even a refusal there arrives after the bytes have left. It
+    /// is the gate that keeps transcription off that phone (`TellScreen`).
+    private var colourable: Bool {
+        current.kind == .photo && image != nil && !largerText && !session.isLocalByChoice
+            && store.memories(for: subject.id).contains {
+                !$0.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+    }
+
     /// The words of the deletion, by what is being deleted. Three literal
     /// keys rather than one with the kind interpolated: each is read as a
     /// whole sentence by somebody who is 80, and the translation table holds
@@ -500,6 +529,29 @@ struct SubjectDetailScreen: View {
                     photoView
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                }
+            }
+
+            // The colours the family said yes to, under the photograph and never
+            // over it: the picture as it was taken stays the first thing on the
+            // card, and this one carries its mark in its own pixels.
+            if subject.kind == .photo, let colourImage {
+                Section {
+                    Image(uiImage: colourImage)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .accessibilityLabel("Väritetty kuva. Värit ovat tekoälyn arvaus kerrotun mukaan.")
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                } header: {
+                    Text("Värit kerronnan mukaan")
+                        .foregroundStyle(Elder.supporting)
+                } footer: {
+                    if let name = current.colourConfirmedByName {
+                        Text("Vahvisti \(name)")
+                            .foregroundStyle(Elder.supporting)
+                    }
                 }
             }
 
@@ -660,6 +712,28 @@ struct SubjectDetailScreen: View {
                 }
             }
 
+            if colourable {
+                Section {
+                    Button {
+                        isColouring = true
+                    } label: {
+                        Label("Väritä kerronnan mukaan", systemImage: "paintpalette")
+                            .font(.body.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
+                    }
+                    .buttonStyle(.bordered)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                } footer: {
+                    // Said at the button, before anything leaves: this is the
+                    // one place in the app a photograph leaves the phone without
+                    // being sealed first, and the words told about it go with it.
+                    Text("Kuva ja siitä kerrotut muistot lähetetään palveluumme väritettäväksi. Mitään ei tallenneta ennen kuin vastaat.")
+                        .foregroundStyle(Elder.supporting)
+                }
+            }
+
             let open = store.questions.filter { $0.subjectID == subject.id && !$0.answered }
             if !open.isEmpty {
                 Section {
@@ -751,6 +825,29 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isAsking) {
             AskQuestionSheet(subject: subject)
+        }
+        .sheet(isPresented: $isColouring, onDismiss: {
+            if tellsAfterColouring {
+                tellsAfterColouring = false
+                isTelling = true
+            }
+        }) {
+            if let image {
+                ColourSheet(subject: current, photograph: image) { tellsAfterColouring = true }
+            }
+        }
+        // Keyed on the object as well as the file: a yes confirmed on another
+        // phone arrives as a key with no file here yet, and is fetched.
+        .task(id: [current.colourR2Key, current.colourImageFilename]) {
+            guard current.colourR2Key != nil || current.colourImageFilename != nil,
+                  let filename = await MediaLoader.colourFilename(for: current, store: store, session: session)
+            else {
+                colourImage = nil
+                return
+            }
+            colourImage = await Task.detached(priority: .userInitiated) {
+                MediaStore.loadImage(named: filename)
+            }.value
         }
         .sheet(isPresented: $isDating) {
             DateSheet(subject: current)

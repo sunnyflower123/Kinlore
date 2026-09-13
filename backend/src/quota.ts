@@ -2,8 +2,9 @@
 ///
 /// Two principles govern this file:
 ///
-/// 1. **Telling is never paywalled.** The quota limits photos and AI minutes,
-///    not the act of writing a memory. A typed memory always goes through.
+/// 1. **Telling is never paywalled.** The quota limits photos, AI minutes and
+///    colourisations, not the act of writing a memory. A typed memory always
+///    goes through.
 /// 2. **The original audio is always kept.** Hitting the quota does not reject a
 ///    recording, it defers its transcription — the audio is the product, not an
 ///    intermediate step.
@@ -16,7 +17,7 @@ import { reconcileStaleEntitlement } from './entitlement.ts'
 
 export type QuotaDenial = {
 	error: 'quota_exceeded'
-	kind: 'ai_seconds' | 'photos'
+	kind: 'ai_seconds' | 'photos' | 'colourisations'
 	used: number
 	limit: number
 }
@@ -126,17 +127,55 @@ export async function checkPhotoCount(env: Env, session: Session): Promise<Quota
 	return null
 }
 
+// ---------------------------------------------------------------- colourisations
+
+/// Photographs coloured by the telling, per month, on a counter of their own.
+///
+/// Never out of the telling minutes: the payer is not the teller (PLAN.md §9),
+/// and a grandchild colouring photographs must not use up the time a
+/// grandmother has to talk. Every round counts, a "not quite" included — each
+/// one is a whole new image upstream and costs the same, 3.4 c on the lite model
+/// and 6.8 c on the flash one (measured 13 Sep 2026).
+export async function checkColourisations(env: Env, session: Session): Promise<QuotaDenial | null> {
+	if (await isPaid(env, session.familyID)) return null
+
+	const limit = Number(env.FREE_COLOURISATIONS_PER_MONTH) || 5
+	const row = await env.DB.prepare(
+		'SELECT colourisations FROM usage_counter WHERE family_id = ? AND period = ?',
+	)
+		.bind(session.familyID, period())
+		.first<{ colourisations: number }>()
+
+	const used = row?.colourisations ?? 0
+	if (used >= limit) {
+		return { error: 'quota_exceeded', kind: 'colourisations', used, limit }
+	}
+	return null
+}
+
+/// Recorded once the image has come back, like the minutes: a round that failed
+/// upstream delivered nothing, and the family is not charged for it.
+export async function recordColourisation(env: Env, session: Session): Promise<void> {
+	await env.DB.prepare(
+		`INSERT INTO usage_counter (family_id, period, colourisations)
+		 VALUES (?, ?, 1)
+		 ON CONFLICT(family_id, period) DO UPDATE SET colourisations = colourisations + 1`,
+	)
+		.bind(session.familyID, period())
+		.run()
+}
+
 // ---------------------------------------------------------------- status
 
 /// The family's usage for the app. The paywall needs this so it can show what is
 /// left before the limit is reached.
 export async function usage(env: Env, session: Session) {
 	const paid = await isPaid(env, session.familyID)
-	const seconds = await env.DB.prepare(
-		'SELECT ai_seconds FROM usage_counter WHERE family_id = ? AND period = ?',
+	const counter = await env.DB.prepare(
+		'SELECT ai_seconds, colourisations FROM usage_counter WHERE family_id = ? AND period = ?',
 	)
 		.bind(session.familyID, period())
-		.first<{ ai_seconds: number }>()
+		.first<{ ai_seconds: number; colourisations: number }>()
 	const photos = await env.DB.prepare(
 		`SELECT count(*) AS n FROM subject
 		 WHERE family_id = ? AND kind = 'photo' AND deleted_at IS NULL`,
@@ -147,7 +186,11 @@ export async function usage(env: Env, session: Session) {
 	return {
 		entitlement: paid ? 'archive' : 'free',
 		period: period(),
-		aiSeconds: { used: seconds?.ai_seconds ?? 0, limit: paid ? null : Number(env.FREE_AI_SECONDS_PER_MONTH) || 600 },
+		aiSeconds: { used: counter?.ai_seconds ?? 0, limit: paid ? null : Number(env.FREE_AI_SECONDS_PER_MONTH) || 600 },
 		photos: { used: photos?.n ?? 0, limit: paid ? null : Number(env.FREE_PHOTO_LIMIT) || 20 },
+		colourisations: {
+			used: counter?.colourisations ?? 0,
+			limit: paid ? null : Number(env.FREE_COLOURISATIONS_PER_MONTH) || 5,
+		},
 	}
 }

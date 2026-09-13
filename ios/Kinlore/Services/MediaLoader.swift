@@ -46,6 +46,24 @@ enum MediaLoader {
         return filename
     }
 
+    /// The same for a photograph's confirmed colours.
+    static func colourFilename(
+        for subject: Subject,
+        store: MemoryStore,
+        session: Session
+    ) async -> String? {
+        if let filename = subject.colourImageFilename, MediaStore.exists(filename) {
+            return filename
+        }
+        guard let key = subject.colourR2Key,
+              let data = await fetch(key: key, session: session),
+              let filename = MediaStore.saveRaw(data, extension: "jpg")
+        else { return nil }
+
+        store.setLocalColour(subjectID: subject.id, filename: filename)
+        return filename
+    }
+
     /// Fetches and unseals. PLAN.md §10 lever 3.
     ///
     /// Bytes that were never sealed pass through, so a family from before lever

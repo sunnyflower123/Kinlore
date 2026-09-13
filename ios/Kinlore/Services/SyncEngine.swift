@@ -126,6 +126,11 @@ final class SyncEngine {
                 + store.subjects
                     .filter { $0.deletedAt == nil && $0.mergedInto == nil && $0.r2Key != nil }
                     .map { FullCopy.Item(id: $0.id, kind: .photo, key: $0.r2Key!, filename: $0.imageFilename) }
+                // And the colours the family confirmed, which the copy fetches
+                // after the photographs they colour.
+                + store.subjects
+                    .filter { $0.deletedAt == nil && $0.mergedInto == nil && $0.colourR2Key != nil }
+                    .map { FullCopy.Item(id: $0.id, kind: .colour, key: $0.colourR2Key!, filename: $0.colourImageFilename) }
             },
             exists: { MediaStore.exists($0) },
             fetch: { key in await MediaLoader.fetch(key: key, session: session) },
@@ -134,6 +139,7 @@ final class SyncEngine {
                 switch item.kind {
                 case .audio: store.setLocalAudio(memoryID: item.id, filename: filename, saving: false)
                 case .photo: store.setLocalImage(subjectID: item.id, filename: filename, saving: false)
+                case .colour: store.setLocalColour(subjectID: item.id, filename: filename, saving: false)
                 }
             },
             flush: { store.save() },
@@ -287,6 +293,19 @@ final class SyncEngine {
             }
         }
         photosOverQuota = refused
+
+        // A confirmed colouring, sealed like the photograph it colours. It is
+        // outside the photo limit on the server, and a failure is simply tried
+        // again next round: the yes stays on this phone, and does not travel,
+        // until its file has a key.
+        for subject in store.coloursAwaitingUpload() {
+            guard let filename = subject.colourImageFilename,
+                  let data = try? Data(contentsOf: MediaStore.url(for: filename))
+            else { continue }
+            if let key = try? await media.upload(data: seal(data, familyKey), kind: .colour) {
+                store.setColourR2Key(subjectID: subject.id, key: key)
+            }
+        }
 
         for memory in store.memoriesAwaitingUpload() {
             guard let filename = memory.audioFilename,

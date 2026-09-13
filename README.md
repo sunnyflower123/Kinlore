@@ -128,7 +128,7 @@ the meter said no. Every push still gets the backend type check, on Linux.
 
 | Claim | Command |
 |---|---|
-| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 146 UI tests, 57 of them an accessibility sweep at both text sizes |
+| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 152 UI tests, 58 of them an accessibility sweep at both text sizes |
 | One purchase unlocks one family, and never a second | `node scripts/entitlement-binding-check.mjs` |
 | The paid archive is offered on a rhythm, and never beside a name a human is being asked to confirm | `swiftc … scripts/upsell-rhythm-check.swift` |
 | A place's coordinates follow its title through sync, and rubbish is refused | `node scripts/place-sync-check.mjs` |
@@ -256,7 +256,9 @@ and the argument for keeping it in v1 is written down beside it.
 **The audio still leaves the phone**, even with R2 disabled, because
 transcription happens in the Worker. End-to-end in the strict sense — a server
 that never holds the plaintext at all — is incompatible with server-side
-transcription, and sealing at rest does not close that hole. A local-only mode
+transcription, and sealing at rest does not close that hole. A photograph leaves
+the same way when somebody asks for its colours, with the memories told about
+it; the button says so before anything is sent. A local-only mode
 already exists in the code (`Session.mode`), but onboarding does not yet offer
 it, and the only place the user is told the audio travels is the microphone
 prompt — which comes *after* the archive is created. That barrier is the order

@@ -1213,6 +1213,22 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The question over a colouring: the picture, a heading in the serif, and
+    /// three answers. `-seed blind` is the fixture whose photograph has both a
+    /// picture and a telling, which is what the colour button waits for, and
+    /// the stub answers with a tint that keeps every edge — so the sheet
+    /// reaches its question rather than its refusal, and no credit is spent.
+    /// Audited once the stub's answer is on screen: the progress view before
+    /// it never stops drawing.
+    func testColourSheet() throws {
+        try sweep("Värit kerronnan mukaan", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Väritä kerronnan mukaan"], in: app, "the way to colour the photograph").tap()
+            require(app.staticTexts["Näyttääkö tältä?"], "the question over the colouring")
+            XCTAssertTrue(hasStoppedDrawing(app), "the colour sheet was still being drawn when the audit ran")
+        }
+    }
+
     /// The joiner's landing: straight onto Muistot, with a waiting state in
     /// place of an invitation that would be false. `-seed arrival` sets the
     /// same one-shot flag a real join sets, so the navigation bar reading

@@ -388,6 +388,28 @@ final class MemoryStore {
         save()
     }
 
+    /// A photograph's colours, the moment somebody said yes to them.
+    ///
+    /// Only `ColourSheet`'s "Kyllä" calls this, and only with a file the lock
+    /// made from the photograph's own brightness. The original is not touched:
+    /// `imageFilename` stays the picture as it was taken, and this is a second
+    /// file beside it. A later yes replaces an earlier one — the newest word
+    /// from the family wins — and the file it replaces is deleted, because
+    /// nothing else points at it.
+    func setColour(subjectID: String, filename: String, confirmedByID: String, confirmedByName: String) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        let replaced = subjects[index].colourImageFilename
+        subjects[index].colourImageFilename = filename
+        // A new yes is a new file, and it travels once it has a key of its own.
+        subjects[index].colourR2Key = nil
+        subjects[index].colourConfirmedByID = confirmedByID
+        subjects[index].colourConfirmedByName = confirmedByName
+        subjects[index].colourConfirmedAt = .now
+        dirtySubjects.insert(subjectID)
+        save()
+        if let replaced, replaced != filename { MediaStore.delete(filename: replaced) }
+    }
+
     /// Renames a subject. Used when the teller corrects a name that speech
     /// recognition misheard — that is the only moment the error can still be
     /// fixed, because later nobody knows what was said on the recording.
@@ -815,7 +837,11 @@ final class MemoryStore {
                 // longer referenced, and never uploaded even after the family
                 // goes paid.
                 incoming.imageFilename = subjects[index].imageFilename
-                subjects[index] = incoming
+                // The colours follow the same idea with one rule more, which
+                // `withColours` keeps: see there.
+                let merged = incoming.withColours(from: subjects[index])
+                if let stale = merged.stale { MediaStore.delete(filename: stale) }
+                subjects[index] = merged.row
             } else {
                 subjects.append(incoming)
             }
@@ -1005,6 +1031,26 @@ final class MemoryStore {
     func setLocalImage(subjectID: String, filename: String, saving: Bool = true) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].imageFilename = filename
+        if saving { save() }
+    }
+
+    /// Photographs whose confirmed colours are still only on this phone.
+    func coloursAwaitingUpload() -> [Subject] {
+        subjects.filter { $0.deletedAt == nil && $0.colourImageFilename != nil && $0.colourR2Key == nil }
+    }
+
+    func setColourR2Key(subjectID: String, key: String) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].colourR2Key = key
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
+    /// The local copy of colours confirmed on another phone. Not marked dirty,
+    /// like `setLocalImage`: the filename is this device's own business.
+    func setLocalColour(subjectID: String, filename: String, saving: Bool = true) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].colourImageFilename = filename
         if saving { save() }
     }
 

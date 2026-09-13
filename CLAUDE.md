@@ -276,7 +276,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 57 accessibility sweeps that already run here, each
+contrast rows, against the 58 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false
@@ -755,6 +755,29 @@ node scripts/transcribe-budget-check.mjs
 # Costs nothing: no Worker, no key, no network, no model. After touching
 # extract.ts.
 node scripts/extract-shaping-check.mjs
+
+# Colours by the telling (ARCHITECTURE §24), in four checks that cost nothing —
+# no key, no network. First the lock between an image model's reply and a
+# family's photograph: lightness from the photograph and only the hue from the
+# model, a reply whose shapes moved refused, a ratio framed and not stretched.
+# A lock that got this wrong still hands back a fine colour photograph, with
+# every face the model's. Then the phone's half of the colour sync rules, what
+# the model is told and what is believed back, and the route's doors through a
+# keyless Worker of its own. The server's half of the sync rules is in
+# `subject-rules-check.mjs`, which needs `npx wrangler dev`. After touching
+# ColourLock.swift, colourise.ts, or the colour fields in MemoryStore+Sync.swift
+# or sync.ts.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/colour-lock-check \
+  scripts/colour-lock-check.swift ios/Kinlore/Services/ColourLock.swift \
+  && /tmp/colour-lock-check
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/colour-sync-check \
+  scripts/colour-sync-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
+  ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
+  && /tmp/colour-sync-check
+node scripts/colourise-check.mjs
+node scripts/colourise-route-check.mjs
 
 # The palette against its own argument. Elder.swift carries twenty-five
 # contrast ratios in its comments — "15.17:1 under primary text", "5.59:1 on

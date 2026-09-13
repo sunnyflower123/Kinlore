@@ -18,7 +18,8 @@ import Observation
 ///   - After every successful sync, in the background: what is missing and
 ///     nothing else. A file that is already here is never fetched again.
 ///   - Voices before photographs. The recording is the thing that cannot be
-///     made a second time; a paper photograph can be scanned twice.
+///     made a second time; a paper photograph can be scanned twice. And a
+///     photograph before the colours confirmed for it, which were made from it.
 ///   - A cheap network only — never cellular, never a hotspot. A grandmother's
 ///     phone that never meets Wi-Fi never copies, and the family screen says
 ///     so, which is the true sentence rather than a quietly empty one.
@@ -40,7 +41,17 @@ import Observation
 final class FullCopy {
     struct Item: Equatable {
         enum Kind: Equatable {
-            case audio, photo
+            case audio, photo, colour
+
+            /// The order a round fetches in. A colouring comes after the
+            /// photograph it colours: it was made from it.
+            var rank: Int {
+                switch self {
+                case .audio: 0
+                case .photo: 1
+                case .colour: 2
+                }
+            }
         }
 
         let id: String
@@ -164,10 +175,10 @@ final class FullCopy {
         return ports.exists(filename)
     }
 
-    /// Voices first; within a kind, the order the rows came in.
+    /// Voices first, then photographs, then the colours confirmed for them;
+    /// within a kind, the order the rows came in.
     private static func order(_ a: Item, _ b: Item) -> Bool {
-        if a.kind != b.kind { return a.kind == .audio }
-        return false
+        a.kind.rank < b.kind.rank
     }
 
     #if DEBUG

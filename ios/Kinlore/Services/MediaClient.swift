@@ -7,6 +7,8 @@ struct MediaClient {
 
     enum Kind: String {
         case photo, audio
+        /// A photograph's confirmed colours, stored beside it (`media.ts`).
+        case colour
     }
 
     private struct UploadReply: Decodable {

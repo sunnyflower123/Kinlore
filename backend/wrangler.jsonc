@@ -49,10 +49,11 @@
 	],
 
 	"vars": {
-		// Free tier limits. Photos and AI minutes are limited — writing
-		// memories never is, see rule 2 in CLAUDE.md.
+		// Free tier limits. Photos, AI minutes and colourisations are limited —
+		// writing memories never is, see rule 2 in CLAUDE.md.
 		"FREE_PHOTO_LIMIT": "20",
 		"FREE_AI_SECONDS_PER_MONTH": "600",
+		"FREE_COLOURISATIONS_PER_MONTH": "5",
 		"RC_ENTITLEMENT_ID": "archive",
 		// The project identifier from the RevenueCat dashboard. Not a secret,
 		// unlike RC_SECRET_KEY and RC_WEBHOOK_SECRET.
@@ -99,7 +100,30 @@
 		// The third attempt switches model: the measured fault was in the
 		// provider (finish_reason=error), and the same model again does not help.
 		"MODEL_EXTRACT_FALLBACK": "openai/gpt-4o-mini",
-		"MODEL_TRANSCRIBE": "google/gemini-3.6-flash"
+		"MODEL_TRANSCRIBE": "google/gemini-3.6-flash",
+
+		// Colouring a photograph by what the family told about it. Chosen by
+		// measurement as well, 13 Sep 2026: one synthetic 1950s photograph, the
+		// same instruction and Finnish telling, through chat completions with
+		// rule 8's deny, each cost read from the reply's own `usage.cost`:
+		//
+		//                                cost    edges   faces     told colours
+		//   gemini-3.1-flash-lite-image  3.39 c  0.971   the same  followed  ← chosen
+		//   gemini-3.1-flash-image       6.78 c  0.964   the same  followed
+		//   gemini-2.5-flash-image       3.94 c  0.683   the same  followed; boots changed
+		//   gpt-5-image-mini             4.87 c  0.125   REDRAWN   followed; square frame
+		//
+		// "Edges" is the correlation of the reply's edge map with the original's,
+		// unshifted, where 1 is every edge in place; "faces" is by eye. The last
+		// row is the reason it is measured rather than read off a price list: that
+		// model repainted the grandmother as somebody else, and charged more for
+		// it than the chosen one.
+		//
+		// The lite model spread the told red of the house onto a window frame and a
+		// cardigan nobody mentioned, where flash kept them apart. At half the price
+		// a correcting second round costs what one flash round does. One photograph
+		// is not a sample.
+		"MODEL_COLOURISE": "google/gemini-3.1-flash-lite-image"
 	},
 
 	"observability": { "enabled": true }

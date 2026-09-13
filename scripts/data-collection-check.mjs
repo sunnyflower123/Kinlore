@@ -5,26 +5,29 @@
 // what keeps them out of somebody else's training set. CLAUDE.md says why it is
 // not a per-call option: "as a flag it would be forgotten on some call". That
 // makes it a rule about *every* request, which is exactly the kind of rule
-// reading cannot keep — there are three call sites today and the fourth will be
-// written by somebody in a hurry.
+// reading cannot keep — there were three call sites when this was written, and
+// the fourth, colourisation on 13 Sep 2026, does not go through `complete()` at
+// all.
 //
 // It also cannot be checked by making a request. A real call costs credits, and
 // the one thing a test must never do is send a family's words upstream to prove
 // they are being protected.
 //
-// So the request is built and then not sent: `complete()` is imported straight
-// out of `backend/src/openrouter.ts` — Node runs TypeScript as it is — and
-// `fetch` is replaced with something that keeps the request and answers like
-// OpenRouter. Nothing leaves this machine, nothing is spent, and what is
-// asserted is the actual body the Worker would have sent rather than a reading
-// of the source.
+// So the request is built and then not sent: `complete()` and `completeImage()`
+// are imported straight out of `backend/src/openrouter.ts` — Node runs
+// TypeScript as it is — and `fetch` is replaced with something that keeps the
+// request and answers like OpenRouter. Nothing leaves this machine, nothing is
+// spent, and what is asserted is the actual body the Worker would have sent
+// rather than a reading of the source.
 //
 // Four properties:
 //
-//   1. Every call carries the deny — plain, structured, and with audio in it.
-//   2. **The structured branch especially**, because it reaches into
-//      `body.provider` to add `require_parameters` and is the one place where
-//      the object could be replaced and the deny quietly lost.
+//   1. Every call carries the deny — plain, structured, with audio in it, and
+//      with a photograph going up and another coming back.
+//   2. **The structured branch especially**, because it adds
+//      `require_parameters` to the same object and is the one place where the
+//      object could be replaced and the deny quietly lost — and because one
+//      shared object would carry that addition into every call after it.
 //   3. A caller cannot turn it off. It is not an option, and passing one is
 //      ignored rather than honoured.
 //   4. The key travels in the Authorization header and is nowhere in the body,
@@ -37,7 +40,7 @@ import { fileURLToPath } from 'node:url'
 import { pathToFileURL } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const { complete } = await import(
+const { complete, completeImage } = await import(
 	pathToFileURL(join(root, 'backend', 'src', 'openrouter.ts')).href
 )
 
@@ -55,25 +58,30 @@ function check(what, condition, detail = '') {
 const KEY = 'sk-or-not-a-real-key'
 const SAID = 'Aino kertoi kuinka mökki paloi.'
 
+const WORDS = { choices: [{ message: { content: '{"ok":true}' }, finish_reason: 'stop' }] }
+const PICTURE = {
+	choices: [
+		{
+			message: { content: null, images: [{ image_url: { url: 'data:image/jpeg;base64,/9j/4AAQ' } }] },
+			finish_reason: 'stop',
+		},
+	],
+}
+
 /// Builds the request the Worker would send, and keeps it here.
 ///
-/// The reply is the smallest shape `complete` accepts, so the function runs to
+/// The reply is the smallest shape the call accepts, so the function runs to
 /// the end rather than throwing on the way — a request captured from a call
 /// that failed early would prove nothing about the calls that succeed.
-async function request(options) {
+async function request(options, call = complete, reply = WORDS) {
 	let captured = null
 	const real = globalThis.fetch
 	globalThis.fetch = async (url, init) => {
 		captured = { url, init }
-		return {
-			ok: true,
-			json: async () => ({
-				choices: [{ message: { content: '{"ok":true}' }, finish_reason: 'stop' }],
-			}),
-		}
+		return { ok: true, json: async () => reply }
 	}
 	try {
-		await complete({ OPENROUTER_API_KEY: KEY }, options.messages, options.opts)
+		await call({ OPENROUTER_API_KEY: KEY }, options.messages, options.opts)
 	} finally {
 		globalThis.fetch = real
 	}
@@ -92,9 +100,9 @@ console.log('— every request says no (rule 8) —')
 	)
 }
 {
-	// The branch that reaches into `body.provider`. If that object is ever
-	// rebuilt rather than added to, this is where the deny disappears — and
-	// every structured call is an extraction, which is the memory itself.
+	// The branch that adds to `body.provider`. If that object is ever rebuilt
+	// rather than added to, this is where the deny disappears — and every
+	// structured call is an extraction, which is the memory itself.
 	const { body } = await request({
 		messages: plain.messages,
 		opts: {
@@ -132,6 +140,46 @@ console.log('— every request says no (rule 8) —')
 	check(
 		'and a request carrying the recording itself',
 		body.provider?.data_collection === 'deny',
+		JSON.stringify(body.provider),
+	)
+}
+{
+	// Colourisation: a family photograph goes up with what was told about it,
+	// and a new picture comes back. It is built by `completeImage()`, not
+	// `complete()`, so nothing above says anything about it.
+	const { body } = await request(
+		{
+			messages: [
+				{
+					role: 'user',
+					content: [
+						{ type: 'text', text: SAID },
+						{ type: 'image_url', image_url: { url: 'data:image/jpeg;base64,/9j/4AAQ' } },
+					],
+				},
+			],
+			opts: { model: 'a/b', aspectRatio: '4:3' },
+		},
+		completeImage,
+		PICTURE,
+	)
+	check(
+		'and a request carrying a photograph',
+		body.provider?.data_collection === 'deny',
+		JSON.stringify(body.provider),
+	)
+}
+{
+	// Built fresh for every request. Were it one shared object, the structured
+	// call's `require_parameters` would ride along on every call after it.
+	await request({
+		messages: plain.messages,
+		opts: { model: 'a/b', schema: { name: 'muisto', schema: { type: 'object' } } },
+	})
+	const { body } = await request(plain)
+	check(
+		"and one call's additions do not stick to the next",
+		body.provider?.data_collection === 'deny' && body.provider?.require_parameters === undefined,
 		JSON.stringify(body.provider),
 	)
 }

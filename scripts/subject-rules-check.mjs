@@ -190,6 +190,98 @@ try {
 		const s = (await subjects(mummo)).get(rejected)
 		check('and neither is a rejection', Boolean(s?.deleted_at), String(s?.deleted_at))
 	}
+
+	console.log('— a colouring the family said yes to —')
+	{
+		// Every object this family owns lives under its id, and a yes may only
+		// point at one of those.
+		const familyID = (await send('/family', { headers: mummo.auth })).body.id
+		const own = (name) => `${familyID}/${name}.jpg`
+		const photo = randomUUID()
+		// An hour ago, so that every moment below is safely in the past.
+		const T = Math.floor(Date.now() / 1000) - 3600
+		const yes = (key, at, by = memberID) => ({
+			id: photo,
+			kind: 'photo',
+			title: '',
+			r2_key: own('photo'),
+			colour_r2_key: key,
+			colour_confirmed_by: by,
+			colour_confirmed_at: at,
+			created_at: 0,
+		})
+		const colours = async () => {
+			const s = (await subjects(mummo)).get(photo)
+			return {
+				key: s?.colour_r2_key,
+				by: s?.colour_confirmed_by,
+				at: s?.colour_confirmed_at,
+				name: s?.colour_confirmed_by_name,
+				title: s?.title,
+			}
+		}
+
+		await push(mummo, [yes(own('colour-1'), T)])
+		let c = await colours()
+		check(
+			'travels whole: the file, the name and the moment',
+			c.key === own('colour-1') && c.by === memberID && c.at === T,
+			JSON.stringify(c),
+		)
+		check("and the name is read from the family, like a telling's author's", c.name === 'Mummo', String(c.name))
+
+		// A phone that has never seen the colouring, naming the photograph.
+		await push(mummo, [{ id: photo, kind: 'photo', title: 'Mökin ranta', r2_key: own('photo'), created_at: 0 }])
+		c = await colours()
+		check(
+			'an older phone naming the photograph does not take the colours away',
+			c.key === own('colour-1') && c.title === 'Mökin ranta',
+			JSON.stringify(c),
+		)
+
+		await push(mummo, [yes(own('colour-0'), T - 600)])
+		c = await colours()
+		check('an older yes arriving late does not replace a newer one', c.key === own('colour-1'), JSON.stringify(c))
+
+		await push(mummo, [yes(own('colour-2'), T + 600)])
+		c = await colours()
+		check('a newer yes does', c.key === own('colour-2') && c.at === T + 600, JSON.stringify(c))
+
+		await push(mummo, [yes(own('colour-3'), T + 1200, randomUUID())])
+		c = await colours()
+		check(
+			"nobody can put another member's name on a yes",
+			c.key === own('colour-2') && c.by === memberID,
+			JSON.stringify(c),
+		)
+
+		await push(mummo, [yes(`${randomUUID()}/colour-4.jpg`, T + 1800)])
+		c = await colours()
+		check("nor point one at another family's objects", c.key === own('colour-2'), JSON.stringify(c))
+
+		await push(mummo, [yes(own('colour-5'), T + 10 * 365 * 86_400)])
+		c = await colours()
+		check(
+			'a moment in the future is held to now, so it cannot lock out every later yes',
+			c.key === own('colour-5') && c.at <= Math.floor(Date.now() / 1000) + 1,
+			JSON.stringify(c),
+		)
+
+		const somebody = randomUUID()
+		await push(mummo, [
+			{
+				id: somebody,
+				kind: 'person',
+				title: 'Eeva',
+				colour_r2_key: own('colour-6'),
+				colour_confirmed_by: memberID,
+				colour_confirmed_at: T,
+				created_at: 0,
+			},
+		])
+		const eeva = (await subjects(mummo)).get(somebody)
+		check('and only a photograph has colours to confirm', eeva?.colour_r2_key === null, String(eeva?.colour_r2_key))
+	}
 } catch (error) {
 	failures += 1
 	console.log(`\n  FAIL ${error.message}`)

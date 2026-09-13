@@ -31,7 +31,8 @@
 //      passes beautifully when the log is empty, which is why the log must
 //      first be shown to contain the failure line at all.
 //   3. **The words the family said are in neither place.** A transcript, a name
-//      being corrected, and the audio itself.
+//      being corrected, the audio itself, and a photograph sent with what was
+//      told about it.
 //
 //   node scripts/leak-check.mjs
 
@@ -55,6 +56,10 @@ const API = `http://localhost:${PORT}`
 const SAID = 'Aino kertoi kuinka Kuusamon mökki paloi talvella 1957'
 const NAME = 'Eeva-Liisa Karjalainen'
 const AUDIO = 'QUlOT05LRVJUT0lLVVVTQU1P'
+// A JPEG's first bytes and then the family's. The route turns away anything
+// that does not open like a JPEG, and a request refused at the door never
+// reaches the failure this check exists to look at.
+const PHOTO = '/9j/4AAQS0lOTE9SRUtVVkFBSU5P'
 
 let failures = 0
 
@@ -127,7 +132,7 @@ try {
 	// Stop rather than spend.
 	if (health.hasKey) throw new Error('this Worker has a key — refusing to call upstream')
 
-	// Both model routes are behind a session, so this Worker needs a family of
+	// Every model route is behind a session, so this Worker needs a family of
 	// its own — its `--persist-to` database is empty, which is the point of it.
 	execFileSync(
 		'npx',
@@ -186,13 +191,28 @@ try {
 			`${transcription.status} ${JSON.stringify(transcription.body)}`,
 		)
 	}
+	{
+		// The photograph and what was told about it, which go up together.
+		const colourisation = await post(
+			'/colourise',
+			{ image: PHOTO, told: [SAID, NAME], aspect: '4:3' },
+			auth,
+		)
+		check(
+			'and so does a colourisation failure',
+			colourisation.status === 502 &&
+				colourisation.body.error === 'upstream_failed' &&
+				Object.keys(colourisation.body).length === 1,
+			`${colourisation.status} ${JSON.stringify(colourisation.body)}`,
+		)
+	}
 
 	// Workers Logs is written from this process's output, so give it a moment
 	// to arrive before reading it.
 	await new Promise((resolve) => setTimeout(resolve, 2000))
 	// wrangler wraps each line in colour codes; strip them so a search for a
 	// leaked word cannot be defeated by an escape sequence landing inside it.
-	const log = worker.read().replace(/\u001b\[[0-9;]*m/g, '')
+	const log = worker.read().replace(/\[[0-9;]*m/g, '')
 
 	console.log('— and the log is not where it went instead (second half) —')
 	{
@@ -201,7 +221,7 @@ try {
 		// an empty file.
 		check(
 			'the failure did reach the log',
-			/\[extract\]/.test(log) && /\[transcribe\]/.test(log),
+			/\[extract\]/.test(log) && /\[transcribe\]/.test(log) && /\[colourise\]/.test(log),
 			`${log.length} characters captured`,
 		)
 	}
@@ -210,6 +230,7 @@ try {
 		['a fragment of it', 'Kuusamon mökki paloi'],
 		['the name being corrected', NAME],
 		['the audio', AUDIO],
+		['the photograph', PHOTO],
 	]) {
 		check(`${what} is not in the log`, !log.includes(secret))
 	}

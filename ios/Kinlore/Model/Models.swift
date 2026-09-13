@@ -134,6 +134,22 @@ struct Subject: Identifiable, Codable, Hashable {
     /// Where a `place` lives on the map. Set by `PlaceResolver` from the title,
     /// nil on every other kind of subject and on any name nothing recognised.
     var place: PlaceHint?
+    /// A photograph's colours as the family told them, in a file of their own —
+    /// never in place of `imageFilename`, which stays the photograph as it was
+    /// taken. Nil until somebody looked at a colouring and said yes to it
+    /// (`ColourSheet`), which is the only thing that writes it (rule 4).
+    ///
+    /// Optional, all four of these, because a file written before they existed
+    /// must still load and `Subject` has no hand-written decoder (rule 10).
+    var colourImageFilename: String?
+    /// The R2 key of that file, the same on every phone. Nil until this phone's
+    /// yes has been uploaded — and a yes does not travel until it has one.
+    var colourR2Key: String?
+    /// Who said yes, and when. The colours are a guess until a person vouches
+    /// for them, and the card says whose word they stand on.
+    var colourConfirmedByID: String?
+    var colourConfirmedByName: String?
+    var colourConfirmedAt: Date?
     /// A subject proposed by the AI is created unconfirmed. Unconfirmed never
     /// appears in the family tree as fact — a wrong relationship is worse than a
     /// missing one.
