@@ -136,7 +136,9 @@ final class FilmDriver: XCTestCase {
     /// proposal, waiting for a human — and it is the one thing on this screen
     /// that says the app does not decide who anybody is.
     func testFilmTheFamily() throws {
-        let app = try roll(["-seed", "archive", "-tab", "people"])
+        // `-people list`: Ihmiset opens on the tree since 13 Sep 2026, and
+        // this take was shot on the list.
+        let app = try roll(["-seed", "archive", "-tab", "people", "-people", "list"])
         beat(2.6)
         let person = try reveal(app, app.buttons, ["Eeva", "Kalle", "Sanni"])
         person.tap()
@@ -274,7 +276,9 @@ final class FilmDriver: XCTestCase {
     /// shows it there. The list holds confirmed people only now, so the hand
     /// opens the door first. The take has to be shot again.
     func testFilmTheRowAlone() throws {
-        let app = try roll(["-seed", "film", "-tab", "people"])
+        // `-people list`, as in the family take: shot on the list, under
+        // which the door sits.
+        let app = try roll(["-seed", "film", "-tab", "people", "-people", "list"])
         beat(1.6) // the family, and the one quiet row under it
         try tap(app.buttons, ["1 name waiting to be checked", "1 nimi odottaa tarkistusta"])
         _ = try reveal(app, app.buttons, [Self.filmProposal])
