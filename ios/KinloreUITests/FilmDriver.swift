@@ -269,9 +269,8 @@ final class FilmDriver: XCTestCase {
     /// which is the right outcome for a take that would have shown nothing.
     ///
     /// The purchase button belongs to RevenueCat's template, so its label is
-    /// whatever the dashboard says that day; the list below is the usual
-    /// words, matched by prefix. Not verified against a live paywall when
-    /// written (12 Sep 2026): the first run on a keyed simulator is the check.
+    /// whatever the dashboard says that day. Measured on the first keyed run,
+    /// 13 Sep 2026: "Open the whole archive", one yearly package at 50 USD.
     func testFilmThePaywall() throws {
         let app = try roll([
             "-seed", "family",
@@ -284,7 +283,15 @@ final class FilmDriver: XCTestCase {
         let open = try reveal(app, app.buttons, ["Open the whole archive", "Avaa koko arkisto"])
         open.tap()
         beat(2.6) // the paywall, and its price, read before anything is bought
-        try tap(app.buttons, ["Subscribe", "Continue", "Purchase", "Buy", "Start", "Tilaa", "Osta", "Jatka"], timeout: 30)
+        // The dashboard's button says "Open the whole archive" (13 Sep 2026)
+        // — the same words as the offer card's button under the sheet, so
+        // the tap goes to the last hittable one, which is the paywall's.
+        try tapLast(app, "Open the whole archive", timeout: 30)
+        // The Test Store answers with its own dialog — "Test Store Purchase",
+        // the product's id, title and price, and three buttons. The film cuts
+        // it out; the take has to get past it.
+        beat(0.8)
+        try tap(app.buttons, ["Test valid purchase"], timeout: 30)
         _ = try find(
             app.staticTexts,
             ["Thank you — the payment went through", "Kiitos — maksu meni läpi"],
