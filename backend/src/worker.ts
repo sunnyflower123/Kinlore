@@ -13,6 +13,7 @@ import {
 	getFamily,
 	joinFamily,
 	leaveFamily,
+	linkMember,
 	removeMember,
 	renameMember,
 	revokeInvite,
@@ -137,6 +138,14 @@ function spokenLanguage(value: unknown): Lang {
 	return value === 'en' ? 'en' : 'fi'
 }
 
+/// A subject id as the app sends one — a UUID the phone made — so a short
+/// string and nothing else. Only the shape is checked here: whether a card by
+/// that id exists, and whose it is, the family routes ask inside the very
+/// statements that use it (`family.ts`).
+function isSubjectID(value: unknown): value is string {
+	return typeof value === 'string' && value.length > 0 && value.length <= 64
+}
+
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url)
@@ -257,10 +266,21 @@ export default {
 		if (url.pathname === '/family/invite' && request.method === 'POST') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			// Optional, and a missing body is not an error: an invitation with
-			// nobody's name on it is what this route made until now.
-			const body = await readJSON<{ displayName?: string }>(request)
+			// nobody's name on it is what this route made until now. The card it
+			// is made for is optional the same way (13 Sep 2026).
+			const body = await readJSON<{ displayName?: string; personSubjectID?: unknown }>(request)
+			const card = body?.personSubjectID
+			if (card !== undefined && card !== null && !isSubjectID(card)) {
+				return json({ error: 'bad_request' }, 400)
+			}
 			try {
-				return json(await createInvite(env, session, body?.displayName))
+				const result = await createInvite(
+					env,
+					session,
+					body?.displayName,
+					isSubjectID(card) ? card : undefined,
+				)
+				return 'error' in result ? json(result, 400) : json(result)
 			} catch (err) {
 				return failure(err, 'invite-create')
 			}
@@ -356,17 +376,40 @@ export default {
 			}
 		}
 
-		// One's own name, changed. The reply carries the name as stored, so the
-		// app shows what the family will see rather than what was typed.
+		// One's own name, or one's own card in the tree (13 Sep 2026), changed.
+		// The reply carries what was stored, so the app shows what the family
+		// will see rather than what was sent.
 		if (url.pathname === '/family/me' && request.method === 'PATCH') {
 			if (!session) return json({ error: 'unauthorized' }, 401)
-			const body = await readJSON<{ displayName?: string }>(request)
-			if (typeof body?.displayName !== 'string') return json({ error: 'bad_request' }, 400)
+			const body = await readJSON<{ displayName?: unknown; personSubjectID?: unknown }>(request)
+			const name = body?.displayName
+			const card = body?.personSubjectID
+			// The key counts, not its value: `"personSubjectID": null` is how
+			// unlinking is said, and it must not read as "no card sent".
+			const linking = typeof body === 'object' && body !== null && 'personSubjectID' in body
+			if (typeof name !== 'string' && !linking) return json({ error: 'bad_request' }, 400)
+			if (linking && card !== null && !isSubjectID(card)) {
+				return json({ error: 'bad_request' }, 400)
+			}
+			// Refused before anything is written, so a request carrying both
+			// cannot come back 400 with the card already moved. The app sends one
+			// at a time; the route does not lean on that.
+			if (typeof name === 'string' && !name.trim()) return json({ error: 'empty_name' }, 400)
 			try {
-				const result = await renameMember(env, session, body.displayName)
-				return 'error' in result ? json(result, 400) : json(result)
+				const reply: { displayName?: string; personSubjectID?: string | null } = {}
+				if (linking) {
+					const linked = await linkMember(env, session, isSubjectID(card) ? card : null)
+					if ('error' in linked) return json(linked, 400)
+					reply.personSubjectID = linked.personSubjectID
+				}
+				if (typeof name === 'string') {
+					const renamed = await renameMember(env, session, name)
+					if ('error' in renamed) return json(renamed, 400)
+					reply.displayName = renamed.displayName
+				}
+				return json(reply)
 			} catch (err) {
-				return failure(err, 'family-rename')
+				return failure(err, 'family-me')
 			}
 		}
 

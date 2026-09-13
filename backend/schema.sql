@@ -63,9 +63,21 @@ CREATE TABLE member (
   -- The member's own person card in the tree. A member is a subject just as
   -- much as a dead relative is.
   --
-  -- Declared and unused: as of 12 Sep 2026 nothing in backend/src or in the
-  -- app writes or reads this column, so the link it describes does not exist
-  -- yet. Measured with grep over both trees, not assumed from the comment.
+  -- Declared since the first schema and written by nothing until 13 Sep 2026.
+  -- Now `PATCH /family/me` sets one's own (NULL unlinks), the join sets it
+  -- from an invitation that names a card, and `GET /family` reads it back.
+  --
+  -- The foreign key is ENFORCED, and every write here is shaped by that. D1
+  -- enforces foreign keys on every query and a query cannot turn them off —
+  -- `PRAGMA defer_foreign_keys` only moves the check to the end of the
+  -- transaction (Cloudflare's D1 documentation, "Foreign keys"). Measured on
+  -- 13 Sep 2026 against the local D1: a member row naming a subject that is
+  -- not there fails with `FOREIGN KEY constraint failed`. A card reaches this
+  -- database only when the phone that made it syncs, so no statement writes
+  -- an id here unless the same statement finds a live person card of the
+  -- member's own family under it; otherwise the link stays NULL. The join
+  -- claims its code before it inserts the member, so a join that failed on
+  -- this column would burn the invitation it came through.
   person_subject_id TEXT REFERENCES subject(id),
   created_at    INTEGER NOT NULL,
   last_seen_at  INTEGER,
@@ -110,7 +122,21 @@ CREATE TABLE invite (
   -- oversight: an unauthenticated lookup that answered for a real code and not
   -- for a wrong one would hand a guesser the oracle §4 exists to deny.
   --   ALTER TABLE invite ADD COLUMN display_name TEXT;
-  display_name  TEXT
+  display_name  TEXT,
+  -- The person card the invitation was made for, when the phone that made it
+  -- had one — the first minute's answer to "whose memories" (FirstMinuteSheet).
+  -- The join links whoever comes through the code to that card, so the
+  -- grandmother who opens the link becomes the card her grandchild made.
+  --
+  -- No REFERENCES, on purpose, unlike `member.person_subject_id` above. The
+  -- card is made on a phone and reaches D1 with that phone's next sync, and an
+  -- enforced foreign key here would refuse the invitation whenever it was the
+  -- quicker of the two. So the id is kept as sent and asked about where it is
+  -- used: the join links only to a live person card of this invitation's own
+  -- family, and without one joins unlinked. Like `display_name`, never handed
+  -- out before joining. Since 13 Sep 2026; for an existing database:
+  --   ALTER TABLE invite ADD COLUMN person_subject_id TEXT;
+  person_subject_id TEXT
 );
 
 CREATE INDEX idx_invite_family ON invite(family_id);

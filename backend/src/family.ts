@@ -29,6 +29,17 @@ const DEFAULTS = {
 	en: { family: 'Family', owner: 'Me', member: 'Family member' },
 } as const
 
+/// A live person card of one family: the one thing a member may be linked to.
+/// Bound as (card id, family id).
+///
+/// Used inside the statement that writes the link, never as a read before it.
+/// `member.person_subject_id` is an enforced foreign key (schema.sql), and a
+/// card reaches D1 only when the phone that made it syncs — so a write that
+/// does not find the card in the same statement is a write that can fail, and
+/// on the join it would fail after the code had already been claimed.
+const LIVE_PERSON_CARD = `SELECT id FROM subject
+	WHERE id = ? AND family_id = ? AND kind = 'person' AND deleted_at IS NULL`
+
 export type CreateFamilyInput = {
 	memberID: string
 	secret: string
@@ -85,7 +96,8 @@ export type JoinInput = {
 
 export async function joinFamily(env: Env, input: JoinInput) {
 	const invite = await env.DB.prepare(
-		'SELECT code, family_id, expires_at, revoked_at, display_name FROM invite WHERE code = ?',
+		`SELECT code, family_id, expires_at, revoked_at, display_name, person_subject_id
+		 FROM invite WHERE code = ?`,
 	)
 		.bind(input.code.trim())
 		.first<{
@@ -94,6 +106,7 @@ export async function joinFamily(env: Env, input: JoinInput) {
 			expires_at: number
 			revoked_at: number | null
 			display_name: string | null
+			person_subject_id: string | null
 		}>()
 
 	// The same answer in all three cases: a wrong, an expired and a revoked code
@@ -109,9 +122,16 @@ export async function joinFamily(env: Env, input: JoinInput) {
 	const displayName =
 		input.displayName.trim() || invite.display_name?.trim() || DEFAULTS[input.lang ?? 'fi'].member
 
-	const existing = await env.DB.prepare('SELECT id, family_id, left_at FROM member WHERE id = ?')
+	const existing = await env.DB.prepare(
+		'SELECT id, family_id, left_at, person_subject_id FROM member WHERE id = ?',
+	)
 		.bind(input.memberID)
-		.first<{ id: string; family_id: string; left_at: number | null }>()
+		.first<{
+			id: string
+			family_id: string
+			left_at: number | null
+			person_subject_id: string | null
+		}>()
 
 	if (existing && existing.family_id !== invite.family_id) {
 		return { error: 'member_exists' as const }
@@ -154,20 +174,38 @@ export async function joinFamily(env: Env, input: JoinInput) {
 	// Somebody who left and was invited back. The row was kept so that the
 	// names on their memories still resolve, so coming back is undoing the
 	// mark rather than creating anything — and the name they just typed
-	// wins, because they typed it.
+	// wins, because they typed it. A card they were already linked to stays
+	// theirs; the invitation's card is what stands when there was none, and
+	// only if this family's database holds it (`LIVE_PERSON_CARD`).
 	if (existing?.left_at) {
 		await env.DB.prepare(
-			'UPDATE member SET left_at = NULL, display_name = ?, last_seen_at = ? WHERE id = ?',
+			`UPDATE member SET left_at = NULL, display_name = ?, last_seen_at = ?,
+			   person_subject_id = COALESCE(person_subject_id, (${LIVE_PERSON_CARD}))
+			 WHERE id = ?`,
 		)
-			.bind(displayName, now(), input.memberID)
+			.bind(displayName, now(), invite.person_subject_id, invite.family_id, input.memberID)
 			.run()
-		return { familyID: invite.family_id, role: 'member' as const }
+		return {
+			familyID: invite.family_id,
+			role: 'member' as const,
+			personSubjectID: existing.person_subject_id ?? invite.person_subject_id,
+		}
 	}
 
 	const timestamp = now()
+	// Linked in the statement that creates the member, and only to a card this
+	// family's database already holds (`LIVE_PERSON_CARD`). The inviter's phone
+	// may not have synced the card up yet, and a foreign key failure here would
+	// come after the claim above: a burned code, which answers her next try as
+	// an invitation that is no good. So she is let in unlinked instead, and the
+	// reply names the card, for her phone to link itself once a pull brings it
+	// (`PATCH /family/me`). Handed back only now, to somebody who is a member
+	// and will pull that card anyway — not the lookup docs/ARCHITECTURE.md §4
+	// refuses.
 	await env.DB.prepare(
-		`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at, last_seen_at)
-		 VALUES (?, ?, ?, ?, 'member', ?, ?)`,
+		`INSERT INTO member (id, family_id, display_name, secret_hash, role, created_at, last_seen_at,
+		                     person_subject_id)
+		 VALUES (?, ?, ?, ?, 'member', ?, ?, (${LIVE_PERSON_CARD}))`,
 	)
 		.bind(
 			input.memberID,
@@ -176,22 +214,54 @@ export async function joinFamily(env: Env, input: JoinInput) {
 			await hashSecret(input.secret),
 			timestamp,
 			timestamp,
+			invite.person_subject_id,
+			invite.family_id,
 		)
 		.run()
 
-	return { familyID: invite.family_id, role: 'member' as const }
+	return {
+		familyID: invite.family_id,
+		role: 'member' as const,
+		personSubjectID: invite.person_subject_id,
+	}
 }
 
 /// `displayName` is who the invitation is for, and it is optional: an
 /// invitation with nobody's name on it is the shape this had before and stays
 /// valid. See the column's comment in schema.sql for why it is never read back
 /// out before joining.
-export async function createInvite(env: Env, session: Session, displayName?: string) {
+///
+/// `personSubjectID` is the card it is made for, optional the same way. A
+/// subject this family's database holds under that id has to be a live person
+/// card, or the invitation is refused. An id it does not hold is kept as it
+/// is: the card may simply not have been synced up yet (schema.sql,
+/// `invite.person_subject_id`). Another family's card is not held here either
+/// and is answered the same, so this route cannot be asked whether an id
+/// exists elsewhere — and it links nobody to one, because the join asks again,
+/// about the invitation's own family.
+export async function createInvite(
+	env: Env,
+	session: Session,
+	displayName?: string,
+	personSubjectID?: string,
+) {
+	if (personSubjectID) {
+		const held = await env.DB.prepare(
+			'SELECT kind, deleted_at FROM subject WHERE id = ? AND family_id = ?',
+		)
+			.bind(personSubjectID, session.familyID)
+			.first<{ kind: string; deleted_at: number | null }>()
+		if (held && (held.kind !== 'person' || held.deleted_at !== null)) {
+			return { error: 'unknown_person' as const }
+		}
+	}
+
 	const code = randomCode()
 	const timestamp = now()
 	await env.DB.prepare(
-		`INSERT INTO invite (code, family_id, created_by, expires_at, created_at, display_name)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO invite (code, family_id, created_by, expires_at, created_at, display_name,
+		                     person_subject_id)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 	)
 		.bind(
 			code,
@@ -200,6 +270,7 @@ export async function createInvite(env: Env, session: Session, displayName?: str
 			timestamp + INVITE_DAYS * 86_400,
 			timestamp,
 			displayName?.trim() || null,
+			personSubjectID ?? null,
 		)
 		.run()
 
@@ -293,6 +364,38 @@ export async function renameMember(env: Env, session: Session, displayName: stri
 	return { displayName: name }
 }
 
+/// A member's own card in the tree — "this one is me" — or no card, with null.
+///
+/// Only one's own, like the name above, and only a live person card of one's
+/// own family. Everything else — a card not synced up yet, another family's,
+/// a photograph, a rejected card — gets the one answer `unknown_person`, and
+/// the app's retry leans on that answer being harmless: the founder's card is
+/// linked from the phone after the sync that carries it up, and a refusal
+/// just waits for the next round (`SyncEngine.linkOwnCard`).
+///
+/// The check sits inside the UPDATE rather than in a read before it, because
+/// the link is an enforced foreign key (schema.sql): a write that does not
+/// find the card in the same statement is a write that can fail. Since
+/// 13 Sep 2026.
+export async function linkMember(env: Env, session: Session, personSubjectID: string | null) {
+	if (personSubjectID === null) {
+		await env.DB.prepare(
+			'UPDATE member SET person_subject_id = NULL WHERE id = ? AND family_id = ?',
+		)
+			.bind(session.memberID, session.familyID)
+			.run()
+		return { personSubjectID: null }
+	}
+	const linked = await env.DB.prepare(
+		`UPDATE member SET person_subject_id = ?
+		 WHERE id = ? AND family_id = ? AND left_at IS NULL AND EXISTS (${LIVE_PERSON_CARD})`,
+	)
+		.bind(personSubjectID, session.memberID, session.familyID, personSubjectID, session.familyID)
+		.run()
+	if ((linked.meta.changes ?? 0) === 0) return { error: 'unknown_person' as const }
+	return { personSubjectID }
+}
+
 /// The owner ends somebody else's membership. **The memories stay**, exactly
 /// as when a member leaves on their own (`leaveFamily` above): the row is
 /// marked, never deleted, and the name on what they told keeps resolving.
@@ -358,12 +461,23 @@ export async function getFamily(env: Env, session: Session) {
 	// Only the people who are still here. A departed member's row stays behind so
 	// that the name on their memories keeps resolving, but the family view is a
 	// list of who is in the family — see `leaveFamily`.
+	//
+	// With the card each member is in the tree, since 13 Sep 2026. Ids only:
+	// the titles are sealed, and every phone in the family already holds the
+	// cards they name.
 	const members = await env.DB.prepare(
-		`SELECT id, display_name, role, created_at FROM member
+		`SELECT id, display_name, role, created_at, person_subject_id FROM member
 		 WHERE family_id = ? AND left_at IS NULL ORDER BY created_at`,
 	)
 		.bind(session.familyID)
-		.all<{ id: string; display_name: string; role: string; created_at: number }>()
+		.all<{
+			id: string
+			display_name: string
+			role: string
+			created_at: number
+			person_subject_id: string | null
+		}>()
+	const memberRows = members.results ?? []
 
 	// The invitations that still open the door: alive, and not yet used by
 	// the one person each admits. With the name it was made for, so the owner
@@ -382,12 +496,22 @@ export async function getFamily(env: Env, session: Session) {
 		name: family.name,
 		entitlement: family.entitlement,
 		syncSeq: family.sync_seq,
-		you: { id: session.memberID, role: session.role, displayName: session.displayName },
-		members: (members.results ?? []).map((m) => ({
+		you: {
+			id: session.memberID,
+			role: session.role,
+			displayName: session.displayName,
+			// Off the list rather than the session: `authenticate` reads only
+			// what every route needs, and the caller is always on the list,
+			// because a departed member is refused before any route runs.
+			personSubjectID:
+				memberRows.find((m) => m.id === session.memberID)?.person_subject_id ?? null,
+		},
+		members: memberRows.map((m) => ({
 			id: m.id,
 			displayName: m.display_name,
 			role: m.role,
 			joinedAt: m.created_at,
+			personSubjectID: m.person_subject_id,
 		})),
 		invites: (invites.results ?? []).map((i) => ({
 			code: i.code,

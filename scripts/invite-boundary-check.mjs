@@ -19,6 +19,13 @@
 // happy path cannot see. Two cases overlap (a revoked code, a made-up one) and
 // they are cheap; the rest are only here.
 //
+// **And, since 13 Sep 2026, the card an invitation is made for.** A member can
+// be linked to a person card, and the link is an enforced foreign key — which
+// gives this door one more silent way to fail, in the worst place: an
+// invitation naming a card its inviter's phone has not synced yet, refused at
+// the join after the code was claimed. The last cases press on that, on a
+// member's link to their own card, and on a card from somebody else's family.
+//
 // Costs nothing: no AI, no upstream call, only D1 writes. Each run leaves two
 // throwaway families behind, wherever it runs.
 //
@@ -167,8 +174,11 @@ async function createFamily(who, familyName) {
 	if (status !== 200) throw new Error(`could not create ${familyName}: ${status}`)
 }
 
-async function invite(who, displayName) {
-	const body_ = displayName === undefined ? {} : { displayName }
+async function invite(who, displayName, personSubjectID) {
+	const body_ = {
+		...(displayName === undefined ? {} : { displayName }),
+		...(personSubjectID === undefined ? {} : { personSubjectID }),
+	}
 	const { body } = await post('/family/invite', body_, who.auth)
 	if (!body.code) throw new Error('no invite code came back')
 	return body.code
@@ -181,6 +191,35 @@ async function nameOf(who) {
 	const response = await fetch(`${API}/family`, { headers: { ...json, ...who.auth } })
 	const body = await response.json().catch(() => ({}))
 	return (body.members ?? []).find((m) => m.id === who.memberID)?.displayName
+}
+
+/// The family view as one member sees it.
+async function familyOf(who) {
+	const response = await fetch(`${API}/family`, { headers: { ...json, ...who.auth } })
+	return response.json().catch(() => ({}))
+}
+
+/// A card as a phone's outbox sends it up. The title travels in clear here:
+/// the server never reads one, and sealing it would test FamilyCrypto rather
+/// than the link.
+async function pushCard(who, { id = randomUUID(), kind = 'person' } = {}) {
+	const { status } = await post(
+		'/sync',
+		{ subjects: [{ id, kind, title: 'Kortti', confirmed: 1, created_at: Math.floor(Date.now() / 1000) }] },
+		who.auth,
+	)
+	if (status !== 200) throw new Error(`a card could not be pushed: ${status}`)
+	return id
+}
+
+/// "This card is me" — or null, for no card at all.
+async function linkMe(who, personSubjectID) {
+	const response = await fetch(`${API}/family/me`, {
+		method: 'PATCH',
+		headers: { ...json, ...who.auth },
+		body: JSON.stringify({ personSubjectID }),
+	})
+	return { status: response.status, body: await response.json().catch(() => ({})) }
 }
 
 async function join(who, code) {
@@ -445,6 +484,129 @@ try {
 			(await nameOf(guest)) === 'Perheenjäsen',
 			await nameOf(guest),
 		)
+	}
+
+	console.log("— a member's own card in the tree —")
+	{
+		// `member.person_subject_id` is an enforced foreign key, so every write
+		// of it has to find the card first. Linking is one's own act, and only
+		// to a live person card of one's own family; everything else is refused
+		// in one answer.
+		const mine = await pushCard(ville)
+		const linked = await linkMe(ville, mine)
+		check(
+			'a member links themselves to their card',
+			linked.status === 200 && linked.body.personSubjectID === mine,
+			`${linked.status} ${JSON.stringify(linked.body)}`,
+		)
+		const row = (await familyOf(mummo)).members?.find((m) => m.id === ville.memberID)
+		const you = (await familyOf(ville)).you
+		check(
+			'and the family view returns it, on the member and on "you"',
+			row?.personSubjectID === mine && you?.personSubjectID === mine,
+			JSON.stringify({ row, you }),
+		)
+
+		const across = await linkMe(ville, await pushCard(stranger))
+		check(
+			'a card from another family is refused',
+			across.status === 400 && across.body.error === 'unknown_person',
+			`${across.status} ${JSON.stringify(across.body)}`,
+		)
+		const photo = await linkMe(ville, await pushCard(mummo, { kind: 'photo' }))
+		check('so is a photograph', photo.status === 400, `${photo.status} ${JSON.stringify(photo.body)}`)
+		check(
+			'and neither refusal moved the link',
+			(await familyOf(ville)).you?.personSubjectID === mine,
+		)
+
+		// The founder's card is made on the phone and linked from it once a sync
+		// has carried it up. Until then the server has nothing to link to, and
+		// this refusal is what the phone's retry waits out.
+		const later = randomUUID()
+		const early = await linkMe(ville, later)
+		check('a card the server has not got yet is refused', early.status === 400, String(early.status))
+		await pushCard(ville, { id: later })
+		const arrived = await linkMe(ville, later)
+		check(
+			'and linked once a sync has brought it',
+			arrived.status === 200 && arrived.body.personSubjectID === later,
+			`${arrived.status} ${JSON.stringify(arrived.body)}`,
+		)
+
+		const unlinked = await linkMe(ville, null)
+		check(
+			'null unlinks',
+			unlinked.status === 200 && (await familyOf(ville)).you?.personSubjectID === null,
+			`${unlinked.status} ${JSON.stringify(unlinked.body)}`,
+		)
+	}
+
+	console.log('— the card an invitation is made for —')
+	{
+		await breathe()
+		{
+			// The first minute's invitation: the grandchild types grandmother's
+			// name, her card is made, and the invitation carries it. Opening the
+			// link makes her that card.
+			const card = await pushCard(mummo)
+			const guest = silent('Kortin Kaarina')
+			const { status, body } = await join(guest, await invite(mummo, 'Kaarina', card))
+			check('an invitation with a card lets its person in', status === 200 && !body.error, JSON.stringify(body))
+			const you = (await familyOf(guest)).you
+			check('and links them to the card', you?.personSubjectID === card, JSON.stringify(you))
+		}
+		{
+			// The case the design is about. The inviter's phone made the card and
+			// the invitation, and the sync that carries the card up has not
+			// happened yet. The join claims the code before it writes the member,
+			// so a join that failed on the foreign key would burn her invitation.
+			const card = randomUUID()
+			const guest = silent('Aune, kortti matkalla')
+			const { status, body } = await join(guest, await invite(mummo, 'Aune', card))
+			check(
+				'a card not yet pushed does not break the join',
+				status === 200 && !body.error,
+				`${status} ${JSON.stringify(body)}`,
+			)
+			const you = (await familyOf(guest)).you
+			check(
+				'she is let in unlinked, and the reply names the card for her phone',
+				you?.personSubjectID === null && body.personSubjectID === card,
+				JSON.stringify({ you, reply: body }),
+			)
+			// What her phone does once a pull brings the card down.
+			await pushCard(mummo, { id: card })
+			const linked = await linkMe(guest, card)
+			check(
+				'and she links herself once the card has arrived',
+				linked.status === 200 && (await familyOf(guest)).you?.personSubjectID === card,
+				`${linked.status} ${JSON.stringify(linked.body)}`,
+			)
+		}
+		{
+			// Refusing another family's card at this door would tell the inviter
+			// that the id exists somewhere, so it is kept like a card still on its
+			// way — and it links nobody, because the join asks about the
+			// invitation's own family.
+			const guest = silent('Vieraan kortin kutsu')
+			const { status } = await join(guest, await invite(mummo, undefined, await pushCard(stranger)))
+			const you = (await familyOf(guest)).you
+			check(
+				"an invitation naming another family's card links nobody to it",
+				status === 200 && you?.personSubjectID === null,
+				`${status} ${JSON.stringify(you)}`,
+			)
+		}
+		{
+			const photo = await pushCard(mummo, { kind: 'photo' })
+			const refused = await post('/family/invite', { personSubjectID: photo }, mummo.auth)
+			check(
+				'an invitation made for a photograph is refused',
+				refused.status === 400 && refused.body.error === 'unknown_person',
+				`${refused.status} ${JSON.stringify(refused.body)}`,
+			)
+		}
 	}
 } catch (error) {
 	failures += 1
