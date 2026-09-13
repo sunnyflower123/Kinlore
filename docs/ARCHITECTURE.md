@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
 | Backup and recovery | **Written down and measured**, see docs/RECOVERY.md — Time Travel answers, the dump runs, R2 has no versioning, and nothing yet copies the media off the account |
 | The family's media on every phone, not only in R2 | **Done and checked**, see §5 — `FullCopy` after every sync, on Wi-Fi, voices first, with the number on the family screen |
-| Colouring a photograph by what was told about it | **Built and tested, not deployed**, see §24 — kept only after somebody answers yes; the Worker needs four D1 columns before it goes out, and the model was chosen on one photograph |
+| Colouring a photograph by what was told about it | **Done and tested, deployed 13 Sep 2026**, see §24 — kept only after somebody answers yes, and the model was chosen on one photograph |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
 | Demo video | Remaining |
@@ -3834,9 +3834,6 @@ photographs.
 - **The correcting round has not been measured.** The instruction's last
   sentence, which of two disagreeing tellings to follow, was written after the
   measurement, and no model has been shown a correction yet.
-- **Not deployed.** The Worker needs `usage_counter.colourisations` and the
-  three `subject` columns in D1 first — the `ALTER` statements are in
-  `schema.sql` beside the columns.
 - **No way to take a colouring back.** A later yes replaces an earlier one;
   nothing removes one.
 - **The grandparent's own card**, where the question comes before any colour.
