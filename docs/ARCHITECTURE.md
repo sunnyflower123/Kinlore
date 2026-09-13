@@ -1737,9 +1737,16 @@ Built, in the order they were built:
 
 Not built:
 
-13. **Family tree** — a drawn graph. **A trap.** Relationships are lists on the
-   person card: the same information, works at the largest text size and is
-   readable with VoiceOver. Formally out of v1 since §10.
+13. ~~**Family tree** — a drawn graph. **A trap.**~~ **Built on 13 Sep 2026**,
+   on a family member's phone only. Relationships stay lists on the person
+   card — the same information, at the largest text size and aloud with
+   VoiceOver — and those lists are all a grandparent's phone and VoiceOver get.
+   What made the drawing a trap was her phone, so the drawing is where her
+   phone does not go: behind a tree beside the gear on Ihmiset, `FamilyTreeView`
+   over `FamilyTreeLayout`, confirmed people and confirmed relationships only
+   (rule 4). Where somebody lands is arithmetic no screenshot can check, so
+   `scripts/family-tree-layout-check.swift` checks it: a child below her
+   parents, a couple side by side, nobody sharing a place.
 
 ## 9. Build order
 

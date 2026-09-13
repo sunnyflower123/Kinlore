@@ -604,6 +604,17 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   ios/Kinlore/Model/Models.swift \
   && /tmp/question-ladder-check
 
+# Where the family tree puts people, and the lines it draws. Pure arithmetic
+# over confirmed people and relationships, and every way of being wrong is
+# silent: a child drawn a row above her mother, a couple split by a stranger,
+# a brother with no line to his sister. None of them fails a build, and a
+# screenshot shows a tree either way. Costs nothing. Run it after touching
+# FamilyTreeLayout.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/family-tree-layout-check \
+  scripts/family-tree-layout-check.swift ios/Kinlore/Services/FamilyTreeLayout.swift \
+  && /tmp/family-tree-layout-check
+
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
 # Wi-Fi only, never the last gigabyte, three failures ending a round, the

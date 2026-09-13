@@ -118,6 +118,12 @@
 "Kuka on vanhempi?" = "Who is the parent?";
 "Kuka on puoliso?" = "Who is the spouse?";
 "Kuka on sisarus?" = "Who is the sibling?";
+"Sukupuu" = "Family tree";
+"Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia." = "The family tree draws itself as relatives are added on people's cards.";
+"Ei vielä sukupuussa" = "Not in the tree yet";
+"Lisää sukulainen henkilön kortilta, niin hän tulee puuhun." = "Add a relative on their card to bring them into the tree.";
+"Pienennä" = "Zoom out";
+"Suurenna" = "Zoom in";
 "Yhdistä" = "Merge";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "The family already has %@. The cards will be merged, and this one's memories will move there.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "The family already has %@. This card's memories will move to them, and the merge cannot be undone.";

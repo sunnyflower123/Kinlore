@@ -128,6 +128,17 @@ question_ladder() {
 		&& "$OUT/question-ladder-check"
 }
 
+# Where the family tree puts people and the lines between them. Pure arithmetic
+# over confirmed people and relationships, and each way of being wrong is
+# silent: a child drawn a row above her mother still draws. Added 13 Sep 2026
+# with the drawn tree.
+family_tree_layout() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/family-tree-layout-check" scripts/family-tree-layout-check.swift \
+		ios/Kinlore/Services/FamilyTreeLayout.swift \
+		&& "$OUT/family-tree-layout-check"
+}
+
 # Hermetic in a different way: it loads the shipping schema.sql into an
 # in-memory SQLite and asks the database itself. No Worker, no D1, no
 # RevenueCat — and the TypeScript guard it backs up cannot be run on this
@@ -188,6 +199,7 @@ echo "Invariants"
 run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
+run "a child is drawn below her parents" family_tree_layout
 run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock
 run "a confirmed colouring survives an older phone" colour_sync

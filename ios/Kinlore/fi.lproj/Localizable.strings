@@ -108,6 +108,12 @@
 "Kuka on vanhempi?" = "Kuka on vanhempi?";
 "Kuka on puoliso?" = "Kuka on puoliso?";
 "Kuka on sisarus?" = "Kuka on sisarus?";
+"Sukupuu" = "Sukupuu";
+"Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia." = "Sukupuu piirtyy, kun ihmisten korteille lisätään sukulaisia.";
+"Ei vielä sukupuussa" = "Ei vielä sukupuussa";
+"Lisää sukulainen henkilön kortilta, niin hän tulee puuhun." = "Lisää sukulainen henkilön kortilta, niin hän tulee puuhun.";
+"Pienennä" = "Pienennä";
+"Suurenna" = "Suurenna";
 "Yhdistä" = "Yhdistä";
 "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne." = "Perheessä on jo %@. Kortit yhdistetään, ja tämän muistot siirtyvät sinne.";
 "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua." = "Perheessä on jo %@. Tämän kortin muistot siirtyvät hänelle, eikä yhdistämistä voi perua.";

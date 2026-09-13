@@ -851,6 +851,15 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The drawn family tree, on a family member's phone, since 13 Sep 2026.
+    /// `-seed related` is the one fixture with a confirmed couple in it, and
+    /// Sanni, related to nobody, is listed beneath the drawing.
+    func testFamilyTree() throws {
+        try sweep("Sukupuu", arguments: ["-seed", "related", "-tab", "people", "-screen", "tree"]) { app, _ in
+            require(app.buttons["Eeva"], "a person in the tree")
+        }
+    }
+
     /// The memory row's own way out, which shows only on a telling of one's
     /// own. The fixture's memories are all Mummo's, so this one is told first
     /// and read back from its card, the way it would be the day after.

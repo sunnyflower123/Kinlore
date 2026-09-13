@@ -2,9 +2,11 @@ import SwiftUI
 
 /// A person's relatives.
 ///
-/// Lists rather than a drawn tree — the graph is a deliberate cut in the plan
-/// (PLAN.md §5). A list carries the same information, works at the largest text
-/// size and is readable with VoiceOver.
+/// Lists, on every phone. A list carries the same information as a drawing,
+/// works at the largest text size and is readable with VoiceOver, which is why
+/// a grandparent's phone has only this. Since 13 Sep 2026 a family member's
+/// phone also draws the whole family (`FamilyTreeView`, behind the tree on
+/// Ihmiset); until then the drawing was a cut in the plan (PLAN.md §5).
 struct RelationsSection: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject

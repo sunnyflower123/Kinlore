@@ -127,6 +127,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | `-comfort <1–5>` | DEBUG | Puts the question ladder at a given level instead of where the answers have taken it. Level 1 offers naming questions, level 5 reflective ones — the whole progression without answering six questions first. See ARCHITECTURE.md §12. |
 | `-screen starter` | DEBUG | Opens the Tell screen on a photo nobody has spoken about yet, where the starter questions live. Otherwise that state is reachable only by picking a photo from the library by hand. |
 | `-screen person` | DEBUG | Opens the first person's card, relationships and all. |
+| `-screen tree` | DEBUG | Opens Ihmiset on the drawn family tree, which exists on a family member's phone only (since 13 Sep 2026). Combine with `-seed related`, the fixture with a confirmed couple in it, or the tree has nobody to draw. |
 | `-screen family` | DEBUG | Opens the family view: members, usage, invite link. |
 | `-screen settings` | DEBUG | Opens Settings: export, leaving the family, emptying the device. |
 | `-screen camera` | DEBUG | Opens the camera over Albumi. It sits behind a menu row, and a screenshot run has no hands. |

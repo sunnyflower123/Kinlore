@@ -40,7 +40,7 @@ struct RootView: View {
             // tab that owns the screen. An explicit `-tab` still wins, because
             // a caller naming both means it (FilmDriver names both).
             switch UserDefaults.standard.string(forKey: "screen") {
-            case "person", "family", "settings", "export", "help", "sharing":
+            case "person", "family", "settings", "export", "help", "sharing", "tree":
                 return .people
             case "camera":
                 return .memories
@@ -162,6 +162,10 @@ struct HelpRoute: Hashable {}
 /// Settings and offered only there. See `EnableSharingScreen`.
 struct SharingRoute: Hashable {}
 
+/// And for the drawn family tree, one step below Ihmiset, on a family member's
+/// phone only. See `FamilyTreeView`.
+struct FamilyTreeRoute: Hashable {}
+
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
 struct PeopleScreen: View {
@@ -176,6 +180,15 @@ struct PeopleScreen: View {
     /// The sheet a person is typed into, and the card to open once it closes.
     @State private var isAddingPerson = false
     @State private var addedPerson: Subject?
+
+    /// Whose phone this is, and whether it is being listened to rather than
+    /// looked at. The drawn tree is offered on neither a grandparent's phone
+    /// nor under VoiceOver: both keep the relationships as lists on each card,
+    /// where they can be read at any size and aloud.
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+
+    private var offersTree: Bool { !largerText && !voiceOverEnabled }
 
     /// Confirmed people only, since 12 Sep 2026. A name the extraction heard
     /// and nobody has vouched for is not on this list: it waits behind one
@@ -284,6 +297,9 @@ struct PeopleScreen: View {
             .navigationDestination(for: SharingRoute.self) { _ in
                 EnableSharingScreen()
             }
+            .navigationDestination(for: FamilyTreeRoute.self) { _ in
+                FamilyTreeView()
+            }
             .toolbar {
                 // Settings belongs under People rather than as its own tab:
                 // three tabs is already the limit of what an 80-year-old holds
@@ -303,6 +319,15 @@ struct PeopleScreen: View {
                             .elderTapTarget()
                     }
                     .accessibilityLabel("Lisää henkilö")
+                }
+                if offersTree {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink(value: FamilyTreeRoute()) {
+                            Image(systemName: "tree")
+                                .elderTapTarget()
+                        }
+                        .accessibilityLabel("Sukupuu")
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: SettingsRoute()) {
@@ -356,6 +381,8 @@ struct PeopleScreen: View {
                     // Both, so the screen has the back stack it really has.
                     path.append(SettingsRoute())
                     path.append(SharingRoute())
+                case "tree":
+                    path.append(FamilyTreeRoute())
                 default:
                     break
                 }
