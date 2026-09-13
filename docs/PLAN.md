@@ -152,9 +152,19 @@ down here so that the choice is made now rather than on 15 September.
 ## 4. The magic moment — the one thing
 
 > Grandmother presses a big button and rambles for 90 seconds about an old
-> photo. The app returns: a structured memory attached to the photo, person
-> cards for the relatives mentioned, year and place information — and three
-> follow-up questions back.
+> photo. The app returns: the memory in her own voice and in readable words,
+> attached to the photo; the names and places it heard, each with the
+> sentence it was heard in, waiting for a person's yes; the time as she said
+> it — and two questions back.
+
+*Reworded 13 Sep 2026.* The first version of this paragraph promised *person
+cards for the relatives mentioned, year and place information* and three
+questions, and the app built exactly that: after one telling it had made a
+moment and named it, put a place on the map, listed two people it had only
+heard of, and offered one of them as the next thing to talk about — nothing
+the family had confirmed. The magic moment is the same screen and it is
+quieter: what the app heard, offered rather than asserted. The arc around it
+is *"yksi kerronta, yksi muisto"* (ARCHITECTURE §12, §18, §22, §23; UX §6).
 
 The demo video needs to be essentially this one screen. The judging criterion
 says *"meaningful progress toward a working app with clear core functionality"* —

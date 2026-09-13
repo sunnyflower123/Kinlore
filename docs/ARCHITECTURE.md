@@ -2946,11 +2946,13 @@ you cannot browse to it. Native MapKit, so no key, no account, no quota — and
 **no location permission either**, because it renders a coordinate the archive
 already holds and never asks where the phone is.
 
-**Withdrawn from v1 on 12 Sep 2026.** The card draws no map until v1.1 —
-decision 9.2 of the first-run plan, taken with the rest of *"yksi kerronta,
-yksi muisto"* — and the lookup itself now waits for a confirmation (above).
-`PlaceMapCard` and `scripts/place-map-check.swift` stay, used by no screen,
-for the day it returns; the coordinates keep accumulating meanwhile.
+**Withdrawn on 12 Sep 2026 and back on the 13th.** Decision 9.2 of the
+first-run plan took the map out of v1 with the rest of *"yksi kerronta, yksi
+muisto"*, as the cheapest of three options; the next day the cost showed —
+the film's take of this card was already final — and the rule itself allows
+the map: the lookup now waits for a person's confirmation (above), so the
+card draws nothing the family has not vouched for. What stays withdrawn is
+the guess: an unconfirmed place gets no lookup, no card and no map.
 
 This paragraph used to end *"what it does not have is a position on anything"*,
 which was true for three weeks and is the sentence a reader would have trusted.
@@ -3536,8 +3538,8 @@ the two answers the result screen's row already had, *Vahvista* and
 shows confirmed places only, and a moment is told apart by its first words
 under its day. The telling itself carries *"Kuulin nämä"* on its row, so a
 proposal ignored at the result is answered where the sentence is rather than
-nowhere. And a place's card draws no map in v1 (§18). `HeardNamesTests` pins
-the three.
+nowhere. A place's card kept its map after one day without it — a confirmed
+place's map asserts nothing (§18). `HeardNamesTests` pins the three.
 
 Measured: `testResult` and `testResultWithProposals`, both text sizes, green —
 which is what checks the new `.bordered` labels against the contrast minimum,

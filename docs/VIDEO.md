@@ -253,9 +253,13 @@ cp <the film's photograph> \
   `xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>`.
   The purchase button is RevenueCat's and is matched by the usual words;
   the first keyed run is the check.
-- **The proposal row alone** — `testFilmTheRowAlone`, `-seed film -tab
-  people`. A separate launch from the paywall on purpose: the offer needs a
-  result with no proposals, so the two never share a screen.
+- **The name waiting, alone** — `testFilmTheRowAlone`, `-seed film -tab
+  people`. The hand opens the people list's one quiet row and holds on
+  *"Names heard"*: the proposal with the sentence it was heard in, its two
+  answers, and no offer near it. A separate launch from the paywall on
+  purpose: the offer needs a result with no proposals, so the two never share
+  a screen. The take of 12 Sep 2026 shows the row on the list itself, which
+  the list stopped holding that evening; it has to be shot again.
 
 The names in the seed and the driver — the proposal, and the answer — are
 placeholders until the film's own voice clip has been run through the real

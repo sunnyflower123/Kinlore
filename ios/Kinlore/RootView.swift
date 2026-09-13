@@ -500,11 +500,27 @@ struct SubjectDetailScreen: View {
                 }
             }
 
-            // No map on a place's card in v1 — decided 12 Sep 2026 with the
-            // rest of "yksi kerronta, yksi muisto". `PlaceMapCard` drew the
-            // looked-up coordinate here from 10 Sep; the coordinates keep
-            // accumulating for confirmed places (ARCHITECTURE §18), and the
-            // card is v1.1's to bring back.
+            // Where it is, for a confirmed place the lookup found. Under the
+            // name and above everything told about it, because the map
+            // answers "where" and the memories answer "what happened there".
+            //
+            // Withdrawn for one day, 12 Sep 2026, with the rest of "yksi
+            // kerronta, yksi muisto", and back on 13 Sep for the reason the
+            // rule allows it: the lookup now waits for a person's confirmation
+            // (`placesAwaitingCoordinates`), so a map here draws nothing the
+            // family has not vouched for. The film's take of this card was
+            // already final, which is what made the day's cost visible.
+            //
+            // `current` and not `subject`: correcting a place's name clears
+            // its coordinate (`PlaceResolver`), and this screen has to show
+            // the archive as it is now rather than as it was when it opened.
+            if current.kind == .place, current.place != nil {
+                Section {
+                    PlaceMapCard(subject: current)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+            }
 
             // The date, and the way to put one there. It used to be a label that
             // appeared only when the extraction had heard a year — so a

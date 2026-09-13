@@ -247,13 +247,21 @@ final class FilmDriver: XCTestCase {
         beat(3.0)
     }
 
-    /// 8 · The proposal row, alone: a name still waiting for a person, and no
-    /// offer anywhere near it. This is the rule `UpsellRhythm` keeps — never
-    /// against a name — filmed as the absence it is. A separate launch from
-    /// scene 7 on purpose: the offer needs a result with no proposals, so the
-    /// two cannot share a screen, which is the point.
+    /// 8 · The name still waiting, alone: behind the people list's one quiet
+    /// row, on "Names heard", with the sentence it was heard in and its two
+    /// answers — and no offer anywhere near it. This is the rule
+    /// `UpsellRhythm` keeps — never against a name — filmed as the absence it
+    /// is. A separate launch from scene 7 on purpose: the offer needs a result
+    /// with no proposals, so the two cannot share a screen, which is the point.
+    ///
+    /// Until 12 Sep 2026 the name stood on the people list itself, as an
+    /// orange "A proposal — confirm this person" row, and the take of that day
+    /// shows it there. The list holds confirmed people only now, so the hand
+    /// opens the door first. The take has to be shot again.
     func testFilmTheRowAlone() throws {
         let app = try roll(["-seed", "film", "-tab", "people"])
+        beat(1.6) // the family, and the one quiet row under it
+        try tap(app.buttons, ["1 name waiting to be checked", "1 nimi odottaa tarkistusta"])
         _ = try reveal(app, app.buttons, [Self.filmProposal])
         beat(8.0)
     }
