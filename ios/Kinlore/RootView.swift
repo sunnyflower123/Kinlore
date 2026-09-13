@@ -173,6 +173,9 @@ struct PeopleScreen: View {
     /// `subjects(of:matching:)` hands back everything for an empty query — so
     /// there is one code path rather than two.
     @State private var query = ""
+    /// The sheet a person is typed into, and the card to open once it closes.
+    @State private var isAddingPerson = false
+    @State private var addedPerson: Subject?
 
     /// Confirmed people only, since 12 Sep 2026. A name the extraction heard
     /// and nobody has vouched for is not on this list: it waits behind one
@@ -192,6 +195,7 @@ struct PeopleScreen: View {
         NavigationStack(path: $path) {
             Group {
                 if store.subjects(of: .person).filter(\.confirmed).isEmpty, heard.isEmpty {
+                    VStack(spacing: 0) {
                     ContentUnavailableView {
                         Label("Ei vielä ihmisiä", systemImage: "person.2")
                     } description: {
@@ -205,6 +209,14 @@ struct PeopleScreen: View {
                         Text("Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.")
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
+                    }
+                    // Beneath the empty state rather than among its actions:
+                    // a `ContentUnavailableView` styles its own buttons, and
+                    // the audit measured that one's font as not following
+                    // Dynamic Type. Its words stay exempt as before.
+                    addPersonButton
+                        .padding(.horizontal, Elder.screenPadding)
+                        .padding(.bottom, 12)
                     }
                 } else if people.isEmpty, !query.isEmpty {
                     // A search that found nobody is a different emptiness from
@@ -278,12 +290,40 @@ struct PeopleScreen: View {
                 // in mind. It is shown without a backend too — a single-device
                 // archive is exactly the one with no copy anywhere else, and it
                 // used to have no way to reach the export at all.
+                // Beside the gear, the way the Album's "+" sits on its own tab.
+                // Not a row in the list, and that is measured: as a row above
+                // the door to the heard names it moved the audit's Dynamic Type
+                // finding onto that unchanged door (13 Sep 2026), and with the
+                // row gone the door passed again.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isAddingPerson = true
+                    } label: {
+                        Image(systemName: "person.badge.plus")
+                            .elderTapTarget()
+                    }
+                    .accessibilityLabel("Lisää henkilö")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: SettingsRoute()) {
                         Image(systemName: "gearshape")
                             .elderTapTarget()
                     }
                     .accessibilityLabel("Asetukset")
+                }
+            }
+            // The card is opened once the sheet has gone, so it is pushed onto
+            // the screen rather than under a sheet still on its way down.
+            .sheet(isPresented: $isAddingPerson, onDismiss: {
+                if let addedPerson {
+                    path.append(addedPerson)
+                    self.addedPerson = nil
+                }
+            }) {
+                NameSheet(title: "Lisää henkilö", initial: "") { name in
+                    guard let person = store.addPerson(named: name) else { return false }
+                    addedPerson = person
+                    return true
                 }
             }
             #if DEBUG
@@ -323,6 +363,23 @@ struct PeopleScreen: View {
             #endif
             .elderSurface()
         }
+    }
+
+    /// The way to put somebody in by hand beneath the empty state, where
+    /// whoever sets the archive up meets it first (since 13 Sep 2026). Once
+    /// there is anybody on the list, the same sheet opens from the toolbar.
+    ///
+    /// A title and nothing else, in the shape of the memory row's own buttons.
+    /// Built like `heardRow`, with an icon beside the words, the audit measured
+    /// its font as not following Dynamic Type at the default size, which is the
+    /// finding the person card's removal button met four times before it
+    /// settled in this same shape.
+    private var addPersonButton: some View {
+        Button("Lisää henkilö") { isAddingPerson = true }
+            .buttonStyle(.borderless)
+            .font(.body.weight(.medium))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .elderTapTarget()
     }
 
     /// One quiet row for the names the extraction heard and nobody has

@@ -1711,6 +1711,18 @@ Built, in the order they were built:
     reason: this is the person, not the extraction. The card could date the
     picture and not name it; the title was whatever the first telling left.
 
+    **And a person by hand**, since 13 Sep 2026: *"Lisää henkilö"* beside the
+    gear on Ihmiset and beneath its empty state, and *"Joku uusi"* at the top of
+    the picker behind *"Lisää sukulainen"*, all through the same `NameSheet`.
+    Until then a person could only be born out of a telling. That is the right
+    order for the person talking and the wrong one for whoever sets the archive
+    up, who knows the family's shape before anybody has said a word — and the
+    blind card needs three names before it can ask anything.
+    `MemoryStore.addPerson` confirms what it creates, because the person who
+    typed the name vouches for it, which is what rule 4 asks; and a name the
+    family already has is the same card, so typing a heard *Aino* confirms her
+    rather than making a second one.
+
     **The tile reads its name.** A photograph has inherited a title from its
     first telling since 15 Aug 2026 — the place and the time that were said,
     `Extraction.suggestedTitle`, filled only into an empty field — and the

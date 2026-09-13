@@ -289,6 +289,26 @@ final class MemoryStore {
         return subject
     }
 
+    /// A person somebody typed, rather than one the extraction heard.
+    ///
+    /// Confirmed, because a person wrote the name: rule 4 is about who vouches,
+    /// and typing a name is vouching for it. A card that already exists under
+    /// the name is the one returned, and a proposal waiting under it is
+    /// confirmed rather than doubled — typing "Aino" while the extraction's
+    /// Aino waits behind the heard-names row is the same act as confirming her.
+    ///
+    /// Until 13 Sep 2026 a person could only come out of a telling, which left
+    /// whoever set the archive up with nobody to put in it, and a family tree
+    /// with nobody to draw.
+    @discardableResult
+    func addPerson(named name: String) -> Subject? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let person = findOrCreateSubject(named: trimmed, kind: .person, confirmed: true)
+        if !person.confirmed { confirm(subjectID: person.id) }
+        return subject(id: person.id) ?? person
+    }
+
     /// "Not that Matti": a fresh, unconfirmed card with the same name, and the
     /// given memories now mention it instead of the familiar one. The
     /// familiar card keeps everything else it has; nothing is merged or

@@ -135,11 +135,16 @@ private struct RelativeRow: View {
     }
 }
 
-/// Choosing a relative from the people already known.
+/// Choosing a relative: somebody the family already has, or somebody new.
 ///
-/// No typing a name: a person is born out of telling, not out of a form. If the
-/// person you want is not in the list, nobody has told about them yet — and that
-/// is the correct order.
+/// Until 13 Sep 2026 this said "no typing a name: a person is born out of
+/// telling, not out of a form", and the list stayed empty until a telling had
+/// named somebody. That order suits the person talking and fails whoever sets
+/// the archive up, who knows the family's shape before anyone has said a word
+/// — and a family tree cannot be drawn out of people nobody may add. A typed
+/// name is confirmed by the person who typed it, since rule 4 is about who
+/// vouches, and a name the family already has is the same card rather than a
+/// second one (`MemoryStore.addPerson`).
 private struct RelationPicker: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -148,6 +153,9 @@ private struct RelationPicker: View {
     let kind: RelationKind
     let asChild: Bool
     let onDone: () -> Void
+
+    @State private var isAddingSomeoneNew = false
+    @State private var addedSomeoneNew = false
 
     private var candidates: [Subject] {
         store.subjects(of: .person).filter { $0.id != subject.id }
@@ -167,36 +175,28 @@ private struct RelationPicker: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if candidates.isEmpty {
-                    ContentUnavailableView {
-                        Label("Ei muita henkilöitä", systemImage: "person.2")
-                    } description: {
-                        Text("Henkilöt syntyvät kertomisesta. Kerro ensin muisto jossa mainitset heidät.")
-                            .elderBody()
-                            .foregroundStyle(Elder.supporting)
-                    }
-                } else {
-                    List(candidates) { person in
-                        Button {
-                            // `parentOf` reads from → to. Adding a child flips
-                            // the direction; otherwise the family tree would
-                            // come out upside down.
-                            if asChild {
-                                store.addRelation(from: subject.id, to: person.id, kind: kind)
-                            } else if kind == .parentOf {
-                                store.addRelation(from: person.id, to: subject.id, kind: kind)
-                            } else {
-                                store.addRelation(from: subject.id, to: person.id, kind: kind)
-                            }
-                            dismiss()
-                            onDone()
-                        } label: {
-                            Text(person.displayTitle)
-                                .font(.body)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .elderTapTarget()
-                        }
+            List {
+                // First, because it is the row this list could not offer
+                // until 13 Sep 2026 — see the note above this type.
+                Button {
+                    isAddingSomeoneNew = true
+                } label: {
+                    Label("Joku uusi", systemImage: "person.badge.plus")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .elderTapTarget()
+                }
+
+                ForEach(candidates) { person in
+                    Button {
+                        relate(person)
+                        dismiss()
+                        onDone()
+                    } label: {
+                        Text(person.displayTitle)
+                            .font(.body)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .elderTapTarget()
                     }
                 }
             }
@@ -207,7 +207,31 @@ private struct RelationPicker: View {
                     Button("Peruuta") { dismiss(); onDone() }
                 }
             }
+            // The picker closes only once the name sheet has gone, so two
+            // sheets are not dismissed on the same frame.
+            .sheet(isPresented: $isAddingSomeoneNew, onDismiss: {
+                if addedSomeoneNew { dismiss(); onDone() }
+            }) {
+                NameSheet(title: title, initial: "") { name in
+                    guard let person = store.addPerson(named: name) else { return false }
+                    relate(person)
+                    addedSomeoneNew = true
+                    return true
+                }
+            }
             .elderSurface()
+        }
+    }
+
+    /// `parentOf` reads from → to. Adding a child flips the direction;
+    /// otherwise the family tree would come out upside down.
+    private func relate(_ person: Subject) {
+        if asChild {
+            store.addRelation(from: subject.id, to: person.id, kind: kind)
+        } else if kind == .parentOf {
+            store.addRelation(from: person.id, to: subject.id, kind: kind)
+        } else {
+            store.addRelation(from: subject.id, to: person.id, kind: kind)
         }
     }
 }

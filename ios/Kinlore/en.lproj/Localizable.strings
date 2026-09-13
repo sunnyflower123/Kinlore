@@ -103,8 +103,8 @@
 "Ihmiset" = "People";
 "Suku" = "Relatives";
 "Ei vielä ihmisiä" = "No people yet";
-"Ei muita henkilöitä" = "No other people";
-"Henkilöt syntyvät kertomisesta. Kerro ensin muisto jossa mainitset heidät." = "People come out of telling. Tell a memory that mentions them first.";
+"Lisää henkilö" = "Add a person";
+"Joku uusi" = "Someone new";
 "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli." = "People gather here as they get talked about. What each of them was like is written down together.";
 "Lisää sukulainen" = "Add a relative";
 "Lapsi" = "Child";

@@ -842,6 +842,15 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The sheet a person is typed into, since 13 Sep 2026: a new way into a
+    /// shared sheet, so it is measured at both sizes before it is called done.
+    func testAddPersonSheet() throws {
+        try sweep("Lisää henkilö", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+            reach(app.buttons["Lisää henkilö"], in: app, "the way to add a person").tap()
+            require(app.buttons["Tallenna"], "the sheet")
+        }
+    }
+
     /// The memory row's own way out, which shows only on a telling of one's
     /// own. The fixture's memories are all Mummo's, so this one is told first
     /// and read back from its card, the way it would be the day after.
