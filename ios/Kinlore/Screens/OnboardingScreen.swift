@@ -264,6 +264,9 @@ private struct WhereMemoriesGo: View {
 /// larger" switch reads as an admission and "kenen puhelin tämä on" does not.
 private struct CreateFamilyForm: View {
     @Environment(Session.self) private var session
+    /// Where the founder's own card is made once the family exists. See
+    /// `Session.createFamily`.
+    @Environment(MemoryStore.self) private var store
     @Binding var name: String
     /// False when reached from an archive already kept to this phone.
     var canStayAlone = true
@@ -437,7 +440,7 @@ private struct CreateFamilyForm: View {
         // somebody uneasy about the server, and making it wait on the server
         // answering would be a poor joke. See `Session.keepToThisPhone`.
         guard isShared else { return session.keepToThisPhone() }
-        Task { await session.createFamily(named: "", displayName: name) }
+        Task { await session.createFamily(named: "", displayName: name, archive: store) }
     }
 }
 

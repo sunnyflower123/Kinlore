@@ -158,12 +158,37 @@ final class SyncEngine {
         return false
     }
 
+    /// Callers waiting for the round in flight to end. See
+    /// `syncAfterRoundInFlight`.
+    private var waitingForRound: [CheckedContinuation<Void, Never>] = []
+
+    /// A round that begins after this call, awaited to its end.
+    ///
+    /// `sync()` ignores a call made while a round runs, which is right for the
+    /// lifecycle triggers — the running round will do — and wrong for a caller
+    /// whose next request needs what it has just written to be on the server:
+    /// the round in flight may have built its payload before the write. An
+    /// invitation naming a card made a moment ago is that caller
+    /// (`InviteShareButton`). Whether the round got through is not reported;
+    /// the server's answer to the next request is the one that counts.
+    func syncAfterRoundInFlight() async {
+        while isRunning {
+            await withCheckedContinuation { waitingForRound.append($0) }
+        }
+        await sync()
+    }
+
     /// One round. Safe to call often — overlapping calls are ignored.
     func sync() async {
         guard isEnabled, !isRunning, !isHeld, let base = AppServices.apiBaseURL else { return }
         isRunning = true
         state = .syncing
-        defer { isRunning = false }
+        defer {
+            isRunning = false
+            let waiting = waitingForRound
+            waitingForRound = []
+            for caller in waiting { caller.resume() }
+        }
 
         let client = SyncClient(baseURL: base, token: session.identity.token)
 
@@ -232,6 +257,10 @@ final class SyncEngine {
             // go on to the catch-up and the places, and a family's whole
             // archive should not stand between them and that.
             Task { await fullCopy.run() }
+
+            // 3. This member's own card, now that the round may have carried
+            //    it up or brought it down.
+            await linkOwnCard()
         } catch {
             // Not shown to the user as an error. The memories are safe locally
             // and the queue drains by itself — a network error is not her
@@ -241,6 +270,27 @@ final class SyncEngine {
                 ? .refused
                 : .waitingForNetwork
         }
+    }
+
+    /// Links this member to the card waiting for them, once the server holds
+    /// it.
+    ///
+    /// A card waits in two cases: the founder's own, made on this phone as the
+    /// family was created (`Session.createFamily`), and the one an invitation
+    /// named when the inviter's phone had not synced it by the time of the
+    /// join (`Session.join`). The server refuses a card it does not hold, so
+    /// this asks only once there is evidence that it does: the card is on this
+    /// phone and not in the outbox — pushed by this round or an earlier one,
+    /// or pulled, which means another phone pushed it. A refusal or a lost
+    /// connection leaves it waiting for the next round, and every launch and
+    /// every return to the app runs one before it refreshes the family.
+    private func linkOwnCard() async {
+        guard let waiting = session.pendingPersonLink,
+              // Through a merge, if the card has since been renamed into another.
+              let card = store.subject(id: waiting), card.kind == .person,
+              !store.dirtySubjects.contains(card.id)
+        else { return }
+        await session.linkMe(personSubjectID: card.id)
     }
 
     // MARK: - Encryption at rest

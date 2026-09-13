@@ -13,6 +13,11 @@ final class Session {
         let displayName: String
         let role: String
         let joinedAt: Double
+        /// The person card this member is in the tree, or nil while they are
+        /// linked to none. An id only — the same one the card has on every
+        /// phone, so the title comes from the store. Absent from a server that
+        /// predates it. Since 13 Sep 2026.
+        let personSubjectID: String?
     }
 
     struct Invite: Identifiable, Decodable, Hashable {
@@ -40,6 +45,9 @@ final class Session {
             let id: String
             let role: String
             let displayName: String
+            /// This member's own card, as the server has it. See
+            /// `Member.personSubjectID` and `linkMe(personSubjectID:)`.
+            let personSubjectID: String?
         }
     }
 
@@ -92,6 +100,17 @@ final class Session {
     /// her button. Device state, one-shot, never synced — the same shape as
     /// `arrivalPendingKey`, and set at the same moment. Since 13 Sep 2026.
     nonisolated static let firstMinutePendingKey = "first_minute_pending"
+
+    /// The card this member is to be linked to once the server holds it: the
+    /// founder's own, made on this phone when the family is created, or the
+    /// one an invitation named before its inviter's phone had synced it.
+    /// `SyncEngine` links it after a round, `linkMe` clears it, and it goes
+    /// with the membership. Device state, never synced. Since 13 Sep 2026.
+    private static let pendingPersonLinkKey = "pending_person_link"
+
+    var pendingPersonLink: String? {
+        UserDefaults.standard.string(forKey: Self.pendingPersonLinkKey)
+    }
 
     /// Whether this archive is one somebody chose to keep to this phone, as
     /// opposed to one that has no backend to sync to. The screens need the
@@ -185,7 +204,8 @@ final class Session {
 
     // MARK: - Joining
 
-    func createFamily(named familyName: String, displayName: String) async {
+    /// `archive` is where the founder's own card is made — see below.
+    func createFamily(named familyName: String, displayName: String, archive: MemoryStore) async {
         await perform { client in
             let result = try await client.createFamily(
                 familyName: familyName,
@@ -197,6 +217,16 @@ final class Session {
             // the worst of both — unreadable to a new device, and readable to a
             // dump.
             FamilyKey.create()
+            // The founder's own card in the tree, from the name just given, so
+            // the tree has its first person and knows which one is "you".
+            // After the server has said yes, so a failed attempt leaves the
+            // phone as it was (`store(familyID:)`); before the mode flips, so
+            // the first round carries the card up. The link itself waits for
+            // that round, because the server refuses a card it does not hold
+            // (`SyncEngine.linkOwnCard`). No name typed, no card.
+            if let card = archive.addPerson(named: displayName) {
+                UserDefaults.standard.set(card.id, forKey: Self.pendingPersonLinkKey)
+            }
             // Before the mode flips, for the reason `join` gives: the flip is
             // what creates the root view, and the root view consumes this.
             UserDefaults.standard.set(true, forKey: Self.firstMinutePendingKey)
@@ -220,6 +250,12 @@ final class Session {
         await perform { client in
             if let key = parts.key { FamilyKey.adopt(key) }
             let result = try await client.join(code: parts.code, displayName: displayName)
+            // The card the invitation was made for. Already linked if the
+            // server held it; if not, linked from here once a pull brings it
+            // (`SyncEngine.linkOwnCard`).
+            if let card = result.personSubjectID {
+                UserDefaults.standard.set(card, forKey: Self.pendingPersonLinkKey)
+            }
             // Before the mode flips: the flip is what creates the root view,
             // and the root view is what consumes this.
             UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
@@ -254,6 +290,10 @@ final class Session {
             if result.familyID != currentID {
                 try? await client.leave()
                 throw FamilyError.message(elsewhere)
+            }
+            // The card the invitation named, as in `join`.
+            if let card = result.personSubjectID {
+                UserDefaults.standard.set(card, forKey: Self.pendingPersonLinkKey)
             }
             joined = true
         }
@@ -338,13 +378,16 @@ final class Session {
         return reported && isPaid
     }
 
-    func createInvite(displayName: String = "") async -> String? {
+    /// `personSubjectID` is the card the invitation is made for, if any. The
+    /// caller pushes that card first (`SyncEngine.syncAfterRoundInFlight`) so
+    /// that the join finds it; the server lets the join through without it.
+    func createInvite(displayName: String = "", personSubjectID: String? = nil) async -> String? {
         guard let client else { return nil }
         lastError = nil
         isWorking = true
         defer { isWorking = false }
         do {
-            let code = try await client.createInvite(displayName: displayName)
+            let code = try await client.createInvite(displayName: displayName, personSubjectID: personSubjectID)
             await refresh()
             return code
         } catch {
@@ -413,6 +456,29 @@ final class Session {
         }
     }
 
+    /// This member's own card in the tree — "this one is me" — or no card,
+    /// with nil. `PATCH /family/me`; the family reads it back as
+    /// `personSubjectID` on `GET /family`.
+    ///
+    /// Returns whether the server made the link, and says nothing itself: its
+    /// first caller is the link after a sync (`SyncEngine.linkOwnCard`), where
+    /// a refusal only means the card has not reached the server yet, and a
+    /// sentence on whatever screen is open would be about nothing anybody did.
+    /// A link that was made clears the card waiting for one, so a deliberate
+    /// choice is not overwritten later by the automatic one.
+    @discardableResult
+    func linkMe(personSubjectID: String?) async -> Bool {
+        guard let client else { return false }
+        do {
+            _ = try await client.link(personSubjectID: personSubjectID)
+        } catch {
+            return false
+        }
+        UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
+        await refresh()
+        return true
+    }
+
     // MARK: - Leaving
 
     /// Ends this device's membership. The memories stay with the family — see
@@ -441,6 +507,8 @@ final class Session {
             return false
         }
         UserDefaults.standard.removeObject(forKey: familyKey)
+        // A card still waiting for its link is this family's, and goes with it.
+        UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
         // The key belongs to the family, not to this phone. Leaving keeps the
         // local copy — which is plaintext, so nothing on this device becomes
         // unreadable — but the means to read the family's rows goes with the
@@ -477,6 +545,7 @@ final class Session {
         // A wiped device has not just joined anything, or created anything.
         UserDefaults.standard.removeObject(forKey: Self.arrivalPendingKey)
         UserDefaults.standard.removeObject(forKey: Self.firstMinutePendingKey)
+        UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
         family = nil
         usage = nil
         mode = AppServices.apiBaseURL == nil ? .local : .needsFamily
@@ -516,16 +585,22 @@ final class Session {
         let now = Date.now.timeIntervalSince1970
         let day: Double = 24 * 60 * 60
         mode = .inFamily(id: "demo-family")
-        let you = Member(id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day)
+        let you = Member(
+            id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day, personSubjectID: nil
+        )
         family = Family(
             id: "demo-family",
             name: "Virtaset",
             entitlement: "free",
-            you: Family.You(id: "demo-you", role: "owner", displayName: "Minä"),
+            you: Family.You(id: "demo-you", role: "owner", displayName: "Minä", personSubjectID: nil),
             members: alone ? [you] : [
                 you,
-                Member(id: "demo-aino", displayName: "Aino", role: "member", joinedAt: now - 12 * day),
-                Member(id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day),
+                Member(
+                    id: "demo-aino", displayName: "Aino", role: "member", joinedAt: now - 12 * day, personSubjectID: nil
+                ),
+                Member(
+                    id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day, personSubjectID: nil
+                ),
             ],
             // Two open invitations, as the server lists them since a code
             // admits one person: one made for somebody by name, one without.

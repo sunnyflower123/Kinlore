@@ -639,6 +639,27 @@ no invitation.
   row's worth of height on the owner's row moved the list's resting place so
   its last invite row sat twelve points above the bar, and the bar's own
   item changes no geometry
+- **A member can be a card in the tree**, since 13 Sep 2026, and a
+  grandparent who joins through an invitation becomes the card the inviter
+  made for her. `PATCH /family/me` takes `personSubjectID` (null unlinks),
+  `POST /family/invite` takes the card it is for (`invite.person_subject_id`),
+  the join links to it, and `GET /family` returns the id on every member and
+  on `you`. The founder's own card is made from their name when the family is
+  created and linked after the round that pushes it; the first minute's
+  invitation pushes its card before naming it. **The foreign key decided the
+  shape.** D1 enforces foreign keys on every query and a query cannot turn
+  them off (Cloudflare's D1 docs); measured on the local D1, a member row
+  naming a missing subject fails, and through the Worker a push naming one is
+  a 502. A card reaches D1 only when its phone syncs, and the join claims its
+  code before it inserts the member, so writing an unsynced id would burn her
+  invitation. So no statement writes the link unless the same statement finds
+  a live person card of that family: otherwise she joins unlinked, the reply
+  names the card, and her phone links itself once a pull brings it.
+  `invite.person_subject_id` has no `REFERENCES` for the same reason.
+  `invite-boundary-check.mjs` presses on it in fifteen cases; against a
+  `family.ts` that wrote the id directly, eight went red — a join answering
+  502, and a member linked to another family's card, which the key alone
+  never refused
 - The family view shows who has joined **and when**. The date was decoded from
   the server and never drawn until it was looked for: a stranger in the list is
   a question, and a stranger who arrived last Tuesday is an answer about which

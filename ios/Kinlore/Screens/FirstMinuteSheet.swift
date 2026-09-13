@@ -97,7 +97,13 @@ struct FirstMinuteSheet: View {
                 .font(.body.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
 
-            InviteShareButton(title: "Omalla puhelimellaan", suggestedName: person.displayTitle)
+            // With her card, so that joining through this invitation makes her
+            // that card rather than a second person under her name.
+            InviteShareButton(
+                title: "Omalla puhelimellaan",
+                suggestedName: person.displayTitle,
+                personSubjectID: person.id
+            )
                 .buttonStyle(.borderedProminent)
 
             // The card already exists, so this is the way out as well as an

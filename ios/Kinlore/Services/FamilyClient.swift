@@ -11,6 +11,12 @@ struct FamilyClient {
     struct JoinResult: Decodable {
         let familyID: String
         let role: String
+        /// The card the invitation was made for, when it named one. The server
+        /// has already linked the new member to it if the card had reached the
+        /// server; if not, this phone links itself once the card arrives
+        /// (`SyncEngine`). Absent from a server that predates it, and from the
+        /// create route, which has no card to name.
+        let personSubjectID: String?
     }
 
     // MARK: - Routes
@@ -67,16 +73,23 @@ struct FamilyClient {
         try await send("family", method: "GET", body: Optional<Int>.none, authenticated: true)
     }
 
-    /// `displayName` is who the invitation is for. Empty sends no body at all,
-    /// which is the request this route answered before the name existed.
-    func createInvite(displayName: String) async throws -> String {
-        struct Body: Encodable { let displayName: String }
+    /// `displayName` is who the invitation is for, and `personSubjectID` the
+    /// card it is made for. With neither, no body is sent at all, which is the
+    /// request this route answered before either existed.
+    func createInvite(displayName: String, personSubjectID: String?) async throws -> String {
+        // The synthesized encoder leaves a nil field out, which is what the
+        // route expects of a field nobody filled in.
+        struct Body: Encodable {
+            let displayName: String?
+            let personSubjectID: String?
+        }
         struct Reply: Decodable { let code: String }
         let named = displayName.trimmingCharacters(in: .whitespaces)
+        let body = Body(displayName: named.isEmpty ? nil : named, personSubjectID: personSubjectID)
         let reply: Reply = try await send(
             "family/invite",
             method: "POST",
-            body: named.isEmpty ? nil : Body(displayName: named),
+            body: body.displayName == nil && body.personSubjectID == nil ? nil : body,
             authenticated: true
         )
         return reply.code
@@ -120,6 +133,32 @@ struct FamilyClient {
             authenticated: true
         )
         return reply.displayName
+    }
+
+    /// This member's own card in the tree, or none with nil. The server links
+    /// only a live person card of this family that it already holds, so a
+    /// card made on this phone is refused until a sync has carried it up.
+    func link(personSubjectID: String?) async throws -> String? {
+        struct Body: Encodable {
+            let personSubjectID: String?
+
+            // Written out, because the synthesized encoder leaves a nil out
+            // altogether — and a missing key is not the same request as
+            // `null`, which is how unlinking is said.
+            enum CodingKeys: String, CodingKey { case personSubjectID }
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encode(personSubjectID, forKey: .personSubjectID)
+            }
+        }
+        struct Reply: Decodable { let personSubjectID: String? }
+        let reply: Reply = try await send(
+            "family/me",
+            method: "PATCH",
+            body: Body(personSubjectID: personSubjectID),
+            authenticated: true
+        )
+        return reply.personSubjectID
     }
 
     /// Ends this device's membership. The memories stay with the family — see

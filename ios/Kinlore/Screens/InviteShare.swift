@@ -26,10 +26,21 @@ struct InviteShareButton: View {
     /// answered. Empty everywhere else, which is the button as it always was.
     var suggestedName = ""
 
+    /// The card the invitation is made for, when the screen offering it has
+    /// one — the first minute's, again. Whoever joins through the code is
+    /// linked to it, so the grandmother who opens the link becomes the card
+    /// her grandchild made. Nil everywhere else.
+    var personSubjectID: String? = nil
+
+    @Environment(SyncEngine.self) private var sync: SyncEngine?
+
     @State private var name = ""
     @State private var code: String?
     @State private var isSharing = false
     @State private var couldNotCreate = false
+    /// From the tap until the code is back. Longer than `session.isWorking`,
+    /// which starts only once the card the invitation names has been pushed.
+    @State private var isCreating = false
 
     var body: some View {
         Button {
@@ -122,8 +133,22 @@ struct InviteShareButton: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Button {
+                        isCreating = true
                         Task {
-                            code = await session.createInvite(displayName: name)
+                            // The card goes along only while the name is still
+                            // the one it was offered under: an invitation
+                            // renamed to somebody else is for somebody else,
+                            // and linking them to her card would put the wrong
+                            // person in the tree.
+                            let card = isStillForTheCard ? personSubjectID : nil
+                            // Up before the invitation names it, so that the
+                            // join finds the card and links her there and
+                            // then. A join survives a card that has not
+                            // arrived, and her phone links itself later; this
+                            // is what keeps that the rare case.
+                            if card != nil { await sync?.syncAfterRoundInFlight() }
+                            code = await session.createInvite(displayName: name, personSubjectID: card)
+                            isCreating = false
                             if code == nil {
                                 // Said out loud, on the path to the product's
                                 // second user. A spinner that returns to a
@@ -136,7 +161,7 @@ struct InviteShareButton: View {
                             }
                         }
                     } label: {
-                        if session.isWorking {
+                        if session.isWorking || isCreating {
                             ProgressView().frame(maxWidth: .infinity)
                         } else {
                             Text("Luo kutsu")
@@ -148,7 +173,7 @@ struct InviteShareButton: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .elderTapTarget()
-                    .disabled(session.isWorking)
+                    .disabled(session.isWorking || isCreating)
 
                     Spacer()
 
@@ -171,6 +196,14 @@ struct InviteShareButton: View {
             // in a take.
             .elderSurface()
         }
+    }
+
+    /// Whether the name in the sheet is still the one the card was offered
+    /// under. Case and surrounding spaces do not make it somebody else.
+    private var isStillForTheCard: Bool {
+        let offered = suggestedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.trimmingCharacters(in: .whitespacesAndNewlines)
+            .caseInsensitiveCompare(offered) == .orderedSame
     }
 
     /// A dismissed sheet starts over. A code left behind would be shared to
