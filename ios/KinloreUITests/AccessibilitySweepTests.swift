@@ -861,6 +861,23 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same tree at the size a family reaches: six generations and
+    /// fifty-three people, with generation labels down the side and a legend
+    /// under it since 16 Sep 2026 (`-seed clan`).
+    ///
+    /// The small fixture cannot answer what this one does. The shaded bands
+    /// are new ground under every name in the drawing, the rail is text in a
+    /// column of its own — which at the largest size is a column of hyphenated
+    /// words — and the legend put three more things in the bar the zoom
+    /// buttons already sit in. All three are the kind of thing that measures
+    /// fine at the default size and clips at the largest.
+    func testFamilyTreeAtSize() throws {
+        try sweep("Sukupuu, iso suku", arguments: ["-seed", "clan", "-tab", "people", "-screen", "tree", "-you", "clan-elina"]) { app, _ in
+            require(app.buttons["Aapo"], "the oldest generation")
+            require(app.staticTexts["Sinun polvesi"], "the generation labels")
+        }
+    }
+
     /// What a person in the tree offers: their card, or a relative added on
     /// the spot. A new sheet since 13 Sep 2026.
     func testTreePersonSheet() throws {

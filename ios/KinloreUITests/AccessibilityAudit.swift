@@ -165,6 +165,14 @@ extension XCTestCase {
         if searchField.exists {
             topFrame = topFrame.isNull ? searchField.frame : topFrame.union(searchField.frame)
         }
+        // Where the scrolling stops. A list builds its rows lazily, so what is
+        // below the fold is not in the tree at all — but a drawing is one view
+        // with everything in it, and the family tree renders every generation
+        // whether or not it is on screen. The tallest scroll view, because a
+        // screen can hold more than one: the tree's own drawing scrolls
+        // sideways inside the page that scrolls down.
+        let scrollers = app.scrollViews.allElementsBoundByIndex.map(\.frame)
+        let contentFrame = scrollers.max { $0.height < $1.height } ?? .null
 
         var found: [String] = []
         // Contrast findings in the fade above the tab bar, held back until the
@@ -180,7 +188,7 @@ extension XCTestCase {
 
         try app.performAccessibilityAudit { issue in
             if AccessibilityPolicy.isDeliberate(
-                issue, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame
+                issue, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame, content: contentFrame
             ) || extra(issue) {
                 return true
             }
@@ -428,7 +436,8 @@ enum AccessibilityPolicy {
         _ issue: XCUIAccessibilityAuditIssue,
         tabBar: CGRect,
         keyboard: CGRect,
-        topChrome: CGRect = .null
+        topChrome: CGRect = .null,
+        content: CGRect = .null
     ) -> Bool {
         let label = issue.element?.label ?? ""
 
@@ -510,6 +519,22 @@ enum AccessibilityPolicy {
         // is not a colour anybody can see. The same reasoning as the tab bar
         // below, from the other end.
         if issue.auditType == .contrast, let frame = issue.element?.frame, frame.minY < 0 {
+            return true
+        }
+
+        // **Below the scrolling area, which is the same thing from the other
+        // end.** The family tree draws every generation at once, so a family
+        // of any size has names below the fold, clipped and not drawn — and
+        // the pixels at their frames belong to whatever the app puts under the
+        // scroll view. Measured 16 Sep 2026 with `-seed clan`: two names
+        // reported at 1.04:1, which is paper on paper, 120 points below the
+        // bottom of the drawing.
+        //
+        // As narrow as the rule above it: contrast only, and only where the
+        // element is entirely past the end of the scrolling area. A name half
+        // in and half out still has pixels and is still judged.
+        if issue.auditType == .contrast, !content.isNull,
+           let frame = issue.element?.frame, frame.minY >= content.maxY {
             return true
         }
 

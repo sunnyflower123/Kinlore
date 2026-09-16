@@ -549,3 +549,15 @@
 "Vahvisti %@" = "Vahvisti %@";
 "Kootaan värikuvia %lld/%lld" = "Kootaan värikuvia %lld/%lld";
 "Värit kerronnan mukaan, vahvisti %@" = "Värit kerronnan mukaan, vahvisti %@";
+
+/* The family tree's rail and legend: which generation a row is, and
+   what a line between two people means. */
+"Isoisovanhemmat" = "Isoisovanhemmat";
+"Isovanhemmat" = "Isovanhemmat";
+"Sinun polvesi" = "Sinun polvesi";
+"Lastenlapset" = "Lastenlapset";
+"Lastenlastenlapset" = "Lastenlastenlapset";
+"%lld. polvi" = "%lld. polvi";
+"%lld polvea ylempänä" = "%lld polvea ylempänä";
+"%lld polvea alempana" = "%lld polvea alempana";
+"Pariskunta" = "Pariskunta";

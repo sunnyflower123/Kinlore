@@ -1199,6 +1199,22 @@ final class MemoryStore {
             return
         }
         let seed = UserDefaults.standard.string(forKey: "seed")
+        // `-seed clan` is the opposite end of the same idea: a family too big
+        // for the screen, with every hard connection in it, for the one screen
+        // whose defects only appear at size. The table is `ClanFixture`.
+        if seed == "clan" {
+            let fixture = ClanFixture.archive()
+            subjects = fixture.subjects
+            memories = []
+            questions = []
+            relations = fixture.relations
+            dirtySubjects = []
+            dirtyMemories = []
+            dirtyQuestions = []
+            dirtyRelations = []
+            save()
+            return
+        }
         guard ["archive", "unseen", "deck", "blind", "related", "dated", "film", "film-untold", "film-tree"].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the

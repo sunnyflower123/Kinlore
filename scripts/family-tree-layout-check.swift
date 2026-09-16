@@ -200,6 +200,123 @@ enum FamilyTreeLayoutCheck {
             check("Eero is on his sister's row", first.placements["Eero"]?.row == first.placements["Liisa"]?.row)
         }
 
+        print("— a family that shares nobody is a family of its own —")
+        do {
+            // Two families and one person related to neither. Which family
+            // somebody is in is what the drawing needs to know before it
+            // shades a row and calls it a generation: the second family's
+            // row 0 is its own oldest generation and nobody else's.
+            let r = FamilyTreeLayout.layout(
+                people: ["Aino", "Toivo", "Eeva", "Kalle", "Sanni"],
+                links: [parent("Aino", "Toivo"), spouse("Eeva", "Kalle")]
+            )
+            check("each family is numbered", r.family["Aino"] == 0 && r.family["Toivo"] == 0 && r.family["Eeva"] == 1)
+            check("and there is an extent for each", r.familyExtents.count == 2)
+            check("related to nobody is in no family", r.family["Sanni"] == nil)
+            let first = r.familyExtents.first, second = r.familyExtents.last
+            check("the first family ends before the second begins", (first?.maxX ?? 9) < (second?.minX ?? -9))
+            check("each extent covers its own people",
+                  first?.minX == r.placements["Aino"]?.x
+                      && second?.minX == r.placements["Eeva"]?.x && second?.maxX == r.placements["Kalle"]?.x)
+            check("and carries its own depth, not the tallest", first?.rows == 2 && second?.rows == 1,
+                  "\(r.familyExtents)")
+        }
+
+        print("— the connections a family archive actually contains —")
+        do {
+            // A second marriage. Both wives are drawn, each as a couple with
+            // him, and the half-siblings are both under their father.
+            let r = FamilyTreeLayout.layout(
+                people: ["Aapo", "Hilma", "Lyyli", "Vaino", "Kerttu"],
+                links: [
+                    spouse("Aapo", "Hilma"), spouse("Aapo", "Lyyli"),
+                    parent("Aapo", "Vaino"), parent("Hilma", "Vaino"),
+                    parent("Aapo", "Kerttu"), parent("Lyyli", "Kerttu"),
+                ]
+            )
+            check("both wives are on his row",
+                  r.placements["Hilma"]?.row == 0 && r.placements["Lyyli"]?.row == 0)
+            check("both marriages are drawn", r.segments.filter { $0.kind == .couple }.count == 2)
+            check("both children are a generation below",
+                  r.placements["Vaino"]?.row == 1 && r.placements["Kerttu"]?.row == 1)
+            check("nobody shares a place", noOverlap(r))
+
+            // Cousins married to each other: the family is a ring rather than
+            // a tree, and a ring is where a breadth-first generation can come
+            // back round to disagree with itself.
+            let ring = FamilyTreeLayout.layout(
+                people: ["A", "B", "C", "D", "E", "F"],
+                links: [
+                    spouse("A", "B"), parent("A", "C"), parent("B", "C"), parent("A", "D"), parent("B", "D"),
+                    parent("C", "E"), parent("D", "F"), spouse("E", "F"),
+                ]
+            )
+            check("a ring places everybody once", ring.placements.count == 6 && noOverlap(ring))
+            check("the cousins are on one row", ring.placements["E"]?.row == ring.placements["F"]?.row)
+            check("and their marriage is drawn", ring.segments.contains { $0.kind == .couple && $0.y1 == 2 })
+
+            // A marriage the generations cannot hold: Eemeli is a brother of
+            // somebody a generation above his wife. One of the two lines has
+            // to go — what must not happen is somebody left out or drawn on
+            // top of somebody else.
+            let apart = FamilyTreeLayout.layout(
+                people: ["Oiva", "Eemeli", "Vaino", "Sirkka"],
+                links: [sibling("Oiva", "Eemeli"), parent("Vaino", "Sirkka"), spouse("Eemeli", "Sirkka"), spouse("Oiva", "Vaino")]
+            )
+            check("everybody is still placed", apart.placements.count == 4 && noOverlap(apart))
+            // Which line goes depends on the order the family was entered in
+            // — here it is the parent, because breadth first reaches Sirkka
+            // through her husband before it reaches her through her father.
+            // What matters is that exactly one goes: the other three
+            // relationships are still drawn and nobody is misplaced.
+            let kept = apart.segments.filter { $0.kind == .couple }.count
+                + (apart.segments.contains { $0.kind == .sibling } ? 1 : 0)
+                + (apart.segments.contains { $0.kind == .descent } ? 1 : 0)
+            check("and exactly one of the four relationships loses its line", kept == 3, "\(apart.segments)")
+        }
+
+        print("— a family too big for the screen —")
+        do {
+            // Four generations, three children to a couple and each of them
+            // married: eighty people, which is the size a family archive
+            // reaches in a year and a size nothing here had ever been run at
+            // until 16 Sep 2026. Every property below holds at five people
+            // too; the point is that they still hold at eighty.
+            var people = ["a", "b"]
+            var links = [spouse("a", "b")]
+            var couples = [("a", "b")]
+            var next = 0
+            for _ in 0 ..< 3 {
+                var born: [(String, String)] = []
+                for (mother, father) in couples {
+                    for _ in 0 ..< 3 {
+                        next += 1
+                        let child = "c\(next)", inLaw = "i\(next)"
+                        people += [child, inLaw]
+                        links += [parent(mother, child), parent(father, child), spouse(child, inLaw)]
+                        born.append((child, inLaw))
+                    }
+                }
+                couples = born
+            }
+            let r = FamilyTreeLayout.layout(people: people, links: links)
+            check("everybody is placed", r.placements.count == people.count, "\(r.placements.count) of \(people.count)")
+            check("nobody shares a place", noOverlap(r))
+            check("four generations", r.rows == 4)
+            check("wide enough for the youngest generation", r.width >= 54, "\(r.width)")
+            let childBelow = links.filter { $0.kind == .parent }.allSatisfy {
+                (r.placements[$0.to]?.row ?? -9) == (r.placements[$0.from]?.row ?? 9) + 1
+            }
+            check("every child is one row under both parents", childBelow)
+            let coupleSideBySide = links.filter { $0.kind == .spouse }.allSatisfy {
+                guard let a = r.placements[$0.from], let b = r.placements[$0.to] else { return false }
+                return a.row == b.row && abs(a.x - b.x) == 1
+            }
+            check("every couple is side by side", coupleSideBySide)
+            check("one family", r.familyExtents.count == 1 && r.looseRow == nil)
+            check("and the same drawing twice", FamilyTreeLayout.layout(people: people, links: links) == r)
+        }
+
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) check(s) failed")
         exit(failures == 0 ? 0 : 1)
     }

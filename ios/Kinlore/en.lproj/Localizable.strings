@@ -624,3 +624,15 @@
 "Vahvisti %@" = "Confirmed by %@";
 "Kootaan värikuvia %lld/%lld" = "Gathering coloured photographs %lld/%lld";
 "Värit kerronnan mukaan, vahvisti %@" = "Colours by the telling, confirmed by %@";
+
+/* The family tree's rail and legend: which generation a row is, and
+   what a line between two people means. */
+"Isoisovanhemmat" = "Great-grandparents";
+"Isovanhemmat" = "Grandparents";
+"Sinun polvesi" = "Your generation";
+"Lastenlapset" = "Grandchildren";
+"Lastenlastenlapset" = "Great-grandchildren";
+"%lld. polvi" = "Generation %lld";
+"%lld polvea ylempänä" = "%lld generations above you";
+"%lld polvea alempana" = "%lld generations below you";
+"Pariskunta" = "A couple";

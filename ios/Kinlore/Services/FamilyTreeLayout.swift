@@ -35,6 +35,19 @@ enum FamilyTreeLayout {
         let x: Double
     }
 
+    /// What a line between two people means. The drawing tells them apart —
+    /// a couple is drawn as two lines, the way a genealogy does it — and a
+    /// picture whose lines all look the same cannot be read without being
+    /// explained (16 Sep 2026).
+    enum SegmentKind: Equatable {
+        /// Between the two of a couple, along their own row.
+        case couple
+        /// From between parents down to a child.
+        case descent
+        /// The bar over siblings nobody has entered parents for.
+        case sibling
+    }
+
     /// A straight line, in the same units as `Placement`: `x` in
     /// person-widths, `y` in rows, with a row's people centred on its integer.
     struct Segment: Equatable {
@@ -42,10 +55,29 @@ enum FamilyTreeLayout {
         let y1: Double
         let x2: Double
         let y2: Double
+        var kind: SegmentKind = .descent
+    }
+
+    /// Where one family sits: the places it takes, and how many generations
+    /// deep it is. Families share nobody, so these do not overlap.
+    struct Extent: Equatable {
+        var minX: Double
+        var maxX: Double
+        var rows: Int
     }
 
     struct Result: Equatable {
         var placements: [String: Placement] = [:]
+        /// Which family each person is in — everybody related to them, however
+        /// distantly. **A row is a generation only inside one family.** Two
+        /// families that share nobody both start at row 0 because neither
+        /// knows anything about the other's age, so drawing them in one band
+        /// and calling that band a generation says something nobody entered
+        /// (seen on 16 Sep 2026: a couple related to nobody, drawn level with
+        /// somebody's great-great-grandparents and labelled as them).
+        var family: [String: Int] = [:]
+        /// One per family, in the order they are drawn.
+        var familyExtents: [Extent] = []
         /// People with no relationship to anybody drawn, in the order given.
         /// They are placed below every family and have no lines.
         var unconnected: [String] = []
@@ -140,7 +172,8 @@ enum FamilyTreeLayout {
 
         var x: [String: Double] = [:]
         var offset = 0.0
-        for members in families {
+        for (index, members) in families.enumerated() {
+            for id in members { result.family[id] = index }
             let depth = (members.compactMap { row[$0] }.max() ?? 0) + 1
             result.rows = max(result.rows, depth)
             var byRow = Array(repeating: [String](), count: depth)
@@ -195,6 +228,10 @@ enum FamilyTreeLayout {
                 }
                 rightEdge = max(rightEdge, next)
             }
+            let places = members.compactMap { x[$0] }
+            result.familyExtents.append(
+                Extent(minX: places.min() ?? offset, maxX: places.max() ?? offset, rows: depth)
+            )
             // One empty place between two families that share nobody.
             offset = rightEdge + 1
         }
@@ -228,7 +265,7 @@ enum FamilyTreeLayout {
             for partner in partners {
                 let key = "s:" + [id, partner].sorted().joined(separator: "|")
                 guard drawn.insert(key).inserted, let a = x[id], let b = x[partner], let r = row[id] else { continue }
-                segments.append(Segment(x1: min(a, b), y1: Double(r), x2: max(a, b), y2: Double(r)))
+                segments.append(Segment(x1: min(a, b), y1: Double(r), x2: max(a, b), y2: Double(r), kind: .couple))
             }
         }
 
@@ -270,9 +307,9 @@ enum FamilyTreeLayout {
                 // so the same family came out as two different lists of lines
                 // that draw the same. The layout check caught it, in half of
                 // the runs of some processes and none of others.
-                segments.append(Segment(x1: ax, y1: bar, x2: ax, y2: Double(r)))
-                segments.append(Segment(x1: min(ax, bx), y1: bar, x2: max(ax, bx), y2: bar))
-                segments.append(Segment(x1: bx, y1: bar, x2: bx, y2: Double(r)))
+                segments.append(Segment(x1: ax, y1: bar, x2: ax, y2: Double(r), kind: .sibling))
+                segments.append(Segment(x1: min(ax, bx), y1: bar, x2: max(ax, bx), y2: bar, kind: .sibling))
+                segments.append(Segment(x1: bx, y1: bar, x2: bx, y2: Double(r), kind: .sibling))
             }
         }
 

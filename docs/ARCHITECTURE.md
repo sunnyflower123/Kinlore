@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 63 sweep tests, each auditing one screen at the default text size and again at the largest, out of 169 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 64 sweep tests, each auditing one screen at the default text size and again at the largest, out of 177 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1788,6 +1788,91 @@ Not built:
    somebody lands is arithmetic no screenshot can check, so
    `scripts/family-tree-layout-check.swift` checks it: a child below her
    parents, a couple side by side, nobody sharing a place.
+
+   **And then somebody used it, and it explained nothing** (16 Sep 2026). The
+   first evening with it produced one sentence — *"it is not very clear yet how
+   this works"* — about a drawing that was, on its own terms, correct. Five
+   discs and four kinds of line, and nothing on the screen said what a row was
+   or what a line meant. Four ways out of that were drawn up and one was built:
+   the generations named.
+
+   - **A rail down the left names each generation**, counted from your own row:
+     *Vanhemmat*, *Sinun polvesi*, *Lapset*, and beyond three either way a
+     count — *4 polvea ylempänä*. Counted from you because the archive stores
+     no gender, so a word for one person would have to read *"Eevan vanhempi"*;
+     a generation has a name in Finnish that needs none. A phone linked to no
+     card gets the drawing's own numbering instead, which claims nothing. The
+     rail does not scroll sideways with the drawing and does not shrink with
+     the zoom: in a family that needs scrolling, a label that scrolls away
+     names the rows you are no longer looking at.
+   - **A band to every other generation**, `Elder.card` on `Elder.paper` —
+     1.11:1, a tint and not an edge — so a row reads as one row across a family
+     too wide to see at once. Names measure 16.81:1 on it against 15.17:1 off
+     it, so no name is harder to read for being in a shaded generation.
+   - **A couple is two lines**, the way a genealogy draws a marriage, and a
+     legend says so: *pariskunta*, *lapset*, *sisarukset*. Three kinds of line
+     are drawn and none of them is guessable. It is above the drawing, where a
+     key is read before the picture — in the bar it cost 150 points of an
+     874-point screen for three words — and it is a column rather than a row:
+     as a `ViewThatFits` folding a row into a column, the audit called all
+     three words partially unsupported Dynamic Type, in both tree sweeps, at
+     the default text size. One arrangement at every size passes.
+   - **The bands stop at your own family.** Two families that share nobody are
+     drawn side by side and both start at row 0, because neither knows
+     anything about the other's age. Shading across both and calling the band
+     a generation says something nobody entered — measured with `-seed clan`,
+     where a couple related to nobody was drawn level with somebody's
+     great-great-grandparents and labelled as them. `Result.family` and
+     `Result.familyExtents` are what the drawing asks to avoid it. **Half of
+     it is answered and half is not**: the band ends at your family's last
+     column, and the rail stops at your family's depth, but the rail is one
+     column for the whole picture — scroll right to Otto and Helmi and they
+     are still level with the words *4 polvea ylempänä*. A rail cannot say
+     "these words are for this family only"; a caption over each family could,
+     and is not built.
+   - **The caption's dead generation is gone.** The layout leaves an empty row
+     above the people related to nobody for the screen's caption; the screen
+     now takes the air back out of it — 134 points of nothing at the default
+     text size — instead of only doing so when there was no tree above it.
+   - **The zoom bar is below the drawing rather than over it.** As a
+     `safeAreaInset` it floated on top, and in a family of any size somebody is
+     always under it: the audit measured two names at 1.04:1, which is paper on
+     paper — not dimmed, covered.
+
+   **`-seed clan` is the fixture all of that was measured against**: six
+   generations, 53 confirmed people, a second marriage and the half-siblings
+   from it, a sibship of six, a childless couple, a child with one parent, two
+   cousin marriages, a marriage the generations cannot hold, siblings with no
+   parents entered, two families sharing nobody, a contradiction, a duplicate
+   link, an unconfirmed person, and seven people related to nobody. Every
+   defect above is one that five people cannot show. `FamilyTreeCrowdTests`
+   and the *Sukupuu, iso suku* sweep run against it, and the layout check now
+   builds an eighty-person family of its own and asks the same questions of it
+   that it asks of five.
+
+   **What it still gets wrong, measured and not fixed.** None of these is new
+   on 16 Sep; each needed a family big enough to show it.
+
+   - **A second marriage is one line through the first wife**, and the bracket
+     to that marriage's children drops from the middle of the two spouses —
+     which, with a wife on each side, is exactly the first wife's place. So
+     the picture reads *Hilma and Lyyli are a couple* and *Kerttu hangs from
+     Hilma*, and neither is in the archive.
+   - **A link the placement cannot honour is dropped in silence.** Two of the
+     75 the fixture offers: the brother of a man drawn in his wife's
+     generation, and the second half of a contradiction. The drawing simply
+     has no line for them and nothing on the screen says a line is missing —
+     and which of the two ends loses its line depends on the order the family
+     was entered in.
+   - **A family of 53 does not fit at any zoom the app offers.** The drawing is
+     2376 × 1248 points at the default text size; the canvas beside the rail is
+     324 points wide. That is 7.3 canvases at 1×, and 2.9 at the smallest zoom
+     — where a name is `.body` at 0.4, which is 6.8 points. So a big family is
+     read either through a narrow window or too small to read. Option 03 of the
+     16 Sep artifact, one person and their immediate family at a time, was
+     filed as *later, if families grow*; this is that case.
+   - **The rail hyphenates.** *Isoisovanhemmat* does not fit 78 points at the
+     default text size and breaks as *Isoisovan-hemmat*.
 
 ## 9. Build order
 
