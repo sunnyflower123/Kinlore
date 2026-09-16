@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 63 sweep tests, each auditing one screen at the default text size and again at the largest, out of 168 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 63 sweep tests, each auditing one screen at the default text size and again at the largest, out of 169 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1732,9 +1732,24 @@ Built, in the order they were built:
     reason: this is the person, not the extraction. The card could date the
     picture and not name it; the title was whatever the first telling left.
 
-    **And a person by hand**, since 13 Sep 2026: *"Lisää henkilö"* beside the
-    gear on Ihmiset and beneath its empty state, and *"Joku uusi"* at the top of
+    **And a person by hand**, since 13 Sep 2026: *"Lisää henkilö"* in its own
+    corner at the top of Ihmiset, and *"Joku uusi"* at the top of
     the picker behind *"Lisää sukulainen"*, all through the same `NameSheet`.
+    It stood beneath the empty state as well until 16 Sep 2026, where whoever
+    sets the archive up meets it first — and that is exactly who lost it: the
+    first person added emptied that screen, and the button was suddenly at the
+    top of a list the person had never looked at. A button that is easy to find
+    once and gone afterwards is worse than one place that never moves, so the
+    empty state's last sentence points at the toolbar instead.
+
+    **And the toolbar was not one place either**, which the test written for
+    that fix then measured: beside the gear the button moved 90 pt left
+    (x 218 → x 128) on the same first person, because the tree/list switch
+    joins that trailing group as soon as there is somebody to draw. It sits on
+    the leading side now, alone, where nothing conditional can push it.
+    `AddPersonTests.testTheWayToAddAPersonIsInOnePlaceBeforeAndAfter` compares
+    the frame either side of the first person rather than only asserting the
+    button exists.
     Until then a person could only be born out of a telling. That is the right
     order for the person talking and the wrong one for whoever sets the archive
     up, who knows the family's shape before anybody has said a word — and the

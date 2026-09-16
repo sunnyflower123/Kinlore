@@ -250,7 +250,6 @@ struct PeopleScreen: View {
         NavigationStack(path: $path) {
             Group {
                 if store.subjects(of: .person).filter(\.confirmed).isEmpty, heard.isEmpty {
-                    VStack(spacing: 0) {
                     ContentUnavailableView {
                         Label("Ei vielä ihmisiä", systemImage: "person.2")
                     } description: {
@@ -261,17 +260,16 @@ struct PeopleScreen: View {
                         // level down — *suku* is the web of relations on a
                         // person's card, and it is a different thing from the
                         // list. See docs/ARCHITECTURE.md §21.
-                        Text("Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.")
+                        // The last sentence points at the toolbar, because
+                        // the toolbar is the only place the button is. It sat
+                        // beneath this empty state as well until 16 Sep 2026,
+                        // and adding the first person took it away: whoever
+                        // had just used it went looking for it where they had
+                        // used it, and it had moved to the top of the screen.
+                        // One place that never moves beats two that trade off.
+                        Text("Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.")
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
-                    }
-                    // Beneath the empty state rather than among its actions:
-                    // a `ContentUnavailableView` styles its own buttons, and
-                    // the audit measured that one's font as not following
-                    // Dynamic Type. Its words stay exempt as before.
-                    addPersonButton
-                        .padding(.horizontal, Elder.screenPadding)
-                        .padding(.bottom, 12)
                     }
                 } else if people.isEmpty, !query.isEmpty {
                     // A search that found nobody is a different emptiness from
@@ -350,12 +348,22 @@ struct PeopleScreen: View {
                 // in mind. It is shown without a backend too — a single-device
                 // archive is exactly the one with no copy anywhere else, and it
                 // used to have no way to reach the export at all.
-                // Beside the gear, the way the Album's "+" sits on its own tab.
-                // Not a row in the list, and that is measured: as a row above
-                // the door to the heard names it moved the audit's Dynamic Type
-                // finding onto that unchanged door (13 Sep 2026), and with the
-                // row gone the door passed again.
-                ToolbarItem(placement: .topBarTrailing) {
+                // A corner of its own, on the leading side, and that is the
+                // whole point of it: it is the one control here whose position
+                // nothing else can move. Beside the gear it moved 90 pt to the
+                // left the moment the family got its first person — measured
+                // 16 Sep 2026, x 218 → x 128 — because the switch below joins
+                // the group then and the group grows leftwards. Which is the
+                // same complaint as the button that used to sit under the empty
+                // state: whoever had just used it went looking where they had
+                // used it. Album's "+" can sit beside nothing and stay put;
+                // this bar has a conditional item in it, so this one cannot.
+                //
+                // Not a row in the list either, and that is measured: as a row
+                // above the door to the heard names it moved the audit's
+                // Dynamic Type finding onto that unchanged door (13 Sep 2026),
+                // and with the row gone the door passed again.
+                ToolbarItem(placement: .topBarLeading) {
                     Button {
                         isAddingPerson = true
                     } label: {
@@ -447,29 +455,6 @@ struct PeopleScreen: View {
             #endif
             .elderSurface()
         }
-    }
-
-    /// The way to put somebody in by hand beneath the empty state, where
-    /// whoever sets the archive up meets it first (since 13 Sep 2026). Once
-    /// there is anybody on the list, the same sheet opens from the toolbar.
-    ///
-    /// A title and nothing else, in the shape of the memory row's own buttons.
-    /// Built like `heardRow`, with an icon beside the words, the audit measured
-    /// its font as not following Dynamic Type at the default size, which is the
-    /// finding the person card's removal button met four times before it
-    /// settled in this same shape.
-    private var addPersonButton: some View {
-        // The width inside the label, so the whole row takes the tap and not
-        // only the words (found in the tree's sheet, 13 Sep 2026).
-        Button {
-            isAddingPerson = true
-        } label: {
-            Text("Lisää henkilö")
-                .font(.body.weight(.medium))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .elderTapTarget()
-        }
-        .buttonStyle(.borderless)
     }
 
     /// One quiet row for the names the extraction heard and nobody has

@@ -360,7 +360,7 @@ enum AccessibilityPolicy {
         // Change the sentence in RootView and this line changes with it or
         // `testPeopleEmpty` goes red — which is the coupling working, not
         // failing.
-        "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli.",
+        "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.",
     ]
 
     /// A `List` caps how far its own headers and footers grow, exactly as
