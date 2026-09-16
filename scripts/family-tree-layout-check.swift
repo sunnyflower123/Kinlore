@@ -41,6 +41,44 @@ enum FamilyTreeLayoutCheck {
             return Set(places).count == places.count
         }
 
+        /// No line is drawn over somebody it is not about, which is the one
+        /// way this drawing can state a relationship the archive does not
+        /// contain. Two shapes do it and both come from a second marriage:
+        /// the line to the second wife drawn straight through the first, and
+        /// the drop to that marriage's children, which starts from between
+        /// the two and — with a wife on each side of him — starts on her.
+        func throughSomebody(_ r: FamilyTreeLayout.Result, _ links: [L]) -> [String] {
+            var wrong: [String] = []
+            let place = r.placements.sorted { $0.key < $1.key }
+
+            for line in r.segments where line.kind == .couple && line.y1 == line.y2 {
+                for (id, p) in place
+                where Double(p.row) == line.y1 && line.x1 < p.x && p.x < line.x2 {
+                    wrong.append("a marriage is drawn through \(id)")
+                }
+            }
+
+            var folksOf: [String: Set<String>] = [:]
+            for link in links where link.kind == .parent {
+                guard let up = r.placements[link.from], let down = r.placements[link.to],
+                      down.row == up.row + 1 else { continue }
+                folksOf[link.to, default: []].insert(link.from)
+            }
+            for folks in Set(folksOf.values.map { $0.sorted() }).sorted(by: { $0.joined() < $1.joined() }) {
+                let places = folks.compactMap { r.placements[$0] }
+                guard places.count == folks.count, let row = places.first?.row else { continue }
+                let anchor = places.map(\.x).reduce(0, +) / Double(places.count)
+                let fromTheirOwnRow = r.segments.contains {
+                    $0.kind == .descent && $0.x1 == anchor && $0.x2 == anchor && $0.y1 == Double(row)
+                }
+                guard fromTheirOwnRow else { continue }
+                for (id, p) in place where p.row == row && p.x == anchor && !folks.contains(id) {
+                    wrong.append("the children of \(folks.joined(separator: " and ")) hang from \(id)")
+                }
+            }
+            return wrong
+        }
+
         print("— a parent is above the child —")
         do {
             let r = FamilyTreeLayout.layout(people: ["Aino", "Toivo"], links: [parent("Aino", "Toivo")])
@@ -226,13 +264,21 @@ enum FamilyTreeLayoutCheck {
         do {
             // A second marriage. Both wives are drawn, each as a couple with
             // him, and the half-siblings are both under their father.
+            //
+            // He stands BETWEEN them, and that is the whole of it: laid out
+            // with the two wives side by side, the line to the second one runs
+            // straight through the first, and the drop to its children starts
+            // from the middle of the couple, which is her place exactly. The
+            // picture then says Hilma and Lyyli are a couple and Kerttu hangs
+            // from Hilma, and the archive says neither.
+            let marriages = [
+                spouse("Aapo", "Hilma"), spouse("Aapo", "Lyyli"),
+                parent("Aapo", "Vaino"), parent("Hilma", "Vaino"),
+                parent("Aapo", "Kerttu"), parent("Lyyli", "Kerttu"),
+            ]
             let r = FamilyTreeLayout.layout(
                 people: ["Aapo", "Hilma", "Lyyli", "Vaino", "Kerttu"],
-                links: [
-                    spouse("Aapo", "Hilma"), spouse("Aapo", "Lyyli"),
-                    parent("Aapo", "Vaino"), parent("Hilma", "Vaino"),
-                    parent("Aapo", "Kerttu"), parent("Lyyli", "Kerttu"),
-                ]
+                links: marriages
             )
             check("both wives are on his row",
                   r.placements["Hilma"]?.row == 0 && r.placements["Lyyli"]?.row == 0)
@@ -240,20 +286,50 @@ enum FamilyTreeLayoutCheck {
             check("both children are a generation below",
                   r.placements["Vaino"]?.row == 1 && r.placements["Kerttu"]?.row == 1)
             check("nobody shares a place", noOverlap(r))
+            check("the man married twice stands between his wives",
+                  abs((r.placements["Aapo"]?.x ?? 0) - (r.placements["Hilma"]?.x ?? 9)) == 1
+                  && abs((r.placements["Aapo"]?.x ?? 0) - (r.placements["Lyyli"]?.x ?? 9)) == 1,
+                  "\(r.placements.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value.x)" })")
+            check("no line is drawn over anybody it is not about",
+                  throughSomebody(r, marriages).isEmpty, "\(throughSomebody(r, marriages))")
+            check("and the wives are not drawn as a couple with each other",
+                  !r.segments.contains { $0.kind == .couple && abs($0.x2 - $0.x1) > 1 },
+                  "\(r.segments.filter { $0.kind == .couple })")
+
+            // Three marriages, which no single row can put side by side: one
+            // of the three has a wife standing between the two. The line to
+            // her bends under the row rather than through her, and so does
+            // the drop to her children — every marriage still drawn, and
+            // none of them over anybody else.
+            let thrice = [
+                spouse("Aapo", "Hilma"), spouse("Aapo", "Lyyli"), spouse("Aapo", "Saima"),
+                parent("Aapo", "Kerttu"), parent("Saima", "Kerttu"),
+            ]
+            let three = FamilyTreeLayout.layout(
+                people: ["Aapo", "Hilma", "Lyyli", "Saima", "Kerttu"], links: thrice
+            )
+            check("all three wives are placed on his row",
+                  ["Hilma", "Lyyli", "Saima"].allSatisfy { three.placements[$0]?.row == 0 }
+                  && noOverlap(three))
+            check("all three marriages are drawn",
+                  Set(three.segments.filter { $0.kind == .couple }.map { "\($0.x1)-\($0.x2)@\($0.y1)" }).count >= 3,
+                  "\(three.segments.filter { $0.kind == .couple })")
+            check("and none of them over anybody else",
+                  throughSomebody(three, thrice).isEmpty, "\(throughSomebody(three, thrice))")
 
             // Cousins married to each other: the family is a ring rather than
             // a tree, and a ring is where a breadth-first generation can come
             // back round to disagree with itself.
-            let ring = FamilyTreeLayout.layout(
-                people: ["A", "B", "C", "D", "E", "F"],
-                links: [
-                    spouse("A", "B"), parent("A", "C"), parent("B", "C"), parent("A", "D"), parent("B", "D"),
-                    parent("C", "E"), parent("D", "F"), spouse("E", "F"),
-                ]
-            )
+            let ringLinks = [
+                spouse("A", "B"), parent("A", "C"), parent("B", "C"), parent("A", "D"), parent("B", "D"),
+                parent("C", "E"), parent("D", "F"), spouse("E", "F"),
+            ]
+            let ring = FamilyTreeLayout.layout(people: ["A", "B", "C", "D", "E", "F"], links: ringLinks)
             check("a ring places everybody once", ring.placements.count == 6 && noOverlap(ring))
             check("the cousins are on one row", ring.placements["E"]?.row == ring.placements["F"]?.row)
             check("and their marriage is drawn", ring.segments.contains { $0.kind == .couple && $0.y1 == 2 })
+            check("with nobody under either line", throughSomebody(ring, ringLinks).isEmpty,
+                  "\(throughSomebody(ring, ringLinks))")
 
             // A marriage the generations cannot hold: Eemeli is a brother of
             // somebody a generation above his wife. One of the two lines has
@@ -313,6 +389,8 @@ enum FamilyTreeLayoutCheck {
                 return a.row == b.row && abs(a.x - b.x) == 1
             }
             check("every couple is side by side", coupleSideBySide)
+            check("and no line crosses anybody, eighty deep", throughSomebody(r, links).isEmpty,
+                  "\(throughSomebody(r, links).prefix(5))")
             check("one family", r.familyExtents.count == 1 && r.looseRow == nil)
             check("and the same drawing twice", FamilyTreeLayout.layout(people: people, links: links) == r)
         }

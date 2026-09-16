@@ -245,10 +245,25 @@ struct FamilyTreeView: View {
                     // joins equals rather than a generation to the next, and
                     // the only way to tell it from a sibling bar at a glance.
                     let offsets: [CGFloat] = segment.kind == .couple ? [-2.5, 2.5] : [0]
-                    for dy in offsets {
+                    // The pair is drawn across the line rather than always
+                    // under it, and each part reaches a little past its own
+                    // ends. A marriage the row could not put side by side —
+                    // the third one of a man married three times — bends below
+                    // the row to get round whoever stands between, and it has
+                    // to read as a marriage all the way round: offset downward
+                    // the two uprights of that bend would be one line drawn
+                    // twice, and square corners would gape.
+                    let run = CGPoint(x: to.x - from.x, y: to.y - from.y)
+                    let length = max((run.x * run.x + run.y * run.y).squareRoot(), 0.001)
+                    let along = CGPoint(x: run.x / length, y: run.y / length)
+                    let reach: CGFloat = segment.kind == .couple ? 2.5 : 0
+                    for shift in offsets {
+                        let across = CGPoint(x: -along.y * shift, y: along.x * shift)
                         var path = Path()
-                        path.move(to: CGPoint(x: from.x, y: from.y + dy))
-                        path.addLine(to: CGPoint(x: to.x, y: to.y + dy))
+                        path.move(to: CGPoint(x: from.x + across.x - along.x * reach,
+                                              y: from.y + across.y - along.y * reach))
+                        path.addLine(to: CGPoint(x: to.x + across.x + along.x * reach,
+                                                 y: to.y + across.y + along.y * reach))
                         context.stroke(path, with: .color(Elder.supporting), lineWidth: 2)
                     }
                 }

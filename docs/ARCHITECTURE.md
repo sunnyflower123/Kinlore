@@ -1830,6 +1830,22 @@ Not built:
      are still level with the words *4 polvea ylempänä*. A rail cannot say
      "these words are for this family only"; a caption over each family could,
      and is not built.
+   - **A man married twice stands between his wives.** The row used to pair
+     him with whichever marriage the archive holds first and put the second
+     wife beyond her, so the line to that marriage ran straight through the
+     first wife and the bracket to its children dropped from the middle of the
+     couple — with a wife on each side of him, her own place. The picture said
+     *Hilma and Lyyli are a couple* and *Kerttu hangs from Hilma*, and the
+     archive says neither. A row's unit is now the whole chain of marriages
+     rather than a pair, walked from whoever married fewest to the partner
+     with fewest marriages left, which leaves the one married twice in the
+     middle: over the fixture's 53, both his lines are one place long and both
+     brackets drop at 0.5 and 1.5, between people rather than on one. Three
+     marriages are one more than a row can put side by side — the third bends
+     a quarter of a row below and goes round whoever stands between, and its
+     children hang from that bent line instead of from her. The bend is
+     arithmetic no screenshot has shown yet: `-seed clan` has a second
+     marriage and no third.
    - **The caption's dead generation is gone.** The layout leaves an empty row
      above the people related to nobody for the screen's caption; the screen
      now takes the air back out of it — 134 points of nothing at the default
@@ -1848,16 +1864,17 @@ Not built:
    defect above is one that five people cannot show. `FamilyTreeCrowdTests`
    and the *Sukupuu, iso suku* sweep run against it, and the layout check now
    builds an eighty-person family of its own and asks the same questions of it
-   that it asks of five.
+   that it asks of five. **The question it asks about lines is
+   `throughSomebody`**: whether any line in a drawing is over somebody it is
+   not about — a marriage across a third person, or a drop to children that
+   starts on one. It is asked of every family in the file, the eighty
+   included, because the shape that broke it is not rare and the failure is
+   silent: a line over a stranger draws exactly as well as a line between the
+   two it belongs to.
 
    **What it still gets wrong, measured and not fixed.** None of these is new
    on 16 Sep; each needed a family big enough to show it.
 
-   - **A second marriage is one line through the first wife**, and the bracket
-     to that marriage's children drops from the middle of the two spouses —
-     which, with a wife on each side, is exactly the first wife's place. So
-     the picture reads *Hilma and Lyyli are a couple* and *Kerttu hangs from
-     Hilma*, and neither is in the archive.
    - **A link the placement cannot honour is dropped in silence.** Two of the
      75 the fixture offers: the brother of a man drawn in his wife's
      generation, and the second half of a contradiction. The drawing simply

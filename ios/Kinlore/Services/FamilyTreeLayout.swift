@@ -89,6 +89,11 @@ enum FamilyTreeLayout {
         var segments: [Segment] = []
     }
 
+    /// How far under a row a marriage's line dips when the two cannot be put
+    /// side by side. Under the discs, which are a fifth of a row tall, and
+    /// above the bracket to the children at half a row.
+    private static let roundAbout = 0.25
+
     static func layout(people: [String], links: [Link]) -> Result {
         var result = Result()
 
@@ -183,17 +188,59 @@ enum FamilyTreeLayout {
 
             var rightEdge = offset
             for r in 0 ..< depth {
-                // A couple is one unit, so the two are never split by a sort.
+                // A couple is one unit, so the two are never split by a sort —
+                // and somebody married more than once is one unit with all of
+                // their marriages, standing between them.
+                //
+                // Any other order draws the second marriage as a line straight
+                // through the first wife, and drops that marriage's children
+                // from the middle of the couple, which with a wife on each
+                // side of him is her own place. The picture then says the two
+                // wives are a couple and the second marriage's daughter hangs
+                // from the first — neither of which anybody entered. Both were
+                // in `-seed clan` until 16 Sep 2026.
+                let here = Set(byRow[r])
+                func married(_ person: String) -> [String] {
+                    (spouses[person] ?? []).filter { here.contains($0) }
+                }
                 var units: [[String]] = []
-                var paired = Set<String>()
-                for id in byRow[r] where !paired.contains(id) {
-                    paired.insert(id)
-                    if let partner = (spouses[id] ?? []).first(where: { byRow[r].contains($0) && !paired.contains($0) }) {
-                        paired.insert(partner)
-                        units.append([id, partner])
-                    } else {
-                        units.append([id])
+                var placed = Set<String>()
+                for first in byRow[r] where !placed.contains(first) {
+                    // Everybody one chain of marriages joins, in the order the
+                    // family reached them, so the walk below is decided by the
+                    // archive and not by a dictionary.
+                    var group = [first]
+                    var found: Set<String> = [first]
+                    var head = 0
+                    while head < group.count {
+                        for partner in married(group[head]) where found.insert(partner).inserted {
+                            group.append(partner)
+                        }
+                        head += 1
                     }
+                    let reached = Dictionary(uniqueKeysWithValues: group.enumerated().map { ($0.element, $0.offset) })
+
+                    // From an end of the chain — whoever married fewest — on
+                    // to the partner with fewest marriages left, which leaves
+                    // the one married twice in the middle. Three marriages are
+                    // one more than a row can stand side by side: everybody is
+                    // still placed, and the one line that then has to reach
+                    // past somebody is bent under the row further down.
+                    var unit: [String] = []
+                    var taken = Set<String>()
+                    func left(_ person: String) -> Int { married(person).filter { !taken.contains($0) }.count }
+                    func nearest(_ among: [String]) -> String? {
+                        among.min { a, b in left(a) == left(b) ? reached[a]! < reached[b]! : left(a) < left(b) }
+                    }
+                    var walking = nearest(group)
+                    while let person = walking {
+                        unit.append(person)
+                        taken.insert(person)
+                        walking = nearest(married(person).filter { !taken.contains($0) })
+                            ?? group.first { !taken.contains($0) }
+                    }
+                    placed.formUnion(unit)
+                    units.append(unit)
                 }
 
                 // Each unit wants to sit under its parents — a couple between
@@ -261,11 +308,24 @@ enum FamilyTreeLayout {
         var drawn = Set<String>()
 
         // A couple: one line between the two, through the middle of the row.
+        //
+        // Unless somebody stands between them, which the row above can only
+        // avoid for two marriages of one person and not for three. Then the
+        // line dips under the row and goes around her: a line that ran through
+        // her would say she is the one married, and a marriage nobody entered
+        // is the mistake rule 4 exists to prevent.
         for (id, partners) in spouses {
             for partner in partners {
                 let key = "s:" + [id, partner].sorted().joined(separator: "|")
                 guard drawn.insert(key).inserted, let a = x[id], let b = x[partner], let r = row[id] else { continue }
-                segments.append(Segment(x1: min(a, b), y1: Double(r), x2: max(a, b), y2: Double(r), kind: .couple))
+                let (left, right) = (min(a, b), max(a, b))
+                guard right - left > 1 else {
+                    segments.append(Segment(x1: left, y1: Double(r), x2: right, y2: Double(r), kind: .couple))
+                    continue
+                }
+                segments.append(Segment(x1: left, y1: Double(r), x2: left, y2: Double(r) + roundAbout, kind: .couple))
+                segments.append(Segment(x1: left, y1: Double(r) + roundAbout, x2: right, y2: Double(r) + roundAbout, kind: .couple))
+                segments.append(Segment(x1: right, y1: Double(r) + roundAbout, x2: right, y2: Double(r), kind: .couple))
             }
         }
 
@@ -283,7 +343,11 @@ enum FamilyTreeLayout {
             guard !above.isEmpty, !below.isEmpty else { continue }
             let anchor = above.reduce(0, +) / Double(above.count)
             let middle = Double(r) + 0.5
-            segments.append(Segment(x1: anchor, y1: Double(r), x2: anchor, y2: middle))
+            // From the parents themselves, or — where their marriage had to
+            // bend under the row to get round somebody — from that line, so
+            // the children are not hung on the person it went around.
+            let top = (above.max()! - above.min()! > 1) ? Double(r) + roundAbout : Double(r)
+            segments.append(Segment(x1: anchor, y1: top, x2: anchor, y2: middle))
             let low = min(anchor, below.min()!)
             let high = max(anchor, below.max()!)
             if low < high { segments.append(Segment(x1: low, y1: middle, x2: high, y2: middle)) }
