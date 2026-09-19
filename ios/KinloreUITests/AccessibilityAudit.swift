@@ -229,6 +229,17 @@ extension XCTestCase {
         // told a frame full of paper from a word in the fade on 6 Sep 2026,
         // and it costs nothing when the variable is not set.
         //
+        // **And give it to xcodebuild's own environment, not as a build
+        // setting.** `TEST_RUNNER_KINLORE_AUDIT_SHOT=… xcodebuild …` reaches
+        // the runner; the same text written after `xcodebuild` as an argument
+        // does not, and it fails the way everything else about this variable
+        // fails — in silence, with the run otherwise identical. Measured 19
+        // Sep 2026 on `KINLORE_XXXL_LOSS`, the sweep's own variable, which
+        // this process reads through the same `ProcessInfo` call: as an
+        // argument the lookup was nil, as an environment prefix it was not,
+        // same command otherwise. The shot was not re-measured, and it is read
+        // two lines below by that same call.
+        //
         // **Give it a path under `/tmp`.** A prefix inside a session's own
         // scratchpad produces no file at all: the simulator cannot write into
         // `/private/tmp/claude-<uid>/…`, the write below is `try?`, and so the

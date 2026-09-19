@@ -226,6 +226,10 @@ final class AccessibilitySweepTests: XCTestCase {
         api: String = "",
         settle: (XCUIApplication, Bool) throws -> Void = { _, _ in }
     ) throws {
+        // What each size put in the accessibility tree, collected only when
+        // `KINLORE_XXXL_LOSS` asks for it. See the comparison below.
+        var seen: [Bool: Set<String>] = [:]
+        let wantsLossCheck = ProcessInfo.processInfo.environment["KINLORE_XXXL_LOSS"] != nil
         for size in [nil, Self.largest] {
             let app = launch(arguments, api: api, textSize: size)
             // The closure is told which size it is in, because a screen does not
@@ -258,7 +262,48 @@ final class AccessibilitySweepTests: XCTestCase {
             continueAfterFailure = true
             defer { continueAfterFailure = abortAfterAudit }
             try audit(app, "\(name), \(at)")
+            if wantsLossCheck {
+                let texts = app.staticTexts.allElementsBoundByIndex.map(\.label)
+                let buttons = app.buttons.allElementsBoundByIndex.map(\.label)
+                seen[size != nil] = Set((texts + buttons).filter { !$0.isEmpty })
+            }
             app.terminate()
+        }
+        // **What the audit at the largest size could not see.**
+        //
+        // A sweep that reports nothing at the largest text size reads as a
+        // clean screen, and it is not the same claim: an element the tree no
+        // longer holds is an element the audit did not judge. SwiftUI builds
+        // a list's rows lazily — the note above `testCreateFamilyForm` is the
+        // same fact from the other end — so a screen that grows one row can
+        // push its lower half past whatever has been built, silently, in the
+        // direction that looks like success.
+        //
+        // Measured 19 Sep 2026. On a build carrying an extra row under the
+        // place card's map, that screen held 19 labels at the default size
+        // and 9 at the largest: ten gone, including both sentences the audit
+        // had reported, *"Kuuntele omalla äänellä"* and a person's name. In
+        // the same run Albumi, Ihmiset as a list, Kerro and the drawn family
+        // tree at `-seed clan` lost none — 11, 17, 8 and 83 labels, identical
+        // at both sizes. So the loss is not a property of the largest size;
+        // it is what a particular screen does there, and nothing reports it.
+        //
+        // **Behind a variable rather than on by default**, for the reason the
+        // audit's own screenshot is: what this would cost across all sweeps
+        // has not been measured, and a screen may legitimately hold different
+        // words at the largest size — a truncation, a label the layout
+        // replaces — which this would read as a loss. One suite run with
+        // `TEST_RUNNER_KINLORE_XXXL_LOSS=1` answers that, and until somebody
+        // spends it this changes nothing.
+        if let atDefault = seen[false], let atLargest = seen[true] {
+            let lost = atDefault.subtracting(atLargest).sorted()
+            XCTAssertTrue(
+                lost.isEmpty,
+                "\(name): \(lost.count) of \(atDefault.count) labels are in the tree at the"
+                    + " default text size and gone at the largest, so the audit there judged"
+                    + " less than the screen: "
+                    + lost.prefix(10).map { String($0.prefix(60)) }.joined(separator: " | ")
+            )
         }
     }
 
