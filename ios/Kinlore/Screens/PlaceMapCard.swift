@@ -47,7 +47,8 @@ struct PlaceMapCard: View {
     /// at 791; on 19 Sep 2026 a Section footer on the person card was read as
     /// `Text clipped` with its bottom edge at exactly 791.0, and adding a
     /// line's height to it changed neither the frame nor the finding. Three
-    /// elements, three audit categories, one edge.
+    /// elements, three audit categories, one edge — which reads like one
+    /// cause and is not one.
     ///
     /// For one of the three the pixels have since answered the question the
     /// audit cannot: that footer's sentence is drawn complete. A screenshot of
@@ -56,8 +57,24 @@ struct PlaceMapCard: View {
     /// two full lines ending 5.7 points above the bar, with plain paper in the
     /// gutters beside and below it. So that finding is the frame meeting the
     /// bar and not text a reader loses, and the 45.67 points are the footer's
-    /// own padding around two lines rather than room for a third. Which of the
-    /// other two is the same thing has not been measured.
+    /// own padding around two lines rather than room for a third.
+    ///
+    /// **The second of the three has now been measured, and it answers the
+    /// same way.** An A/B at `e5597dc`, in a worktree pinned to that commit
+    /// and on a simulator of its own in Finnish, rebuilt the row form: two
+    /// `.dynamicType` findings at the default size, twice over with frames
+    /// identical to the decimal — *"Kuulin nämä"* at y 765.67 and the
+    /// telling's own text at y 628 — against a green control on the shipping
+    /// overlay. Sixty points of `contentMargins` at the list's end moved
+    /// neither frame, because this list is not scrolled to its end; shortening
+    /// the map from 220 to 160 did, and both frames rose exactly sixty points,
+    /// to 705.67 and 568. Both findings stayed, and a third arrived on a row
+    /// the shorter map had lifted into view. So the row is what introduces
+    /// them and the bar is not what causes them — the shape the footer showed
+    /// on the same day, reached from a different sentence. Height is not the
+    /// answer either: that arm gives back every point the row took, and the
+    /// findings do not care. What about the row does cause them is unmeasured.
+    /// The overlay is green, and that is the whole of what is known.
     ///
     /// It is also the truer control. The map is the thing being corrected, so
     /// tapping the map is where the correction starts; the words in the corner
