@@ -603,11 +603,22 @@ final class MemoryStore {
         }
     }
 
-    /// Records a looked-up location.
+    /// Records a location: the one `PlaceLookup` found, or the one somebody in
+    /// the family moved the mark to (`PlacePinSheet`).
     ///
     /// Queued for the server, unlike a downloaded photo's filename: the answer
     /// to "where is Puumala" is the same on every phone in the family, so it is
-    /// worth looking up once rather than once per device.
+    /// worth looking up once rather than once per device — and a hand-placed
+    /// point is worth even more, because nothing on another phone can produce
+    /// it again.
+    ///
+    /// The two callers are one method because the archive stores one point per
+    /// place and has no field for who put it there (§18). What keeps a
+    /// gazetteer's answer from landing on top of a family's is a rule on the
+    /// server rather than a flag here: a stored `exact` is not displaced by a
+    /// coarser push under the same title. Locally nothing can overwrite it at
+    /// all — `placesAwaitingCoordinates` only ever offers a place with no
+    /// point.
     func setPlace(subjectID: String, place: PlaceHint) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].place = place
@@ -1498,15 +1509,35 @@ final class MemoryStore {
             // about somebody else by then (see `film-family` below), and Helmi
             // was answered on the orange proposal row in the week between — the
             // weaker instrument, which is what rule 4 keeps it for.
+            // Each card is dated, and until 19 Sep 2026 none of them was.
+            // Six `Subject`s made inside one `if` take their `createdAt` from
+            // `Date.now` six times over, microseconds apart — and the tree
+            // orders people by that date, so whether two of them tied decided
+            // which row a person stood in. Measured on this seed: four
+            // launches of one build on one simulator, three different orders
+            // of the same six people; four more with the tie broken by
+            // identifier, two orders. A take that taps Helmi where the
+            // recording had her can only be re-shot if the archive comes up
+            // the same way twice, so the archive is given the history the
+            // story already gives it — the three cousins were in it before
+            // the telling, Helmi and Toivo are named in the telling, and
+            // Grandma's own card is made last, for the tree.
+            let before = Date().addingTimeInterval(-30 * 86_400)
+            let justNow = Date().addingTimeInterval(-180)
             let proposal = Subject(
                 id: "demo-film-proposal", kind: .person, title: "Helmi",
-                confirmed: treeShot || family
+                confirmed: treeShot || family, createdAt: justNow
             )
-            let grandma = Subject(id: "demo-film-grandma", kind: .person, title: "Grandma")
-            let elli = Subject(id: "demo-film-elli", kind: .person, title: "Elli")
-            let filmAino = Subject(id: "demo-film-aino", kind: .person, title: "Aino")
-            let liisa = Subject(id: "demo-film-liisa", kind: .person, title: "Liisa")
-            let filmToivo = Subject(id: "demo-film-toivo", kind: .person, title: "Toivo")
+            let grandma = Subject(id: "demo-film-grandma", kind: .person, title: "Grandma",
+                                  createdAt: justNow.addingTimeInterval(20))
+            let elli = Subject(id: "demo-film-elli", kind: .person, title: "Elli",
+                               createdAt: before)
+            let filmAino = Subject(id: "demo-film-aino", kind: .person, title: "Aino",
+                                   createdAt: before.addingTimeInterval(86_400))
+            let liisa = Subject(id: "demo-film-liisa", kind: .person, title: "Liisa",
+                                createdAt: before.addingTimeInterval(2 * 86_400))
+            let filmToivo = Subject(id: "demo-film-toivo", kind: .person, title: "Toivo",
+                                    createdAt: justNow.addingTimeInterval(10))
             var filmPhoto = photo
             // The thirties, as a decade: rule 5 on the one photograph the film
             // is about. Only once it has been told about — before that the
