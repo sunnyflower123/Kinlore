@@ -381,4 +381,26 @@ enum FamilyTreeLayout {
         result.segments = segments.sorted { ($0.y1, $0.x1, $0.y2, $0.x2) < ($1.y1, $1.x1, $1.y2, $1.x2) }
         return result
     }
+
+    /// Whether any of a family is inside the part of the drawing on screen.
+    ///
+    /// The screen's generation rail is one column for the whole picture and
+    /// deliberately does not scroll with the drawing — a label that scrolls
+    /// away names the rows you are no longer looking at. The cost of that is
+    /// this question: its words are counted from your own row, so scrolled
+    /// sideways on to a family that shares nobody with yours they go on
+    /// standing beside people they are not about. Both families start at row 0
+    /// because neither knows anything about the other's age, so *Isovanhemmat*
+    /// beside the other one's oldest generation is a relationship nobody
+    /// entered — the same fault as a marriage drawn through a third person,
+    /// and the same rule against it (rule 4).
+    ///
+    /// `visible` is in the same units as `Placement`: `x` in person-widths,
+    /// with a place running from its own integer to the next. Touching counts
+    /// as visible, so the words stay while the last column of your family is
+    /// still under the window.
+    static func inView(_ family: Extent?, _ visible: ClosedRange<Double>) -> Bool {
+        guard let family else { return false }
+        return family.minX <= visible.upperBound && visible.lowerBound <= family.maxX + 1
+    }
 }

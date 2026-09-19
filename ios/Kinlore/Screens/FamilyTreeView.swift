@@ -34,6 +34,12 @@ struct FamilyTreeView: View {
     @State private var zoom: CGFloat = 1
     @GestureState private var pinch: CGFloat = 1
 
+    /// The part of the drawing under the window, in the drawing's own points
+    /// before the zoom is divided back out. Nil until it has been measured,
+    /// and the rail asks it: a picture nobody has scrolled yet is one nobody
+    /// has scrolled off their own family.
+    @State private var window: CGRect?
+
     /// The person whose sheet is up, and what was asked of it. Acted on once
     /// the sheet has gone, so a card or a second sheet never arrives under one
     /// still on its way down.
@@ -62,6 +68,10 @@ struct FamilyTreeView: View {
     private static let rowInset: CGFloat = 8
 
     private static let zoomRange: ClosedRange<CGFloat> = 0.4 ... 2.5
+
+    /// The horizontal scroll view's own space, which the drawing's frame is
+    /// measured in.
+    private static let space = "tree"
 
     /// The card this phone's member is in the tree, followed through a merge,
     /// or nil while the family's server links them to none (`Session.linkMe`).
@@ -131,8 +141,27 @@ struct FamilyTreeView: View {
                                         height: height(of: result) * scale,
                                         alignment: .topLeading
                                     )
+                                    // Which part of the drawing is under the
+                                    // window, so the rail can stop naming
+                                    // generations over a family its words are
+                                    // not about. Taken from the drawing's own
+                                    // frame rather than the scroll offset,
+                                    // because the frame carries the centring
+                                    // of a family narrower than the screen as
+                                    // well as the scrolling of one wider.
+                                    .background {
+                                        GeometryReader { drawing in
+                                            let left = -drawing.frame(in: .named(Self.space)).minX
+                                            Color.clear.onChange(
+                                                of: CGRect(x: left, y: 0,
+                                                           width: proxy.size.width, height: 0),
+                                                initial: true
+                                            ) { _, seen in window = seen }
+                                        }
+                                    }
                                     .frame(minWidth: proxy.size.width, alignment: .center)
                             }
+                            .coordinateSpace(name: Self.space)
                         }
                     }
                     .frame(height: height(of: result) * scale)
@@ -375,18 +404,54 @@ struct FamilyTreeView: View {
     /// leaves the one thing that explains it readable.
     private func generationRail(_ result: FamilyTreeLayout.Result, scale: CGFloat) -> some View {
         let yours = yourRow(result)
+        // Counted from your own row, so they are about the picture only while
+        // your own family is in it. Scrolled sideways on to a family that
+        // shares nobody with yours — which starts at row 0 because neither
+        // family knows anything about the other's age — the same words would
+        // call its oldest generation your great-grandparents, and nobody
+        // entered that. The band under the rows already stops at your family's
+        // last column; until now the words did not.
+        //
+        // The drawing's own numbering, which a phone linked to no card gets,
+        // stays where it is: every family starts at row 0, so a row counted
+        // from the top of the drawing is as true of one as of another.
+        let mine = yours == nil || FamilyTreeLayout.inView(yourFamily(result), columns(at: scale))
         return ZStack(alignment: .topLeading) {
-            ForEach(treeRows(result), id: \.self) { row in
-                generationName(row, from: yours)
+            if mine {
+                ForEach(treeRows(result), id: \.self) { row in
+                    generationName(row, from: yours)
+                        .font(.caption)
+                        .fontWeight(row == yours ? .bold : .regular)
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(width: railWidth - 12, alignment: .leading)
+                        .offset(x: 6, y: y(ofRow: row, result) * scale + Self.rowInset)
+                }
+            } else {
+                // Not an empty column. The words leaving is the whole point,
+                // and a reader who watched them go is owed the reason they
+                // went — that these people are not counted from anybody.
+                Text("Toinen perhe")
                     .font(.caption)
-                    .fontWeight(row == yours ? .bold : .regular)
                     .foregroundStyle(Elder.supporting)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(width: railWidth - 12, alignment: .leading)
-                    .offset(x: 6, y: y(ofRow: row, result) * scale + Self.rowInset)
+                    .offset(x: 6, y: Self.rowInset)
             }
         }
         .frame(width: railWidth, alignment: .topLeading)
+    }
+
+    /// The window in the drawing's own units — `x` in person-widths, which is
+    /// what an `Extent` is measured in. Everything while nothing has been
+    /// measured, so the rail is never missing from a picture at rest.
+    private func columns(at scale: CGFloat) -> ClosedRange<Double> {
+        guard let window else { return -.greatestFiniteMagnitude ... .greatestFiniteMagnitude }
+        // A pinch in progress can hand this a magnification near zero, and a
+        // place is never narrower than a point.
+        let place = max(columnWidth * scale, 1)
+        let first = Double(window.minX / place)
+        return first ... max(first, Double(window.maxX / place))
     }
 
     /// What a row is called, counted from yours. Nobody linked to a card — a

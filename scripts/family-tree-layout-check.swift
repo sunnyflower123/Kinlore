@@ -258,6 +258,26 @@ enum FamilyTreeLayoutCheck {
                       && second?.minX == r.placements["Eeva"]?.x && second?.maxX == r.placements["Kalle"]?.x)
             check("and carries its own depth, not the tallest", first?.rows == 2 && second?.rows == 1,
                   "\(r.familyExtents)")
+
+            // And the screen's question about those extents: the rail's words
+            // are counted from your own row, so they are about the drawing
+            // only while your own family is under the window. Scrolled on to
+            // the other one they would name its generations as yours, which
+            // is a relationship nobody entered. Silent when wrong in both
+            // directions — a rail that withdraws too early leaves a picture
+            // with nothing to explain it, and one that withdraws too late
+            // says the wrong thing about somebody.
+            let mine = first
+            check("the rail's words apply where your family is",
+                  FamilyTreeLayout.inView(mine, 0 ... 3))
+            check("and still apply when only its last column is left",
+                  FamilyTreeLayout.inView(mine, (mine!.maxX + 0.5) ... (mine!.maxX + 4)))
+            check("and stop where it ends",
+                  !FamilyTreeLayout.inView(mine, (mine!.maxX + 1.5) ... (mine!.maxX + 4)))
+            check("the other family is not yours",
+                  !FamilyTreeLayout.inView(mine, (second!.minX + 0.1) ... (second!.maxX + 1)))
+            check("and a window that has not been measured is nobody's",
+                  !FamilyTreeLayout.inView(nil, 0 ... 3))
         }
 
         print("— the connections a family archive actually contains —")

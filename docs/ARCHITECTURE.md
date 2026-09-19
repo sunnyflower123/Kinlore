@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 64 sweep tests, each auditing one screen at the default text size and again at the largest, out of 177 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 64 sweep tests, each auditing one screen at the default text size and again at the largest, out of 178 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1823,13 +1823,33 @@ Not built:
      a generation says something nobody entered — measured with `-seed clan`,
      where a couple related to nobody was drawn level with somebody's
      great-great-grandparents and labelled as them. `Result.family` and
-     `Result.familyExtents` are what the drawing asks to avoid it. **Half of
-     it is answered and half is not**: the band ends at your family's last
-     column, and the rail stops at your family's depth, but the rail is one
-     column for the whole picture — scroll right to Otto and Helmi and they
-     are still level with the words *4 polvea ylempänä*. A rail cannot say
-     "these words are for this family only"; a caption over each family could,
-     and is not built.
+     `Result.familyExtents` are what the drawing asks to avoid it. The band
+     ends at your family's last column and the rail stops at your family's
+     depth.
+   - **And the rail's words stop where your family does** (19 Sep 2026). Until
+     then only half of the paragraph above was answered: the band ended at
+     your family, but the rail is one column for the whole picture and does
+     not scroll, so scrolling right to Otto and Helmi left them standing level
+     with *4 polvea ylempänä* — a generation counted from a person they are
+     not related to, which is the same thing a marriage drawn through a third
+     person said and falls under the same rule. The screen now asks
+     `FamilyTreeLayout.inView`, which is the one line of arithmetic in this:
+     whether any of your family is still inside the window, measured in
+     person-widths from the drawing's own frame so that the centring of a
+     narrow family and the scrolling of a wide one are the same question. In
+     view, the words; out of it, *Toinen perhe*, because a column that empties
+     itself explains nothing. The drawing's own numbering, which a phone
+     linked to no card gets, is left alone: every family starts at row 0, so a
+     row counted from the top of the drawing is as true of one as of another.
+
+     **What this cost was a test that had been measuring the defect.**
+     `testTheGenerationsStayNamedAfterScrollingAcrossTheFamily` swiped three
+     times and asserted the words were still there; a flick carries some 700
+     of the drawing's 2376 points, so three of them land past the end of your
+     own family on Otto and Helmi, and the assertion was the wrong behaviour
+     written down as a requirement. It swipes once now, to Kerttu and Oiva,
+     which is inside the family its name is about, and asserts that the
+     drawing moved as well as that the words did not.
    - **A man married twice stands between his wives.** The row used to pair
      him with whichever marriage the archive holds first and put the second
      wife beyond her, so the line to that marriage ran straight through the
@@ -1882,14 +1902,15 @@ Not built:
      and which of the two ends loses its line depends on the order the family
      was entered in.
    - **A family of 53 does not fit at any zoom the app offers.** The drawing is
-     2376 × 1248 points at the default text size; the canvas beside the rail is
+     2376 × 1136 points at the default text size; the canvas beside the rail is
      324 points wide. That is 7.3 canvases at 1×, and 2.9 at the smallest zoom
      — where a name is `.body` at 0.4, which is 6.8 points. So a big family is
      read either through a narrow window or too small to read. Option 03 of the
      16 Sep artifact, one person and their immediate family at a time, was
      filed as *later, if families grow*; this is that case.
-   - **The rail hyphenates.** *Isoisovanhemmat* does not fit 78 points at the
-     default text size and breaks as *Isoisovan-hemmat*.
+   - **The rail hyphenates.** Neither *Isoisovanhemmat* nor *Isovanhemmat*
+     fits 78 points at the default text size; they break as *Isoisovan-hemmat*
+     and *Isovan-hemmat*.
 
 ## 9. Build order
 

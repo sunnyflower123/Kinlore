@@ -57,15 +57,51 @@ final class FamilyTreeCrowdTests: XCTestCase {
     /// The labels are beside the drawing rather than in it, so they are still
     /// there after scrolling sideways to somebody at the far end of a
     /// generation — which in a family this wide is most of it.
+    ///
+    /// One swipe, not three. This swiped three times until 19 Sep 2026 and
+    /// passed, and the picture it passed on turns out to be Otto and Helmi:
+    /// a flick carries some 700 points of a drawing 2376 wide, so three of
+    /// them run off the end of your own family and on to one that shares
+    /// nobody with it. The assertion under them was then the defect stated as
+    /// a requirement — the rail naming generations over strangers — and the
+    /// test whose name says *across the family* was the one measuring it.
     func testTheGenerationsStayNamedAfterScrollingAcrossTheFamily() {
         let app = crowd()
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].waitForExistence(timeout: 20), "the generation labels")
         let before = app.staticTexts["Sinun polvesi"].frame
-        for _ in 0 ..< 3 { app.swipeLeft() }
+        app.swipeLeft()
         shot(app, "crowd-across")
+        XCTAssertTrue(app.buttons["Oiva"].isHittable, "the drawing did not scroll sideways at all")
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].exists, "the generation labels scrolled away with the tree")
         XCTAssertEqual(app.staticTexts["Sinun polvesi"].frame.minX, before.minX, accuracy: 1,
                        "the labels moved sideways with the drawing")
+    }
+
+    /// And they stop where your own family does. The rail is one column for
+    /// the whole picture, so its words — counted from your own row — used to
+    /// go on standing beside whatever you scrolled to. Otto and Helmi share
+    /// nobody with Elina's family and start at row 0 because nothing is known
+    /// about their age either way, so *Isovanhemmat* beside them is a
+    /// relationship nobody entered: the same fault as a marriage drawn
+    /// through a third person, under the same rule.
+    func testTheGenerationsAreNotNamedOverAFamilyThatSharesNobody() {
+        let app = crowd()
+        XCTAssertTrue(app.staticTexts["Sinun polvesi"].waitForExistence(timeout: 20), "the generation labels")
+        // Sixteen places away, which is several screens of a drawing this
+        // wide. The scroll view clamps at the far end, so more swipes than
+        // the distance needs cost nothing — and asking whether Otto can be
+        // reached before he is on screen costs a test: `isHittable` on
+        // somebody outside the window fails outright rather than answering
+        // no ("Activation point invalid", 19 Sep 2026).
+        for _ in 0 ..< 8 { app.swipeLeft() }
+        shot(app, "crowd-other-family")
+        XCTAssertTrue(app.buttons["Otto"].isHittable, "the far family cannot be scrolled to")
+        XCTAssertFalse(app.staticTexts["Sinun polvesi"].exists,
+                       "a row of a family that shares nobody with you is called your own generation")
+        XCTAssertFalse(app.staticTexts["Isovanhemmat"].exists,
+                       "another family's oldest generation is named as your grandparents'")
+        XCTAssertTrue(app.staticTexts["Toinen perhe"].exists,
+                      "the words went and nothing says why")
     }
 
     /// What the lines mean, before the drawing rather than after it. Three

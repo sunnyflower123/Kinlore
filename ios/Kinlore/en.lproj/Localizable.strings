@@ -635,4 +635,5 @@
 "%lld. polvi" = "Generation %lld";
 "%lld polvea ylempänä" = "%lld generations above you";
 "%lld polvea alempana" = "%lld generations below you";
+"Toinen perhe" = "Another family";
 "Pariskunta" = "A couple";
