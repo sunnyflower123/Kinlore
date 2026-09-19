@@ -236,6 +236,27 @@ final class AccessibilitySweepTests: XCTestCase {
             // twice, and only the closure knows where its landmarks are.
             try settle(app, size != nil)
             let at = size == nil ? "default text size" : "largest text size"
+            // Both sizes are reported, even when the first one fails.
+            //
+            // `continueAfterFailure` is false for this class, and for the
+            // settle step above it must stay false: `require` asserts and
+            // returns rather than throwing, so a screen that never arrived
+            // would otherwise be audited under the name of the screen the test
+            // failed to reach — which is what `testAskQuestionSheet` did.
+            //
+            // The audit is the opposite case. The two rounds of this loop are
+            // independent launches, so a failure in the first says nothing
+            // about the second, and aborting hides half of every red sweep.
+            // Measured 19 Sep 2026: testFamilyTree opened the app once and
+            // reported five findings at the default size, and the six it also
+            // had at the largest size — where the names are drawn SMALLER than
+            // at the default size, which is the defect — were invisible until
+            // the flag was flipped by hand in a worktree. Two sessions read
+            // that silence as a clean largest size on the same day. With this
+            // in place the same test opens the app twice and reports both.
+            let abortAfterAudit = continueAfterFailure
+            continueAfterFailure = true
+            defer { continueAfterFailure = abortAfterAudit }
             try audit(app, "\(name), \(at)")
             app.terminate()
         }
