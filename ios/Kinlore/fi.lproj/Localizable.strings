@@ -231,6 +231,9 @@
 "Etsi" = "Etsi";
 "1 muisto" = "1 muisto";
 "%lld muistoa" = "%lld muistoa";
+"Mainittu yhdessä muistossa" = "Mainittu yhdessä muistossa";
+"Mainittu %lld muistossa" = "Mainittu %lld muistossa";
+"Tästä ei ole vielä omaa muistoa. Paina yllä olevaa nappia ja ala puhua." = "Tästä ei ole vielä omaa muistoa. Paina yllä olevaa nappia ja ala puhua.";
 "Ääntä ei saatu haettua — yritä uudelleen" = "Ääntä ei saatu haettua — yritä uudelleen";
 "Tätä äänitystä ei saatu soimaan" = "Tätä äänitystä ei saatu soimaan";
 "Hylätäänkö tämä kertominen?" = "Hylätäänkö tämä kertominen?";

@@ -810,12 +810,58 @@ struct SubjectDetailScreen: View {
             }
 
             let memories = store.memories(for: subject.id)
+            // The tellings that *named* this rather than being about it, and
+            // the half of the same web this screen never read. A place is named
+            // inside somebody's memory of a photograph, and a proposed person's
+            // name was heard in one — so both answered *"nobody has told
+            // anything yet"* over the very telling a person has to read before
+            // rule 4's confirmation can mean anything.
+            //
+            // Measured on the demo video's own take of 12 Sep 2026: Puumala's
+            // card said it ten seconds after the telling that named Puumala, on
+            // camera, with the map of the place above the sentence (the video
+            // project's SCRIPT-v21.md §1.5, which is where it was written down
+            // as the app's defect rather than the film's).
+            //
+            // Only when nothing is filed under it: a subject with a telling of
+            // its own gets the section below, and listing the same memory twice
+            // under two headings would be the screen answering something nobody
+            // asked.
+            let mentions = memories.isEmpty ? store.memories(mentioning: subject.id) : []
+            if !mentions.isEmpty {
+                Section {
+                    ForEach(mentions) { memory in
+                        MemoryRow(memory: memory)
+                    }
+                } header: {
+                    // Two whole sentences rather than one with a number in it:
+                    // the count's own header below says why, and Finnish would
+                    // want "yhdessä" here in any case.
+                    Group {
+                        if mentions.count == 1 {
+                            Text("Mainittu yhdessä muistossa")
+                        } else {
+                            Text("Mainittu \(mentions.count) muistossa")
+                        }
+                    }
+                    .foregroundStyle(Elder.supporting)
+                }
+            }
             if memories.isEmpty {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.")
-                            .elderBody()
-                            .foregroundStyle(Elder.supporting)
+                        // Nothing at all, or nothing of its own. Each as its own
+                        // `Text`: a ternary hides the literal from SwiftUI's key
+                        // lookup and from scripts/localisation-check.mjs alike.
+                        if mentions.isEmpty {
+                            Text("Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.")
+                                .elderBody()
+                                .foregroundStyle(Elder.supporting)
+                        } else {
+                            Text("Tästä ei ole vielä omaa muistoa. Paina yllä olevaa nappia ja ala puhua.")
+                                .elderBody()
+                                .foregroundStyle(Elder.supporting)
+                        }
 
                         // A photograph nobody has told about yet can go: the
                         // wrong side of a print, a blurred one, the same one
@@ -835,6 +881,13 @@ struct SubjectDetailScreen: View {
                         // in — plain, styled, as a Label — four runs; beside
                         // the text, in the shape the memory row's button has,
                         // it passes.
+                        //
+                        // A mention above it does not close this door, and that
+                        // is deliberate: a person the recognition invented is
+                        // *always* named in some telling, which is where the
+                        // name came from, so a rule that kept the button for
+                        // subjects nothing mentions would take it away from
+                        // exactly the case it was added for.
                         if removable {
                             Button(removalButton) { isConfirmingRemoval = true }
                                 .buttonStyle(.borderless)
