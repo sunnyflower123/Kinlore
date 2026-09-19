@@ -146,8 +146,11 @@
 "Kuvaa" = "Kuvaa";
 "Kuvaa vanha valokuva" = "Kuvaa vanha valokuva";
 "Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa." = "Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa.";
+"Kuvattu 1 kuva" = "Kuvattu 1 kuva";
+"Kuvattu %lld kuvaa" = "Kuvattu %lld kuvaa";
 "Valitse kuvista" = "Valitse kuvista";
 "Lisää kuvia" = "Lisää kuvia";
+"Tuodaan kuvia" = "Tuodaan kuvia";
 "Ei vielä kuvia" = "Ei vielä kuvia";
 "Valokuva, jossa on joku" = "Valokuva, jossa on joku";
 "Valokuva, josta ei ole vielä kerrottu" = "Valokuva, josta ei ole vielä kerrottu";
@@ -259,6 +262,7 @@
 "Lapset: %@" = "Lapset: %@";
 "Puoliso: %@" = "Puoliso: %@";
 "Sisarukset: %@" = "Sisarukset: %@";
+"Kootaan arkistoa" = "Kootaan arkistoa";
 "Kootaan kuvia %lld/%lld" = "Kootaan kuvia %lld/%lld";
 "Kootaan ääniä %lld/%lld" = "Kootaan ääniä %lld/%lld";
 "Kirjoitetaan arkistoa" = "Kirjoitetaan arkistoa";

@@ -165,7 +165,8 @@ struct SettingsScreen: View {
                     if isExporting {
                         HStack(spacing: 12) {
                             ProgressView()
-                            Text(exportStatus ?? "Kootaan arkistoa")
+                            Text(exportStatus
+                                ?? String(localized: "Kootaan arkistoa"))
                                 .foregroundStyle(Elder.supporting)
                         }
                     } else {

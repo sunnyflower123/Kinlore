@@ -320,7 +320,7 @@ struct GalleryScreen: View {
         )
         .overlay {
             if isImporting {
-                ProgressView("Tuodaan kuvia")
+                ProgressView(String(localized: "Tuodaan kuvia"))
                     .padding(24)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
             }

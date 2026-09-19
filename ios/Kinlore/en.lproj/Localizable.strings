@@ -162,8 +162,11 @@
 "Kuvaa" = "Photograph";
 "Kuvaa vanha valokuva" = "Photograph an old picture";
 "Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa." = "Photograph an old picture from the album, and the whole family can tell their own memories of it.";
+"Kuvattu 1 kuva" = "1 photograph taken";
+"Kuvattu %lld kuvaa" = "%lld photographs taken";
 "Valitse kuvista" = "Choose from photos";
 "Lisää kuvia" = "Add photographs";
+"Tuodaan kuvia" = "Bringing in photographs";
 "Ei vielä kuvia" = "No photographs yet";
 "Valokuva, jossa on joku" = "A photograph with somebody in it";
 "Valokuva, josta ei ole vielä kerrottu" = "A photograph nobody has told about yet";
@@ -319,6 +322,7 @@
 "Lapset: %@" = "Children: %@";
 "Puoliso: %@" = "Spouse: %@";
 "Sisarukset: %@" = "Siblings: %@";
+"Kootaan arkistoa" = "Gathering the archive";
 "Kootaan kuvia %lld/%lld" = "Gathering photographs %lld/%lld";
 "Kootaan ääniä %lld/%lld" = "Gathering recordings %lld/%lld";
 "Kirjoitetaan arkistoa" = "Writing the archive";

@@ -119,7 +119,9 @@ struct CameraScreen: View {
                 .accessibilityLabel("Kuvaa")
 
                 if captured > 0 {
-                    Text(captured == 1 ? "Kuvattu 1 kuva" : "Kuvattu \(captured) kuvaa")
+                    Text(captured == 1
+                        ? String(localized: "Kuvattu 1 kuva")
+                        : String(localized: "Kuvattu \(captured) kuvaa"))
                         .font(.subheadline)
                         .foregroundStyle(Elder.supporting)
                         .fixedSize(horizontal: false, vertical: true)

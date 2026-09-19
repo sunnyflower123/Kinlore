@@ -7,8 +7,8 @@
 // complete, the check green, the Finnish build perfect, and an English phone
 // still show one Finnish sentence in the middle of a screen.
 //
-// That is not hypothetical. Six of them have been found here, every one by
-// accident:
+// That is not hypothetical. Every one found before this check existed was
+// found by accident:
 //
 //   * the placement sentence, `SubjectKind.label` and the date precision
 //     picker — found by running the app in English and reading the screen
@@ -19,7 +19,13 @@
 //     on 19 Sep;
 //   * `RemoteError.errorDescription`'s photos branch and `FamilyScreen`'s
 //     removal-failure alert, found the same evening by sweeping the class
-//     rather than waiting for the seventh.
+//     rather than waiting for the seventh;
+//   * `CameraScreen`'s photograph count, `GalleryScreen`'s import progress and
+//     `SettingsScreen`'s export status, found later the same evening in this
+//     check's own blind spot — see `prose` below, which was throwing them away
+//     before any rule could look at them;
+//   * `PlaceMapCard`'s invitation, found by rule 5 the hour it was written, and
+//     the one of the ten whose keys were BOTH already in both tables.
 //
 // WHAT COUNTS AS LOOKED UP. Four shapes, and the last two are why a naive
 // regex over this codebase reports 166 findings instead of two:
@@ -36,6 +42,12 @@
 //      is fine for that reason; `Text(session.lastError ?? "…")` was not, and
 //      that is the difference this rule exists to see — `lastError` is a
 //      `String?`, so the coalescing picks `Text`'s String overload.
+//
+// Rule 5 in the loop runs the other way round: a literal INSIDE one of those
+// initialisers but not in the key position — a ternary branch, a second
+// argument — is the String overload, so it is reported whatever the table
+// says. That is the only rule here that can see a defect whose key already
+// exists, and `PlaceMapCard`'s invitation was one.
 //
 // A fifth shape cannot be seen from the producer at all, and pretending
 // otherwise is what makes this kind of check useless. A literal can be stored
@@ -195,6 +207,31 @@ const SHAPE = new RegExp(
   ')\\s*$'
 );
 
+// The call whose argument list a literal sits in, or null when it sits in none.
+// A backward scan rather than a parse: the prefix is short and balanced.
+const enclosingCall = (prefix) => {
+  let depth = 0;
+  for (let i = prefix.length - 1; i >= 0; i--) {
+    const c = prefix[i];
+    if (c === ')') depth++;
+    else if (c === '(') {
+      if (depth === 0) return /([A-Za-z_]\w*)\s*$/.exec(prefix.slice(0, i))?.[1] ?? '';
+      depth--;
+    }
+  }
+  return null;
+};
+
+// The initialisers that take EITHER a LocalizedStringKey or a String. A literal
+// anywhere inside one of these but not in the key position — a ternary branch,
+// a second argument — is a String, and rule 5 reports it.
+const DUAL = new Set([
+  'Text', 'Button', 'Label', 'Toggle', 'TextField', 'SecureField', 'Picker',
+  'Link', 'Stepper', 'NavigationLink', 'Section', 'ProgressView',
+  'navigationTitle', 'accessibilityLabel', 'accessibilityHint',
+  'accessibilityValue', 'help', 'searchable',
+]);
+
 // A member whose declared type is the key type. Nearest one above the literal
 // wins, which is how a literal in `var title: LocalizedStringKey` is told from
 // one in `var body: some View`.
@@ -202,9 +239,28 @@ const DECLARATION =
   /\b(?:var|let)\s+\w+\s*:\s*([^={\n]+?)\s*(?:\{|=|$)|\bfunc\s+\w+\s*\([^)]*\)\s*(?:async\s+)?(?:throws\s+)?->\s*([^={\n]+?)\s*(?:\{|$)/;
 
 // Finnish prose rather than an identifier, a key, a path or a format argument.
+//
+// The Finnishness test used to be "contains ä or ö, or ends in a full stop",
+// and that was this check's own hiding place. `Text(captured == 1 ? "Kuvattu 1
+// kuva" : …)`, `ProgressView("Tuodaan kuvia")` and `Text(exportStatus ??
+// "Kootaan arkistoa")` have neither, so all three were dropped before any rule
+// could look at them — rule 4 was already right about the third and never ran.
+//
+// Dropping the test altogether instead reports 23, of which 19 are developer
+// log lines, `Bearer %@` and HTML fragments. So the app's own Finnish table is
+// the vocabulary: a literal is Finnish when one of its words shares a
+// four-letter stem with a word in `fi.lproj`. Measured over those 23 that
+// separated 15 of 16 correctly, the exception being
+// `[export] wrote %@ (%@ bytes, %@ missing)`, whose "missing" meets "Missä" —
+// which is why a developer log line, `[`-prefixed by this repo's convention,
+// is excluded outright. The vocabulary grows with the app: a new Finnish word
+// is covered as soon as one sentence using it is translated.
 const prose = (s) =>
-  s.includes(' ') && s.trim().length > 6 && !s.startsWith('-') && !s.includes('/')
-  && (/[äöÄÖ]/.test(s) || /[.?!…]\s*$/.test(s));
+  s.includes(' ') && s.trim().length > 6
+  && !s.startsWith('-') && !s.startsWith('[') && !s.includes('/') && !s.includes('<')
+  && (/[äöÄÖ]/.test(s) || /[.?!…]\s*$/.test(s)
+      || (s.toLowerCase().match(/[a-zäöå]+/g) ?? [])
+           .some((w) => w.length >= 4 && FINNISH_STEMS.has(w.slice(0, 4))));
 
 // Every key the Finnish table declares. A sentence that is one of these can at
 // least be looked up by whoever draws it; a sentence that is not cannot be
@@ -218,6 +274,14 @@ const KEYS = new Set(
 // The scanner writes %@ for an interpolation; the table writes %lld when the
 // value is an Int. Both spellings are the same key.
 const isKey = (s) => KEYS.has(s) || KEYS.has(s.replaceAll('%@', '%lld'));
+
+// The Finnish words this app already uses, cut to a four-letter stem so that a
+// case ending does not hide one — "kuva" stands for "kuvia" and "kuvaa".
+const FINNISH_STEMS = new Set(
+  [...KEYS].flatMap((k) => k.toLowerCase().match(/[a-zäöå]+/g) ?? [])
+    .filter((w) => w.length >= 4)
+    .map((w) => w.slice(0, 4))
+);
 
 let scanned = 0, literalCount = 0, carried = 0;
 const findings = [];
@@ -268,6 +332,27 @@ for (const file of swiftFiles(swiftRoot)) {
     let enclosing = null;
     for (const d of declarations) { if (d.line <= lit.line) enclosing = d; else break; }
     if (enclosing && /\bLocalizedStringKey\b/.test(enclosing.type)) continue;
+
+    // Rule 5: inside a dual-overload initialiser but not in its key position.
+    // `Text(a ? "x" : "y")` is a String and is never looked up — `FamilyScreen`
+    // says so twice and writes two `Text`s instead, `GalleryScreen` and
+    // `DateSheet` wrap both branches, and an `-exportLocalizations` probe of
+    // five shapes on 19 Sep extracted the plain literal and none of the rest.
+    // So this one is reported whatever the table says: `PlaceMapCard`'s two
+    // keys were in both tables and an English phone read them in Finnish.
+    //
+    // `Text(verbatim:)` is the language saying not to look it up, and is the
+    // one position inside these calls that is right to leave alone.
+    const call = enclosingCall(lit.prefix);
+    if (call && DUAL.has(call) && !/verbatim:\s*$/.test(lit.prefix)) {
+      findings.push({
+        where: `ios/Kinlore/${rel}:${lit.line}`,
+        text: lit.text,
+        why: `inside \`${call}(\` but not in its key position, so it is the `
+           + 'String overload and is never looked up',
+      });
+      continue;
+    }
 
     // Past here the literal reaches somebody as a String. Whether that String
     // is looked up where it is DRAWN cannot be seen from here — but if there

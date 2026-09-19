@@ -188,8 +188,8 @@ struct PlaceMapCard: View {
     private var invitation: some View {
         if onPlace != nil, let place = subject.place {
             Text(place.precision.deservesAPin
-                ? "Siirrä paikkaa kartalla"
-                : "Merkitse tarkka paikka")
+                ? String(localized: "Siirrä paikkaa kartalla")
+                : String(localized: "Merkitse tarkka paikka"))
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(Elder.cream)
                 .multilineTextAlignment(.trailing)
