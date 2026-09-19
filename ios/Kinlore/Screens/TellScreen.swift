@@ -1412,6 +1412,16 @@ private struct ResultView: View {
             VStack(alignment: .leading, spacing: 28) {
                 header
 
+                // Above the memory's own text, because it is the one thing on
+                // this screen that has to be answered while the room is still
+                // the room: who spoke is known now and guessable never
+                // (`TellerCard`). Not on the saved-audio screen, which is the
+                // other way a telling ends — that screen is already a title, a
+                // paragraph and four buttons on the day the network failed,
+                // and a question added to it would be measured at the largest
+                // text size before it was read.
+                TellerCard(model: model)
+
                 if let body = model.result?.body {
                     MemoryCard(text: body, memory: model.savedMemory)
                 }

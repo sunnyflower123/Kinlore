@@ -860,6 +860,100 @@ final class TellViewModel {
     /// Whether the telling on the result screen was refiled by hand.
     private(set) var movedByHand = false
 
+    // MARK: - Who told it
+
+    /// What the result screen's teller question was answered with.
+    ///
+    /// Three answers and not two: *"minä"* is not the same as *"en halua
+    /// nimeäni näkyviin"*, and neither is the same as the unanswered state
+    /// this starts in. Only the last of those falls back to the author's
+    /// name, which is what every telling did before the question existed.
+    enum TellerChoice: Equatable {
+        /// Whoever holds the phone. The associated value is their own card in
+        /// the family tree when the member has been linked to one
+        /// (`Family.You.personSubjectID`); without a link the author's name is
+        /// already this person's, and nothing needs storing.
+        case me(String?)
+        case person(String)
+        case hidden
+    }
+
+    /// Nil until the question is answered. The result screen reads it to know
+    /// whether to ask or to show the answer.
+    private(set) var tellerChoice: TellerChoice?
+
+    /// Records the answer against every telling of this session.
+    ///
+    /// The whole session, because the interview loop saves one memory per
+    /// round and the voice did not change between rounds — the question is
+    /// asked once, at the end, on the screen that ends the loop.
+    func chooseTeller(_ choice: TellerChoice) {
+        tellerChoice = choice
+        let subjectID: String?
+        let hidden: Bool
+        switch choice {
+        case let .me(card):
+            subjectID = card
+            hidden = false
+        case let .person(id):
+            subjectID = id
+            hidden = false
+        case .hidden:
+            subjectID = nil
+            hidden = true
+        }
+        store.setTeller(subjectID, hidden: hidden, for: sessionMemoryIDs)
+    }
+
+    /// Whether the answer was "do not name me". Written out rather than
+    /// compared at the call site, where the optional makes `== .hidden`
+    /// read as a question about two different things.
+    var tellerIsHidden: Bool {
+        if case .hidden? = tellerChoice { return true }
+        return false
+    }
+
+    /// Puts the question back, when the first answer was the wrong one.
+    ///
+    /// **It does not unset what was stored.** The card asks again, and the
+    /// next answer overwrites; somebody who taps this and then leaves the
+    /// screen keeps the answer they gave, which matters for exactly one of the
+    /// three — a name taken off a telling must not come back because a thumb
+    /// went to the wrong row and then away.
+    func clearTellerChoice() {
+        tellerChoice = nil
+    }
+
+    /// The card the chosen teller has, for the answered card's one line. Nil
+    /// for *"minä"* without a linked card and for a hidden name, both of which
+    /// the screen has its own words for.
+    var chosenTeller: Subject? {
+        switch tellerChoice {
+        case let .me(card): card.flatMap { store.subject(id: $0) }
+        case let .person(id): store.subject(id: id)
+        default: nil
+        }
+    }
+
+    /// The people this archive has lately been told by — the second and third
+    /// voice round a table, one tap away after their first telling.
+    var recentTellers: [Subject] { store.recentTellers() }
+
+    /// Everybody who could have told it: the family's confirmed people, for
+    /// the sheet behind *"Joku muu"*.
+    var tellerCandidates: [Subject] {
+        store.subjects(of: .person).filter { $0.confirmed && !$0.title.isEmpty }
+    }
+
+    /// A name typed into the sheet. Confirmed by the hand that typed it, like
+    /// every other typed name (`MemoryStore.addPerson`).
+    @discardableResult
+    func addTeller(named name: String) -> Subject? {
+        guard let person = store.addPerson(named: name) else { return nil }
+        chooseTeller(.person(person.id))
+        return person
+    }
+
     // MARK: - Name correction
 
     /// Sends the corrected names back through extraction.
@@ -964,5 +1058,8 @@ final class TellViewModel {
         savedMemoryID = nil
         completingMemoryID = nil
         editedNames = [:]
+        // The next telling is asked about on its own: the phone may have
+        // changed hands, which is the whole case this question is for.
+        tellerChoice = nil
     }
 }

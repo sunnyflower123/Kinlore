@@ -255,6 +255,34 @@ CREATE TABLE memory (
   audio_r2_key  TEXT,
   audio_seconds INTEGER,
 
+  -- Who told it, which is not who pushed it. `author_id` is the session's own
+  -- member and nothing else is accepted — a client must not claim a telling
+  -- was made by somebody else — and that is exactly right for who may edit it
+  -- and exactly wrong for whose voice it is. One phone round a table files
+  -- every teller under its owner until somebody says otherwise, which is what
+  -- these two columns are: a person card chosen on the result screen, or a
+  -- teller who asked not to be named at all. Both NULL and 0 is the state of
+  -- every telling made before 19 Sep 2026, and it still reads as the author.
+  --
+  -- The flag hides the name that is SHOWN. `author_id` still stands, because
+  -- the upsert below decides from it who may take a telling back; what the
+  -- app and the export promise is that no name is put beside it.
+  --
+  -- No REFERENCES, for `invite.person_subject_id`'s reason one step further.
+  -- The card and the telling travel in the same push and the subjects go in
+  -- first, so the foreign key would hold on every ordinary round — but a push
+  -- is capped at MAX_ROWS rows per table, and a first sync of a large archive
+  -- is exactly where the card falls outside the cap while the telling does
+  -- not. D1 enforces foreign keys on every query and a batch is one
+  -- transaction, so that round would fail whole, with a constraint error for
+  -- a cause. A teller whose card this database has never seen is a name the
+  -- reading phone cannot resolve, and `MemoryStore.byline(for:)` already
+  -- answers that with the author. For existing databases:
+  --   ALTER TABLE memory ADD COLUMN teller_subject_id TEXT;
+  --   ALTER TABLE memory ADD COLUMN teller_hidden INTEGER NOT NULL DEFAULT 0;
+  teller_subject_id TEXT,
+  teller_hidden INTEGER NOT NULL DEFAULT 0,
+
   source        TEXT NOT NULL,        -- 'typed' | 'voice'
   created_at    INTEGER NOT NULL,
   deleted_at    INTEGER,

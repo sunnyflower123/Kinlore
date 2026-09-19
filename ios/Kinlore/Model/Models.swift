@@ -216,6 +216,38 @@ struct Memory: Identifiable, Codable, Hashable {
     /// same person appears in ten memories under different photos.
     var mentionedSubjectIDs: [String] = []
 
+    /// Who told it, when somebody said so on the result screen.
+    ///
+    /// The author is the phone; the teller is the voice. They are the same
+    /// person alone on the sofa and different people the moment one phone goes
+    /// round a table, which is the case this field exists for — `authorID` is
+    /// the session's own member and a client must not be able to claim
+    /// otherwise (`backend/src/sync.ts`), so the teller is a second field
+    /// rather than a correction to that one.
+    ///
+    /// A person card's id, confirmed like any other: typing a name is
+    /// vouching for it (`MemoryStore.addPerson`), so rule 4 is satisfied by
+    /// the hand that chose rather than by a later confirmation.
+    ///
+    /// `Optional` because rule 10 leaves no other choice here: `Models.swift`
+    /// has no hand-written decoder, so a non-optional field with a default
+    /// throws on every archive file written before this existed.
+    var tellerSubjectID: String?
+
+    /// The teller asked not to be named.
+    ///
+    /// Distinct from "nobody said", which is what `nil` on both fields means
+    /// and what every telling before 19 Sep 2026 is — those keep falling back
+    /// to the author's name, as they always have. This one names nobody at
+    /// all, not even the phone's owner.
+    ///
+    /// **It hides the name that is shown, not the row that is kept.** The
+    /// author id still travels, because the server decides from it who may
+    /// edit or take back a telling (rule 3's half of the memory upsert), and
+    /// a family member with the database in front of them could read it. What
+    /// this promises is what the app displays and what the export prints.
+    var tellerHidden: Bool?
+
     /// Taken back by the teller. A tombstone, not a removal — the same shape as
     /// a rejected subject, and for the same reason: the row has to stay so that
     /// the taking-back reaches the family instead of stopping at one device.

@@ -49,6 +49,12 @@ export type MemoryRow = {
 	audio_seconds: number | null
 	source: string
 	mentions: string[]
+	/// Who told it, as against who pushed it — a person card chosen on the
+	/// result screen, or, with the flag, a teller who asked not to be named.
+	/// Null and 0 is every telling made before 19 Sep 2026 and reads as the
+	/// author, which is what those tellings have always said.
+	teller_subject_id: string | null
+	teller_hidden: number
 	created_at: number
 	deleted_at: number | null
 	seq: number
@@ -173,7 +179,8 @@ export async function pull(env: Env, session: Session, since: number) {
 	const memories = await env.DB.prepare(
 		`SELECT m.id, m.subject_id, m.author_id, m.body, m.raw_transcript,
 		        m.audio_r2_key, m.audio_seconds, m.source, m.created_at,
-		        m.deleted_at, m.seq, mem.display_name AS author_name
+		        m.deleted_at, m.seq, m.teller_subject_id, m.teller_hidden,
+		        mem.display_name AS author_name
 		 FROM memory m
 		 LEFT JOIN member mem ON mem.id = m.author_id
 		 WHERE m.family_id = ? AND m.seq > ? ORDER BY m.seq LIMIT ?`,
@@ -384,8 +391,9 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		statements.push(
 			env.DB.prepare(
 				`INSERT INTO memory (id, family_id, subject_id, author_id, body, raw_transcript,
-				                     audio_r2_key, audio_seconds, source, created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				                     audio_r2_key, audio_seconds, source, teller_subject_id,
+				                     teller_hidden, created_at, deleted_at, seq)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   -- The author may move a telling to another card: the AI's
 				   -- placement is the most important piece of the result, and
@@ -406,6 +414,17 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   -- completion, and nothing may strip it afterwards.
 				   raw_transcript = COALESCE(excluded.raw_transcript, memory.raw_transcript),
 				   audio_r2_key = COALESCE(excluded.audio_r2_key, memory.audio_r2_key),
+				   -- Taken as sent, like subject_id above and unlike the two
+				   -- sticky fields either side of it. The teller is an answer a
+				   -- person gave on the result screen and may give again —
+				   -- *"vaihda kertoja"*, and the second answer has to be able
+				   -- to be a narrower one. COALESCE here would make a name
+				   -- impossible to take off a telling once it was on, which is
+				   -- the one direction this field must never fail in. The WHERE
+				   -- below keeps it the author's alone, as everything else here
+				   -- is.
+				   teller_subject_id = excluded.teller_subject_id,
+				   teller_hidden = excluded.teller_hidden,
 				   deleted_at = COALESCE(excluded.deleted_at, memory.deleted_at),
 				   seq = excluded.seq
 				 -- Only the author edits their own. Nobody gets to tidy up what
@@ -424,6 +443,12 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				memory.audio_r2_key ?? null,
 				memory.audio_seconds ?? null,
 				memory.source ?? 'typed',
+				// Kept as sent and never looked up. The card may not have
+				// reached this database yet, and the column carries no foreign
+				// key for that reason (schema.sql); a reader that cannot
+				// resolve it shows the author instead.
+				memory.teller_subject_id ?? null,
+				memory.teller_hidden ? 1 : 0,
 				memory.created_at ?? timestamp,
 				memory.deleted_at ?? null,
 				seq,

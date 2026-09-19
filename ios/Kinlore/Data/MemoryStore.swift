@@ -722,6 +722,74 @@ final class MemoryStore {
         return false
     }
 
+    // MARK: - Who told it
+
+    /// Files the given tellings under a teller, or under nobody.
+    ///
+    /// All of them at once, because the interview loop saves one memory per
+    /// round and the person answering did not change between rounds — the
+    /// result screen asks once at the end and the answer covers what was said
+    /// into it. The same reason `split(mention:in:)` takes a list.
+    ///
+    /// `subjectID` nil with `hidden` false is the state nothing sets: it is
+    /// what a telling nobody was asked about already is.
+    func setTeller(_ subjectID: String?, hidden: Bool, for memoryIDs: [String]) {
+        var touched = false
+        for index in memories.indices where memoryIDs.contains(memories[index].id) {
+            memories[index].tellerSubjectID = subjectID
+            memories[index].tellerHidden = hidden ? true : nil
+            dirtyMemories.insert(memories[index].id)
+            touched = true
+        }
+        guard touched else { return }
+        save()
+    }
+
+    /// The name shown beside a telling, in one place because three surfaces
+    /// ask it: a memory's row on its card, the gallery's *"Uutta perheeltä"*
+    /// row, and the export that outlives the app.
+    ///
+    /// Three answers, and the middle one is the point of the field:
+    ///
+    ///   - a chosen teller's card title, which follows the card if the name is
+    ///     ever corrected — that is why the id is stored and the name is not;
+    ///   - `nil` when the teller asked not to be named, and the caller shows
+    ///     the day instead of a name;
+    ///   - the author otherwise, which is every telling made before there was
+    ///     anything to ask and every one that arrives from another client.
+    ///
+    /// A teller whose card has since been removed or merged away falls back to
+    /// the author rather than to nothing: a missing card is not a request for
+    /// privacy, and `subject(id:)` already follows a merge.
+    func byline(for memory: Memory) -> String? {
+        if let id = memory.tellerSubjectID, let teller = subject(id: id), !teller.title.isEmpty {
+            return teller.displayTitle
+        }
+        if memory.tellerHidden == true { return nil }
+        return memory.authorName
+    }
+
+    /// The people this archive has most recently been told by, newest first.
+    ///
+    /// The card offers these above the full list, so that the second and third
+    /// person round a table are one tap away after their first telling. Built
+    /// from what was chosen rather than from the person list, because a family
+    /// of fifty-three has fifty-three people in it and two of them are in the
+    /// room.
+    func recentTellers(limit: Int = 2) -> [Subject] {
+        var seen = Set<String>()
+        var out: [Subject] = []
+        for memory in told.sorted(by: { $0.createdAt > $1.createdAt }) {
+            guard let id = memory.tellerSubjectID, !seen.contains(id),
+                  let person = subject(id: id), person.confirmed, !person.title.isEmpty
+            else { continue }
+            seen.insert(id)
+            out.append(person)
+            if out.count == limit { break }
+        }
+        return out
+    }
+
     func markAnswered(questionID: String) {
         guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
         questions[index].answered = true
@@ -874,6 +942,16 @@ final class MemoryStore {
                 // Same rule as the subject's photo file above — and here it is
                 // rule 3's file: the recording on this disk is the original.
                 incoming.audioFilename = memories[index].audioFilename
+                // A row that says nothing about the teller takes nothing away,
+                // which is the colours' rule (`withColours`) for the same
+                // reason: a Worker that has not been redeployed sends neither
+                // field, and the first pull after an update would otherwise
+                // wipe every answer the family had given. Nothing sets a teller
+                // back to nobody, so there is no case this loses.
+                if incoming.tellerSubjectID == nil, incoming.tellerHidden != true {
+                    incoming.tellerSubjectID = memories[index].tellerSubjectID
+                    incoming.tellerHidden = memories[index].tellerHidden
+                }
                 memories[index] = incoming
             } else {
                 memories.append(incoming)

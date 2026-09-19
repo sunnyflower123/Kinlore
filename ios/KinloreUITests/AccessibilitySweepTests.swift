@@ -624,15 +624,28 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep(
             "Tulos, tutut nimet",
             arguments: ["-seed", "related", "-screen", "result"]
-        ) { app, largest in
-            // At the default size the row is on screen without scrolling; at
-            // the largest it is not, and it has to be, to be audited at all.
-            if largest {
-                reach(app.staticTexts["Tutut nimet"], in: app, "the familiar names")
-            } else {
-                require(app.staticTexts["Tutut nimet"], "the familiar names")
-            }
+        ) { app, _ in
+            // Scrolled to at both sizes since 19 Sep 2026. The row used to be
+            // on screen without scrolling at the default size, and the teller
+            // question now stands above everything on this screen
+            // (`TellerCard`) — a heading, a sentence, three choices and a
+            // quiet row, which is more than the fold had to spare. The
+            // section is still audited; it is simply no longer the first
+            // thing under the memory.
+            reach(app.staticTexts["Tutut nimet"], in: app, "the familiar names")
             XCTAssertTrue(hasStoppedDrawing(app), "the result screen was still being drawn when the audit ran")
+        }
+    }
+
+    /// The sheet behind *"Joku muu"*, which is a new screen and so is
+    /// measured at both sizes before it is called done (rule 1). It is the
+    /// same shape as the relative picker, and shares its one hard part: the
+    /// way out is a row at the bottom rather than a toolbar button, because a
+    /// toolbar button's text barely grows with Dynamic Type.
+    func testTellerSheet() throws {
+        try sweep("Muiston kertoja", arguments: ["-seed", "related", "-screen", "result"]) { app, _ in
+            reach(app.buttons["Joku muu"], in: app, "the way to the whole family").tap()
+            require(app.buttons["Joku uusi"], "the sheet")
         }
     }
 

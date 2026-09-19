@@ -1055,6 +1055,7 @@ private struct NewTellingRow: View {
     let memory: Memory
     let subject: Subject
 
+    @Environment(MemoryStore.self) private var store
     @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Side by side normally, stacked at accessibility sizes.
@@ -1132,11 +1133,24 @@ private struct NewTellingRow: View {
                 .font(.body.weight(.medium))
                 .foregroundStyle(.primary)
             // "Kertoi" — the act this whole app is named after, in the
-            // past tense; the author's name is the reason to tap (§11's
+            // past tense; the teller's name is the reason to tap (§11's
             // argument, read in the other direction).
-            Text("\(memory.authorName) kertoi")
-                .font(.subheadline)
-                .foregroundStyle(Elder.supporting)
+            //
+            // The teller and not the author since 19 Sep 2026: one phone round
+            // a table files every voice under whoever owns the phone unless
+            // somebody says otherwise, and `byline(for:)` is where the three
+            // answers to that are kept. Nil is the one who asked not to be
+            // named, and then the row says when instead of who — the same
+            // words an untitled moment is listed under.
+            if let teller = store.byline(for: memory) {
+                Text("\(teller) kertoi")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+            } else {
+                Text("Kerrottu \(memory.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+            }
         }
     }
 

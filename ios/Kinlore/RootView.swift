@@ -1122,10 +1122,24 @@ private struct MemoryRow: View {
                 // told last week from the one told first. The device's own
                 // short form, so an English phone is not handed a Finnish
                 // date; the family screen's member row still is.
-                Text("\(memory.authorName) · \(Self.told(memory.createdAt))")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Elder.supporting)
-                    .fixedSize(horizontal: false, vertical: true)
+                // The teller and not the author since 19 Sep 2026, through
+                // the one place that answers it (`MemoryStore.byline(for:)`):
+                // one phone round a table files every voice under whoever owns
+                // the phone until somebody says otherwise, and a teller who
+                // asked not to be named leaves the day standing alone. The
+                // date is already the device's own short form, so it needs no
+                // key of its own when it is the whole line.
+                if let teller = store.byline(for: memory) {
+                    Text("\(teller) · \(Self.told(memory.createdAt))")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text(verbatim: Self.told(memory.createdAt))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 // The original audio is part of the product, not a step towards it.
                 if memory.audioFilename != nil || memory.audioR2Key != nil {

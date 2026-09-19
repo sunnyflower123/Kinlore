@@ -84,6 +84,15 @@
 "Avoimia kysymyksiä" = "Avoimia kysymyksiä";
 "%@ kysyy" = "%@ kysyy";
 "%@ kertoi" = "%@ kertoi";
+"Kuka kertoi tämän muiston?" = "Kuka kertoi tämän muiston?";
+"Nimi tulee muiston viereen perheen arkistoon." = "Nimi tulee muiston viereen perheen arkistoon.";
+"Minä" = "Minä";
+"Joku muu" = "Joku muu";
+"En halua nimeäni näkyviin" = "En halua nimeäni näkyviin";
+"Tämän muiston kertoi %@" = "Tämän muiston kertoi %@";
+"Nimeä ei näytetä tämän muiston vieressä." = "Nimeä ei näytetä tämän muiston vieressä.";
+"Vaihda kertoja" = "Vaihda kertoja";
+"Muiston kertoja" = "Muiston kertoja";
 "Mitä haluaisit tietää?" = "Mitä haluaisit tietää?";
 "Esimerkiksi: Millainen kesä mökillä oli?" = "Esimerkiksi: Millainen kesä mökillä oli?";
 "Kysy perheeltä" = "Kysy perheeltä";

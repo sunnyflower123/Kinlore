@@ -332,7 +332,14 @@ enum ArchiveExport {
                 if let filename = audioNames[memory.id] {
                     out += "<audio controls src=\"aani/\(escaped(filename))\"></audio>\n"
                 }
-                out += "<p class=\"byline\">\(escaped(memory.authorName)) · \(dateText(memory.createdAt))</p>\n"
+                // The teller when somebody named one, and the day alone when
+                // the teller asked not to be named — the same three answers
+                // the app's own rows read, from the same place
+                // (`MemoryStore.byline(for:)`). The export is the copy that
+                // outlives the app, so a promise the app keeps and the export
+                // breaks would be the worse half of the two.
+                let byline = store.byline(for: memory).map { "\(escaped($0)) · " } ?? ""
+                out += "<p class=\"byline\">\(byline)\(dateText(memory.createdAt))</p>\n"
                 out += "</article>\n"
             }
 

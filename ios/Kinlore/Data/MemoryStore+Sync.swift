@@ -47,6 +47,14 @@ struct MemoryDTO: Codable {
     var audio_seconds: Double?
     var source: String
     var mentions: [String]?
+    /// Who told it, and whether they asked not to be named. Optional in both
+    /// directions for the same reason the colours above are: a Worker that has
+    /// not been redeployed sends neither, and most tellings until now have
+    /// neither. Not sealed, and not needing to be — it is a UUID pointing at a
+    /// subject whose own title is sealed, which is the argument the relations
+    /// already travel on.
+    var teller_subject_id: String?
+    var teller_hidden: Int?
     var created_at: Double
     var deleted_at: Double?
     var seq: Int?
@@ -314,6 +322,8 @@ extension Memory {
             audio_seconds: audioDuration,
             source: source.rawValue,
             mentions: mentionedSubjectIDs,
+            teller_subject_id: tellerSubjectID,
+            teller_hidden: tellerHidden == true ? 1 : nil,
             created_at: createdAt.timeIntervalSince1970,
             // Hardcoded to nil until a memory could be taken back at all. The
             // same field on a subject was hardcoded the same way once, and a
@@ -340,6 +350,8 @@ extension Memory {
             source: MemorySource(rawValue: dto.source) ?? .typed,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             mentionedSubjectIDs: dto.mentions ?? [],
+            tellerSubjectID: dto.teller_subject_id,
+            tellerHidden: dto.teller_hidden == 1 ? true : nil,
             deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
