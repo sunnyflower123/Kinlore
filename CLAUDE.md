@@ -367,18 +367,56 @@ have carried them — same outcome, from the command written to prevent it.
 Measured 19 Sep 2026, and caught before the commit rather than after. A change
 rewording the consent texts in the microphone permission, the onboarding
 notice and the Help screen was about to commit both `.strings` tables by path,
-while a second session's nine date-sheet keys — `Kuukausi`, `Päivä`, the four
-`Valitse …` — sat appended at the end of both files, and a third session's
-`git merge --ff-only` waited behind the same two paths. Nothing overlapped
-textually: one change replaced two entries in place, one appended a block, one
-inserted a line after `Minä`. The file was all they shared, and the file is
-the unit git commits.
+while a second session's nine date-sheet keys sat appended at the end of both
+files, and a third session's `git merge --ff-only` waited behind the same two
+paths. Those nine are deliberately not named here: two of them were renamed
+within twenty minutes of being read, because a sweep went red at five rows in
+that section and green at four, and an anecdote that pins somebody else's
+half-finished identifiers goes stale faster than the lesson it carries.
+Nothing overlapped textually: one change replaced two entries in place, one
+appended a block, one inserted a line after `Minä`. The file was all they
+shared, and the file is the unit git commits.
 
 So read the diff before committing a path — `git diff -- <path>`, every hunk,
-every time — and treat a hunk you did not write as a reason to wait or to ask
-whose it is. Do not reach for `git add -p` to cut around it: that puts your
-hunks in the shared index, which is the hole `git commit -- <paths>` exists to
-close, and you would be trading a visible collision for an invisible one.
+every time. Do not reach for `git add -p` to cut around a hunk you did not
+write: that puts your own hunks in the shared index, which is the hole
+`git commit -- <paths>` exists to close, and trades a visible collision for an
+invisible one.
+
+**Waiting for the other session is the weaker answer, and the same evening
+found the better one.** Build the commit from HEAD's own copy of the file plus
+your hunks alone, through an index of your own, and their text stays on disk
+where they left it:
+
+```bash
+IDX=$(mktemp)                                    # never .git/index, which is shared
+# write HEAD's version of the file plus ONLY your hunks to $BLENDED
+GIT_INDEX_FILE=$IDX git read-tree HEAD
+BLOB=$(git hash-object -w "$BLENDED")
+GIT_INDEX_FILE=$IDX git update-index --cacheinfo 100644 "$BLOB" <path>
+TREE=$(GIT_INDEX_FILE=$IDX git write-tree)
+NEW=$(git commit-tree "$TREE" -p HEAD -F <message-file>)
+git update-ref refs/heads/main "$NEW" "$(git rev-parse HEAD)"   # compare-and-swap
+git reset -q -- <path>                           # ← the leg that is easy to miss
+```
+
+**That last line is not optional, and leaving it out loses the commit
+silently.** `update-ref` moves the branch, but the shared index still holds the
+pre-commit blob, so `git status` reads `MM` and the index is staged to *delete*
+what was just committed. Measured 19 Sep 2026 in a throwaway repo: a plain
+`git commit -m <something unrelated>` by the next session succeeded and left
+HEAD without the line — no conflict, no warning, and a message about something
+else. `git reset -q -- <path>` resets that one entry to HEAD and touches
+neither the working tree nor any other path; with it, the staged diff is empty
+and a plain commit refuses.
+
+Three sessions hit this collision within one hour on 19 Sep 2026 — `CLAUDE.md`,
+`docs/ARCHITECTURE.md` and both `.strings` tables — and a fourth arrived on a
+microphone string while they were still arguing about the order. Every ordering
+argued that evening dissolved the moment somebody rebuilt a file instead. The
+order was never a property of the files; it was a property of committing the
+working-tree copy of them, which was the only instrument anybody had while they
+were measuring.
 
 **A file git has never seen is the other gap.** The pathspec is matched
 against tracked paths, so a brand-new file fails the whole commit with
