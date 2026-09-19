@@ -410,6 +410,22 @@ else. `git reset -q -- <path>` resets that one entry to HEAD and touches
 neither the working tree nor any other path; with it, the staged diff is empty
 and a plain commit refuses.
 
+**The recipe has a premise it never states: your own change has to be on
+disk.** `$BLENDED` is HEAD's copy of the file with your hunks written back into
+it, so everything this publishes is content the shared working tree already
+holds. When your change is not in that tree at all — it lives on a branch, or
+in a worktree of its own — the private index is not the better tool here, it is
+the wrong one. Write the change into the shared tree first, and the ordinary
+by-path rules apply again.
+
+**Moving the ref while the tree lacks the content is the same silent loss as
+the missing reset leg, arriving from the other side.** HEAD carries the line
+and disk does not, so the next session's by-path commit of that file takes the
+working-tree copy and removes it — no conflict, no warning, and a message about
+something else, which is exactly the shape measured above. `git reset` answers
+the index; nothing answers this but putting the content on disk before the ref
+moves.
+
 Three sessions hit this collision within one hour on 19 Sep 2026 — `CLAUDE.md`,
 `docs/ARCHITECTURE.md` and both `.strings` tables — and a fourth arrived on a
 microphone string while they were still arguing about the order. Every ordering
