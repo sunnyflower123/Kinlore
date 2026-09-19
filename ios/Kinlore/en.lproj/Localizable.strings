@@ -446,7 +446,15 @@
 "Virheellinen osoite." = "Invalid address.";
 
 // The Tell screen's computed texts, photographed Finnish on an English phone (5 Sep 2026).
-"Puhelin kysyy ensin luvan mikrofoniin." = "The phone will first ask permission for the microphone.";
+/* The accessibility-size variant, so its LENGTH is part of the mechanism
+   rather than a matter of taste. Measured 19 Sep 2026: the 54-character
+   "The phone will first ask permission for the microphone." ran to five
+   lines at XXXL where the Finnish key runs to three, and those 136 pt put
+   the record button under the floating tab bar on the very first launch —
+   the screen's one control, hidden on the one launch that raises the
+   system prompt this sentence exists to warn about. Keep it near forty
+   characters; the long variant below is for the ordinary text sizes. */
+"Puhelin kysyy ensin luvan mikrofoniin." = "The phone will ask for the microphone.";
 "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua." = "The phone will first ask permission for the microphone. Allow it, and you can talk.";
 "Puhu ihan rauhassa ja vapaasti." = "Talk at your own pace, freely.";
 "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Talk at your own pace, freely. No need to remember the order or the years — we put them in place for you.";
