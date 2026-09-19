@@ -120,12 +120,45 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Luettelo"].exists, "a zoom tap opened another screen")
     }
 
-    /// A grandparent's phone keeps the list: no picture of lines, and no way to one.
+    /// A grandparent's phone keeps the list: no picture of lines, and no way to
+    /// one — including on the tab bar, which on her phone keeps the older word
+    /// rather than naming a tree she is never shown.
     func testAGrandparentsPhoneKeepsTheList() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "default", "-elder.largerText", "YES"])
         XCTAssertTrue(app.staticTexts["Eeva"].waitForExistence(timeout: 10), "the people list")
         XCTAssertTrue(app.navigationBars["Ihmiset"].exists, "a grandparent's list is not titled Ihmiset")
+        XCTAssertTrue(app.tabBars.buttons["Ihmiset"].exists, "her tab does not say Ihmiset")
         XCTAssertFalse(app.buttons["Sukupuu"].exists, "the tree is offered on a grandparent's phone")
         XCTAssertFalse(app.buttons["Luettelo"].exists, "the tree is shown on a grandparent's phone")
+    }
+
+    /// The tab bar is the only name the app gives itself before it is touched,
+    /// and until 19 Sep 2026 it said "Ihmiset" over a screen titled "Sukupuu".
+    /// One decision now answers both, so the tab follows the view the phone is
+    /// on — including back to the older word when the list is chosen.
+    /// No `-people.showsList` in this one, unlike the tests above: a value in
+    /// the argument domain outranks whatever the app writes, so the switch
+    /// would move the screen while the tab bar kept reading the launch
+    /// argument. That is a fault of the harness and it looked exactly like a
+    /// fault of the app. So this starts from whichever view the phone was left
+    /// on, and asserts the pair rather than a word.
+    func testTheTabIsNamedForTheScreenItOpens() {
+        let app = launch(["-seed", "related", "-tab", "people", "-people", "default"])
+        let toList = app.buttons["Luettelo"]
+        let toTree = app.tabBars.buttons["Sukupuu"]
+        XCTAssertTrue(toList.waitForExistence(timeout: 10) || app.buttons["Sukupuu"].exists, "Ihmiset")
+        if !toList.exists { app.buttons["Sukupuu"].tap() }
+
+        XCTAssertTrue(toList.waitForExistence(timeout: 10), "the tree")
+        XCTAssertTrue(toTree.exists, "the tab does not name the tree it opens")
+        XCTAssertFalse(app.tabBars.buttons["Ihmiset"].exists, "the tab still says Ihmiset over the tree")
+
+        toList.tap()
+        XCTAssertTrue(app.tabBars.buttons["Ihmiset"].waitForExistence(timeout: 10), "the tab kept the tree's name over the list")
+        XCTAssertFalse(toTree.exists, "two words for one tab")
+
+        // Back to the tree, which is where a phone starts.
+        app.buttons["Sukupuu"].tap()
+        XCTAssertTrue(toList.waitForExistence(timeout: 10), "the tree did not come back")
     }
 }

@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 186 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 187 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -3816,6 +3816,32 @@ same things it did, so this is a clearer name for an old place rather than a new
 word for a new act. English says *Album*. Older text in this file, the other
 documents and the code's comments still calls it *Muistot*, and means the same
 tab.
+
+**Sukupuu, not Ihmiset, on the phone that is shown one, since 19 Sep 2026.**
+The same pass over the two names left standing answered them differently.
+*Kerro* stays: it is the only verb in the bar and the only word that says what
+this app is for, and it stays true on a grandparent's phone, where the tab is
+the button and nothing else. *Ihmiset* had stopped naming what was behind it.
+Since 13 Sep the tab opens the drawn tree on a family member's phone, and the
+screen under the word *Ihmiset* was titled *Sukupuu* — so the one place the app
+names itself before anybody taps it hid the part of it that took the most work.
+That is the Muistot fault the other way round: not two words for one thing, but
+one word too small for the thing.
+
+The word now follows the same signal the content already follows. `PeopleTab`
+in `RootView.swift` is that single decision — a grandparent's phone (the text
+floor) and VoiceOver keep the list, and so keep *Ihmiset*; a family member's
+phone draws the tree and the tab says *Sukupuu*, *Family tree* in English, with
+the toolbar switch's own `tree` icon rather than a second drawing of the same
+destination. Nobody confirmed is nothing to draw, so the first minute on a new
+phone keeps the older word as well. Both the tab and the screen's title read
+that one function, which is what stops them drifting apart a second time.
+
+One case is deliberately left to disagree. A search is always answered as a
+list, and the title says *Ihmiset* while the tab still says *Sukupuu*: a tab
+that renamed itself under a typing finger is the worse of the two faults.
+`FamilyTreeTests` pins both phones, and the grandparent's test now asserts the
+tab bar as well as the screen.
 
 What the survey changed, in full: *"Mitätöi"* on an invite became *"Poista"* —
 the register of an authority annulling a document, in an app whose every other

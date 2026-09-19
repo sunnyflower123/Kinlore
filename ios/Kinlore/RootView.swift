@@ -85,6 +85,21 @@ struct RootView: View {
     @AppStorage(Elder.largerTextKey) private var largerText = false
     @State private var isShowingFirstMinute = false
 
+    /// The other two inputs to the third tab's name. Neither is in the store:
+    /// VoiceOver is an environment value, and which of the two views this
+    /// phone was last left on is device state.
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @AppStorage(PeopleTab.prefersListKey) private var prefersList = false
+
+    private var peopleTabIsTree: Bool {
+        PeopleTab.showsTree(
+            largerText: largerText,
+            voiceOver: voiceOverEnabled,
+            prefersList: prefersList,
+            hasConfirmedPerson: store.subjects(of: .person).contains(where: \.confirmed)
+        )
+    }
+
     /// The caller decides whether unseen tellings are waiting, because it has
     /// the store and a `@State`'s initial value cannot ask the environment.
     /// Evaluated once per root-view identity, so a person's own tab choice is
@@ -110,8 +125,23 @@ struct RootView: View {
                 .tabItem { Label("Kerro", systemImage: "mic.circle.fill") }
                 .tag(Tab.tell)
 
+            // The tab is named for what it opens, and that is two different
+            // screens on two phones: a family member's opens the drawn tree,
+            // a grandparent's and VoiceOver's the list. Until 19 Sep 2026 the
+            // tab said "Ihmiset" over a screen whose own title said
+            // "Sukupuu", so the one place the app names itself before it is
+            // touched hid the part of it that took the most work — the same
+            // fault Muistot → Albumi answered, the other way round
+            // (ARCHITECTURE §21). `PeopleTab.showsTree` is that one decision,
+            // read here and by the screen, so the two words cannot part again.
+            // The icon is the toolbar switch's `tree`, filled for a tab bar,
+            // rather than a second drawing of the same destination.
             PeopleScreen()
-                .tabItem { Label("Ihmiset", systemImage: "person.2.fill") }
+                .tabItem {
+                    peopleTabIsTree
+                        ? Label("Sukupuu", systemImage: "tree.fill")
+                        : Label("Ihmiset", systemImage: "person.2.fill")
+                }
                 .tag(Tab.people)
         }
         // Rule 10, said out loud. Once per launch that moved a file aside,
@@ -180,6 +210,56 @@ struct HelpRoute: Hashable {}
 /// Settings and offered only there. See `EnableSharingScreen`.
 struct SharingRoute: Hashable {}
 
+/// Whether this phone's third tab is the family tree or the list of people.
+///
+/// One decision with two readers: the tab bar, which names what is behind it,
+/// and the screen, which draws it. They disagreed from 13 Sep 2026, when the
+/// tree became what the tab opens and the tab kept the older word.
+///
+/// A search is deliberately no part of it. Search is always answered as a
+/// list, and a tab that renamed itself under a typing finger would be a worse
+/// fault than a title one word behind — so the screen adds that condition to
+/// what it draws, and the tab does not.
+enum PeopleTab {
+    /// Which of the two views this phone was last left on. Written only by the
+    /// switch in the toolbar.
+    static let prefersListKey = "people.showsList"
+
+    /// The drawn tree is offered on neither a grandparent's phone nor under
+    /// VoiceOver: both keep the relationships as lists on each card, where
+    /// they can be read at any size and aloud.
+    static func offersTree(largerText: Bool, voiceOver: Bool) -> Bool {
+        !largerText && !voiceOver
+    }
+
+    static func showsTree(
+        largerText: Bool,
+        voiceOver: Bool,
+        prefersList: Bool,
+        hasConfirmedPerson: Bool
+    ) -> Bool {
+        // Nobody confirmed is nothing to draw — which is the first minute on a
+        // new phone, and the one moment the tab must not promise a tree.
+        guard offersTree(largerText: largerText, voiceOver: voiceOver), hasConfirmedPerson
+        else { return false }
+        #if DEBUG
+        // `-screen tree` for a screenshot or a film take, and `-people list`
+        // or `-people tree` for a test. Either holds for the whole launch, so
+        // the switch in the toolbar does nothing under it. The suite's launch
+        // helper passes `list` unless a test says otherwise, so the tests
+        // written about the list keep testing the list — and keep finding the
+        // tab under the word the list is called by.
+        if UserDefaults.standard.string(forKey: "screen") == "tree" { return true }
+        switch UserDefaults.standard.string(forKey: "people") {
+        case "list": return false
+        case "tree": return true
+        default: break
+        }
+        #endif
+        return !prefersList
+    }
+}
+
 /// The people in the family. The same `subject` table as the photos and the same
 /// memory view — only the listing differs.
 struct PeopleScreen: View {
@@ -202,34 +282,33 @@ struct PeopleScreen: View {
     @AppStorage(Elder.largerTextKey) private var largerText = false
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
 
-    private var offersTree: Bool { !largerText && !voiceOverEnabled }
-
     /// The tree first on a family member's phone, and the list one tap away
-    /// (13 Sep 2026: the founder wanted the family's picture to be what Ihmiset
-    /// opens on). Remembered per phone. A search is always answered as a list.
-    @AppStorage("people.showsList") private var prefersList = false
+    /// (13 Sep 2026: the founder wanted the family's picture to be what this
+    /// tab opens on). Remembered per phone.
+    @AppStorage(PeopleTab.prefersListKey) private var prefersList = false
 
-    /// A family member's phone, nobody searching, and somebody confirmed to draw.
-    private var canDrawTree: Bool {
-        offersTree && query.isEmpty && store.subjects(of: .person).contains(where: \.confirmed)
+    private var hasConfirmedPerson: Bool {
+        store.subjects(of: .person).contains(where: \.confirmed)
     }
 
+    /// A family member's phone, nobody searching, and somebody confirmed to
+    /// draw. This is what puts the switch in the toolbar, so it is asked
+    /// whether or not the tree is the view that is up.
+    private var canDrawTree: Bool {
+        PeopleTab.offersTree(largerText: largerText, voiceOver: voiceOverEnabled)
+            && query.isEmpty
+            && hasConfirmedPerson
+    }
+
+    /// The tab's decision, plus the one condition that belongs to the screen
+    /// alone: a search is always answered as a list.
     private var showsTree: Bool {
-        guard canDrawTree else { return false }
-        #if DEBUG
-        // `-screen tree` for a screenshot or a film take, and `-people list`
-        // or `-people tree` for a test. Either holds for the whole launch, so
-        // the switch in the toolbar does nothing under it. The suite's launch
-        // helper passes `list` unless a test says otherwise, so the tests
-        // written about the list keep testing the list.
-        if UserDefaults.standard.string(forKey: "screen") == "tree" { return true }
-        switch UserDefaults.standard.string(forKey: "people") {
-        case "list": return false
-        case "tree": return true
-        default: break
-        }
-        #endif
-        return !prefersList
+        query.isEmpty && PeopleTab.showsTree(
+            largerText: largerText,
+            voiceOver: voiceOverEnabled,
+            prefersList: prefersList,
+            hasConfirmedPerson: hasConfirmedPerson
+        )
     }
 
     /// Confirmed people only, since 12 Sep 2026. A name the extraction heard
@@ -310,9 +389,12 @@ struct PeopleScreen: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            // Named for what it shows. The tab is Ihmiset either way; the title
-            // says which of its two views is up. Both sides are keys: a ternary
-            // of two plain literals is a String, and is never looked up.
+            // Named for what it shows, and the tab below now says the same
+            // word, from the same decision. They differ in one case only: a
+            // search is answered as a list under a tab still called Sukupuu,
+            // because a tab that renames itself under a typing finger is the
+            // worse of the two faults. Both sides are keys: a ternary of two
+            // plain literals is a String, and is never looked up.
             .navigationTitle(showsTree ? LocalizedStringKey("Sukupuu") : LocalizedStringKey("Ihmiset"))
             // Out of the way until it is wanted: iOS keeps the field hidden
             // above the list until somebody pulls down, which is the right
