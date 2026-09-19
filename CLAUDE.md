@@ -356,7 +356,31 @@ still went in carrying four of somebody else's — `docs/ARCHITECTURE.md`,
 ignores the index, so a concurrent `git add` cannot leak into it. Anything
 already staged stays staged and stays theirs.
 
-**A file git has never seen is the one gap in that.** The pathspec is matched
+**That protects you from another session's index, not from their working tree,
+and the difference is the whole safety of this rule.** The paragraph above
+reads as "commit by path and nobody else's work can get in"; what it says is
+that nobody else's *staging* can get in. When two sessions edit the **same
+file**, `git commit -- <path>` takes that file's entire working-tree content,
+so the other session's unstaged hunks ride in exactly as `git add -A` would
+have carried them — same outcome, from the command written to prevent it.
+
+Measured 19 Sep 2026, and caught before the commit rather than after. A change
+rewording the consent texts in the microphone permission, the onboarding
+notice and the Help screen was about to commit both `.strings` tables by path,
+while a second session's nine date-sheet keys — `Kuukausi`, `Päivä`, the four
+`Valitse …` — sat appended at the end of both files, and a third session's
+`git merge --ff-only` waited behind the same two paths. Nothing overlapped
+textually: one change replaced two entries in place, one appended a block, one
+inserted a line after `Minä`. The file was all they shared, and the file is
+the unit git commits.
+
+So read the diff before committing a path — `git diff -- <path>`, every hunk,
+every time — and treat a hunk you did not write as a reason to wait or to ask
+whose it is. Do not reach for `git add -p` to cut around it: that puts your
+hunks in the shared index, which is the hole `git commit -- <paths>` exists to
+close, and you would be trading a visible collision for an invisible one.
+
+**A file git has never seen is the other gap.** The pathspec is matched
 against tracked paths, so a brand-new file fails the whole commit with
 `pathspec … did not match any file(s) known to git` — and on 12 Sep 2026 that
 left the work uncommitted while the `git push` on the next line shipped
