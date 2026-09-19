@@ -278,7 +278,8 @@ final class FilmDriver: XCTestCase {
     /// a person (extraction proposes none), so this is the whole mechanism.
     func testFilmTheTree() throws {
         let app = try roll(["-seed", "film-tree", "-tab", "people", "-screen", "tree"])
-        _ = try find(app.staticTexts, ["Family tree", "Sukupuu"], timeout: 30)
+        // The drawing itself: the tree has carried no title since 19 Sep 2026.
+        _ = try find(app.buttons, ["Helmi"], timeout: 30)
         beat(2.0) // nobody related yet: six people side by side, read first
         try tap(app.buttons, ["Helmi"])
         beat(0.35)

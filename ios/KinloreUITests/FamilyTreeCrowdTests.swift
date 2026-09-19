@@ -54,7 +54,7 @@ final class FamilyTreeCrowdTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Vanhemmat"].exists, "a row is called your parents' with no you in the tree")
     }
 
-    /// The labels are beside the drawing rather than in it, so they are still
+    /// The labels ride the window rather than the drawing, so they are still
     /// there after scrolling sideways to somebody at the far end of a
     /// generation — which in a family this wide is most of it.
     ///
@@ -124,8 +124,9 @@ final class FamilyTreeCrowdTests: XCTestCase {
     /// Her row as well as her column, since 19 Sep 2026. Until then the
     /// drawing moved sideways only and opened four generations above her, on
     /// her great-great-grandparents, with the rail saying *4 polvea
-    /// ylempänä* beside them. `FamilyTreeView.show` records what the second
-    /// handhold cost to get right.
+    /// ylempänä* beside them. `FamilyTreeView.opening` is where the window
+    /// is put now, and `openingRow` records what the second handhold cost to
+    /// get right.
     func testTheTreeOpensOnYourOwnLine() {
         let app = crowd()
         let you = app.buttons["Elina, sinä"]
@@ -142,53 +143,69 @@ final class FamilyTreeCrowdTests: XCTestCase {
         XCTAssertTrue(app.buttons["Venla"].isHittable, "your children's generation is not on the screen")
     }
 
-    /// The opening leaves nothing in the strip the zoom bar covers.
+    /// The opening leaves nobody under the three controls that float over
+    /// the drawing: the two zoom buttons in the lower corner and the menu's
+    /// button in the bar.
     ///
-    /// The scroll view's fold lies where that bar begins, and whatever the
-    /// fold cuts stays in the accessibility tree while being painted nowhere:
-    /// VoiceOver reads a name that no eye can find, and the audit measures it
-    /// as paper on paper. Opening on your own row makes a scrolled screen the
-    /// first one anybody sees, so where it stops is measured rather than
-    /// chosen — `FamilyTreeView.openingRow` carries the four stopping places
-    /// that were tried. Centring her, which is the obvious answer, leaves
-    /// Saima, Lauri and Hellin down there with their initials.
-    func testTheTreeOpensWithNothingUnderTheZoomBar() {
+    /// A name under a control stays in the accessibility tree while being
+    /// painted nowhere: VoiceOver reads a name that no eye can find, and the
+    /// audit measures it as paper on paper — which is what it said of Liisa
+    /// and Veikko under the bar the zoom buttons used to sit in, on 16 Sep
+    /// 2026. Opening on your own row makes a scrolled screen the first one
+    /// anybody sees, so where it stops is measured rather than chosen —
+    /// `FamilyTreeView.openingRow` carries the four stopping places that were
+    /// tried. Centring her, which is the obvious answer, left Saima, Lauri and
+    /// Hellin down there with their initials.
+    func testTheTreeOpensWithNothingUnderItsButtons() {
         for size in [nil, "UICTContentSizeCategoryAccessibilityXXXL"] {
             let extra = size.map { ["-UIPreferredContentSizeCategoryName", $0] } ?? []
             let app = launch(["-seed", "clan", "-tab", "people", "-people", "tree",
                               "-you", "clan-elina"] + extra)
             XCTAssertTrue(app.buttons["Elina, sinä"].waitForExistence(timeout: 30),
                           "your own card is not in the tree")
-            let screen = app.windows.firstMatch.frame
-            let bar = app.buttons["Pienennä"].frame
             let tabs = app.tabBars.firstMatch.frame
-            XCTAssertGreaterThan(bar.minY, 0, "the zoom bar is not on the screen")
-            XCTAssertGreaterThan(tabs.minY, bar.minY, "the zoom bar is not above the tabs")
-            // The cards, which is what the audit reads a name off, and not the
-            // page's own prose below the drawing: that is scrolled to and read
-            // rather than hidden. The tabs live below the strip, the two zoom
-            // controls are the strip, and a name carried off the sides is
-            // another test's business.
-            let hidden = app.buttons.allElementsBoundByIndex.filter { card in
-                let f = card.frame
-                return f.height > 0 && f.minX > 0 && f.maxX < screen.width
-                    && f.maxY > bar.minY && f.minY < tabs.minY
-                    && card.label != "Pienennä" && card.label != "Suurenna"
+            let names = ["Pienennä", "Suurenna", "Valikko"]
+            let controls = names.map { app.buttons[$0].frame }
+            for (name, control) in zip(names, controls) {
+                XCTAssertGreaterThan(control.height, 0, "\(name) is not on the screen")
+                XCTAssertGreaterThan(tabs.minY, control.maxY, "\(name) is not above the tabs")
             }
-            XCTAssertEqual(hidden.map(\.label), [],
-                           "the opening leaves these where nobody can see them (\(size ?? "default"))")
+            // The words: the names, *Sinä*, the generation labels and the
+            // caption, which is what the audit reads and a reader looks for.
+            // A disc's edge under a translucent control is the map's own
+            // business and a finger moves it; a word under one is hidden.
+            // The tabs live below the controls, and a name carried off the
+            // sides is another test's business. A disc's initial is a text
+            // to the runner as well, `accessibilityHidden` or not — "V" at
+            // the largest size, 19 Sep 2026, where a row is taller than the
+            // window and the next row's disc is under something whatever
+            // the opening — so a word here is anything longer than a letter.
+            let covered = app.staticTexts.allElementsBoundByIndex.filter { word in
+                let f = word.frame
+                return word.label.count > 1 && f.height > 0 && controls.contains { $0.intersects(f) }
+            }
+            XCTAssertEqual(covered.map(\.label), [],
+                           "the opening puts these under the controls (\(size ?? "default"))")
         }
     }
 
-    /// What the lines mean, before the drawing rather than after it. Three
+    /// What the lines mean, in the menu rather than on the drawing. Three
     /// kinds of line are drawn and they are not guessable: a couple is two
-    /// lines, children hang from a bracket, siblings from a bar.
-    func testTheDrawingSaysWhatItsLinesMeanBeforeTheDrawing() {
+    /// lines, children hang from a bracket, siblings from a bar. Until 19 Sep
+    /// 2026 the key stood above the picture and took its share of the
+    /// screen at every text size; now the drawing is the screen and the key
+    /// is one tap away.
+    func testTheMenuSaysWhatTheLinesMean() {
         let app = crowd()
-        XCTAssertTrue(app.staticTexts["Pariskunta"].waitForExistence(timeout: 20), "nothing says what a couple's line is")
+        XCTAssertTrue(app.buttons["Aapo"].waitForExistence(timeout: 20), "the tree")
+        XCTAssertFalse(app.staticTexts["Pariskunta"].exists, "the key stands on the drawing rather than in the menu")
+        app.buttons["Valikko"].tap()
+        let heading = app.staticTexts["Mitä viivat tarkoittavat"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), "the menu does not say what the lines mean")
+        XCTAssertTrue(app.staticTexts["Pariskunta"].exists, "nothing says what a couple's line is")
         XCTAssertTrue(app.staticTexts["Sisarukset"].exists, "nothing says what a sibling bar is")
-        XCTAssertLessThan(app.staticTexts["Pariskunta"].frame.maxY, app.buttons["Aapo"].frame.minY,
-                          "the key is under the picture it is for")
+        app.buttons["Sulje"].tap()
+        XCTAssertTrue(heading.waitForNonExistence(timeout: 10), "the menu did not close")
         for _ in 0 ..< 4 { app.swipeUp() }
         shot(app, "crowd-down")
         XCTAssertTrue(app.buttons["Venla"].exists, "the youngest generation cannot be scrolled to")
@@ -215,7 +232,7 @@ final class FamilyTreeCrowdTests: XCTestCase {
     }
 
     /// Zoomed out to see a family this size, the words are still words: the
-    /// labels and the legend keep their own size while the drawing shrinks.
+    /// generation labels keep their own size while the drawing shrinks.
     func testZoomingOutLeavesTheWordsReadable() {
         let app = crowd()
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].waitForExistence(timeout: 20), "the generation labels")
@@ -225,12 +242,11 @@ final class FamilyTreeCrowdTests: XCTestCase {
         XCTAssertTrue(app.buttons["Aapo"].exists, "the oldest generation is gone at the smallest zoom")
         XCTAssertEqual(app.staticTexts["Sinun polvesi"].frame.height, before, accuracy: 1,
                        "the generation labels shrank with the drawing")
-        XCTAssertTrue(app.staticTexts["Pariskunta"].exists, "the legend is gone at the smallest zoom")
         shot(app, "crowd-small")
     }
 
-    /// A relationship the rows cannot hold is named under the drawing rather
-    /// than dropped in silence. The fixture's family has exactly two, and both
+    /// A relationship the rows cannot hold is named in the menu rather than
+    /// dropped in silence. The fixture's family has exactly two, and both
     /// are there on purpose: Eemeli is Oiva's brother and Sirkka's husband
     /// with Sirkka a generation below Oiva, so one of those two bonds has
     /// nowhere to go; and Onni and Sulo were entered as each other's parent,
@@ -242,23 +258,22 @@ final class FamilyTreeCrowdTests: XCTestCase {
     /// that sends somebody off to enter it a second time.
     func testARelationshipTheRowsCannotHoldIsNamedRatherThanDropped() {
         let app = crowd()
-        XCTAssertTrue(app.staticTexts["Nämä eivät mahdu kuvaan"].waitForExistence(timeout: 20),
+        XCTAssertTrue(app.buttons["Aapo"].waitForExistence(timeout: 20), "the tree")
+        XCTAssertFalse(app.staticTexts["Nämä eivät mahdu kuvaan"].exists,
+                       "the note stands on the drawing rather than in the menu")
+        app.buttons["Valikko"].tap()
+        XCTAssertTrue(app.staticTexts["Nämä eivät mahdu kuvaan"].waitForExistence(timeout: 10),
                       "nothing says a relationship was left out of the picture")
-        XCTAssertTrue(app.staticTexts["Eemeli ja Sirkka — aviopuolisot"].exists,
-                      "the marriage the generations cannot hold is not named")
-        XCTAssertTrue(app.staticTexts["Onni ja Sulo — vanhempi ja lapsi"].exists,
-                      "the pair each entered as the other's parent is not named")
-        // And it can be reached. Everything in this column exists in the
-        // hierarchy whether or not it is on screen, so existing is the weaker
-        // half: under a drawing 1136 points tall a note nobody can scroll to
-        // would pass every assertion above.
-        for _ in 0 ..< 5 { app.buttons["Pienennä"].tap() }
-        for _ in 0 ..< 4 { app.swipeUp() }
+        let marriage = app.staticTexts["Eemeli ja Sirkka — aviopuolisot"]
+        let parents = app.staticTexts["Onni ja Sulo — vanhempi ja lapsi"]
+        XCTAssertTrue(marriage.exists, "the marriage the generations cannot hold is not named")
+        XCTAssertTrue(parents.exists, "the pair each entered as the other's parent is not named")
+        // And it can be read. The sheet scrolls, and a sentence under its
+        // fold exists all the same, so existing is the weaker half.
+        if !parents.isHittable { app.swipeUp() }
         shot(app, "crowd-undrawn")
-        XCTAssertTrue(app.staticTexts["Nämä eivät mahdu kuvaan"].isHittable,
-                      "the note under the drawing cannot be scrolled to")
-        XCTAssertTrue(app.staticTexts["Eemeli ja Sirkka — aviopuolisot"].isHittable,
-                      "what will not fit is named where nobody can read it")
+        XCTAssertTrue(marriage.isHittable, "what will not fit is named where nobody can read it")
+        XCTAssertTrue(parents.isHittable, "the second bond is named where nobody can read it")
     }
 
     /// A name in the drawing is drawn larger, not smaller, when the reader
@@ -298,10 +313,10 @@ final class FamilyTreeCrowdTests: XCTestCase {
         let screen = app.windows.firstMatch.frame
         XCTAssertGreaterThan(name.minX, 0, "your own name starts off the left edge")
         XCTAssertLessThan(name.maxX, screen.width, "your own name runs off the right edge")
-        // Not only on the screen but inside the drawing's own window, which
-        // at this text size is 153 of the phone's 402 points — the rail takes
-        // the rest. A name can sit at x 83 of a 402-point screen and be
-        // nowhere a reader can see it.
+        // Not only on the screen but inside the drawing's own window. Until
+        // 19 Sep 2026 that window was 153 of the phone's 402 points at this
+        // text size — the rail took the rest — and a name could sit at x 83
+        // of a 402-point screen and be nowhere a reader could see it.
         XCTAssertTrue(app.staticTexts["Elina"].isHittable,
                       "the drawing opens somewhere your own name cannot be seen, at \(name) of \(screen)")
     }

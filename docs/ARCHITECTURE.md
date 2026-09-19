@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 67 sweep tests, each auditing one screen at the default text size and again at the largest, out of 194 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 68 sweep tests, each auditing one screen at the default text size and again at the largest, out of 196 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2073,6 +2073,126 @@ Not built:
      `safeAreaInset` it floated on top, and in a family of any size somebody is
      always under it: the audit measured two names at 1.04:1, which is paper on
      paper — not dimmed, covered.
+   - **The drawing is a map, and nothing else is on the screen** (19 Sep
+     2026). Asked for in two sentences: take everything that is not the tree
+     off the screen and put it behind one small button, and let the picture
+     be dragged and zoomed like a map. Until then `FamilyTreeView` was a
+     vertical page with a horizontal strip cut into it — two nested
+     `ScrollView`s, because the rail had to stay put sideways — with the
+     legend, a sentence of instructions, the note on undrawn bonds and the
+     door to the heard names stacked around the drawing, and a
+     `MagnifyGesture` over a `scaleEffect` anchored at the drawing's corner.
+     A page of that kind cannot be dragged diagonally, grows about the wrong
+     point, and at the largest text size left the family a 153-point sliver
+     between a 248-point rail and a sentence a third of the screen tall.
+
+     `TreeCanvas` is a `UIScrollView` under a `UIViewRepresentable`, and the
+     drawing inside it is the same SwiftUI canvas as before, hosted. UIKit's
+     pan is the reason: two axes at once, with deceleration. Its pinch is not
+     used, because `UIScrollView` zooms by transforming the view and text is
+     stretched from its rendered pixels until the gesture ends; a
+     `UIPinchGestureRecognizer` of the screen's own drives the SwiftUI scale
+     instead and the drawing is laid out again at every step, sharp at every
+     size, with the point under the fingers put back under the fingers by
+     arithmetic — the same arithmetic the two buttons use about the middle of
+     the window. The drawing is laid out under the bars (`ignoresSafeArea`,
+     the insets handed to the scroll view as `contentInset`), centred when it
+     is smaller than the window, and the generation words and the caption
+     over the people related to nobody are labels pinned to the window's
+     edge on scraps of paper, placed from what the scroll view reports of its
+     offset. So the words keep their own size while the drawing zooms, the
+     caption is no longer painted four places off the screen whenever the
+     picture opens on somebody's own column, and `FamilyTreeLayout.inView`
+     still swaps the words for *Toinen perhe* out past your own family.
+     Each word stands in the air above its row's discs rather than on them:
+     the first screenshot had *Vanhemmat* laid over the top of a disc in the
+     first column, a quarter cut out of Tuula, and a word over the air
+     between generations covers only lines. The words are wide enough for
+     *Lastenlastenlapset* on one line now that their width is no longer
+     taken from the picture, so the hyphenation the 16 Sep entry lists is
+     gone with the rail.
+
+     **What the screenshots and the test runs measured that the arithmetic
+     had not, 19 Sep 2026.** The generation words stood two rows below their
+     rows, placed as though the drawing had not been scrolled: the first
+     update of the scroll view reports its window deferred, the first layout
+     reports its own at once, and the deferred one — taken before the
+     opening — was delivered after it and wrote it over. A deferred report
+     now delivers the newest window at the moment of delivery. The caption
+     over the loose people was the same defect measured, 440 points from the
+     last row instead of under 156.
+
+     The bars' insets are UIKit's to report, on the scroll view itself. They
+     came from a `GeometryReader` around the canvas until a probe logged
+     them: a top inset of 116 points for a frame that already began below
+     the bar, and nothing for the tab bar the frame ran under — so the
+     drawing kept 116 points of air over its first row, opened with its last
+     row under the tabs, and moved 83 points when the proxy's late second
+     answer arrived. An audit that began between the two read every name in
+     three rows off pixels 83 points away from it and called ten of them
+     low-contrast, all of them ink on paper. `safeAreaInsets` on the scroll
+     view answers 0 at the top and the tab bar's 83 at the bottom, and
+     `safeAreaInsetsDidChange` says when that changes. The zoom buttons'
+     band is the one part of the inset UIKit cannot know; it is measured
+     from the buttons and the opening waits for it, so that the picture is
+     placed once, against the window it will have.
+
+     The drawing no longer lies under the top bar, only under the tabs:
+     Eeva's card in the person sweep opened at eight points from the top,
+     under the bar and not hittable, and the status bar fades whatever
+     scrolls beneath it into a colour the audit reads as the name's own —
+     the policy forgives that under the tab bar alone, where it was
+     measured. The opening then moves the picture the least that takes
+     every name out from under the buttons' band: lifted until the caught
+     row's names end at the band's top when your own card stays whole,
+     pushed below the band when it stays whole that way instead, and left
+     to the fraction when neither move keeps it. *Lauri* and *Hellin* were
+     five points under the buttons' top edge at the default size with the
+     fraction alone deciding; lifting every row that ended short of the
+     drawing's end carried Elina off the top at the largest text size,
+     where the last row is a screen and a half below her; lifting the last
+     row alone left the next row's disc under the buttons at that size,
+     where a row is taller than the window and a disc is under something
+     whatever the opening. A disc's edge is the map's business and a
+     finger's; the names are the words. The strip test counts a text longer
+     than a letter for the same reason: the runner sees a disc's initial as
+     a text, `accessibilityHidden` or not. And the list's search field is on
+     the list alone: over the tree it surfaced whenever the picture was
+     scrolled to its top, and a search is answered as a list in any case.
+
+     The audit moves the drawing itself. `performAccessibilityAudit` steps
+     the text size through twelve categories and back, the drawing is laid
+     out again at each, and a smaller drawing under the old offset is
+     clamped by the scroll view to an offset the old size never asked for.
+     Probed 19 Sep 2026: the first step shrank the drawing from 1136 to 981
+     points, the offset went from 478 to 396 and stayed there when the size
+     came back, with the loose row under the buttons and six names' colours
+     read off pixels the drawing had left — ink on paper, every one. A new
+     size re-applies the opening exactly as a new inset does, for as long
+     as the reader has not moved the picture.
+
+     The rest is behind one button. The bar over the tree has no title and
+     one item, *Valikko*, with an `Elder.proposal` dot on it while heard
+     names wait; the list's three toolbar items — a new person, the settings,
+     the switch — are not drawn over the tree at all. `TreeMenuSheet` is a
+     sheet of plain buttons and not a `Menu`, for the reason the person's
+     sheet is: a menu's rows barely grow with the text size and no UI test
+     here has been able to open one. It holds the list, a new person, the
+     door to the heard names with the same words as under the list, the
+     settings, the key to the lines and the bonds the rows cannot hold, and a
+     door chosen in it is opened after the sheet has gone down. The zoom
+     buttons are two `.bordered` circles in the lower trailing corner, where
+     the opening leaves nothing under them:
+     `testTheTreeOpensWithNothingUnderItsButtons` measures all three floating
+     controls against every card at both text sizes. The film's tree take
+     waits on Helmi's disc now rather than on a title.
+
+     What this does not change: where anybody lands, the rows, the bands, and
+     the opening on your own line — `openingRow` is the same 0.31 over the
+     same card band, applied once by the scroll view's coordinator the first
+     time it has a size. The family of 53 that did not fit still does not:
+     2376 points against a 402-point window is 5.9 windows rather than 7.3,
+     and the same picture at the smallest zoom.
 
    **`-seed clan` is the fixture all of that was measured against**: six
    generations, 53 confirmed people, a second marriage and the half-siblings

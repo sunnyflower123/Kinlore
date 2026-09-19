@@ -362,7 +362,16 @@ struct PeopleScreen: View {
                             .foregroundStyle(Elder.supporting)
                     }
                 } else if showsTree {
-                    FamilyTreeView(heardCount: heard.count, onOpen: { path.append($0) })
+                    // The doors the tree's menu opens belong to this stack,
+                    // so the tree asks for them rather than pushing them.
+                    FamilyTreeView(
+                        heardCount: heard.count,
+                        onOpen: { path.append($0) },
+                        onHeard: { path.append(HeardNamesRoute()) },
+                        onSettings: { path.append(SettingsRoute()) },
+                        onList: { prefersList = true },
+                        onAddPerson: { isAddingPerson = true }
+                    )
                 } else {
                     List {
                         ForEach(people) { person in
@@ -389,13 +398,16 @@ struct PeopleScreen: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            // Named for what it shows, and the tab below now says the same
-            // word, from the same decision. They differ in one case only: a
-            // search is answered as a list under a tab still called Sukupuu,
-            // because a tab that renames itself under a typing finger is the
-            // worse of the two faults. Both sides are keys: a ternary of two
-            // plain literals is a String, and is never looked up.
-            .navigationTitle(showsTree ? LocalizedStringKey("Sukupuu") : LocalizedStringKey("Ihmiset"))
+            // The list is named for what it shows, and the tab below says the
+            // same word, from the same decision. They differ in one case
+            // only: a search is answered as a list under a tab still called
+            // Sukupuu, because a tab that renames itself under a typing
+            // finger is the worse of the two faults. The tree has no title
+            // at all since 19 Sep 2026: it is a map, drawn under the bar,
+            // and the tab is the one word that names it. Both sides are
+            // keys: a ternary of two plain literals is a String, and is never
+            // looked up.
+            .navigationTitle(showsTree ? LocalizedStringKey("") : LocalizedStringKey("Ihmiset"))
             // Out of the way until it is wanted: iOS keeps the field hidden
             // above the list until somebody pulls down, which is the right
             // bargain here. The grandchild looking for one name in forty finds
@@ -405,7 +417,11 @@ struct PeopleScreen: View {
             // cut in half at the largest size — and what the search actually
             // covers is spelled out where it matters, on the screen that comes
             // back with nothing.
-            .searchable(text: $query, prompt: Text("Etsi"))
+            // And on the list alone (19 Sep 2026): over the tree the field
+            // surfaced whenever the picture was scrolled to its top, one
+            // more thing on a screen meant to hold the drawing and nothing
+            // else. A search is answered as a list in any case.
+            .searchable(!showsTree, text: $query, prompt: Text("Etsi"))
             .navigationDestination(for: Subject.self) { subject in
                 SubjectDetailScreen(subject: subject)
             }
@@ -445,45 +461,43 @@ struct PeopleScreen: View {
                 // above the door to the heard names it moved the audit's
                 // Dynamic Type finding onto that unchanged door (13 Sep 2026),
                 // and with the row gone the door passed again.
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isAddingPerson = true
-                    } label: {
-                        Image(systemName: "person.badge.plus")
-                            .elderTapTarget()
-                    }
-                    .accessibilityLabel("Lisää henkilö")
-                }
-                // The switch between the tree and the list, on the phones that
-                // have the tree. Two buttons rather than one with a ternary
-                // label: a ternary of two literals is a String, never looked up.
-                if canDrawTree {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        if showsTree {
-                            Button {
-                                prefersList = true
-                            } label: {
-                                Image(systemName: "list.bullet")
-                                    .elderTapTarget()
-                            }
-                            .accessibilityLabel("Luettelo")
-                        } else {
-                            Button {
-                                prefersList = false
-                            } label: {
-                                Image(systemName: "tree")
-                                    .elderTapTarget()
-                            }
-                            .accessibilityLabel("Sukupuu")
+                //
+                // None of these three over the tree (19 Sep 2026). The tree's
+                // bar has one button, the menu, and the same three doors are
+                // behind it — the drawing is the screen there, and a bar of
+                // controls over a map is the thing a map does without.
+                if !showsTree {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            isAddingPerson = true
+                        } label: {
+                            Image(systemName: "person.badge.plus")
+                                .elderTapTarget()
                         }
+                        .accessibilityLabel("Lisää henkilö")
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: SettingsRoute()) {
-                        Image(systemName: "gearshape")
-                            .elderTapTarget()
+                // The way back to the tree from the list, on the phones that
+                // have the tree. The other direction is in the tree's menu.
+                if canDrawTree && !showsTree {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            prefersList = false
+                        } label: {
+                            Image(systemName: "tree")
+                                .elderTapTarget()
+                        }
+                        .accessibilityLabel("Sukupuu")
                     }
-                    .accessibilityLabel("Asetukset")
+                }
+                if !showsTree {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink(value: SettingsRoute()) {
+                            Image(systemName: "gearshape")
+                                .elderTapTarget()
+                        }
+                        .accessibilityLabel("Asetukset")
+                    }
                 }
             }
             // The card is opened once the sheet has gone, so it is pushed onto
@@ -548,6 +562,19 @@ struct PeopleScreen: View {
                 .padding(.vertical, 6)
         }
         .listRowBackground(Elder.paper)
+    }
+}
+
+private extension View {
+    /// `searchable` that can be left off: there is no way to take the field
+    /// away from a view once the modifier is on it, and the tree wants none.
+    @ViewBuilder
+    func searchable(_ wanted: Bool, text: Binding<String>, prompt: Text) -> some View {
+        if wanted {
+            searchable(text: text, prompt: prompt)
+        } else {
+            self
+        }
     }
 }
 

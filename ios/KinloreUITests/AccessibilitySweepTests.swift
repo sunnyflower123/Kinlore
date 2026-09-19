@@ -891,24 +891,35 @@ final class AccessibilitySweepTests: XCTestCase {
     func testFamilyTree() throws {
         try sweep("Sukupuu", arguments: ["-seed", "related", "-tab", "people", "-screen", "tree"]) { app, _ in
             require(app.buttons["Eeva"], "a person in the tree")
-            require(app.buttons["Luettelo"], "the way to the list")
+            require(app.buttons["Valikko"], "the menu")
         }
     }
 
     /// The same tree at the size a family reaches: six generations and
-    /// fifty-three people, with generation labels down the side and a legend
-    /// under it since 16 Sep 2026 (`-seed clan`).
+    /// fifty-three people, with the generation labels riding the window's
+    /// edge (`-seed clan`).
     ///
     /// The small fixture cannot answer what this one does. The shaded bands
-    /// are new ground under every name in the drawing, the rail is text in a
-    /// column of its own — which at the largest size is a column of hyphenated
-    /// words — and the legend put three more things in the bar the zoom
-    /// buttons already sit in. All three are the kind of thing that measures
+    /// are new ground under every name in the drawing, and the labels are
+    /// words on scraps of paper over whatever the drawing has under them —
+    /// which at the largest size is a column of hyphenated words over a
+    /// picture three times the size. Both are the kind of thing that measures
     /// fine at the default size and clips at the largest.
     func testFamilyTreeAtSize() throws {
         try sweep("Sukupuu, iso suku", arguments: ["-seed", "clan", "-tab", "people", "-screen", "tree", "-you", "clan-elina"]) { app, _ in
             require(app.buttons["Aapo"], "the oldest generation")
             require(app.staticTexts["Sinun polvesi"], "the generation labels")
+        }
+    }
+
+    /// Everything that used to stand around the drawing, behind one button
+    /// since 19 Sep 2026: the ways out of the screen, the key to the lines,
+    /// and the bonds the rows cannot hold. `-seed clan` has two of those, so
+    /// the sheet is measured with every section it can have.
+    func testTreeMenu() throws {
+        try sweep("Sukupuu, valikko", arguments: ["-seed", "clan", "-tab", "people", "-screen", "tree", "-you", "clan-elina"]) { app, _ in
+            require(app.buttons["Valikko"], "the menu's button").tap()
+            require(app.staticTexts["Nämä eivät mahdu kuvaan"], "the menu")
         }
     }
 
