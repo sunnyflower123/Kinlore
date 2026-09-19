@@ -372,6 +372,25 @@ run "the site says each thing once, in one language" node scripts/page-check.mjs
 # It found six missing dialog titles the hour it was written.
 run "every string the app shows has an English one" node scripts/localisation-check.mjs
 
+# And the question before that one. The check above asks whether every key has
+# an English translation; it cannot ask whether the string is LOOKED UP at all,
+# because it counts keys, and a literal that reaches the screen as a `String` is
+# not a key to it. So the table can be complete, this file green, the Finnish
+# build perfect, and an English phone still show one Finnish sentence in the
+# middle of a screen. Six of those have been found here, every one by accident:
+# three by running the app in English and reading it, "Valokuva" by a
+# screenshot, and two on 19 Sep 2026 by sweeping the class rather than waiting
+# for the seventh.
+#
+# It reports only what is certain from the literal alone — a sentence that is
+# not a key in fi.lproj, which nothing downstream can look up, and a fallback
+# behind `?? ` whose left-hand side is a String rather than a
+# LocalizedStringKey. The forty-odd sentences carried as Strings WITH a key
+# behind them are counted instead: `Text(LocalizedStringKey(x))` looks those up
+# where they are drawn, and reading them as defects reports forty findings that
+# are all fine.
+run "every Finnish sentence on a screen has a key" node scripts/localisation-lookup-check.mjs
+
 # --- The backend ------------------------------------------------------------
 
 echo
