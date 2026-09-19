@@ -591,3 +591,14 @@
 "aviopuolisot" = "aviopuolisot";
 "sisarukset" = "sisarukset";
 "vanhempi ja lapsi" = "vanhempi ja lapsi";
+
+/* The date sheet's finer answers — see en.lproj. */
+"Päivämäärä" = "Päivämäärä";
+"Koko kuukausi" = "Koko kuukausi";
+"Valitse vuosikymmen" = "Valitse vuosikymmen";
+"Valitse vuosi" = "Valitse vuosi";
+"Valitse kuukausi" = "Valitse kuukausi";
+"Valitse päivä" = "Valitse päivä";
+"Vaihda vuosi" = "Vaihda vuosi";
+"Vaihda kuukausi" = "Vaihda kuukausi";
+"Poista ajankohta" = "Poista ajankohta";

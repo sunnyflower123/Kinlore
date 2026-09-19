@@ -52,18 +52,36 @@ struct DateHint: Codable, Hashable {
     var end: Date?
     var precision: DatePrecision
 
+    /// The archive's clock. Every date here is built as midnight in Helsinki —
+    /// by the extraction, by `DateSheet` and by the fixtures — so it is read
+    /// back there too. The same instant read in a zone west of it is the day
+    /// before, which turns 1.1.1957 into a photograph from 1956.
+    static let zone = TimeZone(identifier: "Europe/Helsinki") ?? .current
+
+    private static let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        return calendar
+    }()
+
     /// Human-readable form that states the uncertainty honestly.
     var displayText: String {
         guard let start else { return String(localized: "Ajankohta ei tiedossa") }
-        let year = Calendar.current.component(.year, from: start)
+        let year = Self.calendar.component(.year, from: start)
         switch precision {
         case .decade: return String(localized: "\(String(year / 10 * 10))-luku")
         case .year: return "\(year)"
         case .month, .day:
-            let f = DateFormatter()
-            f.locale = Locale(identifier: "fi_FI")
-            f.dateFormat = precision == .day ? "d.M.yyyy" : "LLLL yyyy"
-            return f.string(from: start)
+            // The phone's own language, not Finnish spelled out here. This was
+            // a `DateFormatter` pinned to fi_FI, which showed "kesäkuu 1957" on
+            // an English phone — invisible while nothing but the extraction
+            // could write a month, and the extraction could not write a real
+            // one either (19 Sep 2026).
+            var style = precision == .day
+                ? Date.FormatStyle.dateTime.day().month(.wide).year()
+                : Date.FormatStyle.dateTime.month(.wide).year()
+            style.timeZone = Self.zone
+            return start.formatted(style)
         case .unknown: return String(localized: "Ajankohta ei tiedossa")
         }
     }

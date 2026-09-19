@@ -1186,13 +1186,47 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// The date sheet: a wheel, a graphical date picker and four choices, on the
-    /// screen that asks how sure somebody is before it asks what they know.
+    /// The date sheet: four kinds of answer and a column of years, on the screen
+    /// that asks how sure somebody is before it asks what they know. There is no
+    /// wheel and no graphical calendar on it — this sweep is why, and the sweep
+    /// below is why the finest answers could come back without one.
+    ///
+    /// Four and not five, and this sweep is why that too: the month and the day
+    /// were a row each at first, and at the default text size the fifth row made
+    /// the audit report "Dynamic Type font sizes are partially unsupported".
+    /// Three rows passed and four passed, A/B'd in a worktree pinned to HEAD, so
+    /// the finer answers live behind "Päivämäärä" instead of beside it.
     func testDateSheet() throws {
         try sweep("Ajankohta", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             reach(app.buttons["Lisää ajankohta"], in: app, "the date row").tap()
             require(app.staticTexts["Kuinka tarkkaan tiedät?"], "the date sheet")
+        }
+    }
+
+    /// The deepest step of the same sheet: the days of a chosen month, under the
+    /// month and the year already answered.
+    ///
+    /// It is audited separately because it is the state the exact day was
+    /// dropped for in the first place. A wheel and a graphical calendar were
+    /// measured here and neither one's text grew with Dynamic Type — three
+    /// findings on that state alone — so the day came back on 19 Sep 2026 as
+    /// rows instead, and rows are only an answer if they hold at the largest
+    /// size. 1900 and January are chosen because they are the first row of each
+    /// list: what is being measured is the day list, not the scrolling.
+    func testDateSheetDay() throws {
+        try sweep("Ajankohta, päivä", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Lisää ajankohta"], in: app, "the date row").tap()
+            reach(app.buttons["Päivämäärä"], in: app, "the exact-date choice").tap()
+            reach(app.buttons["1900"], in: app, "the years").tap()
+            reach(app.buttons["tammikuu"], in: app, "the months of the chosen year").tap()
+            require(
+                app.buttons.matching(
+                    NSPredicate(format: "label CONTAINS %@", "Vaihda kuukausi")
+                ).firstMatch,
+                "the days of the chosen month"
+            )
         }
     }
 

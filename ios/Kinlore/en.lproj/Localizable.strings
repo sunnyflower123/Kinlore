@@ -679,3 +679,23 @@
 "aviopuolisot" = "spouses";
 "sisarukset" = "siblings";
 "vanhempi ja lapsi" = "parent and child";
+
+/* --- The date sheet's finer answers, 19 Sep 2026 -------------------------
+   The screen asked for a decade or a year and stopped there, so a wedding
+   remembered as "kesäkuussa 1957" had to be filed as the whole of 1957.
+   "Päivämäärä" asks the year, then the month, then the day, each as a list of
+   rows — the wheel and the calendar are what the Dynamic Type finding was
+   about, not the precision — and "Koko kuukausi" is the month standing on its
+   own, offered above the days. "Valitse" and "Poista ajankohta" were on the
+   screen in Finnish on an English phone until the same day: one reached Text
+   through a ternary and the other through a String parameter, and the check
+   can see neither. */
+"Päivämäärä" = "Exact date";
+"Koko kuukausi" = "The whole month";
+"Valitse vuosikymmen" = "Choose the decade";
+"Valitse vuosi" = "Choose the year";
+"Valitse kuukausi" = "Choose the month";
+"Valitse päivä" = "Choose the day";
+"Vaihda vuosi" = "Change the year";
+"Vaihda kuukausi" = "Change the month";
+"Poista ajankohta" = "Remove the date";

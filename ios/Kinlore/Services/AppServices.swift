@@ -471,22 +471,43 @@ struct RemoteExtractionService: ExtractionService {
         )
     }
 
+    /// What the telling is allowed to claim about when it happened.
+    ///
+    /// The reply carries `start_year` and `end_year` and nothing finer, while
+    /// its `precision` may say "day" or "month" — the enum in `extract.ts` has
+    /// carried those two from the first. A model that heard "kesäkuussa 1957"
+    /// therefore answered month 1957, and this built the first of January and
+    /// stored it as a month: the card then read *tammikuu 1957* as fact, a
+    /// month nobody had said, and a day precision read *1.1.1957* the same way.
+    /// Rule 5 is that uncertainty is stored rather than rounded, and this was
+    /// the opposite — a coarse answer sharpened into a false one.
+    ///
+    /// So the stored precision is the precision of the data that arrived. The
+    /// family sharpens it by hand in `DateSheet`, where somebody who was there
+    /// chooses the month and the day, which is rule 4's shape as well: the
+    /// model proposes the year it heard, a person adds what it could not hear.
     private static func dateHint(from reply: Reply.DateReply) -> DateHint? {
         guard let precision = DatePrecision(rawValue: reply.precision), precision != .unknown else {
             return nil
         }
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "Europe/Helsinki") ?? .current
+        calendar.timeZone = DateHint.zone
 
         func date(_ year: Int?) -> Date? {
             guard let year else { return nil }
             return calendar.date(from: DateComponents(year: year, month: 1, day: 1))
         }
 
+        // A precision with no year behind it is not a date at all, and storing
+        // one is worse than storing nothing: `date_precision` is the signal
+        // sync reads as "this device has something to say about the date", so
+        // an empty hint pushed from here clears a date another phone had.
+        guard let start = date(reply.start_year) else { return nil }
+
         return DateHint(
-            start: date(reply.start_year),
+            start: start,
             end: date(reply.end_year),
-            precision: precision
+            precision: precision == .day || precision == .month ? .year : precision
         )
     }
 }
