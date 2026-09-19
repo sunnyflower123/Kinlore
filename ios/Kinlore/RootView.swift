@@ -950,6 +950,21 @@ struct SubjectDetailScreen: View {
                 Section {
                     ForEach(mentions) { memory in
                         MemoryRow(memory: memory)
+                            // The one row on this screen whose surface was the
+                            // system's rather than this repo's, and it did not
+                            // draw the white the sibling section below gets: it
+                            // came up `systemGray4`, rgb(209, 209, 214), a
+                            // colour named nowhere in this app. The accent on it
+                            // measures **4.20:1** against rule 1's 4.5 minimum,
+                            // which is how the audit found it — "Contrast nearly
+                            // passed" on the listen button, in 3 runs of 10.
+                            //
+                            // It reads as a tap highlight and is not one: it
+                            // survives a scroll up and back down and a change of
+                            // Dynamic Type size, measured 19 Sep 2026 from the
+                            // audit's own screenshot at both text sizes. On
+                            // `Elder.card` the same button measures 6.14:1.
+                            .listRowBackground(Elder.card)
                     }
                 } header: {
                     // Two whole sentences rather than one with a number in it:
