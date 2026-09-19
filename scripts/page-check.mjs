@@ -39,6 +39,7 @@
 // Exits non-zero on the first failing rule, naming the line.
 
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -248,11 +249,84 @@ for (const lang of ['fi', 'en']) {
   }
 }
 
+// --- 10. every link the page offers actually goes somewhere -----------------
+// This page is where a stranger arrives first, and from 28 Sep 2026 it is also
+// the DSA contact surface. Its links into the repository answer 404 until the
+// repo turns public, so between now and then a correct one and a stale one look
+// exactly alike from here: neither can be clicked, and only one of them starts
+// working on the day it has to.
+//
+// The failure has a base rate in this repository rather than a theoretical one.
+// Seventy paths exist in history and not at HEAD — docs/ARKKITEHTUURI.md before
+// its English translation, the whole ios/Memorize/ tree before the rename of
+// 15 Aug 2026, the cut guessing round. A rename is one command, and the link
+// left pointing at the old name says nothing at all.
+//
+// Tracked, not merely present on disk. Pages serves what git holds, so a file
+// sitting in this working tree and ignored is a 404 for everybody else — and
+// that is the version nobody can see by opening the page locally.
+//
+// This is the only rule that reads docs/simple.html too: the fourth link into
+// the repository lives there, and it is the same surface.
+{
+  const simple = readFileSync(join(root, 'docs/simple.html'), 'utf8');
+  const git = (...args) => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' });
+  const tracked = new Set(git('ls-files').split('\n').filter(Boolean));
+
+  // "this repository", as the clone itself names it. A fork's origin differs
+  // from the links on the page, which is correct there and not a defect, so a
+  // link naming some other repository is left alone.
+  let slug = null;
+  try {
+    const m = git('remote', 'get-url', 'origin').trim().match(/github\.com[:/](.+?)(?:\.git)?$/);
+    if (m) slug = m[1];
+  } catch { /* no origin: nothing to compare the repository links against */ }
+
+  const branchExists = (b) => {
+    try { git('rev-parse', '--verify', '--quiet', `refs/heads/${b}`); return true; } catch { return false; }
+  };
+
+  for (const [page, text] of [['docs/index.html', html], ['docs/simple.html', simple]]) {
+    for (const m of text.matchAll(/(?:href|src)="([^"]+)"/g)) {
+      const href = m[1];
+
+      // a fragment has to land on an id of the page that offers it
+      if (href.startsWith('#')) {
+        if (!text.includes(`id="${href.slice(1)}"`)) {
+          fail('links', `${page} links to ${href} and nothing on it carries that id`);
+        }
+        continue;
+      }
+
+      // an absolute URL: only the ones into this repository can be checked here
+      if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//')) {
+        const blob = href.match(/^https:\/\/github\.com\/(.+?)\/blob\/([^/]+)\/(.+)$/);
+        if (blob && slug && blob[1] === slug) {
+          if (!branchExists(blob[2])) {
+            fail('links', `${page} links into branch ${blob[2]}, which is not a branch here`);
+          }
+          if (!tracked.has(blob[3])) {
+            fail('links', `${page} links to ${blob[3]}, which git does not track — a 404 the day the repo turns public`);
+          }
+        }
+        continue;
+      }
+
+      const target = href.split('#')[0].split('?')[0];
+      if (!target) continue;
+      const rel = join(dirname(join(root, page)), target).slice(root.length + 1);
+      if (!tracked.has(rel)) {
+        fail('links', `${page} links to ${href}, which git does not track (${rel})`);
+      }
+    }
+  }
+}
+
 // --- report ------------------------------------------------------------------
 if (failures.length) {
-  console.error(`docs/index.html — ${failures.length} failure(s)\n`);
+  console.error(`the page — ${failures.length} failure(s)\n`);
   for (const f of failures) console.error(`  [${f.rule}] ${f.detail}`);
   console.error('');
   process.exit(1);
 }
-console.log('docs/index.html — 9 rules, all pass');
+console.log('the page — 10 rules, all pass');
