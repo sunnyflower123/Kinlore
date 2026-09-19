@@ -73,8 +73,27 @@ struct PlaceMapCard: View {
     /// them and the bar is not what causes them — the shape the footer showed
     /// on the same day, reached from a different sentence. Height is not the
     /// answer either: that arm gives back every point the row took, and the
-    /// findings do not care. What about the row does cause them is unmeasured.
-    /// The overlay is green, and that is the whole of what is known.
+    /// findings do not care.
+    ///
+    /// **What in the row does cause it was measured the same evening, and it
+    /// is neither the row's kind nor its height.** Replacing the button with a
+    /// plain `Text` of the same words changes nothing — the same two findings,
+    /// the same frames to the decimal. What changes is what survives to the
+    /// larger layout. On the shipping screen both sentences are still in the
+    /// accessibility tree at `UICTContentSizeCategoryAccessibilityXXXL` and
+    /// both have plainly grown, the telling's text from 125.67 points tall to
+    /// 1151.33 and *"Kuulin nämä"* from 18 to 58.67, so the audit can watch
+    /// them scale. With the extra row they are absent from that tree
+    /// altogether, and the audit says at the default size what it could not
+    /// verify at the larger one. The finding tracks whether an element
+    /// survives to the simulated size — not where it sits, not what it is, and
+    /// not how tall the screen is.
+    ///
+    /// That also disposes of the cheaper reading this nearly rested on. The
+    /// row's arm is green at the largest size, which reads as a clean bill
+    /// until the probe says both sentences are gone from the tree there: a
+    /// green over nothing. A screen that reports at one size and not at the
+    /// other is worth a probe before it is worth a conclusion.
     ///
     /// It is also the truer control. The map is the thing being corrected, so
     /// tapping the map is where the correction starts; the words in the corner
