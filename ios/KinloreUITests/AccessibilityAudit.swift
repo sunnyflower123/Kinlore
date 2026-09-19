@@ -229,6 +229,14 @@ extension XCTestCase {
         // told a frame full of paper from a word in the fade on 6 Sep 2026,
         // and it costs nothing when the variable is not set.
         //
+        // **Give it a path under `/tmp`.** A prefix inside a session's own
+        // scratchpad produces no file at all: the simulator cannot write into
+        // `/private/tmp/claude-<uid>/…`, the write below is `try?`, and so the
+        // run prints its findings and stays otherwise identical — nothing says
+        // the picture is missing except the empty directory. Measured 19 Sep
+        // 2026, when the same command with `/tmp/kinlore-shot/card` wrote the
+        // PNG on the first attempt.
+        //
         // **It is taken here, after the audit has finished**, so it is the
         // settled screen and not necessarily the one the audit judged. It
         // answers what colour was drawn; it cannot show what the audit saw on
