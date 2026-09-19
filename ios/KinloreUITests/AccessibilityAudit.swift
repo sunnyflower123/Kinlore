@@ -699,7 +699,8 @@ enum AccessibilityPolicy {
             return true
         }
 
-        if issue.auditType == .dynamicType, listHeaderAndFooterText.contains(label) {
+        if issue.auditType == .dynamicType || issue.auditType == .textClipped,
+           listHeaderAndFooterText.contains(label) {
             return true
         }
 
