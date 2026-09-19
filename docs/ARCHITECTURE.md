@@ -1925,35 +1925,74 @@ Not built:
      `scripts/family-tree-layout-check.swift` hold both halves, and they could
      have failed: compiled against the old walk with `undrawn` kept, the
      blood-before-marriage case goes red in three places.
-   - **The drawing opens on a picture, not on one name** (19 Sep 2026). A
-     place and a generation are `@ScaledMetric`, so they grow with the text
-     and a name does not run into its neighbour; the phone does not grow with
-     them. Measured on `-seed clan` at the largest accessibility size: a
-     column is 372 points against 132 at the default, the rail beside it takes
-     153 of the 402 the phone has, and what is left for the drawing is 249 —
-     two thirds of a single place. The screenshot is one name, half of it past
-     the right edge, in a field of paper, and a couple is the smallest thing
-     this picture has to say.
+   - **The drawing keeps the reader's own text size, and opens on a card
+     rather than on a grid square** (19 Sep 2026, after half a day of getting
+     it wrong). A place and a generation are `@ScaledMetric`, so the picture
+     grows with the text and the phone does not: at the largest accessibility
+     size the rail takes 248 of the 402 points the phone has and the drawing
+     is left with 153, which is not a whole card. The answer taken that
+     morning was `FamilyTreeView.fit`, an opening scale of
+     `window.width / (2 x columnWidth)` capped at 1, so that a couple was
+     always in view.
 
-     What made it easy to miss is that zooming out answered it. At the
-     smallest zoom the same window holds 1.67 places, and two adjacent cards
-     are 74 points apart and 54 wide there, so a pair was always reachable —
-     after five taps of *Pienennä*, with nothing on the screen saying so. The
-     defect is where the picture starts, not what it can reach, and the fix is
-     the one number `FamilyTreeView.fit`: the opening scale is capped at
-     whatever shows two places, `window.width / (2 × columnWidth)`, and never
-     goes above 1. At the default text size that window holds 2.45 places, so
-     the factor is 1 and nothing moves. Where it binds it also settles the
-     names, holding the drawing's own text at `window.width / 264` of 17
-     points — about 16 at the largest size, near what ordinary text is at the
-     default — because the same scaling that widened the column had enlarged
-     the name inside it.
+     **That factor was Dynamic Type inverted and the accessibility sweep said
+     so immediately.** It shrinks the drawing by as much as the text grew, so
+     the larger a reader sets their type the smaller this screen draws its
+     names: measured from the sweep's own screenshots on `-seed related`, one
+     launch at each size, *Eeva* is a 37.33 x 20.33 point line at the default
+     size and 22.95 x 13.05 at AccessibilityXXXL — on a screen where the
+     title, the legend, the rail and the sentence under the drawing had all
+     grown by three. The sweep reported all four names and the caption as
+     *Text clipped* at both sizes, and nothing on the screen was cut; the size
+     was the defect. `testFamilyTree` is green at `b6c1fec`, red at `da5d5ae`
+     and red at `d4889b6` with byte-identical frames, each measured alone on a
+     private simulator within the same half hour.
 
-     `testTheDrawingOpensOnAPictureAtTheLargestTextSize` measures a place from
-     the archive rather than assuming one, as the distance between Elina and
-     the husband beside her, and asks that two of them fit the screen and that
-     her own card sit inside it. It could have failed: run against the view as
-     it was, it reports that 748.8 points is not less than 402.
+     One thing hid the second half of that for a while, and it is worth
+     knowing before reading any sweep log: `continueAfterFailure` is false, so
+     a sweep that fails at the default size never launches the largest at all.
+     Both of the tree's failures were reported as *default text size* only,
+     and the five findings at the largest size — the ones carrying the
+     inverted numbers — were never printed. A passing sweep opens the app
+     twice; a failing one opens it once.
+
+     So the factor is gone and the drawing is drawn at the reader's own size.
+     What answers the original complaint instead is where the picture opens.
+     `anchors` hung one handhold per whole place and `show` rounded a person
+     to it, `Int(place.x.rounded())`, which is half a place of error — 66
+     points at the default text size, where the card still lands on the
+     screen, and enough at the largest to put the whole card outside a
+     153-point window: Elina's card at x 68.67 in a window beginning at
+     248.67, a tree that opens on the lines between two strangers. There is
+     now one handhold per person, a point wide, on their own centre line, and
+     `show` scrolls to the person rather than to a grid square. The vertical
+     handhold is `cardBand` — the air above the discs, a disc, the gap under
+     it and a line of the name — rather than the whole row: `scrollTo` aligns
+     a fraction of the target with the same fraction of the window, so a
+     target taller than the window cannot put its contents anywhere the reader
+     can see them, which at the largest size opened the tree on a disc with
+     its name below the fold. `openingRow` moved from 0.35 to 0.31 with it and
+     the picture at the default size is the same to a point, which is the
+     arithmetic in the comment and was confirmed by
+     `testTheTreeOpensWithNothingUnderTheZoomBar` naming the three names that
+     0.35 of a band left under the bar.
+
+     `testTheDrawingsNamesGrowWithTheReadersText` replaces the test that
+     asserted two places fit, which was the wrong claim to hold. It launches
+     `-seed clan` twice and asks that the same name be taller at
+     AccessibilityXXXL than at the default size and hittable where the drawing
+     opens. It could have failed: run against the view as it was, it reports
+     that 13.05 is not greater than 20.33.
+
+     One finding was left over and is a hole in the audit rather than in the
+     screen. With the drawing at its full size, a six-generation family always
+     has names below the fold, and the sweep reported *Contrast failed* on
+     *Matti* at y 1084.33 of an 874-point screen — twice alone, identically,
+     and *unmeasurable*, because `ContrastMeter` will not crop off the
+     picture. `AccessibilityPolicy` already forgives contrast above the
+     viewport for exactly that reason; it now forgives it below the screen as
+     well, contrast only and only where the element is wholly past the bottom
+     edge. A name half on the screen still has pixels and is still judged.
    - **The drawing opens on your own row, and not four generations above it**
      (19 Sep 2026). `show` had one handhold, the cell, and a cell lies inside
      the horizontal scroll view which lies inside the vertical one — so
@@ -1972,7 +2011,9 @@ Not built:
      place. Laid out instead as a `VStack` of measured heights — the shape
      `anchors` has carried in this file for exactly this reason — she opens at
      349 points at the default size and 375 at the largest, her parents' row
-     above her and her children's below.
+     above her and her children's below. The second of those two numbers was
+     taken while the drawing was still scaled down to fit two places in the
+     window, and does not describe the screen after the entry above.
 
      Where it stops is measured rather than chosen, because the fold now cuts
      a screen somebody is looking at. The scroll view's fold lies where the
@@ -1982,7 +2023,9 @@ Not built:
      same seed. Centring her leaves six names under the bar — Saima, Lauri and
      Hellin with their initials — 0.42 and 0.6 leave three each, and a third
      of the way down leaves none; at the largest size nothing of the drawing
-     reaches the strip at all. `FamilyTreeView.openingRow` is that 0.35, and
+     reaches the strip at all. `FamilyTreeView.openingRow` was that 0.35 — it
+     is 0.31 since the entry above gave it a card band to take a fraction of
+     instead of a whole row, which is the same opening to within a point — and
      `testTheTreeOpensWithNothingUnderTheZoomBar` measures the strip rather
      than trusting it, so a phone shaped differently enough to break the
      constant says so. Both new tests could have failed: without the second

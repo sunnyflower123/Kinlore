@@ -261,28 +261,49 @@ final class FamilyTreeCrowdTests: XCTestCase {
                       "what will not fit is named where nobody can read it")
     }
 
-    /// The drawing opens on a picture at every text size, not on one name.
+    /// A name in the drawing is drawn larger, not smaller, when the reader
+    /// asks for larger text.
     ///
-    /// A place grows with the text so that a name does not run into its
-    /// neighbour; the phone does not grow with it. At the largest text size a
-    /// column is 372 points against 132 at the default, and the rail takes 153
-    /// of the 402 there are, so the window held two thirds of one place — one
-    /// name, half off the right edge, in a field of paper. Five taps of
-    /// *Pienennä* always answered it and nothing said so.
-    func testTheDrawingOpensOnAPictureAtTheLargestTextSize() {
-        let app = launch(["-seed", "clan", "-tab", "people", "-people", "tree", "-you", "clan-elina",
-                          "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
-        XCTAssertTrue(app.buttons["Elina, sinä"].waitForExistence(timeout: 30), "your own card is not in the tree")
+    /// The opposite shipped for six hours on 19 Sep 2026. A place and a
+    /// generation are `@ScaledMetric` and the phone is not, so at the largest
+    /// text size a column is 372 points against 132 at the default and the
+    /// window is left with 249 — two thirds of one place, one name half off
+    /// the right edge. The answer taken then was to open the drawing at
+    /// whatever showed two places, which shrinks the picture by as much as the
+    /// text grew: "Eeva" measured 37.33 x 20.33 points at the default size
+    /// and 22.95 x 13.05 at AccessibilityXXXL, on a screen where every other
+    /// word had grown by three. The accessibility sweep called all four names
+    /// clipped at both sizes; nothing was cut, and the size was the defect.
+    ///
+    /// So this asks the two things that were both true of the picture before
+    /// that factor and neither of them after: the name grows with the reader's
+    /// text, and it is whole on the screen when the drawing opens. It could
+    /// have failed — run against the view as it was, the same name is 20.33
+    /// points at the default size and 13.05 at the largest.
+    func testTheDrawingsNamesGrowWithTheReadersText() {
+        let arguments = ["-seed", "clan", "-tab", "people", "-people", "tree", "-you", "clan-elina"]
+        let ordinary = launch(arguments)
+        XCTAssertTrue(ordinary.staticTexts["Elina"].waitForExistence(timeout: 30),
+                      "your own name is not in the tree at the default text size")
+        let ordinaryName = ordinary.staticTexts["Elina"].frame.height
+        ordinary.terminate()
+
+        let app = launch(arguments, textSize: "UICTContentSizeCategoryAccessibilityXXXL")
+        XCTAssertTrue(app.staticTexts["Elina"].waitForExistence(timeout: 30),
+                      "your own name is not in the tree at the largest text size")
         shot(app, "crowd-largest")
+        let name = app.staticTexts["Elina"].frame
+        XCTAssertGreaterThan(name.height, ordinaryName,
+                             "the drawing's names are smaller at the largest text size than at the default")
         let screen = app.windows.firstMatch.frame
-        let you = app.buttons["Elina, sinä"].frame
-        // Her husband, one place to the right of her: the drawing's own unit,
-        // measured rather than assumed, so this holds at any text size.
-        let place = abs(app.buttons["Mikko"].frame.midX - you.midX)
-        XCTAssertGreaterThan(place, 1, "the two are drawn in the same place")
-        XCTAssertLessThan(place * 2, screen.width, "the screen does not hold two places of the drawing")
-        XCTAssertGreaterThan(you.minX, 0, "your own card starts off the left edge")
-        XCTAssertLessThan(you.maxX, screen.width, "your own card runs off the right edge")
+        XCTAssertGreaterThan(name.minX, 0, "your own name starts off the left edge")
+        XCTAssertLessThan(name.maxX, screen.width, "your own name runs off the right edge")
+        // Not only on the screen but inside the drawing's own window, which
+        // at this text size is 153 of the phone's 402 points — the rail takes
+        // the rest. A name can sit at x 83 of a 402-point screen and be
+        // nowhere a reader can see it.
+        XCTAssertTrue(app.staticTexts["Elina"].isHittable,
+                      "the drawing opens somewhere your own name cannot be seen, at \(name) of \(screen)")
     }
 
     /// A picture of what a test was looking at, when

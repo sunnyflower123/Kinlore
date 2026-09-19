@@ -68,9 +68,22 @@ struct FamilyTreeView: View {
     @ScaledMetric(relativeTo: .caption) private var railWidth: CGFloat = 78
     /// The little drawing of a line in the legend, beside the word for it.
     @ScaledMetric(relativeTo: .caption) private var markWidth: CGFloat = 20
+    /// One line of a name under a disc, which is 21 points of `.body` at the
+    /// default text size. It is here so that `cardBand` can be said in the
+    /// same units the drawing is drawn in.
+    @ScaledMetric(relativeTo: .body) private var nameLine: CGFloat = 21
 
     /// From the top of a generation's row to the top of its discs.
     private static let rowInset: CGFloat = 8
+
+    /// The band of a row that the people in it are actually drawn in: the air
+    /// above the discs, a disc, the gap under it and a line of the name.
+    /// `rowHeight` is this plus the air between one generation and the next,
+    /// and the difference matters only to where the drawing opens — a row is
+    /// 156 points at the default text size and 487 at AccessibilityXXXL,
+    /// where the window under the page's own heading is about 440, so the
+    /// middle of a row there is below everything drawn in it.
+    private var cardBand: CGFloat { Self.rowInset + discSize + 6 + nameLine }
 
     private static let zoomRange: ClosedRange<CGFloat> = 0.4 ... 2.5
 
@@ -111,7 +124,28 @@ struct FamilyTreeView: View {
 
     var body: some View {
         let result = layout
-        let scale = zoom * pinch * fit
+        // Nothing fits the drawing to the window here, and the one thing
+        // that did was removed on 19 Sep 2026. A place and a generation are
+        // `@ScaledMetric`, so the picture grows with the reader's text while
+        // the phone does not, and the obvious answer is to open it at
+        // `window.width / (2 * columnWidth)` so that a couple is always in
+        // view. That factor is Dynamic Type inverted: it shrinks the drawing
+        // by as much as the text grew, so the larger a reader sets their type
+        // the smaller this screen draws its names.
+        //
+        // Measured on `-seed related` from the accessibility sweep's own
+        // screenshots, one launch at each size: "Eeva" is a 37.33 x 20.33
+        // point line at the default text size and 22.95 x 13.05 at
+        // AccessibilityXXXL — where the title, the legend, the generation
+        // rail and the sentence under the drawing had all grown by three. The
+        // sweep reported all four names and the caption as clipped at both
+        // sizes, and nothing on the screen was cut: what it had found was the
+        // size. `testTheDrawingsNamesGrowWithTheReadersText` holds it now.
+        //
+        // The reader may shrink this drawing; the app may not do it for them.
+        // *Pienennä* is one tap away and keeps the words readable when it is
+        // taken, which `testZoomingOutLeavesTheWordsReadable` measures.
+        let scale = zoom * pinch
         // Inside a reader, because where the drawing starts is the whole
         // difference between a family of five and a family of 53. At 53 it is
         // 2376 points wide against a 324-point canvas and 1136 tall against
@@ -375,22 +409,43 @@ struct FamilyTreeView: View {
     /// already showing. Measured 19 Sep 2026 on a tree that did not move at
     /// all, for anybody.
     ///
-    /// So: one empty rectangle per place in the grid, laid out rather than
-    /// offset, and over the scaled drawing rather than inside it —
-    /// `scaleEffect` is a rendering transform for the same reason, and a grid
-    /// measured in scaled points stays true at any zoom. Nothing is drawn and
-    /// nothing is read; this is geometry the scroll views can see.
+    /// So: one empty rectangle laid out rather than offset, and over the
+    /// scaled drawing rather than inside it — `scaleEffect` is a rendering
+    /// transform for the same reason, and geometry measured in scaled points
+    /// stays true at any zoom. Nothing is drawn and nothing is read; this is
+    /// geometry the scroll views can see.
+    ///
+    /// **One per person, on their own centre line, and it was a grid of
+    /// whole places until 19 Sep 2026.** A grid has to be told which place a
+    /// reader means, `Int(place.x.rounded())`, and a place the layout puts
+    /// half way between two columns — which is where it stands anybody whose
+    /// couple has an odd number of children under it — then rounds to a
+    /// neighbour. Half a place is 66 points at the default text size, so the
+    /// card still landed on the screen and nothing said anything; at
+    /// AccessibilityXXXL the window left for the drawing is 153 points and
+    /// the same half place put the whole card outside it. Measured on
+    /// `-seed clan`: Elina's own card at x 68.67 in a window that begins at
+    /// 248.67, which is a tree that opens on the lines between two strangers.
     private func anchors(_ result: FamilyTreeLayout.Result, scale: CGFloat) -> some View {
-        VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
             ForEach(0 ..< max(result.rows, 1), id: \.self) { row in
+                let span = (y(ofRow: row + 1, result) - y(ofRow: row, result)) * scale
+                let here = result.placements
+                    .filter { $0.value.row == row }
+                    .map { (id: $0.key, centre: (CGFloat($0.value.x) + 0.5) * columnWidth * scale) }
+                    .sorted { ($0.centre, $0.id) < ($1.centre, $1.id) }
                 HStack(spacing: 0) {
-                    ForEach(0 ..< Int(max(result.width, 1).rounded(.up)), id: \.self) { column in
+                    ForEach(Array(here.enumerated()), id: \.element.id) { index, person in
+                        // From wherever the last handhold ended — they are a
+                        // point wide — to this one's centre line.
                         Color.clear
                             .frame(
-                                width: columnWidth * scale,
-                                height: (y(ofRow: row + 1, result) - y(ofRow: row, result)) * scale
+                                width: max(0, person.centre - (index == 0 ? 0 : here[index - 1].centre + 1)),
+                                height: span
                             )
-                            .id(Self.cell(row: row, column: column))
+                        Color.clear
+                            .frame(width: 1, height: span)
+                            .id(Self.handhold(person.id))
                     }
                 }
             }
@@ -428,14 +483,27 @@ struct FamilyTreeView: View {
     /// corner, which until today was the only place it was ever seen.
     private func show(_ person: String, _ result: FamilyTreeLayout.Result, _ reader: ScrollViewProxy) {
         guard let place = result.placements[person] else { return }
-        reader.scrollTo(Self.cell(row: place.row, column: Int(place.x.rounded())), anchor: .center)
+        reader.scrollTo(Self.handhold(person), anchor: .center)
         reader.scrollTo(Self.rowAnchor(place.row), anchor: UnitPoint(x: 0.5, y: Self.openingRow))
     }
 
-    private static func cell(row: Int, column: Int) -> String { "cell-\(row)-\(column)" }
+    private static func handhold(_ person: String) -> String { "at-\(person)" }
 
-    /// Where your own row sits when the picture opens: a third of the way
-    /// down rather than halfway, which is a measurement and not a taste.
+    /// Where your own card sits when the picture opens: a little under a
+    /// third of the way down rather than halfway, which is a measurement and
+    /// not a taste.
+    ///
+    /// It is a fraction of `cardBand` and was a fraction of the whole row
+    /// until 19 Sep 2026, which is the whole of why the number moved from
+    /// 0.35 to 0.31. `scrollTo` aligns the same fraction of the target and of
+    /// the window, so 0.35 of a 156-point row put the row's top at
+    /// `0.35 x window - 54.6` and 0.31 of an 83-point band puts it at
+    /// `0.31 x window - 25.7`: on the 722.67-point window this phone has,
+    /// 197.3 points against 198.3. The same picture to a point, which is the
+    /// intent — and the 25 points of drift that 0.35 left behind was not
+    /// guessed at either. `testTheTreeOpensWithNothingUnderTheZoomBar` named
+    /// Saima, Lauri and Hellin under the bar, the same three the fitting
+    /// below found at 0.42.
     ///
     /// The scroll view's fold lies where the zoom bar begins, and whatever
     /// the fold cuts stays in the accessibility tree while being painted
@@ -445,14 +513,17 @@ struct FamilyTreeView: View {
     /// stopping places were tried on `-seed clan` at the default text size.
     /// Halfway leaves six names in the strip — Saima, Lauri and Hellin with
     /// their initials — 0.42 leaves three, 0.6 leaves three, and a third of
-    /// the way down leaves none. At the largest text size all four are
-    /// equal: nothing of the drawing reaches the strip there at all.
+    /// the way down leaves none. The four were compared at the largest text
+    /// size as well and came out equal there, though that comparison was made
+    /// while a factor shrank the whole drawing to fit two places in the
+    /// window; what holds of the drawing as it is now is only that the strip
+    /// is empty at both sizes, which the test asks on every run.
     ///
     /// It is a constant fitted to one screen's height, which is why
     /// `testTheTreeOpensWithNothingUnderTheZoomBar` measures the strip rather
     /// than trusting this number: a phone shaped differently enough to break
     /// it says so.
-    private static let openingRow: CGFloat = 0.35
+    private static let openingRow: CGFloat = 0.31
 
     private func node(_ person: Subject, isYou: Bool) -> some View {
         Button {
@@ -567,9 +638,21 @@ struct FamilyTreeView: View {
         .overlay(alignment: .topLeading) {
             VStack(spacing: 0) {
                 ForEach(0 ..< max(result.rows, 1), id: \.self) { row in
+                    let span = (y(ofRow: row + 1, result) - y(ofRow: row, result)) * scale
+                    let band = min(span, cardBand * scale)
+                    // The handhold is the band the people are in, not the row
+                    // they belong to. `scrollTo` aligns a fraction of the
+                    // target with the same fraction of the window, so a
+                    // target taller than the window cannot put its contents
+                    // anywhere the reader can see them: at AccessibilityXXXL
+                    // the tree opened on a disc with its name below the fold
+                    // and nothing else, which is what the row-tall handhold
+                    // bought. A band shorter than the window always lands.
                     Color.clear
-                        .frame(width: 1, height: (y(ofRow: row + 1, result) - y(ofRow: row, result)) * scale)
+                        .frame(width: 1, height: band)
                         .id(Self.rowAnchor(row))
+                    Color.clear
+                        .frame(width: 1, height: max(0, span - band))
                 }
             }
             .allowsHitTesting(false)
@@ -578,40 +661,6 @@ struct FamilyTreeView: View {
     }
 
     private static func rowAnchor(_ row: Int) -> String { "row-\(row)" }
-
-    /// How many places the picture opens with in the window. Two, because a
-    /// couple is the smallest thing this drawing has to say: one person and
-    /// the lines going off the edge is a list entry drawn expensively.
-    private static let placesAtOnce: CGFloat = 2
-
-    /// What the drawing opens at, before the reader has zoomed anything.
-    ///
-    /// A place and a generation grow with the text so that a name does not run
-    /// into its neighbour, and the screen does not grow with either. Measured
-    /// 19 Sep 2026 on `-seed clan` at the largest text size: a column is 372
-    /// points against 132 at the default, the rail beside it takes 153 of the
-    /// 402 the phone has, and the window is left with 249 — so the drawing
-    /// opened on two thirds of one place, where at the default size it opens
-    /// on 2.45 of them. A screenshot of it is one name, half off the right
-    /// edge, in a field of paper.
-    ///
-    /// Zooming out did answer it, and that is the part that made it easy to
-    /// miss: at the smallest zoom the same window held 1.67 places, and two
-    /// adjacent cards are 74 points apart and 54 wide there, so a couple was
-    /// always reachable. It took five taps of *Pienennä* and nothing on the
-    /// screen said so. What is fixed here is where the picture starts, not
-    /// what it can reach.
-    ///
-    /// Never above 1, so a picture that already fits opens exactly as it did:
-    /// at the default text size the window holds 2.45 places and this is 1.
-    /// Where it binds, it holds the drawing's own text near the size ordinary
-    /// text has at the default setting — `window.width / 264` of 17 points,
-    /// about 16 at the largest — because the same scaling that widened the
-    /// column enlarged the name inside it.
-    private var fit: CGFloat {
-        guard let window, window.width > 0 else { return 1 }
-        return min(1, window.width / (Self.placesAtOnce * columnWidth))
-    }
 
     /// The window in the drawing's own units — `x` in person-widths, which is
     /// what an `Extent` is measured in. Everything while nothing has been

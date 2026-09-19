@@ -188,7 +188,8 @@ extension XCTestCase {
 
         try app.performAccessibilityAudit { issue in
             if AccessibilityPolicy.isDeliberate(
-                issue, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame, content: contentFrame
+                issue, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame,
+                content: contentFrame, screen: app.frame
             ) || extra(issue) {
                 return true
             }
@@ -437,7 +438,8 @@ enum AccessibilityPolicy {
         tabBar: CGRect,
         keyboard: CGRect,
         topChrome: CGRect = .null,
-        content: CGRect = .null
+        content: CGRect = .null,
+        screen: CGRect = .null
     ) -> Bool {
         let label = issue.element?.label ?? ""
 
@@ -519,6 +521,27 @@ enum AccessibilityPolicy {
         // is not a colour anybody can see. The same reasoning as the tab bar
         // below, from the other end.
         if issue.auditType == .contrast, let frame = issue.element?.frame, frame.minY < 0 {
+            return true
+        }
+
+        // **Below the screen, which is the same thing from the other end.**
+        // The rule above was written for an element scrolled off the top; a
+        // drawing puts them off the bottom instead. The family tree renders
+        // every generation whether or not it is on screen, so at the largest
+        // text size — where a row of `-seed clan` is 487 points and the phone
+        // is 874 — there are always names below the fold. Measured 19 Sep
+        // 2026, twice alone on a private simulator, identical both times:
+        // "Matti" at y 1084.33 on an 874-point screen, and the meter would
+        // not put a number on it because the crop is off the picture.
+        //
+        // `ContrastMeter` refusing to measure is what makes this safe to
+        // accept rather than a hole: nil is not a pass anywhere else in this
+        // file, and here it is the proof that there were no pixels to judge.
+        // Narrow in the same two ways as the rule above: contrast only, and
+        // only where the element is wholly past the bottom edge. A name half
+        // on the screen still has pixels and is still judged.
+        if issue.auditType == .contrast, !screen.isNull,
+           let frame = issue.element?.frame, frame.minY >= screen.maxY {
             return true
         }
 
