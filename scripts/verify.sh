@@ -288,6 +288,20 @@ run "the palette still measures what it claims" node scripts/palette-contrast-ch
 # was believed: a fourth sentence, a reworded third with the count unchanged,
 # and `.contrast` added to the gate.
 run "the audit forgives only what was measured" node scripts/audit-exemption-check.mjs
+# The sentence in the "Tyhjennä tämä laite" dialog, against the function that
+# has to make it true. Six services keep a device-local record in UserDefaults
+# — the ladder's comfort, the upsell rhythm, the deck's skips, the seen list,
+# the blind card's answers, the transcription tally — and their eight keys are
+# cleared because somebody remembered to add a line to `wipe()`. Each of them
+# says "part of emptying the device" in a comment, which is a reminder and not
+# a check, and the seventh will be written by somebody who has not read the
+# other six. So the rule is read out of the source and a new service joins it
+# by existing. A key that is only ever READ is a launch argument rather than a
+# record — eight of those live in the same files, and the first matcher here
+# reported all eight. Falsified four ways: a reset dropped from the wipe, a
+# seventh service that stores and forgets, a key its own reset stopped
+# clearing, and `wipe()` renamed.
+run "the device wipe forgets every record of her" node scripts/device-wipe-check.mjs
 run "only a point may be drawn as a point" place_map
 run "a long telling is given room to come back" node scripts/transcribe-budget-check.mjs
 # The two pure functions between the model's JSON and the family's archive.
