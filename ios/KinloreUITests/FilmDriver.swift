@@ -172,12 +172,14 @@ final class FilmDriver: XCTestCase {
     /// filming, because it is rule 5 drawn rather than argued. Held for the
     /// six seconds the v16 cut keeps the card on screen.
     ///
-    /// Under the map the card says nobody has told anything yet, and that is
-    /// the app and not the seed: the telling that named Puumala was told
-    /// about the photograph, so it is filed under the photograph
-    /// (`TellViewModel.placeSubject`), and a place lists only what was told
-    /// about it. Measured on the take of 12 Sep 2026; this comment used to
-    /// claim the telling was listed under the card.
+    /// Under the map the card used to say that nobody had told anything yet,
+    /// ten seconds after the film showed the telling that named Puumala. The
+    /// card reads *"Mainittu yhdessä muistossa"* since 19 Sep 2026 and lists
+    /// it: the telling is filed under the photograph
+    /// (`TellViewModel.placeSubject`) and *mentions* the place, and the screen
+    /// asked only the first of those two questions (`RootView`; the video
+    /// project's SCRIPT-v21.md §1.5). Nothing about the seed changed — the
+    /// take was waiting on the app.
     func testFilmThePlace() throws {
         let app = try roll(["-seed", "film", "-tab", "memories"])
         beat(1.6)
@@ -186,26 +188,78 @@ final class FilmDriver: XCTestCase {
         beat(7.0)
     }
 
+    /// 5b · The album a week later, scrolled past the bottom of the screen.
+    ///
+    /// `-seed film-week` is the film's archive with thirty tellings in it, and
+    /// quantity is the only thing it adds: six prints with their counts on
+    /// them, sixteen moments under the days they were told, three places. The
+    /// narration over this is one line — *"A week later there are thirty. She
+    /// had more to say than anyone asked."* — and the picture has to carry the
+    /// number, because nothing on the screen says it.
+    ///
+    /// Slow drags rather than flicks. A flick's deceleration belongs to the
+    /// phone and lands wherever it lands; three slow drags with a beat between
+    /// them are three readable screens, which is what a viewer gets in three
+    /// and a half seconds.
+    func testFilmTheAlbum() throws {
+        let app = try roll(["-seed", "film-week", "-tab", "memories"])
+        beat(2.4) // the grid, and the counts on the prints, before anything moves
+        for _ in 0 ..< 3 {
+            app.swipeUp(velocity: .slow)
+            beat(1.2)
+        }
+        beat(2.4)
+    }
+
+    /// 5c · Not only her: one photograph, three tellings, three names.
+    ///
+    /// The album's *"Uutta perheeltä"* section on the grandchild's phone after
+    /// the invitation, where `-seed film-family` leaves exactly three tellings
+    /// unseen — the grandmother's, her daughter's and her nephew's, all three
+    /// about the same picture. `byline(for:)` draws the name under each, which
+    /// is the entire scene: the archive stops being one person's.
+    ///
+    /// It is the truthful version of a bigger idea that is not built. One phone
+    /// round a table, several voices in a room, is an open question in PLAN §8
+    /// with no screen behind it, and a film cannot show it (SCRIPT-v21.md
+    /// §2.10). This is what is true today and filmable today.
+    func testFilmTheTellers() throws {
+        let app = try roll(["-seed", "film-family", "-tab", "memories"])
+        _ = try find(app.staticTexts, ["New from the family", "Uutta perheeltä"], timeout: 30)
+        beat(8.0) // three rows, three names, read one after another
+    }
+
     // MARK: - The v16 takes (SHOOT-v16.md in the video project)
 
-    /// The name the film seed proposes, mirrored from `-seed film` in
-    /// MemoryStore. The blind card's take taps it — not the app confirming its
-    /// own guess by proxy, but the person who knows the photograph arriving at
-    /// the same name without being shown it, which is the confirmation rule 4
-    /// calls the strongest. Until 13 Sep 2026 the take tapped a name the app
-    /// had not proposed and ended on the question left open; the film built
-    /// on it had to explain a quiz, and the seed changed with it.
+    /// The name the film seed proposes on the photograph the grandmother told
+    /// about, mirrored from `-seed film` in MemoryStore. Scene 8 still needs
+    /// it — the one quiet row on the people list is hers — and the blind card
+    /// no longer does; see `filmOtherProposal` below.
     private static let filmProposal = "Helmi"
+
+    /// And the name on the OTHER print, proposed by Uncle Jussi's telling in
+    /// `-seed film-family`. The blind card's take taps this one.
+    private static let filmOtherProposal = "Kerttu"
 
     /// 6 · The blind card: the photograph a name was heard in, four names with
     /// the app's guess unmarked among them, and the name a person who knows
     /// the picture gives. What the take has to show is what the app then
     /// says — its one sentence, and the name a fact.
+    ///
+    /// **`-seed film-family` and not `-seed film` since 19 Sep 2026, and the
+    /// photograph is a different one.** On the film seed the card asked about
+    /// the picture the audience had just heard the grandmother tell about, so
+    /// the cut had to spend ten seconds explaining why the app was asking
+    /// something it had been told — a conflict the film made, not the app (the
+    /// video project's SCRIPT-v21.md §2.9). Here the question is about a print
+    /// from the same table that nobody in the film has named, the telling that
+    /// proposed the name is Uncle Jussi's, and the grandchild recognising her
+    /// is the whole scene without a word of argument.
     func testFilmTheBlindCard() throws {
-        let app = try roll(["-seed", "film", "-tab", "tell"])
+        let app = try roll(["-seed", "film-family", "-tab", "tell"])
         _ = try find(app.staticTexts, ["Who is this?", "Kuka tässä on?"], timeout: 30)
         beat(6.5) // the picture, the question and the four names, read before anything is chosen
-        try tap(app.buttons, [Self.filmProposal])
+        try tap(app.buttons, [Self.filmOtherProposal])
         _ = try find(
             app.staticTexts,
             ["Thank you. Now we know who this is.", "Kiitos. Nyt tiedämme, kuka hän on."],

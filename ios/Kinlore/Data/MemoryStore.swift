@@ -1239,15 +1239,24 @@ final class MemoryStore {
         return MediaStore.save(imageData: data)
     }
 
-    /// The film's own photograph for `-seed film`, if the shooting day put one
-    /// in the app's Documents folder as `film-photo.jpg` (the video project's
-    /// SHOOT-v16.md says how); the plain generated one otherwise, so the seed
-    /// never fails to build a card for want of a picture. Saved through
-    /// `MediaStore` like any photograph, so nothing downstream is a special
-    /// case.
-    private static func filmPhotoFile() -> String? {
+    /// The film's own photographs for the `film` seeds, if the shooting day put
+    /// them in the app's Documents folder — `film-photo.jpg` for the first and
+    /// `film-photo-2.jpg` onwards for the rest (the video project's SHOOT-v16.md
+    /// says how); the plain generated one otherwise, so a seed never fails to
+    /// build a card for want of a picture. Saved through `MediaStore` like any
+    /// photograph, so nothing downstream is a special case.
+    ///
+    /// More than one since 19 Sep 2026, for the two takes that need a picture
+    /// the grandmother never spoke about: the album a week later, which is six
+    /// prints from the table rather than one, and the blind card, whose
+    /// question has to be about a photograph the film has shown and nobody has
+    /// named. A shooting day that copies one file still gets six cards; five of
+    /// them are then the generated placeholder, which is visibly wrong on
+    /// camera and correct everywhere else.
+    private static func filmPhotoFile(_ index: Int = 1) -> String? {
+        let name = index == 1 ? "film-photo.jpg" : "film-photo-\(index).jpg"
         if let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
-           let data = try? Data(contentsOf: documents.appendingPathComponent("film-photo.jpg")),
+           let data = try? Data(contentsOf: documents.appendingPathComponent(name)),
            let saved = MediaStore.save(imageData: data) {
             return saved
         }
@@ -1293,7 +1302,10 @@ final class MemoryStore {
             save()
             return
         }
-        guard ["archive", "unseen", "deck", "blind", "related", "dated", "film", "film-untold", "film-tree"].contains(seed) else { return }
+        guard [
+            "archive", "unseen", "deck", "blind", "related", "dated",
+            "film", "film-untold", "film-week", "film-family", "film-tree",
+        ].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
         // fixture's Mummo is one this phone has not seen. The section and the
@@ -1472,10 +1484,24 @@ final class MemoryStore {
         // only, so `-seed film` draws nothing. Grandma stops the tree: the app
         // has parent, spouse and sibling, and a grandchild drawn straight
         // under her would be drawn as her child.
-        if seed == "film" || seed == "film-untold" || seed == "film-tree" {
+        if seed?.hasPrefix("film") == true {
             let told = seed != "film-untold"
             let treeShot = seed == "film-tree"
-            let proposal = Subject(id: "demo-film-proposal", kind: .person, title: "Helmi", confirmed: treeShot)
+            // Two later hours of the same archive, added 19 Sep 2026 for the
+            // takes the video's §4 marks as needing a seed. `film-week` is her
+            // phone after a week of telling and `film-family` is mine after the
+            // invitation; both are the block below plus what that hour added,
+            // because the film is one archive growing rather than five.
+            let week = seed == "film-week"
+            let family = seed == "film-family"
+            // Confirmed by the time the family is here: the blind card asks
+            // about somebody else by then (see `film-family` below), and Helmi
+            // was answered on the orange proposal row in the week between — the
+            // weaker instrument, which is what rule 4 keeps it for.
+            let proposal = Subject(
+                id: "demo-film-proposal", kind: .person, title: "Helmi",
+                confirmed: treeShot || family
+            )
             let grandma = Subject(id: "demo-film-grandma", kind: .person, title: "Grandma")
             let elli = Subject(id: "demo-film-elli", kind: .person, title: "Elli")
             let filmAino = Subject(id: "demo-film-aino", kind: .person, title: "Aino")
@@ -1518,6 +1544,231 @@ final class MemoryStore {
                     mentionedSubjectIDs: [proposal.id, filmToivo.id, puumala.id]
                 ),
             ] : [])
+            // `-seed film-week`: the same archive a week later, and everything
+            // it adds is quantity. The video's fifth scene scrolls it past the
+            // bottom of the screen while the narration says *"A week later
+            // there are thirty. She had more to say than anyone asked."* —
+            // so thirty is counted here rather than rounded to: the four above,
+            // ten about the five other prints from the table, and sixteen free
+            // dictations.
+            //
+            // The moments carry no title, and that is the app and not the
+            // fixture: since 12 Sep 2026 a telling names nothing, so a free
+            // dictation is listed under the day it was told with its own first
+            // words beneath it (`SubjectRow`). Seven days of her voice, one
+            // line each, is the scene — and it is also why the week is dated
+            // backwards from now instead of arriving all at once.
+            if week {
+                // Two more places, because a week of telling names more than
+                // one. Confirmed, or the list does not draw them
+                // (`GalleryScreen.places`), and each with a coordinate for the
+                // reason Puumala carries one: the lookup refuses to run under a
+                // seed, so a place without one has no map on its card.
+                let savonlinna = Subject(
+                    id: "demo-film-savonlinna", kind: .place, title: "Savonlinna",
+                    place: PlaceHint(latitude: 61.8694, longitude: 28.8856, precision: .town)
+                )
+                let sulkava = Subject(
+                    id: "demo-film-sulkava", kind: .place, title: "Sulkava",
+                    place: PlaceHint(latitude: 61.7864, longitude: 28.3711, precision: .town)
+                )
+                subjects += [savonlinna, sulkava]
+
+                // The photograph was the first thing she told about, not the
+                // last: the four tellings above are pushed back behind the week
+                // so the album reads downwards through it.
+                let start = Date().addingTimeInterval(-7 * 86_400)
+                for index in memories.indices {
+                    memories[index].createdAt = start.addingTimeInterval(Double(index) * 600)
+                }
+
+                // A week of evenings, oldest first. `photo` is which print of
+                // the table it belongs to, 2 … 6, or nil for a free dictation
+                // that becomes a moment of its own — which is what the app makes
+                // of one (`TellViewModel`). `place` is a place the words name,
+                // and the only reason the archive has three places in it.
+                let evenings: [(words: String, photo: Int?, place: String?)] = [
+                    ("Toivo built that boat in the winter of the war, out of whatever the shed had. He said it leaked for a year and then it stopped.", 2, nil),
+                    ("We rowed it out to the island every summer until the motor came.", 2, nil),
+                    ("The school had one room and one stove, and the boys sat nearest the stove.", 3, nil),
+                    ("Liisa walked six kilometres to it and six back, and never once said it was far.", 3, nil),
+                    ("Liisa kept the shop after the war. Everything was behind the counter then; you asked, and she fetched it.", 4, nil),
+                    ("Sugar came in a blue paper bag, and my mother saved every one of them.", 4, nil),
+                    ("That is the hay meadow behind the cottage. Everyone came, and nobody was paid.", 5, nil),
+                    ("Elli is the one laughing. She was always the one laughing.", 5, nil),
+                    ("Aino's wedding. They had coffee and one cake, and the fiddler came from Sulkava.", 6, "demo-film-sulkava"),
+                    ("I do not know the year of it. Sometime before I was born, I think.", 6, nil),
+                    ("The ice went out late that spring, and we could not get to the island until June.", nil, nil),
+                    ("Mother made rieska on the stove every Saturday, and the smell got into the curtains.", nil, nil),
+                    ("Father walked to Savonlinna to sell the fish. It took him a day each way.", nil, "demo-film-savonlinna"),
+                    ("There was one radio in the village and it stood in the schoolhouse.", nil, nil),
+                    ("When we were evacuated we took the cow and the sewing machine, and left the rest of it standing.", nil, nil),
+                    ("I was given skis one Christmas. They were my brother's, painted over.", nil, nil),
+                    ("There was a bear in the potato field the summer I turned nine. Nobody believed me.", nil, nil),
+                    ("We sang at the jetty on midsummer night, and the sound went right across the water.", nil, "demo-puumala"),
+                    ("My mother's hands were cold even in August.", nil, nil),
+                    ("The post came twice a week, and we walked out to meet it.", nil, nil),
+                    ("Toivo taught me to swim by rowing out and telling me to follow.", nil, nil),
+                    ("The berries were picked into a birch basket, and the basket is still in the loft.", nil, nil),
+                    ("We had no shoes at all in the summer. None of us did.", nil, nil),
+                    ("When the men came back, nobody spoke about where they had been.", nil, nil),
+                    ("Sundays were long. Church in the morning and nothing whatever after it.", nil, nil),
+                    ("I still know every stone on the path down to that jetty.", nil, "demo-puumala"),
+                ]
+                // The decade of each print, and 6 is left undated on purpose:
+                // the grid's basket for what nobody has dated is a heading of
+                // its own, and a fixture where everything is dated never draws
+                // it. She says so out loud in the tenth telling.
+                let decades = [2: 1940, 3: 1950, 4: 1950, 5: 1930]
+                var prints: [Int: String] = [:]
+                var count = 0
+                for entry in evenings {
+                    count += 1
+                    let created = start.addingTimeInterval(Double(count) * 6 * 3600)
+                    let subjectID: String
+                    if let index = entry.photo {
+                        if prints[index] == nil {
+                            let id = "demo-film-print-\(index)"
+                            subjects.append(Subject(
+                                id: id,
+                                kind: .photo,
+                                title: "",
+                                imageFilename: Self.filmPhotoFile(index),
+                                dateHint: decades[index].map {
+                                    DateHint(
+                                        start: Calendar.current.date(
+                                            from: DateComponents(year: $0, month: 1, day: 1)
+                                        ),
+                                        end: nil,
+                                        precision: .decade
+                                    )
+                                },
+                                createdAt: created
+                            ))
+                            prints[index] = id
+                        }
+                        subjectID = prints[index] ?? ""
+                    } else {
+                        let id = "demo-film-moment-\(count)"
+                        subjects.append(Subject(id: id, kind: .event, title: "", createdAt: created))
+                        subjectID = id
+                    }
+                    memories.append(Memory(
+                        id: "demo-film-week-\(count)",
+                        subjectID: subjectID,
+                        authorID: "demo-mummo",
+                        authorName: "Grandma",
+                        body: entry.words,
+                        rawTranscript: entry.words,
+                        source: .voice,
+                        createdAt: created,
+                        mentionedSubjectIDs: [entry.place].compactMap { $0 }
+                    ))
+                }
+                // Her own phone, and she told every word of it: none of this is
+                // news from the family. The baseline is written rather than
+                // left alone, because `NewFromFamily` answers "nothing is new"
+                // only while the key is ABSENT, and a filming device has opened
+                // this tab before — which is not a hypothetical. The first run
+                // of this seed put all twenty-six rows in the section and left
+                // the album itself below the fold.
+                UserDefaults.standard.set(memories.map(\.id), forKey: NewFromFamily.seenKey)
+            }
+            // `-seed film-family`: the same archive after the invitation, and
+            // the one state in this fixture that is not one person's. Two takes
+            // come out of it.
+            //
+            // The album's *"Uutta perheeltä"* section lists three tellings of
+            // one photograph with three names under them — `byline(for:)` draws
+            // *"<nimi> kertoi"* — and that is the whole of the eighth scene: a
+            // photograph is not one person's memory. It needed no new code, only
+            // a seed where three members have told about the same picture
+            // (docs/VIDEO.md; the video project's SCRIPT-v21.md §2.10, which
+            // also says what this is NOT — the gathering round one phone is an
+            // open question in PLAN §8 and no screen does it).
+            //
+            // And the blind card then asks about a SECOND photograph, which is
+            // why one exists here. Until 19 Sep 2026 it asked about the one the
+            // grandmother had just been heard telling about, so the film had to
+            // spend ten seconds explaining why the app was asking something it
+            // had been told — §2.9. Uncle Jussi's telling about the other print
+            // names Kerttu, nobody has confirmed her, and the photograph on the
+            // card is one the film has shown on the table and named nowhere.
+            //
+            // His telling names Helmi and Toivo as well, and that is load-bearing
+            // rather than colour: decoys are confirmed people the same telling
+            // did NOT name (`BlindConfirmation`), so naming those two leaves
+            // exactly Elli, Aino and Liisa — four names that do not move between
+            // rehearsals, which is what a take needs.
+            if family {
+                let kerttu = Subject(
+                    id: "demo-film-kerttu", kind: .person, title: "Kerttu", confirmed: false
+                )
+                let other = Subject(
+                    id: "demo-film-print-2",
+                    kind: .photo,
+                    title: "",
+                    imageFilename: Self.filmPhotoFile(2),
+                    dateHint: DateHint(
+                        start: Calendar.current.date(from: DateComponents(year: 1940, month: 1, day: 1)),
+                        end: nil,
+                        precision: .decade
+                    )
+                )
+                subjects += [kerttu, other]
+
+                // Everything the fixture built above happened while she was
+                // alone, a week ago; the family has been here for a day.
+                let alone = Date().addingTimeInterval(-7 * 86_400)
+                for index in memories.indices {
+                    memories[index].createdAt = alone.addingTimeInterval(Double(index) * 600)
+                }
+                memories += [
+                    Memory(
+                        id: "demo-film-mum",
+                        subjectID: filmPhoto.id,
+                        authorID: "demo-film-mum",
+                        authorName: "Mum",
+                        body: "The little one at the end of the jetty is my mother. "
+                            + "I have looked at this picture all my life and never thought to ask about it.",
+                        source: .voice,
+                        createdAt: Date().addingTimeInterval(-26 * 3600),
+                        mentionedSubjectIDs: [proposal.id]
+                    ),
+                    Memory(
+                        id: "demo-film-jussi-other",
+                        subjectID: other.id,
+                        authorID: "demo-film-jussi",
+                        authorName: "Uncle Jussi",
+                        body: "This is Kerttu, Helmi's sister. Toivo took the picture, which is why he is not in it.",
+                        source: .voice,
+                        createdAt: Date().addingTimeInterval(-20 * 3600),
+                        mentionedSubjectIDs: [kerttu.id, proposal.id, filmToivo.id]
+                    ),
+                    Memory(
+                        id: "demo-film-jussi",
+                        subjectID: filmPhoto.id,
+                        authorID: "demo-film-jussi",
+                        authorName: "Uncle Jussi",
+                        body: "Toivo was my father's brother. He is the one with the oar, "
+                            + "and he held it exactly like that all his life.",
+                        source: .voice,
+                        createdAt: Date().addingTimeInterval(-2 * 3600),
+                        mentionedSubjectIDs: [filmToivo.id]
+                    ),
+                ]
+                // Seen: everything but those three. The baseline is written
+                // here rather than emptied — `-seed unseen` does the opposite
+                // with the same key — because the scene is three rows and the
+                // archive holds seven tellings. The decoys' one-liners and the
+                // telling about the other print are older news, and a section
+                // of seven says nothing about one photograph.
+                let scene = ["demo-film-telling", "demo-film-mum", "demo-film-jussi"]
+                UserDefaults.standard.set(
+                    memories.map(\.id).filter { !scene.contains($0) },
+                    forKey: NewFromFamily.seenKey
+                )
+            }
             // Which cards were pushed aside outlives a launch by design (see
             // the deck seed below); the untold photograph has to be offered
             // again on every take.

@@ -275,6 +275,63 @@ proposal the card asks about — since 13 Sep 2026; before that the proposal
 was a misheard *Elli* and the take ended on the question left open, which
 the film then had to explain as something other than a quiz.
 
+## The v21 takes
+
+The v21 cut (the video project's `SCRIPT-v21.md`) keeps those five and adds
+three that no seed above could dress, written on 19 Sep 2026. Two fixtures
+carry them, and both are `-seed film` with one later hour of the same archive
+on top, because the film is one family's archive growing rather than five
+unrelated states.
+
+`-seed film-week` is her phone a week after the telling: thirty memories — the
+four of `-seed film`, ten about the five other prints from the table, sixteen
+dictated with no photograph at all — six photographs grouped by decade with one
+deliberately undated, and three places. It writes the seen-baseline as it
+seeds, so none of the thirty arrives as *"New from the family"*: a week of her
+own telling is not news from anybody. The first run did not, and the album
+opened on twenty-six rows of *"Grandma told this"*, which is the opposite of
+the scene.
+
+`-seed film-family` is a family member's phone after the invitation. It adds
+three tellings about the one photograph — the grandmother's, her daughter's and
+her nephew's — and a second print with a name on it that nobody has confirmed.
+Exactly those three are left unseen, so the album opens on the rows the take
+needs and nothing else.
+
+- **The album a week later** — `testFilmTheAlbum`, `-seed film-week -tab
+  memories`. Three slow drags rather than flicks: a flick's deceleration
+  belongs to the phone and lands wherever it lands, and the take has to be
+  three readable screens. Nothing on the screen says thirty, so the picture
+  carries the number.
+- **Three tellers, one photograph** — `testFilmTheTellers`, `-seed film-family
+  -tab memories`. The take holds on *"New from the family"* while three
+  bylines are read; `MemoryStore.byline(for:)` draws the teller's name under
+  each row, and the archive stopping being one person's is the whole scene.
+- **The blind card** moved from `-seed film` to `-seed film-family` the same
+  day. On `-seed film` it asked about the photograph whose telling the film
+  had shown a minute earlier, so the film had already said the answer aloud;
+  it now asks about the second print, where the name was heard in a telling
+  the film never plays. The take taps `Kerttu` instead of `Helmi`.
+- **The place** needed no seed at all — `testFilmThePlace` is unchanged. Under
+  the map of a place a telling had just named, the card said *"Nobody has told
+  anything yet"*, because a subject listed what was told **about** it and never
+  what merely named it. `SubjectDetailScreen` reads both since 19 Sep 2026 and
+  the card says *"Named in one memory"* with the telling under it.
+
+The photographs are `film-photo.jpg` for the first and `film-photo-2.jpg`
+onwards for the rest, in the folder the recipe above already uses:
+
+```bash
+for i in 2 3 4 5 6; do
+  cp "<print $i>" \
+    "$(xcrun simctl get_app_container "$SIM" com.kinlore.app data)/Documents/film-photo-$i.jpg"
+done
+```
+
+A shooting day that copies only the first still gets six cards; the other five
+are then the generated placeholder, which is correct everywhere except on
+camera.
+
 ## Before filming night, in one list
 
 1. Copy the Test Store public key from the RevenueCat dashboard (scene 5).
