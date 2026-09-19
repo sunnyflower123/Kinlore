@@ -147,7 +147,7 @@ enum RemoteError: LocalizedError {
             kind == "colourisations"
                 ? String(localized: "Tämän kuukauden väritykset on käytetty.")
                 : kind == "photos"
-                ? "Ilmaisessa arkistossa on tilaa \(limit) kuvalle."
+                ? String(localized: "Ilmaisessa arkistossa on tilaa \(limit) kuvalle.")
                 // Not "AI-minuutit", which is the one place that name survived
                 // after the family screen dropped it — and the worst place for
                 // it to survive, because this is the sentence somebody meets at

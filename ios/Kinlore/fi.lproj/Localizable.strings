@@ -515,6 +515,7 @@
 "Aseta seuraava kuva näkyviin." = "Aseta seuraava kuva näkyviin.";
 "Aseta vanha valokuva näkyviin ja paina." = "Aseta vanha valokuva näkyviin ja paina.";
 "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa." = "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.";
+"Ilmaisessa arkistossa on tilaa %lld kuvalle." = "Ilmaisessa arkistossa on tilaa %lld kuvalle.";
 "Kamera ei ole käytössä" = "Kamera ei ole käytössä";
 "Kertomasi muistot ovat vain tässä laitteessa." = "Kertomasi muistot ovat vain tässä laitteessa.";
 "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.";

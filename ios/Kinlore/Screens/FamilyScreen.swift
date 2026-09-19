@@ -276,7 +276,8 @@ struct FamilyScreen: View {
         .alert("Jäsentä ei voitu poistaa", isPresented: $removeFailed) {
             Button("Selvä", role: .cancel) {}
         } message: {
-            Text(session.lastError ?? "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii.")
+            Text(session.lastError
+                ?? String(localized: "Hän on yhä perheessä. Yritä uudelleen, kun verkkoyhteys toimii."))
         }
         // Room under the last row for the floating tab bar.
         //

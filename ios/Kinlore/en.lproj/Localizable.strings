@@ -601,6 +601,7 @@
 "Aseta seuraava kuva näkyviin." = "Put the next picture in view.";
 "Aseta vanha valokuva näkyviin ja paina." = "Put an old photograph in view and press.";
 "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa." = "An uncertain answer is the right answer. The app keeps it as it is and does not guess at anything more exact.";
+"Ilmaisessa arkistossa on tilaa %lld kuvalle." = "The free archive has room for %lld photographs.";
 "Kamera ei ole käytössä" = "The camera is not available";
 "Kertomasi muistot ovat vain tässä laitteessa." = "The memories you have told are on this device only.";
 "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "The invitation is still valid. Try again when the connection is working.";
