@@ -3225,6 +3225,15 @@ numbers so they are a fact about the precision rather than a choice inside a
 view, and `scripts/place-map-check.swift` asserts them without a simulator or a
 network.
 
+*Nothing at all* was, until 19 Sep 2026, nothing inside a `Section` that was
+opened anyway: `SubjectDetailScreen` asked whether a coordinate existed, and
+`PlaceMapCard` then asked whether it could be drawn, so an `unknown` left a
+band of empty paper between the place's name and its date. The screen now asks
+the same question the card does — `place?.precision.mapSpanMetres != nil` — and
+the row is absent rather than blank. Two guards for one rule is how the
+duplication reads; the alternative is a view that draws an invisible map, and
+the check above is written against the precision either way.
+
 ### Why the device and not the Worker
 
 `MKLocalSearch`, biased at a box covering Finland and Karelia. No API key, no
@@ -3328,10 +3337,23 @@ what rule 1 means by not resting on colour.
 
 At launch and on every return to the foreground, after sync — a place another
 device has already resolved arrives with the pull, and looking it up again would
-be work for an answer we now have. A place told *during* a session is therefore
-resolved on the next sweep rather than immediately, so its card carries no map
-until the app is next opened or brought back to the foreground. Telling must
-never wait on a lookup.
+be work for an answer we now have. Telling must never wait on a lookup.
+
+**And, since 19 Sep 2026, when a place card is opened.** The sweep alone was
+the whole of it until then, and what that cost was reported rather than
+reasoned about: a place named in a telling, confirmed in the same telling, and
+opened from Albumi a minute later had a card and no map, because the only two
+moments that could resolve it were both in the past. Leaving the app and coming
+back fixed it, which is not an instruction anybody has. `PlaceResolver.resolve`
+answers the one subject the screen is showing — unpaced and not held back by a
+sweep in progress, since it is a single request and the only one anybody is
+waiting for — and `SubjectDetailScreen` asks for it in a `task`. A seeded
+archive still asks for nothing: the fixture guard that kept the demo family's
+*"Puumala"* out of every UI test run is now a property both paths read.
+
+It also covers the case a confirmation hook never would: a place confirmed on a
+grandchild's phone arrives here through the pull with its title and no point,
+and the device that opens the card is the device that looks it up.
 
 ### Sync
 

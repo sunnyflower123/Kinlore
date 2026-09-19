@@ -83,6 +83,10 @@ struct KinloreApp: App {
                 // nothing has failed, and a screen with no engine to ask says
                 // nothing — which is the correct answer for that instant.
                 .environment(sync)
+                // The one resolver, reachable from the screen that draws what
+                // it fetches: a place card opened before the next launch used
+                // to have no way to ask for its own coordinate.
+                .environment(places)
                 .task {
                     // The engine needs both, so it is created here.
                     if sync == nil {
