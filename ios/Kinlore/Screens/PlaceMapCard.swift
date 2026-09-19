@@ -32,11 +32,32 @@ struct PlaceMapCard: View {
     ///
     /// **Inside the card and not in a row of its own, which is a measurement
     /// rather than a preference.** Written as an ordinary row under the map it
-    /// pushed the card's last memory sixty points down, onto the tab bar's
-    /// edge, and `performAccessibilityAudit` reported that text as not
-    /// supporting Dynamic Type — three runs red against one green on the same
-    /// simulator at the same commit, so it was not the machine. An overlay
-    /// costs no height and the finding goes with it.
+    /// pushed the card's last memory sixty points down, to a bottom edge of
+    /// **791.67 against a tab bar whose top is 791**, and
+    /// `performAccessibilityAudit` reported that text as not supporting
+    /// Dynamic Type — three runs red against one green on the same simulator
+    /// at the same commit, so it was not the machine. An overlay costs no
+    /// height and the finding goes with it.
+    ///
+    /// **Those two figures are written down rather than left in a session's
+    /// notes because they are one of three findings that meet the same edge,
+    /// and only the numbers make the set visible.** `AccessibilityAudit.swift`
+    /// carries a note of 6 Sep 2026 about a name in `Elder.supporting` passing
+    /// contrast near the top of a screen and failing at y 767–782 with the bar
+    /// at 791; on 19 Sep 2026 a Section footer on the person card was read as
+    /// `Text clipped` with its bottom edge at exactly 791.0, and adding a
+    /// line's height to it changed neither the frame nor the finding. Three
+    /// elements, three audit categories, one edge.
+    ///
+    /// For one of the three the pixels have since answered the question the
+    /// audit cannot: that footer's sentence is drawn complete. A screenshot of
+    /// it at `c1e5428`, read in five-point bands, has paper at 745–755, ink
+    /// from 755.33 to 785.33 and paper again to the frame's bottom at 791 —
+    /// two full lines ending 5.7 points above the bar, with plain paper in the
+    /// gutters beside and below it. So that finding is the frame meeting the
+    /// bar and not text a reader loses, and the 45.67 points are the footer's
+    /// own padding around two lines rather than room for a third. Which of the
+    /// other two is the same thing has not been measured.
     ///
     /// It is also the truer control. The map is the thing being corrected, so
     /// tapping the map is where the correction starts; the words in the corner
