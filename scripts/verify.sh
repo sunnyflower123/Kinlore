@@ -149,6 +149,21 @@ extraction_context() {
 # gave. Rule 5 inverted, and silent: a wrong date is as short and as confident
 # a line as a right one. Added 19 Sep 2026, the day the shaping was fixed,
 # because the fix was reasoned rather than measured.
+# How often the app asks again for text it never got, and what it blames on
+# the moment rather than on the recording. Both are silent in both directions:
+# too forgiving and unusable audio costs paid minutes on every launch for ever,
+# too strict and a week without signal abandons a good recording. The tally is
+# executed — `TranscriptionAttempts` sits in a file of its own so that it can
+# be, since DeferredMemory.swift reaches three files that import UIKit — and
+# the classifier beside it is read rather than run, which the check says of
+# itself.
+transcription_catchup() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/transcription-catchup-check" scripts/transcription-catchup-check.swift \
+		ios/Kinlore/Services/TranscriptionAttempts.swift \
+		&& "$OUT/transcription-catchup-check"
+}
+
 date_hint() {
 	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library -enable-bare-slash-regex \
 		-o "$OUT/date-hint-check" scripts/date-hint-check.swift \
@@ -232,6 +247,7 @@ run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
 run "a question aims at what the archive lacks" extraction_context
 run "no date is sharper than what was said" date_hint
+run "the app stops asking, and not for the weather" transcription_catchup
 run "a child is drawn below her parents" family_tree_layout
 run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock

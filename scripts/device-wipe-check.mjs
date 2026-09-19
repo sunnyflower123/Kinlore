@@ -21,12 +21,14 @@
 // service stores under is cleared by a reset() in the same file, and every
 // such reset() is called by wipe(). A new service joins the rule by existing.
 //
-// SCOPE, stated rather than implied. This reads `ios/Kinlore/Services/` and
-// the one device-local record that lives outside it and is not called reset(),
-// `Elder.forgetLargerText()`. `Session`'s own keys are deliberately out: they
-// are cleared by `session.renewIdentity()`, which is the wipe's last act and
-// has its own reasons, and asserting a guess about them here would be a check
-// that goes green for the wrong reason.
+// SCOPE. This reads `ios/Kinlore/Services/`, the one device-local record that
+// lives outside it and is not called reset() — `Elder.forgetLargerText()` —
+// and `Session`, whose five keys are the other half of the same promise and
+// are cleared by `renewIdentity()` rather than by a reset(). Session was left
+// out when this check was written on 19 Sep 2026, on the argument that
+// `renewIdentity()` has reasons of its own; the argument was wrong in the way
+// a scope note usually is, since "somebody else clears it" is exactly the
+// sentence the seventh service will also be able to say.
 //
 //   node scripts/device-wipe-check.mjs
 //
@@ -41,6 +43,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SERVICES = join(root, 'ios', 'Kinlore', 'Services')
 const SETTINGS = join(root, 'ios', 'Kinlore', 'Screens', 'SettingsScreen.swift')
 const ELDER = join(root, 'ios', 'Kinlore', 'Design', 'Elder.swift')
+const SESSION = join(root, 'ios', 'Kinlore', 'Data', 'Session.swift')
 
 let failures = 0
 function check(what, condition, detail = '') {
@@ -121,6 +124,15 @@ function keysIn(source) {
 	return [...keys]
 }
 
+/// Whether a body clears one key. Both spellings count: `renewIdentity()`
+/// writes `forKey: Self.arrivalPendingKey` for the three static ones and a
+/// bare name for the two instance ones, and a matcher that knew only the bare
+/// name reported three of Session's five keys as never cleared — a finding
+/// about the matcher, produced the first time this half was run.
+function clears(body, key) {
+	return body.includes(`removeObject(forKey: ${key})`) || body.includes(`removeObject(forKey: Self.${key})`)
+}
+
 /// What is wrong, as a list rather than as printing, so the self-test can ask.
 function audit(settings, services) {
 	const wipe = bodyAt(settings, 'private func wipe() async {')
@@ -139,7 +151,7 @@ function audit(settings, services) {
 		}
 		for (const key of keysIn(source)) {
 			keys += 1
-			if (!cleared.includes(`removeObject(forKey: ${key})`)) {
+			if (!clears(cleared, key)) {
 				missingClears.push(`${name}: ${key}`)
 			}
 		}
@@ -195,6 +207,29 @@ check(
 	'whose phone this is would outlive the archive it was asked for',
 )
 
+console.log('\n— the identity, and what it is holding —')
+const session = readFileSync(SESSION, 'utf8')
+const renew = bodyAt(session, 'func renewIdentity() {')
+check('renewIdentity() is there to read', Boolean(renew), 'no `func renewIdentity()` in Session')
+check(
+	'and the wipe still ends by calling it',
+	result.wipe.includes('session.renewIdentity()'),
+	'the next sync would pull the whole archive straight back',
+)
+if (renew) {
+	const unheld = keysIn(session).filter((key) => !clears(renew, key))
+	check(
+		`each of Session's ${keysIn(session).length} keys goes with the identity`,
+		unheld.length === 0,
+		unheld.join('; '),
+	)
+	check(
+		'the Keychain goes too, both halves of it',
+		renew.includes('Identity.forget()') && renew.includes('FamilyKey.forget()'),
+		'a wiped phone would keep the key to an archive it says is gone',
+	)
+}
+
 // --- The self-test. Both halves of the rule are asserted to go red when the
 //     failure they describe is introduced, so this cannot go quietly green on
 //     a matcher that stopped matching.
@@ -220,6 +255,15 @@ check(
 check(
 	'and an intact tree reports neither',
 	result.missingCalls.length === 0 && result.missingClears.length === 0,
+)
+const brokenRenew = bodyAt(
+	session.replace('UserDefaults.standard.removeObject(forKey: localOnlyKey)', ''),
+	'func renewIdentity() {',
+)
+check(
+	'a key the identity stopped taking with it is reported',
+	Boolean(brokenRenew) && !clears(brokenRenew, 'localOnlyKey'),
+	'the same matcher reads the broken copy as intact',
 )
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
