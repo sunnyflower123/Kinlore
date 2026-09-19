@@ -341,8 +341,23 @@ extension Memory {
             authorID: dto.author_id,
             // The server attaches the member's display name so the client does
             // not have to keep a separate member directory just for reading.
-            // The fallback is Finnish because it is shown in the UI.
-            authorName: dto.author_name ?? "Perheenjäsen",
+            //
+            // The fallback is a word and not a name, so it is looked up like
+            // one. This comment used to read "the fallback is Finnish because
+            // it is shown in the UI", which names the right reason and draws
+            // the opposite conclusion from it: being shown is exactly what
+            // makes a translation necessary, and English has been the default
+            // since 30 Aug 2026. Nothing reported it, because the string went
+            // into `authorName` and reached the screen through an
+            // interpolation rather than through a literal.
+            //
+            // The word is the server's own — `DEFAULTS` in `family.ts` writes
+            // "Perheenjäsen" or "Family member" into `member.display_name`
+            // when a joiner types no name, following the `lang` the client
+            // sends. So this is the last resort below that one, for a row
+            // whose author has no member record at all, and it has to read
+            // the same as the name the server would have written.
+            authorName: dto.author_name ?? String(localized: "Perheenjäsen"),
             body: dto.body,
             rawTranscript: dto.raw_transcript,
             audioR2Key: dto.audio_r2_key,

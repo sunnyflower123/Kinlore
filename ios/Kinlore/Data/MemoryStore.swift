@@ -15,8 +15,27 @@ final class MemoryStore {
     private(set) var questions: [FollowUpQuestion] = []
     private(set) var relations: [Relation] = []
 
-    /// The author's name. In a family this comes from the member record.
-    var authorName = "Minä"
+    /// The name this device puts beside a telling of its own: *"Minä"* until
+    /// a pull answers with the member's `display_name`, and for good on a
+    /// phone that never joins a family.
+    ///
+    /// The line here used to say the name comes from the member record, and it
+    /// does — but by another road than assignment. Nothing writes to this
+    /// property anywhere in the app; the server derives `author_name` from
+    /// `member.display_name` on every pull (`sync.ts`), so a family's own name
+    /// arrives with the row rather than being set here.
+    ///
+    /// `String(localized:)` and not a bare literal, because this one is
+    /// INTERPOLATED rather than shown. `byline(for:)` hands it to
+    /// `Text("\(teller) kertoi")`, and a `String` interpolated into a
+    /// `LocalizedStringKey` is substituted word for word — the key is the
+    /// sentence around it, never the value dropped into it. So the entry
+    /// `"Minä" = "Me"` sat in `en.lproj` with nothing able to reach it, and an
+    /// English phone read *"Minä told this"* under every memory told on a
+    /// phone with no family — which is the blind spot
+    /// `localisation-check.mjs` names in its own header, in its own words:
+    /// it cannot see a string composed at runtime, only a literal.
+    var authorName = String(localized: "Minä")
 
     /// The most recent ordering number received from the server. The next pull
     /// asks for everything above it.

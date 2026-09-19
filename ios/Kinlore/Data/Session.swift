@@ -592,14 +592,20 @@ final class Session {
         let day: Double = 24 * 60 * 60
         mode = .inFamily(id: "demo-family")
         let yourCard = UserDefaults.standard.string(forKey: "you")
+        // A word rather than a name, so it is looked up like the author's is.
+        // A member's `displayName` reaches the list through `Text(member
+        // .displayName)` and `Text("\(member.displayName) (sinä)")`, neither
+        // of which looks up a `String` — and this fixture is what the film and
+        // the judging see, both of them in English.
+        let mine = String(localized: "Minä")
         let you = Member(
-            id: "demo-you", displayName: "Minä", role: "owner", joinedAt: now - 40 * day, personSubjectID: yourCard
+            id: "demo-you", displayName: mine, role: "owner", joinedAt: now - 40 * day, personSubjectID: yourCard
         )
         family = Family(
             id: "demo-family",
             name: "Virtaset",
             entitlement: "free",
-            you: Family.You(id: "demo-you", role: "owner", displayName: "Minä", personSubjectID: yourCard),
+            you: Family.You(id: "demo-you", role: "owner", displayName: mine, personSubjectID: yourCard),
             members: alone ? [you] : [
                 you,
                 Member(
