@@ -36,8 +36,18 @@ struct GalleryScreen: View {
     /// Dynamic Type, and at accessibility sizes it was clipped by a 110 pt tile —
     /// the count simply ran off the edge. Larger photographs are the right answer
     /// for this user anyway; the grid just holds fewer per row.
+    ///
+    /// From the text floor up, and not only from the accessibility sizes,
+    /// since 19 Sep 2026. A grandparent's phone is given `Elder.textFloor` and
+    /// nothing larger unless she asked iOS for it, so her album was the same
+    /// grid as a grandchild's: three across, 111 points a side, a face in a
+    /// group portrait a few points wide — on the screen whose own comment says
+    /// a photograph is recognised by looking. Two across is 172 points a side,
+    /// 2.4 times the area, at the cost of a longer scroll; the decade headings
+    /// already break that scroll into pages. Measured on `-seed film-week` at
+    /// the floor before and after.
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: typeSize.isAccessibilitySize ? 170 : 110), spacing: 10)]
+        [GridItem(.adaptive(minimum: typeSize >= Elder.textFloor ? 170 : 110), spacing: 10)]
     }
 
     private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
@@ -157,185 +167,204 @@ struct GalleryScreen: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            Group {
-                // Three states, and the search has to be asked about first.
-                if isSearching {
-                    // An archive with nothing in it is an invitation; a search
-                    // that found nothing is a dead end, and offering "lisää
-                    // kuvia" there would answer a question nobody asked.
-                    if nothingMatches { noResults } else { content }
-                } else if nothingMatches {
-                    // A phone that has just joined a family is empty in a
-                    // different way from a family nobody has told anything:
-                    // its content exists and is on its way. The invitation —
-                    // "Lisää vanha valokuva…" — is a false sentence there, for
-                    // exactly as long as the first pull takes.
-                    //
-                    // The refused note above either, because an empty archive
-                    // is exactly where a reader's phone the server has
-                    // forgotten stands: nothing arrived, nothing will, and the
-                    // invitation to photograph an album is the wrong sentence.
-                    VStack(spacing: 0) {
-                        RefusedNote()
-                            .padding([.horizontal, .top], Elder.screenPadding)
-                        if isAwaitingFamilyContent {
-                            arrivalState
-                        } else if isMissingFamilyContent {
-                            notArrivedState
-                        } else {
-                            emptyState
-                        }
-                    }
-                } else {
-                    content
-                }
+            // The search field is the grandchild's instrument — one name in
+            // forty — and ARCHITECTURE §8.12 promised that grandmother never
+            // meets it, because iOS kept it hidden above the list until
+            // somebody pulled down. iOS 26 stopped keeping that promise: the
+            // field is drawn under the large title on every arrival, a grey
+            // box that says "Etsi" between the title and the first photograph,
+            // and a tap on it raises a keyboard over the album. Measured
+            // 19 Sep 2026 at the text floor, where it was also the fifty
+            // points that put the blind card's fourth name under the tab bar.
+            // So the promise is kept here instead, by the same signal the
+            // people tab and the blind card follow: whose phone this is.
+            if largerText {
+                archive
+            } else {
+                archive.searchable(text: $query, prompt: Text("Etsi"))
             }
-            .navigationTitle("Albumi")
-            .onAppear {
-                // A pop-back from a card is a visit already in progress, not
-                // a new arrival: the captured section stays, the seen-marking
-                // has already happened. A tab switch leaves the flag false,
-                // so returning to the tab still starts clean — the half
-                // `testNewFromFamilyClearsOnceSeen` pins.
-                if isReturningFromCard {
-                    isReturningFromCard = false
-                    return
-                }
-                newFromFamily = NewFromFamily.unseen(in: store, me: session.identity.memberID)
-                // The same guard as the Kerro tab's card: a family member's
-                // question outranks it, the extraction's follow-ups do not
-                // (TellScreen's `deckCard`, ARCHITECTURE §23).
-                if largerText, blind == nil,
-                   store.openQuestions(
-                       limit: 1, excludingAuthor: session.identity.memberID,
-                       onlyAuthored: true
-                   ).isEmpty {
-                    blind = BlindConfirmation.next(in: store)
-                }
-                // The baseline is not written while the first pull is still
-                // owed. A joiner's arrival used to mark an EMPTY store as
-                // seen, and the pull then landed the whole family archive on
-                // the wrong side of that baseline — every telling "new" at
-                // once, burying the photographs under the exact dump the
-                // first-visit rule exists to prevent. Until the cursor has
-                // moved, being here does not count as having seen anything.
-                guard !(sync?.isEnabled == true && store.syncSeq == 0) else { return }
-                NewFromFamily.markAllSeen(in: store)
-            }
-            .onDisappear {
-                isReturningFromCard = !path.isEmpty
-            }
-            .searchable(text: $query, prompt: Text("Etsi"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // A menu rather than two buttons: the bar has room for one
-                    // control at the largest text size, and the second way in
-                    // would be the one to fall off it.
-                    //
-                    // The camera is first because it is the case this app is
-                    // for. `PhotosPicker` does not survive being a menu row, so
-                    // both rows are plain buttons and the picker is presented
-                    // from the flag one of them sets.
-                    Menu {
-                        Button {
-                            isPhotographing = true
-                        } label: {
-                            Label("Kuvaa vanha valokuva", systemImage: "camera")
-                        }
-                        Button {
-                            isPickingFromLibrary = true
-                        } label: {
-                            Label("Valitse kuvista", systemImage: "photo.on.rectangle.angled")
-                        }
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.title3.weight(.semibold))
-                            .elderTapTarget()
-                    }
-                    .accessibilityLabel("Lisää kuvia")
-                }
-            }
-            .navigationDestination(for: Subject.self) { subject in
-                SubjectDetailScreen(subject: subject)
-            }
-            .onChange(of: picked) { _, items in
-                guard !items.isEmpty else { return }
-                Task { await importPhotos(items) }
-            }
-            // Full screen rather than a sheet: a camera under a card that can
-            // be dragged away is a camera that gets dragged away mid-album.
-            .fullScreenCover(isPresented: $isPhotographing) {
-                CameraScreen(pickFromLibraryInstead: { isPickingFromLibrary = true })
-            }
-            #if DEBUG
-            // `-screen camera`, alongside the other screenshot aids: the camera
-            // sits behind a menu row, and a screenshot run has no hands. It
-            // pairs with `-camera stub|denied|unavailable`, which choose which
-            // of its three states is drawn — on a simulator, where there is no
-            // camera at all, only one of them is otherwise reachable.
-            .task {
-                if UserDefaults.standard.string(forKey: "screen") == "camera" {
-                    isPhotographing = true
-                }
-            }
-            #endif
-            .photosPicker(
-                isPresented: $isPickingFromLibrary,
-                selection: $picked,
-                matching: .images,
-                photoLibrary: .shared()
-            )
-            .overlay {
-                if isImporting {
-                    ProgressView("Tuodaan kuvia")
-                        .padding(24)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
-                }
-            }
-            // A photo that would not load used to be skipped in silence: you
-            // chose ten, eight arrived, and nothing said which or why. Counting
-            // your own photographs to find that out is not a thing to ask of
-            // anybody, least of all of somebody who scanned them.
-            // Offered, not imposed: the sheet can be swiped away and the photos
-            // are already in the archive. Nothing here is a step in an import
-            // that would otherwise be unfinished.
-            .sheet(isPresented: Binding(
-                get: { !justImported.isEmpty },
-                set: { if !$0 { justImported = [] } }
-            )) {
-                DateSheet(subjects: justImported)
-            }
-            #if DEBUG
-            // `-import 3`: the question an import asks, without the system photo
-            // picker in front of it. A test run cannot drive that picker, so the
-            // one screen the bulk path exists for was unreachable — the same
-            // hole `-mic denied` and `-screen result` were written for.
-            .task {
-                // Once per launch. A `task` runs again when the view comes back
-                // — returning from a photo's card is enough — and a second
-                // helping would put three more photographs in the archive and
-                // the sheet back over the grid.
-                guard !didSeedImport,
-                      let count = UserDefaults.standard.string(forKey: "import").flatMap(Int.init),
-                      count > 1
-                else { return }
-                didSeedImport = true
-                justImported = (0 ..< count).map { _ in
-                    let subject = Subject(kind: .photo, title: "")
-                    store.add(subject)
-                    return subject
-                }
-            }
-            #endif
-            .alert("Kaikkia kuvia ei saatu tuotua", isPresented: $isReportingSkipped) {
-                Button("Selvä") { isReportingSkipped = false }
-            } message: {
-                Text(skipped == 1
-                    ? String(localized: "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen.")
-                    : String(localized: "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen."))
-            }
-            .elderSurface()
         }
+    }
+
+    /// The tab's root: the three states, and everything hung on them.
+    private var archive: some View {
+        Group {
+            // Three states, and the search has to be asked about first.
+            if isSearching {
+                // An archive with nothing in it is an invitation; a search
+                // that found nothing is a dead end, and offering "lisää
+                // kuvia" there would answer a question nobody asked.
+                if nothingMatches { noResults } else { content }
+            } else if nothingMatches {
+                // A phone that has just joined a family is empty in a
+                // different way from a family nobody has told anything:
+                // its content exists and is on its way. The invitation —
+                // "Lisää vanha valokuva…" — is a false sentence there, for
+                // exactly as long as the first pull takes.
+                //
+                // The refused note above either, because an empty archive
+                // is exactly where a reader's phone the server has
+                // forgotten stands: nothing arrived, nothing will, and the
+                // invitation to photograph an album is the wrong sentence.
+                VStack(spacing: 0) {
+                    RefusedNote()
+                        .padding([.horizontal, .top], Elder.screenPadding)
+                    if isAwaitingFamilyContent {
+                        arrivalState
+                    } else if isMissingFamilyContent {
+                        notArrivedState
+                    } else {
+                        emptyState
+                    }
+                }
+            } else {
+                content
+            }
+        }
+        .navigationTitle("Albumi")
+        .onAppear {
+            // A pop-back from a card is a visit already in progress, not
+            // a new arrival: the captured section stays, the seen-marking
+            // has already happened. A tab switch leaves the flag false,
+            // so returning to the tab still starts clean — the half
+            // `testNewFromFamilyClearsOnceSeen` pins.
+            if isReturningFromCard {
+                isReturningFromCard = false
+                return
+            }
+            newFromFamily = NewFromFamily.unseen(in: store, me: session.identity.memberID)
+            // The same guard as the Kerro tab's card: a family member's
+            // question outranks it, the extraction's follow-ups do not
+            // (TellScreen's `deckCard`, ARCHITECTURE §23).
+            if largerText, blind == nil,
+               store.openQuestions(
+                   limit: 1, excludingAuthor: session.identity.memberID,
+                   onlyAuthored: true
+               ).isEmpty {
+                blind = BlindConfirmation.next(in: store)
+            }
+            // The baseline is not written while the first pull is still
+            // owed. A joiner's arrival used to mark an EMPTY store as
+            // seen, and the pull then landed the whole family archive on
+            // the wrong side of that baseline — every telling "new" at
+            // once, burying the photographs under the exact dump the
+            // first-visit rule exists to prevent. Until the cursor has
+            // moved, being here does not count as having seen anything.
+            guard !(sync?.isEnabled == true && store.syncSeq == 0) else { return }
+            NewFromFamily.markAllSeen(in: store)
+        }
+        .onDisappear {
+            isReturningFromCard = !path.isEmpty
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                // A menu rather than two buttons: the bar has room for one
+                // control at the largest text size, and the second way in
+                // would be the one to fall off it.
+                //
+                // The camera is first because it is the case this app is
+                // for. `PhotosPicker` does not survive being a menu row, so
+                // both rows are plain buttons and the picker is presented
+                // from the flag one of them sets.
+                Menu {
+                    Button {
+                        isPhotographing = true
+                    } label: {
+                        Label("Kuvaa vanha valokuva", systemImage: "camera")
+                    }
+                    Button {
+                        isPickingFromLibrary = true
+                    } label: {
+                        Label("Valitse kuvista", systemImage: "photo.on.rectangle.angled")
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title3.weight(.semibold))
+                        .elderTapTarget()
+                }
+                .accessibilityLabel("Lisää kuvia")
+            }
+        }
+        .navigationDestination(for: Subject.self) { subject in
+            SubjectDetailScreen(subject: subject)
+        }
+        .onChange(of: picked) { _, items in
+            guard !items.isEmpty else { return }
+            Task { await importPhotos(items) }
+        }
+        // Full screen rather than a sheet: a camera under a card that can
+        // be dragged away is a camera that gets dragged away mid-album.
+        .fullScreenCover(isPresented: $isPhotographing) {
+            CameraScreen(pickFromLibraryInstead: { isPickingFromLibrary = true })
+        }
+        #if DEBUG
+        // `-screen camera`, alongside the other screenshot aids: the camera
+        // sits behind a menu row, and a screenshot run has no hands. It
+        // pairs with `-camera stub|denied|unavailable`, which choose which
+        // of its three states is drawn — on a simulator, where there is no
+        // camera at all, only one of them is otherwise reachable.
+        .task {
+            if UserDefaults.standard.string(forKey: "screen") == "camera" {
+                isPhotographing = true
+            }
+        }
+        #endif
+        .photosPicker(
+            isPresented: $isPickingFromLibrary,
+            selection: $picked,
+            matching: .images,
+            photoLibrary: .shared()
+        )
+        .overlay {
+            if isImporting {
+                ProgressView("Tuodaan kuvia")
+                    .padding(24)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            }
+        }
+        // A photo that would not load used to be skipped in silence: you
+        // chose ten, eight arrived, and nothing said which or why. Counting
+        // your own photographs to find that out is not a thing to ask of
+        // anybody, least of all of somebody who scanned them.
+        // Offered, not imposed: the sheet can be swiped away and the photos
+        // are already in the archive. Nothing here is a step in an import
+        // that would otherwise be unfinished.
+        .sheet(isPresented: Binding(
+            get: { !justImported.isEmpty },
+            set: { if !$0 { justImported = [] } }
+        )) {
+            DateSheet(subjects: justImported)
+        }
+        #if DEBUG
+        // `-import 3`: the question an import asks, without the system photo
+        // picker in front of it. A test run cannot drive that picker, so the
+        // one screen the bulk path exists for was unreachable — the same
+        // hole `-mic denied` and `-screen result` were written for.
+        .task {
+            // Once per launch. A `task` runs again when the view comes back
+            // — returning from a photo's card is enough — and a second
+            // helping would put three more photographs in the archive and
+            // the sheet back over the grid.
+            guard !didSeedImport,
+                  let count = UserDefaults.standard.string(forKey: "import").flatMap(Int.init),
+                  count > 1
+            else { return }
+            didSeedImport = true
+            justImported = (0 ..< count).map { _ in
+                let subject = Subject(kind: .photo, title: "")
+                store.add(subject)
+                return subject
+            }
+        }
+        #endif
+        .alert("Kaikkia kuvia ei saatu tuotua", isPresented: $isReportingSkipped) {
+            Button("Selvä") { isReportingSkipped = false }
+        } message: {
+            Text(skipped == 1
+                ? String(localized: "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen.")
+                : String(localized: "\(skipped) kuvaa jäi tuomatta. Voit yrittää niitä uudelleen."))
+        }
+        .elderSurface()
     }
 
     /// The first pull after joining is running and nothing has arrived yet.
@@ -532,7 +561,7 @@ struct GalleryScreen: View {
                     // is reading, and this is where she reads. Her Kerro tab
                     // keeps the button (see TellScreen.blindCard).
                     if let card = blind {
-                        BlindCardView(card: card) { blind = nil }
+                        BlindCardView(card: card, photoHeight: 150) { blind = nil }
                             .padding(.vertical, 8)
                     }
 
@@ -578,16 +607,28 @@ struct GalleryScreen: View {
                 if !photos.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
                         SectionHeading("Kuvat")
-                        ForEach(photoGroups) { group in
-                            if let heading = group.heading {
-                                groupHeading(heading)
-                            }
-                            LazyVGrid(columns: columns, spacing: 10) {
-                                ForEach(group.photos) { photo in
-                                    NavigationLink(value: photo) {
-                                        PhotoTile(subject: photo)
+                        // A decade's heading belongs to the row under it, so
+                        // the gap above it is three times the gap below it.
+                        // With one spacing for both, every heading after the
+                        // first sat exactly halfway between the previous
+                        // decade's last row and its own first one, and read
+                        // as a caption of the one as easily as the title of
+                        // the other. Measured 19 Sep 2026 on `-seed
+                        // film-week`, where the decades are one row each.
+                        VStack(alignment: .leading, spacing: 24) {
+                            ForEach(photoGroups) { group in
+                                VStack(alignment: .leading, spacing: 8) {
+                                    if let heading = group.heading {
+                                        groupHeading(heading)
                                     }
-                                    .buttonStyle(.plain)
+                                    LazyVGrid(columns: columns, spacing: 10) {
+                                        ForEach(group.photos) { photo in
+                                            NavigationLink(value: photo) {
+                                                PhotoTile(subject: photo)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1181,7 +1222,46 @@ private struct SubjectRow: View {
         return out.count < text.count ? out + "…" : out
     }
 
+    /// The first words of the telling, for a moment that has one. A moment is
+    /// told apart by them: since 12 Sep 2026 a free dictation carries no title
+    /// the model wrote, and five told on one day are five rows saying the
+    /// same date without this line.
+    private var openingWords: String? {
+        guard subject.kind == .event,
+              let words = store.memories(for: subject.id).first(where: { !$0.body.isEmpty })?.body
+        else { return nil }
+        return Self.opening(of: words)
+    }
+
+    /// Whether her words are the row's first line and the day its second.
+    ///
+    /// A moment nobody has named is called by the day it was told, and until
+    /// 19 Sep 2026 that day was the row's bold line with the words in grey
+    /// under it — so a week of evenings read as *"Kerrottu 17.9.2026"* four
+    /// times over and *"Kerrottu 16.9.2026"* four times under that, with the
+    /// one line that tells the rows apart the quietest thing on each of them
+    /// (measured on `-seed film-week`). What a person gave still comes first:
+    /// a name from *"Nimeä hetki"* stays the first line and the words stay
+    /// under it. Only the day the app assigned steps down.
+    private var leadsWithWords: Bool {
+        subject.kind == .event && subject.title.isEmpty && openingWords != nil
+    }
+
     var body: some View {
+        // Read in the order every other row is read: the name the card will
+        // carry first, then what is under it. The eye takes her words first
+        // because they are bolder and higher; VoiceOver, which cannot see
+        // bold, takes the row by its name — and the tests that find a moment
+        // by "Kerrottu …" find it by the same name. Every other row keeps
+        // the label `.combine` builds, so a place still reads its count.
+        if leadsWithWords, let words = openingWords {
+            row.accessibilityLabel(Text(verbatim: "\(subject.displayTitle), \(words)"))
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: 14) {
             // A person gets their initial; a place and an event keep their
             // symbol, because a pin and a calendar say what kind of thing the
@@ -1201,12 +1281,27 @@ private struct SubjectRow: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                // An event whose memory is still waiting for its text has no
-                // title yet, and a blank row would look like a broken one.
-                Text(subject.displayTitle)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.primary)
-                subtitle
+                if leadsWithWords, let words = openingWords {
+                    // Cut in the words, not by the frame: a `lineLimit` was
+                    // measured as "Text clipped" by the audit, which is right
+                    // — an ellipsis the layout adds is text the reader cannot
+                    // reach. An ellipsis in the string is not.
+                    Text(verbatim: words)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(subject.displayTitle)
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                } else {
+                    // An event whose memory is still waiting for its text has
+                    // no title yet, and a blank row would look like a broken
+                    // one.
+                    Text(subject.displayTitle)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.primary)
+                    subtitle
+                }
             }
 
             Spacer()
@@ -1229,18 +1324,11 @@ private struct SubjectRow: View {
     @ViewBuilder
     private var subtitle: some View {
         let count = store.memories(for: subject.id).count
-        // A moment is told apart by its first words: since 12 Sep 2026 a free
-        // dictation is shown under its day rather than under a title the model
-        // wrote, and five told on one day are five rows saying the same date
-        // without this line. The "Ehdotus — vahvista paikka" branch stood
-        // here until the same day; only confirmed places are listed now.
-        if subject.kind == .event,
-           let words = store.memories(for: subject.id).first(where: { !$0.body.isEmpty })?.body {
-            // Cut in the words, not by the frame: a `lineLimit` was measured
-            // as "Text clipped" by the audit, which is right — an ellipsis
-            // the layout adds is text the reader cannot reach. An ellipsis
-            // in the string is not.
-            Text(verbatim: Self.opening(of: words))
+        // A named moment keeps its first words under the name; the "Ehdotus
+        // — vahvista paikka" branch stood here until 12 Sep 2026, and only
+        // confirmed places are listed now.
+        if let words = openingWords {
+            Text(verbatim: words)
                 .font(.subheadline)
                 .foregroundStyle(Elder.supporting)
                 .fixedSize(horizontal: false, vertical: true)

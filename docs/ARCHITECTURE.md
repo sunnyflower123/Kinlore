@@ -1629,11 +1629,22 @@ Built, in the order they were built:
     photograph names Puumala without saying the word, which is the only way
     the rule can be tested apart from the words.
 
-    Out of the way by design: `.searchable` keeps the field above the list until
-    somebody pulls down. The grandchild looking for one name in forty finds it;
-    grandmother never meets it. A fruitless search gets its own dead end rather
-    than the empty archive's invitation — offering *"lisää kuvia"* to somebody
-    who searched for a word answers a question nobody asked.
+    Out of the way by design — and on Albumi, since 19 Sep 2026, by a rule
+    rather than by trust in the platform. The bargain was that `.searchable`
+    keeps the field above the list until somebody pulls down, so the grandchild
+    looking for one name in forty finds it and grandmother never meets it.
+    iOS 26 broke the second half: it draws the field under the large title on
+    every arrival, and measured at the text floor on `-seed film-week` the
+    first thing on her album was a box saying *"Etsi"*, above her own
+    photographs, with a keyboard one tap away. So `GalleryScreen` hangs
+    `.searchable` on the archive only when `elder.largerText` is off — the
+    same whose-phone signal that puts the blind card on Albumi (§23) and the
+    tree behind the people list (`PeopleTab` in `RootView.swift`). A reader's
+    phone keeps the search, a grandparent's never had a use for it, and
+    `SearchTests` runs on the reader's. Ihmiset still carries its field on
+    every phone. A fruitless search gets its own dead end rather than the
+    empty archive's invitation — offering *"lisää kuvia"* to somebody who
+    searched for a word answers a question nobody asked.
 
     **A round is not a search result.** The waiting guessing round kept the
     gallery out of its empty state, which is right when the archive is empty and
@@ -4264,6 +4275,24 @@ drawn underneath the floating tab bar at the *ordinary* text size. 18 pt, and
 the label is built, which is the overwrite that turned the names blue in the
 first place, so the one thing that has to be certain here would have been the
 system's decision rather than ours.
+
+**And the same row went under the same bar again, on her album.** Since 5 Sep
+2026 the card sits on Albumi (Muistot until 13 Sep) on a grandparent's phone —
+the text-floor signal — where it is one thing under a large title rather than
+the screen's only thing (`BlindCardView`, one view in both places). Measured
+there on 19 Sep 2026 with `-seed blind -elder.largerText YES`: the search field
+iOS 26 draws under the title (§8.12) pushed the photograph down, the photograph
+took its full 200 pt, and the fourth name was drawn under the tab bar with
+*"En muista"* below the screen — three of four names in front of the one person
+the instrument exists for, and the way past a face she cannot place not on the
+screen at all. No audit sees this. `performAccessibilityAudit` reads the tree,
+and the tree holds all five rows whether or not the screen does;
+`testMemoriesWithTheBlindCard` was green throughout. The album now carries no
+search field at the floor and passes `photoHeight: 150` — the Kerro tab keeps
+200, having the screen to itself — and at the floor the photograph, the
+question, four names and *"En muista"* all sit above the bar, from a screenshot
+and not from a tree. At accessibility sizes the card was already capped at 150
+and scrolls, as it always did.
 
 **The card is held in state, not recomputed.** It was a computed property first,
 and that was wrong in a way only the *correct* answer showed: confirming writes

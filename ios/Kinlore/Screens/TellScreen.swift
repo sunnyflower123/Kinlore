@@ -1268,6 +1268,15 @@ struct BlindCardView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     let card: BlindConfirmation.Card
+    /// The tallest the photograph may be. 200 on the Kerro tab, where the
+    /// card has the screen to itself; Albumi passes 150, because there the
+    /// card sits under a large title. Measured 19 Sep 2026 at the text floor
+    /// on her album: with 200 the fourth name was drawn under the tab bar and
+    /// "En muista" below the screen, so she was shown three of the four names
+    /// the instrument depends on, and the way past a face she cannot place
+    /// was not on the screen at all. Accessibility sizes cap it at 150 either
+    /// way.
+    var photoHeight: CGFloat = 200
     var onDone: () -> Void = {}
 
     @State private var afterward: LocalizedStringKey?
@@ -1285,7 +1294,7 @@ struct BlindCardView: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxHeight: typeSize.isAccessibilitySize ? 150 : 200)
+                    .frame(maxHeight: min(photoHeight, typeSize.isAccessibilitySize ? 150 : 200))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     // What is known and nothing more. A name in here would hand
                     // the answer to whoever is listening rather than looking —

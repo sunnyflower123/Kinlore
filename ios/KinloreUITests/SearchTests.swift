@@ -11,8 +11,11 @@ final class SearchTests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// The field sits above the list until somebody pulls down, which is the
-    /// bargain: the grandchild finds it, grandmother never meets it.
+    /// The bargain: the grandchild finds the field, grandmother never meets
+    /// it. It used to rest on the field sitting above the list until somebody
+    /// pulled down; iOS 26 draws it under the title on arrival, so since
+    /// 19 Sep 2026 her half is kept by the album carrying no field at all on
+    /// a phone with `elder.largerText` set. These tests run on a reader's.
     private func search(_ text: String, in app: XCUIApplication) {
         let field = app.searchFields.firstMatch
         for _ in 0 ..< 3 where !field.exists { app.swipeDown() }
