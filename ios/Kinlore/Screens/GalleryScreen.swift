@@ -46,8 +46,21 @@ struct GalleryScreen: View {
     /// 2.4 times the area, at the cost of a longer scroll; the decade headings
     /// already break that scroll into pages. Measured on `-seed film-week` at
     /// the floor before and after.
+    ///
+    /// The minimum is 158 and not 170 because of the 375-point phones — the
+    /// 12 mini, the 13 mini and the SE, the narrowest that run iOS 26, and
+    /// the width of this project's only test phone. `Elder.screenPadding`
+    /// takes 48 and the gap 10, which leaves 317 for two tiles: 158.5 each.
+    /// At 170 the adaptive grid fell to ONE column on that width — a
+    /// 327-point tile and a scroll 3.7 times the two-across one — while the
+    /// 402-point simulator every earlier measurement was taken on showed
+    /// two. Measured 19 Sep 2026 on a 13 mini simulator with the tile edges
+    /// read from the pixels: 24.0–351.0 points at 170, 24.0–182.3 at 158, on
+    /// `-seed dated` and `-seed archive` and at XXXL alike. On a 17 Pro
+    /// simulator the tile is 24.0–196.0 with either number: 158 is a floor,
+    /// not a size.
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: typeSize >= Elder.textFloor ? 170 : 110), spacing: 10)]
+        [GridItem(.adaptive(minimum: typeSize >= Elder.textFloor ? 158 : 110), spacing: 10)]
     }
 
     private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
