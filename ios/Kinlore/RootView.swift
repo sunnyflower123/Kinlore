@@ -552,6 +552,10 @@ private struct PersonRow: View {
 struct SubjectDetailScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    /// Optional for the same reason `SyncEngine` is read that way: a screen
+    /// hosted without the app around it has nothing to ask, and no coordinate
+    /// is the answer this card already knows how to draw.
+    @Environment(PlaceResolver.self) private var places: PlaceResolver?
     let subject: Subject
 
     @Environment(\.dismiss) private var dismiss
@@ -712,7 +716,14 @@ struct SubjectDetailScreen: View {
             // `current` and not `subject`: correcting a place's name clears
             // its coordinate (`PlaceResolver`), and this screen has to show
             // the archive as it is now rather than as it was when it opened.
-            if current.kind == .place, current.place != nil {
+            //
+            // The span and not merely the point, since 19 Sep 2026: a name the
+            // gazetteer placed without recognising it — `GeoPrecision.unknown`
+            // — is stored as a coordinate and drawn as nothing, which is rule 5
+            // and stays. `place != nil` opened a Section for it all the same,
+            // so such a place carried a band of empty paper between its name
+            // and its date. The condition now says what the card says.
+            if current.kind == .place, current.place?.precision.mapSpanMetres != nil {
                 Section {
                     PlaceMapCard(subject: current)
                         .listRowInsets(EdgeInsets())
@@ -951,6 +962,14 @@ struct SubjectDetailScreen: View {
                     .accessibilityLabel("Korjaa nimi")
                 }
             }
+        }
+        // The coordinate this card's map needs, asked for at the moment the
+        // map is wanted. The sweeps in `KinloreApp` run at launch and on the
+        // return to the foreground; a place confirmed in the telling that
+        // named it therefore had a card and no map until the app had been
+        // closed and opened. `PlaceResolver.resolve` says the rest.
+        .task {
+            await places?.resolve(current, in: store)
         }
         .task {
             guard image == nil else { return }
