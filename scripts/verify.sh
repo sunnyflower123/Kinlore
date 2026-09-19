@@ -259,6 +259,17 @@ run "no request offers the memories for training" node scripts/data-collection-c
 # three runs in a row proved it cannot be trusted under load. This answers at
 # any load, so the two are not alternatives.
 run "the palette still measures what it claims" node scripts/palette-contrast-check.mjs
+# The accessibility audit's exemption list, which is the one place in this
+# repository where rule 1 is switched off by name. Twenty-one clauses forgive
+# a finding the audit would otherwise report, and twenty of them are a clause
+# somebody has to write and review. One is not: it forgives by matching a
+# sentence in a literal, so it widens by a line. This pins the three sentences
+# in that set and the two audit types the gate answers for, and fails if
+# `.contrast` ever joins them — forgiven by label, contrast would be rule 1
+# switched off by name and nothing would say so. Falsified three ways before it
+# was believed: a fourth sentence, a reworded third with the count unchanged,
+# and `.contrast` added to the gate.
+run "the audit forgives only what was measured" node scripts/audit-exemption-check.mjs
 run "only a point may be drawn as a point" place_map
 run "a long telling is given room to come back" node scripts/transcribe-budget-check.mjs
 # The two pure functions between the model's JSON and the family's archive.

@@ -699,6 +699,61 @@ enum AccessibilityPolicy {
             return true
         }
 
+        // **Both audit types, for the same reason as the precedent below.** The
+        // simulation reports whichever the row's current shape produces, so a
+        // sentence exempt as `.dynamicType` and reported as `.textClipped` is
+        // one finding under two names — which is what the disjunction for
+        // `"Perheen jäsenet ja kutsut"` already says a few clauses down.
+        //
+        // `.textClipped` arrived here on 19 Sep 2026, on this set's first
+        // entry, after two wrong turns that each looked convincing.
+        //
+        // Typography was the first. `866ec51` gave that footer
+        // `.fixedSize(horizontal: false, vertical: true)` to let a third line
+        // through; the frame measured 370 x 45.667 with and without it, to the
+        // byte, and a screenshot showed two complete lines of ink ending 5.7 pt
+        // above the tab bar with no third line to make room for. Reverted in
+        // `307c408`.
+        //
+        // Position was the second. Three findings on these screens end exactly
+        // at the tab bar's top edge at y 791 under three different audit types,
+        // which reads like one cause. An A/B settled it: with
+        // `.contentMargins(.bottom, Elder.minTapTarget, for: .scrollContent)`
+        // on `SubjectDetailScreen`'s List the frame moved from y 745.33 to
+        // 685.33 — sixty points clear of the capsule, height unchanged to the
+        // byte — and `testPersonCardWithoutAStory` reported the same clipping
+        // 2/2 in both arms. Proximity is not the cause and those three findings
+        // are not one thing. The finding travels with the sentence rather than
+        // with where the sentence sits, which is the signature the doc comment
+        // on this set describes.
+        //
+        // **One sentence in `307c408` is wrong, and is corrected here rather
+        // than in history**, because it is why this exemption was refused once:
+        // it says every exemption in this function gates on
+        // `issue.element == nil`. Three of twenty-one do. The rest gate on a
+        // label, an element type, a frame, an enabled state or a named set —
+        // and forgiving a `.textClipped` finding by its label was not new
+        // either: `"Lisää sukulainen"` above gates on the label alone, and
+        // `"Nimi"` below on the label with an element type.
+        //
+        // **This rests on construction and not on a measurement of its own
+        // narrowness, because a canary was tried and could not be built.**
+        // Twice on 19 Sep 2026, in a worktree: a `Text` clipped to a 140 x 14
+        // frame with a label outside this set, first beside the footer and then
+        // as the list's first section where it is certainly drawn. Neither was
+        // reported as `Text clipped`. SwiftUI truncates with an ellipsis rather
+        // than drawing a string cut off, and a truncation is a handled state —
+        // which is also why this exemption and the ones at `"Lisää sukulainen"`
+        // and `"Nimi"` are for a framework cap rather than for a truncation. So
+        // no run proves that clipping still goes red, and the footing is the
+        // same as `"Kutsu perheenjäsen"` below: three sentences, each measured
+        // when it was added, and everything else still reported.
+        //
+        // `scripts/audit-exemption-check.mjs` pins those three sentences and
+        // this gate's two types, and runs in `verify.sh` at any load. This set
+        // is the one exemption here that widens by a line in a literal rather
+        // than by a new clause — and `.contrast` must never join the two types
+        // above, because forgiven by label it would switch off rule 1 by name.
         if issue.auditType == .dynamicType || issue.auditType == .textClipped,
            listHeaderAndFooterText.contains(label) {
             return true
