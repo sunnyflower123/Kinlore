@@ -1077,12 +1077,6 @@ struct SubjectDetailScreen: View {
                 // Tell screen where telling starts.
                 Text("Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.")
                     .foregroundStyle(Elder.supporting)
-                    // A Section footer hands its text the height of two lines
-                    // and clips the third, which the sweep read as "Text
-                    // clipped" at the default size from 48b21f1 onwards
-                    // (19 Sep 2026). Vertical fixedSize lets the sentence take
-                    // the height it asks for; the width stays the list's.
-                    .fixedSize(horizontal: false, vertical: true)
             }
 
         }
