@@ -142,6 +142,23 @@ extraction_context() {
 		&& "$OUT/extraction-context-check"
 }
 
+# What the app is willing to believe a model said about WHEN. The reply carries
+# years and nothing finer while its precision may say "day" or "month", so a
+# telling that mentioned a month used to be stored AS a month — built on the
+# first of January and read back off the card as *tammikuu 1957*, a date nobody
+# gave. Rule 5 inverted, and silent: a wrong date is as short and as confident
+# a line as a right one. Added 19 Sep 2026, the day the shaping was fixed,
+# because the fix was reasoned rather than measured.
+date_hint() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library -enable-bare-slash-regex \
+		-o "$OUT/date-hint-check" scripts/date-hint-check.swift \
+		ios/Kinlore/Services/AppServices.swift ios/Kinlore/Model/Models.swift \
+		ios/Kinlore/Services/Extraction.swift ios/Kinlore/Services/ExtractionContext.swift \
+		ios/Kinlore/Services/PurchaseService.swift ios/Kinlore/Services/Transcription.swift \
+		ios/Kinlore/Services/Colourisation.swift \
+		&& "$OUT/date-hint-check"
+}
+
 # Where the family tree puts people and the lines between them. Pure arithmetic
 # over confirmed people and relationships, and each way of being wrong is
 # silent: a child drawn a row above her mother still draws. Added 13 Sep 2026
@@ -214,6 +231,7 @@ run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
 run "a question aims at what the archive lacks" extraction_context
+run "no date is sharper than what was said" date_hint
 run "a child is drawn below her parents" family_tree_layout
 run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock

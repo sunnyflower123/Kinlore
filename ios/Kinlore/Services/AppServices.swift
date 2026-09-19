@@ -367,7 +367,13 @@ struct RemoteExtractionService: ExtractionService {
     /// Mirrors the backend's `ExtractionResult`. Years travel as integers,
     /// because language models handle years reliably and unix timestamps not at
     /// all — the conversion happens here.
-    private struct Reply: Decodable {
+    ///
+    /// Internal rather than private, and only so that
+    /// `scripts/date-hint-check.swift` can hand `dateHint(from:)` a reply
+    /// decoded from the JSON the Worker actually sends. The two siblings above
+    /// stay private; widening this one buys a check on the field names as well
+    /// as on the shaping, which is the half a hand-built value would miss.
+    struct Reply: Decodable {
         struct Mention: Decodable {
             let name: String
             let kind: String
@@ -486,7 +492,10 @@ struct RemoteExtractionService: ExtractionService {
     /// family sharpens it by hand in `DateSheet`, where somebody who was there
     /// chooses the month and the day, which is rule 4's shape as well: the
     /// model proposes the year it heard, a person adds what it could not hear.
-    private static func dateHint(from reply: Reply.DateReply) -> DateHint? {
+    ///
+    /// Internal rather than private, so that `scripts/date-hint-check.swift`
+    /// can drive this function itself rather than a copy of it.
+    static func dateHint(from reply: Reply.DateReply) -> DateHint? {
         guard let precision = DatePrecision(rawValue: reply.precision), precision != .unknown else {
             return nil
         }
