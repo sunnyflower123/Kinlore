@@ -25,7 +25,7 @@
 //     check's own blind spot — see `prose` below, which was throwing them away
 //     before any rule could look at them;
 //   * `PlaceMapCard`'s invitation, found by rule 5 the hour it was written, and
-//     the one of the ten whose keys were BOTH already in both tables.
+//     the only one so far whose keys were BOTH already in both tables.
 //
 // WHAT COUNTS AS LOOKED UP. Four shapes, and the last two are why a naive
 // regex over this codebase reports 166 findings instead of two:
