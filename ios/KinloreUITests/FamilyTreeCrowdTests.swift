@@ -58,22 +58,27 @@ final class FamilyTreeCrowdTests: XCTestCase {
     /// there after scrolling sideways to somebody at the far end of a
     /// generation — which in a family this wide is most of it.
     ///
-    /// One swipe, not three. This swiped three times until 19 Sep 2026 and
-    /// passed, and the picture it passed on turns out to be Otto and Helmi:
-    /// a flick carries some 700 points of a drawing 2376 wide, so three of
-    /// them run off the end of your own family and on to one that shares
-    /// nobody with it. The assertion under them was then the defect stated as
-    /// a requirement — the rail naming generations over strangers — and the
-    /// test whose name says *across the family* was the one measuring it.
+    /// That the drawing moved at all is measured on the drawing rather than
+    /// asserted of whoever happens to be at the far end of one flick. Naming
+    /// a person there costs a recalibration every time the picture starts
+    /// somewhere new: this swiped three times until 19 Sep 2026 and passed on
+    /// a screen showing Otto and Helmi, a family that shares nobody with
+    /// Elina's, so the assertion under it was the rail's own defect written
+    /// down as a requirement; one swipe then landed on Oiva, and the morning's
+    /// second fix — opening on you rather than in the corner — moved the
+    /// landing again. Elina's own card carries the answer in every version:
+    /// if the drawing scrolled sideways, she went left with it.
     func testTheGenerationsStayNamedAfterScrollingAcrossTheFamily() {
         let app = crowd()
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].waitForExistence(timeout: 20), "the generation labels")
-        let before = app.staticTexts["Sinun polvesi"].frame
+        let labels = app.staticTexts["Sinun polvesi"].frame
+        let you = app.buttons["Elina, sinä"].frame
         app.swipeLeft()
         shot(app, "crowd-across")
-        XCTAssertTrue(app.buttons["Oiva"].isHittable, "the drawing did not scroll sideways at all")
+        XCTAssertLessThan(app.buttons["Elina, sinä"].frame.minX, you.minX - 100,
+                          "the drawing did not scroll sideways at all")
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].exists, "the generation labels scrolled away with the tree")
-        XCTAssertEqual(app.staticTexts["Sinun polvesi"].frame.minX, before.minX, accuracy: 1,
+        XCTAssertEqual(app.staticTexts["Sinun polvesi"].frame.minX, labels.minX, accuracy: 1,
                        "the labels moved sideways with the drawing")
     }
 
@@ -87,12 +92,12 @@ final class FamilyTreeCrowdTests: XCTestCase {
     func testTheGenerationsAreNotNamedOverAFamilyThatSharesNobody() {
         let app = crowd()
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].waitForExistence(timeout: 20), "the generation labels")
-        // Sixteen places away, which is several screens of a drawing this
-        // wide. The scroll view clamps at the far end, so more swipes than
-        // the distance needs cost nothing — and asking whether Otto can be
-        // reached before he is on screen costs a test: `isHittable` on
-        // somebody outside the window fails outright rather than answering
-        // no ("Activation point invalid", 19 Sep 2026).
+        // Sixteen places from where the drawing now opens, which is several
+        // screens of a picture this wide. The scroll view clamps at the far
+        // end, so more swipes than the distance needs cost nothing — and
+        // asking whether Otto can be reached before he is on screen costs a
+        // test: `isHittable` on somebody outside the window fails outright
+        // rather than answering no ("Activation point invalid", 19 Sep 2026).
         for _ in 0 ..< 8 { app.swipeLeft() }
         shot(app, "crowd-other-family")
         XCTAssertTrue(app.buttons["Otto"].isHittable, "the far family cannot be scrolled to")
@@ -102,6 +107,30 @@ final class FamilyTreeCrowdTests: XCTestCase {
                        "another family's oldest generation is named as your grandparents'")
         XCTAssertTrue(app.staticTexts["Toinen perhe"].exists,
                       "the words went and nothing says why")
+    }
+
+    /// The drawing opens on the part of the family whose phone this is. A
+    /// family of 53 is 2376 points wide against a 324-point canvas, so a
+    /// picture that opens at its own left edge opens on whichever branch was
+    /// drawn first — measured 19 Sep 2026, Hilma, Aapo and half of Lyyli, six
+    /// of fifty-three, with Elina four places away and nothing to say which
+    /// way to look for her. It now opens on her own line instead: Urho, Sulo
+    /// and Kerttu above Reino, Sirkka and Eemeli.
+    ///
+    /// Her column and not her row. The drawing does not scroll downwards on
+    /// opening, and `FamilyTreeView.show` records what that cost and why.
+    func testTheTreeOpensOnYourOwnLine() {
+        let app = crowd()
+        XCTAssertTrue(app.buttons["Elina, sinä"].waitForExistence(timeout: 20), "your own card is not in the tree")
+        shot(app, "crowd-opens")
+        // Her frame and not her hittability, since she is below the fold:
+        // what is asserted is that the drawing carried her column into the
+        // window, not that she can be tapped without scrolling to her.
+        let you = app.buttons["Elina, sinä"].frame
+        XCTAssertGreaterThan(you.midX, 0, "the tree opens to the left of your own line")
+        XCTAssertLessThan(you.midX, app.windows.firstMatch.frame.width,
+                          "the tree opens to the right of your own line")
+        XCTAssertTrue(app.buttons["Sulo"].isHittable, "your own line is not on the screen")
     }
 
     /// What the lines mean, before the drawing rather than after it. Three

@@ -30,6 +30,11 @@ struct FamilyTreeView: View {
     /// Opens a person's card. The navigation stack belongs to Ihmiset.
     var onOpen: (Subject) -> Void = { _ in }
 
+    /// Whether the drawing has been put where it opens. Once per appearance
+    /// and never again: after that, where the picture sits is the reader's
+    /// own business.
+    @State private var opened = false
+
     /// Pinch to zoom, and two buttons for a hand that cannot pinch.
     @State private var zoom: CGFloat = 1
     @GestureState private var pinch: CGFloat = 1
@@ -107,6 +112,30 @@ struct FamilyTreeView: View {
     var body: some View {
         let result = layout
         let scale = zoom * pinch
+        // Inside a reader, because where the drawing starts is the whole
+        // difference between a family of five and a family of 53. At 53 it is
+        // 2376 points wide against a 324-point canvas and 1136 tall against
+        // some 625 — seven windows across and two down — so a picture that
+        // opens at its own top left corner opens on whoever happens to be
+        // oldest. Measured 19 Sep 2026: six of the fifty-three on screen,
+        // Hilma and Aapo and half of Lyyli, and the person holding the phone
+        // four places across and three rows down, reachable only by scrolling
+        // blind in two directions at once.
+        ScrollViewReader { reader in
+            drawing(result, scale: scale)
+                // Once, and without animation: this is where the picture
+                // begins rather than somewhere it has been carried.
+                .task {
+                    guard !opened, let you = yourCardID else { return }
+                    show(you, result, reader)
+                    opened = true
+                }
+        }
+    }
+
+    /// Everything under the title: the key, the rail beside the drawing, the
+    /// drawing itself, and the zoom below all of it.
+    private func drawing(_ result: FamilyTreeLayout.Result, scale: CGFloat) -> some View {
         // The bar is below the drawing, not over it. As a `safeAreaInset` it
         // floated on top, and a family of any size always has somebody under
         // it: the audit measured Liisa and Veikko at 1.04:1 on 16 Sep 2026,
@@ -158,6 +187,9 @@ struct FamilyTreeView: View {
                                                 initial: true
                                             ) { _, seen in window = seen }
                                         }
+                                    }
+                                    .overlay(alignment: .topLeading) {
+                                        anchors(result, scale: scale)
                                     }
                                     .frame(minWidth: proxy.size.width, alignment: .center)
                             }
@@ -329,6 +361,77 @@ struct FamilyTreeView: View {
         }
         .frame(width: width(of: result), height: height(of: result), alignment: .topLeading)
     }
+
+    /// The handholds the reader in `body` scrolls by, and the reason they
+    /// exist rather than an `.id` on each person: a place in the drawing is
+    /// an `.offset`, which moves what is painted and leaves the layout frame
+    /// where it started. Every node therefore reports the drawing's own top
+    /// left corner, and a reader handed a person scrolls to the corner it is
+    /// already showing. Measured 19 Sep 2026 on a tree that did not move at
+    /// all, for anybody.
+    ///
+    /// So: one empty rectangle per place in the grid, laid out rather than
+    /// offset, and over the scaled drawing rather than inside it —
+    /// `scaleEffect` is a rendering transform for the same reason, and a grid
+    /// measured in scaled points stays true at any zoom. Nothing is drawn and
+    /// nothing is read; this is geometry the scroll views can see.
+    private func anchors(_ result: FamilyTreeLayout.Result, scale: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            ForEach(0 ..< max(result.rows, 1), id: \.self) { row in
+                HStack(spacing: 0) {
+                    ForEach(0 ..< Int(max(result.width, 1).rounded(.up)), id: \.self) { column in
+                        Color.clear
+                            .frame(
+                                width: columnWidth * scale,
+                                height: (y(ofRow: row + 1, result) - y(ofRow: row, result)) * scale
+                            )
+                            .id(Self.cell(row: row, column: column))
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Puts a person's own column on the screen. A placement's `x` can fall
+    /// between two columns — a parent centred over her children — and the
+    /// nearest is the one to put in the window.
+    ///
+    /// Sideways only, and the reason is measured rather than chosen. The
+    /// drawing hangs in two scroll views, the sideways one inside the
+    /// up-and-down one, and a reader handed an id lying in both moves only
+    /// the inner; a second set of handholds beside the rail, outside the
+    /// sideways view, drove the other one and worked — the tree opened on
+    /// Elina with her parents above her and her daughter below, which is the
+    /// picture this was written for.
+    ///
+    /// It cost the screen its accessibility audit, and not over a colour.
+    /// Between the scroll view's fold and the tab bar lie some 52 points that
+    /// are on the screen without being in the scroll view: the zoom bar is
+    /// drawn there, opaque, and anything the fold cuts off lands behind it,
+    /// laid out and painted nowhere. Measured 19 Sep 2026 from the pixels of
+    /// the audit's own frames — Saima 1.03:1, Lauri 1.04:1, twelve shades of
+    /// paper and no ink in either. The rows repeat every 156 points and a
+    /// name is 20 tall, so better than one stopping place in two strands one
+    /// there: centring your own row failed at the default text size,
+    /// centring the row above it failed at the largest, each passing where
+    /// the other failed.
+    ///
+    /// It is not a fault this morning introduced. One `swipeUp()` added to
+    /// the sweep at `e396bfb` fails the same way on a disc cut by the
+    /// right-hand edge, so the screen has never passed its audit anywhere but
+    /// at rest in its own corner — which, until today, is the only place it was ever
+    /// seen. Closing it means the strip cannot hold opaque chrome, and where
+    /// the zoom buttons go instead is a question about the screen rather than
+    /// about this function. Sideways alone is clean at both text sizes, and
+    /// sideways is the larger half: seven windows across against two down.
+    private func show(_ person: String, _ result: FamilyTreeLayout.Result, _ reader: ScrollViewProxy) {
+        guard let place = result.placements[person] else { return }
+        reader.scrollTo(Self.cell(row: place.row, column: Int(place.x.rounded())), anchor: .center)
+    }
+
+    private static func cell(row: Int, column: Int) -> String { "cell-\(row)-\(column)" }
 
     private func node(_ person: Subject, isYou: Bool) -> some View {
         Button {

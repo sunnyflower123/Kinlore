@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 64 sweep tests, each auditing one screen at the default text size and again at the largest, out of 178 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 182 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1826,6 +1826,46 @@ Not built:
      `Result.familyExtents` are what the drawing asks to avoid it. The band
      ends at your family's last column and the rail stops at your family's
      depth.
+   - **The drawing opens on your own line rather than in its own corner**
+     (19 Sep 2026). A family of 53 is 2376 points wide against a 324-point
+     canvas, so a picture that opens at its left edge opens on whichever
+     branch happened to be drawn first — Hilma, Aapo and half of Lyyli, six of
+     the fifty-three, with the person holding the phone four places away and
+     nothing on screen to say which way that was. A `ScrollViewReader` now
+     carries her column into the window as the tree appears, once and without
+     animation.
+
+     **What it scrolls to is not a person, and that is the whole difficulty.**
+     A place in the drawing is an `.offset`, which moves what is painted and
+     leaves the layout frame where it started, so every node reports the
+     drawing's own top left corner and a reader handed a person scrolls to the
+     corner it is already showing — measured on a tree that did not move at
+     all, for anybody. `FamilyTreeView.anchors` lays one empty rectangle per
+     place in the grid, over the scaled drawing rather than inside it, since
+     `scaleEffect` is a rendering transform for the same reason; nothing is
+     drawn and nothing is read, and the scroll views have geometry they can
+     see.
+
+     **Sideways only, and the reason is the audit rather than the arithmetic.**
+     Driving the up-and-down scroll works — a second set of handholds beside
+     the rail, outside the sideways view, opened the tree on Elina with her
+     parents above and her daughter below — and it costs the screen its
+     accessibility sweep. Between the scroll view's fold and the tab bar lie
+     some 52 points that are on the screen without being in the scroll view;
+     the zoom bar is drawn there, opaque, and whatever the fold cuts off lands
+     behind it, laid out and painted nowhere. Measured from the pixels of the
+     audit's own frames: *Saima* 1.03:1, *Lauri* 1.04:1, twelve shades of
+     paper and no ink in either. Rows repeat every 156 points and a name is 20
+     tall, so better than one stopping place in two strands one there —
+     centring your own row failed at the default text size, centring the row
+     above it failed at the largest, each passing where the other failed. It
+     is not new: one `swipeUp()` added to the sweep at `e396bfb` fails the same
+     way on a disc cut by the right-hand edge, so the screen has never passed
+     its audit anywhere but at rest in its own corner, which until now was the
+     only place anybody had seen it. Closing it means that strip cannot hold
+     opaque chrome, and where the zoom buttons would go instead is a question
+     about the screen. Sideways alone is clean at both text sizes, and
+     sideways is the larger half: seven windows across against two down.
    - **And the rail's words stop where your family does** (19 Sep 2026). Until
      then only half of the paragraph above was answered: the band ended at
      your family, but the rail is one column for the whole picture and does
@@ -1847,9 +1887,11 @@ Not built:
      times and asserted the words were still there; a flick carries some 700
      of the drawing's 2376 points, so three of them land past the end of your
      own family on Otto and Helmi, and the assertion was the wrong behaviour
-     written down as a requirement. It swipes once now, to Kerttu and Oiva,
-     which is inside the family its name is about, and asserts that the
-     drawing moved as well as that the words did not.
+     written down as a requirement. It swipes once now and measures the
+     drawing itself — your own card carried left by more than 100 points —
+     rather than naming whoever happens to be at the far end of one flick,
+     which cost a second recalibration the same morning when the picture began
+     opening somewhere new.
    - **A man married twice stands between his wives.** The row used to pair
      him with whichever marriage the archive holds first and put the second
      wife beyond her, so the line to that marriage ran straight through the
