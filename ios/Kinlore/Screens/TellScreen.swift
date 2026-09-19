@@ -654,7 +654,24 @@ private struct IdleView: View {
     /// its answer still looks like a working card — so
     /// `BlindConfirmationTests` asserts it instead of trusting this comment.
     private var tellingContent: some View {
-        VStack(spacing: 28) {
+        // 14, and the number is English's rather than Finnish's. This screen is
+        // taller than the phone in every language — 778 pt of content against a
+        // 729 pt viewport in Finnish, measured 19 Sep 2026 — and what saved it
+        // there was the band the floating tab bar sits in: "Kirjoita sen sijaan"
+        // ended at 788 pt, just above the bar's top edge at 793. English says
+        // the same things in two more lines, because the title wraps and so does
+        // the sentence about the microphone, and those 67 pt put the row at
+        // 795 pt: drawn, tappable by nobody, entirely behind the tab bar on the
+        // very first launch — the one launch where the way past the microphone
+        // matters most, and the one place a screenshot of the Finnish build
+        // could never show it.
+        //
+        // Air is what this stack has to give. Eight gaps at 28 were 224 pt; at
+        // 14 the row sits at 697 pt in English and 672 in Finnish, both clear of
+        // the bar with a line of text to spare. A screen with room loses nothing
+        // by the squeeze — the three Spacers below take back exactly what the
+        // gaps give up, which is why the Finnish screen still reads as open.
+        VStack(spacing: 14) {
             // Resolved once: what is offered at the bottom decides how long the
             // reassurance at the top can afford to be.
             let offered = offer
@@ -741,6 +758,14 @@ private struct IdleView: View {
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                // The one gap the squeeze above is not allowed to take, and the
+                // audit is what said so: the button's glow is a red shadow at
+                // radius 14, it reaches some 28 pt past the disc, and this line
+                // is measured against whatever is behind it. At the stack's new
+                // 14 pt all five Kerro sweeps went red at the default text size
+                // with "Contrast failed — Paina ja ala puhua" (19 Sep 2026).
+                // 14 here puts the caption back where 28 had it.
+                .padding(.top, 14)
 
             // An open question is a reason to come back to the app. It is also
             // an easier start than a blank button: telling "something" is hard
