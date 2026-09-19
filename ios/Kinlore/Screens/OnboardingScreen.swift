@@ -250,11 +250,23 @@ private struct WhereMemoriesGo: View {
             // with `+` this was a String, shown verbatim in every language —
             // the informed-consent sentence, Finnish on an English phone
             // (founder's-eye review, 3 Sep 2026, finding #38).
+            // The identifier is how `ConsentOrderTests` finds this sentence,
+            // and it is not decoration. That test used to find it by a clause
+            // of the sentence itself, and rewording the shared branch on
+            // 19 Sep 2026 took the clause out of the app — so the element
+            // resolved to nothing and the test failed with the message it had
+            // been given, that the notice sits more than a screenful below the
+            // button. It did not; it had been renamed. A test about the ORDER
+            // of two things must not depend on the wording of either, and
+            // `.accessibilityIdentifier` is invisible to VoiceOver, which
+            // reads the label.
             Group {
                 if isShared {
                     Text("Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
+                        .accessibilityIdentifier("whereMemoriesGo")
                 } else {
                     Text("Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa.")
+                        .accessibilityIdentifier("whereMemoriesGo")
                 }
             }
             .foregroundStyle(Elder.supporting)
@@ -424,11 +436,28 @@ private struct CreateFamilyForm: View {
                 // spinner and there is nothing to read anyway.
                 .disabled(session.isWorking)
                 .elderTapTarget()
-            } footer: {
+            // A header and not a footer, which is the same argument
+            // `ConsentOrderTests` makes about the consent notice one section
+            // up: a sentence underneath the button somebody has already
+            // pressed is a sentence nobody read. Measured 19 Sep 2026 on an
+            // iPhone 17 Pro at the default text size — the button's own frame
+            // runs from 816.7 to 906.7 pt on an 874 pt screen, so it is
+            // hittable (its centre is on screen) while everything the section
+            // renders below it is not. The hint appeared only after a swipe,
+            // and `JoinFormTests` had been reporting exactly that: an empty
+            // form said nothing about what is missing. Above the button it
+            // cannot fall off the bottom while the button is reachable, and
+            // the arrow still points up at the field it is about.
+            //
+            // `.textCase(nil)` because a grouped `Form` upper-cases a header
+            // by default, and this one is a sentence to somebody who is
+            // eighty.
+            } header: {
                 if wasPressedEmpty, let missing {
                     Label(missing, systemImage: "arrow.up")
                         .foregroundStyle(Elder.proposal)
                         .elderBody()
+                        .textCase(nil)
                 }
             }
 
@@ -623,11 +652,28 @@ private struct JoinFamilyForm: View {
                 }
                 .disabled(session.isWorking)
                 .elderTapTarget()
-            } footer: {
+            // A header and not a footer, which is the same argument
+            // `ConsentOrderTests` makes about the consent notice one section
+            // up: a sentence underneath the button somebody has already
+            // pressed is a sentence nobody read. Measured 19 Sep 2026 on an
+            // iPhone 17 Pro at the default text size — the button's own frame
+            // runs from 816.7 to 906.7 pt on an 874 pt screen, so it is
+            // hittable (its centre is on screen) while everything the section
+            // renders below it is not. The hint appeared only after a swipe,
+            // and `JoinFormTests` had been reporting exactly that: an empty
+            // form said nothing about what is missing. Above the button it
+            // cannot fall off the bottom while the button is reachable, and
+            // the arrow still points up at the field it is about.
+            //
+            // `.textCase(nil)` because a grouped `Form` upper-cases a header
+            // by default, and this one is a sentence to somebody who is
+            // eighty.
+            } header: {
                 if wasPressedEmpty, let missing {
                     Label(missing, systemImage: "arrow.up")
                         .foregroundStyle(Elder.proposal)
                         .elderBody()
+                        .textCase(nil)
                 }
             }
 

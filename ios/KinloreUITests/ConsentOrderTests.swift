@@ -139,19 +139,25 @@ final class ConsentOrderTests: XCTestCase {
 
     // MARK: - Helpers
 
-    /// Part of `WhereMemoriesGo` and not all of it. Matching the whole sentence
-    /// would turn every rewording into a red test, which is not what this is
-    /// here to catch — the clause about where the recording goes is. Since
-    /// finding B4 that clause has two truths: the family form says it is sent,
-    /// the kept-here form says it is not, and the notice this order test
-    /// guards is whichever of the two the form carries.
+    /// Found by identifier, because this file is about an order and not about
+    /// a wording.
+    ///
+    /// It matched a clause of the sentence itself until 19 Sep 2026 — "Äänitys
+    /// lähetetään" on the family form, "Äänityksiä ei lähetetä" on the
+    /// kept-here one — on the reasoning that matching the whole sentence would
+    /// turn every rewording into a red test. Matching part of it did exactly
+    /// that, and worse: rewording the shared branch removed that clause from
+    /// the app, the query resolved to nothing, and both tests below failed
+    /// with the message they carry for a notice that was never built — that it
+    /// is more than a screenful under the button. Neither commit had moved
+    /// anything, and the failure was read as a position for an hour because
+    /// that is what it said.
+    ///
+    /// `whereMemoriesGo` is on both branches of the notice, so the one the
+    /// form carries is the one this returns, exactly as before. The
+    /// identifier is invisible to VoiceOver, which reads the label.
     private func notice(in app: XCUIApplication) -> XCUIElement {
-        app.staticTexts
-            .matching(NSPredicate(
-                format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@",
-                "Äänitys lähetetään", "Äänityksiä ei lähetetä"
-            ))
-            .firstMatch
+        app.staticTexts["whereMemoriesGo"]
     }
 
     /// Scrolls the way somebody does who is looking for the button: one swipe at
