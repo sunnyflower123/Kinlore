@@ -174,6 +174,49 @@ final class MemoryStore {
         }
     }
 
+    /// A telling the search found, with the card it lives on.
+    struct MemoryMatch: Identifiable {
+        let memory: Memory
+        let subject: Subject
+        var id: String { memory.id }
+    }
+
+    /// The memories themselves that match what somebody typed, newest first.
+    ///
+    /// `subjects(of:matching:)` answers "which photographs, moments and places
+    /// have something about the cottage" and the album shows the card. Since
+    /// 19 Sep 2026 it also shows the telling: a tile found by a word inside
+    /// its story looked exactly like a tile found by its title, and the
+    /// sentence that matched was on the card two taps away. And every card
+    /// counts here, a person's included — a memory told about grandmother
+    /// lives on her card on the Ihmiset tab, and until now the album's search
+    /// could not reach it at all.
+    ///
+    /// Matched the three ways the cards are — the words, the names the family
+    /// made of them, the title of the card it is under — and by who told it,
+    /// so a teller's name finds her tellings. A telling not yet transcribed
+    /// has no words to match. The card is resolved through `subject(id:)`
+    /// like everywhere else: a merged one answers with its survivor, a
+    /// rejected one is not listed.
+    func memories(matching query: String) -> [MemoryMatch] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty else { return [] }
+        func hit(_ text: String) -> Bool { text.localizedCaseInsensitiveContains(needle) }
+        return told
+            .filter { !$0.body.isEmpty }
+            .compactMap { memory -> MemoryMatch? in
+                guard let subject = subject(id: memory.subjectID) else { return nil }
+                let matches = hit(memory.body)
+                    || hit(subject.displayTitle)
+                    || (byline(for: memory).map(hit) ?? false)
+                    || memory.mentionedSubjectIDs.contains { id in
+                        self.subject(id: id).map { hit($0.title) } ?? false
+                    }
+                return matches ? MemoryMatch(memory: memory, subject: subject) : nil
+            }
+            .sorted { $0.memory.createdAt > $1.memory.createdAt }
+    }
+
     /// The questions worth putting in front of the teller right now.
     ///
     /// Chosen by the ladder rather than by age: the oldest three are as likely

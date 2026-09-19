@@ -36,19 +36,55 @@ final class SearchTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Kalle"].exists, "the search kept somebody it should not")
     }
 
-    func testTheGalleryFindsAPhotoByItsStory() {
+    /// The photograph — and, since 19 Sep 2026, the telling itself, listed by
+    /// its own words above the photographs. A photograph found by a word
+    /// inside its story looked exactly like one found by its title, and the
+    /// sentence that matched was on the card two taps away. Both text sizes
+    /// and audited, because the row is new and the audit is what reads it.
+    func testTheGalleryFindsAPhotoByItsStory() throws {
+        for textSize in [nil, "UICTContentSizeCategoryAccessibilityXXXL"] {
+            let app = launch(["-seed", "archive", "-tab", "memories"], textSize: textSize)
+            XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "the gallery")
+
+            search("soudettiin", in: app)
+
+            let telling = app.buttons.matching(
+                NSPredicate(format: "label CONTAINS %@", "soudettiin")
+            ).firstMatch
+            XCTAssertTrue(
+                telling.waitForExistence(timeout: 5),
+                "the telling that contains the word was not listed by its words"
+            )
+            try audit(app, "Albumi, haku, muistot, \(textSize ?? "default")")
+
+            // The photograph is still found — below the tellings, which at
+            // XXXL is below the fold, and a grid does not build a tile that is
+            // not on screen. Measured 19 Sep 2026: found without a scroll at
+            // the default size, not found at XXXL until the screen was moved.
+            let photo = app.buttons.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Valokuva")
+            ).firstMatch
+            for _ in 0 ..< 4 where !photo.exists { app.swipeUp() }
+            XCTAssertTrue(
+                photo.waitForExistence(timeout: 5),
+                "the photo whose story contains the word was not found"
+            )
+        }
+
+        // A telling about a PERSON lives on her card on the Ihmiset tab and,
+        // until 19 Sep 2026, nowhere the album's search could reach. Eeva's
+        // is one sentence, and her name is not the word searched for.
         let app = launch(["-seed", "archive", "-tab", "memories"])
         XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "the gallery")
 
-        search("soudettiin", in: app)
+        search("naapurissa", in: app)
 
-        let photo = app.buttons.matching(
-            NSPredicate(format: "label BEGINSWITH %@", "Valokuva")
-        ).firstMatch
         XCTAssertTrue(
-            photo.waitForExistence(timeout: 5),
-            "the photo whose story contains the word was not found"
+            app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "naapurissa")).firstMatch
+                .waitForExistence(timeout: 5),
+            "a telling about a person was not found from the album"
         )
+        XCTAssertFalse(app.staticTexts["Ei osumia"].exists, "a found telling was called no match")
     }
 
     /// The photograph is found by who and where its story names, not only by

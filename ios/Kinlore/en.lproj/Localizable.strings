@@ -394,6 +394,7 @@
 "Uutta perheeltä" = "New from the family";
 "Kuvat" = "Photographs";
 "Kerrotut hetket" = "Moments told about";
+"Muistot" = "Memories";
 
 // The photo ceiling, which said the same thing in Finnish on an English phone until 8 Sep 2026: the note was built from a ternary, so no key ever existed.
 "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on." = "One photograph did not fit the free archive. It is safe on this phone and travels to the family when there is room.";

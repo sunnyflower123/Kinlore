@@ -1629,6 +1629,25 @@ Built, in the order they were built:
     photograph names Puumala without saying the word, which is the only way
     the rule can be tested apart from the words.
 
+    **And since 19 Sep 2026 the album lists the tellings themselves.** The
+    search answered with cards: a tile found by a word inside its story looked
+    exactly like a tile found by its title, and the sentence that matched was
+    on the card two taps away — and a memory told about a *person* lives on
+    her card on Ihmiset, so from the album it could not be found at all. A
+    *"Muistot"* section now stands first in a search, one row per telling: the
+    words first, cut in the string the way an untitled moment's row cuts them
+    and not by the frame; the card's name with its kind's symbol under them;
+    and who told it, by `byline(for:)`. `MemoryStore.memories(matching:)`
+    matches the words, the mentions, the card's title and the teller, and
+    resolves the card through `subject(id:)` like the rest, so a merged card
+    answers with its survivor and a rejected one is not listed; a telling not
+    yet transcribed has no words to match. Every kind of card leads where the
+    album already goes, a person's included. The rows exist only inside a
+    search — nothing changes for somebody who is not searching, and a
+    grandparent's phone has no field to search from. `SearchTests` reads the
+    row by its words at both text sizes and audits it, and finds Eeva's one
+    sentence from the album without her name in it.
+
     Out of the way by design — and on Albumi, since 19 Sep 2026, by a rule
     rather than by trust in the platform. The bargain was that `.searchable`
     keeps the field above the list until somebody pulls down, so the grandchild
@@ -1661,6 +1680,8 @@ Built, in the order they were built:
     The pairing "every addition requires a removal" asks for is **not paid**.
     Nothing was removed for this one; it is an addition, and the decision to
     take it was made deliberately rather than by forgetting the rule.
+    The rows of tellings are an addition too, inside a state only a reader
+    who is already searching ever enters.
 
 13. **A date by hand**, on a photograph or a moment.
 

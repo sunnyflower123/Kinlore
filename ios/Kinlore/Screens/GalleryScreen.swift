@@ -52,6 +52,9 @@ struct GalleryScreen: View {
 
     private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
     private var events: [Subject] { Self.byDate(store.subjects(of: .event, matching: query)) }
+    /// The tellings themselves, while somebody is searching; nothing
+    /// otherwise, so the section exists only inside a search.
+    private var foundMemories: [MemoryStore.MemoryMatch] { store.memories(matching: query) }
 
     /// The photographs by decade — the one order a family thinks in, and the
     /// one nothing here used. `dateHint` is asked for by a sheet of its own
@@ -162,7 +165,7 @@ struct GalleryScreen: View {
     }
 
     private var nothingMatches: Bool {
-        photos.isEmpty && events.isEmpty && places.isEmpty
+        photos.isEmpty && events.isEmpty && places.isEmpty && foundMemories.isEmpty
     }
 
     var body: some View {
@@ -602,6 +605,26 @@ struct GalleryScreen: View {
                     // all: a dozen tellings stranded on the quota were the
                     // one refusal shown as a delay.
                     MinutesQuotaNote()
+                }
+
+                // The tellings that matched, first and only while searching.
+                // What somebody typed is most often a word from inside one,
+                // and the words are the most specific thing the search can
+                // answer with. Until 19 Sep 2026 a photograph found by a
+                // sentence looked exactly like one found by its title, with
+                // the sentence on the card two taps away, and a memory told
+                // about a person was not on this screen at all. Every kind of
+                // card leads where the album can already go.
+                if !foundMemories.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        SectionHeading("Muistot")
+                        ForEach(foundMemories) { match in
+                            NavigationLink(value: match.subject) {
+                                FoundMemoryRow(memory: match.memory, subject: match.subject)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
 
                 if !photos.isEmpty {
@@ -1199,6 +1222,68 @@ private struct NewTellingRow: View {
         Image(systemName: "chevron.right")
             .font(.footnote.weight(.semibold))
             .foregroundStyle(Elder.supporting)
+    }
+}
+
+/// A telling the search found, listed by its own words.
+///
+/// The words first, because they are what matched; under them the card the
+/// telling lives on and who told it, which together are the reason to tap.
+/// The same shape as an untitled moment's row and read by VoiceOver in the
+/// same order — words, card, teller — because here the words are the name.
+private struct FoundMemoryRow: View {
+    @Environment(MemoryStore.self) private var store
+    let memory: Memory
+    let subject: Subject
+
+    var body: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                // Cut in the words and not by the frame, for the reason the
+                // moment row gives: an ellipsis the layout adds is text the
+                // reader cannot reach, and one in the string is not.
+                Text(verbatim: SubjectRow.opening(of: memory.body))
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                // The card, with its kind's symbol so that a photograph, a
+                // person, a place and a moment are told apart at a glance.
+                // The symbol says nothing VoiceOver needs: the label reads
+                // the card's name, and a person's card is named by a person.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Image(systemName: subject.kind.symbolName)
+                        .accessibilityHidden(true)
+                    Text(subject.displayTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+
+                // Who told it, by the same three answers the family's other
+                // rows use (`byline(for:)`); the day when the teller asked
+                // not to be named.
+                if let teller = store.byline(for: memory) {
+                    Text("\(teller) kertoi")
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                } else {
+                    Text("Kerrottu \(memory.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Elder.supporting)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .elderCard()
+        .accessibilityElement(children: .combine)
     }
 }
 
