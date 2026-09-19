@@ -26,13 +26,26 @@ struct HelpScreen: View {
                 "Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena."
             )
 
-            // One literal, not three joined with `+`: a String built from parts
-            // is handed over as a String and never looked up, so this sentence
-            // — the one that says the recording leaves the phone — stayed
-            // Finnish on an English phone. See scripts/localisation-check.mjs.
+            // One literal per row, never parts joined with `+`: a String built
+            // from parts is handed over as a String and never looked up, so
+            // this sentence — the one that says the recording leaves the
+            // phone — stayed Finnish on an English phone. See
+            // scripts/localisation-check.mjs.
+            //
+            // Four rows rather than one because `section` is variadic and the
+            // length had a measured cost: as a single row this answer stood
+            // 2511 pt tall in English at AccessibilityXXXL on a 874 pt screen
+            // — three and a half screens of one paragraph — against 309 pt at
+            // the default size (measured 19 Sep 2026 with a GeometryReader
+            // probe under `simctl launch --console-pty`, because a List builds
+            // lazily and a row below the fold reports nothing). Splitting
+            // costs no structure, changes no word, and gives both the eye and
+            // VoiceOver somewhere to stop.
             section(
                 "Mitä äänellesi tapahtuu",
-                "Perheen arkistossa äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti. Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.",
+                "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse.",
+                "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen.",
+                "Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.",
                 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä."
             )
 

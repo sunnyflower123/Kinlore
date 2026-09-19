@@ -113,10 +113,20 @@ targets:
         # Says where the recording goes, not only that there is one. This is the
         # only moment iOS gives us before the first recording, and until now the
         # app never told anybody — anywhere — that the audio leaves the phone.
+        # Since 19 Sep 2026 it also answers the question that follows from
+        # that one and that the sentence above left open: what can be read off
+        # the voice, by whom, and for how long. All three clauses are claims
+        # the code makes good on — `openrouter.ts` sets `data_collection:
+        # 'deny'` unconditionally, the Worker keeps no copy of the base64 it
+        # forwards, nothing anywhere asks a model who is speaking (the teller
+        # is `teller_subject_id`, a card the family picks), and `SyncEngine`
+        # seals the audio with the family key before R2 ever sees it.
         NSMicrophoneUsageDescription: >-
           Kinlore tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
-          voi kuunnella ne myöhemmin. Perheen arkistossa äänitys lähetetään
-          palveluumme, jossa puheesta kirjoitetaan teksti.
+          voi kuunnella ne myöhemmin. Perheen arkistossa äänitys käy
+          palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei
+          siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä
+          tunnisteta ketään. Arkistoon äänitys tallentuu salattuna.
         NSPhotoLibraryUsageDescription: >-
           Valitse vanhoja valokuvia, joista perheesi voi kertoa muistoja.
         # The shoebox. An 80-year-old's photographs are not in this phone's

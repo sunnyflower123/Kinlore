@@ -231,6 +231,16 @@ private struct WhereMemoriesGo: View {
     /// which was true while the mode still tried and met a 401, and became a
     /// false promise the day the attempt was removed. A consent notice that is
     /// wrong in either clause is worse than none.
+    ///
+    /// Since 19 Sep 2026 the shared branch also says what can be read off the
+    /// voice — nothing is kept at the service, nothing is handed over as
+    /// training data, nobody is identified from the voice, and the archived
+    /// audio is sealed with the family key — matching the microphone
+    /// permission text in `ios/project.yml` and the Help screen. The
+    /// kept-here branch deliberately gained no such clause: nothing is sent,
+    /// so there is nothing to describe, and `MemoryStore.save()` writes plain
+    /// JSON, so a sentence about encryption would be the one kind of untruth
+    /// a consent notice cannot afford.
     var isShared = true
 
     var body: some View {
@@ -242,7 +252,7 @@ private struct WhereMemoriesGo: View {
             // (founder's-eye review, 3 Sep 2026, finding #38).
             Group {
                 if isShared {
-                    Text("Muistot näkyvät perheen jäsenille. Äänitys lähetetään palveluumme, jossa puheesta kirjoitetaan teksti, ja alkuperäinen ääni säilytetään.")
+                    Text("Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
                 } else {
                     Text("Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa.")
                 }
