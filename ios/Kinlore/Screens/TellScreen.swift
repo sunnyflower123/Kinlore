@@ -1431,6 +1431,7 @@ struct BlindCardView: View {
 // MARK: - Result
 
 private struct ResultView: View {
+    @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
     let model: TellViewModel
     /// The presenter's way out, when there is a presenter: the same closure
@@ -1440,6 +1441,26 @@ private struct ResultView: View {
 
     @State private var isConfirmingDiscard = false
     @State private var isMoving = false
+    @State private var isDating = false
+
+    /// Where the memory was filed, as the store has it **now** rather than as
+    /// the view model captured it. A date given on this screen has to be on
+    /// this screen the moment the sheet closes, and `placedSubject` is a value
+    /// taken when the telling was saved.
+    private var placedNow: Subject? {
+        guard let placed = model.placedSubject else { return nil }
+        return store.subject(id: placed.id) ?? placed
+    }
+
+    /// Whether "when did this happen" is a question this subject can answer —
+    /// the same rule the card keeps (`datable` in `RootView.swift`), and kept
+    /// twice on purpose rather than shared: a person's date would have to mean
+    /// birth or death, which `date_start` does not say and the app must not
+    /// guess.
+    private var datable: Bool {
+        guard let kind = placedNow?.kind else { return false }
+        return kind == .photo || kind == .event
+    }
 
     var body: some View {
         ScrollView {
@@ -1577,6 +1598,15 @@ private struct ResultView: View {
                 MoveMemorySheet(current: placed.id) { model.move(to: $0) }
             }
         }
+        // `placedNow` and not the captured subject, for the reason the card's
+        // own date sheet reads the store: the sheet opens on the archive as it
+        // is now, so a date another phone gave while this screen was open is
+        // the date it starts from.
+        .sheet(isPresented: $isDating) {
+            if let dated = placedNow {
+                DateSheet(subject: dated)
+            }
+        }
     }
 
     private var header: some View {
@@ -1609,6 +1639,35 @@ private struct ResultView: View {
                     Button("Siirrä toiselle kortille") { isMoving = true }
                         .buttonStyle(.bordered)
                         .elderTapTarget()
+                }
+
+                // And when it happened, asked where it is known.
+                //
+                // The date could be given only on the subject's own card until
+                // 19 Sep 2026, which is two screens away from the one moment
+                // somebody has just said *"se oli kesäkuussa 1957"* out loud.
+                // Rule 5 stores uncertainty rather than rounding it, and a date
+                // nobody walks two screens to record is not stored at all —
+                // the rule was kept by the schema and lost by the geometry.
+                //
+                // A `Text` and an `Image` rather than a `Label`, which is not a
+                // style preference: the same row on the card was reported as
+                // clipped by the audit in every shape it was tried in as a
+                // `Label`, and split into two views it passes at both sizes
+                // (`RootView.swift`, four runs to learn one fact).
+                if datable, let dated = placedNow {
+                    Button {
+                        isDating = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "calendar")
+                            Text(dated.dateHint?.displayText ?? String(localized: "Lisää ajankohta"))
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .elderTapTarget()
                 }
             }
 

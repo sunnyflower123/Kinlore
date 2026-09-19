@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 67 sweep tests, each auditing one screen at the default text size and again at the largest, out of 193 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 67 sweep tests, each auditing one screen at the default text size and again at the largest, out of 194 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -4109,6 +4109,24 @@ recall on the row where a wrong name is caught — with the rows to check first
 and the familiar names quieter below them, exactly as before. Two questions
 show rather than three; the third is stored and the loop asks it.
 `ResultScreenTests` pins it.
+
+**And when it happened, asked here since 19 Sep 2026.** The date row was the
+subject's card and nowhere else, which is two screens from the one moment it
+is known — somebody has just said *"se oli kesäkuussa 1957"* out loud, and the
+way to record it was to leave the result, find the photograph and open its
+card. Rule 5 stores uncertainty rather than rounding it, and a date nobody
+walks two screens to give is not stored at all: the rule was kept by the
+schema and lost by the geometry. The row sits under *"Siirrä toiselle
+kortille"*, opens the same `DateSheet`, and shows only for a photograph or a
+moment — the card's own `datable` rule, kept twice rather than shared, because
+a person's date would have to mean birth or death and `date_start` does not
+say which. It reads the store (`placedNow`) and not the subject the view model
+captured when the telling was saved, which is the half that fails silently: a
+date given here would be written and the button would go on inviting one.
+Measured rather than assumed, and it changed the test: the canned telling
+already carries a decade, so the row opens reading *"1950-luku"* and what the
+screen really does is sharpen the model's answer rather than add the first
+one.
 
 **And the lists, the same day.** Ihmiset lists confirmed people only; the
 names the extraction heard and nobody has checked wait behind one quiet row
