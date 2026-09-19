@@ -1,0 +1,24 @@
+// Where this project's signing settings come from, and why they are not here.
+//
+// The .xcodeproj is generated (`xcodegen generate`) and ignored by git, so a
+// development team set in Xcode's own Signing & Capabilities tab lives exactly
+// until the next generation — which happens after every added source file, and
+// several times a day when more than one session is working. The symptom is
+// Xcode asking for the team again before a device build, over and over, as if
+// it had forgotten. It had not; the file it wrote to had been replaced.
+//
+// The team is written here instead, through a file that is NOT in the
+// repository: the Apple account behind it was deliberately taken out of HEAD
+// on 10 Sep 2026 and does not come back through a build setting. `#include?`
+// is the optional include — a clone or a CI checkout without the local file
+// generates and builds exactly as before, with no team and no error, which is
+// what every simulator build and the whole of `verify.sh` needs.
+//
+// To create it, once, from the certificate already in your keychain:
+//
+//   security find-identity -v -p codesigning \
+//     | sed -n 's/.*(\([A-Z0-9]\{10\}\))"$/\1/p' | head -1 \
+//     | sed 's/^/DEVELOPMENT_TEAM = /' > ios/Signing.local.xcconfig
+//
+// See docs/SETUP.md.
+#include? "Signing.local.xcconfig"

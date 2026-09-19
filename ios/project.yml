@@ -133,6 +133,13 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.kinlore.invite
             CFBundleURLSchemes: [kinlore]
+    # Signing, from a file rather than from Xcode's UI: the generated project
+    # is replaced on every `xcodegen generate`, and the team the UI writes into
+    # it goes with it. Signing.xcconfig is tracked and carries no team of its
+    # own — it optionally includes the local file that does.
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
     dependencies:
       - package: RevenueCat
         product: RevenueCat

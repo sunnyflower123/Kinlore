@@ -105,6 +105,38 @@ back the memory the user just told.
 |-----|------|
 | RevenueCat **Test Store API key** | Designed for the client side, safe to embed. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling. Without a key, purchases are unavailable but the app works normally. |
 
+### iOS app — signing for a real device
+
+A simulator build needs nothing here; a build for a phone needs a development
+team, and until 19 Sep 2026 the only place to put one was Xcode's Signing &
+Capabilities tab. That is a setting inside the `.xcodeproj`, which is generated
+and ignored by git, so `xcodegen generate` replaced it — and that command runs
+after every added source file and several times a day when more than one
+session is working. Xcode then asked for the team again before the next device
+build, which reads as Xcode forgetting and is the project file being rewritten.
+
+`ios/Signing.xcconfig` is tracked, carries no team of its own and optionally
+includes `ios/Signing.local.xcconfig`, which is in `.gitignore` because the
+Apple account behind the identifier was taken out of HEAD on 10 Sep 2026.
+`#include?` is the optional form: a clone or a CI checkout without the local
+file generates and builds exactly as before, with no team and no error, which
+is what every simulator build and the whole of `verify.sh` rely on. Write the
+local file once, from the certificate already in your keychain:
+
+```bash
+security find-identity -v -p codesigning \
+  | sed -n 's/.*(\([A-Z0-9]\{10\}\))"$/\1/p' | head -1 \
+  | sed 's/^/DEVELOPMENT_TEAM = /' > ios/Signing.local.xcconfig
+```
+
+Measured the same day, in a worktree pinned to a commit so that nothing else in
+the tree could explain it: without the file, `xcodebuild -sdk iphoneos` fails
+with *"Signing for \"Kinlore\" requires a development team"*; with it, that
+error is gone and the build gets as far as provisioning, where the command line
+refuses to create a profile unless it is passed `-allowProvisioningUpdates`.
+Xcode's own build does that step itself, which is why the app installs from the
+IDE and the same command does not.
+
 ## Launch arguments
 
 Everything the app can be told from outside, in one place. In Xcode they go

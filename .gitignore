@@ -11,6 +11,9 @@ node_modules/
 
 # XcodeGen generates these from project.yml — not under version control.
 ios/*.xcodeproj
+# The development team, which is an Apple account identifier and stays out of
+# HEAD (decided 10 Sep 2026). ios/Signing.xcconfig includes it when it exists.
+ios/Signing.local.xcconfig
 ios/Kinlore/Info.plist
 ios/*.xcworkspace
 xcuserdata/
