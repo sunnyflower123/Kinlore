@@ -584,11 +584,11 @@
 
 /* The family tree's rail and legend: which generation a row is, and
    what a line between two people means. */
-"Isoisovanhemmat" = "Isoisovanhemmat";
-"Isovanhemmat" = "Isovanhemmat";
+"Isovanhempiesi polvi" = "Isovanhempiesi polvi";
+"Vanhempiesi polvi" = "Vanhempiesi polvi";
 "Sinun polvesi" = "Sinun polvesi";
-"Lastenlapset" = "Lastenlapset";
-"Lastenlastenlapset" = "Lastenlastenlapset";
+"Lastesi polvi" = "Lastesi polvi";
+"Lastenlastesi polvi" = "Lastenlastesi polvi";
 "%lld. polvi" = "%lld. polvi";
 "%lld polvea ylempänä" = "%lld polvea ylempänä";
 "%lld polvea alempana" = "%lld polvea alempana";

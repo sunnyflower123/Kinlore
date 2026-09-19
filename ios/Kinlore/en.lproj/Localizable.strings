@@ -674,11 +674,11 @@
 
 /* The family tree's rail and legend: which generation a row is, and
    what a line between two people means. */
-"Isoisovanhemmat" = "Great-grandparents";
-"Isovanhemmat" = "Grandparents";
+"Isovanhempiesi polvi" = "Your grandparents' generation";
+"Vanhempiesi polvi" = "Your parents' generation";
 "Sinun polvesi" = "Your generation";
-"Lastenlapset" = "Grandchildren";
-"Lastenlastenlapset" = "Great-grandchildren";
+"Lastesi polvi" = "Your children's generation";
+"Lastenlastesi polvi" = "Your grandchildren's generation";
 "%lld. polvi" = "Generation %lld";
 "%lld polvea ylempänä" = "%lld generations above you";
 "%lld polvea alempana" = "%lld generations below you";

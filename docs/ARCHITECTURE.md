@@ -1829,11 +1829,27 @@ Not built:
    the generations named.
 
    - **A rail down the left names each generation**, counted from your own row:
-     *Vanhemmat*, *Sinun polvesi*, *Lapset*, and beyond three either way a
-     count — *4 polvea ylempänä*. Counted from you because the archive stores
-     no gender, so a word for one person would have to read *"Eevan vanhempi"*;
-     a generation has a name in Finnish that needs none. A phone linked to no
-     card gets the drawing's own numbering instead, which claims nothing. The
+     *Vanhempiesi polvi*, *Sinun polvesi*, *Lastesi polvi*, and beyond two
+     either way a count — *3 polvea ylempänä*. Counted from you because the
+     archive stores no gender, so a word for one person would have to read
+     *"Eevan vanhempi"*; a generation has a name in Finnish that needs none.
+     **Worded as a generation and not as a relationship since 19 Sep 2026.**
+     The words were *Vanhemmat*, *Isovanhemmat* and *Lapset* for three days,
+     and the first family entered on a phone showed why that could not stand:
+     the row above the reader held his mother, his father, his mother's
+     brother and his father's sister, under a word that means two people —
+     *"eihän minulla voi olla neljää vanhempaa"*. Every row is a generation
+     and holds the brothers, sisters and spouses of the people it is named
+     for, and only the reader's own row had been worded to say so. The count
+     starts one generation earlier than it did, because the words are
+     longer: *Isoisovanhempiesi polvi* and *Lastenlastenlastesi polvi* are
+     134 and 138 points of `.caption` at the default size and the rail's
+     word is one line. Two lines were tried first and measured out: the rail
+     grew to 140 points so that *Isovanhempiesi polvi* (117) stays on one,
+     and at the smallest zoom a second line stood on the names in the row
+     above, because the words do not zoom and the air between rows does. A
+     phone linked to no card gets the drawing's own numbering instead, which
+     claims nothing. The
      rail does not scroll sideways with the drawing and does not shrink with
      the zoom: in a family that needs scrolling, a label that scrolls away
      names the rows you are no longer looking at.
@@ -1849,6 +1865,35 @@ Not built:
      as a `ViewThatFits` folding a row into a column, the audit called all
      three words partially unsupported Dynamic Type, in both tree sweeps, at
      the default text size. One arrangement at every size passes.
+   - **A line leaves a person from under their name, and the children of two
+     people nobody has married hang from both** (19 Sep 2026).
+     `FamilyTreeLayout` draws in rows and knows nothing about text, so the
+     screen tells it how deep a card is — half a disc, the gap, a name and
+     two fifths of a line of air under it, about two fifths of a row at
+     every text size, and the word *Sinä* more on the reader's own card —
+     and every line that leaves somebody downwards starts there. The air is
+     measured, not assumed: the first build started the line at the foot of
+     the name's frame, 51 points under the disc's centre, and the letters of
+     *Jorma* on the simulator ended at 52.7, so the line stood on the
+     baseline. Until then it started at the centre of the disc and ran
+     down through the name whenever the drop was from one person: a child
+     with one parent entered, which the first family on a phone had twice.
+     The same family had a child entered from each of two parents and no
+     marriage, which rule 4 will not infer, and its bracket hung from the
+     empty space between two people the picture had not joined; now a drop
+     from under each parent meets one bar, and the bar reaches from the first
+     parent to the last child. A marriage's dip under the row moved from a
+     quarter of a row to two fifths for the same reason — a quarter ran
+     through the name of whoever it went round — and it is drawn only round
+     somebody. It used to be drawn by distance, `right - left > 1`, and a row
+     whose places are means of thirds puts a couple one place and 2⁻⁵² apart:
+     17 of 30 000 random families bent a marriage under the row round nobody,
+     and the same 30 000 through the new test bend none.
+     `family-tree-layout-check` walks every line against every card, and the
+     one line it lets through is that dip under a card deeper than the dip —
+     the reader's own, where at the default size it runs in the air between
+     the name and *Sinä*, three points above the word, which is where the
+     arithmetic puts it and nothing has yet shown on a screen.
    - **The bands stop at your own family.** Two families that share nobody are
      drawn side by side and both start at row 0, because neither knows
      anything about the other's age. Shading across both and calling the band
@@ -2128,10 +2173,11 @@ Not built:
      Each word stands in the air above its row's discs rather than on them:
      the first screenshot had *Vanhemmat* laid over the top of a disc in the
      first column, a quarter cut out of Tuula, and a word over the air
-     between generations covers only lines. The words are wide enough for
+     between generations covers only lines. The words were wide enough for
      *Lastenlastenlapset* on one line now that their width is no longer
      taken from the picture, so the hyphenation the 16 Sep entry lists is
-     gone with the rail.
+     gone with the rail; the generation words that replaced them the same
+     evening are one line each at 140 points, measured above.
 
      **What the screenshots and the test runs measured that the arithmetic
      had not, 19 Sep 2026.** The generation words stood two rows below their

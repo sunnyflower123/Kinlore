@@ -472,6 +472,165 @@ enum FamilyTreeLayoutCheck {
             check("and the same drawing twice", FamilyTreeLayout.layout(people: people, links: links) == r)
         }
 
+        print("— a line leaves a person from under their name —")
+        do {
+            // The layout draws in rows and knows nothing about text, so the
+            // screen tells it how deep a card reaches below the row's centre
+            // line: half a disc, a gap, a name and a little air, about two
+            // fifths of a row — and the word *Sinä* more on the phone's own
+            // card. Every line that leaves somebody downwards starts there.
+            // Until 19 Sep 2026 it started at the centre of the disc and ran
+            // down through the name whenever the drop was from one person
+            // rather than from between two.
+            //
+            // The two numbers are what the screen passes at the default text
+            // size, 59.4 and 75 points of a 156-point row; the letters of a
+            // name were measured ending 52.7 points below the disc's centre
+            // and those of *Sinä* 74.7.
+            let card = 0.381, yours = 0.481
+
+            /// Every line that crosses the band under somebody's disc — the
+            /// gap and the name — at their own column, by name.
+            func throughAName(_ r: FamilyTreeLayout.Result, depth: (String) -> Double) -> [String] {
+                var wrong: [String] = []
+                for (id, p) in r.placements.sorted(by: { $0.key < $1.key }) {
+                    let centre = Double(p.row), foot = centre + depth(id)
+                    for line in r.segments {
+                        let x1 = min(line.x1, line.x2), x2 = max(line.x1, line.x2)
+                        let y1 = min(line.y1, line.y2), y2 = max(line.y1, line.y2)
+                        guard x1 <= p.x, p.x <= x2 else { continue }
+                        if line.y1 == line.y2 {
+                            if centre < y1 && y1 < foot { wrong.append("a line runs across \(id) at \(y1)") }
+                        } else if y1 < foot && y2 > centre {
+                            wrong.append("a line runs down through \(id) from \(y1)")
+                        }
+                    }
+                }
+                return wrong
+            }
+
+            // The first family somebody entered on a phone, as entered: a
+            // child from each parent, three pairs of siblings, and not one
+            // marriage — which rule 4 will not infer from two people having
+            // a child. Jaakko's phone.
+            let phone = [
+                parent("Anna", "Jaakko"), parent("Antti", "Jaakko"), parent("Anna", "Erkko"),
+                parent("Paula", "Anna"), parent("Jorma", "Anna"), parent("Paula", "Juhani"),
+                parent("Suoma", "Antti"), parent("Pertti", "Antti"),
+                parent("Suoma", "Annukka"), parent("Pertti", "Annukka"),
+                sibling("Jaakko", "Erkko"), sibling("Anna", "Juhani"), sibling("Antti", "Annukka"),
+            ]
+            let people = ["Jaakko", "Erkko", "Anna", "Antti", "Juhani", "Annukka", "Paula", "Jorma", "Suoma", "Pertti"]
+            let r = FamilyTreeLayout.layout(people: people, links: phone) { $0 == "Jaakko" ? yours : card }
+            let p = r.placements
+            check("everybody is placed, once", p.count == people.count && noOverlap(r), "\(p.count)")
+            check("three generations", r.rows == 3 && p["Anna"]?.row == 1 && p["Jaakko"]?.row == 2)
+            func drop(from id: String, to y: Double) -> Bool {
+                guard let place = p[id] else { return false }
+                return r.segments.contains {
+                    $0.kind == .descent && $0.x1 == place.x && $0.x2 == place.x
+                        && $0.y1 == Double(place.row) + card && $0.y2 == y
+                }
+            }
+            check("Jaakko hangs from under Anna's name", drop(from: "Anna", to: 1.5))
+            check("and from under Antti's", drop(from: "Antti", to: 1.5))
+            let between = ((p["Anna"]?.x ?? 0) + (p["Antti"]?.x ?? 0)) / 2
+            check("and not from the empty space between two people the picture has not joined",
+                  !r.segments.contains { $0.kind == .descent && $0.x1 == between && $0.x2 == between && $0.y1 < 1.5 },
+                  "\(r.segments.filter { $0.kind == .descent && $0.y2 == 1.5 })")
+            let bar = r.segments.first { $0.kind == .descent && $0.y1 == 1.5 && $0.y2 == 1.5 && $0.x1 <= min(p["Anna"]!.x, p["Antti"]!.x) && $0.x2 >= max(p["Anna"]!.x, p["Antti"]!.x) }
+            check("one bar reaches from the first parent to the last", bar != nil && bar!.x1 <= p["Jaakko"]!.x && bar!.x2 >= p["Jaakko"]!.x,
+                  "\(r.segments.filter { $0.kind == .descent && $0.y1 == 1.5 && $0.y2 == 1.5 })")
+            check("Erkko hangs from under Anna's name alone", drop(from: "Anna", to: 1.5)
+                  && !r.segments.contains { $0.kind == .descent && $0.x1 == p["Anna"]!.x && $0.x2 == p["Anna"]!.x && $0.y1 == 1.0 })
+            check("Juhani hangs from under Paula's name", drop(from: "Paula", to: 0.5))
+            check("no marriage is drawn where none was entered", !r.segments.contains { $0.kind == .couple })
+            check("and no line runs through anybody's name", throughAName(r) { $0 == "Jaakko" ? yours : card }.isEmpty,
+                  "\(throughAName(r) { $0 == "Jaakko" ? yours : card })")
+
+            // The same family with the marriages entered: back to one drop
+            // from between each couple, from the line that joins them.
+            let married = phone + [spouse("Anna", "Antti"), spouse("Paula", "Jorma"), spouse("Suoma", "Pertti")]
+            let m = FamilyTreeLayout.layout(people: people, links: married) { $0 == "Jaakko" ? yours : card }
+            let wedBetween = ((m.placements["Anna"]?.x ?? 0) + (m.placements["Antti"]?.x ?? 0)) / 2
+            check("married, Jaakko hangs from between his parents",
+                  m.segments.contains { $0.kind == .descent && $0.x1 == wedBetween && $0.x2 == wedBetween && $0.y1 == 1.0 && $0.y2 == 1.5 },
+                  "\(m.segments.filter { $0.kind == .descent && $0.y2 == 1.5 })")
+            check("Erkko still from under Anna's name",
+                  m.segments.contains { $0.kind == .descent && $0.x1 == m.placements["Anna"]!.x && $0.x2 == m.placements["Anna"]!.x && $0.y1 == 1.0 + card })
+            check("and still nothing through a name", throughAName(m) { $0 == "Jaakko" ? yours : card }.isEmpty,
+                  "\(throughAName(m) { $0 == "Jaakko" ? yours : card })")
+
+            // A line that leaves the phone's own card starts under *Sinä*,
+            // which is deeper than a name.
+            let own = FamilyTreeLayout.layout(people: ["Jaakko", "Lapsi"], links: [parent("Jaakko", "Lapsi")]) { $0 == "Jaakko" ? yours : card }
+            check("a drop from you starts under Sinä",
+                  own.segments.contains { $0.kind == .descent && $0.x1 == $0.x2 && $0.y1 == yours && $0.y2 == 0.5 },
+                  "\(own.segments)")
+
+            // A marriage is bent under the row only round somebody. It used
+            // to be bent by distance, `right - left > 1`, and a row whose
+            // places are means of thirds puts a couple one place and 2⁻⁵²
+            // apart: Bertta and Daniel below, found by trying 30 000 random
+            // families through the old drawing, which bent 17 of them round
+            // nobody.
+            let thirds = [
+                spouse("Daniel", "Bertta"), spouse("Eero", "Aada"),
+                parent("Fanni", "Bertta"), parent("Greta", "Bertta"), parent("Fanni", "Daniel"),
+                parent("Cecilia", "Fanni"), parent("Cecilia", "Greta"), parent("Aada", "Greta"),
+            ]
+            let t = FamilyTreeLayout.layout(
+                people: ["Aada", "Bertta", "Cecilia", "Heikki", "Daniel", "Eero", "Fanni", "Greta"], links: thirds
+            )
+            let tb = t.placements["Bertta"]!, td = t.placements["Daniel"]!
+            check("a couple on a row of thirds is one place and a rounding error apart",
+                  tb.row == td.row && td.x - tb.x > 1 && td.x - tb.x < 1.000001, "\(tb) \(td)")
+            check("with nobody between them",
+                  !t.placements.contains { $0.value.row == tb.row && tb.x < $0.value.x && $0.value.x < td.x })
+            check("and their marriage is drawn straight",
+                  t.segments.contains { $0.kind == .couple && $0.y1 == Double(tb.row) && $0.y2 == Double(tb.row) && $0.x1 == tb.x && $0.x2 == td.x }
+                  && !t.segments.contains { $0.kind == .couple && $0.y1 != $0.y1.rounded(.down) },
+                  "\(t.segments.filter { $0.kind == .couple })")
+
+            // The dip a marriage makes round somebody runs under the names
+            // it goes round — and the one card it cannot keep out of is the
+            // phone's own, with *Sinä* under the name, which the check lets
+            // through by name.
+            let thrice = [
+                spouse("Aapo", "Hilma"), spouse("Aapo", "Lyyli"), spouse("Aapo", "Saima"),
+                parent("Aapo", "Kerttu"), parent("Saima", "Kerttu"),
+            ]
+            let three = FamilyTreeLayout.layout(people: ["Aapo", "Hilma", "Lyyli", "Saima", "Kerttu"], links: thrice) { _ in card }
+            let dips = three.segments.filter { $0.kind == .couple && $0.y1 == $0.y2 && $0.y1 > 0 }
+            check("a marriage goes round somebody under the names", dips.count == 1 && dips.allSatisfy { $0.y1 > card && $0.y1 < 0.5 }, "\(dips)")
+            check("and its legs start under the names", three.segments.filter { $0.kind == .couple && $0.x1 == $0.x2 }.allSatisfy { $0.y1 == card },
+                  "\(three.segments.filter { $0.kind == .couple && $0.x1 == $0.x2 })")
+            check("and nothing runs through a name", throughAName(three) { _ in card }.isEmpty, "\(throughAName(three) { _ in card })")
+            let threeOwn = FamilyTreeLayout.layout(people: ["Aapo", "Hilma", "Lyyli", "Saima", "Kerttu"], links: thrice) { $0 == "Aapo" ? yours : card }
+            let leaks = throughAName(threeOwn) { $0 == "Aapo" ? yours : card }
+            check("the one line it lets through is that dip under Sinä",
+                  leaks == ["a line runs across Aapo at 0.4"]
+                  && !threeOwn.segments.contains { $0.kind == .couple && $0.x1 == $0.x2 && $0.x1 == threeOwn.placements["Aapo"]!.x },
+                  "\(leaks)")
+
+            // And the families above, at the default depth.
+            let grandparents = FamilyTreeLayout.layout(
+                people: ["Mummo", "Vaari", "Liisa", "Matti", "Sanni"],
+                links: [spouse("Mummo", "Vaari"), parent("Mummo", "Liisa"), parent("Vaari", "Liisa"),
+                        parent("Mummo", "Matti"), parent("Vaari", "Matti"), parent("Mummo", "Sanni"), parent("Vaari", "Sanni")]
+            ) { _ in card }
+            check("Mummo and Vaari: nothing through a name", throughAName(grandparents) { _ in card }.isEmpty,
+                  "\(throughAName(grandparents) { _ in card })")
+            // The same depth is passed and measured: a layout drawn at the
+            // default depth and walked at the screen's would flag the drops
+            // from C and D by a thousandth of a row.
+            let ring = FamilyTreeLayout.layout(people: ["A", "B", "C", "D", "E", "F"], links: [
+                spouse("A", "B"), parent("A", "C"), parent("B", "C"), parent("A", "D"), parent("B", "D"),
+                parent("C", "E"), parent("D", "F"), spouse("E", "F"),
+            ]) { _ in card }
+            check("a ring: nothing through a name", throughAName(ring) { _ in card }.isEmpty, "\(throughAName(ring) { _ in card })")
+        }
+
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) check(s) failed")
         exit(failures == 0 ? 0 : 1)
     }

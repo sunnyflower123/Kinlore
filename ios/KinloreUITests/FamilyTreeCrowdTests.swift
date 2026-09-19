@@ -35,10 +35,14 @@ final class FamilyTreeCrowdTests: XCTestCase {
     func testEachGenerationIsNamedFromYourOwn() {
         let app = crowd()
         XCTAssertTrue(app.staticTexts["Sinun polvesi"].waitForExistence(timeout: 20), "your own generation is not named")
-        XCTAssertTrue(app.staticTexts["Vanhemmat"].exists, "the generation above you is not named")
-        XCTAssertTrue(app.staticTexts["Isovanhemmat"].exists, "two above you is not named")
-        XCTAssertTrue(app.staticTexts["Isoisovanhemmat"].exists, "three above you is not named")
-        XCTAssertTrue(app.staticTexts["Lapset"].exists, "the generation below you is not named")
+        // Worded as generations and not as relationships (19 Sep 2026): the
+        // row above you holds your parents' brothers and sisters and the
+        // people they married, and *Vanhemmat* over four of them read as
+        // four parents.
+        XCTAssertTrue(app.staticTexts["Vanhempiesi polvi"].exists, "the generation above you is not named")
+        XCTAssertTrue(app.staticTexts["Isovanhempiesi polvi"].exists, "two above you is not named")
+        XCTAssertTrue(app.staticTexts["3 polvea ylempänä"].exists, "three above you is not named")
+        XCTAssertTrue(app.staticTexts["Lastesi polvi"].exists, "the generation below you is not named")
         // Four above and further has no name in Finnish that anybody says, so
         // it is counted instead of invented.
         XCTAssertTrue(app.staticTexts["4 polvea ylempänä"].exists, "the oldest generation is not named at all")
@@ -51,7 +55,7 @@ final class FamilyTreeCrowdTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["1. polvi"].waitForExistence(timeout: 20), "the generations are not named at all")
         XCTAssertTrue(app.staticTexts["5. polvi"].exists, "only the first generations are named")
         XCTAssertFalse(app.staticTexts["Sinun polvesi"].exists, "a generation is called yours on a phone linked to no card")
-        XCTAssertFalse(app.staticTexts["Vanhemmat"].exists, "a row is called your parents' with no you in the tree")
+        XCTAssertFalse(app.staticTexts["Vanhempiesi polvi"].exists, "a row is called your parents' with no you in the tree")
     }
 
     /// The labels ride the window rather than the drawing, so they are still
@@ -107,7 +111,7 @@ final class FamilyTreeCrowdTests: XCTestCase {
         XCTAssertTrue(app.buttons["Otto"].isHittable, "the far family cannot be scrolled to")
         XCTAssertFalse(app.staticTexts["Sinun polvesi"].exists,
                        "a row of a family that shares nobody with you is called your own generation")
-        XCTAssertFalse(app.staticTexts["Isovanhemmat"].exists,
+        XCTAssertFalse(app.staticTexts["Isovanhempiesi polvi"].exists,
                        "another family's oldest generation is named as your grandparents'")
         XCTAssertTrue(app.staticTexts["Toinen perhe"].exists,
                       "the words went and nothing says why")

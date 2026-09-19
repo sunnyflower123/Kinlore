@@ -95,7 +95,12 @@ struct FamilyTreeView: View {
     /// words float over the drawing now rather than beside it, so their
     /// width is no longer taken from the picture, and *Isoisovan-hemmat*
     /// was the one hyphenation anybody had noticed.
-    @ScaledMetric(relativeTo: .caption) private var railWidth: CGFloat = 128
+    /// 140 since 19 Sep 2026: the widest generation word, *Isovanhempiesi
+    /// polvi*, is 117.3 points of `.caption` at the default text size, and
+    /// in the 116 that 128 left it it broke at the space into two lines —
+    /// which zoomed out to the smallest covered the names in the row above,
+    /// because the rail's words do not zoom and the air between rows does.
+    @ScaledMetric(relativeTo: .caption) private var railWidth: CGFloat = 140
     /// The room a generation's word is given above its row: three lines of
     /// the caption face, standing on the top of the row's discs. Over the
     /// air between one generation and the next, where only lines run, and
@@ -151,7 +156,21 @@ struct FamilyTreeView: View {
             }
             return FamilyTreeLayout.Link(from: relation.fromSubjectID, to: relation.toSubjectID, kind: kind)
         }
-        return FamilyTreeLayout.layout(people: people.map(\.id), links: links)
+        // How deep a card reaches below the row's centre line, in rows, so
+        // that a line leaving somebody starts under their name: half the
+        // disc, the gap and the name, and two fifths of a line more for the
+        // descenders and some air — measured on the simulator, the letters
+        // of a name reach 52.7 points below the disc's centre at the default
+        // size, and a line started at the arithmetic's 51 sat on the
+        // baseline. On your own card *Sinä* sits under the name, and its
+        // letters end 74.7 points down; the bar to your children runs at 78.
+        let you = yourCardID
+        let name = discSize / 2 + 6 + nameLine
+        let card = name + nameLine * 0.4
+        let yours = name + 6 + youLine
+        return FamilyTreeLayout.layout(people: people.map(\.id), links: links) { id in
+            Double((id == you ? yours : card) / rowHeight)
+        }
     }
 
     var body: some View {
@@ -338,8 +357,11 @@ struct FamilyTreeView: View {
             }
 
             // Under the people, and through the middle of their discs: every
-            // disc has a paper backing, so a line meets it edge to edge, and
-            // every name sits below the height its lines run at.
+            // disc has a paper backing, so a line meets it edge to edge. A
+            // couple's line runs at that height, above every name, and a line
+            // that leaves a person downwards starts under their name — the
+            // layout is told how deep a card is — so nothing runs through a
+            // word.
             Canvas { context, _ in
                 for segment in result.segments {
                     let from = point(segment.x1, segment.y1, result)
@@ -623,13 +645,19 @@ struct FamilyTreeView: View {
     private func generationName(_ row: Int, from yours: Int?) -> Text {
         guard let yours else { return Text("\(row + 1). polvi") }
         switch row - yours {
-        case -3: return Text("Isoisovanhemmat")
-        case -2: return Text("Isovanhemmat")
-        case -1: return Text("Vanhemmat")
+        // Worded as generations, the way your own row is, and not as
+        // relationships (19 Sep 2026): the row above you holds your parents'
+        // brothers and sisters and the people they married, and *Vanhemmat*
+        // over four of them read as four parents. Two generations each way
+        // have a word; from three on it is a count, because
+        // *Isoisovanhempiesi polvi* and *Lastenlastenlastesi polvi* are 134
+        // and 138 points of `.caption` and the rail's word is one line — a
+        // second line hides the names in the row above at the smallest zoom.
+        case -2: return Text("Isovanhempiesi polvi")
+        case -1: return Text("Vanhempiesi polvi")
         case 0: return Text("Sinun polvesi")
-        case 1: return Text("Lapset")
-        case 2: return Text("Lastenlapset")
-        case 3: return Text("Lastenlastenlapset")
+        case 1: return Text("Lastesi polvi")
+        case 2: return Text("Lastenlastesi polvi")
         case let above where above < 0: return Text("\(-above) polvea ylempänä")
         case let below: return Text("\(below) polvea alempana")
         }

@@ -99,12 +99,29 @@ enum FamilyTreeLayout {
         var segments: [Segment] = []
     }
 
-    /// How far under a row a marriage's line dips when the two cannot be put
-    /// side by side. Under the discs, which are a fifth of a row tall, and
-    /// above the bracket to the children at half a row.
-    private static let roundAbout = 0.25
+    /// How far under a row a marriage's line dips when somebody stands
+    /// between the two. Under the names — a card, disc and name, reaches
+    /// about two fifths of a row below the centre line (`depth`), and until
+    /// 19 Sep 2026 this was a quarter, which ran the dip through the name of
+    /// whoever it went round — and above the bracket to the children at half
+    /// a row.
+    private static let roundAbout = 0.4
 
-    static func layout(people: [String], links: [Link]) -> Result {
+    /// `depth` is how far below a row's centre line a person's card reaches,
+    /// in rows: the lower half of the disc, the gap, the name and a little
+    /// air under it — and, on the phone's own card, the word *Sinä* under
+    /// the name. A line that leaves a person downwards starts there, under
+    /// the name, rather than at the centre of the disc and down through the
+    /// name (19 Sep 2026). The screen measures it from its own text metrics;
+    /// about two fifths of a row is what those come to at every text size,
+    /// and is what a caller with no text gets. A card deeper than the
+    /// bracket at half a row gets no drop of its own; its children hang from
+    /// the bracket alone.
+    static func layout(
+        people: [String],
+        links: [Link],
+        depth: (String) -> Double = { _ in 0.38 }
+    ) -> Result {
         var result = Result()
 
         var unique: [String] = []
@@ -358,18 +375,37 @@ enum FamilyTreeLayout {
         // line dips under the row and goes around her: a line that ran through
         // her would say she is the one married, and a marriage nobody entered
         // is the mistake rule 4 exists to prevent.
+        /// Whether anybody on a row stands strictly between two places on it.
+        func somebodyBetween(_ left: Double, _ right: Double, on r: Int) -> Bool {
+            x.contains { row[$0.key] == r && left < $0.value && $0.value < right }
+        }
+
         for (id, partners) in spouses {
             for partner in partners {
                 let key = "s:" + [id, partner].sorted().joined(separator: "|")
                 guard drawn.insert(key).inserted, let a = x[id], let b = x[partner], let r = row[id] else { continue }
                 let (left, right) = (min(a, b), max(a, b))
-                guard right - left > 1 else {
+                // Straight when nobody is in the way. Until 19 Sep 2026 the
+                // test was the distance, `right - left > 1`, and a row whose
+                // places are means of thirds puts a couple a place and
+                // 2⁻⁵² apart: 17 of 30 000 random families bent a marriage
+                // under the row round nobody. Whether somebody stands
+                // between is the question the dip exists to answer.
+                guard somebodyBetween(left, right, on: r) else {
                     segments.append(Segment(x1: left, y1: Double(r), x2: right, y2: Double(r), kind: .couple))
                     continue
                 }
-                segments.append(Segment(x1: left, y1: Double(r), x2: left, y2: Double(r) + roundAbout, kind: .couple))
-                segments.append(Segment(x1: left, y1: Double(r) + roundAbout, x2: right, y2: Double(r) + roundAbout, kind: .couple))
-                segments.append(Segment(x1: right, y1: Double(r) + roundAbout, x2: right, y2: Double(r), kind: .couple))
+                // Down from under each name to the dip. A card deeper than
+                // the dip — the phone's own, with *Sinä* under the name —
+                // has no leg to draw, and the dip runs along its foot.
+                let dip = Double(r) + roundAbout
+                for (place, person) in [(a, id), (b, partner)] {
+                    let top = Double(r) + min(depth(person), roundAbout)
+                    if top < dip {
+                        segments.append(Segment(x1: place, y1: top, x2: place, y2: dip, kind: .couple))
+                    }
+                }
+                segments.append(Segment(x1: left, y1: dip, x2: right, y2: dip, kind: .couple))
             }
         }
 
@@ -385,15 +421,40 @@ enum FamilyTreeLayout {
             let above = theirParents.compactMap { x[$0] }
             let below = children.compactMap { x[$0] }
             guard !above.isEmpty, !below.isEmpty else { continue }
-            let anchor = above.reduce(0, +) / Double(above.count)
             let middle = Double(r) + 0.5
-            // From the parents themselves, or — where their marriage had to
-            // bend under the row to get round somebody — from that line, so
-            // the children are not hung on the person it went around.
-            let top = (above.max()! - above.min()! > 1) ? Double(r) + roundAbout : Double(r)
-            segments.append(Segment(x1: anchor, y1: top, x2: anchor, y2: middle))
-            let low = min(anchor, below.min()!)
-            let high = max(anchor, below.max()!)
+            var low = below.min()!
+            var high = below.max()!
+            // From between the parents when the archive has them as a
+            // couple: from their line, or — where it had to dip under the
+            // row to get round somebody — from the dip, so the children are
+            // not hung on the person it went round.
+            //
+            // From under each parent's own name otherwise (19 Sep 2026): one
+            // parent entered and no other, or two nobody has entered as a
+            // couple. The first family somebody entered on a phone was both
+            // — a child from each parent and no marriage, which rule 4 will
+            // not infer — and its children hung from the empty space between
+            // two people the picture had not joined, while a child of one
+            // parent hung from a line run down through her name.
+            let wed = theirParents.count == 2
+                && spouses[theirParents[0]]?.contains(theirParents[1]) == true
+            if wed {
+                let anchor = above.reduce(0, +) / Double(above.count)
+                let top = somebodyBetween(above.min()!, above.max()!, on: r) ? Double(r) + roundAbout : Double(r)
+                segments.append(Segment(x1: anchor, y1: top, x2: anchor, y2: middle))
+                low = min(low, anchor)
+                high = max(high, anchor)
+            } else {
+                for parent in theirParents {
+                    guard let place = x[parent], row[parent] == r else { continue }
+                    let top = Double(r) + min(depth(parent), 0.5)
+                    if top < middle {
+                        segments.append(Segment(x1: place, y1: top, x2: place, y2: middle))
+                    }
+                    low = min(low, place)
+                    high = max(high, place)
+                }
+            }
             if low < high { segments.append(Segment(x1: low, y1: middle, x2: high, y2: middle)) }
             for childX in below {
                 segments.append(Segment(x1: childX, y1: middle, x2: childX, y2: Double(r + 1)))
