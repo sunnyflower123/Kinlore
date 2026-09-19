@@ -276,7 +276,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 64 accessibility sweeps that already run here, each
+contrast rows, against the 65 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false
@@ -293,6 +293,39 @@ parchment this project actually uses; it failed here and had to be replaced.
 Colours come from `Elder.swift` in the app and the six tokens in `kinlore.css`
 on the page — and neumorphism and glassmorphism are low-contrast by
 construction, which is rule 1 inverted.
+
+### The closing recap is written as a matriculation essay
+
+Requested 16 Sep 2026. The author sits the Finnish matriculation exam's
+kirjoitustaito paper, and the one message every session ends with — the recap
+that says what was done — is the one piece of prose read every single day. So
+it doubles as a specimen: **the message that closes a task is written in
+Finnish, in the form of a kirjoitustaidon koe answer at laudatur level (55–60 p
+on the YTL 0–60 scale).** Progress notes during the work, answers to plain
+questions and the one-line "about to do X" before starting are not affected —
+only the recap that ends a task.
+
+What the form asks for, in the order an assessor reads it:
+
+- **An otsikko** that fits the text in both style and content, then an opening
+  paragraph that frames the task as a claim or a question rather than a list.
+- **One idea per paragraph**, paragraphs that hand over to each other, and a
+  closing paragraph that answers the opening — not a "Yhteenveto" heading that
+  restates it.
+- **The work is the aineisto.** Files, commands, measurements and test results
+  are referred to the way an essay refers to its pohjateksti — named and
+  interpreted in the running text, not pasted as a table. A command the reader
+  must run may follow the essay in a code block.
+- **Yleiskieli to the exam's standard:** varied sentence structure, precise
+  vocabulary, no filler, no rhetorical questions in place of content, no bullet
+  points and no headings inside the essay itself.
+
+"To some extent" is the brief: it is still a recap. Everything the reader needs
+— what changed, what was verified and how, what failed or was skipped, what
+remains — is in it and exact, and nothing is invented for the sake of the form.
+Identifiers keep their exact spelling inside the prose. A recap of ten minutes'
+work is three paragraphs; a recap of a day's work may approach the exam's
+length, about 6 000 characters without spaces, and never exceeds it.
 
 ## Git — commit by path, because the index is shared
 
@@ -431,10 +464,32 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild \
 
 # The same app for a REAL device, which is how the phase E visit installs it
 # (PLAN.md §8) and which nothing had ever run until 12 Sep 2026 — every build
-# in this project's history targeted the simulator. Both halves pass: the code
-# compiles for arm64, and Xcode resolves signing on its own even though
-# project.yml names no DEVELOPMENT_TEAM. Run the first line to separate a
-# compile problem from a signing one; the second is the real thing.
+# in this project's history targeted the simulator. The code compiles for
+# arm64, which is what the first line checks; the second is the real thing.
+#
+# This entry said until 19 Sep 2026 that "Xcode resolves signing on its own
+# even though project.yml names no DEVELOPMENT_TEAM". It does not, and the
+# likeliest reading of 12 Sep's run is that the team was still sitting in the
+# pbxproj from Xcode's own Signing & Capabilities tab — where it does not
+# survive the next `xcodegen generate`, because the project file is generated
+# and ignored by git. Re-measured in a worktree pinned to a commit, so that
+# nothing else in a busy tree could explain either result: with no team the
+# device build fails outright at "Signing for \"Kinlore\" requires a
+# development team".
+#
+# The team now comes from `ios/Signing.xcconfig`, which is tracked, carries no
+# team of its own and optionally includes `ios/Signing.local.xcconfig`, which
+# is in .gitignore because the Apple account identifier stays out of HEAD
+# (10 Sep 2026). Write the local file once — docs/SETUP.md has the one command
+# that reads it out of the keychain. Without it a clone still generates and
+# still builds for the simulator, with no team and no error.
+#
+# With it, the command below gets past signing and stops at provisioning:
+# xcodebuild will not create a profile unless it is passed
+# `-allowProvisioningUpdates`, a step Xcode's own build performs by itself.
+# That flag talks to the Apple account and can create a profile and an App ID
+# there, so it is a decision rather than a default — which is why it is not
+# written into the line below.
 #
 # Do not grep this output for "error" — the RevenueCat package has files
 # called ErrorUtils.swift and BackendError.swift, and the paths alone produce
