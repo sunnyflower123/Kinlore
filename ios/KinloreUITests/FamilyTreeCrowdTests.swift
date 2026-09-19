@@ -214,6 +214,30 @@ final class FamilyTreeCrowdTests: XCTestCase {
                       "what will not fit is named where nobody can read it")
     }
 
+    /// The drawing opens on a picture at every text size, not on one name.
+    ///
+    /// A place grows with the text so that a name does not run into its
+    /// neighbour; the phone does not grow with it. At the largest text size a
+    /// column is 372 points against 132 at the default, and the rail takes 153
+    /// of the 402 there are, so the window held two thirds of one place — one
+    /// name, half off the right edge, in a field of paper. Five taps of
+    /// *Pienennä* always answered it and nothing said so.
+    func testTheDrawingOpensOnAPictureAtTheLargestTextSize() {
+        let app = launch(["-seed", "clan", "-tab", "people", "-people", "tree", "-you", "clan-elina",
+                          "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        XCTAssertTrue(app.buttons["Elina, sinä"].waitForExistence(timeout: 30), "your own card is not in the tree")
+        shot(app, "crowd-largest")
+        let screen = app.windows.firstMatch.frame
+        let you = app.buttons["Elina, sinä"].frame
+        // Her husband, one place to the right of her: the drawing's own unit,
+        // measured rather than assumed, so this holds at any text size.
+        let place = abs(app.buttons["Mikko"].frame.midX - you.midX)
+        XCTAssertGreaterThan(place, 1, "the two are drawn in the same place")
+        XCTAssertLessThan(place * 2, screen.width, "the screen does not hold two places of the drawing")
+        XCTAssertGreaterThan(you.minX, 0, "your own card starts off the left edge")
+        XCTAssertLessThan(you.maxX, screen.width, "your own card runs off the right edge")
+    }
+
     /// A picture of what a test was looking at, when
     /// `TEST_RUNNER_KINLORE_TREE_SHOT=/some/dir/prefix` is on the xcodebuild
     /// line, and nothing at all when it is not.

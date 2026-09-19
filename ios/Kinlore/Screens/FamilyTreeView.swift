@@ -111,7 +111,7 @@ struct FamilyTreeView: View {
 
     var body: some View {
         let result = layout
-        let scale = zoom * pinch
+        let scale = zoom * pinch * fit
         // Inside a reader, because where the drawing starts is the whole
         // difference between a family of five and a family of 53. At 53 it is
         // 2376 points wide against a 324-point canvas and 1136 tall against
@@ -548,6 +548,40 @@ struct FamilyTreeView: View {
             }
         }
         .frame(width: railWidth, alignment: .topLeading)
+    }
+
+    /// How many places the picture opens with in the window. Two, because a
+    /// couple is the smallest thing this drawing has to say: one person and
+    /// the lines going off the edge is a list entry drawn expensively.
+    private static let placesAtOnce: CGFloat = 2
+
+    /// What the drawing opens at, before the reader has zoomed anything.
+    ///
+    /// A place and a generation grow with the text so that a name does not run
+    /// into its neighbour, and the screen does not grow with either. Measured
+    /// 19 Sep 2026 on `-seed clan` at the largest text size: a column is 372
+    /// points against 132 at the default, the rail beside it takes 153 of the
+    /// 402 the phone has, and the window is left with 249 — so the drawing
+    /// opened on two thirds of one place, where at the default size it opens
+    /// on 2.45 of them. A screenshot of it is one name, half off the right
+    /// edge, in a field of paper.
+    ///
+    /// Zooming out did answer it, and that is the part that made it easy to
+    /// miss: at the smallest zoom the same window held 1.67 places, and two
+    /// adjacent cards are 74 points apart and 54 wide there, so a couple was
+    /// always reachable. It took five taps of *Pienennä* and nothing on the
+    /// screen said so. What is fixed here is where the picture starts, not
+    /// what it can reach.
+    ///
+    /// Never above 1, so a picture that already fits opens exactly as it did:
+    /// at the default text size the window holds 2.45 places and this is 1.
+    /// Where it binds, it holds the drawing's own text near the size ordinary
+    /// text has at the default setting — `window.width / 264` of 17 points,
+    /// about 16 at the largest — because the same scaling that widened the
+    /// column enlarged the name inside it.
+    private var fit: CGFloat {
+        guard let window, window.width > 0 else { return 1 }
+        return min(1, window.width / (Self.placesAtOnce * columnWidth))
     }
 
     /// The window in the drawing's own units — `x` in person-widths, which is

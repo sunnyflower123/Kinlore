@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 183 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 184 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1925,6 +1925,35 @@ Not built:
      `scripts/family-tree-layout-check.swift` hold both halves, and they could
      have failed: compiled against the old walk with `undrawn` kept, the
      blood-before-marriage case goes red in three places.
+   - **The drawing opens on a picture, not on one name** (19 Sep 2026). A
+     place and a generation are `@ScaledMetric`, so they grow with the text
+     and a name does not run into its neighbour; the phone does not grow with
+     them. Measured on `-seed clan` at the largest accessibility size: a
+     column is 372 points against 132 at the default, the rail beside it takes
+     153 of the 402 the phone has, and what is left for the drawing is 249 —
+     two thirds of a single place. The screenshot is one name, half of it past
+     the right edge, in a field of paper, and a couple is the smallest thing
+     this picture has to say.
+
+     What made it easy to miss is that zooming out answered it. At the
+     smallest zoom the same window holds 1.67 places, and two adjacent cards
+     are 74 points apart and 54 wide there, so a pair was always reachable —
+     after five taps of *Pienennä*, with nothing on the screen saying so. The
+     defect is where the picture starts, not what it can reach, and the fix is
+     the one number `FamilyTreeView.fit`: the opening scale is capped at
+     whatever shows two places, `window.width / (2 × columnWidth)`, and never
+     goes above 1. At the default text size that window holds 2.45 places, so
+     the factor is 1 and nothing moves. Where it binds it also settles the
+     names, holding the drawing's own text at `window.width / 264` of 17
+     points — about 16 at the largest size, near what ordinary text is at the
+     default — because the same scaling that widened the column had enlarged
+     the name inside it.
+
+     `testTheDrawingOpensOnAPictureAtTheLargestTextSize` measures a place from
+     the archive rather than assuming one, as the distance between Elina and
+     the husband beside her, and asks that two of them fit the screen and that
+     her own card sit inside it. It could have failed: run against the view as
+     it was, it reports that 748.8 points is not less than 402.
    - **A man married twice stands between his wives.** The row used to pair
      him with whichever marriage the archive holds first and put the second
      wife beyond her, so the line to that marriage ran straight through the
