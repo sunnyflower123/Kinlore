@@ -26,6 +26,7 @@
 // functions below. The same one word would unlock `transcribe.ts`,
 // `family.ts` and `worker.ts`, which are the only other modules Node still
 // refuses.
+import { extractionBudget } from './budget.ts'
 import { complete, UpstreamError, type Message } from './openrouter.ts'
 import type { Env } from './worker'
 
@@ -451,8 +452,11 @@ export async function extract(
 				// Low but not zero: at zero the follow-up questions become formulaic.
 				temperature: 0.4,
 				schema: extractionSchema(lang),
-				// Comfortably above the longest memory to be expected.
-				maxTokens: 2000,
+				// Sized to the telling rather than fixed. The flat 2000 that
+				// stood here truncated a long memory intermittently, which
+				// costs a retry and sometimes the weaker fallback model — see
+				// `extractionBudget`.
+				maxTokens: extractionBudget(transcript, lang),
 			})
 			const parsed = parseStructured(raw)
 

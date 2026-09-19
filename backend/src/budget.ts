@@ -99,3 +99,44 @@ export function outputBudget(seconds: number | undefined, lang: Lang): number {
 	const tokens = Math.ceil(words * TOKENS_PER_WORD[lang]) + 256
 	return Math.min(Math.max(tokens, 1024), MAX_OUTPUT_TOKENS)
 }
+
+/// How many tokens the STRUCTURING of a telling can need, at most.
+///
+/// The same defect as `outputBudget` above, in the other half of the pipeline
+/// and found the same way — by a `finish_reason=length` in the production log
+/// on 19 Sep 2026, hours after the archive context and the photograph started
+/// travelling with the transcript. `extract()` sent a flat 2000 whose comment
+/// read "comfortably above the longest memory to be expected", and measurement
+/// says it was not: the same 126-word telling through the shipping schema came
+/// back at 1735 and at 2376 completion tokens on two consecutive runs.
+///
+/// **A flat cap in the middle of the range is the worst place for one**, which
+/// is why nobody had seen this. A truncated reply is rejected whole, the second
+/// attempt usually succeeds, and what the family sees is a telling that took
+/// twice as long. When both attempts land high the round falls through to
+/// `MODEL_EXTRACT_FALLBACK`, and `openai/gpt-4o-mini` writes Finnish visibly
+/// worse — the run that exposed this returned "Ainoista", a plural of a woman's
+/// name, and questions nobody would ask.
+///
+/// The photograph did not cause it. It raised the floor — measured at 8 words,
+/// 901 and 1024 tokens without a picture against 1314 and 1451 with one — on a
+/// budget that was already too tight for a long telling on its own.
+///
+/// The shape follows the measurement rather than the other way round. Most of
+/// the completion is the model's own reasoning and it is largely CONSTANT: an
+/// eight-word telling spends up to 1451 tokens before writing anything. What
+/// scales is the body, and rule 2 of the prompt forbids shortening it, so it
+/// costs the transcript again — once as text and once more as the reasoning
+/// that grew with the input. Hence twice the transcript's tokens over a fixed
+/// floor, against measured maxima of 1451 at 8 words, 1892 at 38 and 2376 at
+/// 126.
+///
+/// Generous on purpose, and it is free to be: `max_tokens` is a ceiling and
+/// not a reservation, so an unused budget costs nothing. What a tight one costs
+/// is a retry, a doubled wait, and sometimes the weaker model.
+const EXTRACTION_FLOOR = 3072
+export function extractionBudget(transcript: string, lang: Lang): number {
+	const words = transcript.trim().split(/\s+/).filter(Boolean).length
+	const tokens = Math.ceil(words * TOKENS_PER_WORD[lang] * 2) + EXTRACTION_FLOOR
+	return Math.min(tokens, MAX_OUTPUT_TOKENS)
+}

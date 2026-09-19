@@ -11,7 +11,7 @@
 //
 //   node scripts/transcribe-budget-check.mjs
 
-import { boundedSeconds, outputBudget } from '../backend/src/budget.ts'
+import { boundedSeconds, extractionBudget, outputBudget } from '../backend/src/budget.ts'
 
 let failures = 0
 function check(label, actual, ok) {
@@ -97,6 +97,53 @@ for (const [label, rubbish] of [
 
 check('a claim that is not a number is charged the byte floor, like an omitted one',
   boundedSeconds('90', NINETY_SECONDS_B64), boundedSeconds('90', NINETY_SECONDS_B64) === omitted)
+
+// ------------------------------------------------- the structuring's budget
+//
+// The same defect as the transcription's, in the other half of the pipeline,
+// found in the production log on 19 Sep 2026: `finish_reason=length` on the
+// extraction. The cap was a flat 2000 and the measured need for one 126-word
+// telling was 1735 on one run and 2376 on the next — a cap sitting inside the
+// spread, so it failed intermittently, which is why it had never been seen.
+// The visible cost is a doubled wait; the invisible one is the round falling
+// through to `MODEL_EXTRACT_FALLBACK`, where `openai/gpt-4o-mini` writes
+// Finnish badly enough to return "Ainoista" as a woman's name.
+//
+// The numbers asserted below are the measured maxima on
+// `google/gemini-3.6-flash` through the shipping schema, with a photograph,
+// which is the expensive case: 1451 completion tokens at 8 words, 1892 at 38,
+// 2376 at 126. Being over budget is free — `max_tokens` is a ceiling and not a
+// reservation — so every one of these asks for headroom rather than for a fit.
+
+console.log('\n— structuring a telling is given room to come back —')
+const tiny = extractionBudget('Tässä on Aino.', 'fi')
+check('a few words still clear the measured floor of 1451', tiny, tiny > 1451)
+check('and the old flat cap of 2000 as well', tiny, tiny > 2000)
+
+const medium = extractionBudget(Array(38).fill('sana').join(' '), 'fi')
+check('a medium telling clears its measured 1892', medium, medium > 1892)
+const long = extractionBudget(Array(126).fill('sana').join(' '), 'fi')
+check('a long one clears its measured 2376', long, long > 2376)
+check('and a longer telling gets more than a shorter one', long, long > medium)
+
+// Ninety seconds of Finnish at the hallucination guard's own ceiling.
+const ninety = extractionBudget(Array(4 * 90 + 20).fill('sana').join(' '), 'fi')
+check('a full ninety-second telling is budgeted past 3000', ninety, ninety > 3000)
+check('a telling nobody could speak is still capped', extractionBudget(Array(20_000).fill('sana').join(' '), 'fi'),
+  extractionBudget(Array(20_000).fill('sana').join(' '), 'fi') === 16_000)
+
+// English words are shorter and tokenise into fewer pieces, the same reason
+// `TOKENS_PER_WORD` is two numbers for the transcription.
+check('English costs fewer tokens per word here too',
+  extractionBudget(Array(100).fill('word').join(' '), 'en'),
+  extractionBudget(Array(100).fill('word').join(' '), 'en') <
+    extractionBudget(Array(100).fill('sana').join(' '), 'fi'))
+
+// An empty transcript never reaches `extract()` — the route rejects it with
+// `missing_transcript` — but a budget of zero would be a 400 dressed as a
+// truncated model reply, which is three levels from the cause.
+check('an empty transcript still gets the floor', extractionBudget('', 'fi'), extractionBudget('', 'fi') === 3072)
+check('and so does one that is only whitespace', extractionBudget('   \n  ', 'fi'), extractionBudget('   \n  ', 'fi') === 3072)
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)
