@@ -1232,13 +1232,60 @@ final class AccessibilitySweepTests: XCTestCase {
                 .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
                 .firstMatch
             reach(row, in: app, "the place's row in Muistot").tap()
+            // A button since 19 Sep 2026, and it was `otherElements` before:
+            // the card opens the screen its point is moved on, so the map is
+            // a control rather than a picture.
             let map = require(
-                app.otherElements["Suunnilleen tällä seudulla kartalla"],
+                app.buttons["Suunnilleen tällä seudulla kartalla"],
                 "the place card's map"
             )
             // A map draws itself over several frames, and the tiles arrive
             // from a cache rather than instantly. Auditing mid-draw is how the
             // gallery's tiles once reported colours nothing had drawn.
+            settle(map)
+        }
+    }
+
+    /// Moving that point to where the place actually is.
+    ///
+    /// The screen this sweep exists for is a full-bleed map with a mark drawn
+    /// over it, a sentence and two buttons — and it is the map that makes it
+    /// worth measuring twice. It is the only view in the app that can yield
+    /// height: at the largest size the sentence and the buttons take most of
+    /// the sheet, and if the map refused to shrink the buttons would be pushed
+    /// off the bottom of a screen that has no scroll. That failure is silent
+    /// in a screenshot taken at the default size, which is the only size
+    /// anybody looks at.
+    ///
+    /// Puumala is a municipality in the demo archive, so the row that opens
+    /// this reads *"Merkitse tarkka paikka"* — the wording for a circle asking
+    /// to become a point. A run that found the other wording here would mean a
+    /// fixture's precision had been rounded on the way.
+    func testPlacePinSheet() throws {
+        try sweep("Tarkka paikka", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
+            let row = app.buttons
+                .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
+                .firstMatch
+            reach(row, in: app, "the place's row in Muistot").tap()
+            // The card's map is the control. Puumala is a municipality in the
+            // demo archive, so the card draws a circle and its corner reads
+            // *"Merkitse tarkka paikka"* — the wording for a circle asking to
+            // become a point. What the tap is found by is the map's spoken
+            // label, which is the same one `testPlaceDetail` audits.
+            reach(
+                app.buttons["Suunnilleen tällä seudulla kartalla"],
+                in: app,
+                "the card's map, which opens the placing screen"
+            ).tap()
+            let map = require(
+                app.otherElements["Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla."],
+                "the map the mark sits on"
+            )
+            // For the reason `testPlaceDetail` gives: a map draws itself over
+            // several frames and its tiles arrive from a cache rather than
+            // instantly. The frame is what is waited for and not the drawing —
+            // a map's tiles keep arriving, so two identical screenshots are a
+            // promise this screen cannot make.
             settle(map)
         }
     }

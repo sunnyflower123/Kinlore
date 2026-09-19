@@ -559,6 +559,18 @@
 "Tarkka sijainti kartalla" = "Exact location on the map";
 "Suunnilleen tällä seudulla kartalla" = "Roughly in this area, on the map";
 
+/* Moving that point by hand (19 Sep 2026). The row's wording follows what is
+   drawn now: a circle is asking to become a point, a point is only ever being
+   nudged. "Merkki" is the mark in the middle of the map, not a pin the finger
+   carries -- the map moves under it. */
+"Merkitse tarkka paikka" = "Mark the exact spot";
+"Siirrä paikkaa kartalla" = "Move the spot on the map";
+"Tarkka paikka" = "The exact spot";
+"Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee." = "Drag the map until the mark sits on the right spot. Two fingers bring it closer.";
+"Tallenna tämä paikka" = "Save this spot";
+"Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla." = "Map. The mark stays in the middle and the map moves underneath it.";
+"Avaa kartan, jolla paikan voi merkitä tarkemmin." = "Opens a map where the spot can be marked more precisely.";
+
 /* --- The failure paths, 12 Sep 2026 --------------------------------------
    Every one of these was Finnish on an English phone, and the check could not
    see one of them: each sat in a ternary, an assignment or a returned String

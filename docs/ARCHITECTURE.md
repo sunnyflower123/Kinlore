@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 188 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 66 sweep tests, each auditing one screen at the default text size and again at the largest, out of 191 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -3338,6 +3338,11 @@ would eventually draw. Data first, so that the family's places accumulate while
 the decision is still open. A place is already openable like any other subject
 (§8).
 
+Read that as written: there is no screen **of places**, no browsing the
+family's archive on a map. Two maps of a single place do exist — the card the
+next paragraph is about, and since 19 Sep 2026 the one that card opens so the
+point can be moved by hand.
+
 **Confirmed places only, since 12 Sep 2026.** `placesAwaitingCoordinates`
 skips a place nobody has vouched for. A name the extraction heard is a guess
 until somebody confirms it, and a coordinate under a guess is the guess drawn
@@ -3456,11 +3461,57 @@ said out loud, not one of them a street. Whoever changes `precision(of:)`, or
 adds `.pointOfInterest` to `resultTypes` so that a hairdresser named Koivula
 can win the query, turns that claim red — and CLAUDE.md already sends anybody
 who touches `PlaceLookup.swift` to run it, which is as close to automatic as a
-check that costs a network round trip gets here. The confirmation this
-paragraph asks for — from a human who knows which *Karjala* it was — still
-does not exist. That is a judgement about the coordinate, and `PlaceHint` has
-no field to hold one. What the check buys is not the rule; it is that the day
-the rule starts mattering is a day somebody is told.
+check that costs a network round trip gets here. What the check buys is not the
+rule; it is that the day the rule starts mattering is a day somebody is told.
+
+### The one answer a gazetteer cannot give — 19 Sep 2026
+
+This section said until now that the confirmation it asks for, *"from a human
+who knows which Karjala it was"*, does not exist, because the judgement is
+about the coordinate and `PlaceHint` has no field to hold one. That was the
+wrong way round. The judgement needs no field of its own: the point **is** the
+judgement, once a person puts it somewhere.
+
+So the card's map is a control. Tapping it opens `PlacePinSheet`, a full map
+with a mark fixed in the middle; the map moves under the mark, and saving
+writes the centre back as `exact`. The mark is still and the map moves because
+a dragged pin is a pin under a finger — the one thing you cannot see while you
+are placing it — and because dragging accurately is the gesture this app's user
+has least of. The words in the card's corner, *"Merkitse tarkka paikka"* over a
+circle and *"Siirrä paikkaa kartalla"* over a point, are what keeps the control
+from being a secret.
+
+**Nothing is saved until the mark has moved**, measured in metres against where
+the screen opened. That guard is rule 5 rather than tidiness: the stored answer
+for *Puumala* is a municipality, and writing it back as `exact` because
+somebody opened the map and pressed the blue button turns fourteen kilometres
+of parish into a claim about one farmyard. Only a person can make this point
+exact, and moving the map is how they say so. `PlacePinTests` drives both
+halves — the untouched map offering nothing, and a drag reaching the archive,
+which the card answers by speaking as a pin instead of a circle.
+
+**Two limits, both deliberate for v1.** A hand-placed point is
+indistinguishable from a street address the gazetteer resolved, because the
+archive holds one point per place and no field for who put it there; and
+correcting the place's *name* still clears it, since the coordinates answer the
+title and `MemoryStore.rename` cannot tell a point somebody stood on from a
+point somebody looked up. What is not left to chance is the family's point
+being replaced by a machine's: a stored `exact` is not displaced by a coarser
+push under the same title (see Sync below).
+
+**What VoiceOver gets is the screen and not the task.** The map is one labelled
+element with a hint, the buttons are ordinary buttons, and somebody who cannot
+see the map can read what the screen is for and leave the stored point as it
+was. Placing a point inside a landscape is visual work; four "move north"
+actions over ground nothing can name would be the appearance of an answer
+rather than one.
+
+The affordance is inside the card rather than in a row beneath it, and that too
+was measured. As a row it pushed the card's last memory sixty points down onto
+the tab bar's edge, and `performAccessibilityAudit` then reported that text as
+not supporting Dynamic Type — three runs red, against a green run of the same
+test without the row on the same simulator and the same commit. An overlay
+costs no height.
 
 **The subject above the coordinate does carry a confirmation, though, and
 nothing was reading it.** Every place the extraction hears is created
@@ -3512,12 +3563,24 @@ looking one up would spend a request on a name the family has taken back. See
 the `CASE` in `push()` in `backend/src/sync.ts`, and `MemoryStore.rename` for the
 same rule on the client.
 
+**And since 19 Sep 2026 a coarser point never displaces an exact one under the
+same title.** A person can now place the mark by hand, which stores `exact`;
+every other phone in the family is still holding the municipality the gazetteer
+answered with and pushes it with the next thing anybody changes about that
+place — a date, a confirmation. Without the rule the family's own point would
+be replaced by the circle it was placed to correct, and nothing on any screen
+would say so. Placing the mark again is `exact` over `exact`, so a correction
+of a correction still works.
+
 Every one of those rules is silent when broken: memories still sync, places
 still open, and the only evidence would be a point on a map nobody has built
 yet. So they are checked through the running Worker rather than asserted —
-`scripts/place-sync-check.mjs`, five cases, no AI call and no credits spent.
-The check was itself checked: with the `CASE` replaced by a plain `COALESCE`,
-case 3 fails and the script exits non-zero.
+`scripts/place-sync-check.mjs`, eight checks, no AI call and no credits spent.
+The check was itself checked twice, and the second time was the new rule's: run
+against a Worker built from the previous commit in a worktree of its own, the
+older cases pass and *"a looked-up circle does not displace a point the family
+placed by hand"* fails. Earlier, with the `CASE` replaced by a plain
+`COALESCE`, case 3 fails and the script exits non-zero.
 
 ### What the columns tell the server — a decided leak
 
@@ -3540,9 +3603,9 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
   pair as one opaque blob, keep null as the only server-visible state — and it
   is recorded here so it is a decision to revisit rather than a discovery to
   make twice.
-- Only `PlaceMapCard` reads a coordinate, and it reads the local archive
-  rather than D1, so what accumulates before v1.1 is bounded and re-sealable
-  by the same sweep that resolved it.
+- Only `PlaceMapCard` and `PlacePinSheet` read a coordinate, and both read the
+  local archive rather than D1, so what accumulates before v1.1 is bounded and
+  re-sealable by the same sweep that resolved it.
 
 `InviteShare`'s doc comment beside the invite text already says the smaller
 thing lever 3 promises about the key; this paragraph is where the whole of

@@ -2,10 +2,11 @@
 // Checks what sync does to a place's coordinates.
 //
 // The rule is one sentence — the coordinates answer the title, so they follow
-// it — and three cases fall out of it that are easy to break later and silent
+// it — and four cases fall out of it that are easy to break later and silent
 // when broken: a device that has not looked a name up must not wipe what
-// another one resolved, a corrected title must not keep the old point, and a
-// client must not be able to write a coordinate that is not one.
+// another one resolved, a coarser answer must not displace the point a person
+// placed by hand, a corrected title must not keep the old point, and a client
+// must not be able to write a coordinate that is not one.
 //
 // Silent is the operative word. Every one of these failures leaves a working
 // app: memories still sync, places still open, and the only evidence is a point
@@ -152,6 +153,45 @@ try {
 		'a latitude with no longitude is refused',
 		row?.lat === null && row?.lon === null,
 		JSON.stringify({ lat: row?.lat, lon: row?.lon }),
+	)
+
+	// 6. A point somebody in the family placed by hand (`PlacePinSheet`) is
+	//    `exact`, and every other phone is still holding the municipality the
+	//    gazetteer answered with. Those phones push their copy with the next
+	//    thing anybody changes about the place, so without a rule the family's
+	//    own point is replaced by the circle it was placed to correct — and
+	//    nothing on any screen would say so.
+	//
+	//    Re-placing the mark is the case that must keep working: that is
+	//    `exact` over `exact`, and the newer push wins.
+	const pinned = randomUUID()
+	await push({ ...base, id: pinned, title: 'Koivula', lat: 61.5, lon: 28.1, geo_precision: 'town' })
+	await push({ ...base, id: pinned, title: 'Koivula', lat: 61.512, lon: 28.134, geo_precision: 'exact' })
+	await push({ ...base, id: pinned, title: 'Koivula', lat: 61.5, lon: 28.1, geo_precision: 'town' })
+	row = await pull(pinned)
+	check(
+		'a looked-up circle does not displace a point the family placed by hand',
+		row?.lat === 61.512 && row?.lon === 28.134 && row?.geo_precision === 'exact',
+		JSON.stringify({ lat: row?.lat, lon: row?.lon, geo_precision: row?.geo_precision }),
+	)
+
+	await push({ ...base, id: pinned, title: 'Koivula', lat: 61.513, lon: 28.135, geo_precision: 'exact' })
+	row = await pull(pinned)
+	check(
+		'the mark can be moved again once it has been placed',
+		row?.lat === 61.513 && row?.lon === 28.135,
+		JSON.stringify({ lat: row?.lat, lon: row?.lon }),
+	)
+
+	// 7. And the correction rule still outranks it: a hand-placed point is the
+	//    answer to the name it was placed under, and §18's limit is that
+	//    nothing here can tell it from a street the gazetteer resolved.
+	await push({ ...base, id: pinned, title: 'Koivumäki' })
+	row = await pull(pinned)
+	check(
+		'correcting the title clears a hand-placed point too',
+		row?.lat === null && row?.lon === null && row?.geo_precision === null,
+		JSON.stringify({ title: row?.title, lat: row?.lat, lon: row?.lon }),
 	)
 } catch (error) {
 	failures += 1

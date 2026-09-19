@@ -313,13 +313,40 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   -- what another one resolved — but when the title itself changes,
 				   -- the old point stops being the answer to anything, and keeping
 				   -- it would turn a corrected name into a wrong place on the map.
-				   lat = CASE WHEN excluded.title IS NOT subject.title
-				              THEN excluded.lat ELSE COALESCE(excluded.lat, subject.lat) END,
-				   lon = CASE WHEN excluded.title IS NOT subject.title
-				              THEN excluded.lon ELSE COALESCE(excluded.lon, subject.lon) END,
+				   --
+				   -- And a coarser point never displaces an exact one under the
+				   -- same title (19 Sep 2026). A person can now move the mark to
+				   -- where the place actually is -- PlacePinSheet on the phone --
+				   -- and that is stored as exact; every other phone in the family
+				   -- is still holding the municipality the gazetteer answered
+				   -- with, and pushes it with the next thing anybody changes
+				   -- about that place, a date or a confirmation. Without this the
+				   -- family's own point would be silently replaced by the circle
+				   -- it was placed to correct, and nothing on any screen would
+				   -- say so. Re-placing the mark still works: that is exact over
+				   -- exact, and excluded wins.
+				   --
+				   -- No backtick anywhere in this string. The whole statement is
+				   -- a JS template literal, so one would end it -- the build
+				   -- fails at the next word with "Expected )", which names a
+				   -- column in the SQL and not the quote that caused it.
+				   lat = CASE WHEN excluded.title IS NOT subject.title THEN excluded.lat
+				              WHEN excluded.lat IS NULL THEN subject.lat
+				              WHEN subject.geo_precision = 'exact'
+				                   AND excluded.geo_precision IS NOT 'exact' THEN subject.lat
+				              ELSE excluded.lat END,
+				   lon = CASE WHEN excluded.title IS NOT subject.title THEN excluded.lon
+				              WHEN excluded.lon IS NULL THEN subject.lon
+				              WHEN subject.geo_precision = 'exact'
+				                   AND excluded.geo_precision IS NOT 'exact' THEN subject.lon
+				              ELSE excluded.lon END,
 				   geo_precision = CASE WHEN excluded.title IS NOT subject.title
 				                        THEN excluded.geo_precision
-				                        ELSE COALESCE(excluded.geo_precision, subject.geo_precision) END,
+				                        WHEN excluded.geo_precision IS NULL THEN subject.geo_precision
+				                        WHEN subject.geo_precision = 'exact'
+				                             AND excluded.geo_precision IS NOT 'exact'
+				                        THEN subject.geo_precision
+				                        ELSE excluded.geo_precision END,
 				   -- The same shape as the point above, and for the same reason.
 				   -- A device pushes its whole local row, so one that has never
 				   -- seen the date sends three nulls — and a plain assignment

@@ -656,6 +656,8 @@ struct SubjectDetailScreen: View {
     @State private var isCorrectingName = false
     @State private var isDating = false
     @State private var isRenaming = false
+    /// The map opened to move a place's point by hand.
+    @State private var isPinning = false
     @State private var isConfirmingRemoval = false
 
     /// The subject as the store has it now, rather than as it was when this
@@ -807,7 +809,14 @@ struct SubjectDetailScreen: View {
             // and its date. The condition now says what the card says.
             if current.kind == .place, current.place?.precision.mapSpanMetres != nil {
                 Section {
-                    PlaceMapCard(subject: current)
+                    // Tapping it opens the map that can be moved. §18 measures
+                    // how coarse the lookup's answer usually is — a farm name
+                    // comes back as its municipality — so the circle here is
+                    // nearly always the best a gazetteer can do and nearly
+                    // never the best anybody in the family can do.
+                    // `PlacePinSheet` is where they say so, and the card's own
+                    // corner is where they are told they may.
+                    PlaceMapCard(subject: current) { isPinning = true }
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 }
@@ -1148,6 +1157,14 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isDating) {
             DateSheet(subject: current)
+        }
+        // `current.place` and not the one the row was drawn from: the sheet
+        // opens on the archive as it is now, so a point another phone resolved
+        // while this card was open is the point the map starts at.
+        .sheet(isPresented: $isPinning) {
+            if let place = current.place {
+                PlacePinSheet(subject: current, place: place)
+            }
         }
         .sheet(isPresented: $isRenaming) {
             NameSheet(

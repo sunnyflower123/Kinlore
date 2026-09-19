@@ -498,6 +498,15 @@
 "Tarkka sijainti kartalla" = "Tarkka sijainti kartalla";
 "Suunnilleen tällä seudulla kartalla" = "Suunnilleen tällä seudulla kartalla";
 
+/* Moving that point by hand — see en.lproj. */
+"Merkitse tarkka paikka" = "Merkitse tarkka paikka";
+"Siirrä paikkaa kartalla" = "Siirrä paikkaa kartalla";
+"Tarkka paikka" = "Tarkka paikka";
+"Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee." = "Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee.";
+"Tallenna tämä paikka" = "Tallenna tämä paikka";
+"Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla." = "Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla.";
+"Avaa kartan, jolla paikan voi merkitä tarkemmin." = "Avaa kartan, jolla paikan voi merkitä tarkemmin.";
+
 /* --- The failure paths, 12 Sep 2026 — see en.lproj. */
 " Sovellus avautuu ensimmäiselle näytölle." = " Sovellus avautuu ensimmäiselle näytölle.";
 "Arkiston vienti ei onnistunut" = "Arkiston vienti ei onnistunut";
