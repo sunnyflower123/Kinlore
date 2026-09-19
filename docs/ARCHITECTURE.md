@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 187 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 188 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1954,6 +1954,47 @@ Not built:
      the husband beside her, and asks that two of them fit the screen and that
      her own card sit inside it. It could have failed: run against the view as
      it was, it reports that 748.8 points is not less than 402.
+   - **The drawing opens on your own row, and not four generations above it**
+     (19 Sep 2026). `show` had one handhold, the cell, and a cell lies inside
+     the horizontal scroll view which lies inside the vertical one — so
+     `scrollTo` moved the inner view alone and the picture opened on your own
+     column at the top of the drawing. On `-seed clan` that is your
+     great-great-grandparents, with the rail beside them reading *4 polvea
+     ylempänä*: the drawing saying in words how far from you it had opened.
+     Measured at both text sizes, Elina sat at y=947 on an 874-point screen
+     and could not be tapped.
+
+     The second handhold is a column of its own beside the rail, outside the
+     horizontal view and therefore able to drive only the other one. The
+     afternoon went on the first attempt, which hung those handholds on
+     `.offset`: that moves what is drawn and not what is laid out, so every
+     one of them sat at the rail's top and every row scrolled to the same
+     place. Laid out instead as a `VStack` of measured heights — the shape
+     `anchors` has carried in this file for exactly this reason — she opens at
+     349 points at the default size and 375 at the largest, her parents' row
+     above her and her children's below.
+
+     Where it stops is measured rather than chosen, because the fold now cuts
+     a screen somebody is looking at. The scroll view's fold lies where the
+     zoom bar begins, and whatever it cuts stays in the accessibility tree
+     while being painted nowhere: VoiceOver reads a name no eye can find, and
+     the audit measures paper on paper. Four stopping places were tried on the
+     same seed. Centring her leaves six names under the bar — Saima, Lauri and
+     Hellin with their initials — 0.42 and 0.6 leave three each, and a third
+     of the way down leaves none; at the largest size nothing of the drawing
+     reaches the strip at all. `FamilyTreeView.openingRow` is that 0.35, and
+     `testTheTreeOpensWithNothingUnderTheZoomBar` measures the strip rather
+     than trusting it, so a phone shaped differently enough to break the
+     constant says so. Both new tests could have failed: without the second
+     handhold the opening test reports that the tree does not open on you, and
+     with her centred the strip test names those three.
+
+     One thing this does not fix and does make more visible. The tree's
+     accessibility sweep is red before the change and after it, on every
+     visible name, with `Text clipped` — six findings at the old opening and
+     ten at the new one, because four more names are now in the window. Same
+     defect, same kind, more of it on screen; it is the drawing's name labels
+     and not the scrolling, and it is the next thing to measure.
    - **A man married twice stands between his wives.** The row used to pair
      him with whichever marriage the archive holds first and put the second
      wife beyond her, so the line to that marriage ran straight through the

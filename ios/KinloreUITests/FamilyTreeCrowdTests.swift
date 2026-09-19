@@ -99,6 +99,10 @@ final class FamilyTreeCrowdTests: XCTestCase {
         // test: `isHittable` on somebody outside the window fails outright
         // rather than answering no ("Activation point invalid", 19 Sep 2026).
         for _ in 0 ..< 8 { app.swipeLeft() }
+        // And upwards, since 19 Sep 2026. The drawing opens on your own row
+        // and this family starts at row 0, so the two are four generations
+        // apart on a picture that now begins in the middle of its own height.
+        for _ in 0 ..< 4 { app.swipeDown() }
         shot(app, "crowd-other-family")
         XCTAssertTrue(app.buttons["Otto"].isHittable, "the far family cannot be scrolled to")
         XCTAssertFalse(app.staticTexts["Sinun polvesi"].exists,
@@ -117,20 +121,63 @@ final class FamilyTreeCrowdTests: XCTestCase {
     /// way to look for her. It now opens on her own line instead: Urho, Sulo
     /// and Kerttu above Reino, Sirkka and Eemeli.
     ///
-    /// Her column and not her row. The drawing does not scroll downwards on
-    /// opening, and `FamilyTreeView.show` records what that cost and why.
+    /// Her row as well as her column, since 19 Sep 2026. Until then the
+    /// drawing moved sideways only and opened four generations above her, on
+    /// her great-great-grandparents, with the rail saying *4 polvea
+    /// ylempänä* beside them. `FamilyTreeView.show` records what the second
+    /// handhold cost to get right.
     func testTheTreeOpensOnYourOwnLine() {
         let app = crowd()
-        XCTAssertTrue(app.buttons["Elina, sinä"].waitForExistence(timeout: 20), "your own card is not in the tree")
+        let you = app.buttons["Elina, sinä"]
+        XCTAssertTrue(you.waitForExistence(timeout: 20), "your own card is not in the tree")
         shot(app, "crowd-opens")
-        // Her frame and not her hittability, since she is below the fold:
-        // what is asserted is that the drawing carried her column into the
-        // window, not that she can be tapped without scrolling to her.
-        let you = app.buttons["Elina, sinä"].frame
-        XCTAssertGreaterThan(you.midX, 0, "the tree opens to the left of your own line")
-        XCTAssertLessThan(you.midX, app.windows.firstMatch.frame.width,
-                          "the tree opens to the right of your own line")
-        XCTAssertTrue(app.buttons["Sulo"].isHittable, "your own line is not on the screen")
+        XCTAssertTrue(you.isHittable, "the tree does not open on you")
+        XCTAssertTrue(app.staticTexts["Sinun polvesi"].isHittable, "the rail does not say which row you are on")
+        XCTAssertFalse(app.staticTexts["4 polvea ylempänä"].isHittable,
+                       "the tree still opens on your great-great-grandparents")
+        // The picture the screen was written for, and the one the defect
+        // withheld: your parents above you and your children below, in the
+        // same window as yourself.
+        XCTAssertTrue(app.buttons["Matti"].isHittable, "your parents' generation is not on the screen")
+        XCTAssertTrue(app.buttons["Venla"].isHittable, "your children's generation is not on the screen")
+    }
+
+    /// The opening leaves nothing in the strip the zoom bar covers.
+    ///
+    /// The scroll view's fold lies where that bar begins, and whatever the
+    /// fold cuts stays in the accessibility tree while being painted nowhere:
+    /// VoiceOver reads a name that no eye can find, and the audit measures it
+    /// as paper on paper. Opening on your own row makes a scrolled screen the
+    /// first one anybody sees, so where it stops is measured rather than
+    /// chosen — `FamilyTreeView.openingRow` carries the four stopping places
+    /// that were tried. Centring her, which is the obvious answer, leaves
+    /// Saima, Lauri and Hellin down there with their initials.
+    func testTheTreeOpensWithNothingUnderTheZoomBar() {
+        for size in [nil, "UICTContentSizeCategoryAccessibilityXXXL"] {
+            let extra = size.map { ["-UIPreferredContentSizeCategoryName", $0] } ?? []
+            let app = launch(["-seed", "clan", "-tab", "people", "-people", "tree",
+                              "-you", "clan-elina"] + extra)
+            XCTAssertTrue(app.buttons["Elina, sinä"].waitForExistence(timeout: 30),
+                          "your own card is not in the tree")
+            let screen = app.windows.firstMatch.frame
+            let bar = app.buttons["Pienennä"].frame
+            let tabs = app.tabBars.firstMatch.frame
+            XCTAssertGreaterThan(bar.minY, 0, "the zoom bar is not on the screen")
+            XCTAssertGreaterThan(tabs.minY, bar.minY, "the zoom bar is not above the tabs")
+            // The cards, which is what the audit reads a name off, and not the
+            // page's own prose below the drawing: that is scrolled to and read
+            // rather than hidden. The tabs live below the strip, the two zoom
+            // controls are the strip, and a name carried off the sides is
+            // another test's business.
+            let hidden = app.buttons.allElementsBoundByIndex.filter { card in
+                let f = card.frame
+                return f.height > 0 && f.minX > 0 && f.maxX < screen.width
+                    && f.maxY > bar.minY && f.minY < tabs.minY
+                    && card.label != "Pienennä" && card.label != "Suurenna"
+            }
+            XCTAssertEqual(hidden.map(\.label), [],
+                           "the opening leaves these where nobody can see them (\(size ?? "default"))")
+        }
     }
 
     /// What the lines mean, before the drawing rather than after it. Three

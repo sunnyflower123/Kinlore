@@ -403,40 +403,56 @@ struct FamilyTreeView: View {
     /// between two columns — a parent centred over her children — and the
     /// nearest is the one to put in the window.
     ///
-    /// Sideways only, and the reason is measured rather than chosen. The
-    /// drawing hangs in two scroll views, the sideways one inside the
-    /// up-and-down one, and a reader handed an id lying in both moves only
-    /// the inner; a second set of handholds beside the rail, outside the
-    /// sideways view, drove the other one and worked — the tree opened on
-    /// Elina with her parents above her and her daughter below, which is the
-    /// picture this was written for.
+    /// Both ways, since 19 Sep 2026. The drawing hangs in two scroll views,
+    /// the sideways one inside the up-and-down one, and an id that lies in
+    /// both moves only the inner — so the picture used to open on your own
+    /// column at the top of the tree. On `-seed clan` that is your
+    /// great-great-grandparents, with the rail beside them reading *4 polvea
+    /// ylempänä*: the drawing saying in words how far from you it had opened.
     ///
-    /// It cost the screen its accessibility audit, and not over a colour.
-    /// Between the scroll view's fold and the tab bar lie some 52 points that
-    /// are on the screen without being in the scroll view: the zoom bar is
-    /// drawn there, opaque, and anything the fold cuts off lands behind it,
-    /// laid out and painted nowhere. Measured 19 Sep 2026 from the pixels of
-    /// the audit's own frames — Saima 1.03:1, Lauri 1.04:1, twelve shades of
-    /// paper and no ink in either. The rows repeat every 156 points and a
-    /// name is 20 tall, so better than one stopping place in two strands one
-    /// there: centring your own row failed at the default text size,
-    /// centring the row above it failed at the largest, each passing where
-    /// the other failed.
+    /// The second handhold is a row of its own beside the rail, which is
+    /// outside the sideways view and so can only drive the other one. The
+    /// first attempt hung those handholds on `.offset`, which is where this
+    /// cost its afternoon: `.offset` moves what is drawn and not what is laid
+    /// out, so every handhold sat at the rail's top and every row scrolled to
+    /// the same place. Laid out in a `VStack` of measured heights — the same
+    /// shape `anchors` has carried for exactly this reason — it works at both
+    /// text sizes: Elina goes from 947 points on an 874-point screen to 282,
+    /// with her parents above her and her children below.
     ///
-    /// It is not a fault this morning introduced. One `swipeUp()` added to
-    /// the sweep at `e396bfb` fails the same way on a disc cut by the
-    /// right-hand edge, so the screen has never passed its audit anywhere but
-    /// at rest in its own corner — which, until today, is the only place it was ever
-    /// seen. Closing it means the strip cannot hold opaque chrome, and where
-    /// the zoom buttons go instead is a question about the screen rather than
-    /// about this function. Sideways alone is clean at both text sizes, and
-    /// sideways is the larger half: seven windows across against two down.
+    /// What this owes the audit is paid by `openingRow` below rather than by
+    /// staying still, and the debt was real: centring her left six names in
+    /// the strip the zoom bar covers. It was never a debt this function
+    /// incurred, mind — one `swipeUp()` added to the sweep at `e396bfb` fails
+    /// the same way, so the screen passes its audit only at rest in its own
+    /// corner, which until today was the only place it was ever seen.
     private func show(_ person: String, _ result: FamilyTreeLayout.Result, _ reader: ScrollViewProxy) {
         guard let place = result.placements[person] else { return }
         reader.scrollTo(Self.cell(row: place.row, column: Int(place.x.rounded())), anchor: .center)
+        reader.scrollTo(Self.rowAnchor(place.row), anchor: UnitPoint(x: 0.5, y: Self.openingRow))
     }
 
     private static func cell(row: Int, column: Int) -> String { "cell-\(row)-\(column)" }
+
+    /// Where your own row sits when the picture opens: a third of the way
+    /// down rather than halfway, which is a measurement and not a taste.
+    ///
+    /// The scroll view's fold lies where the zoom bar begins, and whatever
+    /// the fold cuts stays in the accessibility tree while being painted
+    /// nowhere — a name read aloud that no eye can find, and paper on paper
+    /// to the audit. The rows repeat every 156 points and their contents are
+    /// some 110 of that, so there is a gap to land the fold in, and four
+    /// stopping places were tried on `-seed clan` at the default text size.
+    /// Halfway leaves six names in the strip — Saima, Lauri and Hellin with
+    /// their initials — 0.42 leaves three, 0.6 leaves three, and a third of
+    /// the way down leaves none. At the largest text size all four are
+    /// equal: nothing of the drawing reaches the strip there at all.
+    ///
+    /// It is a constant fitted to one screen's height, which is why
+    /// `testTheTreeOpensWithNothingUnderTheZoomBar` measures the strip rather
+    /// than trusting this number: a phone shaped differently enough to break
+    /// it says so.
+    private static let openingRow: CGFloat = 0.35
 
     private func node(_ person: Subject, isYou: Bool) -> some View {
         Button {
@@ -547,8 +563,21 @@ struct FamilyTreeView: View {
                     .offset(x: 6, y: Self.rowInset)
             }
         }
-        .frame(width: railWidth, alignment: .topLeading)
+        .frame(width: railWidth, height: height(of: result) * scale, alignment: .topLeading)
+        .overlay(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                ForEach(0 ..< max(result.rows, 1), id: \.self) { row in
+                    Color.clear
+                        .frame(width: 1, height: (y(ofRow: row + 1, result) - y(ofRow: row, result)) * scale)
+                        .id(Self.rowAnchor(row))
+                }
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
+
+    private static func rowAnchor(_ row: Int) -> String { "row-\(row)" }
 
     /// How many places the picture opens with in the window. Two, because a
     /// couple is the smallest thing this drawing has to say: one person and
