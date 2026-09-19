@@ -2256,6 +2256,82 @@ As a side effect this closes the open edge left in §10: the open-question list
 grows by three every round, and ordering plus the return of skipped questions is
 exactly the cap that was deferred to "the store".
 
+### What the questions are aimed at — 19 Sep 2026
+
+The ladder decides **how much** a question asks. Nothing until now decided
+**what it asks about**, and that half was worse than it looked. The extraction
+saw one thing, the transcript, and rule 6 of the prompt asks it for a gap *in
+the speech* — so the questions converged on the three shapes that rule names, a
+person named but not described, a place known only by its name, a smell or a
+sound, and came back in the same shapes on the fourth telling about a
+photograph as on the first. The archive was standing right there and the model
+had never been shown it.
+
+Three things now travel with the transcript, and the fourth is the photograph
+itself. `ExtractionContext` carries the subject the telling was filed under, so
+a question can ask for the year a photograph does not have; what is **missing**
+about each person and place the archive already links to that subject; and every
+question still open on it, so the model can aim elsewhere rather than be
+filtered down to fewer than three afterwards. What the archive *holds* never
+leaves the phone — no memory text is sent, only names and the shape of each
+hole, from a closed vocabulary of five that the Worker turns into a Finnish or
+an English phrase. The client cannot write the prompt by writing a gap, and the
+data goes in the **user** message while the instruction stays in the system
+prompt, because `asked` is free text an earlier model wrote and free text
+appended to a system prompt is somewhere for an instruction to hide.
+
+A photograph is not on that list of gaps, and that is the one thing the check
+found. *"Onko teillä valokuvaa Ainosta?"* is answered "kyllä on" and nothing has
+been told — and `QuestionLadder.outcome` measures an answer against the level's
+word floor, so the honest answer reads as strain and drops the teller a whole
+level. A question that punishes somebody for answering it correctly is worse
+than no question. Every gap that remains is answerable by talking.
+
+Measured 19 Sep 2026 against `google/gemini-3.6-flash` through the real Worker,
+one Puumala transcript, level 3. With nothing sent the middle question was
+*"Millainen paikka Puumalan mökki pihapiireineen oli?"* — which needed no
+archive to write and restated one of the three questions already open. With the
+archive it became *"Miten Aino oli sinulle sukua ja millainen pikkutyttö hän
+oli?"*, which is the `relation` and `description` holes exactly, and the easy
+question moved to *"Missä päin Puumalaa tämä mökki tarkalleen sijaitsi?"*, which
+is the `place` hole. With the photograph as well, the easy question became
+*"Minä vuonna Aino syntyi?"* and the middle one *"Kuvassa näkyy suuri puuvene
+rannassa — muistatko, oliko se perheen oma?"*. The memory's own text stayed
+215–219 characters in all four runs: the archive aims the questions without
+reaching the telling, which is what it was told not to do.
+
+**The photograph rides on the extraction call rather than a second one**, because
+`MODEL_EXTRACT` is already multimodal. Measured the same day: a flat **+1140
+prompt tokens whatever the resolution** — 512, 768 and 1024 px tokenise
+identically — taking the round from $0.0045 to $0.0061, about a sixth of a cent.
+1024 is sent because the smaller one was not cheaper and was the one that
+answered about the cottage in general rather than the boat tied to the jetty.
+Only a `photo` subject, and only the picture as it was taken: a colourisation is
+the family's guess at the colours (§24, rule 4), and asking a model what it sees
+in another model's output is a question about the wrong picture.
+
+The prompt is told to **describe, never identify** — *"nainen vasemmalla"*, not a
+name — and not to ask about age, health, money or mood, because the person
+answering is often in the photograph. That is rule 4 on a surface where the
+model can see faces and the app cannot.
+
+Two checks, both free. `scripts/extraction-context-check.swift` runs the builder
+and the de-duplicator, which is why `ExtractionContext.build` is pure over the
+model types rather than a method on `MemoryStore` — the store reaches
+`MediaStore` and so reaches UIKit, and a check that needs UIKit needs a booted
+simulator. `scripts/extract-shaping-check.mjs` gained the Worker's half: the
+caps, the closed vocabulary, and that an empty archive emits nothing at all. An
+instruction about a list that is not there is how a model starts inventing the
+list.
+
+The pairing required by "every addition requires a removal" (CLAUDE.md): the
+model's three questions are **no longer taken on trust**. `add(questions:)` used
+to append whatever came back, three per telling for ever, and the already-asked
+list only asks the model not to repeat itself. `ExtractionContext.deduplicated`
+drops a restatement on the client as well, so the archive's question list stops
+growing by three a round whether or not the model cooperated — which is the cap
+§10 deferred to "the store" and the note above claimed was already closed.
+
 ## 13. The guessing round — built, then cut
 
 **Cut on 16 Aug 2026** (PLAN.md §5, row 8). The code is gone: `GuessRound.swift`,

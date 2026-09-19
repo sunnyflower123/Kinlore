@@ -350,6 +350,13 @@ struct RemoteExtractionService: ExtractionService {
         /// Which of the two system prompts structures this. Not the language
         /// the app is being READ in when those differ — see SpokenLanguage.
         let lang: String
+        /// What the family's archive already holds. Omitted when it holds
+        /// nothing relevant, so an empty archive costs no tokens and adds no
+        /// instruction about a list that is not there.
+        let context: ExtractionContext?
+        /// The photograph the telling is about, base64 JPEG. Omitted for a
+        /// telling that is not about one — a person, a place, free dictation.
+        let image: String?
 
         struct Correction: Encodable {
             let from: String
@@ -405,7 +412,9 @@ struct RemoteExtractionService: ExtractionService {
     func extract(
         transcript: String,
         corrections: [NameCorrection],
-        level: Int?
+        level: Int?,
+        context: ExtractionContext,
+        photo: Data?
     ) async throws -> ExtractionResult {
         let reply: Reply = try await post(
             "extract",
@@ -415,8 +424,15 @@ struct RemoteExtractionService: ExtractionService {
                 transcript: transcript,
                 corrections: corrections.map { .init(from: $0.from, to: $0.to) },
                 level: level,
-                lang: SpokenLanguage.current
+                lang: SpokenLanguage.current,
+                context: context.isEmpty ? nil : context,
+                image: photo?.base64EncodedString()
             ),
+            // The photograph rides on this call rather than a second one: the
+            // extraction model is already multimodal, so the picture is input
+            // tokens on a round that was going to happen anyway. Measured
+            // 19 Sep 2026: a flat +1140 prompt tokens whatever the
+            // resolution, and $0.0045 to $0.0061 for the round.
             timeout: 90
         )
 

@@ -19,7 +19,7 @@ import {
 	revokeInvite,
 } from './family'
 import { download, upload } from './media'
-import { extract, type Lang } from './extract'
+import { extract, normaliseContext, type Lang } from './extract'
 import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement'
 import {
 	checkAISeconds,
@@ -531,6 +531,8 @@ export default {
 					transcript?: string
 					corrections?: { from?: string; to?: string }[]
 					level?: number
+					context?: unknown
+					image?: unknown
 				}
 				try {
 					payload = await request.json()
@@ -562,8 +564,30 @@ export default {
 						? Math.round(payload.level)
 						: undefined
 
+				// What the archive already holds, so a follow-up question can aim
+				// at a hole rather than at the speech. Shaped and capped in
+				// `normaliseContext`; anything unrecognised is dropped rather
+				// than repaired, because a context that cannot be trusted is
+				// still an extraction that must succeed.
+				const context = normaliseContext(payload.context)
+
+				// The photograph, on the same call. Same two guards as
+				// `/colourise`: the JPEG magic bytes, which are "/9j/" in
+				// base64, and the size cap. A picture that fails either is
+				// dropped rather than refused — the memory has already been
+				// spoken, and losing it over a thumbnail would be absurd.
+				if (
+					typeof payload.image === 'string' &&
+					payload.image.startsWith('/9j/') &&
+					payload.image.length <= MAX_IMAGE_BYTES * 1.37
+				) {
+					context.image = payload.image
+				}
+
 				try {
-					return json(await extract(env, transcript, corrections, level, spokenLanguage(payload.lang)))
+					return json(
+						await extract(env, transcript, corrections, level, spokenLanguage(payload.lang), context),
+					)
 				} catch (err) {
 					return failure(err, 'extract')
 				}

@@ -128,6 +128,20 @@ question_ladder() {
 		&& "$OUT/question-ladder-check"
 }
 
+# What the model is told about the family's archive before it writes a
+# follow-up question. Until 19 Sep 2026 it was told nothing but the transcript,
+# so it could only ask about a gap in ninety seconds of speech and asked the
+# same three shapes on the fourth telling as on the first. Every way the
+# context can be wrong is silent: a gap reported that is not one spends the
+# single question an 80-year-old will answer, a gap missed stays a hole, and a
+# fresh question discarded as a repeat is a hole nobody hears about again.
+extraction_context() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/extraction-context-check" scripts/extraction-context-check.swift \
+		ios/Kinlore/Services/ExtractionContext.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/extraction-context-check"
+}
+
 # Where the family tree puts people and the lines between them. Pure arithmetic
 # over confirmed people and relationships, and each way of being wrong is
 # silent: a child drawn a row above her mother still draws. Added 13 Sep 2026
@@ -199,6 +213,7 @@ echo "Invariants"
 run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
+run "a question aims at what the archive lacks" extraction_context
 run "a child is drawn below her parents" family_tree_layout
 run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock

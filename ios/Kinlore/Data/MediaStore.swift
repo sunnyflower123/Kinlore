@@ -72,6 +72,22 @@ enum MediaStore {
         return UIImage(data: jpeg)
     }
 
+    /// The photograph small enough to show a language model, as JPEG bytes.
+    ///
+    /// 1024 because it is not more expensive than 512. The extraction model
+    /// tokenises an image to a flat budget — measured 19 Sep 2026 on
+    /// `google/gemini-3.6-flash`, 512, 768 and 1024 px each cost exactly 1140
+    /// prompt tokens — and the larger one is the one that saw the rowing boat
+    /// tied to the jetty rather than answering about the cottage in general.
+    /// Above that the picture stops being free and starts being a bigger
+    /// upload on somebody's rural connection.
+    static func modelImage(named filename: String) -> Data? {
+        guard let data = try? Data(contentsOf: url(for: filename)) else { return nil }
+        return downsample(data, to: modelDimension)
+    }
+
+    private static let modelDimension = 1024
+
     static func delete(filename: String) {
         try? FileManager.default.removeItem(at: url(for: filename))
     }

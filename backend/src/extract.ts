@@ -400,19 +400,39 @@ export async function extract(
 	/// is being read in. Defaults to Finnish so that a client which has not been
 	/// updated keeps the behaviour it was written against.
 	lang: Lang = 'fi',
+	/// What the family's archive already holds, and the photograph the telling
+	/// is about. Empty for a caller that sends none — the questions then aim at
+	/// the speech alone, which is what they did before 19 Sep 2026.
+	context: ExtractContext = {},
 ): Promise<ExtractionResult> {
 	let system = lang === 'en' ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT_FI
 	if (level) system += levelInstruction(level, lang)
 	if (corrections.length > 0) system += correctionInstruction(corrections, lang)
+	system += contextInstruction(context, lang)
 
+	const ask =
+		contextBlock(context, lang) +
+		(lang === 'en' ? `Structure this memory:\n\n${transcript}` : `Jäsennä tämä muisto:\n\n${transcript}`)
+
+	// The photograph rides on the same call rather than a second one: the
+	// extraction model is already multimodal (`MODEL_EXTRACT` is a Gemini
+	// Flash), so what the picture costs is input tokens on a call that was
+	// going to happen anyway. Measured 19 Sep 2026 on one Puumala transcript:
+	// a flat +1140 prompt tokens whatever the resolution — 512, 768 and 1024
+	// px all tokenised identically — and $0.0045 to $0.0061 for the round,
+	// about a sixth of a cent. Sent at 1024 for that reason: the small one
+	// was not cheaper, and it was the one that answered with the cottage
+	// rather than the rowing boat tied to the jetty.
 	const messages: Message[] = [
 		{ role: 'system', content: system },
 		{
 			role: 'user',
-			content:
-				lang === 'en'
-					? `Structure this memory:\n\n${transcript}`
-					: `Jäsennä tämä muisto:\n\n${transcript}`,
+			content: context.image
+				? [
+						{ type: 'text', text: ask },
+						{ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${context.image}` } },
+					]
+				: ask,
 		},
 	]
 
@@ -457,4 +477,241 @@ export async function extract(
 	}
 
 	throw lastError
+}
+
+// --------------------------------------------------------------- context
+//
+// What the family's archive already holds, sent alongside the transcript so
+// that a follow-up question can aim at a hole rather than at the speech.
+//
+// Without it the questions are as personal as ninety seconds of speech allows,
+// which is not very: rule 6 above asks for a gap "in the speech", so the model
+// converges on the three shapes that rule lists and asks them again on the
+// fourth telling as readily as on the first. Measured 19 Sep 2026 on one
+// Puumala transcript, the text-only reply was "Millainen se Puumalan mökki ja
+// sen piha oli?" — a question no archive was needed to write.
+//
+// THE DATA GOES IN THE USER MESSAGE, NOT THE SYSTEM PROMPT. The instructions
+// below are stable and belong in the system prompt; `asked` is free text the
+// family and an earlier model wrote, and free text appended to a system prompt
+// is somewhere for an instruction to hide. Keeping the two apart costs nothing
+// and is the whole defence.
+
+/// What an archive can be missing about a subject. A closed vocabulary, not
+/// free text: these words are turned into a phrase in the prompt, so the client
+/// cannot write the prompt by writing a gap.
+const GAPS = ['date', 'place', 'birth_year', 'relation', 'description'] as const
+export type Gap = (typeof GAPS)[number]
+
+const GAP_WORDS: Record<Lang, Record<Gap, string>> = {
+	fi: {
+		date: 'ajankohta',
+		place: 'paikka',
+		birth_year: 'syntymävuosi',
+		relation: 'sukulaisuus muihin',
+		description: 'millainen hän oli',
+	},
+	en: {
+		date: 'the date',
+		place: 'the place',
+		birth_year: 'a year of birth',
+		relation: 'how they are related to the others',
+		description: 'what they were like',
+	},
+}
+
+export type ExtractContext = {
+	/// The photo, person, place or event the telling was filed under. Absent in
+	/// free dictation, where there is no subject until after extraction.
+	subject?: {
+		kind: 'photo' | 'person' | 'place' | 'event'
+		title?: string
+		/// Already rendered by the client — "1950-luku", "kesäkuu 1957". The
+		/// client owns `DateHint.displayText` and this is not worth a second
+		/// implementation.
+		date?: string
+		place?: string
+		memories?: number
+	}
+	/// People and places the archive already links to this subject, with what it
+	/// still does not know about each. Names, never memory text: what the
+	/// archive HOLDS stays on the phone, only the shape of the hole is sent.
+	known?: { name: string; kind: 'person' | 'place'; memories?: number; missing?: Gap[] }[]
+	/// Questions already open on this subject. Sent so the model can aim
+	/// elsewhere rather than be filtered down to fewer than three afterwards.
+	asked?: string[]
+	/// The photograph itself, base64 JPEG, when the telling is about one.
+	image?: string
+}
+
+/// Keeps only what the shape allows, and only as much of it as is useful.
+///
+/// Every string is capped and every list is short. Not for the token bill —
+/// the whole block is under 200 tokens — but because this is client-supplied
+/// text on its way into a model call, and an unbounded field is an unbounded
+/// call. Anything unrecognised is dropped rather than repaired.
+export function normaliseContext(raw: unknown): ExtractContext {
+	if (typeof raw !== 'object' || raw === null) return {}
+	const { subject, known, asked } = raw as Record<string, unknown>
+	const out: ExtractContext = {}
+
+	const text = (value: unknown, max: number): string | undefined => {
+		if (typeof value !== 'string') return undefined
+		const trimmed = value.trim().slice(0, max)
+		return trimmed || undefined
+	}
+
+	if (typeof subject === 'object' && subject !== null) {
+		const s = subject as Record<string, unknown>
+		if (s.kind === 'photo' || s.kind === 'person' || s.kind === 'place' || s.kind === 'event') {
+			out.subject = {
+				kind: s.kind,
+				title: text(s.title, 120),
+				date: text(s.date, 40),
+				place: text(s.place, 80),
+				memories: typeof s.memories === 'number' && s.memories >= 0 ? Math.round(s.memories) : undefined,
+			}
+		}
+	}
+
+	if (Array.isArray(known)) {
+		out.known = known
+			.flatMap((item): NonNullable<ExtractContext['known']> => {
+				if (typeof item !== 'object' || item === null) return []
+				const k = item as Record<string, unknown>
+				const name = text(k.name, 60)
+				if (!name || (k.kind !== 'person' && k.kind !== 'place')) return []
+				const missing = Array.isArray(k.missing)
+					? (k.missing.filter((g): g is Gap => GAPS.includes(g as Gap)).slice(0, 6) as Gap[])
+					: []
+				return [
+					{
+						name,
+						kind: k.kind,
+						memories: typeof k.memories === 'number' && k.memories >= 0 ? Math.round(k.memories) : undefined,
+						missing,
+					},
+				]
+			})
+			.slice(0, 8)
+	}
+
+	if (Array.isArray(asked)) {
+		out.asked = asked.flatMap((q) => text(q, 200) ?? []).slice(0, 12)
+	}
+
+	return out
+}
+
+/// True when there is anything in the context worth a word in the prompt.
+/// An empty object must not add an instruction that refers to nothing — a rule
+/// about a list that is not there is how a model starts inventing the list.
+function hasContext(context: ExtractContext): boolean {
+	return Boolean(context.subject || context.known?.length || context.asked?.length)
+}
+
+/// The instruction, which is stable, and therefore the system prompt's half.
+///
+/// Finnish by design — see the note at the top of this file. In English below,
+/// and it is not a translation for the same reason nothing else here is.
+function contextInstruction(context: ExtractContext, lang: Lang): string {
+	let out = ''
+	if (hasContext(context)) {
+		out +=
+			lang === 'en'
+				? `
+
+7. THE ARCHIVE. The user message carries what the family's archive already holds, under ARCHIVE. It is not part of the speech — the teller did not just say it, so never put it in the memory's text and never thank them for it.
+
+Use it to aim. At least one of the three questions must go at something listed as not known. A question the archive can already answer is a wasted turn, and this audience does not get many.
+
+Anything listed as already asked is closed: do not ask it again, and do not ask the same thing in other words.`
+				: `
+
+7. ARKISTO. Käyttäjän viestissä on ARKISTO-osio, jossa on se mitä perheen arkistossa jo on. Se EI ole osa puhetta — kertoja ei juuri sanonut sitä, joten älä koskaan kirjoita sitä muiston tekstiin äläkä kiitä siitä.
+
+Käytä sitä kohdistamiseen. Vähintään yhden kolmesta kysymyksestä on osuttava johonkin, joka on merkitty tuntemattomaksi. Kysymys johon arkisto jo vastaa on hukattu vuoro, eikä tämä kertoja saa niitä montaa.
+
+Jo kysytty on kysytty: älä kysy samaa uudestaan äläkä samaa asiaa toisin sanoin.`
+	}
+
+	if (context.image) {
+		out +=
+			lang === 'en'
+				? `
+
+8. THE PHOTOGRAPH. The user message carries the photograph this memory is about. Look at it.
+
+At least one question must be about something VISIBLE in it that the speech did not mention — an object, a piece of clothing, a building, the landscape, an animal, what people are doing. That is the question only this photograph could have produced, and it is the reason the picture was sent.
+
+Describe, never identify. "the woman on the left", "that striped dress" — do not put a name to a face unless the speech named them, and never say who somebody is. You cannot see who they are and neither can the app; a guess in the shape of a fact is the one thing this archive cannot carry.
+
+Do not ask about age, health, money or mood, and do not remark on how anybody looks. The person answering is often in the photograph.`
+				: `
+
+8. VALOKUVA. Käyttäjän viestissä on se valokuva, jota muisto koskee. Katso sitä.
+
+Vähintään yhden kysymyksen on koskettava jotakin, mikä kuvassa NÄKYY ja mistä puhe ei kertonut: esinettä, vaatetta, rakennusta, maisemaa, eläintä, sitä mitä ihmiset tekevät. Se on se kysymys, jonka vain tämä valokuva on voinut synnyttää, ja sitä varten kuva lähetettiin.
+
+Kuvaile, älä tunnista. "Nainen vasemmalla", "se raidallinen mekko" — älä liitä nimeä kasvoihin, ellei puhe ole nimennyt häntä, äläkä koskaan sano kuka joku on. Et näe sitä, eikä sovelluskaan näe; arvaus faktan muodossa on juuri se, mitä tämä arkisto ei voi kantaa.
+
+Älä kysy iästä, terveydestä, varallisuudesta tai mielialasta äläkä huomauta kenenkään ulkonäöstä. Vastaaja on usein itse kuvassa.`
+	}
+
+	return out
+}
+
+/// The data, which is the user message's half.
+///
+/// Returns an empty string when there is nothing to say, so the caller can
+/// concatenate without a branch.
+export function contextBlock(context: ExtractContext, lang: Lang): string {
+	if (!hasContext(context)) return ''
+	const fi = lang === 'fi'
+	const lines: string[] = []
+
+	if (context.subject) {
+		const s = context.subject
+		const kindWord = fi
+			? { photo: 'valokuva', person: 'henkilö', place: 'paikka', event: 'hetki' }[s.kind]
+			: { photo: 'a photograph', person: 'a person', place: 'a place', event: 'a moment' }[s.kind]
+		const parts = [s.title ? `${kindWord} "${s.title}"` : kindWord]
+		if (s.date) parts.push(fi ? `ajankohta ${s.date}` : `dated ${s.date}`)
+		if (s.place) parts.push(fi ? `paikka ${s.place}` : `at ${s.place}`)
+		if (typeof s.memories === 'number') {
+			parts.push(fi ? `${s.memories} muistoa ennestään` : `${s.memories} memories already`)
+		}
+		lines.push((fi ? 'Kohde: ' : 'Subject: ') + parts.join(', '))
+	}
+
+	for (const k of context.known ?? []) {
+		const kindWord = fi
+			? k.kind === 'person'
+				? 'henkilö'
+				: 'paikka'
+			: k.kind === 'person'
+				? 'person'
+				: 'place'
+		const count =
+			typeof k.memories === 'number' ? (fi ? `, ${k.memories} muistoa` : `, ${k.memories} memories`) : ''
+		const missing = (k.missing ?? []).map((g) => GAP_WORDS[lang][g])
+		const tail = missing.length
+			? fi
+				? ` — ei tiedossa: ${missing.join(', ')}`
+				: ` — not known: ${missing.join(', ')}`
+			: fi
+				? ' — ei puuttuvia tietoja'
+				: ' — nothing missing'
+		lines.push(`${k.name} (${kindWord}${count})${tail}`)
+	}
+
+	if (context.asked?.length) {
+		lines.push(fi ? 'Jo kysytty:' : 'Already asked:')
+		for (const q of context.asked) lines.push(`- ${q}`)
+	}
+
+	const heading = fi
+		? 'ARKISTO (ei puheesta — perheen arkistosta):'
+		: 'ARCHIVE (not from the speech — from the family archive):'
+	return `${heading}\n${lines.join('\n')}\n\n`
 }

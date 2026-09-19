@@ -517,6 +517,22 @@ final class TellViewModel {
         await process(transcript: text, audioURL: nil, duration: nil)
     }
 
+    /// The photograph this telling is about, sized for the model, or nil.
+    ///
+    /// Only a `photo` subject, and only the picture as it was taken: a
+    /// colourisation is the family's guess at the colours (rule 4, and only
+    /// after somebody said yes to it), and asking a model what it sees in
+    /// another model's output is a question about the wrong picture.
+    ///
+    /// Read on the main actor before the call rather than inside it, because
+    /// this is disk work and `process` is already awaiting a network round —
+    /// but it is one downsample of one file, which `MediaStore` does through
+    /// ImageIO without decoding the whole image.
+    private var modelPhoto: Data? {
+        guard let target, target.kind == .photo, let filename = target.imageFilename else { return nil }
+        return MediaStore.modelImage(named: filename)
+    }
+
     // MARK: - Pipeline
 
     private func process(transcript text: String, audioURL: URL?, duration: TimeInterval?) async {
@@ -541,7 +557,13 @@ final class TellViewModel {
         // the same code — structure is what degrades, not the telling.
         let extracted: ExtractionResult
         do {
-            extracted = try await extraction.extract(transcript: text, level: ladderLevel)
+            extracted = try await extraction.extract(
+                transcript: text,
+                corrections: [],
+                level: ladderLevel,
+                context: store.extractionContext(for: target),
+                photo: modelPhoto
+            )
             wasOrganised = true
         } catch {
             // The developer's half of the same failure: the user's sentence says
@@ -734,9 +756,18 @@ final class TellViewModel {
         movedByHand = false
         sessionMemoryIDs.append(memory.id)
 
-        let questions = extracted.questions.map {
-            FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level)
-        }
+        // The archive already told the model what was open on this subject and
+        // asked it not to repeat any of it, and that is the half that buys a
+        // better question rather than merely fewer. This is the other half: the
+        // model was asked, not obeyed, and `add(questions:)` appends whatever
+        // it is handed. Three per telling for ever, with nothing in between, is
+        // why a fourth telling about one photograph used to produce the first
+        // telling's questions again.
+        let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }.map(\.text)
+        let unrepeated = ExtractionContext.deduplicated(extracted.questions.map(\.text), against: open)
+        let questions = extracted.questions
+            .filter { unrepeated.contains($0.text) }
+            .map { FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level) }
         store.add(questions: questions)
         newQuestions = questions
         // Measured on the raw transcript rather than the cleaned body: what was
@@ -981,6 +1012,12 @@ final class TellViewModel {
         }
 
         do {
+            // No archive and no photograph on this one. It re-runs the same
+            // transcript with the names the teller has just fixed, and what is
+            // wanted back is the memory's text with those names inflected into
+            // it. The questions are already on screen and are not replaced, so
+            // sending the context would be paying for aiming that is thrown
+            // away — and the picture would be paying for it twice.
             let corrected = try await extraction.extract(
                 transcript: transcript,
                 corrections: corrections,

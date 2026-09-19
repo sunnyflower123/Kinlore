@@ -72,16 +72,33 @@ protocol ExtractionService {
     /// aims the follow-up questions: without it they come out at level 3–4 every
     /// time, because a question aimed at a gap is naturally a "tell me about"
     /// question — a wall for somebody who has not answered anything yet.
+    ///
+    /// `context` is what the family's archive already holds and, when the
+    /// telling is about a photograph, the photograph. Without it the questions
+    /// aim at the speech alone and repeat themselves across tellings — see
+    /// `ExtractionContext`.
     func extract(
         transcript: String,
         corrections: [NameCorrection],
-        level: Int?
+        level: Int?,
+        context: ExtractionContext,
+        photo: Data?
     ) async throws -> ExtractionResult
 }
 
 extension ExtractionService {
-    func extract(transcript: String, level: Int?) async throws -> ExtractionResult {
-        try await extract(transcript: transcript, corrections: [], level: level)
+    func extract(
+        transcript: String,
+        corrections: [NameCorrection] = [],
+        level: Int?
+    ) async throws -> ExtractionResult {
+        try await extract(
+            transcript: transcript,
+            corrections: corrections,
+            level: level,
+            context: ExtractionContext(),
+            photo: nil
+        )
     }
 }
 
@@ -118,7 +135,14 @@ struct StubExtractionService: ExtractionService {
     func extract(
         transcript: String,
         corrections: [NameCorrection],
-        level: Int?
+        level: Int?,
+        // The stub has no model to show an archive or a photograph to. It is
+        // here to keep the UI developable without a key, and inventing a
+        // context-aware question would make it a worse rehearsal than a plain
+        // one — the screen would look right for a reason the real path does
+        // not share.
+        context: ExtractionContext = ExtractionContext(),
+        photo: Data? = nil
     ) async throws -> ExtractionResult {
         try await Task.sleep(for: simulatedDelay)
         if let film = Self.filmResult(for: transcript, corrections: corrections, level: level) {
@@ -358,7 +382,9 @@ struct FailingExtractionService: ExtractionService {
     func extract(
         transcript: String,
         corrections: [NameCorrection],
-        level: Int?
+        level: Int?,
+        context: ExtractionContext = ExtractionContext(),
+        photo: Data? = nil
     ) async throws -> ExtractionResult {
         throw RemoteError.badStatus(503)
     }
