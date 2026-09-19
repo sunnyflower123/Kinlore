@@ -22,6 +22,11 @@
 //    to rewrite what somebody else said, even by accident.
 // 6. **A deletion is final.** A stale push cannot bring back what a person
 //    chose to take away.
+// 7. **Who told it is an answer, and an answer can be given again.** The teller
+//    is taken as sent rather than `COALESCE`d, so a name can come off a telling
+//    as well as go on — and *"en halua nimeäni näkyviin"* is a state of its own
+//    that has to survive the crossing. The author rule covers it like the rest:
+//    nobody else gets to say whose voice it was.
 //
 // Every one of them is silent. A stripped transcript, a rewritten sentence, a
 // memory that came back from the dead — the app looks exactly the same
@@ -294,6 +299,79 @@ try {
 		})
 		m = (await memories(mummo)).get(told)
 		check('another member cannot move it back', m?.subject_id === elsewhere, JSON.stringify(m?.subject_id))
+	}
+
+	console.log('— who told it crosses, and can be taken back off —')
+	{
+		// One phone round a table is where the author and the voice come
+		// apart: Mummo's phone, Sanni's story. The author stays Mummo, which
+		// is what gives her the right to answer the question again.
+		const sanni = randomUUID()
+		await push(mummo, { subjects: [{ id: sanni, kind: 'person', title: 'Sanni', created_at: now }] })
+
+		const atTable = randomUUID()
+		const words = 'Isä souti meidät saareen joka kesä.'
+		const telling = (fields) => ({
+			id: atTable,
+			subject_id: subject,
+			body: words,
+			created_at: now,
+			...fields,
+		})
+		await push(mummo, {
+			memories: [telling({ teller_subject_id: sanni, teller_hidden: 0 })],
+		})
+
+		// A member of her own, because a code admits one person.
+		const { body: invite } = await send('/family/invite', { method: 'POST', headers: mummo.auth })
+		const lapsenlapsi = person('Lapsenlapsi')
+		await send('/family/join', {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({
+				memberID: lapsenlapsi.memberID,
+				secret: lapsenlapsi.secret,
+				displayName: lapsenlapsi.name,
+				code: invite.code,
+			}),
+		})
+
+		let m = (await memories(lapsenlapsi)).get(atTable)
+		check('the family is told whose voice it was', m?.teller_subject_id === sanni, JSON.stringify(m?.teller_subject_id))
+		check('and that the name may be shown', m?.teller_hidden === 0, JSON.stringify(m?.teller_hidden))
+
+		// *"Vaihda kertoja"*, answered the second time with nobody at all.
+		// This is the direction `COALESCE` would have made impossible, and a
+		// name that cannot be taken off is the promise broken the wrong way
+		// round.
+		await push(mummo, { memories: [telling({ teller_subject_id: null, teller_hidden: 0 })] })
+		m = (await memories(mummo)).get(atTable)
+		check(
+			'a name can be taken off a telling again',
+			m?.teller_subject_id === null,
+			JSON.stringify(m?.teller_subject_id),
+		)
+
+		// Withheld is a state, not an absence: nil means nobody was asked.
+		await push(mummo, { memories: [telling({ teller_subject_id: null, teller_hidden: 1 })] })
+		m = (await memories(lapsenlapsi)).get(atTable)
+		check(
+			'a teller who asked not to be named stays unnamed on every phone',
+			m?.teller_hidden === 1,
+			JSON.stringify(m?.teller_hidden),
+		)
+
+		// And the refusal that is silent: the grandchild's phone cannot put
+		// her own name on what somebody else said, by accident or otherwise.
+		await push(lapsenlapsi, {
+			memories: [telling({ teller_subject_id: sanni, teller_hidden: 0 })],
+		})
+		m = (await memories(mummo)).get(atTable)
+		check(
+			'another member cannot say whose voice it was',
+			m?.teller_subject_id === null && m?.teller_hidden === 1,
+			JSON.stringify([m?.teller_subject_id, m?.teller_hidden]),
+		)
 	}
 
 	console.log('— the names in a telling are a set, not a pile —')
