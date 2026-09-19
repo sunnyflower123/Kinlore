@@ -153,6 +153,62 @@ enum FamilyTreeLayoutCheck {
             check("a bar joins them", r.segments.contains { $0.y1 == $0.y2 && $0.y1 < Double(a?.row ?? 0) })
         }
 
+        // A person is of one generation, so some bond somebody entered may have
+        // nowhere to go. Which one goes is not for the walk to decide by
+        // accident, and which ones went is not a secret.
+        print("— a generation comes from blood, and what will not fit is named —")
+        do {
+            // Eemeli is Oiva's brother and Sirkka's husband, and Sirkka is
+            // Oiva's daughter. One of those two bonds cannot be drawn, and
+            // the marriage is the one that says nothing about a generation.
+            // The order matters: the walk starts at Sirkka and meets the
+            // marriage one step before the brotherhood, which is exactly the
+            // shape that used to answer wrong.
+            let r = FamilyTreeLayout.layout(
+                people: ["Sirkka", "Eemeli", "Oiva"],
+                links: [spouse("Eemeli", "Sirkka"), parent("Oiva", "Sirkka"), sibling("Oiva", "Eemeli")]
+            )
+            check("the brother keeps his brother's generation",
+                  r.placements["Eemeli"]?.row == r.placements["Oiva"]?.row,
+                  "Eemeli \(String(describing: r.placements["Eemeli"])), Oiva \(String(describing: r.placements["Oiva"]))")
+            check("the daughter is a generation below both",
+                  r.placements["Sirkka"]?.row == (r.placements["Oiva"]?.row ?? -9) + 1)
+            check("the marriage is what cannot be drawn",
+                  r.undrawn == [spouse("Eemeli", "Sirkka")], "\(r.undrawn)")
+            check("and no couple's line is drawn for it",
+                  !r.segments.contains { $0.kind == .couple }, "\(r.segments)")
+            check("nobody shares a place", noOverlap(r))
+
+            // Which is an order and not a ban: whoever married in has no
+            // blood relative in the tree at all, and their spouse is the only
+            // answer there is for them.
+            let wed = FamilyTreeLayout.layout(
+                people: ["Aino", "Toivo", "Kaisa"],
+                links: [parent("Aino", "Toivo"), spouse("Toivo", "Kaisa")]
+            )
+            check("somebody who married in still has a generation", wed.placements["Kaisa"]?.row == 1)
+            check("beside their spouse",
+                  abs((wed.placements["Kaisa"]?.x ?? 0) - (wed.placements["Toivo"]?.x ?? 9)) == 1)
+            check("and a family that fits reports nothing undrawn", wed.undrawn.isEmpty, "\(wed.undrawn)")
+        }
+
+        // Entered twice and then backwards, which is what a proposal confirmed
+        // from both ends looks like in the archive.
+        print("— a pair each entered as the other's parent keeps one line and names the other —")
+        do {
+            let r = FamilyTreeLayout.layout(
+                people: ["Sulo", "Onni"],
+                links: [parent("Sulo", "Onni"), parent("Onni", "Sulo")]
+            )
+            check("the first answer stands", r.placements["Sulo"]?.row == 0 && r.placements["Onni"]?.row == 1)
+            check("the second is named rather than drawn", r.undrawn == [parent("Onni", "Sulo")], "\(r.undrawn)")
+            check("two rows and not a loop", r.rows == 2)
+            // A descent is drawn in two pieces, down to the bracket and down
+            // from it, so what is asserted is that every piece runs downwards.
+            check("the line runs down to the child and none back up",
+                  r.segments.allSatisfy { $0.kind == .descent && $0.y1 <= $0.y2 }, "\(r.segments)")
+        }
+
         // Since 13 Sep 2026 they are in the picture rather than in a list under
         // it: a family is as big as everybody in it, related yet or not.
         print("— people nobody is related to are drawn below the tree, apart —")
@@ -412,6 +468,7 @@ enum FamilyTreeLayoutCheck {
             check("and no line crosses anybody, eighty deep", throughSomebody(r, links).isEmpty,
                   "\(throughSomebody(r, links).prefix(5))")
             check("one family", r.familyExtents.count == 1 && r.looseRow == nil)
+            check("and nothing anywhere that cannot be drawn", r.undrawn.isEmpty, "\(r.undrawn)")
             check("and the same drawing twice", FamilyTreeLayout.layout(people: people, links: links) == r)
         }
 

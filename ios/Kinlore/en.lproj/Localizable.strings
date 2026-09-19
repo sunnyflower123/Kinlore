@@ -650,3 +650,17 @@
 "%lld polvea alempana" = "%lld generations below you";
 "Toinen perhe" = "Another family";
 "Pariskunta" = "A couple";
+
+/* What the archive holds and the drawing cannot say, 19 Sep 2026. A person is
+   of one generation in a picture, so a marriage across two of them, or a pair
+   each entered as the other's parent, loses its line — and until now lost it
+   in silence, which from the drawing looks exactly like a bond nobody has
+   entered yet. The three words below name what the two were entered as; they
+   are looked up in `bond(_:)` rather than written into a `Text`, because they
+   reach the screen as a String. */
+"Nämä eivät mahdu kuvaan" = "These will not fit the picture";
+"Kuvassa jokainen on yhdessä polvessa, eivätkä nämä siteet mahdu siihen. Ne ovat tallessa kummankin omalla kortilla." = "In the picture everybody is of one generation, and these bonds do not fit that. They are kept on each person's own card.";
+"%@ ja %@ — %@" = "%@ and %@ — %@";
+"aviopuolisot" = "spouses";
+"sisarukset" = "siblings";
+"vanhempi ja lapsi" = "parent and child";

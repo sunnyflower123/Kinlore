@@ -78,6 +78,16 @@ enum FamilyTreeLayout {
         var family: [String: Int] = [:]
         /// One per family, in the order they are drawn.
         var familyExtents: [Extent] = []
+        /// Relationships somebody entered that no row can hold, in the order
+        /// they were given. A person is of one generation in a drawing, so a
+        /// marriage between two generations, or a pair each entered as the
+        /// other's parent, leaves a line with nowhere to go, and rule 4 drops
+        /// it rather than draw a relationship nobody entered.
+        ///
+        /// Dropping it is the easy half. Which ones were dropped is the other
+        /// half, because a line quietly absent is the picture disagreeing
+        /// with the cards and nothing anywhere admitting it (19 Sep 2026).
+        var undrawn: [Link] = []
         /// People with no relationship to anybody drawn, in the order given.
         /// They are placed below every family and have no lines.
         var unconnected: [String] = []
@@ -116,11 +126,12 @@ enum FamilyTreeLayout {
             if linkKeys.insert(key).inserted { clean.append(link) }
         }
 
-        var neighbours: [String: [(id: String, delta: Int)]] = [:]
+        var neighbours: [String: [(id: String, delta: Int, blood: Bool)]] = [:]
         for link in clean {
             let delta = link.kind == .parent ? 1 : 0
-            neighbours[link.from, default: []].append((link.to, delta))
-            neighbours[link.to, default: []].append((link.from, -delta))
+            let blood = link.kind != .spouse
+            neighbours[link.from, default: []].append((link.to, delta, blood))
+            neighbours[link.to, default: []].append((link.from, -delta, blood))
         }
 
         // Generations, one family at a time, breadth first from whoever was
@@ -128,6 +139,18 @@ enum FamilyTreeLayout {
         // data that contradicts itself — somebody entered as both the parent
         // and the child of the same person — still places everybody, and loses
         // only the line that disagrees.
+        //
+        // Blood before marriage, since 19 Sep 2026. A parent or a sibling says
+        // which generation somebody is of; whom they married does not, and a
+        // walk that takes whichever it reaches first decides that by accident.
+        // In the fixture's family it decided it wrong: Eemeli took his
+        // generation from his wife, landed a row below his own brother, and
+        // the brotherhood was the line that went — where the marriage is what
+        // crosses two generations and the fixture says so in as many words.
+        // A marriage still answers for whoever has no blood relative in the
+        // tree at all, which is everybody who married in, and is why it is an
+        // order rather than a ban. One person of the fifty-three moves under
+        // this rule, onto his brother's row.
         var row: [String: Int] = [:]
         var discovered: [String: Int] = [:]
         var families: [[String]] = []
@@ -138,16 +161,37 @@ enum FamilyTreeLayout {
             }
             var members: [String] = []
             var queue = [person]
+            // Marriages met along the way, kept until the blood walk has
+            // nobody left to reach.
+            var married: [(of: String, id: String)] = []
             row[person] = 0
             var head = 0
-            while head < queue.count {
-                let current = queue[head]
-                head += 1
-                discovered[current] = discovered.count
-                members.append(current)
-                for (other, delta) in neighbours[current] ?? [] where row[other] == nil {
-                    row[other] = row[current]! + delta
+            var wed = 0
+            while head < queue.count || wed < married.count {
+                while head < queue.count {
+                    let current = queue[head]
+                    head += 1
+                    discovered[current] = discovered.count
+                    members.append(current)
+                    for (other, delta, blood) in neighbours[current] ?? [] where row[other] == nil {
+                        if blood {
+                            row[other] = row[current]! + delta
+                            queue.append(other)
+                        } else {
+                            married.append((current, other))
+                        }
+                    }
+                }
+                // One marriage, then back to blood: whoever has just married
+                // in may bring a family of their own, and inside that family
+                // it is descent that answers again.
+                while wed < married.count {
+                    let (of, other) = married[wed]
+                    wed += 1
+                    guard row[other] == nil else { continue }
+                    row[other] = row[of]!
                     queue.append(other)
+                    break
                 }
             }
             let top = members.compactMap { row[$0] }.min() ?? 0
@@ -171,7 +215,7 @@ enum FamilyTreeLayout {
                 siblings[link.from, default: []].append(link.to)
                 siblings[link.to, default: []].append(link.from)
             default:
-                continue
+                result.undrawn.append(link)
             }
         }
 

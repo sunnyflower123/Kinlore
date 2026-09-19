@@ -571,3 +571,11 @@
 "%lld polvea alempana" = "%lld polvea alempana";
 "Toinen perhe" = "Toinen perhe";
 "Pariskunta" = "Pariskunta";
+
+/* The relationships the rows cannot hold — see en.lproj. */
+"Nämä eivät mahdu kuvaan" = "Nämä eivät mahdu kuvaan";
+"Kuvassa jokainen on yhdessä polvessa, eivätkä nämä siteet mahdu siihen. Ne ovat tallessa kummankin omalla kortilla." = "Kuvassa jokainen on yhdessä polvessa, eivätkä nämä siteet mahdu siihen. Ne ovat tallessa kummankin omalla kortilla.";
+"%@ ja %@ — %@" = "%@ ja %@ — %@";
+"aviopuolisot" = "aviopuolisot";
+"sisarukset" = "sisarukset";
+"vanhempi ja lapsi" = "vanhempi ja lapsi";

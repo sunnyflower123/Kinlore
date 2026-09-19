@@ -213,6 +213,11 @@ struct FamilyTreeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, Elder.screenPadding)
 
+                    if !result.undrawn.isEmpty {
+                        undrawnNote(result)
+                            .padding(.horizontal, Elder.screenPadding)
+                    }
+
                     if heardCount > 0 {
                         heardDoor
                             .padding(.horizontal, Elder.screenPadding)
@@ -630,6 +635,54 @@ struct FamilyTreeView: View {
                 Spacer(minLength: 0)
                 tick
             }
+        }
+    }
+
+    /// What the archive holds and the drawing cannot say. Everybody is of one
+    /// generation in a picture, so a marriage between two of them, or a pair
+    /// each entered as the other's parent, leaves a bond with nowhere to go,
+    /// and `FamilyTreeLayout` drops the line rather than draw a relationship
+    /// nobody entered — which is rule 4, and the easy half of it.
+    ///
+    /// This is the other half (19 Sep 2026). A line quietly absent is the
+    /// picture disagreeing with the cards, and from the drawing alone it looks
+    /// exactly like a bond nobody has entered yet — the one reading that sends
+    /// somebody off to enter it a second time. Nothing here calls anybody
+    /// wrong: the app does not know which of two answers the family meant, and
+    /// saying otherwise would be the guess asserted as fact all over again.
+    private func undrawnNote(_ result: FamilyTreeLayout.Result) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Nämä eivät mahdu kuvaan")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text("Kuvassa jokainen on yhdessä polvessa, eivätkä nämä siteet mahdu siihen. Ne ovat tallessa kummankin omalla kortilla.")
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(Array(result.undrawn.enumerated()), id: \.offset) { _, link in
+                Text("\(name(link.from)) ja \(name(link.to)) — \(bond(link.kind))")
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    /// The name on somebody's card, for a sentence rather than a disc.
+    private func name(_ id: String) -> String {
+        people.first { $0.id == id }?.displayTitle ?? id
+    }
+
+    /// What two people were entered as, in a word. Built with
+    /// `String(localized:)` because it is a `String` and not a literal inside
+    /// `Text`: handed a variable, `Text` shows it verbatim, and an English
+    /// phone would read one Finnish word in the middle of the sentence.
+    /// `localisation-check.mjs` counts keys, not lookups, so nothing else
+    /// would report it.
+    private func bond(_ kind: FamilyTreeLayout.Kind) -> String {
+        switch kind {
+        case .spouse: return String(localized: "aviopuolisot")
+        case .sibling: return String(localized: "sisarukset")
+        case .parent: return String(localized: "vanhempi ja lapsi")
         }
     }
 

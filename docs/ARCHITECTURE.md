@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 182 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 65 sweep tests, each auditing one screen at the default text size and again at the largest, out of 183 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -1892,6 +1892,39 @@ Not built:
      rather than naming whoever happens to be at the far end of one flick,
      which cost a second recalibration the same morning when the picture began
      opening somewhere new.
+   - **A generation comes from blood, and what still will not fit is named**
+     (19 Sep 2026). Fifty-three people offer 75 relationships and 74 survive
+     de-duplication; two of those cannot be drawn, because everybody is of one
+     generation in a picture and a bond may disagree with the rows. Dropping
+     the line is right — rule 4, a wrong relationship is worse than a missing
+     one — but *which* line was dropped fell to whichever the breadth-first
+     walk happened to reach first, and in the fixture's family it fell the
+     wrong way: Eemeli took his generation from his wife Sirkka, landed a row
+     below his own brother Oiva, and the brotherhood was the line that went,
+     where the marriage is the bond that crosses two generations and
+     `ClanFixture` says so in as many words beside it.
+
+     Parent and sibling links are now walked to exhaustion before any
+     marriage, because descent says which generation somebody is of and whom
+     they married does not. It is an order and not a ban: a marriage still
+     answers for whoever has no blood relative in the tree at all, which is
+     everybody who married in. One person of the fifty-three moves under the
+     rule, onto his brother's row, and the drawing narrows from eighteen
+     places to seventeen.
+
+     **The drop itself was the silent half.** A line quietly absent looks, from
+     the picture alone, exactly like a bond nobody has entered yet — the one
+     reading that sends somebody off to enter it a second time.
+     `Result.undrawn` carries the refused links out of the arithmetic and
+     `FamilyTreeView.undrawnNote` names them under the drawing: *Eemeli ja
+     Sirkka — aviopuolisot*, *Onni ja Sulo — vanhempi ja lapsi*, the second
+     being a pair each entered as the other's parent, which is what a proposal
+     confirmed from both ends looks like in an archive. Nothing on that screen
+     calls anybody wrong, because the app does not know which of the two
+     answers the family meant. Three cases in
+     `scripts/family-tree-layout-check.swift` hold both halves, and they could
+     have failed: compiled against the old walk with `undrawn` kept, the
+     blood-before-marriage case goes red in three places.
    - **A man married twice stands between his wives.** The row used to pair
      him with whichever marriage the archive holds first and put the second
      wife beyond her, so the line to that marriage ran straight through the

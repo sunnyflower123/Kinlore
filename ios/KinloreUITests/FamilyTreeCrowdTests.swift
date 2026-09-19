@@ -182,6 +182,38 @@ final class FamilyTreeCrowdTests: XCTestCase {
         shot(app, "crowd-small")
     }
 
+    /// A relationship the rows cannot hold is named under the drawing rather
+    /// than dropped in silence. The fixture's family has exactly two, and both
+    /// are there on purpose: Eemeli is Oiva's brother and Sirkka's husband
+    /// with Sirkka a generation below Oiva, so one of those two bonds has
+    /// nowhere to go; and Onni and Sulo were entered as each other's parent,
+    /// which is what a proposal confirmed from both ends looks like in the
+    /// archive.
+    ///
+    /// Until 19 Sep 2026 the line simply was not drawn, which from the picture
+    /// is indistinguishable from a bond nobody has entered yet — the reading
+    /// that sends somebody off to enter it a second time.
+    func testARelationshipTheRowsCannotHoldIsNamedRatherThanDropped() {
+        let app = crowd()
+        XCTAssertTrue(app.staticTexts["Nämä eivät mahdu kuvaan"].waitForExistence(timeout: 20),
+                      "nothing says a relationship was left out of the picture")
+        XCTAssertTrue(app.staticTexts["Eemeli ja Sirkka — aviopuolisot"].exists,
+                      "the marriage the generations cannot hold is not named")
+        XCTAssertTrue(app.staticTexts["Onni ja Sulo — vanhempi ja lapsi"].exists,
+                      "the pair each entered as the other's parent is not named")
+        // And it can be reached. Everything in this column exists in the
+        // hierarchy whether or not it is on screen, so existing is the weaker
+        // half: under a drawing 1136 points tall a note nobody can scroll to
+        // would pass every assertion above.
+        for _ in 0 ..< 5 { app.buttons["Pienennä"].tap() }
+        for _ in 0 ..< 4 { app.swipeUp() }
+        shot(app, "crowd-undrawn")
+        XCTAssertTrue(app.staticTexts["Nämä eivät mahdu kuvaan"].isHittable,
+                      "the note under the drawing cannot be scrolled to")
+        XCTAssertTrue(app.staticTexts["Eemeli ja Sirkka — aviopuolisot"].isHittable,
+                      "what will not fit is named where nobody can read it")
+    }
+
     /// A picture of what a test was looking at, when
     /// `TEST_RUNNER_KINLORE_TREE_SHOT=/some/dir/prefix` is on the xcodebuild
     /// line, and nothing at all when it is not.
