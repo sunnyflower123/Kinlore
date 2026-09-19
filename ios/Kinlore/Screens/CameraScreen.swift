@@ -134,7 +134,9 @@ struct CameraScreen: View {
     }
 
     private var hint: String {
-        if justSaved { return "Tallennettu. Kuvaa seuraava." }
+        if justSaved {
+            return String(localized: "Tallennettu. Kuvaa seuraava.")
+        }
         return captured == 0
             ? String(localized: "Aseta vanha valokuva näkyviin ja paina.")
             : String(localized: "Aseta seuraava kuva näkyviin.")
