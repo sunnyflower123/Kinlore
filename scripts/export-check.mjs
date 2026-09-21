@@ -204,5 +204,25 @@ if (existsSync(jsonPath)) {
 console.log('— size —')
 check('the zip is not empty', statSync(zip).size > 2048, `${statSync(zip).size} bytes`)
 
+// Rule 4 on the page. The demo archive holds Aino as an extraction's
+// proposal (`confirmed: false`) with no memories of her own, and the list of
+// subjects nobody has spoken about used to name her there — a guess, in the
+// one copy that outlives the app. Exported separately because the recorded
+// archive above has no proposal in it. Matched on markup rather than on the
+// heading, which follows the simulator's language.
+console.log('— what the page does not assert —')
+launch(udid, ['-seed', 'archive', '-tab', 'people', '-screen', 'export', '-api', ''])
+waitFor(14)
+{
+	const again = readdirSync(tmp).filter((name) => /^Muistoarkisto-\d{4}-\d{2}-\d{2}\.zip$/.test(name)).sort()
+	const demoOut = mkdtempSync(join(tmpdir(), 'kinlore-export-demo-'))
+	execFileSync('unzip', ['-q', join(tmp, again[again.length - 1]), '-d', demoOut])
+	const demoPage = readFileSync(join(demoOut, 'Muistoarkisto', 'muistot.html'), 'utf8')
+	const emptyList = [...demoPage.matchAll(/<p class="open">(?!<strong>)([^<]*)<\/p>/g)].map((m) => m[1])
+	check('the demo export lists the subjects nobody has spoken about', emptyList.length === 1, `${emptyList.length} lists`)
+	const names = (emptyList[0] ?? '').replace(/^[^:]*:\s*/, '').replace(/\.$/, '').split(', ')
+	check('and names nobody the family has not confirmed', !names.includes('Aino'), names.join(', '))
+}
+
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

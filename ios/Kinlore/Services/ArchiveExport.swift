@@ -278,8 +278,14 @@ enum ArchiveExport {
 
         for subject in subjects {
             let memories = store.memories(for: subject.id)
+            // An empty subject the extraction proposed and nobody confirmed is
+            // left out rather than named. Rule 4: listed here it would be a
+            // name the model heard, printed as somebody the family has not
+            // spoken about yet. One with memories of its own stays — telling
+            // about a person confirms them (`MemoryStore.confirm`), so that
+            // case is rare, and a memory is never what the export drops.
             guard !memories.isEmpty else {
-                empty.append(subject)
+                if subject.confirmed { empty.append(subject) }
                 continue
             }
 
