@@ -920,6 +920,12 @@ final class TellViewModel {
     /// asked once, at the end, on the screen that ends the loop.
     func chooseTeller(_ choice: TellerChoice) {
         tellerChoice = choice
+        // Placing a teller in the photograph was part of the answer it
+        // followed. A different answer takes it back, or the first name would
+        // stay in the picture under the second one's telling.
+        if let placed = placedTellerID, placed != chosenTeller?.id {
+            placeTellerInPhoto(false)
+        }
         let subjectID: String?
         let hidden: Bool
         switch choice {
@@ -963,6 +969,65 @@ final class TellViewModel {
         case let .me(card): card.flatMap { store.subject(id: $0) }
         case let .person(id): store.subject(id: id)
         default: nil
+        }
+    }
+
+    // MARK: - Who is in the photograph
+
+    /// The teller this session put in the photograph by hand, so the answered
+    /// card can say so and take it back. Nil when nobody was placed — which
+    /// includes a teller the telling already named, whom this row did not put
+    /// there and must not take out.
+    private(set) var placedTellerID: String?
+
+    /// The photograph this session's tellings are about, when they are.
+    private var photo: Subject? {
+        guard let placed = placedSubject, placed.kind == .photo else { return nil }
+        return store.subject(id: placed.id)
+    }
+
+    /// The tellings a teller can be placed in: this session's, about the
+    /// photograph.
+    private var photoMemoryIDs: [String] {
+        guard let photo else { return [] }
+        let about = Set(store.memories(for: photo.id).map(\.id))
+        return sessionMemoryIDs.filter(about.contains)
+    }
+
+    /// Whom the result screen may offer to put in the photograph: the answered
+    /// teller, when the telling was about one and they are not in it yet.
+    ///
+    /// **Never a hidden teller.** A name placed in the picture is a name on the
+    /// photograph's tellings, which is exactly what *"En halua nimeäni
+    /// näkyviin"* asked not to be. Never *"minä"* without a card, because
+    /// there is nothing to place. And confirmed cards only: this row is a
+    /// human saying so, and it must not turn a heard name into a fact on the
+    /// way (rule 4).
+    var tellerToPlace: Subject? {
+        guard placedTellerID == nil, !tellerIsHidden,
+              let teller = chosenTeller, teller.kind == .person, teller.confirmed,
+              let photo, !photoMemoryIDs.isEmpty
+        else { return nil }
+        let alreadyIn = store.memories(for: photo.id).contains { $0.mentionedSubjectIDs.contains(teller.id) }
+        return alreadyIn ? nil : teller
+    }
+
+    /// The card placed in the photograph on this screen, for the line that
+    /// says so.
+    var placedTeller: Subject? {
+        placedTellerID.flatMap { store.subject(id: $0) }
+    }
+
+    /// Puts the answered teller in the photograph, or takes them out again.
+    func placeTellerInPhoto(_ present: Bool) {
+        if present {
+            guard let teller = tellerToPlace else { return }
+            store.setPresent(teller.id, true, in: photoMemoryIDs)
+            placedTellerID = teller.id
+        } else {
+            guard let placed = placedTellerID else { return }
+            store.setPresent(placed, false, in: photoMemoryIDs)
+            placedTellerID = nil
         }
     }
 
@@ -1098,5 +1163,6 @@ final class TellViewModel {
         // The next telling is asked about on its own: the phone may have
         // changed hands, which is the whole case this question is for.
         tellerChoice = nil
+        placedTellerID = nil
     }
 }

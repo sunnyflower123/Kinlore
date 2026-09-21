@@ -128,6 +128,45 @@ struct TellerCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            // Only after a name, and only under a photograph: the one answer
+            // this card can give that the photograph does not already know.
+            // Somebody who says *"that's me"* is not among its people until a
+            // hand says so, because *"me"* is not a name the telling can hear.
+            if let placed = model.placedTeller {
+                Text("\(placed.displayTitle) on merkitty tämän kuvan ihmisiin.")
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                // The width inside the label and not on the button: outside
+                // it the row is drawn 326 points wide and answers only on its
+                // two words — measured 21 Sep 2026, a tap at the row's centre
+                // did nothing and one on the words took it back.
+                Button {
+                    model.placeTellerInPhoto(false)
+                } label: {
+                    Text("Poista merkintä")
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .elderTapTarget()
+                }
+                .foregroundStyle(Elder.supporting)
+            } else if let teller = model.tellerToPlace {
+                Button {
+                    model.placeTellerInPhoto(true)
+                } label: {
+                    Group {
+                        if case .me? = model.tellerChoice {
+                            Text("Minä olen tässä kuvassa")
+                        } else {
+                            Text("\(teller.displayTitle) on tässä kuvassa")
+                        }
+                    }
+                    .modifier(ChoiceLabel())
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+
             Button("Vaihda kertoja") { model.clearTellerChoice() }
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(Elder.supporting)

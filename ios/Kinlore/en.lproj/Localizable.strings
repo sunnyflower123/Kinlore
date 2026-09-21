@@ -104,6 +104,10 @@
 "Tämän muiston kertoi %@" = "%@ told this memory";
 "Nimeä ei näytetä tämän muiston vieressä." = "No name is shown beside this memory.";
 "Vaihda kertoja" = "Change who told it";
+"Minä olen tässä kuvassa" = "I am in this photo";
+"%@ on tässä kuvassa" = "%@ is in this photo";
+"%@ on merkitty tämän kuvan ihmisiin." = "%@ is now among the people in this photo.";
+"Poista merkintä" = "Take it back";
 "Muiston kertoja" = "Who told the memory";
 
 "Mitä haluaisit tietää?" = "What would you like to know?";
