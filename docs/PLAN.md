@@ -536,15 +536,16 @@ finished.**
   `entitlement.ts` is built for one tier and one date.
 
   **What the shape is for is a gift.** The category's two survivors,
-  Storyworth (59–199 $ a year) and Remento (99 $ a year), both sell a gift
-  year with a printed book at the end, and neither meters anything. Kinlore
-  has no book, so its year sits below theirs. Eighty once against fifty a
-  year is a ratio of 1.6, which is what makes the archive-for-ever the one
-  most people take, and that is the intended outcome: nothing to cancel and
-  nothing to lapse. Rounded prices because a gift is a rounded sum; Apple
-  has allowed rounded endings on every purchase type since 2023. Net of
-  Finnish VAT at 25.5 % and Apple's small-business commission at 15 %: 34 €
-  from the year, 54 € from the archive.
+  Storyworth (69–199 $ a year, its help page read 21 Sep 2026) and Remento
+  (99 $ a year), both sell a gift year with a printed book at the end, and
+  neither meters anything. Kinlore has no book, so its year sits below
+  theirs. Eighty once against fifty a year is a ratio of 1.6, which is what
+  makes the archive-for-ever the one most people take, and that is the
+  intended outcome: nothing to cancel and nothing to lapse. Rounded prices
+  because a gift is a rounded sum; Apple has allowed rounded endings on
+  every purchase type since 2023. Net of Finnish VAT at 25.5 % and Apple's
+  small-business commission at 15 %: 34 € from the year, 54 € from the
+  archive.
 
   **The running cost that matters is telling, and a one-time price needs a
   ceiling for it.** Transcription costs about 0.3 c a minute (Gemini 3.6 Flash

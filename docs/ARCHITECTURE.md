@@ -2819,7 +2819,15 @@ Four decisions:
 - **HTML rather than a list of text.** The point of an export is that the
   archive outlives the app, and a browser is the one program every family
   already has. The same file carries the photos and plays the audio without
-  Kinlore installed.
+  Kinlore installed. **And the page reads in a book's order, on purpose:**
+  photographs first, each with its memories beneath it, then people, places
+  and events, told subjects only, and the untold named at the end rather
+  than dropped. The order is the code's own — `SubjectKind.sortOrder` in
+  `ArchiveExport.swift`, *"the order the family thinks in, not the
+  alphabet's"* — and since 21 Sep 2026 it is a decision as well, so that
+  anything ever made from this archive on paper reads in the same order as
+  the page and is a second writer over the same walk, not a second
+  structure.
 - **The raw JSON travels beside it.** If the readable version ever lags behind
   the model, nothing has been lost.
 - **`NSFileCoordinator(.forUploading)` does the zipping**, so no dependency is
