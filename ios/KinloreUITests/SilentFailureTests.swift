@@ -64,6 +64,69 @@ final class SilentFailureTests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Kerro"].waitForExistence(timeout: 10), "the app did not go on")
     }
 
+    /// The other direction of the same rule: a file written by a *later*
+    /// version, on a phone that then went back to this one, holding a
+    /// relationship of a kind this version has never heard of. The relations
+    /// list used to be decoded as a whole, so that one row failed the whole
+    /// file and sent a readable archive down the moved-aside path above.
+    /// Now the row is left out and counted, and the rest loads — including
+    /// the relationship beside it. `-store unknownKind` writes such a file
+    /// with the real encoder and one kind edited in.
+    func testAnArchiveWithAnUnknownRelationKindStillLoads() {
+        let app = launch(["-store", "unknownKind", "-tab", "people"])
+        XCTAssertTrue(
+            app.staticTexts["Vanha Aino"].waitForExistence(timeout: 10),
+            "the archive with an unknown relationship kind did not load"
+        )
+        XCTAssertFalse(
+            app.staticTexts["Tallennettua arkistoa ei saatu luettua"].exists,
+            "a file with one unreadable row was reported as an unreadable file"
+        )
+        // The row this version can read is still there: her card names the
+        // spouse the same file holds.
+        app.staticTexts["Vanha Aino"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Puoliso"].waitForExistence(timeout: 10),
+            "the relationship this version can read was lost with the one it cannot"
+        )
+        XCTAssertTrue(app.staticTexts["Vanha Eino"].exists, "the spouse's card is not named on hers")
+    }
+
+    /// A build that has learnt a new relationship kind pulls the family once
+    /// more from the start. The build before it applied every pull minus the
+    /// rows of a kind it did not know, and the cursor moved past them all the
+    /// same — so a relationship the family confirmed never came again, and
+    /// nothing said so. `-store synced` writes an empty archive whose pulls
+    /// have reached 412, and `-sync.kindsKnown` is what the previous build
+    /// recorded. The reset shows exactly where a cursor at zero shows: a
+    /// first pull that fails is said as the family's memories not arriving,
+    /// while a later pull that fails leaves the ordinary empty archive.
+    func testABuildThatLearntARelationKindPullsFromTheStart() {
+        let learnt = launch(
+            ["-store", "synced", "-tab", "memories", "-family_id", "demo", "-sync.kindsKnown", "2"],
+            api: "http://127.0.0.1:9"
+        )
+        XCTAssertTrue(
+            learnt.staticTexts["Perheen muistoja ei saatu haettua"].waitForExistence(timeout: 10),
+            "a build that learnt a new relationship kind did not pull from the start"
+        )
+        learnt.terminate()
+
+        // The same file under a build that recorded every kind it knows —
+        // `RelationKind.allCases.count`, which the next kind moves to 4 and
+        // this line with it. The cursor stands, and the failed pull is not
+        // the first one.
+        let same = launch(
+            ["-store", "synced", "-tab", "memories", "-family_id", "demo", "-sync.kindsKnown", "3"],
+            api: "http://127.0.0.1:9"
+        )
+        XCTAssertTrue(same.staticTexts["Ei vielä kuvia"].waitForExistence(timeout: 10), "never arrived: the empty archive")
+        XCTAssertFalse(
+            same.staticTexts["Perheen muistoja ei saatu haettua"].exists,
+            "a build whose kinds have not changed pulled from the start"
+        )
+    }
+
     /// The month's minutes are a wall with a date, and the app says so where
     /// it happens and everywhere the wait shows: the screen after the telling,
     /// the note on Muistot and the row itself. `-defer once` fails the first

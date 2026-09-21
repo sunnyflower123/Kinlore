@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 68 sweep tests, each auditing one screen at the default text size and again at the largest, out of 196 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 68 sweep tests, each auditing one screen at the default text size and again at the largest, out of 198 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -331,6 +331,24 @@ only this device knows, `imageFilename` and `audioFilename`, orphaning a
 quota-refused photograph the moment any other device touched its subject.
 Remote rows now keep the local file references, which the DTOs never carried
 in the first place.
+
+A fifth was waiting for the first new relationship kind, and was closed on
+21 Sep 2026 before that kind exists. `RelationKind` is a `String` enum, so a
+pulled row of a kind the build does not know is dropped at the wire
+(`Relation.init?(dto:)` answers nil) — correctly, since the build cannot show
+it — and the cursor then moves past it like any other row. The row never
+comes again unless it changes on the server, and the phone that later updates
+to a build that knows the kind holds a relationship the family confirmed and
+never shows it. So the store records `RelationKind.allCases.count` in
+UserDefaults (`sync.kindsKnown`) at every launch, and a launch that finds a
+different number — or none, which is what every build before this check
+recorded — forgets the cursor once and pulls the family again from the
+start. Safe for the reason the pull after a push is safe: `applyRemote` skips
+the outbox and upserts by id. The same enum was the other half of rule 10's
+blind spot: one such row in the *file* failed the whole archive and sent it
+down the moved-aside path, so `Snapshot` now reads `relations` row by row
+and leaves out what it cannot read, counted. `-store unknownKind`,
+`-store synced` and `-sync.kindsKnown` drive both in `SilentFailureTests`.
 
 `scripts/sync-cursor-check.mjs` drives the interleavings that showed each
 defect against a running Worker, and it is load-bearing: putting the maximum

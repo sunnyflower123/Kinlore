@@ -73,10 +73,14 @@ final class MemoryStore {
         #if DEBUG
         // `-store outdated` writes a file in the shape of one saved before the
         // newer fields existed; `-store unreadable` writes one that is not
-        // JSON at all. They are how SilentFailureTests drives rule 10.
+        // JSON at all; `-store unknownKind` one with a relationship of a kind
+        // this version has never heard of; `-store synced` an empty one whose
+        // pulls have reached 412. They are how SilentFailureTests drives
+        // rule 10 and the cursor check below.
         Self.writeFixture(UserDefaults.standard.string(forKey: "store"), to: fileURL)
         #endif
         load()
+        resetSyncCursorIfRelationKindsChanged()
         #if DEBUG
         // Only with `-seed archive`, and it replaces what is on the device.
         seedDemoArchiveIfRequested()
@@ -1242,6 +1246,40 @@ final class MemoryStore {
         save()
     }
 
+    /// How many relationship kinds the last build to run on this device could
+    /// read. Recorded at every launch, compared at the next.
+    ///
+    /// A pull reply that carries a kind this build does not know is applied
+    /// minus that row — `Relation.init?(dto:)` answers nil and `applyRemote`
+    /// moves on — and the cursor advances past it all the same. So the row
+    /// never comes again unless it changes on the server, and nothing on any
+    /// screen says so: the phone that later updates to a build that knows
+    /// the kind holds a relationship the family confirmed and never shows it.
+    /// That build has to ask for everything once more, and this is how it
+    /// knows to. A pull from zero is safe — `applyRemote` skips the outbox
+    /// and upserts by id — so it costs bandwidth and changes nothing already
+    /// here.
+    ///
+    /// **Unrecorded counts as different.** A build without this check is
+    /// exactly the one that may have dropped rows, and it wrote nothing here;
+    /// the first launch after it pulls once more, which is the point.
+    private static let relationKindsKnownKey = "sync.kindsKnown"
+
+    private func resetSyncCursorIfRelationKindsChanged() {
+        let defaults = UserDefaults.standard
+        let known = RelationKind.allCases.count
+        // `object` before `integer`: `integer` answers 0 for a missing key,
+        // which would read "never recorded" as "recorded none".
+        let recorded: Int? = defaults.object(forKey: Self.relationKindsKnownKey) == nil
+            ? nil
+            : defaults.integer(forKey: Self.relationKindsKnownKey)
+        defer { defaults.set(known, forKey: Self.relationKindsKnownKey) }
+        guard recorded != known, syncSeq != 0 else { return }
+        // Two counts and a cursor; nothing the family said (rule 9).
+        print("[store] relation kinds \(recorded.map { String($0) } ?? "unrecorded") → \(known): pulling again from 0, was at \(syncSeq)")
+        resetSyncCursor()
+    }
+
     // MARK: - Wiping
 
     /// Empties the archive on this device: every row, every media file and the
@@ -1355,6 +1393,11 @@ final class MemoryStore {
             dirtyMemories = []
             dirtyQuestions = []
             dirtyRelations = []
+            // And the cursor, which `-store synced` leaves at 412 on disk:
+            // an emptied archive that has pulled up to 412 is a state no
+            // phone has (`wipe` forgets both), and a first-pull screen under
+            // a stale cursor is the leftover the comment above is about.
+            syncSeq = 0
             save()
             return
         }
@@ -1372,6 +1415,7 @@ final class MemoryStore {
             dirtyMemories = []
             dirtyQuestions = []
             dirtyRelations = []
+            syncSeq = 0
             save()
             return
         }
@@ -1939,6 +1983,8 @@ final class MemoryStore {
         dirtyMemories = []
         dirtyQuestions = []
         dirtyRelations = []
+        // A seeded archive has pulled nothing, whatever the file said before.
+        syncSeq = 0
         save()
     }
     #endif
@@ -1966,6 +2012,11 @@ final class MemoryStore {
         var dirtyRelations: Set<String> = []
         /// What wrote the file. Absent in files from before 4 Sep 2026.
         var schemaVersion: Int? = MemoryStore.schemaVersion
+        /// How many relationship rows the file held that this version could
+        /// not read: a kind added by a later version, on a phone that then
+        /// went back to this one. Counted while decoding and never written —
+        /// a fact about one load, not about the archive.
+        var unreadRelations = 0
 
         enum CodingKeys: String, CodingKey {
             case subjects, memories, questions, syncSeq
@@ -2011,6 +2062,12 @@ final class MemoryStore {
         dirtyQuestions = snapshot.dirtyQuestions
         relations = snapshot.relations
         dirtyRelations = snapshot.dirtyRelations
+        if snapshot.unreadRelations > 0 {
+            // A count and nothing else (rule 9). The next save writes the
+            // file without these rows; the server keeps every one that was
+            // pushed, and a version that can read them asks for them again.
+            print("[store] \(snapshot.unreadRelations) relationship row(s) of a kind this version cannot read were left out")
+        }
     }
 
     func save() {
@@ -2024,7 +2081,7 @@ final class MemoryStore {
     }
 
     #if DEBUG
-    /// The two files rule 10 is tested against. See `init`.
+    /// The files rule 10 and the cursor check are tested against. See `init`.
     private static func writeFixture(_ shape: String?, to url: URL) {
         switch shape {
         case "unreadable":
@@ -2047,6 +2104,41 @@ final class MemoryStore {
             }
             if let old = try? JSONSerialization.data(withJSONObject: object) {
                 try? old.write(to: url, options: .atomic)
+            }
+        case "unknownKind":
+            // A file a later version wrote: beside two people and a
+            // relationship this version reads, one relationship of a kind it
+            // has never heard of. The real encoder writes the readable half,
+            // and the unknown row is that half's row copied with its kind
+            // edited at the JSON level — so the only invented thing in the
+            // file is the one word the test is about.
+            let aino = Subject(kind: .person, title: "Vanha Aino")
+            let eino = Subject(kind: .person, title: "Vanha Eino")
+            var snapshot = Snapshot(subjects: [aino, eino], memories: [], questions: [])
+            snapshot.relations = [
+                Relation(fromSubjectID: aino.id, toSubjectID: eino.id, kind: .spouseOf, confirmed: true)
+            ]
+            guard let data = try? JSONEncoder().encode(snapshot),
+                  var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  var rows = object["relations"] as? [[String: Any]],
+                  var unknown = rows.first
+            else { return }
+            unknown["id"] = UUID().uuidString
+            unknown["kind"] = "nonsense_of"
+            rows.append(unknown)
+            object["relations"] = rows
+            if let file = try? JSONSerialization.data(withJSONObject: object) {
+                try? file.write(to: url, options: .atomic)
+            }
+        case "synced":
+            // An empty archive whose pulls have reached 412: what the cursor
+            // check has to forget, on the one screen that shows whether it
+            // did — Albumi says a first pull that failed, and a later one
+            // that failed is the ordinary empty archive.
+            var snapshot = Snapshot(subjects: [], memories: [], questions: [])
+            snapshot.syncSeq = 412
+            if let data = try? JSONEncoder().encode(snapshot) {
+                try? data.write(to: url, options: .atomic)
             }
         default:
             break
@@ -2119,8 +2211,28 @@ extension MemoryStore.Snapshot {
         dirtySubjects = try c.decodeIfPresent(Set<String>.self, forKey: .dirtySubjects) ?? []
         dirtyMemories = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyMemories) ?? []
         dirtyQuestions = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyQuestions) ?? []
-        relations = try c.decodeIfPresent([Relation].self, forKey: .relations) ?? []
+        // Row by row, and a row this version cannot read is left out and
+        // counted rather than failing the file. `RelationKind` is a String
+        // enum, so a kind added by a later version is a decoding error, and
+        // inside a plain `[Relation]` one such row sent a readable archive
+        // down the moved-aside path in `load()`. The row is not lost where
+        // it matters: a pushed row is on the server, and
+        // `resetSyncCursorIfRelationKindsChanged` fetches it again on the
+        // first launch of a version that can read it.
+        let rows = try c.decodeIfPresent([Lenient<Relation>].self, forKey: .relations) ?? []
+        relations = rows.compactMap(\.value)
+        unreadRelations = rows.count - relations.count
         dirtyRelations = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyRelations) ?? []
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion)
+    }
+}
+
+/// One row of a list, or nil where this version could not read it. The list
+/// still fails as a whole when it is not a list at all; only its rows are
+/// forgiven, one at a time.
+private struct Lenient<Row: Decodable>: Decodable {
+    let value: Row?
+    init(from decoder: Decoder) throws {
+        value = try? Row(from: decoder)
     }
 }

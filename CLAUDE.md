@@ -239,9 +239,19 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
     option; it is the only one.** And `schemaVersion` is written and decoded
     and read by nothing: it is a record of what wrote the file, available to a
     future migration, not a mechanism that does anything today.
-    `-store outdated` and `-store unreadable` drive the two UI tests in
-    `SilentFailureTests` that keep this true — run them after touching
-    `Snapshot` or any persisted model.
+    `-store outdated`, `-store unreadable` and `-store unknownKind` drive
+    the three UI tests in `SilentFailureTests` that keep this true — run them
+    after touching `Snapshot` or any persisted model.
+
+    **The third is the rule's other direction, closed 21 Sep 2026.** A
+    `String` enum in a persisted model (`RelationKind`) is a decoding error
+    on every value a later version adds, so a file written by a newer build
+    and opened by this one failed as a whole over one row. `Snapshot` reads
+    `relations` row by row and leaves out what it cannot read, counted; and
+    because the same row is dropped at the wire with the cursor moving past
+    it, the store records how many kinds it knows (`sync.kindsKnown`) and a
+    build that knows more pulls the family once more from the start
+    (ARCHITECTURE §3).
 
 ## The assistant's rules — checked in, not personal setup
 
