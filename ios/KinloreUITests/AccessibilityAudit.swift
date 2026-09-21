@@ -916,4 +916,37 @@ enum AccessibilityPolicy {
 
         return false
     }
+
+    /// The memory row's two texts — the story and its byline — reported by
+    /// the audit's *default-size* simulation and by nothing else: the
+    /// `listHeaderAndFooterText` signature, fifth appearance, and the first
+    /// whose label cannot be listed. A story's words are the family's, and
+    /// the byline carries the day it was told.
+    ///
+    /// Measured 21 Sep 2026 on a private simulator, per the protocol above:
+    ///
+    ///   * `testPersonCard` and `testPersonCardWithAFace` audited clean until
+    ///     a row was added ABOVE the memories — §25's face row, one `Section`
+    ///     of a 56 pt disc and four words. Then both reported the same two
+    ///     texts at the default size, the story at y 595.67 and *"Mummo ·
+    ///     21.9.2026"* at y 624, in the suite and again alone (23.8 s), the
+    ///     frames identical to the point.
+    ///   * `MemoryRow`'s own code untouched, not a character. The finding
+    ///     moved in with the row above it, which is the signature.
+    ///   * The same two screens audit clean at a real AccessibilityXXXL on
+    ///     every one of those runs — the half that would say the words were
+    ///     actually being lost.
+    ///
+    /// So the sweep passes this in on its FIRST launch only, where the audit
+    /// simulates the scaling. The second launch measures the real layout at
+    /// the largest size with nothing forgiven, and a story that really
+    /// stopped growing would still be caught there, as clipping or as this.
+    /// Keyed on the row's identifiers rather than its words — `memory.body`
+    /// and `memory.byline`, set in `RootView.swift` for this purpose alone —
+    /// and on the one audit type; `scripts/audit-exemption-check.mjs` pins
+    /// both, and `.contrast` must never join it.
+    static func isMemoryRowSimulationArtefact(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .dynamicType, let element = issue.element else { return false }
+        return element.identifier == "memory.body" || element.identifier == "memory.byline"
+    }
 }

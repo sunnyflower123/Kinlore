@@ -118,5 +118,39 @@ if (uses.length === 1) {
 	check('the gate does not forgive contrast', !named.includes('.contrast'))
 }
 
+// The memory row's gate (21 Sep 2026): the one exemption keyed on identifiers
+// rather than words, because a story's words cannot be listed. Pinned the same
+// way — the two identifiers it reads, the one type it names, that the row
+// really sets both, and that the sweep passes it in on the default-size launch
+// only, where the audit simulates the scaling.
+const ROW_IDS = ['memory.body', 'memory.byline']
+const gate = source.findIndex((l) => l.includes('static func isMemoryRowSimulationArtefact'))
+check('the memory row gate is declared', gate >= 0, 'no isMemoryRowSimulationArtefact in the file')
+if (gate >= 0) {
+	let end = gate
+	while (end < source.length && !/^\s{4}\}\s*$/.test(source[end])) end += 1
+	const body = source.slice(gate, end + 1).join(' ')
+	const ids = [...body.matchAll(/identifier == "([^"]+)"/g)].map((m) => m[1])
+	check(
+		'the gate reads exactly the two row identifiers',
+		ids.length === ROW_IDS.length && ROW_IDS.every((id) => ids.includes(id)),
+		`reads ${ids.join(', ') || 'nothing'}`,
+	)
+	const types = [...body.matchAll(/auditType\s*==\s*(\.\w+)/g)].map((m) => m[1])
+	check(
+		'the gate names .dynamicType and nothing else',
+		types.length === 1 && types[0] === '.dynamicType',
+		`names ${types.join(', ') || 'nothing'}`,
+	)
+	const row = readFileSync(join(root, 'ios', 'Kinlore', 'RootView.swift'), 'utf8')
+	for (const id of ROW_IDS) {
+		check(`  the row sets "${id}"`, row.includes(`.accessibilityIdentifier("${id}")`))
+	}
+	const sweeps = readFileSync(join(root, 'ios', 'KinloreUITests', 'AccessibilitySweepTests.swift'), 'utf8')
+	check(
+		'the sweep passes it in on the default-size launch only',
+		/size == nil && AccessibilityPolicy\.isMemoryRowSimulationArtefact\(issue\)/.test(sweeps),
+	)
+}
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

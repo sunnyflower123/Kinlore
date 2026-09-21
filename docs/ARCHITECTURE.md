@@ -30,7 +30,8 @@ and what found it.
 [14. Settings — taking the archive out, and leaving](#14-settings--taking-the-archive-out-and-leaving) ·
 [21. The words](#21-the-words) ·
 [22. The one blue button](#22-the-one-blue-button) ·
-[24. Colours by the telling](#24-colours-by-the-telling)
+[24. Colours by the telling](#24-colours-by-the-telling) ·
+[25. A face on the card](#25-a-face-on-the-card)
 
 **Things that were wrong, and what it took to find them**
 [15. Contrast — the rule that was never measured](#15-contrast--the-rule-that-was-never-measured) ·
@@ -72,7 +73,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 71 sweep tests, each auditing one screen at the default text size and again at the largest, out of 210 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 75 sweep tests, each auditing one screen at the default text size and again at the largest, out of 216 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -445,6 +446,7 @@ anything.
 | One confirms, the other does not | Confirmation always wins (§2.4) |
 | One merges, the other adds | The merge redirects, nothing is lost (§2.5) |
 | One deletes a memory, the other reads it | Only the author can delete |
+| Two phones choose a different face for the same person | The newest choice wins, whole — and a removal is a choice, a phone that never saw the face is not (§25) |
 
 Everything else is resolved by the push that arrives second. There are
 deliberately few rules — every extra rule is a place where data can silently go
@@ -1545,6 +1547,12 @@ Built, in the order they were built:
    `sync.kindsKnown` closes. The row on the card looks the relationship up
    by kind and direction now rather than taking the first live line between
    the two, because one person can be a sister and a friend.
+
+   **And a face, since 21 Sep 2026.** The card's first row is the disc the
+   list and the tree draw for this person, with *Valitse kasvot* beside it:
+   a photograph of the archive and a spot in it, chosen by tapping the face,
+   and cut on every phone from its own copy of the picture rather than sent
+   anywhere. §25 has the flow, the four columns and what the Worker refuses.
 6. **Paywall** — RevenueCat's own, not a hand-built one: it is configured
    remotely, so prices and wording change without shipping a build. Every way in
    only exists when a RevenueCat key is configured — a dead button is worse than
@@ -4858,3 +4866,159 @@ photographs.
   `export-check.mjs` and `full-copy-check.swift` were not extended.
 - **Paid colouring has no fair-use number** beside PLAN §10's five hours of
   telling.
+
+## 25. A face on the card
+
+A person's card, the people list and the tree drew an initial in a disc, and
+the disc's own comment said the app had no portraits and could not get any:
+`imageFilename` is written only for photographs, so there was no face on file
+for anybody the archive knew by name. Since 21 Sep 2026 there can be. A
+person's card points at one of the family's photographs and a spot in it,
+and every phone cuts the disc from its own copy of that picture. Nothing new
+leaves the phone, nothing is uploaded, no quota moves: what travels is a
+reference and two fractions. Built as the second phase of letting friends
+into the archive (the plan itself stays outside the repository, as unbuilt
+plans do) — a friend on the list is one more initial among many, and a face
+is what tells her apart.
+
+### The flow
+
+The person card's first row is the disc, at the card's size, with **"Valitse
+kasvot"** beside it, or **"Vaihda kasvot"** once there is a face. It opens
+`FacePickerSheet`: the photographs this person has been told about in come
+first, under *"Kuvat, joissa hänestä kerrotaan"* — the same join the blind
+card reads, `memories(mentioning:)` — and the rest of the archive under
+*"Muut kuvat"*. Only photographs on this phone are offered; a picture another
+phone added is a key with no file until the full copy fetches it, and a face
+cannot be tapped on a key. A tap on a tile opens `FaceFocusScreen`: the
+photograph at the width of the screen, a ring over the square the disc will
+show, *"Napauta kasvoja kuvassa."*, the card's own disc beside *"Näin kasvot
+näkyvät kortilla."*, and **"Tallenna"**. *"Poista kasvot"* is on the picker,
+and it is not red: nothing is deleted, the photograph stays, the card goes
+back to the initial.
+
+What is stored is `portraitSubjectID`, `portraitFocusX`, `portraitFocusY` and
+`portraitSetAt` on the person's row (`Subject`, all four Optional for rule
+10). Never a crop. `SubjectAvatar` looks the photograph up through
+`MemoryStore.portraitPhoto(for:)`, which answers only with a live photograph
+of the archive whose file is on this phone, and cuts the disc from the
+600 px thumbnail with `Portrait.crop` — half the photograph's shorter side
+around the spot, clamped inside the picture, drawn through `UIImage.draw`
+rather than a pixel crop so a camera's orientation flag is honoured. The
+cuts are kept in `PortraitCache`, keyed by file and spot, so a list of forty
+decodes each picture once. When the picture is not on the phone, or was
+rejected, or merged, the initial is drawn as before, silently: the server
+keeps the choice and the phone may catch up.
+
+Half the shorter side is one number and it is a decision about the
+interaction rather than the picture: one tap and no zoom is the whole of
+what an 80-year-old is asked for, so the square has to be right for the two
+kinds of photograph a family actually has. In a portrait of one person it is
+the head and shoulders; in a row of six at a table a face is about a tenth
+of the width, and half the height shows it with the people either side. It
+was measured on the fixture's photograph and reasoned about for the row of
+six, and *Not yet* below says so.
+
+The face disc keeps an ink ring, two points of `Elder.supporting`, where
+the initial's disc has none. A photograph's border pixels can be as pale as
+the paper — sky, a wall, an overexposed print — and the ring is what gives
+the disc a shape (WCAG 1.4.11), in the same ink at 75 % the filled disc
+measured against both grounds in §15. An unconfirmed person keeps the
+proposal ring and the badge over the face, as over the letter.
+
+What VoiceOver gets here is the screen and not the task, as on the map in
+§18. Each photograph is a button with its name, the picture on the focus
+screen says *"Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta"*,
+and the spot is the middle until somebody who can see the picture taps
+elsewhere — so *"Tallenna"* is never disabled and a face can be saved
+without a tap nobody can aim. The avatar itself stays hidden from the
+accessibility tree, as every avatar is: the name is in the row beside it,
+and "image" is all a face could add.
+
+### The rules on the wire
+
+Four columns on `subject`, `portrait_subject_id`, `portrait_focus_x`,
+`portrait_focus_y` and `portrait_set_at`, added like the colour columns in
+§24 and with the same shape of rule in `sync.ts`: **the newest moment wins,
+whole**, and a NULL moment is never later than anything. That one line is
+what lets three different pushes mean three different things. A choice is a
+photograph under a moment. A removal is **no photograph under a new
+moment**, and it wins over the older choice — which is how it travels at
+all. And a phone that never saw the face pushes its whole row as every phone
+does, with no photograph and *no moment*, and changes nothing. Without the
+moment a removal and an ignorant phone would send the same two NULLs, and
+either the removal could not travel or every stale phone would undo it.
+
+The Worker does not believe the reference. The INSERT looks the photograph
+up as it runs — a live one, of the pusher's own family — and anything else
+becomes no photograph and, in the same statement, no moment: **no opinion**,
+which the rules leave alone. Another family's photograph, a person, a
+photograph the family has rejected, a photograph the family does not have:
+each is measured in `subject-rules-check.mjs` and each changes nothing.
+Because the lookup runs inside the batch, the push sorts photographs before
+everything else, so a person given a face from a photograph that arrives in
+the same request finds it already there. A spot outside the picture is
+stored as none and the phone draws the middle.
+
+Two consequences are recorded rather than fixed. A photograph rejected
+*after* it was chosen stays on the person's row — the decision is a fact
+about the family, the phone draws the initial when the picture is gone, and
+un-rejecting the photograph would bring the face straight back. And there
+is no `FOREIGN KEY`, for the same reason: soft deletion keeps the row.
+
+The phone's half is one keep rule, `Subject.withPortrait(from:)`, the
+colours' rule from §24 again: a pulled row with no moment takes nothing
+away, because a Worker that has not been redeployed sends none and would
+otherwise wipe every face the family had chosen on the first pull after an
+update. A choice this phone has not pushed yet needs no rule — the row is
+dirty and `applyRemote` skips it whole.
+
+The blind card (§23) draws no avatar and never may: a face chosen for one
+of the four names would be cut from a photograph, possibly the one on the
+card, and a disc of it beside a name would answer the question in pixels.
+`BlindConfirmationTests` reads every picture's label on that screen for the
+four names and pins that one picture, and only one, is described as the
+card's photograph. Not a count of all of them: the tab bar's icons are
+pictures, and the Kerro tab keeps a photograph of its own in the deck above
+the card — the first run of that line counted five.
+
+The face row sits above the memories, and the audit's default-size
+simulation reported the memory rows the moment it did: the story at y
+595.67 and the byline at y 624, on the person card with a face and without
+one, in the suite and alone, `MemoryRow` untouched and both screens clean at
+a real AccessibilityXXXL. That is the `listHeaderAndFooterText` signature of
+§15, fifth appearance, and the first whose label cannot be listed — a
+story's words are the family's, and the byline carries the day.
+`AccessibilityPolicy.isMemoryRowSimulationArtefact` forgives `.dynamicType`
+on the row's two identifiers, `memory.body` and `memory.byline`, and the
+sweep passes it in on its first launch only, where the audit simulates the
+scaling; the second launch measures the real layout with nothing forgiven.
+`scripts/audit-exemption-check.mjs` pins the two identifiers, the one type
+and the one launch.
+
+### Checked
+
+| Claim | Check |
+|---|---|
+| The four fields go and come back, a row with no moment keeps the face, a removal under a moment takes it, and `applyRemote` lays the rule on | `sync-fields-check.swift` — 7 checks added |
+| Newest moment wins, a removal travels, an ignorant phone changes nothing, and what the Worker refuses: another family's photograph, a person, a rejected photograph, one the family does not have; photographs first in a request; a spot outside the picture; a moment in the future; only a person has a face; a photograph rejected after the choice stays on the row | `subject-rules-check.mjs` — 14 checks added, over the local Worker and D1 |
+| Chosen by tapping the face, and the row flips; taken off from the same row, and it flips back | `FaceTests` |
+| The list with a face, the card with a face, the picker and the spot, each at both text sizes | `AccessibilitySweepTests` — 4 sweeps |
+| No picture on the blind card's screen carries a name, and one is described as the photograph | `BlindConfirmationTests` |
+| The memory row's exemption reads two identifiers and one audit type, the row sets both, and the sweep passes it in on the first launch only | `audit-exemption-check.mjs`, in `verify.sh` |
+
+### Not yet
+
+- **Production.** The four `ALTER TABLE` statements and the Worker deploy
+  are a decision taken at the keyboard, not in a commit; this section
+  records the date when it has happened.
+- **No zoom, and the square was measured on one photograph.** The first
+  real family photographs are the measurement that matters; a face in a
+  crowd of twelve may need a tighter square than half the shorter side.
+- **The export does not carry the face.** The photograph is in the export;
+  which of them is somebody's face, and where, is not
+  (`ArchiveExport` is unchanged).
+- **A face chosen on another phone is the initial until the full copy has
+  fetched the photograph.** By design, and unmeasured on a real family.
+- **Places have no face**, and a photograph is its own picture.
+- **The tree at 48 points has not been looked at with a real face in it.**

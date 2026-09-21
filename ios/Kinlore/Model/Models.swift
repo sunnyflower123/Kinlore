@@ -168,6 +168,23 @@ struct Subject: Identifiable, Codable, Hashable {
     var colourConfirmedByID: String?
     var colourConfirmedByName: String?
     var colourConfirmedAt: Date?
+    /// The face on a person's card: a photograph in the archive, and the point
+    /// in it somebody tapped, as fractions of its width and height. The
+    /// photograph itself is never cropped — `SubjectAvatar` draws a disc
+    /// around the point at whatever size a screen needs, and the original
+    /// stays what it was. Nil until somebody chose one (*"Valitse kasvot"* on
+    /// the person card). A reference to a photograph that has since been
+    /// rejected, or one this phone holds no file for, draws the initial again.
+    ///
+    /// `portraitSetAt` is when the choice was made, and it is what settles two
+    /// phones choosing differently: the newest choice wins on the server
+    /// (`sync.ts`), and a removal is a choice too — nil id under a new moment
+    /// — so it travels where a bare nil, which is also what a phone that never
+    /// saw the face sends, could not. Optional, all four, for rule 10.
+    var portraitSubjectID: String?
+    var portraitFocusX: Double?
+    var portraitFocusY: Double?
+    var portraitSetAt: Date?
     /// A subject proposed by the AI is created unconfirmed. Unconfirmed never
     /// appears in the family tree as fact — a wrong relationship is worse than a
     /// missing one.

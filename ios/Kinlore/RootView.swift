@@ -684,6 +684,8 @@ struct SubjectDetailScreen: View {
     @State private var isRenaming = false
     /// The map opened to move a place's point by hand.
     @State private var isPinning = false
+    /// The picker for the face on a person's card (§25).
+    @State private var isChoosingFace = false
     @State private var isConfirmingRemoval = false
 
     /// The subject as the store has it now, rather than as it was when this
@@ -897,6 +899,30 @@ struct SubjectDetailScreen: View {
                         HStack(spacing: 10) {
                             Image(systemName: "pencil")
                             Text(nameRowText)
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .foregroundStyle(Elder.supporting)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .elderTapTarget()
+                    }
+                }
+            }
+
+            // The face on the card, and the way to give it one (§25). People
+            // only: a place has no face and a photograph is its own picture.
+            // The disc is the same `SubjectAvatar` the list and the tree
+            // draw, so what is chosen here is what is drawn everywhere — and
+            // the row says in words what the disc, hidden from VoiceOver like
+            // every avatar, cannot.
+            if subject.kind == .person {
+                Section {
+                    Button {
+                        isChoosingFace = true
+                    } label: {
+                        HStack(spacing: 14) {
+                            SubjectAvatar(subject: current, size: 56)
+                            Text(current.portraitSubjectID == nil ? "Valitse kasvot" : "Vaihda kasvot")
                                 .font(.body)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -1195,6 +1221,9 @@ struct SubjectDetailScreen: View {
         .sheet(isPresented: $isDating) {
             DateSheet(subject: current)
         }
+        .sheet(isPresented: $isChoosingFace) {
+            FacePickerSheet(subject: current)
+        }
         // `current.place` and not the one the row was drawn from: the sheet
         // opens on the archive as it is now, so a point another phone resolved
         // while this card was open is the point the map starts at.
@@ -1294,8 +1323,14 @@ private struct MemoryRow: View {
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
             } else {
+                // The identifiers on this text and on the byline below are
+                // for `AccessibilityPolicy.isMemoryRowSimulationArtefact`
+                // and nothing else: the audit's default-size simulation
+                // reports these two the moment a row is added above the
+                // memories, and a story's words cannot be listed by label.
                 Text(memory.body)
                     .elderBody()
+                    .accessibilityIdentifier("memory.body")
             }
 
             if !heardHere.isEmpty {
@@ -1343,11 +1378,13 @@ private struct MemoryRow: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Elder.supporting)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("memory.byline")
                 } else {
                     Text(verbatim: Self.told(memory.createdAt))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Elder.supporting)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("memory.byline")
                 }
 
                 // The original audio is part of the product, not a step towards it.

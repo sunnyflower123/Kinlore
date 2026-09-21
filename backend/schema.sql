@@ -188,6 +188,27 @@ CREATE TABLE subject (
   colour_confirmed_by TEXT REFERENCES member(id),
   colour_confirmed_at INTEGER,
 
+  -- kind = 'person'
+  --
+  -- The face on the person's card: a photograph of the same family, the
+  -- point in it somebody tapped as fractions of its width and height, and
+  -- the moment of choosing. The photograph is never cropped -- each phone
+  -- draws a disc around the point at the size its screen needs. The moment
+  -- is what settles two phones choosing differently: the newest choice wins,
+  -- and a removal is a choice with a NULL photograph under a new moment.
+  -- Not a FOREIGN KEY: sync.ts checks on the way in that the photograph is a
+  -- live one of this family, and a photograph rejected afterwards keeps its
+  -- row and leaves the face pointing at it, which the phone draws as the
+  -- initial again. For existing databases:
+  --   ALTER TABLE subject ADD COLUMN portrait_subject_id TEXT;
+  --   ALTER TABLE subject ADD COLUMN portrait_focus_x REAL;
+  --   ALTER TABLE subject ADD COLUMN portrait_focus_y REAL;
+  --   ALTER TABLE subject ADD COLUMN portrait_set_at INTEGER;
+  portrait_subject_id TEXT,
+  portrait_focus_x    REAL,
+  portrait_focus_y    REAL,
+  portrait_set_at     INTEGER,
+
   -- kind = 'place'
   --
   -- Where the place is, once its name has been looked up. A place is born as a

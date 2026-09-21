@@ -704,6 +704,39 @@ final class MemoryStore {
         save()
     }
 
+    /// The face on a person's card, or none.
+    ///
+    /// A photograph of the archive and the point in it somebody tapped — the
+    /// photograph is never cropped, the disc is drawn around the point at
+    /// whatever size a screen needs (`SubjectAvatar`). `nil` removes the face,
+    /// and it is a choice like the other: the moment moves with it, which is
+    /// what lets a removal travel and win on the server over an older choice
+    /// (`sync.ts`), where a bare nil — which is also what every phone that
+    /// never saw the face sends — must not.
+    func setPortrait(subjectID: String, photoID: String?, focusX: Double, focusY: Double) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].portraitSubjectID = photoID
+        subjects[index].portraitFocusX = photoID == nil ? nil : min(max(focusX, 0), 1)
+        subjects[index].portraitFocusY = photoID == nil ? nil : min(max(focusY, 0), 1)
+        subjects[index].portraitSetAt = Date()
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
+    /// The photograph a person's face is drawn from, if it can be drawn at
+    /// all: a live photograph of this archive with its file on this phone.
+    /// Nil is the initial, and every way of getting there is silent by design
+    /// — a rejected photograph, a file the full copy has not fetched yet, a
+    /// reference the server refused and this phone has not pulled yet.
+    func portraitPhoto(for subject: Subject) -> Subject? {
+        guard let id = subject.portraitSubjectID,
+              let photo = subjects.first(where: { $0.id == id }),
+              photo.kind == .photo, photo.deletedAt == nil, photo.mergedInto == nil,
+              photo.imageFilename != nil
+        else { return nil }
+        return photo
+    }
+
     /// Rejects a subject: a tombstone, not a removal.
     ///
     /// The row stays with `deletedAt` set and goes to the server like any other
@@ -1038,7 +1071,9 @@ final class MemoryStore {
                 // `withColours` keeps: see there.
                 let merged = incoming.withColours(from: subjects[index])
                 if let stale = merged.stale { MediaStore.delete(filename: stale) }
-                subjects[index] = merged.row
+                // And the face on a person's card, by the same rule again:
+                // a row that says nothing about it takes nothing away.
+                subjects[index] = merged.row.withPortrait(from: subjects[index])
             } else {
                 subjects.append(incoming)
             }
@@ -1478,7 +1513,7 @@ final class MemoryStore {
             return
         }
         guard [
-            "archive", "unseen", "deck", "blind", "related", "dated",
+            "archive", "unseen", "deck", "blind", "related", "dated", "faces",
             "film", "film-untold", "film-week", "film-family", "film-tree",
         ].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
@@ -1510,7 +1545,7 @@ final class MemoryStore {
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
         let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
-        let kalle = Subject(id: "demo-kalle", kind: .person, title: "Kalle")
+        var kalle = Subject(id: "demo-kalle", kind: .person, title: "Kalle")
         let sanni = Subject(id: "demo-sanni", kind: .person, title: "Sanni")
         // `-seed blind` is the archive with a face on its one photograph.
         //
@@ -1524,8 +1559,21 @@ final class MemoryStore {
             id: "demo-photo",
             kind: .photo,
             title: "",
-            imageFilename: seed == "blind" ? Self.demoPhotoFile() : seed?.hasPrefix("film") == true ? Self.filmPhotoFile() : nil
+            imageFilename: seed == "blind" || seed == "faces"
+                ? Self.demoPhotoFile()
+                : seed?.hasPrefix("film") == true ? Self.filmPhotoFile() : nil
         )
+        // `-seed faces` is the same picture with a face already chosen from
+        // it: Kalle's card, the list and the tree draw a disc of the fixture's
+        // photograph instead of his initial, and Eeva's card is where a test
+        // chooses one. The point is the top of the dark shape
+        // `demoPhotoFile` draws, which is the nearest thing it has to a head.
+        if seed == "faces" {
+            kalle.portraitSubjectID = photo.id
+            kalle.portraitFocusX = 0.5
+            kalle.portraitFocusY = 0.35
+            kalle.portraitSetAt = Date(timeIntervalSince1970: 1_700_000_000)
+        }
         // A place with nothing said about it yet, which is the ordinary state of
         // a place: it is named inside somebody's memory and gets a card of its
         // own. It is here so the accessibility sweep actually covers the Paikat

@@ -357,7 +357,12 @@ final class AccessibilitySweepTests: XCTestCase {
             if wantsLossCheck {
                 seen[size != nil] = labelsInTree(app).union(judgedAbove)
             }
-            try audit(app, "\(name), \(at)")
+            // The first launch is where the audit simulates the scaling, and
+            // the memory row's artefact lives there only; the second launch
+            // is the real layout, with nothing forgiven. The policy says why.
+            try audit(app, "\(name), \(at)", alsoAllowing: { issue in
+                size == nil && AccessibilityPolicy.isMemoryRowSimulationArtefact(issue)
+            })
             app.terminate()
         }
         // **What the audit at the largest size could not see.**
@@ -1226,6 +1231,48 @@ final class AccessibilitySweepTests: XCTestCase {
         ) { app, _ in
             reach(app.buttons["Lisää sukulainen"], in: app, "the row that adds a relative").tap()
             require(app.buttons["Lisää ystävä"], "the sheet")
+        }
+    }
+
+    /// The list with a face on one card: Kalle's disc is a photograph now,
+    /// with the ink ring that gives it an edge on the paper (§25).
+    func testPeopleWithAFace() throws {
+        try sweep("Ihmiset, kasvot kortilla", arguments: ["-seed", "faces", "-tab", "people"]) { app, _ in
+            require(app.staticTexts["Kalle"], "the person with a face")
+        }
+    }
+
+    /// The person card with a face on it, and the row that changes it.
+    func testPersonCardWithAFace() throws {
+        try sweep(
+            "Person card with a face",
+            arguments: ["-seed", "faces", "-tab", "people", "-screen", "person", "-person", "demo-kalle"]
+        ) { app, _ in
+            require(app.buttons["Vaihda kasvot"], "the row that changes the face")
+        }
+    }
+
+    /// The picker: the archive's photographs as tiles, and the way out.
+    func testPersonCardFacePicker() throws {
+        try sweep(
+            "Person card, choose a face",
+            arguments: ["-seed", "faces", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            reach(app.buttons["Valitse kasvot"], in: app, "the row that chooses a face").tap()
+            require(app.buttons["Valokuva"], "the photograph offered")
+        }
+    }
+
+    /// The spot: the photograph with the ring on it, the card's disc beside
+    /// its sentence, and Tallenna.
+    func testPersonCardFaceSpot() throws {
+        try sweep(
+            "Person card, the face's spot",
+            arguments: ["-seed", "faces", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            reach(app.buttons["Valitse kasvot"], in: app, "the row that chooses a face").tap()
+            require(app.buttons["Valokuva"], "the photograph offered").tap()
+            require(app.buttons["Tallenna"], "the save button")
         }
     }
 

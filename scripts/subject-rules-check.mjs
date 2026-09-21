@@ -282,6 +282,123 @@ try {
 		const eeva = (await subjects(mummo)).get(somebody)
 		check('and only a photograph has colours to confirm', eeva?.colour_r2_key === null, String(eeva?.colour_r2_key))
 	}
+
+	console.log('— a face on a person\'s card —')
+	{
+		// A choice is a photograph of this family and a point in it under a
+		// moment; a removal is the same choice with no photograph. Every rule
+		// below is silent when broken: a face that quietly falls off a card
+		// looks exactly like a card nobody chose a face for.
+		const T = Math.floor(Date.now() / 1000) - 3600
+		const photo1 = randomUUID()
+		const photo2 = randomUUID()
+		const person = randomUUID()
+		const picture = (id, more = {}) => ({ id, kind: 'photo', title: '', created_at: 0, ...more })
+		const choice = (photoID, at, more = {}) => ({
+			id: person,
+			kind: 'person',
+			title: 'Kalle',
+			portrait_subject_id: photoID,
+			portrait_focus_x: 0.4,
+			portrait_focus_y: 0.3,
+			portrait_set_at: at,
+			created_at: 0,
+			...more,
+		})
+		const face = async (id = person) => {
+			const s = (await subjects(mummo)).get(id)
+			return { photo: s?.portrait_subject_id, x: s?.portrait_focus_x, y: s?.portrait_focus_y, at: s?.portrait_set_at, title: s?.title }
+		}
+
+		// The person and the photograph in one request, the person first: the
+		// Worker has to put the photograph in before it looks it up.
+		await push(mummo, [choice(photo1, T), picture(photo1)])
+		let f = await face()
+		check(
+			'travels whole: the photograph, the point and the moment, even when the photograph arrives in the same request behind it',
+			f.photo === photo1 && f.x === 0.4 && f.y === 0.3 && f.at === T,
+			JSON.stringify(f),
+		)
+
+		// A phone that has never seen the face, renaming the person.
+		await push(mummo, [{ id: person, kind: 'person', title: 'Kalle Kustaa', created_at: 0 }])
+		f = await face()
+		check(
+			'an older phone renaming the person does not take the face away',
+			f.photo === photo1 && f.title === 'Kalle Kustaa',
+			JSON.stringify(f),
+		)
+
+		await push(mummo, [picture(photo2)])
+		await push(mummo, [choice(photo2, T - 600)])
+		f = await face()
+		check('an older choice arriving late does not replace a newer one', f.photo === photo1, JSON.stringify(f))
+
+		await push(mummo, [choice(photo2, T + 600)])
+		f = await face()
+		check('a newer choice does', f.photo === photo2 && f.at === T + 600, JSON.stringify(f))
+
+		await push(mummo, [choice(null, T + 1200)])
+		f = await face()
+		check('a removal is a choice too, and travels', f.photo === null && f.at === T + 1200, JSON.stringify(f))
+
+		await push(mummo, [choice(photo2, T + 600)])
+		f = await face()
+		check('and the phone that chose the face, pushing its row again, does not bring it back', f.photo === null, JSON.stringify(f))
+
+		await push(mummo, [choice(randomUUID(), T + 1800)])
+		f = await face()
+		check('a photograph the family does not have is no opinion, and changes nothing', f.photo === null && f.at === T + 1200, JSON.stringify(f))
+
+		// Another family's photograph, which is a real row in the same table.
+		const strangerID = randomUUID()
+		const strangerSecret = randomBytes(32).toString('hex')
+		const stranger = { auth: { Authorization: `Bearer ${strangerID}.${strangerSecret}` } }
+		await send('/family', {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({ memberID: strangerID, secret: strangerSecret, displayName: 'Vieras', familyName: 'Toinen perhe' }),
+		})
+		const theirs = randomUUID()
+		await push(stranger, [picture(theirs)])
+		await push(mummo, [choice(theirs, T + 1800)])
+		f = await face()
+		check("nor may it be another family's photograph", f.photo === null && f.at === T + 1200, JSON.stringify(f))
+
+		await push(mummo, [choice(person, T + 1800)])
+		f = await face()
+		check('nor a person', f.photo === null && f.at === T + 1200, JSON.stringify(f))
+
+		await push(mummo, [picture(photo1, { deleted_at: T })])
+		await push(mummo, [choice(photo1, T + 1800)])
+		f = await face()
+		check('nor a photograph the family has rejected', f.photo === null && f.at === T + 1200, JSON.stringify(f))
+
+		await push(mummo, [choice(photo2, T + 2400, { portrait_focus_x: 1.4, portrait_focus_y: -2 })])
+		f = await face()
+		check('a point outside the picture is stored as none, and the face stays', f.photo === photo2 && f.x === null && f.y === null, JSON.stringify(f))
+
+		await push(mummo, [choice(photo2, T + 10 * 365 * 86_400)])
+		f = await face()
+		check(
+			'a moment in the future is held to now, so it cannot lock out every later choice',
+			f.at <= Math.floor(Date.now() / 1000) + 1 && f.at > T + 2400,
+			JSON.stringify(f),
+		)
+
+		// Last, because after this photo2 can be chosen by nobody.
+		await push(mummo, [picture(photo2, { deleted_at: T })])
+		f = await face()
+		check(
+			'a photograph rejected after it was chosen stays on the row: the decision is recorded, and the phone draws the initial',
+			f.photo === photo2,
+			JSON.stringify(f),
+		)
+
+		await push(mummo, [picture(randomUUID(), { portrait_subject_id: photo2, portrait_focus_x: 0.5, portrait_focus_y: 0.5, portrait_set_at: T })])
+		const faces = [...(await subjects(mummo)).values()].filter((s) => s.kind === 'photo' && s.portrait_subject_id !== null)
+		check('and only a person has a face', faces.length === 0, `${faces.length} photographs carry one`)
+	}
 } catch (error) {
 	failures += 1
 	console.log(`\n  FAIL ${error.message}`)

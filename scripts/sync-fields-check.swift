@@ -219,6 +219,8 @@ struct SyncFieldsCheck {
             "colourR2Key": .wire, "colourConfirmedByID": .wire,
             "colourConfirmedByName": .server,
             "colourConfirmedAt": .wire,
+            "portraitSubjectID": .wire, "portraitFocusX": .wire, "portraitFocusY": .wire,
+            "portraitSetAt": .wire,
             "confirmed": .wire, "createdAt": .wire, "mergedInto": .wire, "deletedAt": .wire,
         ]
         let subject = Subject(
@@ -229,6 +231,7 @@ struct SyncFieldsCheck {
             colourImageFilename: "colour-on-this-phone.jpg", colourR2Key: "family/colour.jpg",
             colourConfirmedByID: "member", colourConfirmedByName: "a member's name",
             colourConfirmedAt: later,
+            portraitSubjectID: "photo-of-them", portraitFocusX: 0.4, portraitFocusY: 0.3, portraitSetAt: later,
             confirmed: false, createdAt: then, mergedInto: "subject-kept", deletedAt: later
         )
         let pulledSubject = audit(
@@ -319,6 +322,34 @@ struct SyncFieldsCheck {
             )
         }
 
+        // The face on a person's card, which has no phone-only half and one
+        // keep rule: a pulled row that says nothing about it — no moment —
+        // takes nothing away, and a removal, which is a nil id under a
+        // moment, does. Both are silent when wrong, and the second is the
+        // one a keep rule written for the first quietly breaks.
+        var silent = subject
+        silent.portraitSubjectID = nil
+        silent.portraitFocusX = nil
+        silent.portraitFocusY = nil
+        silent.portraitSetAt = nil
+        let keptFace = silent.withPortrait(from: subject)
+        check(
+            "a pulled row with no word on the face keeps this phone's",
+            keptFace.portraitSubjectID == subject.portraitSubjectID
+                && keptFace.portraitFocusX == subject.portraitFocusX
+                && keptFace.portraitFocusY == subject.portraitFocusY
+                && keptFace.portraitSetAt == subject.portraitSetAt,
+            "a pull leaves \(keptFace.portraitSubjectID ?? "nothing")"
+        )
+        var removal = silent
+        removal.portraitSetAt = later.addingTimeInterval(60)
+        let removedFace = removal.withPortrait(from: subject)
+        check(
+            "and a removal under a moment takes it away",
+            removedFace.portraitSubjectID == nil && removedFace.portraitSetAt == removal.portraitSetAt,
+            "a pull leaves \(removedFace.portraitSubjectID ?? "nothing")"
+        )
+
         let path = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("ios/Kinlore/Data/MemoryStore.swift")
@@ -347,6 +378,12 @@ struct SyncFieldsCheck {
                         "applyRemote lays a pulled \(model) over this phone's through withColours",
                         body.contains("incoming.withColours(from: \(array)[index])")
                     )
+                    if model == "Subject" {
+                        check(
+                            "and the face through withPortrait, on the same row",
+                            body.contains(".withPortrait(from: \(array)[index])")
+                        )
+                    }
                 default:
                     continue
                 }

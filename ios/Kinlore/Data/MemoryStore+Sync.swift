@@ -21,6 +21,13 @@ struct SubjectDTO: Codable {
     var colour_confirmed_by: String?
     var colour_confirmed_by_name: String?
     var colour_confirmed_at: Double?
+    /// The face on a person's card: a photograph of this family and a point
+    /// in it, and the moment of choosing, which is the server's tiebreak.
+    /// Optional in both directions like the colours above.
+    var portrait_subject_id: String?
+    var portrait_focus_x: Double?
+    var portrait_focus_y: Double?
+    var portrait_set_at: Double?
     /// A place's coordinates. Optional in both directions: a server that has not
     /// been redeployed does not send them, and most subjects are not places.
     var lat: Double?
@@ -217,6 +224,10 @@ extension Subject {
             colour_confirmed_by: colourR2Key == nil ? nil : colourConfirmedByID,
             colour_confirmed_by_name: nil,
             colour_confirmed_at: colourR2Key == nil ? nil : colourConfirmedAt?.timeIntervalSince1970,
+            portrait_subject_id: portraitSubjectID,
+            portrait_focus_x: portraitFocusX,
+            portrait_focus_y: portraitFocusY,
+            portrait_set_at: portraitSetAt?.timeIntervalSince1970,
             lat: place?.latitude,
             lon: place?.longitude,
             geo_precision: place?.precision.rawValue,
@@ -246,6 +257,10 @@ extension Subject {
             colourConfirmedByID: dto.colour_confirmed_by,
             colourConfirmedByName: dto.colour_confirmed_by_name,
             colourConfirmedAt: dto.colour_confirmed_at.map { Date(timeIntervalSince1970: $0) },
+            portraitSubjectID: dto.portrait_subject_id,
+            portraitFocusX: dto.portrait_focus_x,
+            portraitFocusY: dto.portrait_focus_y,
+            portraitSetAt: dto.portrait_set_at.map { Date(timeIntervalSince1970: $0) },
             confirmed: dto.confirmed == 1,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             mergedInto: dto.merged_into,
@@ -282,6 +297,28 @@ extension Subject {
             return (row, nil)
         }
         return (row, local.colourImageFilename)
+    }
+
+    /// A pulled row laid over this phone's copy of it, as far as the face goes.
+    ///
+    /// The server keeps the newest choice, and a pull is its answer — with the
+    /// one exception the colours have too: a row that says nothing about the
+    /// face takes nothing away. A Worker that has not been redeployed sends no
+    /// `portrait_set_at`, and would otherwise wipe every face the family had
+    /// chosen on the first pull after an update. A choice this phone has not
+    /// pushed yet needs no rule here: the row is dirty, and `applyRemote`
+    /// skips it whole.
+    ///
+    /// A removal is not "nothing": it arrives as a nil id under a moment, and
+    /// the moment is what this reads.
+    func withPortrait(from local: Subject) -> Subject {
+        guard portraitSetAt == nil else { return self }
+        var row = self
+        row.portraitSubjectID = local.portraitSubjectID
+        row.portraitFocusX = local.portraitFocusX
+        row.portraitFocusY = local.portraitFocusY
+        row.portraitSetAt = local.portraitSetAt
+        return row
     }
 
     private static func hint(from dto: SubjectDTO) -> DateHint? {

@@ -88,7 +88,11 @@ final class BlindConfirmationTests: XCTestCase {
             )
             // The photograph describes what is known and nothing more. A label
             // naming anybody would hand VoiceOver the answer.
-            guard label.hasPrefix("Valokuva") else { continue }
+            // The photograph's description, and since 21 Sep 2026 every
+            // picture on the screen: a face on a person's card (§25) is cut
+            // from a photograph and could carry the person's name as its
+            // label, which would answer the question in one VoiceOver line.
+            guard label.hasPrefix("Valokuva") || element.elementType == .image else { continue }
             for name in ["Aino", "Eeva", "Kalle", "Sanni"] {
                 XCTAssertFalse(
                     label.contains(name),
@@ -96,6 +100,23 @@ final class BlindConfirmationTests: XCTestCase {
                 )
             }
         }
+
+        // The photograph, once. A person can have a face on their card
+        // (§25), cut from a photograph of the archive — possibly this one —
+        // and a disc of it beside a name would answer the question in
+        // pixels. `SubjectAvatar` hides itself from this tree, so what VoiceOver
+        // meets is checked above, by label; what this pins is that nothing
+        // else on the screen is described as the card's photograph. Counted by
+        // that label and not as "all pictures": the first run of this line
+        // counted five — the tab bar's four icons — and the Kerro tab keeps a
+        // photograph of its own in the deck above the card.
+        let photographs = app.images.matching(
+            NSPredicate(format: "label == %@", "Valokuva, jossa on joku")
+        ).count
+        XCTAssertEqual(
+            photographs, 1,
+            "the card describes \(photographs) pictures as its photograph; there is one"
+        )
     }
 
     /// A name that matches confirms the person, which is the strongest

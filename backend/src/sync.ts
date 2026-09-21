@@ -23,6 +23,14 @@ export type SubjectRow = {
 	colour_confirmed_by: string | null
 	colour_confirmed_by_name?: string | null
 	colour_confirmed_at: number | null
+	// The face on a person's card: a live photograph of the same family, the
+	// point in it somebody tapped as fractions of its width and height, and
+	// the moment of choosing, which is what settles two phones choosing
+	// differently. Null on every other kind of subject.
+	portrait_subject_id: string | null
+	portrait_focus_x: number | null
+	portrait_focus_y: number | null
+	portrait_set_at: number | null
 	// Where a place is, once its name has been looked up on a device. Null until
 	// something resolved it, and null again when the name is corrected.
 	lat: number | null
@@ -168,6 +176,7 @@ export async function pull(env: Env, session: Session, since: number) {
 		        s.date_start, s.date_end, s.date_precision,
 		        s.confirmed, s.merged_into, s.created_at, s.deleted_at, s.seq,
 		        s.colour_r2_key, s.colour_confirmed_by, s.colour_confirmed_at,
+		        s.portrait_subject_id, s.portrait_focus_x, s.portrait_focus_y, s.portrait_set_at,
 		        confirmer.display_name AS colour_confirmed_by_name
 		 FROM subject s
 		 LEFT JOIN member confirmer ON confirmer.id = s.colour_confirmed_by
@@ -264,7 +273,15 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 	const timestamp = now()
 	const statements: D1PreparedStatement[] = []
 
-	for (const subject of (payload.subjects ?? []).slice(0, MAX_ROWS)) {
+	// Photographs first, whatever order the phone sent them in. A person's
+	// face points at a photograph of the same family, and the statement below
+	// looks that photograph up as it runs — so a person chosen a face from a
+	// photograph that arrives in the same request has to find it already
+	// there. The sort is stable, and nothing else here reads the order.
+	const pushedSubjects = (payload.subjects ?? [])
+		.slice(0, MAX_ROWS)
+		.sort((a, b) => Number(a.kind !== 'photo') - Number(b.kind !== 'photo'))
+	for (const subject of pushedSubjects) {
 		if (!subject.id || !subject.kind) continue
 		// Both halves or neither. A lone latitude is not half a location, it is a
 		// point off the coast of Ghana.
@@ -284,15 +301,52 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 			subject.colour_confirmed_by === session.memberID &&
 			typeof subject.colour_confirmed_at === 'number' &&
 			Number.isFinite(subject.colour_confirmed_at)
+		// A face is a choice under a moment, and only a person has one. The
+		// choice may be no photograph at all -- that is a removal, and it needs
+		// the moment to travel, because a phone that never saw the face sends
+		// the same null photograph with no moment and must change nothing.
+		// Whether the photograph is a live one of this family is the
+		// statement's own question, asked as it runs; a focus outside the
+		// picture is stored as none, and the phone draws the middle.
+		const face =
+			subject.kind === 'person' &&
+			typeof subject.portrait_set_at === 'number' &&
+			Number.isFinite(subject.portrait_set_at) &&
+			(subject.portrait_subject_id == null || typeof subject.portrait_subject_id === 'string')
+		const faceID = face && typeof subject.portrait_subject_id === 'string' ? subject.portrait_subject_id : null
+		const faceAt = face ? Math.min(subject.portrait_set_at as number, timestamp) : null
+		const focus = (value: unknown) =>
+			faceID !== null && typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1
+				? value
+				: null
 		statements.push(
 			env.DB.prepare(
 				`INSERT INTO subject (id, family_id, kind, title, r2_key,
 				                      colour_r2_key, colour_confirmed_by, colour_confirmed_at,
+				                      portrait_subject_id, portrait_focus_x, portrait_focus_y, portrait_set_at,
 				                      lat, lon, geo_precision,
 				                      date_start, date_end,
 				                      date_precision, confirmed, merged_into, created_by,
 				                      created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?,
+				         -- The photograph a face points at has to be a live one of
+				         -- this family, and the row is asked rather than the phone
+				         -- believed: anything else becomes no photograph and, two
+				         -- lines down, no moment either -- no opinion, which the
+				         -- rules below leave alone. A removal has no photograph on
+				         -- purpose and keeps its moment. Not a FOREIGN KEY, because
+				         -- a rejected photograph keeps its row (soft deletion) and a
+				         -- face already chosen from it stays on the row too: the
+				         -- phone draws the initial when the picture is gone.
+				         (SELECT p.id FROM subject p
+				           WHERE p.id = ? AND p.family_id = ? AND p.kind = 'photo' AND p.deleted_at IS NULL),
+				         ?, ?,
+				         CASE WHEN ? IS NULL THEN ?
+				              WHEN EXISTS (SELECT 1 FROM subject p
+				                            WHERE p.id = ? AND p.family_id = ? AND p.kind = 'photo'
+				                              AND p.deleted_at IS NULL)
+				              THEN ? ELSE NULL END,
+				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   title = excluded.title,
 				   r2_key = COALESCE(excluded.r2_key, subject.r2_key),
@@ -308,6 +362,22 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                              THEN excluded.colour_confirmed_by ELSE subject.colour_confirmed_by END,
 				   colour_confirmed_at = CASE WHEN excluded.colour_confirmed_at > COALESCE(subject.colour_confirmed_at, 0)
 				                              THEN excluded.colour_confirmed_at ELSE subject.colour_confirmed_at END,
+				   -- The face on a person's card, by the same rule: the newest
+				   -- choice wins and moves whole, and a NULL moment is never
+				   -- later than anything. That is what lets a removal travel --
+				   -- a NULL photograph under a new moment -- while a phone that
+				   -- never saw the face, sending the same NULL photograph with
+				   -- no moment, changes nothing. The VALUES above have already
+				   -- turned a photograph this family does not have into no
+				   -- opinion, so nothing here needs to ask again.
+				   portrait_subject_id = CASE WHEN excluded.portrait_set_at > COALESCE(subject.portrait_set_at, 0)
+				                              THEN excluded.portrait_subject_id ELSE subject.portrait_subject_id END,
+				   portrait_focus_x = CASE WHEN excluded.portrait_set_at > COALESCE(subject.portrait_set_at, 0)
+				                           THEN excluded.portrait_focus_x ELSE subject.portrait_focus_x END,
+				   portrait_focus_y = CASE WHEN excluded.portrait_set_at > COALESCE(subject.portrait_set_at, 0)
+				                           THEN excluded.portrait_focus_y ELSE subject.portrait_focus_y END,
+				   portrait_set_at = CASE WHEN excluded.portrait_set_at > COALESCE(subject.portrait_set_at, 0)
+				                          THEN excluded.portrait_set_at ELSE subject.portrait_set_at END,
 				   -- The coordinates answer the title, so they follow it. A device
 				   -- that has not looked the name up sends null and must not wipe
 				   -- what another one resolved — but when the title itself changes,
@@ -383,6 +453,19 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				colour ? subject.colour_r2_key : null,
 				colour ? session.memberID : null,
 				colour ? Math.min(subject.colour_confirmed_at as number, timestamp) : null,
+				// The face, in the order the VALUES ask: the photograph and the
+				// family for the lookup, the point, then the photograph, the
+				// moment, the photograph and the family again for the moment's
+				// own lookup, and the moment.
+				faceID,
+				family,
+				focus(subject.portrait_focus_x),
+				focus(subject.portrait_focus_y),
+				faceID,
+				faceAt,
+				faceID,
+				family,
+				faceAt,
 				hasPoint ? lat : null,
 				hasPoint ? lon : null,
 				hasPoint && subject.geo_precision && GEO_PRECISIONS.has(subject.geo_precision)

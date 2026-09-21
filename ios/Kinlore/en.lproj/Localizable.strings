@@ -734,3 +734,18 @@
 "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Map. Every place is a button that opens the place's card.";
 "Avaa paikan kortin." = "Opens the place's card.";
 "Kartta perheen paikoista." = "A map of the family's places.";
+
+// A face on a person's card (21 Sep 2026): the picker, the tap and the disc.
+"Valitse kasvot" = "Choose a face";
+"Vaihda kasvot" = "Change the face";
+"Poista kasvot" = "Remove the face";
+"Kasvot kortille" = "A face for the card";
+"Kuvat, joissa hänestä kerrotaan" = "Photographs they are told about in";
+"Muut kuvat" = "Other photographs";
+"Arkiston kuvat" = "The archive's photographs";
+"Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta." = "There are no photographs in the archive yet. A face is chosen from one of the archive's photographs.";
+"Napauta kasvoja kuvassa." = "Tap the face in the photograph.";
+"Näin kasvot näkyvät kortilla." = "This is how the face will look on the card.";
+"Kuva ei muutu. Kortille tulee vain tämä ympyrä." = "The photograph does not change. Only this circle goes on the card.";
+"Valokuva. Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta." = "Photograph. The face is taken from the middle unless another spot is tapped.";
+"Kortin kasvot" = "The card's face";

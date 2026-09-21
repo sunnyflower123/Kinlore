@@ -629,3 +629,18 @@
 "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin.";
 "Avaa paikan kortin." = "Avaa paikan kortin.";
 "Kartta perheen paikoista." = "Kartta perheen paikoista.";
+
+// A face on a person's card (21 Sep 2026): the picker, the tap and the disc.
+"Valitse kasvot" = "Valitse kasvot";
+"Vaihda kasvot" = "Vaihda kasvot";
+"Poista kasvot" = "Poista kasvot";
+"Kasvot kortille" = "Kasvot kortille";
+"Kuvat, joissa hänestä kerrotaan" = "Kuvat, joissa hänestä kerrotaan";
+"Muut kuvat" = "Muut kuvat";
+"Arkiston kuvat" = "Arkiston kuvat";
+"Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta." = "Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta.";
+"Napauta kasvoja kuvassa." = "Napauta kasvoja kuvassa.";
+"Näin kasvot näkyvät kortilla." = "Näin kasvot näkyvät kortilla.";
+"Kuva ei muutu. Kortille tulee vain tämä ympyrä." = "Kuva ei muutu. Kortille tulee vain tämä ympyrä.";
+"Valokuva. Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta." = "Valokuva. Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta.";
+"Kortin kasvot" = "Kortin kasvot";
