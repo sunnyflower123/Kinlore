@@ -151,6 +151,36 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Valikko"].exists, "a zoom tap opened another screen")
     }
 
+    /// The drawing rests beside the generation words and not under them
+    /// (21 Sep 2026). The words stand on scraps over the air between rows,
+    /// which is where the bars run, and the drawing used to begin at the
+    /// window's own edge underneath them. The first family entered on a
+    /// phone, zoomed out to fit and in English, where every word is two
+    /// lines, had its first column's bars and drops under the scraps, and
+    /// two children of one parent each read as children of nobody. The
+    /// words' band is the drawing's leading inset now, and the words stand
+    /// beside their rows' discs, where a two-line English word reaches no
+    /// bar: at the opening the first column stands clear of the word, and
+    /// still does at the smallest zoom, where the whole family fits beside
+    /// it. Eeva is the first column, and *Sinun polvesi* on her row is the
+    /// widest word the fixture of five gets.
+    func testTheDrawingRestsBesideTheGenerationWords() {
+        let app = launch(["-seed", "related", "-tab", "people", "-people", "tree", "-you", "demo-eeva"])
+        let eeva = app.buttons["Eeva, sinä"]
+        XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the tree did not open")
+        let word = app.staticTexts["Sinun polvesi"]
+        XCTAssertTrue(word.exists, "your own row is not named")
+        XCTAssertGreaterThan(eeva.frame.minX, word.frame.maxX, "the first column opened under the generation word")
+        // And beside the row's discs rather than in the air above them,
+        // where the bars run: the word's middle is within your own card.
+        XCTAssertGreaterThan(word.frame.midY, eeva.frame.minY, "the word stands in the air above its row")
+        XCTAssertLessThan(word.frame.midY, eeva.frame.maxY, "the word stands below its row")
+        let edge = word.frame.minX
+        for _ in 0 ..< 12 { app.buttons["Pienennä"].tap() }
+        XCTAssertGreaterThan(eeva.frame.minX, word.frame.maxX, "the first column is under the generation word at the smallest zoom")
+        XCTAssertEqual(word.frame.minX, edge, accuracy: 1, "the word moved when the drawing shrank")
+    }
+
     /// A grandparent's phone keeps the list: no picture of lines, and no way to
     /// one — including on the tab bar, which on her phone keeps the older word
     /// rather than naming a tree she is never shown.

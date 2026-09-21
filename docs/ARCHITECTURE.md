@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 71 sweep tests, each auditing one screen at the default text size and again at the largest, out of 206 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 71 sweep tests, each auditing one screen at the default text size and again at the largest, out of 207 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2281,6 +2281,55 @@ Not built:
      band is the one part of the inset UIKit cannot know; it is measured
      from the buttons and the opening waits for it, so that the picture is
      placed once, against the window it will have.
+
+     **The rail is the drawing's leading inset too** (21 Sep 2026). The
+     words stand over the air between rows, which is where the bars run, and
+     the drawing began at the window's own edge underneath them. The first
+     family entered on a phone showed the cost: zoomed out to fit, in
+     English, where every word is two lines, the scraps covered the left two
+     columns and a half of every gap — Paula's name, the bar from her to
+     Jorma, and the lines down to Juhani and to Erkko, each the child of one
+     parent and placed on that parent's far side, which is the left. Both
+     read as children of nobody and Anna as Jorma's alone, from a drawing
+     with nothing wrong in it but a word laid over the line. The words' band
+     — their offset from the edge, the widest scrap, the offset again as
+     air, 156 points at the default size — is the scroll view's left inset
+     now, as the buttons' band is its bottom one: a family that fits the
+     window rests beside the words with none of it under them; one that
+     does not opens on your own column in what is left of the window, and
+     whatever lies left of that column is under the words until the reader
+     moves it. Measured on the same family at the smallest zoom, in English
+     on the 402-point simulator: the widest word ends at 125.7 points and
+     the leftmost name, Juhani's, begins at 153.6. Never more than half the
+     window, because at the largest text size the words are wider than a
+     phone and a drawing left no room is not a picture; there the words wrap
+     inside the half they have, hyphenated where one word is longer than it
+     — given their scaled width instead, *Sinun polvesi* lay across the
+     reader's own disc at the opening. The price is width: a 375-point phone
+     shows four columns beside the rail at the smallest zoom where it showed
+     seven with nearly three of them under the words, and the zoom's floor
+     stays at 0.4.
+
+     **And the words stand beside their rows' discs now, not over the air
+     above them.** The inset answers the family that fits; a family wider
+     than the window opens on your own column, and whatever is left of it
+     lies under the rail, so the words still cover what runs there. Over
+     the air, that is the bars — and the 19 Sep choice of the air over the
+     discs ("a word over the air between generations covers only lines")
+     had the harms the wrong way round: a covered disc is visibly covered,
+     a covered bar is a child of nobody. English settled it. Every one of
+     its generation words is two lines at any width a phone can give the
+     rail — *Your grandparents' generation* is 172 points of `.caption`,
+     *Grandchildren's generation* 154 without *your* — and a two-line scrap
+     standing on the discs reached 36 points up into the 23 the deepest
+     bar leaves under the parents' row at the default size: at the opening
+     on the same phone family, in English, the bar from Paula to Jorma
+     went under *Your parents' generation* with the rail already inset.
+     Centred on the discs, a two-line word is inside the disc's height at
+     the default size, at the largest, and at every zoom the buttons reach
+     — at 0.4 its top edge touches the deepest bar's underside and no
+     more. The words are the same; only their place changed, and
+     `FamilyTreeTests` holds it.
 
      The drawing no longer lies under the top bar, only under the tabs:
      Eeva's card in the person sweep opened at eight points from the top,

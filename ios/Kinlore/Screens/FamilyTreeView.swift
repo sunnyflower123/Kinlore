@@ -101,11 +101,22 @@ struct FamilyTreeView: View {
     /// which zoomed out to the smallest covered the names in the row above,
     /// because the rail's words do not zoom and the air between rows does.
     @ScaledMetric(relativeTo: .caption) private var railWidth: CGFloat = 140
-    /// The room a generation's word is given above its row: three lines of
-    /// the caption face, standing on the top of the row's discs. Over the
-    /// air between one generation and the next, where only lines run, and
-    /// not over the discs — a word laid on the top of a disc cut a quarter
-    /// out of whoever stood in the first column (seen 19 Sep 2026).
+    /// The room a generation's word is given beside its row: three lines of
+    /// the caption face, centred on the row's discs. Beside the discs and not
+    /// over the air between one generation and the next, where the lines run:
+    /// a word over the air hid a bar, and the child on the bar read as
+    /// nobody's (21 Sep 2026). It stood on the top of the discs until then
+    /// because a word laid on a disc cut a quarter out of whoever stood in the
+    /// first column (19 Sep 2026) — true while the drawing began at the
+    /// window's edge, and answered since by the inset (`TreeCanvas`'s `rail`)
+    /// rather than by where the word stands. What a word can cover now is the
+    /// disc of a column that lies under the rail, put there by the opening or
+    /// by the reader, and a covered disc is visibly covered; a covered bar was
+    /// a child of nobody. English is why the air would not do: every one of
+    /// its words is two lines at any width a phone can give the rail —
+    /// *Grandchildren's generation* is 154 points of `.caption` without *your*
+    /// — and two lines standing on the discs reached 36 points up into the 23
+    /// the deepest bar leaves at the default size.
     @ScaledMetric(relativeTo: .caption) private var railBand: CGFloat = 60
     /// One line of a name under a disc, which is 21 points of `.body` at the
     /// default text size. It is here so that `cardBand` can be said in the
@@ -220,6 +231,19 @@ struct FamilyTreeView: View {
                 range: Self.zoomRange,
                 size: CGSize(width: width(of: result), height: height(of: result)),
                 controls: controlsHeight,
+                // The words' band, and the drawing rests beside it rather
+                // than under it (21 Sep 2026). The scraps stand over the
+                // air between rows, which is where the bars run, and the
+                // first family entered on a phone showed what that hides:
+                // zoomed out to fit, in English, where every word is two
+                // lines, the scraps covered the left two columns and a
+                // half of every gap — Paula's name, the bar from her to
+                // Jorma, and the lines down to Juhani and to Erkko, each
+                // the child of one parent and placed on that parent's
+                // far side, which is the left. Both read as the child of
+                // nobody and Anna as Jorma's alone, from a picture with
+                // nothing wrong in it but a word laid over the line.
+                rail: railWidth + 16,
                 opening: opening(result, you: you),
                 key: DrawingKey(result: result, people: people, you: you),
                 onWindow: { window = $0 }
@@ -576,22 +600,26 @@ struct FamilyTreeView: View {
                 // true of one as of another.
                 let mine = yours == nil
                     || FamilyTreeLayout.inView(yourFamily(result, you: you), columns(in: window))
-                let left = window.visible.minX + 8
+                let left = window.edge + 8
+                // The words' own room: the band less its margin on each
+                // side and the scrap's padding. 128 points at the default
+                // size, which is what every word was measured against.
+                let room = max(window.rail - 16 - 12, 1)
                 if mine {
                     ForEach(treeRows(result, you: you), id: \.self) { row in
-                        railWord(generationName(row, from: yours), bold: row == yours)
-                            .frame(height: railBand, alignment: .bottomLeading)
+                        railWord(generationName(row, from: yours), bold: row == yours, room: room)
+                            .frame(height: railBand, alignment: .leading)
                             .offset(
                                 x: left,
-                                y: (y(ofRow: row, result) + Self.rowInset) * window.scale + window.shift.y
-                                    - railBand - 2
+                                y: (y(ofRow: row, result) + Self.rowInset + discSize / 2) * window.scale
+                                    + window.shift.y - railBand / 2
                             )
                     }
                 } else {
                     // Not nothing. The words leaving is the whole point, and
                     // a reader who watched them go is owed the reason they
                     // went — that these people are not counted from anybody.
-                    railWord(Text("Toinen perhe"), bold: false)
+                    railWord(Text("Toinen perhe"), bold: false, room: room)
                         .offset(x: left, y: window.visible.minY + 8)
                 }
 
@@ -614,16 +642,24 @@ struct FamilyTreeView: View {
     }
 
     /// One generation's word. On a scrap of paper so that it reads across
-    /// whatever line of the drawing happens to be under the window's edge;
-    /// on a band the scrap is a tint lighter than the band, which is what
-    /// the band's own colour was chosen to allow.
-    private func railWord(_ word: Text, bold: Bool) -> some View {
+    /// whatever part of the drawing happens to be under the window's edge —
+    /// since 21 Sep 2026 only a disc, at the opening or carried there by the
+    /// reader, because the drawing rests beside the rail and not under it
+    /// (`TreeCanvas`'s `rail`); on a band the scrap is a tint lighter than the
+    /// band, which is what the band's own colour was chosen to allow. As wide
+    /// as the band leaves it and no wider, so that a word never crosses into
+    /// the drawing's own part: the 128 points of `railWidth` at the default
+    /// size, and at the largest text size the half of the window the band is
+    /// capped to, where a word longer than that wraps or hyphenates. Given its
+    /// scaled width there instead, *Sinun polvesi* lay across the reader's own
+    /// disc at the opening (21 Sep 2026).
+    private func railWord(_ word: Text, bold: Bool, room: CGFloat) -> some View {
         word
             .font(.caption)
             .fontWeight(bold ? .bold : .regular)
             .foregroundStyle(Elder.supporting)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: railWidth - 12, alignment: .leading)
+            .frame(maxWidth: room, alignment: .leading)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(Elder.paper, in: RoundedRectangle(cornerRadius: 6))
@@ -656,7 +692,9 @@ struct FamilyTreeView: View {
         // have a word; from three on it is a count, because
         // *Isoisovanhempiesi polvi* and *Lastenlastenlastesi polvi* are 134
         // and 138 points of `.caption` and the rail's word is one line — a
-        // second line hides the names in the row above at the smallest zoom.
+        // second line, standing over the air between rows as the words did
+        // until 21 Sep 2026, hid the names in the row above at the smallest
+        // zoom.
         case -2: return Text("Isovanhempiesi polvi")
         case -1: return Text("Vanhempiesi polvi")
         case 0: return Text("Sinun polvesi")
@@ -784,12 +822,17 @@ struct FamilyTreeView: View {
 // MARK: - The map
 
 /// Where the drawing is under the window: the position of its top left
-/// corner in the scroll view's own bounds, the scale it is drawn at, and the
-/// part of the bounds not under a bar.
+/// corner in the scroll view's own bounds, the scale it is drawn at, the
+/// part of the bounds not under a bar, the buttons or the rail — the
+/// drawing's own — and the edge the rail stands against, left of that.
 private struct TreeWindow: Equatable {
     var shift: CGPoint
     var scale: CGFloat
     var visible: CGRect
+    var edge: CGFloat
+    /// The rail's band between `edge` and `visible`, as applied: the words'
+    /// room, which at the largest text size is less than they asked for.
+    var rail: CGFloat
 }
 
 /// Where the window is put the first time the drawing's size is known, in the
@@ -841,6 +884,16 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
     /// buttons themselves. The bars' own insets are read off the scroll
     /// view, which UIKit keeps current for a view under a tab bar.
     let controls: CGFloat
+    /// The band the generation words take at the window's leading edge, from
+    /// the rail's own metrics: the words' offset from the edge, the widest
+    /// scrap, and the same offset again as air. The drawing rests to its
+    /// right, so a family that fits the window is all beside the words and
+    /// none of it under them; one that does not opens on your own column in
+    /// what is left of the window, and whatever lies left of that column is
+    /// under the words until the reader moves it. Never more than half the
+    /// window: at the largest text size the words are wider than a phone, and
+    /// a drawing left no room is not a picture.
+    let rail: CGFloat
     let opening: TreeOpening?
     let key: DrawingKey
     let onWindow: (TreeWindow) -> Void
@@ -886,6 +939,7 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         coordinator.opening = opening
 
         coordinator.strip = controls
+        coordinator.rail = rail
         // The zoom buttons are measured after the first layout: measured
         // 19 Sep 2026, an opening taken once at that layout was clamped
         // against a bottom inset without them and the drawing sat 73 points
@@ -938,6 +992,8 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         var opening: TreeOpening?
         /// The zoom buttons' band at the bottom, part of the inset there.
         var strip: CGFloat = 0
+        /// The rail's band at the leading edge, part of the inset there.
+        var rail: CGFloat = 0
         /// True once the reader has dragged, pinched or pressed a button:
         /// from then on the picture is where they put it, and the opening
         /// is not applied again.
@@ -956,12 +1012,18 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         /// the margin that centres a drawing smaller than the window.
         var origin: CGPoint { host?.view.frame.origin ?? .zero }
 
-        /// The bars the window runs under, from UIKit, and the buttons'
-        /// band, as the content's insets. True when they changed.
+        /// The bars the window runs under, from UIKit, the buttons' band and
+        /// the rail's, as the content's insets. True when they changed.
         func applyInsets() -> Bool {
             guard let scrollView else { return false }
             let safe = scrollView.safeAreaInsets
-            let inset = UIEdgeInsets(top: safe.top, left: safe.left, bottom: safe.bottom + strip, right: safe.right)
+            let width = max(0, scrollView.bounds.width - safe.left - safe.right)
+            let inset = UIEdgeInsets(
+                top: safe.top,
+                left: safe.left + min(rail, width / 2),
+                bottom: safe.bottom + strip,
+                right: safe.right
+            )
             guard scrollView.contentInset != inset else { return false }
             scrollView.contentInset = inset
             scrollView.verticalScrollIndicatorInsets = inset
@@ -969,7 +1031,8 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
             return true
         }
 
-        /// The part of the bounds not under a bar, in the frame's own points.
+        /// The part of the bounds not under a bar, the buttons or the rail,
+        /// in the frame's own points: the drawing's own.
         var visibleRect: CGRect {
             guard let scrollView else { return .zero }
             let inset = scrollView.contentInset
@@ -1127,7 +1190,9 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
             let window = TreeWindow(
                 shift: CGPoint(x: origin.x - scrollView.contentOffset.x, y: origin.y - scrollView.contentOffset.y),
                 scale: scale,
-                visible: visibleRect
+                visible: visibleRect,
+                edge: scrollView.safeAreaInsets.left,
+                rail: scrollView.contentInset.left - scrollView.safeAreaInsets.left
             )
             guard window != lastWindow else { return }
             lastWindow = window
