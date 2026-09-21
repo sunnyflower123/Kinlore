@@ -444,13 +444,14 @@ run "every string the app shows has an English one" node scripts/localisation-ch
 # screenshot, and two on 19 Sep 2026 by sweeping the class rather than waiting
 # for the seventh.
 #
-# It reports only what is certain from the literal alone — a sentence that is
-# not a key in fi.lproj, which nothing downstream can look up, and a fallback
-# behind `?? ` whose left-hand side is a String rather than a
-# LocalizedStringKey. The forty-odd sentences carried as Strings WITH a key
-# behind them are counted instead: `Text(LocalizedStringKey(x))` looks those up
-# where they are drawn, and reading them as defects reports forty findings that
-# are all fine.
+# It reports only what is certain from the source — a sentence that is not a
+# key in fi.lproj, which nothing downstream can look up, and a literal SwiftUI
+# is handed as a String: a fallback behind a String's `??`, half of a `+`, a
+# string inside an interpolation. A ternary of literals is not one of those; the
+# compiler types it a key, and each branch is asked for in the table. The
+# sentences carried as Strings WITH a key behind them are counted instead:
+# `Text(LocalizedStringKey(x))` looks those up where they are drawn, and
+# reading them as defects reports dozens of findings that are all fine.
 run "every Finnish sentence on a screen has a key" node scripts/localisation-lookup-check.mjs
 
 # --- The backend ------------------------------------------------------------
