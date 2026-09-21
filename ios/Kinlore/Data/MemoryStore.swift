@@ -75,8 +75,9 @@ final class MemoryStore {
         // newer fields existed; `-store unreadable` writes one that is not
         // JSON at all; `-store unknownKind` one with a relationship of a kind
         // this version has never heard of; `-store synced` an empty one whose
-        // pulls have reached 412. They are how SilentFailureTests drives
-        // rule 10 and the cursor check below.
+        // pulls have reached 412; `-store mergedElsewhere` another member's
+        // telling under a card merged away. They are how SilentFailureTests
+        // drives rule 10, the cursor check below and `MergeChain`.
         Self.writeFixture(UserDefaults.standard.string(forKey: "store"), to: fileURL)
         #endif
         load()
@@ -2190,7 +2191,8 @@ final class MemoryStore {
     }
 
     #if DEBUG
-    /// The files rule 10 and the cursor check are tested against. See `init`.
+    /// The files rule 10, the cursor check and `MergeChain` are tested
+    /// against. See `init`.
     private static func writeFixture(_ shape: String?, to url: URL) {
         switch shape {
         case "unreadable":
@@ -2238,6 +2240,23 @@ final class MemoryStore {
             object["relations"] = rows
             if let file = try? JSONSerialization.data(withJSONObject: object) {
                 try? file.write(to: url, options: .atomic)
+            }
+        case "mergedElsewhere":
+            // What every phone but the merging one held after a name was
+            // corrected onto another card: the tombstone, and another
+            // member's telling still filed under it, because the server takes
+            // a telling only from its author (`MergeChain`). The survivor's
+            // card is where that telling belongs.
+            let aino = Subject(kind: .person, title: "Vanha Aino")
+            var aina = Subject(kind: .person, title: "Vanha Aina")
+            aina.mergedInto = aino.id
+            let telling = Memory(
+                subjectID: aina.id, authorID: "toinen", authorName: "Bertta",
+                body: "Hän leipoi pullaa joka lauantai.", source: .typed
+            )
+            let snapshot = Snapshot(subjects: [aino, aina], memories: [telling], questions: [])
+            if let data = try? JSONEncoder().encode(snapshot) {
+                try? data.write(to: url, options: .atomic)
             }
         case "synced":
             // An empty archive whose pulls have reached 412: what the cursor

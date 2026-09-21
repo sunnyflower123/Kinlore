@@ -91,6 +91,24 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// Another member's telling, filed under a card somebody merged away, is
+    /// on the survivor's card. The server keeps the forwarding address and
+    /// re-points a telling for nobody but its author, so until 21 Sep 2026
+    /// every phone but the merging one kept it under the tombstone — on no
+    /// card, in no count, and left out of the export's readable page.
+    /// `-store mergedElsewhere` writes that phone's file.
+    func testATellingFiledUnderAMergedCardIsOnTheSurvivorsCard() {
+        let app = launch(["-store", "mergedElsewhere", "-screen", "person"])
+        XCTAssertTrue(
+            app.buttons["Kerro tästä muisto"].waitForExistence(timeout: 15),
+            "-screen person did not reach the survivor's card"
+        )
+        XCTAssertTrue(
+            app.staticTexts["Hän leipoi pullaa joka lauantai."].waitForExistence(timeout: 10),
+            "the telling filed under the merged card is not on the survivor's card"
+        )
+    }
+
     /// A build that has learnt a new relationship kind pulls the family once
     /// more from the start. The build before it applied every pull minus the
     /// rows of a kind it did not know, and the cursor moved past them all the
