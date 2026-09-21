@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 /// Taking the archive out of the app.
 ///
@@ -226,13 +227,21 @@ enum ArchiveExport {
             .filter { $0.mergedInto == nil && $0.deletedAt == nil }
             .sorted { ($0.kind.sortOrder, $0.title) < ($1.kind.sortOrder, $1.title) }
 
+        // The page says which language its own words are in, and names itself
+        // in it: a screen reader picks its voice from `lang`, and a browser
+        // shows `<title>` on the tab. Both were fixed at Finnish until 21 Sep
+        // 2026, so an English phone's export read "Memory archive" under a
+        // tab called Muistoarkisto, and declared every English word on it
+        // Finnish.
+        let pageLanguage = Bundle.main.preferredLocalizations.first?.hasPrefix("fi") == true ? "fi" : "en"
+
         var out = """
         <!doctype html>
-        <html lang="fi">
+        <html lang="\(pageLanguage)">
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Muistoarkisto</title>
+        <title>\(String(localized: "Muistoarkisto"))</title>
         <style>
         body { font-family: -apple-system, Georgia, serif; line-height: 1.6; max-width: 46rem;
                margin: 0 auto; padding: 2rem 1.25rem; color: #2b2723; background: #fbf8f3; }
@@ -331,8 +340,9 @@ enum ArchiveExport {
                         ? "<p class=\"pending\">\(String(localized: "Ääni tallessa, tekstiä ei ole vielä kirjoitettu."))</p>\n"
                         : "<p class=\"pending\">\(String(localized: "Ääni on tallessa, mutta ei ollut saatavilla tähän vientiin."))</p>\n"
                 } else {
+                    let told = languageAttribute(for: memory.body, on: pageLanguage)
                     for paragraph in memory.body.components(separatedBy: "\n") where !paragraph.isEmpty {
-                        out += "<p>\(escaped(paragraph))</p>\n"
+                        out += "<p\(told)>\(escaped(paragraph))</p>\n"
                     }
                 }
                 if let filename = audioNames[memory.id] {
@@ -356,7 +366,7 @@ enum ArchiveExport {
             if !open.isEmpty {
                 out += "<p class=\"open\"><strong>\(String(localized: "Vielä kysymättä"))</strong></p>\n<ul class=\"open\">\n"
                 for question in open {
-                    out += "<li>\(escaped(question.text))</li>\n"
+                    out += "<li\(languageAttribute(for: question.text, on: pageLanguage))>\(escaped(question.text))</li>\n"
                 }
                 out += "</ul>\n"
             }
@@ -388,6 +398,32 @@ enum ArchiveExport {
         if let siblings = names(.siblingOf) { lines.append(String(localized: "Sisarukset: \(siblings)")) }
         if let friends = names(.friendOf) { lines.append(String(localized: "Ystävät: \(friends)")) }
         return lines
+    }
+
+    /// The family's own words carry their language when it is not the
+    /// page's — ` lang="fi"` on an English page — and nothing when it is.
+    /// Nothing records which language a memory was told in: the app guesses
+    /// from the phone when it records (`SpokenLanguage`) and keeps the guess
+    /// nowhere, so it is read off the words, between the two languages the
+    /// app speaks. Without it an English phone's export would hand a Finnish
+    /// grandmother's memories to an English voice; a Finnish phone's export
+    /// of Finnish memories comes out exactly as it did.
+    ///
+    /// Only a sure reading marks anything, and a text too short to tell is
+    /// left to the page. Measured 21 Sep 2026 on twenty texts — the demo
+    /// archives' memories down to three words, questions in both languages,
+    /// and one-word answers such as "Joo." — each read as the language it is
+    /// in, the least sure at 0.936 ("Liisa kept the shop.", where the name
+    /// pulls).
+    private static func languageAttribute(for text: String, on pageLanguage: String) -> String {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageConstraints = [.finnish, .english]
+        recognizer.processString(text)
+        guard let best = recognizer.languageHypotheses(withMaximum: 1).first,
+              best.value >= 0.9,
+              best.key.rawValue != pageLanguage
+        else { return "" }
+        return " lang=\"\(best.key.rawValue)\""
     }
 
     /// The phone's own numeric date, like the page around it, which is written

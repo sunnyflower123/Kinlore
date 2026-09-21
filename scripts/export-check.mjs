@@ -149,6 +149,20 @@ const pagePath = join(root, 'muistot.html')
 check('there is a readable page', existsSync(pagePath))
 const page = existsSync(pagePath) ? readFileSync(pagePath, 'utf8') : ''
 
+// Named and declared in the language it is written in. The heading is looked
+// up; the tab's `<title>` and the `lang` a screen reader takes its voice from
+// were fixed at Finnish until 21 Sep 2026, and this script — which runs in the
+// simulator's own language, English on a fresh one — read neither.
+const title = page.match(/<title>([^<]*)<\/title>/)?.[1] ?? ''
+const heading = page.match(/<h1>([^<]*)<\/h1>/)?.[1] ?? ''
+check('the page is named as its heading is', title !== '' && title === heading, `"${title}" over "${heading}"`)
+const lang = page.match(/<html lang="([^"]*)"/)?.[1] ?? ''
+check(
+	'and says which language that heading is in',
+	lang === (heading === 'Muistoarkisto' ? 'fi' : 'en'),
+	`lang="${lang}" over "${heading}"`,
+)
+
 // The audio is the product, not a step towards it (rule 3), and a page that
 // mentions it without carrying it would pass a shallower check than this.
 const audio = page.match(/<audio[^>]*src="([^"]+)"/)
@@ -222,6 +236,19 @@ waitFor(14)
 	check('the demo export lists the subjects nobody has spoken about', emptyList.length === 1, `${emptyList.length} lists`)
 	const names = (emptyList[0] ?? '').replace(/^[^:]*:\s*/, '').replace(/\.$/, '').split(', ')
 	check('and names nobody the family has not confirmed', !names.includes('Aino'), names.join(', '))
+
+	// The demo archive was told in Finnish whatever the phone reads, so every
+	// memory and question in it has to reach a screen reader as Finnish:
+	// marked `lang="fi"` on a page that is not, inheriting it on one that is.
+	// A page that followed the phone and marked nothing would read a
+	// grandmother's words in an English voice.
+	const demoLang = demoPage.match(/<html lang="([^"]*)"/)?.[1] ?? ''
+	const told = [...demoPage.matchAll(/<(?:p|li)(?: lang="([a-z]+)")?>/g)].map((m) => m[1] ?? demoLang)
+	check(
+		'and its Finnish words read as Finnish on a page in any language',
+		told.length > 0 && told.every((language) => language === 'fi'),
+		`${told.filter((language) => language !== 'fi').length} of ${told.length} not Finnish on a "${demoLang}" page`,
+	)
 }
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
