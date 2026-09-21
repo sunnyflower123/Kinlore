@@ -115,6 +115,19 @@ colour_sync() {
 		&& "$OUT/colour-sync-check"
 }
 
+# Every field of the four synced models, through sync. A pull replaces the
+# rows it brings, so a field `init?(dto:)` leaves out goes back to its default
+# on every one of them — and a build that reads a new kind pulls the whole
+# family again from zero. A relationship somebody confirmed turns back into a
+# proposal, and the screen looks exactly as it would if nobody had.
+sync_fields() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/sync-fields-check" scripts/sync-fields-check.swift \
+		ios/Kinlore/Services/FamilyCrypto.swift ios/Kinlore/Data/MemoryStore+Sync.swift \
+		ios/Kinlore/Model/Models.swift \
+		&& "$OUT/sync-fields-check"
+}
+
 # Which question the app decides to put in front of an 80-year-old. A
 # staircase over three UserDefaults keys, and both ways of being wrong are
 # silent: the wall that makes an elderly teller give up, and the run of naming
@@ -252,6 +265,7 @@ run "a child is drawn below her parents" family_tree_layout
 run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock
 run "a confirmed colouring survives an older phone" colour_sync
+run "a pull from zero changes nothing here" sync_fields
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over
