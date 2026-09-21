@@ -218,6 +218,16 @@ final class AccessibilitySweepTests: XCTestCase {
         reach(photoTile(in: app), in: app, "the photo tile")
     }
 
+    /// The last thing on the Settings screen in all three of its states: the
+    /// footer under the wipe row, which says one of two sentences depending
+    /// on whether this phone can leave a family.
+    private func settingsFooter(in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
+            "Perheestä poistuminen", "Kertomasi muistot ovat vain"
+        )).firstMatch
+    }
+
     /// What audits inside a `sweep` closure have already judged, so that the
     /// loss check below counts a screen measured page by page as measured.
     private var judgedAbove: Set<String> = []
@@ -228,6 +238,28 @@ final class AccessibilitySweepTests: XCTestCase {
         let texts = app.staticTexts.allElementsBoundByIndex.map(\.label)
         let buttons = app.buttons.allElementsBoundByIndex.map(\.label)
         return Set((texts + buttons).filter { !$0.isEmpty })
+    }
+
+    /// Scrolls a list back to its top: flicks down until one more changes
+    /// nothing. Not a tap on the status bar, which was the first version and
+    /// works on the setup forms and not under a tab bar — on Asetukset it
+    /// left the list at its bottom, measured 21 Sep 2026, so every "page 1"
+    /// there was the last page.
+    private func scrollToTop(
+        _ app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        var previous: [String: CGRect] = [:]
+        for _ in 0 ..< 10 {
+            app.swipeDown(velocity: .fast)
+            _ = hasStoppedDrawing(app)
+            let words = app.staticTexts.allElementsBoundByIndex + app.buttons.allElementsBoundByIndex
+            let now = Dictionary(words.map { ($0.label, $0.frame) }, uniquingKeysWith: { first, _ in first })
+            if now == previous { return }
+            previous = now
+        }
+        XCTFail("never reached the top of the list", file: file, line: line)
     }
 
     /// Audits a screen that is taller than the phone one page at a time, down
@@ -262,17 +294,25 @@ final class AccessibilitySweepTests: XCTestCase {
         _ what: String
     ) throws {
         let window = app.windows.firstMatch
+        // On screen means above the tab bar where there is one: the tree holds
+        // a row under the translucent bar as hittable, and the audit forgives
+        // contrast there by geometry, so a last row that stopped under the bar
+        // would be judged by nobody. A point of slack, because a list at its
+        // end rests its last footer on the bar's edge and not a hair above
+        // it: 791.33 against a bar at 791 on Asetukset, measured 21 Sep 2026.
+        let bar = app.tabBars.firstMatch
+        let floor = bar.exists ? bar.frame.minY : window.frame.maxY
+        let onScreen = { bottom.exists && bottom.isHittable && bottom.frame.maxY <= floor + 1 }
         for page in 1 ... 12 {
-            if page > 1 {
-                // The status bar, which scrolls a list to its top.
-                window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02)).tap()
-                for _ in 1 ..< page {
-                    window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
-                        .press(forDuration: 0.1, thenDragTo:
-                            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
-                }
-                if bottom.exists, bottom.isHittable { break }
+            // From the top every time — the first page too, since a caller
+            // may have scrolled on its way here.
+            scrollToTop(app)
+            for _ in 1 ..< page {
+                window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                    .press(forDuration: 0.1, thenDragTo:
+                        window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
             }
+            if page > 1, onScreen() { break }
             XCTAssertTrue(hasStoppedDrawing(app), "\(context), page \(page), was still being drawn")
             judgedAbove.formUnion(labelsInTree(app))
             // **A word half under the navigation bar.** A page reached by
@@ -306,7 +346,7 @@ final class AccessibilitySweepTests: XCTestCase {
             }
         }
         require(bottom, what)
-        XCTAssertTrue(bottom.isHittable, "\(what) was never scrolled onto the screen")
+        XCTAssertTrue(onScreen(), "\(what) was never scrolled onto the screen")
         XCTAssertTrue(hasStoppedDrawing(app), "\(what) was still moving when the audit ran")
     }
 
@@ -397,11 +437,12 @@ final class AccessibilitySweepTests: XCTestCase {
         // On by default it would be red on over a third of the suite, and
         // much of that red is not a gap in the audit — the screen behind a
         // sheet, which that screen's own sweep judges, and a wheel picker
-        // showing fewer years. The rest is: Perhe, Asetukset, Näin tämä
-        // toimii and the album by decade are judged at the largest size only
-        // as far as the first screen reaches. The two setup forms were on
-        // that list and are not any more — they are audited page by page
-        // (`auditPageByPage`), and their loss check is green.
+        // showing fewer years. The rest is: Näin tämä toimii and the album
+        // by decade are judged at the largest size only as far as the first
+        // screen reaches. The two setup forms, Perhe and all three states of
+        // Asetukset were on that list and are not any more — they are
+        // audited page by page (`auditPageByPage`), and each one's loss
+        // check is green, measured one at a time on 21 Sep 2026.
         if let atDefault = seen[false], let atLargest = seen[true] {
             let lost = atDefault.subtracting(atLargest).sorted()
             XCTAssertTrue(
@@ -536,14 +577,18 @@ final class AccessibilitySweepTests: XCTestCase {
                 hasStoppedDrawing(app),
                 "the top of the Perhe screen was still being drawn when the audit ran"
             )
-            try audit(
-                app,
-                "Perhe ylälaita, \(isLargest ? "largest text size" : "default text size")",
-                alsoAllowing: { issue in
-                    !isLargest && issue.auditType == .dynamicType
-                        && (issue.element?.label ?? "").hasPrefix("Jäsen · ")
-                }
-            )
+            // At the largest size the top is page 1 of `auditPageByPage`
+            // below, which measures every page between it and the invites.
+            if !isLargest {
+                try audit(
+                    app,
+                    "Perhe ylälaita, default text size",
+                    alsoAllowing: { issue in
+                        issue.auditType == .dynamicType
+                            && (issue.element?.label ?? "").hasPrefix("Jäsen · ")
+                    }
+                )
+            }
             let remove = reach(
                 app.buttons["Poista Ville perheestä"], in: app, "the way to remove a member"
             )
@@ -580,6 +625,28 @@ final class AccessibilitySweepTests: XCTestCase {
             XCTAssertTrue(cancel.waitForExistence(timeout: 10), "the alert has no way out")
             cancel.tap()
             XCTAssertTrue(confirm.waitForNonExistence(timeout: 10), "the alert did not close on Peruuta")
+
+            // The top audit judged the top and the sweep's own audit judges the
+            // invites, and at the largest size the members and the usage rows
+            // between them were in front of neither: 14 of the screen's 27
+            // labels, measured with `KINLORE_XXXL_LOSS` on 21 Sep 2026.
+            if isLargest {
+                try auditPageByPage(
+                    app, "Perhe, largest text size",
+                    to: app.staticTexts.matching(NSPredicate(
+                        format: "label BEGINSWITH %@", "Kutsu on voimassa viikon"
+                    )).firstMatch,
+                    "the invites' footer"
+                )
+                // The landmarks below, read from the pages rather than reached
+                // again: the invites' footer is 841 pt tall at this size, so
+                // the last page has scrolled the named invite off the top and
+                // `reach`, which only scrolls down, would never find it.
+                for label in ["Kutsu: Kaarina", "Kutsu ilman nimeä", "Poista"] {
+                    XCTAssertTrue(judgedAbove.contains(label), "no page held \(label)")
+                }
+                return
+            }
 
             let open = reach(app.staticTexts["Kutsu: Kaarina"], in: app, "the invite made for somebody by name")
             reach(app.staticTexts["Kutsu ilman nimeä"], in: app, "the invite with no name on it")
@@ -1280,8 +1347,16 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep(
             "Asetukset",
             arguments: ["-seed", "archive", "-tab", "people", "-screen", "settings"]
-        ) { app, _ in
+        ) { app, isLargest in
             require(app.buttons.firstMatch, "a row in Settings")
+            // At the largest size the list is taller than the phone, and the
+            // wipe row and its footer were never in front of the audit.
+            if isLargest {
+                try auditPageByPage(
+                    app, "Asetukset, largest text size",
+                    to: settingsFooter(in: app), "the footer under the wipe row"
+                )
+            }
         }
     }
 
@@ -1356,8 +1431,14 @@ final class AccessibilitySweepTests: XCTestCase {
                 "-seed", "archive", "-local_only", "YES", "-tab", "people", "-screen", "settings",
             ],
             api: "http://127.0.0.1:9"
-        ) { app, _ in
+        ) { app, isLargest in
             reach(app.buttons["Ota perhe käyttöön"], in: app, "the way into a family")
+            if isLargest {
+                try auditPageByPage(
+                    app, "Asetukset, vain tämä puhelin, largest text size",
+                    to: settingsFooter(in: app), "the footer under the wipe row"
+                )
+            }
         }
     }
 
@@ -1403,7 +1484,7 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep(
             "Asetukset perheessä",
             arguments: ["-seed", "family", "-tab", "people", "-screen", "settings"]
-        ) { app, _ in
+        ) { app, isLargest in
             let familyRow = reach(
                 app.descendants(matching: .any)
                     .matching(NSPredicate(
@@ -1414,6 +1495,16 @@ final class AccessibilitySweepTests: XCTestCase {
                 "the family row in Settings"
             )
             reach(app.buttons["Tyhjennä ja aloita alusta"], in: app, "the wipe row")
+            // At the largest size the two rows above are landmarks, and the
+            // measurement is every page from the top to the last footer:
+            // between them sat the export row and the text-size row, which no
+            // audit had in front of it.
+            if isLargest {
+                return try auditPageByPage(
+                    app, "Asetukset perheessä, largest text size",
+                    to: settingsFooter(in: app), "the footer under the wipe row"
+                )
+            }
             settle(familyRow)
             XCTAssertTrue(
                 hasStoppedDrawing(app),
