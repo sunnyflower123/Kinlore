@@ -218,6 +218,98 @@ final class AccessibilitySweepTests: XCTestCase {
         reach(photoTile(in: app), in: app, "the photo tile")
     }
 
+    /// What audits inside a `sweep` closure have already judged, so that the
+    /// loss check below counts a screen measured page by page as measured.
+    private var judgedAbove: Set<String> = []
+
+    /// The labels in the tree right now. Read **before** an audit, never
+    /// after: the audit changes the tree it judged — see the loss check.
+    private func labelsInTree(_ app: XCUIApplication) -> Set<String> {
+        let texts = app.staticTexts.allElementsBoundByIndex.map(\.label)
+        let buttons = app.buttons.allElementsBoundByIndex.map(\.label)
+        return Set((texts + buttons).filter { !$0.isEmpty })
+    }
+
+    /// Audits a screen that is taller than the phone one page at a time, down
+    /// to `bottom`, and leaves the last page to `sweep`'s own audit.
+    ///
+    /// One audit cannot judge such a screen: a `Form` holds only the rows near
+    /// the screen, so at the largest text size the rest is not in the tree the
+    /// audit reads. Measured with `KINLORE_XXXL_LOSS` on 21 Sep 2026: the
+    /// setup form is several screenfuls tall there, and the audit had judged the
+    /// first — *"Kuka sinä olet"*, the phone question, the consent notice and
+    /// *"Luo arkisto"* were never in front of it. Top and bottom alone are not
+    /// enough either; the questions are in the middle.
+    ///
+    /// Scrolling before an audit is what `reach` warns against, and the answer
+    /// is the one it gives: every page is waited out before it is judged. The
+    /// step is a slow drag of half the screen, not a swipe, so that it carries
+    /// no momentum past a row and every page overlaps the one before it.
+    ///
+    /// **Each page is found from the top, not from the page before it**,
+    /// because the audit moves the list. Measured 21 Sep 2026 on this form:
+    /// with an audit between the drags the pages ran 1 to 5, back to 2, on to
+    /// 5 and back to the top, twelve pages without reaching the button; the
+    /// same drags with no audit between them ran 1 to 6 and reached it on the
+    /// seventh. The audit simulates other text sizes on the live screen, and
+    /// the list does not come back to where it was — nor, straight after an
+    /// audit, with the rows it had, which is why the loss check reads the tree
+    /// before one.
+    private func auditPageByPage(
+        _ app: XCUIApplication,
+        _ context: String,
+        to bottom: XCUIElement,
+        _ what: String
+    ) throws {
+        let window = app.windows.firstMatch
+        for page in 1 ... 12 {
+            if page > 1 {
+                // The status bar, which scrolls a list to its top.
+                window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02)).tap()
+                for _ in 1 ..< page {
+                    window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                        .press(forDuration: 0.1, thenDragTo:
+                            window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
+                }
+                if bottom.exists, bottom.isHittable { break }
+            }
+            XCTAssertTrue(hasStoppedDrawing(app), "\(context), page \(page), was still being drawn")
+            judgedAbove.formUnion(labelsInTree(app))
+            // **A word half under the navigation bar.** A page reached by
+            // dragging rarely starts on a row's edge, so a line of text sits
+            // across the bar's lower edge, where iOS 26 blurs and fades it —
+            // the tab bar's fade, at the other end of the screen, which a
+            // sweep audited from the top had never met. The audit reports it
+            // as contrast with no element, so there is no frame to measure.
+            // Measured 21 Sep 2026 on the setup form's second page, three runs
+            // out of three, the last at load 10: the audit's own picture shows
+            // *"Vain minulle,"* blurred under *"Uusi arkisto"* and nothing else
+            // on the page below the minimum.
+            //
+            // Accepted on exactly that condition: contrast, no element, and a
+            // text in the tree that crosses the bar's edge. A page with no
+            // such line gets nothing, and every finding with an element is
+            // judged as before. A button counts as a word: the line on that
+            // page is a row of the inline picker, which the tree holds as one.
+            let barEdge = app.navigationBars.firstMatch.frame.maxY
+            let words = app.staticTexts.allElementsBoundByIndex + app.buttons.allElementsBoundByIndex
+            let underTheBar = words.contains { $0.frame.minY < barEdge && $0.frame.maxY > barEdge }
+            // Every page is reported, for the reason `sweep` gives about both
+            // sizes: a finding on one page says nothing about the next.
+            do {
+                let abortAfterAudit = continueAfterFailure
+                continueAfterFailure = true
+                defer { continueAfterFailure = abortAfterAudit }
+                try audit(app, "\(context), page \(page)", alsoAllowing: { issue in
+                    underTheBar && issue.auditType == .contrast && issue.element == nil
+                })
+            }
+        }
+        require(bottom, what)
+        XCTAssertTrue(bottom.isHittable, "\(what) was never scrolled onto the screen")
+        XCTAssertTrue(hasStoppedDrawing(app), "\(what) was still moving when the audit ran")
+    }
+
     /// Audits a screen at both sizes in one test, so a failure names the screen
     /// rather than an index into a list.
     private func sweep(
@@ -231,6 +323,7 @@ final class AccessibilitySweepTests: XCTestCase {
         var seen: [Bool: Set<String>] = [:]
         let wantsLossCheck = ProcessInfo.processInfo.environment["KINLORE_XXXL_LOSS"] != nil
         for size in [nil, Self.largest] {
+            judgedAbove = []
             let app = launch(arguments, api: api, textSize: size)
             // The closure is told which size it is in, because a screen does not
             // hold the same things at both: at the largest size a list that fits
@@ -261,12 +354,10 @@ final class AccessibilitySweepTests: XCTestCase {
             let abortAfterAudit = continueAfterFailure
             continueAfterFailure = true
             defer { continueAfterFailure = abortAfterAudit }
-            try audit(app, "\(name), \(at)")
             if wantsLossCheck {
-                let texts = app.staticTexts.allElementsBoundByIndex.map(\.label)
-                let buttons = app.buttons.allElementsBoundByIndex.map(\.label)
-                seen[size != nil] = Set((texts + buttons).filter { !$0.isEmpty })
+                seen[size != nil] = labelsInTree(app).union(judgedAbove)
             }
+            try audit(app, "\(name), \(at)")
             app.terminate()
         }
         // **What the audit at the largest size could not see.**
@@ -289,21 +380,23 @@ final class AccessibilitySweepTests: XCTestCase {
         // it is what a particular screen does there, and nothing reports it.
         //
         // **Behind a variable rather than on by default, and now measured.**
-        // One run of the whole class with `TEST_RUNNER_KINLORE_XXXL_LOSS=1`,
-        // 21 Sep 2026 at `fde0f73`, on a simulator of its own: 29 of 69
-        // sweeps lose labels at the largest size, and `testFamily` re-run
-        // alone lost the same 22 of 27. On by default, it would be red on
-        // almost half the suite, and much of that red is not a gap in the
-        // audit — it is the screen behind a sheet (a sheet over a photograph
-        // loses the photograph's rows, which that photograph's own sweep
-        // judges) and a wheel picker showing fewer years.
+        // The labels are read *before* the audit, and until 21 Sep 2026 they
+        // were read after it — which is not the same tree. The audit simulates
+        // other text sizes on the live screen and leaves a list scrolled and
+        // half rebuilt: on the setup form the tree held the consent notice
+        // and *"Luo arkisto"* just before the audit and only the navigation
+        // bar just after. The first full run was taken that way and said 29
+        // of 69; read before the audit, the same class at `e59846f` plus this
+        // change says 26, and `testFamily` falls from 22 of 27 to 14.
         //
-        // The rest is the finding. Perhe, both forms that create or join a
-        // family, Asetukset, Näin tämä toimii and the album by decade are
-        // judged at the largest size only as far as the first screen reaches:
-        // *"Luo arkisto"*, *"Kuka sinä olet"* and the consent sentence under
-        // them are not in the tree the audit reads. A green there is a claim
-        // about the top of the screen.
+        // On by default it would be red on over a third of the suite, and
+        // much of that red is not a gap in the audit — the screen behind a
+        // sheet, which that screen's own sweep judges, and a wheel picker
+        // showing fewer years. The rest is: Perhe, Asetukset, Näin tämä
+        // toimii and the album by decade are judged at the largest size only
+        // as far as the first screen reaches. The two setup forms were on
+        // that list and are not any more — they are audited page by page
+        // (`auditPageByPage`), and their loss check is green.
         if let atDefault = seen[false], let atLargest = seen[true] {
             let lost = atDefault.subtracting(atLargest).sorted()
             XCTAssertTrue(
@@ -333,7 +426,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// the button out. Setup is also where the phone's owner is now asked about,
     /// and a question nobody can read sets up the wrong phone.
     func testCreateFamilyForm() throws {
-        try sweep("Uusi arkisto", arguments: [], api: "http://127.0.0.1:9") { app, _ in
+        try sweep("Uusi arkisto", arguments: [], api: "http://127.0.0.1:9") { app, isLargest in
             require(app.buttons["Aloita perheen arkisto"], "the way into setup").tap()
             // The form's first section, because a `Form` does not build rows
             // nobody can see: at the largest text size a landmark further down
@@ -341,15 +434,29 @@ final class AccessibilitySweepTests: XCTestCase {
             // arrived". That is what happened when §10 lever 2 put a section
             // above the one this used to watch for.
             require(app.staticTexts["Keiden kesken"], "the setup form")
+            // At the largest size the form is several screenfuls tall, and a
+            // row is not in the tree until it is near the screen.
+            if isLargest {
+                try auditPageByPage(
+                    app, "Uusi arkisto, largest text size",
+                    to: app.buttons["Luo arkisto"], "the setup form's button"
+                )
+            }
         }
     }
 
     /// The one an 80-year-old reaches on her own, from a link, with nobody
     /// beside her.
     func testJoinFamilyForm() throws {
-        try sweep("Liity perheeseen", arguments: [], api: "http://127.0.0.1:9") { app, _ in
+        try sweep("Liity perheeseen", arguments: [], api: "http://127.0.0.1:9") { app, isLargest in
             require(app.buttons["Liity kutsulinkillä"], "the way into joining").tap()
             require(app.staticTexts["Kutsu"], "the join form")
+            if isLargest {
+                try auditPageByPage(
+                    app, "Liity perheeseen, largest text size",
+                    to: app.buttons["Liity perheeseen"], "the join form's button"
+                )
+            }
         }
     }
 
