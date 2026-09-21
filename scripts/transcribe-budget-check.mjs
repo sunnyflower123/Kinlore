@@ -11,7 +11,7 @@
 //
 //   node scripts/transcribe-budget-check.mjs
 
-import { boundedSeconds, extractionBudget, outputBudget } from '../backend/src/budget.ts'
+import { REASONING_BUDGET, boundedSeconds, extractionBudget, outputBudget, transcriptionMaxTokens } from '../backend/src/budget.ts'
 
 let failures = 0
 function check(label, actual, ok) {
@@ -34,6 +34,20 @@ check('English costs fewer tokens per second than Finnish', outputBudget(600, 'e
 check('an unknown length gets the fixed budget', outputBudget(undefined, 'fi'), outputBudget(undefined, 'fi') === 4096)
 check('a zero length gets the fixed budget too', outputBudget(0, 'en'), outputBudget(0, 'en') === 4096)
 check('a one-second answer still gets the floor', outputBudget(1, 'fi'), outputBudget(1, 'fi') === 1024)
+
+// `max_tokens` counts the model's reasoning too. A 40-second telling that
+// reached the founder's phone as "Your voice is kept" on 21 Sep 2026 had been
+// sent 1024 tokens; the model spent up to 980 of them thinking and was cut off.
+// The hardest sample reasoned for 2 792 uncapped, so that is the least the
+// whole budget must leave beside the answer's.
+check('a 40 s telling leaves room to think as well as to write',
+  transcriptionMaxTokens(40, 'en'), transcriptionMaxTokens(40, 'en') >= outputBudget(40, 'en') + 2792)
+check('in Finnish too', transcriptionMaxTokens(40, 'fi'),
+  transcriptionMaxTokens(40, 'fi') >= outputBudget(40, 'fi') + 2792)
+check('the thinking is capped at what the room was sized for', REASONING_BUDGET,
+  transcriptionMaxTokens(40, 'fi') === outputBudget(40, 'fi') + REASONING_BUDGET)
+check('and the sum never passes the smallest output limit', transcriptionMaxTokens(3 * 60 * 60, 'fi'),
+  transcriptionMaxTokens(3 * 60 * 60, 'fi') === 16_000)
 
 // The duration is the client's own number, and both the meter and the
 // hallucination ceiling are derived from it. `boundedSeconds` clamps it to what

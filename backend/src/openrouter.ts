@@ -43,6 +43,10 @@ type CallOptions = {
 	/// Without this the route's default is used, which can be surprisingly low.
 	/// A truncated response looks like invalid JSON, which sends you the wrong way.
 	maxTokens?: number
+	/// A ceiling on the model's hidden reasoning, which `maxTokens` counts
+	/// too. Without it a thinking model can spend the whole budget before
+	/// writing a word (`REASONING_BUDGET` in budget.ts).
+	reasoningTokens?: number
 }
 
 export async function complete(env: Env, messages: Message[], opts: CallOptions): Promise<string> {
@@ -53,6 +57,7 @@ export async function complete(env: Env, messages: Message[], opts: CallOptions)
 	}
 
 	if (opts.maxTokens) body.max_tokens = opts.maxTokens
+	if (opts.reasoningTokens) body.reasoning = { max_tokens: opts.reasoningTokens }
 
 	if (opts.schema) {
 		body.response_format = {

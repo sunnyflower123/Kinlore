@@ -100,6 +100,30 @@ export function outputBudget(seconds: number | undefined, lang: Lang): number {
 	return Math.min(Math.max(tokens, 1024), MAX_OUTPUT_TOKENS)
 }
 
+/// What the transcription model may spend thinking before it writes a word.
+///
+/// `max_tokens` covers the reasoning as well as the answer, and
+/// `outputBudget` above was written as if there were only the answer. Measured
+/// 21 Sep 2026 on a 40-second telling that reached the founder's phone as
+/// *"Your voice is kept"*: `gemini-3.6-flash` spent 566–980 tokens reasoning
+/// against a transcript of about 90, so one run in three hit the 1024 cap and
+/// came back `finish_reason=length` — rejected whole, audio kept, no text.
+/// Finnish failed five times in five. Uncapped, the synthetic hard and noisy
+/// samples reasoned for up to 2 792.
+///
+/// Reasoning is budgeted rather than switched off. `effort: minimal` passed
+/// all 24 samples too, but it made the noisy ones worse (`haat-kohina` 5.9 %
+/// word error rate against 35 %), and the model was chosen by measurement with
+/// its reasoning on. Capped at this number, 8 of 8 of the runs that had failed
+/// finished.
+export const REASONING_BUDGET = 4096
+
+/// The whole of `max_tokens` for a transcription: the answer's budget plus the
+/// thinking's, never past the smallest output limit in use.
+export function transcriptionMaxTokens(seconds: number | undefined, lang: Lang): number {
+	return Math.min(outputBudget(seconds, lang) + REASONING_BUDGET, MAX_OUTPUT_TOKENS)
+}
+
 /// How many tokens the STRUCTURING of a telling can need, at most.
 ///
 /// The same defect as `outputBudget` above, in the other half of the pipeline

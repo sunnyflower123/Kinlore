@@ -12,7 +12,7 @@
 /// the model describing Finnish speech, not documentation. See CLAUDE.md.
 
 import { complete, type Message } from './openrouter'
-import { MAX_WORDS_PER_SECOND, WORD_ALLOWANCE, outputBudget } from './budget'
+import { MAX_WORDS_PER_SECOND, REASONING_BUDGET, WORD_ALLOWANCE, transcriptionMaxTokens } from './budget'
 import type { Lang } from './extract'
 import type { Env } from './worker'
 
@@ -89,7 +89,8 @@ export async function transcribe(
 		await complete(env, messages, {
 			model: env.MODEL_TRANSCRIBE,
 			temperature: 0,
-			maxTokens: outputBudget(seconds, lang),
+			maxTokens: transcriptionMaxTokens(seconds, lang),
+			reasoningTokens: REASONING_BUDGET,
 		})
 	).trim()
 
