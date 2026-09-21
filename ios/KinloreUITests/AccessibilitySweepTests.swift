@@ -288,13 +288,22 @@ final class AccessibilitySweepTests: XCTestCase {
         // at both sizes. So the loss is not a property of the largest size;
         // it is what a particular screen does there, and nothing reports it.
         //
-        // **Behind a variable rather than on by default**, for the reason the
-        // audit's own screenshot is: what this would cost across all sweeps
-        // has not been measured, and a screen may legitimately hold different
-        // words at the largest size — a truncation, a label the layout
-        // replaces — which this would read as a loss. One suite run with
-        // `TEST_RUNNER_KINLORE_XXXL_LOSS=1` answers that, and until somebody
-        // spends it this changes nothing.
+        // **Behind a variable rather than on by default, and now measured.**
+        // One run of the whole class with `TEST_RUNNER_KINLORE_XXXL_LOSS=1`,
+        // 21 Sep 2026 at `fde0f73`, on a simulator of its own: 29 of 69
+        // sweeps lose labels at the largest size, and `testFamily` re-run
+        // alone lost the same 22 of 27. On by default, it would be red on
+        // almost half the suite, and much of that red is not a gap in the
+        // audit — it is the screen behind a sheet (a sheet over a photograph
+        // loses the photograph's rows, which that photograph's own sweep
+        // judges) and a wheel picker showing fewer years.
+        //
+        // The rest is the finding. Perhe, both forms that create or join a
+        // family, Asetukset, Näin tämä toimii and the album by decade are
+        // judged at the largest size only as far as the first screen reaches:
+        // *"Luo arkisto"*, *"Kuka sinä olet"* and the consent sentence under
+        // them are not in the tree the audit reads. A green there is a claim
+        // about the top of the screen.
         if let atDefault = seen[false], let atLargest = seen[true] {
             let lost = atDefault.subtracting(atLargest).sorted()
             XCTAssertTrue(

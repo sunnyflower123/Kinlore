@@ -237,8 +237,9 @@ extension XCTestCase {
         // Sep 2026 on `KINLORE_XXXL_LOSS`, the sweep's own variable, which
         // this process reads through the same `ProcessInfo` call: as an
         // argument the lookup was nil, as an environment prefix it was not,
-        // same command otherwise. The shot was not re-measured, and it is read
-        // two lines below by that same call.
+        // same command otherwise. The shot itself was measured the same day
+        // on an audit that reported two issues: as an argument its directory
+        // stayed empty, as an environment prefix it held one 540 940-byte PNG.
         //
         // **Give it a path under `/tmp`.** A prefix inside a session's own
         // scratchpad produces no file at all: the simulator cannot write into
