@@ -89,15 +89,41 @@ export function boundedSeconds(claimed: number | undefined, base64Length: number
 /// hallucination bound above turned into tokens: the most words the audio can
 /// hold, times the tokens a word of that language costs, plus room to breathe.
 /// Finnish words are long and tokenise into several pieces; English ones
-/// mostly into one or two. Unknown length gets a generous fixed budget; the
-/// top is the smallest output limit among the audio models in use.
+/// mostly into one or two. Unknown length gets a generous fixed budget. The
+/// top is not here: it belongs to the model, and `transcriptionMaxTokens`
+/// applies it.
 const TOKENS_PER_WORD: Record<Lang, number> = { fi: 3, en: 1.6 }
-const MAX_OUTPUT_TOKENS = 16_000
 export function outputBudget(seconds: number | undefined, lang: Lang): number {
 	if (!seconds || seconds <= 0) return 4096
 	const words = seconds * MAX_WORDS_PER_SECOND[lang] + WORD_ALLOWANCE
 	const tokens = Math.ceil(words * TOKENS_PER_WORD[lang]) + 256
-	return Math.min(Math.max(tokens, 1024), MAX_OUTPUT_TOKENS)
+	return Math.max(tokens, 1024)
+}
+
+/// The most one reply from `model` may hold.
+///
+/// One ceiling of 16 000 stood here for every call, and it was the smallest
+/// limit in use — `openai/gpt-4o-mini`'s 16 384, the extraction's fallback,
+/// which never transcribes anything. So the transcription, which only ever
+/// runs on Gemini, was held to a limit a quarter of its own: at a realistic
+/// two Finnish words a second that ends a telling at about half an hour, and
+/// the recording limit (`MAX_AUDIO_BYTES`) admits an hour and a half. The
+/// structuring hit it sooner, because it writes the whole telling out again:
+/// its budget reached the ceiling at about eighteen Finnish minutes.
+///
+/// The numbers are each model's `top_provider.max_completion_tokens` from
+/// OpenRouter's /models, read on 21 Sep 2026 — somebody else's figures, which
+/// can change without this repo changing. A model not listed here gets the old
+/// 16 000, which is what every call was sent before and what every model in
+/// use accepts, so changing a `MODEL_*` variable can cost a long telling its
+/// room but cannot turn a request into a 400.
+const OUTPUT_CEILINGS: Record<string, number> = {
+	'google/gemini-3.6-flash': 65_536,
+	'openai/gpt-4o-mini': 16_000,
+}
+export const DEFAULT_OUTPUT_CEILING = 16_000
+export function outputCeiling(model: string): number {
+	return OUTPUT_CEILINGS[model] ?? DEFAULT_OUTPUT_CEILING
 }
 
 /// What the transcription model may spend thinking before it writes a word.
@@ -119,9 +145,9 @@ export function outputBudget(seconds: number | undefined, lang: Lang): number {
 export const REASONING_BUDGET = 4096
 
 /// The whole of `max_tokens` for a transcription: the answer's budget plus the
-/// thinking's, never past the smallest output limit in use.
-export function transcriptionMaxTokens(seconds: number | undefined, lang: Lang): number {
-	return Math.min(outputBudget(seconds, lang) + REASONING_BUDGET, MAX_OUTPUT_TOKENS)
+/// thinking's, never past what the model can write.
+export function transcriptionMaxTokens(seconds: number | undefined, lang: Lang, model: string): number {
+	return Math.min(outputBudget(seconds, lang) + REASONING_BUDGET, outputCeiling(model))
 }
 
 /// How many tokens the STRUCTURING of a telling can need, at most.
@@ -158,9 +184,13 @@ export function transcriptionMaxTokens(seconds: number | undefined, lang: Lang):
 /// Generous on purpose, and it is free to be: `max_tokens` is a ceiling and
 /// not a reservation, so an unused budget costs nothing. What a tight one costs
 /// is a retry, a doubled wait, and sometimes the weaker model.
+///
+/// The ceiling is the model's, so the fallback keeps the 16 000 it always had:
+/// a telling too long for it fails there as it did before, and the primary
+/// model's two attempts are the ones that now have room.
 const EXTRACTION_FLOOR = 3072
-export function extractionBudget(transcript: string, lang: Lang): number {
+export function extractionBudget(transcript: string, lang: Lang, model: string): number {
 	const words = transcript.trim().split(/\s+/).filter(Boolean).length
 	const tokens = Math.ceil(words * TOKENS_PER_WORD[lang] * 2) + EXTRACTION_FLOOR
-	return Math.min(tokens, MAX_OUTPUT_TOKENS)
+	return Math.min(tokens, outputCeiling(model))
 }

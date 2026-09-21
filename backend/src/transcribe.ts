@@ -89,7 +89,7 @@ export async function transcribe(
 		await complete(env, messages, {
 			model: env.MODEL_TRANSCRIBE,
 			temperature: 0,
-			maxTokens: transcriptionMaxTokens(seconds, lang),
+			maxTokens: transcriptionMaxTokens(seconds, lang, env.MODEL_TRANSCRIBE),
 			reasoningTokens: REASONING_BUDGET,
 		})
 	).trim()

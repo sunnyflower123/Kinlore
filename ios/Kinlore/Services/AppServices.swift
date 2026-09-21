@@ -415,6 +415,21 @@ struct RemoteExtractionService: ExtractionService {
         let questions: [QuestionReply]
     }
 
+    /// How long to wait for the structure. The same mistake as the fixed 180 s
+    /// above, one call later: a flat 90 s, while the reply writes the whole
+    /// telling out again (rule 2 of the prompt forbids shortening it) and the
+    /// Worker may try three times before answering. Ninety seconds is plenty
+    /// for the demo's minute and a half and nothing like enough for half an
+    /// hour, which the output ceilings in `budget.ts` now allow.
+    ///
+    /// A tenth of a second a word is an estimate, not a measurement: about
+    /// three tokens a Finnish word, at a hundred tokens a second, three times
+    /// over. Never under the old 90 s, capped where the transcription's is.
+    static func extractionTimeout(transcript: String) -> TimeInterval {
+        let words = transcript.split(whereSeparator: \.isWhitespace).count
+        return min(max(90, 60 + 0.1 * Double(words)), 900)
+    }
+
     func extract(
         transcript: String,
         corrections: [NameCorrection],
@@ -439,7 +454,7 @@ struct RemoteExtractionService: ExtractionService {
             // tokens on a round that was going to happen anyway. Measured
             // 19 Sep 2026: a flat +1140 prompt tokens whatever the
             // resolution, and $0.0045 to $0.0061 for the round.
-            timeout: 90
+            timeout: Self.extractionTimeout(transcript: transcript)
         )
 
         return ExtractionResult(

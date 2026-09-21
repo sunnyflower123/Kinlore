@@ -456,7 +456,7 @@ export async function extract(
 				// stood here truncated a long memory intermittently, which
 				// costs a retry and sometimes the weaker fallback model — see
 				// `extractionBudget`.
-				maxTokens: extractionBudget(transcript, lang),
+				maxTokens: extractionBudget(transcript, lang, model),
 			})
 			const parsed = parseStructured(raw)
 

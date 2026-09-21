@@ -11,7 +11,15 @@
 //
 //   node scripts/transcribe-budget-check.mjs
 
-import { REASONING_BUDGET, boundedSeconds, extractionBudget, outputBudget, transcriptionMaxTokens } from '../backend/src/budget.ts'
+import {
+  DEFAULT_OUTPUT_CEILING, REASONING_BUDGET, boundedSeconds, extractionBudget, outputBudget, outputCeiling,
+  transcriptionMaxTokens,
+} from '../backend/src/budget.ts'
+
+// The two models wrangler.jsonc names: the one that transcribes and extracts,
+// and the extraction's fallback.
+const GEMINI = 'google/gemini-3.6-flash'
+const FALLBACK = 'openai/gpt-4o-mini'
 
 let failures = 0
 function check(label, actual, ok) {
@@ -23,10 +31,7 @@ const demo = outputBudget(90, 'fi')
 check('a 90 s Finnish telling fits comfortably', demo, demo >= 1024 && demo < 3000)
 
 const twenty = outputBudget(20 * 60, 'fi')
-check('twenty Finnish minutes get well over ten thousand tokens', twenty, twenty > 10_000 && twenty <= 16_000)
-
-const hours = outputBudget(3 * 60 * 60, 'fi')
-check('three hours stop at the ceiling', hours, hours === 16_000)
+check('twenty Finnish minutes get well over ten thousand tokens', twenty, twenty > 10_000)
 
 check('English costs fewer tokens per second than Finnish', outputBudget(600, 'en'),
   outputBudget(600, 'en') < outputBudget(600, 'fi'))
@@ -41,13 +46,37 @@ check('a one-second answer still gets the floor', outputBudget(1, 'fi'), outputB
 // The hardest sample reasoned for 2 792 uncapped, so that is the least the
 // whole budget must leave beside the answer's.
 check('a 40 s telling leaves room to think as well as to write',
-  transcriptionMaxTokens(40, 'en'), transcriptionMaxTokens(40, 'en') >= outputBudget(40, 'en') + 2792)
-check('in Finnish too', transcriptionMaxTokens(40, 'fi'),
-  transcriptionMaxTokens(40, 'fi') >= outputBudget(40, 'fi') + 2792)
+  transcriptionMaxTokens(40, 'en', GEMINI), transcriptionMaxTokens(40, 'en', GEMINI) >= outputBudget(40, 'en') + 2792)
+check('in Finnish too', transcriptionMaxTokens(40, 'fi', GEMINI),
+  transcriptionMaxTokens(40, 'fi', GEMINI) >= outputBudget(40, 'fi') + 2792)
 check('the thinking is capped at what the room was sized for', REASONING_BUDGET,
-  transcriptionMaxTokens(40, 'fi') === outputBudget(40, 'fi') + REASONING_BUDGET)
-check('and the sum never passes the smallest output limit', transcriptionMaxTokens(3 * 60 * 60, 'fi'),
-  transcriptionMaxTokens(3 * 60 * 60, 'fi') === 16_000)
+  transcriptionMaxTokens(40, 'fi', GEMINI) === outputBudget(40, 'fi') + REASONING_BUDGET)
+check('and the sum never passes what the model can write', transcriptionMaxTokens(3 * 60 * 60, 'fi', GEMINI),
+  transcriptionMaxTokens(3 * 60 * 60, 'fi', GEMINI) === 65_536)
+
+// Until 21 Sep 2026 every call was held to 16 000, the fallback's limit, and
+// the transcription never runs on the fallback. At a realistic two Finnish
+// words a second that ended a telling at about half an hour, while the Worker
+// accepts an hour and a half. These are the lengths the ceiling exists for.
+const REALISTIC_FI = 2.04 // words a second, measured (budget.ts)
+const LONGEST_ACCEPTED = (25 * 1024 * 1024) / 4_500 // MAX_AUDIO_BYTES at 4.5 kB/s, in seconds
+const realisticNeed = Math.ceil(LONGEST_ACCEPTED * REALISTIC_FI * 3) + REASONING_BUDGET
+check('the longest recording the Worker accepts fits at a realistic pace',
+  `${Math.round(LONGEST_ACCEPTED / 60)} min needs ${realisticNeed}`,
+  realisticNeed <= transcriptionMaxTokens(LONGEST_ACCEPTED, 'fi', GEMINI))
+check('an hour at the hallucination guard\'s own ceiling is not cut short',
+  transcriptionMaxTokens(60 * 60, 'fi', GEMINI),
+  transcriptionMaxTokens(60 * 60, 'fi', GEMINI) === outputBudget(60 * 60, 'fi') + REASONING_BUDGET)
+check('half an hour no longer stops at the old 16 000',
+  transcriptionMaxTokens(30 * 60, 'fi', GEMINI), transcriptionMaxTokens(30 * 60, 'fi', GEMINI) > 16_000)
+
+// A model nobody wrote down gets what every call was sent before, which every
+// model in use accepts: changing MODEL_TRANSCRIBE can cost room, never a 400.
+check('an unknown model gets the old ceiling', outputCeiling('someone/new-model'),
+  outputCeiling('someone/new-model') === DEFAULT_OUTPUT_CEILING && DEFAULT_OUTPUT_CEILING === 16_000)
+check('and so does its transcription', transcriptionMaxTokens(60 * 60, 'fi', 'someone/new-model'),
+  transcriptionMaxTokens(60 * 60, 'fi', 'someone/new-model') === 16_000)
+check('the fallback stays inside its own 16 384', outputCeiling(FALLBACK), outputCeiling(FALLBACK) <= 16_384)
 
 // The duration is the client's own number, and both the meter and the
 // hallucination ceiling are derived from it. `boundedSeconds` clamps it to what
@@ -130,34 +159,44 @@ check('a claim that is not a number is charged the byte floor, like an omitted o
 // reservation — so every one of these asks for headroom rather than for a fit.
 
 console.log('\n— structuring a telling is given room to come back —')
-const tiny = extractionBudget('Tässä on Aino.', 'fi')
+const tiny = extractionBudget('Tässä on Aino.', 'fi', GEMINI)
 check('a few words still clear the measured floor of 1451', tiny, tiny > 1451)
 check('and the old flat cap of 2000 as well', tiny, tiny > 2000)
 
-const medium = extractionBudget(Array(38).fill('sana').join(' '), 'fi')
+const medium = extractionBudget(Array(38).fill('sana').join(' '), 'fi', GEMINI)
 check('a medium telling clears its measured 1892', medium, medium > 1892)
-const long = extractionBudget(Array(126).fill('sana').join(' '), 'fi')
+const long = extractionBudget(Array(126).fill('sana').join(' '), 'fi', GEMINI)
 check('a long one clears its measured 2376', long, long > 2376)
 check('and a longer telling gets more than a shorter one', long, long > medium)
 
 // Ninety seconds of Finnish at the hallucination guard's own ceiling.
-const ninety = extractionBudget(Array(4 * 90 + 20).fill('sana').join(' '), 'fi')
+const ninety = extractionBudget(Array(4 * 90 + 20).fill('sana').join(' '), 'fi', GEMINI)
 check('a full ninety-second telling is budgeted past 3000', ninety, ninety > 3000)
-check('a telling nobody could speak is still capped', extractionBudget(Array(20_000).fill('sana').join(' '), 'fi'),
-  extractionBudget(Array(20_000).fill('sana').join(' '), 'fi') === 16_000)
+check('a telling nobody could speak is still capped', extractionBudget(Array(20_000).fill('sana').join(' '), 'fi', GEMINI),
+  extractionBudget(Array(20_000).fill('sana').join(' '), 'fi', GEMINI) === 65_536)
+
+// Half an hour of Finnish at a realistic pace. The budget reached the old
+// 16 000 at about eighteen minutes, and the reply has to write the telling
+// out again in full — so the primary model now gets the whole of it, and the
+// fallback keeps its own limit and fails there as it always did.
+const halfHour = Array(Math.round(30 * 60 * REALISTIC_FI)).fill('sana').join(' ')
+check('half an hour of Finnish is not cut to the old 16 000', extractionBudget(halfHour, 'fi', GEMINI),
+  extractionBudget(halfHour, 'fi', GEMINI) > 16_000 && extractionBudget(halfHour, 'fi', GEMINI) < 65_536)
+check('the fallback keeps its own limit', extractionBudget(halfHour, 'fi', FALLBACK),
+  extractionBudget(halfHour, 'fi', FALLBACK) === 16_000)
 
 // English words are shorter and tokenise into fewer pieces, the same reason
 // `TOKENS_PER_WORD` is two numbers for the transcription.
 check('English costs fewer tokens per word here too',
-  extractionBudget(Array(100).fill('word').join(' '), 'en'),
-  extractionBudget(Array(100).fill('word').join(' '), 'en') <
-    extractionBudget(Array(100).fill('sana').join(' '), 'fi'))
+  extractionBudget(Array(100).fill('word').join(' '), 'en', GEMINI),
+  extractionBudget(Array(100).fill('word').join(' '), 'en', GEMINI) <
+    extractionBudget(Array(100).fill('sana').join(' '), 'fi', GEMINI))
 
 // An empty transcript never reaches `extract()` — the route rejects it with
 // `missing_transcript` — but a budget of zero would be a 400 dressed as a
 // truncated model reply, which is three levels from the cause.
-check('an empty transcript still gets the floor', extractionBudget('', 'fi'), extractionBudget('', 'fi') === 3072)
-check('and so does one that is only whitespace', extractionBudget('   \n  ', 'fi'), extractionBudget('   \n  ', 'fi') === 3072)
+check('an empty transcript still gets the floor', extractionBudget('', 'fi', GEMINI), extractionBudget('', 'fi', GEMINI) === 3072)
+check('and so does one that is only whitespace', extractionBudget('   \n  ', 'fi', GEMINI), extractionBudget('   \n  ', 'fi', GEMINI) === 3072)
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

@@ -83,9 +83,12 @@ async function readJSON<T>(request: Request): Promise<T | null> {
 	}
 }
 
-/// Audio is not accepted without limit. 25 MB is about 3 hours of speech at this
-/// compression — far beyond any single memory, but it stops a misbehaving client
-/// from sending a gigabyte.
+/// Audio is not accepted without limit. 25 MB is about an hour and a half of the
+/// app's own recording, which is 4.5 kB/s (measured, ARCHITECTURE §5) — this
+/// said three hours until 21 Sep 2026, a figure from before the measurement.
+/// Far beyond most memories, and it stops a misbehaving client from sending a
+/// gigabyte. It is also the length the output ceilings in `budget.ts` are
+/// sized against.
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
 /// The same bound for a photograph sent to be coloured. The phone keeps its
