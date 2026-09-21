@@ -33,6 +33,9 @@ import Foundation
 ///   and the same relationship entered twice.
 /// * A person and a relationship nobody has confirmed, which rule 4 says must
 ///   not be drawn at all.
+/// * A friend of the family who is nobody's kin (Jonne, Elina's friend), and
+///   somebody who is both kin and a friend (Rauha, Helmi's sister and her
+///   friend): the first is drawn apart, the second by the kinship (21 Sep 2026).
 /// * People related to nobody yet, below everything.
 /// * A name long enough to test what a name does to the place it is in.
 ///
@@ -115,6 +118,12 @@ enum ClanFixture {
         person("onerva", "Onerva")
         person("otto", "Otto")
         person("helmi", "Helmi")
+
+        // Joined by friendship (21 Sep 2026): Jonne is Elina's friend and
+        // nobody's kin, so he is drawn apart; Rauha is Helmi's sister and her
+        // friend, so the kinship places her and the band never sees her.
+        person("jonne", "Jonne")
+        person("rauha", "Rauha")
 
         // Related to nobody yet: named while somebody talked, confirmed, and
         // never placed. Seven of them, so they fill a row of their own.
@@ -200,6 +209,9 @@ enum ClanFixture {
         link("sisko", "tarja", .siblingOf)
         children(["sisko"], ["onerva"])
         link("otto", "helmi", .spouseOf)
+        link("helmi", "rauha", .siblingOf)
+        link("helmi", "rauha", .friendOf)
+        link("elina", "jonne", .friendOf)
 
         // Neither of these may be drawn: one is unconfirmed, the other was
         // taken back.

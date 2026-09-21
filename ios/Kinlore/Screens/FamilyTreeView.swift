@@ -144,18 +144,29 @@ struct FamilyTreeView: View {
 
     private var layout: FamilyTreeLayout.Result {
         let ids = Set(people.map(\.id))
-        let links = store.relations.compactMap { relation -> FamilyTreeLayout.Link? in
-            guard relation.confirmed, relation.deletedAt == nil,
-                  ids.contains(relation.fromSubjectID), ids.contains(relation.toSubjectID)
-            else { return nil }
+        let live = store.relations.filter { relation in
+            relation.confirmed && relation.deletedAt == nil
+                && ids.contains(relation.fromSubjectID) && ids.contains(relation.toSubjectID)
+        }
+        // A friendship is not a line in a family tree (§21: a friend is not
+        // suku), and the layout is never handed one — as a link it would be
+        // placed as a sibling. It is handed who is joined to the family by
+        // friendship alone, and draws them apart under it; a friend who is
+        // also somebody's kin is placed by the kinship.
+        let links = live.compactMap { relation -> FamilyTreeLayout.Link? in
             let kind: FamilyTreeLayout.Kind
             switch relation.kind {
             case .parentOf: kind = .parent
             case .spouseOf: kind = .spouse
             case .siblingOf: kind = .sibling
+            case .friendOf: return nil
             }
             return FamilyTreeLayout.Link(from: relation.fromSubjectID, to: relation.toSubjectID, kind: kind)
         }
+        let kin = Set(links.flatMap { [$0.from, $0.to] })
+        let aside = live.filter { $0.kind == .friendOf }
+            .flatMap { [$0.fromSubjectID, $0.toSubjectID] }
+            .filter { !kin.contains($0) }
         // How deep a card reaches below the row's centre line, in rows, so
         // that a line leaving somebody starts under their name: half the
         // disc, the gap and the name, and two fifths of a line more for the
@@ -168,7 +179,7 @@ struct FamilyTreeView: View {
         let name = discSize / 2 + 6 + nameLine
         let card = name + nameLine * 0.4
         let yours = name + 6 + youLine
-        return FamilyTreeLayout.layout(people: people.map(\.id), links: links) { id in
+        return FamilyTreeLayout.layout(people: people.map(\.id), links: links, aside: aside) { id in
             Double((id == you ? yours : card) / rowHeight)
         }
     }
@@ -437,11 +448,11 @@ struct FamilyTreeView: View {
             // the name, and it is the one card the opening keeps whole.
             bandHeight: min(span, cardBand + 6 + youLine),
             row: Self.openingRow,
-            // The top of every row with people in it — the row the layout
-            // leaves empty for the caption has no names — so the opening can
+            // The top of every row with people in it — the rows the layout
+            // leaves empty for a caption have no names — so the opening can
             // tell which names the fraction would put under the buttons.
             rows: (0 ..< result.rows)
-                .filter { row in result.looseRow.map { row != $0 - 1 } ?? true }
+                .filter { !result.captionRows.contains($0) }
                 .map { y(ofRow: $0, result) },
             card: cardBand,
             name: nameLine
@@ -584,24 +595,17 @@ struct FamilyTreeView: View {
                         .offset(x: left, y: window.visible.minY + 8)
                 }
 
-                // In the empty row the layout leaves above the people related
-                // to nobody, standing on the bottom of that row so it stays
+                // In the empty row the layout leaves above each band of
+                // people drawn apart — the friends, and the people related to
+                // nobody — standing on the bottom of that row so it stays
                 // with them at every text size and every zoom. Shown with no
                 // tree above them too: then they are the whole family, and
                 // the caption says why nobody is joined.
+                if let asideRow = result.asideRow {
+                    caption(Text("Ystävät"), over: asideRow, result, scale: window.scale, shiftY: window.shift.y, left: left)
+                }
                 if let looseRow = result.looseRow {
-                    Text("Ei vielä sukupuussa")
-                        .font(.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Elder.paper, in: RoundedRectangle(cornerRadius: 6))
-                        .frame(height: captionBand, alignment: .bottomLeading)
-                        .offset(
-                            x: left,
-                            y: (CGFloat(looseRow - 1) * rowHeight + captionBand) * window.scale
-                                + window.shift.y - captionBand
-                        )
+                    caption(Text("Ei vielä sukupuussa"), over: looseRow, result, scale: window.scale, shiftY: window.shift.y, left: left)
                 }
             }
         }
@@ -682,6 +686,22 @@ struct FamilyTreeView: View {
         }
     }
 
+    /// A caption over a band of people drawn apart from the generations,
+    /// standing on the bottom of the empty row the layout leaves over it.
+    private func caption(
+        _ text: Text, over first: Int, _ result: FamilyTreeLayout.Result,
+        scale: CGFloat, shiftY: CGFloat, left: CGFloat
+    ) -> some View {
+        text
+            .font(.headline)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Elder.paper, in: RoundedRectangle(cornerRadius: 6))
+            .frame(height: captionBand, alignment: .bottomLeading)
+            .offset(x: left, y: (y(ofRow: first - 1, result) + captionBand) * scale + shiftY - captionBand)
+    }
+
     // MARK: - Arithmetic
 
     /// A name wraps inside this, and the gap to the next place stays clear.
@@ -702,10 +722,11 @@ struct FamilyTreeView: View {
     /// Not every row on the canvas. A family that shares nobody with yours is
     /// drawn beside it and starts at row 0 like every family does, which is no
     /// claim about its age — so a band across it, and a word beside it, would
-    /// be. The people related to nobody are under the caption and are not a
-    /// generation either: nobody has said what they are to anyone.
+    /// be. The friends and the people related to nobody are under their
+    /// captions and are not generations either: a friend is not one, and
+    /// nobody has said what the rest are to anyone.
     private func treeRows(_ result: FamilyTreeLayout.Result, you: String?) -> [Int] {
-        let end = yourFamily(result, you: you)?.rows ?? result.looseRow.map { $0 - 1 } ?? result.rows
+        let end = yourFamily(result, you: you)?.rows ?? result.bandStart
         return end > 0 ? Array(0 ..< end) : []
     }
 
@@ -717,11 +738,12 @@ struct FamilyTreeView: View {
     }
 
     /// Your own row, when this phone is linked to a card that is in the tree.
-    /// Nil when it is not, and nil when your card is one of the people related
-    /// to nobody — from down there you are not a generation to count from.
+    /// Nil when it is not, and nil when your card is drawn apart — a friend of
+    /// the family, or related to nobody — since from down there you are not a
+    /// generation to count from.
     private func yourRow(_ result: FamilyTreeLayout.Result, you: String?) -> Int? {
         guard let you, let place = result.placements[you] else { return nil }
-        guard result.looseRow.map({ place.row < $0 - 1 }) ?? true else { return nil }
+        guard place.row < result.bandStart else { return nil }
         return place.row
     }
 
@@ -735,25 +757,24 @@ struct FamilyTreeView: View {
     }
 
     private func height(of result: FamilyTreeLayout.Result) -> CGFloat {
-        CGFloat(max(result.rows, 1)) * rowHeight - looseTrim(result)
+        CGFloat(max(result.rows, 1)) * rowHeight - captionTrim * CGFloat(result.captionRows.count)
     }
 
-    /// The layout leaves a whole empty generation above the people related to
-    /// nobody, for the caption. A generation's height over one line of text is
-    /// a hole — 134 points of nothing at the default text size, measured on
-    /// 16 Sep 2026 — so everything from the caption down moves up by the
-    /// difference and the drawing loses the hole.
+    /// The layout leaves a whole empty generation above each band of people
+    /// drawn apart — the friends, and the people related to nobody — for its
+    /// caption. A generation's height over one line of text is a hole — 134
+    /// points of nothing at the default text size, measured on 16 Sep 2026 —
+    /// so everything from a caption down moves up by the difference and the
+    /// drawing loses the hole, once for every caption above the row.
     ///
-    /// Nothing above the caption moves, so no line needs a share of it: the
-    /// layout draws none below the last generation.
+    /// Nothing above the first caption moves, so no line needs a share of it:
+    /// the layout draws none below the last generation.
     private func shift(atRow row: Double, _ result: FamilyTreeLayout.Result) -> CGFloat {
-        guard let loose = result.looseRow, row >= Double(loose) else { return 0 }
-        return looseTrim(result)
+        let bandsAbove = [result.asideRow, result.looseRow].compactMap { $0 }.filter { row >= Double($0) }.count
+        return captionTrim * CGFloat(bandsAbove)
     }
 
-    private func looseTrim(_ result: FamilyTreeLayout.Result) -> CGFloat {
-        result.looseRow == nil ? 0 : max(0, rowHeight - captionBand)
-    }
+    private var captionTrim: CGFloat { max(0, rowHeight - captionBand) }
 
     private func clamped(_ value: CGFloat) -> CGFloat {
         min(max(value, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
@@ -1401,6 +1422,10 @@ private struct TreePersonSheet: View {
                     action("Lisää lapsi") { add(.parentOf, true) }
                     action("Lisää puoliso") { add(.spouseOf, false) }
                     action("Lisää sisarus") { add(.siblingOf, false) }
+                    // Not kin, and drawn apart (21 Sep 2026): after a gap,
+                    // under the heading the card's own menu keeps it under.
+                    action("Lisää ystävä") { add(.friendOf, false) }
+                        .padding(.top, 8)
 
                     Button {
                         dismiss()

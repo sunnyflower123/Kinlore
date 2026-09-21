@@ -118,6 +118,12 @@
 "Kuka on vanhempi?" = "Kuka on vanhempi?";
 "Kuka on puoliso?" = "Kuka on puoliso?";
 "Kuka on sisarus?" = "Kuka on sisarus?";
+"Ystävä" = "Ystävä";
+"Ystävät" = "Ystävät";
+"Kuka on ystävä?" = "Kuka on ystävä?";
+"Lisää ystävä" = "Lisää ystävä";
+"Poistetaanko ystävyys?" = "Poistetaanko ystävyys?";
+"%@ ei enää näy tämän henkilön ystävissä. Voit lisätä ystävyyden myöhemmin uudelleen." = "%@ ei enää näy tämän henkilön ystävissä. Voit lisätä ystävyyden myöhemmin uudelleen.";
 "Sukupuu" = "Sukupuu";
 "Ei vielä sukupuussa" = "Ei vielä sukupuussa";
 "Valikko" = "Valikko";
@@ -262,6 +268,7 @@
 "Lapset: %@" = "Lapset: %@";
 "Puoliso: %@" = "Puoliso: %@";
 "Sisarukset: %@" = "Sisarukset: %@";
+"Ystävät: %@" = "Ystävät: %@";
 "Kootaan arkistoa" = "Kootaan arkistoa";
 "Kootaan kuvia %lld/%lld" = "Kootaan kuvia %lld/%lld";
 "Kootaan ääniä %lld/%lld" = "Kootaan ääniä %lld/%lld";

@@ -1092,6 +1092,36 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// A card with a friend on it (21 Sep 2026): the friend under a heading of
+    /// his own, which is a second section the card did not have. `-seed clan`'s
+    /// Jonne is Elina's friend and nobody's kin, so his card is that section
+    /// and little else, and `-person` names it — Elina's own card holds the
+    /// same heading under seven relatives, a screenful down at the largest
+    /// size, and a sweep audits what is on screen. Reached and then settled:
+    /// a short list scrolled past its end bounces back.
+    func testPersonCardWithAFriend() throws {
+        try sweep(
+            "Person card, friend",
+            arguments: ["-seed", "clan", "-tab", "people", "-screen", "person", "-person", "clan-jonne"]
+        ) { app, _ in
+            require(app.buttons["Kerro tästä muisto"], "the person card")
+            settle(reach(app.staticTexts["Ystävät"], in: app, "the friend's own heading"))
+        }
+    }
+
+    /// The sheet behind *Lisää sukulainen* (21 Sep 2026): a menu until the
+    /// day the friend's item was added to it and never fired. The friend's
+    /// button stands after a gap, so the sheet is measured with it.
+    func testPersonCardRelativeKindSheet() throws {
+        try sweep(
+            "Person card, add a relative",
+            arguments: ["-seed", "related", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            reach(app.buttons["Lisää sukulainen"], in: app, "the row that adds a relative").tap()
+            require(app.buttons["Lisää ystävä"], "the sheet")
+        }
+    }
+
     func testSettings() throws {
         try sweep(
             "Asetukset",

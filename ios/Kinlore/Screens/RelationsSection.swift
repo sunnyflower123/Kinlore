@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A person's relatives.
+/// A person's relatives — and, since 21 Sep 2026, their friends, listed apart.
 ///
 /// Lists, on every phone. A list carries the same information as a drawing,
 /// works at the largest text size and is readable with VoiceOver, which is why
@@ -15,24 +15,52 @@ struct RelationsSection: View {
 
     var body: some View {
         Section {
-            group("Vanhemmat", store.relatives(of: subject.id, kind: .parentOf))
-            group("Lapset", store.relatives(of: subject.id, kind: .parentOf, asParent: true))
-            group("Puoliso", store.relatives(of: subject.id, kind: .spouseOf))
-            group("Sisarukset", store.relatives(of: subject.id, kind: .siblingOf))
+            group("Vanhemmat", store.relatives(of: subject.id, kind: .parentOf), kind: .parentOf)
+            group("Lapset", store.relatives(of: subject.id, kind: .parentOf, asParent: true), kind: .parentOf, asParent: true)
+            group("Puoliso", store.relatives(of: subject.id, kind: .spouseOf), kind: .spouseOf)
+            group("Sisarukset", store.relatives(of: subject.id, kind: .siblingOf), kind: .siblingOf)
 
-            Menu {
-                ForEach(RelationKind.allCases, id: \.self) { kind in
-                    Button(kind.addLabel) { adding = kind }
-                }
-                Button("Lapsi") { adding = .parentOf; isAddingChild = true }
+            // A sheet of plain buttons, not a `Menu`, since 21 Sep 2026 — the
+            // choice the tree's person sheet had already made. Measured the
+            // day the friend was added as a fifth item after a divider: on
+            // iOS 26.5 that item never fired, tapped at its centre, at its
+            // edge, pressed, with the menu opened upward over its own row
+            // and downward clear of it, while the four above it fired every
+            // time. And the menu opened only under its words, so a finger
+            // in the middle of the row met nothing. The whole row takes the
+            // tap now, and the sheet's rows grow with the text size.
+            Button {
+                isChoosingKind = true
             } label: {
                 Label("Lisää sukulainen", systemImage: "person.badge.plus")
                     .font(.body.weight(.medium))
-                    // A Menu's label truncates before it wraps, and half of
-                    // "Lisää sukulainen" is not a thing anybody can act on.
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .elderTapTarget()
+            }
+            // Both sheets hang off this one row, not off the section. A
+            // modifier on a `Section` in a `List` reaches every row in it,
+            // so a section with relatives on it presented the sheet from
+            // each of them at once, and the presentations that lost put the
+            // binding back: the sheet came up and went away on its own,
+            // measured 21 Sep 2026 as a button that existed and could not
+            // be tapped. The kind is carried across the sheet's dismissal
+            // rather than acted on inside it: two sheets cannot change
+            // places on the same frame, which is the tree's
+            // `afterPersonSheet` and `RelationPicker`'s own rule about the
+            // name sheet.
+            .sheet(isPresented: $isChoosingKind, onDismiss: startAdding) {
+                RelativeKindSheet { kind, asChild in
+                    pending = (kind, asChild)
+                    isChoosingKind = false
+                }
+            }
+            .sheet(item: $adding) { kind in
+                RelationPicker(subject: subject, kind: kind, asChild: isAddingChild) {
+                    adding = nil
+                    isAddingChild = false
+                }
             }
         } header: {
             Text("Suku")
@@ -49,15 +77,35 @@ struct RelationsSection: View {
                     .foregroundStyle(Elder.supporting)
             }
         }
-        .sheet(item: $adding) { kind in
-            RelationPicker(subject: subject, kind: kind, asChild: isAddingChild) {
-                adding = nil
-                isAddingChild = false
+
+        // Friends, apart from the relatives (21 Sep 2026): a friend is a
+        // person card like any other, and the line to one is not kinship, so
+        // it is not under *Suku* and the tree draws it apart. The section
+        // exists only while somebody is in it — the way in is the row above
+        // — so a card with no friend carries no empty heading.
+        let friends = store.relatives(of: subject.id, kind: .friendOf)
+        if !friends.isEmpty {
+            Section {
+                ForEach(friends) { person in
+                    RelativeRow(subject: subject, relative: person, kind: .friendOf, groupTitle: "Ystävä")
+                }
+            } header: {
+                Text("Ystävät")
+                    .foregroundStyle(Elder.supporting)
             }
         }
     }
 
     @State private var isAddingChild = false
+    @State private var isChoosingKind = false
+    @State private var pending: (kind: RelationKind, asChild: Bool)?
+
+    private func startAdding() {
+        guard let (kind, asChild) = pending else { return }
+        pending = nil
+        isAddingChild = asChild
+        adding = kind
+    }
 
     private var hasUnconfirmed: Bool {
         store.hasUnconfirmedRelation(for: subject.id)
@@ -67,10 +115,12 @@ struct RelationsSection: View {
     /// were shown exactly as written, so an English phone read "Vanhemmat"
     /// under every parent until 13 Sep 2026.
     @ViewBuilder
-    private func group(_ title: LocalizedStringKey, _ people: [Subject]) -> some View {
+    private func group(
+        _ title: LocalizedStringKey, _ people: [Subject], kind: RelationKind, asParent: Bool = false
+    ) -> some View {
         if !people.isEmpty {
             ForEach(people) { person in
-                RelativeRow(subject: subject, relative: person, groupTitle: title)
+                RelativeRow(subject: subject, relative: person, kind: kind, asParent: asParent, groupTitle: title)
             }
         }
     }
@@ -80,29 +130,67 @@ private struct RelativeRow: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
     let relative: Subject
+    let kind: RelationKind
+    /// For `parentOf` only: whether this row's person is the subject's child.
+    var asParent = false
     let groupTitle: LocalizedStringKey
 
     @State private var isConfirmingRemoval = false
 
+    /// The one relationship this row is about, by kind and direction. Until
+    /// 21 Sep 2026 the lookup took whatever live relationship joined the two,
+    /// which was right while two people could only be joined once. Somebody
+    /// can now be a sister and a friend, and a row that took the first line
+    /// it found would confirm or remove the other one.
     private var relation: Relation? {
-        store.relation(between: subject.id, and: relative.id)
+        if kind == .parentOf, !asParent {
+            return store.relation(between: relative.id, and: subject.id, kind: kind)
+        }
+        return store.relation(between: subject.id, and: relative.id, kind: kind)
+    }
+
+    /// Typed, so both branches are keys: a `String` ternary is shown as it is.
+    private var removalTitle: LocalizedStringKey {
+        kind == .friendOf ? "Poistetaanko ystävyys?" : "Poistetaanko sukulaisuus?"
+    }
+
+    private var removalMessage: LocalizedStringKey {
+        kind == .friendOf
+            ? "\(relative.displayTitle) ei enää näy tämän henkilön ystävissä. Voit lisätä ystävyyden myöhemmin uudelleen."
+            : "\(relative.displayTitle) ei enää näy tämän henkilön suvussa. Voit lisätä sukulaisuuden myöhemmin uudelleen."
     }
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: relation?.confirmed == true
-                ? "person.crop.circle"
-                : "person.crop.circle.badge.questionmark")
-                .font(.title3)
-                .foregroundStyle(relation?.confirmed == true ? Elder.supporting : Elder.proposal)
+            // One VoiceOver element per relative, "Matti, Vanhemmat", with
+            // the swipe action below as its action. Until 21 Sep 2026 the row
+            // was three stops — the icon read as "Tili", the symbol's own
+            // name, then the name, then the caption — and the first sweep
+            // over a card with relatives on it failed the two texts as hit
+            // areas: the swipe action makes every element in the row
+            // actionable, and they measured 20 and 14 points tall. Twelve
+            // findings on six relatives at the default text size, none at
+            // the largest, where both fonts reach 44. The element is the
+            // whole left of the row, never under the tap target's minimum.
+            HStack(spacing: 12) {
+                Image(systemName: relation?.confirmed == true
+                    ? "person.crop.circle"
+                    : "person.crop.circle.badge.questionmark")
+                    .font(.title3)
+                    .foregroundStyle(relation?.confirmed == true ? Elder.supporting : Elder.proposal)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(relative.displayTitle)
-                    .font(.body.weight(.medium))
-                Text(groupTitle)
-                    .font(.caption)
-                    .foregroundStyle(Elder.supporting)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(relative.displayTitle)
+                        .font(.body.weight(.medium))
+                    Text(groupTitle)
+                        .font(.caption)
+                        .foregroundStyle(Elder.supporting)
+                }
             }
+            .frame(minHeight: Elder.minTapTarget)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(relative.displayTitle) + Text(", ") + Text(groupTitle))
+            .accessibilityAddTraits(.isStaticText)
 
             Spacer()
 
@@ -116,24 +204,83 @@ private struct RelativeRow: View {
         .padding(.vertical, 4)
         .swipeActions {
             if relation != nil {
-                Button("Poista", role: .destructive) { isConfirmingRemoval = true }
+                // No `role: .destructive` on the swipe button. With it, iOS
+                // treats the tap as the row's removal and animates the row
+                // away before the button's action has done anything, and the
+                // alert this row presents never appears — measured 21 Sep
+                // 2026 on iOS 26.5, `alerts.count` 0 after the tap, the card
+                // unchanged. Only the alert's own "Poista" is destructive,
+                // because it is the one that deletes. The tint is the palette's
+                // own red: the system's measures 3.57:1 on this paper.
+                Button("Poista") { isConfirmingRemoval = true }
+                    .tint(Elder.destructive)
             }
         }
         // A swipe is easy to make by accident and this one used to delete on the
         // spot. The relationship can be added back from the same card, which is
         // why the dialog says so — the recovery is not obvious, and telling
         // somebody about it costs one sentence.
-        .alert(
-            "Poistetaanko sukulaisuus?",
-            isPresented: $isConfirmingRemoval
-        ) {
+        .alert(removalTitle, isPresented: $isConfirmingRemoval) {
             Button("Poista", role: .destructive) {
                 if let relation { store.removeRelation(id: relation.id) }
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
-            Text("\(relative.displayTitle) ei enää näy tämän henkilön suvussa. Voit lisätä sukulaisuuden myöhemmin uudelleen.")
+            Text(removalMessage)
         }
+    }
+}
+
+/// Which relative to add, on a sheet of plain buttons — the shape the tree's
+/// `TreePersonSheet` already had, and for the same reasons: a menu's rows
+/// barely grow with the text size, and a menu's fifth item never fired (see
+/// the note at *"Lisää sukulainen"* in `RelationsSection`). The friend's
+/// button stands after a gap: not kin, so not among them (§21, "Perhe is not
+/// suku"), while the row that opens this still says *Lisää sukulainen*.
+private struct RelativeKindSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let choose: (RelationKind, Bool) -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    action("Lisää vanhempi") { choose(.parentOf, false) }
+                    action("Lisää lapsi") { choose(.parentOf, true) }
+                    action("Lisää puoliso") { choose(.spouseOf, false) }
+                    action("Lisää sisarus") { choose(.siblingOf, false) }
+                    action("Lisää ystävä") { choose(.friendOf, false) }
+                        .padding(.top, 8)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Sulje")
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
+                    }
+                    .padding(.top, 12)
+                }
+                .padding(Elder.screenPadding)
+            }
+            .navigationTitle("Lisää sukulainen")
+            .navigationBarTitleDisplayMode(.inline)
+            .elderSurface()
+        }
+    }
+
+    /// The tree's `action`: the width inside the label, so the whole row
+    /// takes the tap.
+    private func action(_ title: LocalizedStringKey, perform: @escaping () -> Void) -> some View {
+        Button(action: perform) {
+            Text(title)
+                .font(.body.weight(.medium))
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .elderTapTarget()
+        }
+        .buttonStyle(.borderless)
     }
 }
 
@@ -179,6 +326,7 @@ struct RelationPicker: View {
         case .parentOf: return "Kuka on vanhempi?"
         case .spouseOf: return "Kuka on puoliso?"
         case .siblingOf: return "Kuka on sisarus?"
+        case .friendOf: return "Kuka on ystävä?"
         }
     }
 

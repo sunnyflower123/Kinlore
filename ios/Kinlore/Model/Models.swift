@@ -308,25 +308,32 @@ struct Memory: Identifiable, Codable, Hashable {
 
 /// The kind of a relationship.
 ///
-/// `parentOf` is directed and reads `from → to`. Spouse and sibling are
-/// symmetric: they are stored once and read in both directions, so the same
-/// relationship cannot be created twice the other way round.
+/// `parentOf` is directed and reads `from → to`. Spouse, sibling and friend
+/// are symmetric: they are stored once and read in both directions, so the
+/// same relationship cannot be created twice the other way round.
+///
+/// `friendOf` is not kinship (since 21 Sep 2026). A friend is a person card
+/// like any other — the same card, the same tellings, the same picture —
+/// joined to somebody by a line that is not descent: the tree draws a friend
+/// apart rather than as a sibling, and the card lists them under *Ystävät*
+/// rather than under *Suku* (ARCHITECTURE §21). The extraction never proposes
+/// one, so a friendship is always something a person entered.
+///
+/// The first case added since the archive had files and a server to read it
+/// from. A build that does not know it drops the row when reading the file
+/// (`Snapshot`) and at the wire (`Relation.init(dto:)`), and pulls again from
+/// the start once it does (`MemoryStore.kindsKnown`, rule 10).
 enum RelationKind: String, Codable, CaseIterable {
     case parentOf = "parent_of"
     case spouseOf = "spouse_of"
     case siblingOf = "sibling_of"
+    case friendOf = "friend_of"
 
     var isSymmetric: Bool { self != .parentOf }
 
-    /// How the relationship is named when adding it: "X is this person's ___".
-    /// Looked up here, because a `String` handed to a `Button` is shown as it is.
-    var addLabel: String {
-        switch self {
-        case .parentOf: String(localized: "Vanhempi")
-        case .spouseOf: String(localized: "Puoliso")
-        case .siblingOf: String(localized: "Sisarus")
-        }
-    }
+    /// The kinds a family tree is drawn from and the *Suku* list is made of.
+    /// `friendOf` is the one that is neither.
+    static let kinship: [RelationKind] = [.parentOf, .spouseOf, .siblingOf]
 }
 
 struct Relation: Identifiable, Codable, Hashable {

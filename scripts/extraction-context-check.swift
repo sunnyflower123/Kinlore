@@ -125,6 +125,19 @@ struct ExtractionContextCheck {
             known.first { $0.name == "Aino" }?.missing.contains("relation") ?? true,
             false
         )
+        // A friendship is a relationship the archive holds (21 Sep 2026):
+        // somebody whose only line is to a friend has been placed by a
+        // person, and asking who they are would be asking again.
+        check(
+            "a friendship counts as a relationship the archive holds",
+            ExtractionContext.build(
+                target: photo, subjects: [photo, aino, toivo],
+                memories: [memory("m6", on: "p1", naming: ["s-aino"])],
+                relations: [Relation(id: "r2", fromSubjectID: "s-aino", toSubjectID: "s-toivo", kind: .friendOf, confirmed: true)],
+                questions: []
+            ).known.first?.missing.contains("relation") ?? true,
+            false
+        )
         check(
             "a place with no point on the map says so",
             known.first { $0.name == "Puumala" }?.missing ?? ["<no entry>"],

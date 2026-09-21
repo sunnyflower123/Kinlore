@@ -247,6 +247,63 @@ enum FamilyTreeLayoutCheck {
             check("and no people is no tree", empty == FamilyTreeLayout.Result())
         }
 
+        // A friend is not a generation (21 Sep 2026): somebody joined to the
+        // family by friendship alone is drawn apart, on a band of their own
+        // above the people related to nobody, with no line — a line would
+        // read as descent. The layout never sees the friendship itself; the
+        // screen names who is joined by one alone.
+        print("— a friend is drawn apart, above the people related to nobody —")
+        do {
+            let r = FamilyTreeLayout.layout(
+                people: ["Aino", "Toivo", "Jonne", "Kustaa"],
+                links: [parent("Aino", "Toivo")],
+                aside: ["Jonne"]
+            )
+            check("Jonne is known as a friend and Kustaa as related to nobody", r.aside == ["Jonne"] && r.unconnected == ["Kustaa"])
+            check("the friend is below every generation, with a row between",
+                  r.placements["Jonne"]?.row == 3 && r.asideRow == 3,
+                  "\(String(describing: r.placements["Jonne"])), asideRow \(String(describing: r.asideRow))")
+            check("and Kustaa below the friends, with a row between",
+                  r.placements["Kustaa"]?.row == 5 && r.looseRow == 5,
+                  "\(String(describing: r.placements["Kustaa"])), looseRow \(String(describing: r.looseRow))")
+            check("both rows between are empty, for the captions",
+                  r.captionRows == [2, 4] && !r.placements.values.contains { $0.row == 2 || $0.row == 4 })
+            check("the generations end at the first caption", r.bandStart == 2)
+            check("the rows count them all", r.rows == 6)
+            check("no line reaches either", !r.segments.contains { $0.y1 >= 2 || $0.y2 >= 2 }, "\(r.segments)")
+            check("nobody shares a place", noOverlap(r))
+
+            // Kin as well as a friend: the kinship places her, the band does not.
+            let both = FamilyTreeLayout.layout(
+                people: ["Aino", "Toivo", "Rauha"],
+                links: [parent("Aino", "Toivo"), sibling("Toivo", "Rauha")],
+                aside: ["Rauha"]
+            )
+            check("somebody's kin is placed by the kinship, friend or not",
+                  both.placements["Rauha"]?.row == 1 && both.aside.isEmpty && both.asideRow == nil,
+                  "\(String(describing: both.placements["Rauha"]))")
+
+            // Friends and nobody else apart: one band, one caption row.
+            let friendsOnly = FamilyTreeLayout.layout(people: ["Aino", "Toivo", "Jonne"], links: [parent("Aino", "Toivo")], aside: ["Jonne"])
+            check("friends alone leave no row for the other caption",
+                  friendsOnly.looseRow == nil && friendsOnly.captionRows == [2] && friendsOnly.rows == 4)
+
+            // Both bands full: four friends over three to a row, and somebody
+            // related to nobody under them.
+            let full = FamilyTreeLayout.layout(people: ["A", "B", "C", "D", "E", "F", "G"], links: [spouse("A", "B")], aside: ["C", "D", "E", "F"])
+            check("four friends take two rows and the rest start below them",
+                  full.asideRow == 2 && full.placements["F"]?.row == 3 && full.looseRow == 5 && full.placements["G"]?.row == 5,
+                  "\(full.placements)")
+            check("with both bands full, nobody shares a place", noOverlap(full))
+
+            // No tree at all: two friends of each other sit under an empty
+            // top row, and nothing is a generation.
+            let pair = FamilyTreeLayout.layout(people: ["Elina", "Jonne"], links: [], aside: ["Elina", "Jonne"])
+            check("two friends and no family sit under an empty top row",
+                  pair.asideRow == 1 && pair.looseRow == nil && pair.bandStart == 0
+                      && pair.placements["Elina"]?.x == 0 && pair.placements["Jonne"]?.x == 1)
+        }
+
         print("— what does not belong is ignored, not drawn —")
         do {
             let r = FamilyTreeLayout.layout(

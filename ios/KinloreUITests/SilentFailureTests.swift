@@ -86,10 +86,9 @@ final class SilentFailureTests: XCTestCase {
         // spouse the same file holds.
         app.staticTexts["Vanha Aino"].tap()
         XCTAssertTrue(
-            app.staticTexts["Puoliso"].waitForExistence(timeout: 10),
+            app.staticTexts["Vanha Eino, Puoliso"].waitForExistence(timeout: 10),
             "the relationship this version can read was lost with the one it cannot"
         )
-        XCTAssertTrue(app.staticTexts["Vanha Eino"].exists, "the spouse's card is not named on hers")
     }
 
     /// A build that has learnt a new relationship kind pulls the family once
@@ -103,7 +102,7 @@ final class SilentFailureTests: XCTestCase {
     /// while a later pull that fails leaves the ordinary empty archive.
     func testABuildThatLearntARelationKindPullsFromTheStart() {
         let learnt = launch(
-            ["-store", "synced", "-tab", "memories", "-family_id", "demo", "-sync.kindsKnown", "2"],
+            ["-store", "synced", "-tab", "memories", "-family_id", "demo", "-sync.kindsKnown", "3/4"],
             api: "http://127.0.0.1:9"
         )
         XCTAssertTrue(
@@ -113,11 +112,12 @@ final class SilentFailureTests: XCTestCase {
         learnt.terminate()
 
         // The same file under a build that recorded every kind it knows —
-        // `RelationKind.allCases.count`, which the next kind moves to 4 and
-        // this line with it. The cursor stands, and the failed pull is not
-        // the first one.
+        // `MemoryStore.kindsKnown`, relationship kinds over subject kinds,
+        // which `friendOf` moved from 3/4 to 4/4 on 21 Sep 2026; the next
+        // kind of either moves it again, and this line with it. The cursor
+        // stands, and the failed pull is not the first one.
         let same = launch(
-            ["-store", "synced", "-tab", "memories", "-family_id", "demo", "-sync.kindsKnown", "3"],
+            ["-store", "synced", "-tab", "memories", "-family_id", "demo", "-sync.kindsKnown", "4/4"],
             api: "http://127.0.0.1:9"
         )
         XCTAssertTrue(same.staticTexts["Ei vielä kuvia"].waitForExistence(timeout: 10), "never arrived: the empty archive")

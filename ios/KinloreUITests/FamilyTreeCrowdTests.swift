@@ -1,10 +1,10 @@
 import XCTest
 
 /// The family tree at the size a family actually reaches, drawn from
-/// `-seed clan`: six generations, fifty-three confirmed people, a remarriage,
+/// `-seed clan`: six generations, fifty-five confirmed people, a remarriage,
 /// two cousin marriages, a childless couple, a marriage the generations cannot
-/// hold, siblings with no parents entered, two families sharing nobody, and
-/// seven people related to nobody yet.
+/// hold, siblings with no parents entered, two families sharing nobody, a
+/// friend who is nobody's kin, and seven people related to nobody yet.
 ///
 /// `FamilyTreeTests` asks whether the screen works, over a family of five.
 /// Everything here only happens at size: a generation wider than the screen,
@@ -223,16 +223,29 @@ final class FamilyTreeCrowdTests: XCTestCase {
     ///
     /// Measured against the drawing's own generation height — the distance
     /// between two rows of it — so it holds at every text size.
+    ///
+    /// Two bands since 21 Sep 2026, and the air is taken out of both caption
+    /// rows the same way: the friends follow the youngest generation, and
+    /// the people related to nobody follow the friend. `-seed clan`'s Jonne
+    /// is the friend, so this measures each caption against what stands
+    /// above it rather than the last caption against the tree, which would
+    /// now read the whole friends' band as the dead generation.
     func testTheCaptionFollowsTheTreeInsteadOfADeadGeneration() {
         let app = launch(["-seed", "clan", "-tab", "people", "-people", "tree", "-you", "clan-elina"])
         XCTAssertTrue(app.buttons["Aapo"].waitForExistence(timeout: 20), "the tree")
         let generation = app.buttons["Väinö"].frame.minY - app.buttons["Aapo"].frame.minY
         XCTAssertGreaterThan(generation, 1, "two generations are drawn at the same height")
-        let caption = app.staticTexts["Ei vielä sukupuussa"].frame
+        let friends = app.staticTexts["Ystävät"].frame
         let youngest = app.buttons["Venla"].frame
-        XCTAssertGreaterThan(caption.minY, youngest.maxY, "the caption is above the last generation")
-        XCTAssertLessThan(caption.minY - youngest.maxY, generation,
-                          "a whole empty generation sits between the tree and the caption")
+        XCTAssertGreaterThan(friends.minY, youngest.maxY, "the friends' caption is above the last generation")
+        XCTAssertLessThan(friends.minY - youngest.maxY, generation,
+                          "a whole empty generation sits between the tree and the friends' caption")
+        let friend = app.buttons["Jonne"].frame
+        let caption = app.staticTexts["Ei vielä sukupuussa"].frame
+        XCTAssertGreaterThan(friend.minY, friends.maxY, "the friend stands above his own caption")
+        XCTAssertGreaterThan(caption.minY, friend.maxY, "the caption is above the friend")
+        XCTAssertLessThan(caption.minY - friend.maxY, generation,
+                          "a whole empty generation sits between the friend and the caption")
     }
 
     /// Zoomed out to see a family this size, the words are still words: the

@@ -527,7 +527,11 @@ struct PeopleScreen: View {
             .task {
                 switch UserDefaults.standard.string(forKey: "screen") {
                 case "person":
-                    if let first = store.subjects(of: .person).first { path.append(first) }
+                    // `-person <card id>` picks the card; without it, the
+                    // first person's. The clan fixture's cards differ in what
+                    // they carry, and a sweep has to name the one it means.
+                    let named = UserDefaults.standard.string(forKey: "person").flatMap { store.subject(id: $0) }
+                    if let card = named ?? store.subjects(of: .person).first { path.append(card) }
                 case "family":
                     path.append(FamilyRoute())
                 case "settings", "export":

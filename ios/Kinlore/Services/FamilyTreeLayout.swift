@@ -11,12 +11,18 @@ import Foundation
 /// Rows are generations, top to bottom. `x` is measured in person-widths, so a
 /// couple sits one apart and a gap between two families is one empty place.
 /// People related to nobody are placed too, below every family, so the whole
-/// family is in one picture (since 13 Sep 2026).
+/// family is in one picture (since 13 Sep 2026) — and so are the people joined
+/// to it by friendship alone, on a band of their own above them (21 Sep 2026).
+/// A friend is not a generation, and the layout is never handed a friendship
+/// as a link: it would place a friend as a sibling. It is handed who is
+/// `aside`, and draws them apart with no line.
 ///
 /// Only what a human has confirmed should come in (rule 4): a proposal drawn
 /// into a picture of the family is the guess shown as fact. The caller filters;
 /// this file does not know what a proposal is.
 enum FamilyTreeLayout {
+    /// The three lines a tree is made of. No friend here, on purpose: `delta`
+    /// and `blood` below would read one as a sibling. See `aside`.
     enum Kind: Equatable {
         /// `from` is the parent, `to` the child.
         case parent
@@ -88,6 +94,15 @@ enum FamilyTreeLayout {
         /// half, because a line quietly absent is the picture disagreeing
         /// with the cards and nothing anywhere admitting it (19 Sep 2026).
         var undrawn: [Link] = []
+        /// People joined to the tree by friendship alone (21 Sep 2026), in
+        /// the order given: everybody the caller named `aside` who has no
+        /// kinship link. They are placed below every family and above the
+        /// people related to nobody, with no lines. Somebody with kin is
+        /// never here, whatever friendships they also have.
+        var aside: [String] = []
+        /// The first row of the friends, with the row above it left empty
+        /// for the screen's caption. Nil when there are none.
+        var asideRow: Int?
         /// People with no relationship to anybody drawn, in the order given.
         /// They are placed below every family and have no lines.
         var unconnected: [String] = []
@@ -97,6 +112,13 @@ enum FamilyTreeLayout {
         var rows = 0
         var width = 0.0
         var segments: [Segment] = []
+
+        /// The rows left empty for a caption, top to bottom: over the friends
+        /// and over the people related to nobody, whichever exist.
+        var captionRows: [Int] { [asideRow, looseRow].compactMap { $0.map { $0 - 1 } } }
+        /// Where the generations stop: the first caption row, or the end of
+        /// the drawing when nobody is drawn apart.
+        var bandStart: Int { captionRows.first ?? rows }
     }
 
     /// How far under a row a marriage's line dips when somebody stands
@@ -134,12 +156,19 @@ enum FamilyTreeLayout {
     /// and is what a caller with no text gets. A card deeper than the
     /// bracket at half a row gets no drop of its own; its children hang from
     /// the bracket alone.
+    ///
+    /// `aside` names who is joined to the family by friendship alone (21 Sep
+    /// 2026). A name in it that also has a kinship link is placed by the
+    /// kinship and the band never sees it; one with none is drawn apart, on
+    /// a band above the people related to nobody.
     static func layout(
         people: [String],
         links: [Link],
+        aside: [String] = [],
         depth: (String) -> Double = { _ in 0.38 }
     ) -> Result {
         var result = Result()
+        let apart = Set(aside)
 
         var unique: [String] = []
         var known = Set<String>()
@@ -190,7 +219,11 @@ enum FamilyTreeLayout {
         var families: [[String]] = []
         for person in unique where row[person] == nil {
             guard neighbours[person] != nil else {
-                result.unconnected.append(person)
+                if apart.contains(person) {
+                    result.aside.append(person)
+                } else {
+                    result.unconnected.append(person)
+                }
                 continue
             }
             var members: [String] = []
@@ -413,22 +446,27 @@ enum FamilyTreeLayout {
 
         result.width = max(0, offset - 1)
 
-        // Everybody related to nobody, below every family and as wide as the
-        // tree above them, never fewer than three to a row, with the row above
-        // them left empty for the screen's caption — under a tree or, when
-        // nobody is related yet, at the top. No lines, because nobody has said
-        // who they are to anyone.
-        if !result.unconnected.isEmpty {
+        // Everybody the generations cannot hold, below every family in two
+        // bands — the friends first, then everybody related to nobody — each
+        // as wide as the tree above it, never fewer than three to a row, and
+        // each with the row above it left empty for the screen's caption:
+        // under a tree or, when nobody is kin to anybody yet, at the top. No
+        // lines. A friend is not a generation, and a line to one would read
+        // as descent; and nobody has said who the rest are to anyone.
+        func placeApart(_ ids: [String]) -> Int? {
+            guard !ids.isEmpty else { return nil }
             let perRow = max(3, Int(result.width.rounded(.up)))
             let first = result.rows + 1
-            result.looseRow = first
-            for (i, id) in result.unconnected.enumerated() {
+            for (i, id) in ids.enumerated() {
                 row[id] = first + i / perRow
                 x[id] = Double(i % perRow)
             }
-            result.rows = first + (result.unconnected.count + perRow - 1) / perRow
-            result.width = max(result.width, Double(min(result.unconnected.count, perRow)))
+            result.rows = first + (ids.count + perRow - 1) / perRow
+            result.width = max(result.width, Double(min(ids.count, perRow)))
+            return first
         }
+        result.asideRow = placeApart(result.aside)
+        result.looseRow = placeApart(result.unconnected)
 
         for (id, value) in x { result.placements[id] = Placement(row: row[id]!, x: value) }
 

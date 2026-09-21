@@ -259,8 +259,9 @@ architecture. Schema: [backend/schema.sql](backend/schema.sql).
     and opened by this one failed as a whole over one row. `Snapshot` reads
     `relations` row by row and leaves out what it cannot read, counted; and
     because the same row is dropped at the wire with the cursor moving past
-    it, the store records how many kinds it knows (`sync.kindsKnown`) and a
-    build that knows more pulls the family once more from the start
+    it, the store records which kinds it knows — relationship kinds and
+    subject kinds both (`sync.kindsKnown`) — and a build that knows others
+    pulls the family once more from the start
     (ARCHITECTURE §3).
 
 ## The assistant's rules — checked in, not personal setup
@@ -296,7 +297,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 69 accessibility sweeps that already run here, each
+contrast rows, against the 71 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false

@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 69 sweep tests, each auditing one screen at the default text size and again at the largest, out of 200 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 71 sweep tests, each auditing one screen at the default text size and again at the largest, out of 206 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -339,11 +339,15 @@ pulled row of a kind the build does not know is dropped at the wire
 it — and the cursor then moves past it like any other row. The row never
 comes again unless it changes on the server, and the phone that later updates
 to a build that knows the kind holds a relationship the family confirmed and
-never shows it. So the store records `RelationKind.allCases.count` in
-UserDefaults (`sync.kindsKnown`) at every launch, and a launch that finds a
-different number — or none, which is what every build before this check
-recorded — forgets the cursor once and pulls the family again from the
-start. Safe for the reason the pull after a push is safe: `applyRemote` skips
+never shows it. So the store records what it can read — the relationship
+kinds and the subject kinds, `MemoryStore.kindsKnown`, which read `4/4` the
+day `friend_of` arrived — in UserDefaults (`sync.kindsKnown`) at every
+launch, and a launch that finds a different signature — or none, which is
+what every build before this check recorded — forgets the cursor once and
+pulls the family again from the start. Subject kinds are in the signature
+because `Subject.init?(dto:)` drops an unknown one the same way, and it was
+widened while no phone had recorded a value: widened later, it costs every
+phone one more pull. Safe for the reason the pull after a push is safe: `applyRemote` skips
 the outbox and upserts by id. The same enum was the other half of rule 10's
 blind spot: one such row in the *file* failed the whole archive and sent it
 down the moved-aside path, so `Snapshot` now reads `relations` row by row
@@ -1510,6 +1514,24 @@ Built, in the order they were built:
    back, and it is also an easier start than a blank button.
 5. **Relationships** — "add parent / spouse / sibling" from the person card. An
    unconfirmed relationship shows as a proposal.
+
+   **And a friend, since 21 Sep 2026.** `friend_of` is a fourth kind on the
+   same table and the same card, symmetric like a marriage and never proposed
+   by the extraction, so it is always something a person entered. It is not
+   kinship — `RelationKind.kinship` is what the tree and the *Suku* list read
+   — so the card lists a friend under *Ystävät* rather than under *Suku*, the
+   row that adds one still says *Lisää sukulainen* and its sheet offers *Lisää
+   ystävä* after a gap, the export writes them a line of their own, and the tree draws
+   somebody joined to the family by friendship alone apart, on a band above
+   the people related to nobody (`FamilyTreeLayout.aside`) and with no line:
+   a friend is not a generation, and a line to one would read as descent. A
+   friend who is also somebody's kin is placed by the kinship. It cost the
+   Worker nothing — `sync.ts` checks that a kind is non-empty and no more —
+   and the phone one thing first: a build that met the kind before it knew it
+   dropped the row silently and moved its cursor past it, which is what §3's
+   `sync.kindsKnown` closes. The row on the card looks the relationship up
+   by kind and direction now rather than taking the first live line between
+   the two, because one person can be a sister and a friend.
 6. **Paywall** — RevenueCat's own, not a hand-built one: it is configured
    remotely, so prices and wording change without shipping a build. Every way in
    only exists when a RevenueCat key is configured — a dead button is worse than
@@ -1832,7 +1854,9 @@ Not built:
    one tap away — `FamilyTreeView` over `FamilyTreeLayout`, confirmed people
    and confirmed relationships only (rule 4). Everybody confirmed is in the
    picture, with the people related to nobody drawn apart below it rather than
-   listed under it, and a person tapped in it takes a new relative through the
+   listed under it — and the family's friends on a band of their own above
+   them, since 21 Sep 2026 (item 5) — and a person tapped in it takes a new
+   relative, or a friend, through the
    card's own `RelationPicker`, so the tree grows where it is looked at. The card this phone's member is
    linked to says *Sinä* under the name (`member.person_subject_id`, §4). Where
    somebody lands is arithmetic no screenshot can check, so
@@ -2316,7 +2340,9 @@ Not built:
      and the same picture at the smallest zoom.
 
    **`-seed clan` is the fixture all of that was measured against**: six
-   generations, 53 confirmed people, a second marriage and the half-siblings
+   generations, 55 confirmed people — 53 until 21 Sep 2026, when a friend who
+   is nobody's kin and a sister who is also a friend were added for item 5 —
+   a second marriage and the half-siblings
    from it, a sibship of six, a childless couple, a child with one parent, two
    cousin marriages, a marriage the generations cannot hold, siblings with no
    parents entered, two families sharing nobody, a contradiction, a duplicate
@@ -3161,8 +3187,15 @@ those same categories, which is how the contrast problem survived this long.
   and only under a bar — a word with an element is still judged.
 - The guessing round's truncated preview (§13): a teaser, whole text one tap
   away, all of it in the accessibility label.
-- `Lisää sukulainen`, where a `Menu` reports a label frame smaller than the text
-  it draws. Verified on screen at both sizes.
+- `Lisää sukulainen`, where a `Menu` reported a label frame smaller than the
+  text it draws. Verified on screen at both sizes. Dormant since 21 Sep 2026:
+  the row is a `Button` and the choice behind it a sheet of plain buttons
+  (`RelativeKindSheet`), after the menu's fifth item, *Ystävä* after a
+  divider, never fired on iOS 26.5 — tapped at its centre, at its edge,
+  pressed, with the menu opened upward over its own row and downward clear of
+  it — while the four above it fired every time. The tree's person sheet had
+  made the same choice on 13 Sep for the other reason: a menu's rows barely
+  grow with the text size, and no UI test here can open one.
 - The photo tile's memory count, capped at `accessibility2` on purpose.
 - **Anything in the fade under the navigation bar**, which is the tab bar's rule
   from the other end. iOS 26 fades content into the bar and its search field as
@@ -4189,6 +4222,16 @@ a fact somebody had confirmed about their own family. It asks now — and the
 dialog says the relationship can be added back from the same card, because the
 recovery exists and is not obvious.
 
+For sixteen days it did not ask, and nothing said so. The swipe button carried
+`role: .destructive`, and on iOS 26.5 that role is a promise that the row is
+about to go: the system animates it away before the button's action has done
+anything, and the alert the row presents never comes up — measured 21 Sep
+2026, `alerts.count` 0 after the tap and the card unchanged, by the first test
+that ever swiped a relationship row. The role is gone from the swipe button
+(`Elder.destructive` as its tint, since the system red measures 3.57:1 on this
+paper) and stays on the alert's own *"Poista"*, the button that deletes.
+`FriendTests` taps the swipe, reads the question and answers it.
+
 **And every confirmation in the app had lost its cancel button** — found
 5 Sep 2026, when the family sweep tapped *"Peruuta"* on the new member-removal
 dialog and no such button existed. On iOS 26 a `confirmationDialog` attached
@@ -4261,6 +4304,15 @@ different sets, they are different words, and neither should be used for the
 other. **Ihmiset** is a third thing again — the list of person subjects, which is
 what the tab is called, so the empty state under that tab now says *ihmiset* too
 rather than answering in a word the person did not tap.
+
+**Ystävä is not suku either, since 21 Sep 2026.** A friend is a person card
+in the archive like anybody else, joined to somebody by `friend_of`, and the
+word for the line is *ystävä*, decided over *kaveri* on the day it was built:
+the one word for it that fits every age the archive holds. The card lists them
+under *Ystävät*, below *Suku* and never inside it; the row that adds one keeps
+its name, *Lisää sukulainen*, and its sheet offers *Lisää ystävä* after a gap; and the
+tree's caption over them says *Ystävät* where the band below says *Ei vielä
+sukupuussa*. English says *friend* and *Friends*.
 
 **Albumi, not Muistot, since 13 Sep 2026.** The tab where the family's
 photographs and tellings are looked at was called *Muistot*, and beside *Kerro*

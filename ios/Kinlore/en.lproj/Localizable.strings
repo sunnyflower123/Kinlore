@@ -132,6 +132,12 @@
 "Kuka on vanhempi?" = "Who is the parent?";
 "Kuka on puoliso?" = "Who is the spouse?";
 "Kuka on sisarus?" = "Who is the sibling?";
+"Ystävä" = "Friend";
+"Ystävät" = "Friends";
+"Kuka on ystävä?" = "Who is the friend?";
+"Lisää ystävä" = "Add a friend";
+"Poistetaanko ystävyys?" = "Remove the friendship?";
+"%@ ei enää näy tämän henkilön ystävissä. Voit lisätä ystävyyden myöhemmin uudelleen." = "%@ no longer appears among this person's friends. You can add the friendship again later.";
 "Sukupuu" = "Family tree";
 "Ei vielä sukupuussa" = "Not in the tree yet";
 "Valikko" = "Menu";
@@ -322,6 +328,7 @@
 "Lapset: %@" = "Children: %@";
 "Puoliso: %@" = "Spouse: %@";
 "Sisarukset: %@" = "Siblings: %@";
+"Ystävät: %@" = "Friends: %@";
 "Kootaan arkistoa" = "Gathering the archive";
 "Kootaan kuvia %lld/%lld" = "Gathering photographs %lld/%lld";
 "Kootaan ääniä %lld/%lld" = "Gathering recordings %lld/%lld";

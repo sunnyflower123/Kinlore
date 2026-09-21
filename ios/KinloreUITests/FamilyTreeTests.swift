@@ -195,4 +195,32 @@ final class FamilyTreeTests: XCTestCase {
         app.buttons["Sukupuu"].tap()
         XCTAssertTrue(menu.waitForExistence(timeout: 10), "the tree did not come back")
     }
+
+    /// A friend is in the picture and apart from it (21 Sep 2026): under the
+    /// generations and over the people related to nobody, with a caption of
+    /// its own and no line, because a friend is not a generation. `-seed
+    /// clan` has Jonne, Elina's friend and nobody's kin — and Rauha, Helmi's
+    /// sister as well as her friend, whom the kinship places.
+    func testAFriendIsDrawnApartUnderItsOwnCaption() {
+        let app = launch(["-seed", "clan", "-tab", "people", "-people", "tree", "-you", "clan-elina"])
+        let friends = app.staticTexts["Ystävät"]
+        XCTAssertTrue(friends.waitForExistence(timeout: 20), "the friends have no caption")
+        let jonne = app.buttons["Jonne"]
+        XCTAssertTrue(jonne.exists, "the friend is not in the picture")
+        let loose = app.staticTexts["Ei vielä sukupuussa"]
+        XCTAssertTrue(loose.exists, "the people related to nobody lost their caption")
+        XCTAssertLessThan(friends.frame.minY, jonne.frame.minY, "the friend stands above his own caption")
+        XCTAssertLessThan(jonne.frame.minY, loose.frame.minY, "the friend is among the people related to nobody")
+        let rauha = app.buttons["Rauha"]
+        XCTAssertTrue(rauha.exists, "somebody's kin is missing")
+        XCTAssertLessThan(rauha.frame.minY, friends.frame.minY, "somebody's kin is drawn among the friends")
+    }
+
+    /// And no caption over nobody: the fixture of five has no friend in it.
+    func testTheFriendsCaptionWaitsForAFriend() {
+        let app = launch(["-seed", "related", "-tab", "people", "-people", "tree"])
+        XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "the tree")
+        XCTAssertTrue(app.staticTexts["Ei vielä sukupuussa"].exists, "the caption over the people related to nobody")
+        XCTAssertFalse(app.staticTexts["Ystävät"].exists, "a caption over no friends")
+    }
 }

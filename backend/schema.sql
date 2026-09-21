@@ -311,9 +311,13 @@ CREATE TABLE relation (
   family_id     TEXT NOT NULL REFERENCES family(id) ON DELETE CASCADE,
   from_subject  TEXT NOT NULL REFERENCES subject(id) ON DELETE CASCADE,
   to_subject    TEXT NOT NULL REFERENCES subject(id) ON DELETE CASCADE,
-  -- Directed: 'parent_of' reads from → to. 'spouse_of' and 'sibling_of' are
-  -- symmetric, stored once and read in both directions.
-  kind          TEXT NOT NULL,        -- 'parent_of'|'spouse_of'|'sibling_of'
+  -- Directed: 'parent_of' reads from → to. 'spouse_of', 'sibling_of' and
+  -- 'friend_of' are symmetric, stored once and read in both directions.
+  -- 'friend_of' (21 Sep 2026) is not kinship: the app lists a friend apart
+  -- and the tree draws no line to one. The Worker does not check the kind;
+  -- the app is what reads it, and a build that does not know a kind drops
+  -- the row and pulls again from the start once it does (`sync.kindsKnown`).
+  kind          TEXT NOT NULL,        -- 'parent_of'|'spouse_of'|'sibling_of'|'friend_of'
   confirmed     INTEGER NOT NULL DEFAULT 0,
   confidence    REAL,
   created_at    INTEGER NOT NULL,

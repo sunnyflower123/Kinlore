@@ -112,7 +112,7 @@ final class NameCorrectionTests: XCTestCase {
         let eeva = app.staticTexts["Eeva"]
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
         eeva.tap()
-        XCTAssertTrue(app.staticTexts["Puoliso"].waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
+        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
 
         // Then Eeva's name is corrected onto Aino, and the cards merge.
         let correct = app.buttons["Korjaa nimi"]
@@ -131,10 +131,11 @@ final class NameCorrectionTests: XCTestCase {
         let aino = app.staticTexts["Aino"]
         XCTAssertTrue(aino.waitForExistence(timeout: 10), "Aino is not on the list")
         aino.tap()
-        let group = app.staticTexts["Puoliso"]
-        for _ in 0 ..< 4 where !group.exists { app.swipeUp() }
-        XCTAssertTrue(group.waitForExistence(timeout: 10), "the spouse did not follow the merge")
-        XCTAssertTrue(app.staticTexts["Kalle"].exists, "the spouse is somebody else")
+        // The row is one element since 21 Sep 2026: the name and the caption
+        // in one label, "Kalle, Puoliso".
+        let spouse = app.staticTexts["Kalle, Puoliso"]
+        for _ in 0 ..< 4 where !spouse.exists { app.swipeUp() }
+        XCTAssertTrue(spouse.waitForExistence(timeout: 10), "the spouse did not follow the merge, or is somebody else")
     }
 
     /// A familiar name can be told apart at the moment of telling. The fixture

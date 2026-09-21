@@ -80,7 +80,7 @@ final class MemoryStore {
         Self.writeFixture(UserDefaults.standard.string(forKey: "store"), to: fileURL)
         #endif
         load()
-        resetSyncCursorIfRelationKindsChanged()
+        resetSyncCursorIfKindsChanged()
         #if DEBUG
         // Only with `-seed archive`, and it replaces what is on the device.
         seedDemoArchiveIfRequested()
@@ -643,7 +643,11 @@ final class MemoryStore {
         else { return }
         memories[index].body = body
         memories[index].rawTranscript = rawTranscript
-        memories[index].mentionedSubjectIDs = mentionedSubjectIDs
+        // Added to, not replaced: an interview round saved without its text
+        // can already carry a person somebody placed in the photograph by
+        // hand (`setPresent`), and the catch-up must not take them out.
+        let placedByHand = memories[index].mentionedSubjectIDs.filter { !mentionedSubjectIDs.contains($0) }
+        memories[index].mentionedSubjectIDs = mentionedSubjectIDs + placedByHand
         dirtyMemories.insert(memoryID)
         save()
     }
@@ -815,6 +819,33 @@ final class MemoryStore {
         for index in memories.indices where memoryIDs.contains(memories[index].id) {
             memories[index].tellerSubjectID = subjectID
             memories[index].tellerHidden = hidden ? true : nil
+            dirtyMemories.insert(memories[index].id)
+            touched = true
+        }
+        guard touched else { return }
+        save()
+    }
+
+    /// Puts a person among the people of the given tellings — or takes them
+    /// out again — because somebody said they are in the photograph.
+    ///
+    /// The people in a photograph are the people its tellings name
+    /// (`memories(mentioning:)`), and a teller who says *"that's me"* is never
+    /// among them: *"me"* is not a proper noun, so the extraction does not
+    /// list it, and the photo prompt forbids naming a face. This is the hand
+    /// that says it instead (`TellerCard`), so it is a fact and not a
+    /// proposal — rule 4 is kept by who taps, not by a flag.
+    func setPresent(_ personID: String, _ present: Bool, in memoryIDs: [String]) {
+        var touched = false
+        for index in memories.indices where memoryIDs.contains(memories[index].id) {
+            let has = memories[index].mentionedSubjectIDs.contains(personID)
+            if present, !has {
+                memories[index].mentionedSubjectIDs.append(personID)
+            } else if !present, has {
+                memories[index].mentionedSubjectIDs.removeAll { $0 == personID }
+            } else {
+                continue
+            }
             dirtyMemories.insert(memories[index].id)
             touched = true
         }
@@ -1246,8 +1277,9 @@ final class MemoryStore {
         save()
     }
 
-    /// How many relationship kinds the last build to run on this device could
-    /// read. Recorded at every launch, compared at the next.
+    /// Which kinds the last build to run on this device could read — the
+    /// relationship kinds and the subject kinds, as one signature such as
+    /// `4/4`. Recorded at every launch, compared at the next.
     ///
     /// A pull reply that carries a kind this build does not know is applied
     /// minus that row — `Relation.init?(dto:)` answers nil and `applyRemote`
@@ -1263,20 +1295,28 @@ final class MemoryStore {
     /// **Unrecorded counts as different.** A build without this check is
     /// exactly the one that may have dropped rows, and it wrote nothing here;
     /// the first launch after it pulls once more, which is the point.
-    private static let relationKindsKnownKey = "sync.kindsKnown"
+    ///
+    /// **Both enums, not one.** `SubjectKind` is the same shape of gap:
+    /// `Subject.init?(dto:)` answers nil to a kind it does not know and the
+    /// cursor moves past that row too. The signature was widened to cover it
+    /// on 21 Sep 2026, the day the first new relationship kind moved it and
+    /// while no phone had recorded a value yet — widened later, it would cost
+    /// every phone one more pull from the start.
+    private static let kindsKnownKey = "sync.kindsKnown"
 
-    private func resetSyncCursorIfRelationKindsChanged() {
+    /// What this build can read: relationship kinds over subject kinds.
+    static var kindsKnown: String {
+        "\(RelationKind.allCases.count)/\(SubjectKind.allCases.count)"
+    }
+
+    private func resetSyncCursorIfKindsChanged() {
         let defaults = UserDefaults.standard
-        let known = RelationKind.allCases.count
-        // `object` before `integer`: `integer` answers 0 for a missing key,
-        // which would read "never recorded" as "recorded none".
-        let recorded: Int? = defaults.object(forKey: Self.relationKindsKnownKey) == nil
-            ? nil
-            : defaults.integer(forKey: Self.relationKindsKnownKey)
-        defer { defaults.set(known, forKey: Self.relationKindsKnownKey) }
+        let known = Self.kindsKnown
+        let recorded = defaults.string(forKey: Self.kindsKnownKey)
+        defer { defaults.set(known, forKey: Self.kindsKnownKey) }
         guard recorded != known, syncSeq != 0 else { return }
-        // Two counts and a cursor; nothing the family said (rule 9).
-        print("[store] relation kinds \(recorded.map { String($0) } ?? "unrecorded") → \(known): pulling again from 0, was at \(syncSeq)")
+        // Two signatures and a cursor; nothing the family said (rule 9).
+        print("[store] kinds \(recorded ?? "unrecorded") → \(known): pulling again from 0, was at \(syncSeq)")
         resetSyncCursor()
     }
 
@@ -2217,7 +2257,7 @@ extension MemoryStore.Snapshot {
         // inside a plain `[Relation]` one such row sent a readable archive
         // down the moved-aside path in `load()`. The row is not lost where
         // it matters: a pushed row is on the server, and
-        // `resetSyncCursorIfRelationKindsChanged` fetches it again on the
+        // `resetSyncCursorIfKindsChanged` fetches it again on the
         // first launch of a version that can read it.
         let rows = try c.decodeIfPresent([Lenient<Relation>].self, forKey: .relations) ?? []
         relations = rows.compactMap(\.value)

@@ -1,0 +1,87 @@
+import XCTest
+
+/// A friend in the archive (21 Sep 2026): a person card like any other,
+/// joined to somebody by a relationship the tree does not draw as kin.
+///
+/// Where a friend lands in the drawing is `FamilyTreeTests`' question and the
+/// layout check's. These ask what the card does: that a friend is added from
+/// it and listed on it apart from the relatives — under *Ystävät*, never
+/// under *Suku*, since a friend is not suku (ARCHITECTURE §21) — and that
+/// taking the friendship back asks in the friendship's own words and takes
+/// only the friendship.
+final class FriendTests: XCTestCase {
+    override func setUp() {
+        continueAfterFailure = false
+    }
+
+    /// From Eeva's card: Lisää sukulainen, Lisää ystävä, Joku uusi, a name —
+    /// and the friend is on the card under a heading of her own, while the
+    /// spouse stays under Suku.
+    func testAFriendIsAddedFromTheCardAndListedApart() {
+        let app = launch(["-seed", "related", "-tab", "people"])
+        let eeva = app.staticTexts["Eeva"]
+        XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
+        eeva.tap()
+        // A relative's row is one element, "Kalle, Puoliso": the name and
+        // what they are to this person, read in one breath.
+        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
+        XCTAssertFalse(app.staticTexts["Ystävät"].exists, "a heading over no friends")
+
+        addFriend(named: "Ritva", in: app)
+
+        let heading = app.staticTexts["Ystävät"]
+        for _ in 0 ..< 4 where !heading.exists { app.swipeUp() }
+        XCTAssertTrue(heading.waitForExistence(timeout: 10), "the friend has no heading of her own")
+        XCTAssertTrue(app.staticTexts["Ritva, Ystävä"].exists, "the friend is not on the card, or the row does not say what she is")
+        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].exists, "the spouse is gone, or lost his caption")
+    }
+
+    /// Taking a friendship back asks about a friendship, not about kinship,
+    /// and takes the friend off the card while the spouse stays.
+    func testAFriendshipIsTakenBackInItsOwnWords() {
+        let app = launch(["-seed", "related", "-tab", "people"])
+        let eeva = app.staticTexts["Eeva"]
+        XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
+        eeva.tap()
+        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
+        addFriend(named: "Ritva", in: app)
+
+        let ritva = app.staticTexts["Ritva, Ystävä"]
+        for _ in 0 ..< 4 where !ritva.exists { app.swipeUp() }
+        XCTAssertTrue(ritva.waitForExistence(timeout: 10), "the friend is not on the card")
+        ritva.swipeLeft()
+        let remove = app.buttons["Poista"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "no way to take the friendship back")
+        remove.tap()
+
+        XCTAssertTrue(app.staticTexts["Poistetaanko ystävyys?"].waitForExistence(timeout: 10), "the question is not about a friendship")
+        XCTAssertFalse(app.staticTexts["Poistetaanko sukulaisuus?"].exists, "a friend is asked about as kin")
+        app.alerts.buttons["Poista"].tap()
+
+        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the spouse went with the friend")
+        XCTAssertFalse(ritva.exists, "the friend is still on the card")
+        XCTAssertFalse(app.staticTexts["Ystävät"].exists, "an empty heading was left behind")
+    }
+
+    /// The card's row, the friend's button on the sheet it opens, and somebody
+    /// new by name.
+    private func addFriend(named name: String, in app: XCUIApplication) {
+        let row = app.buttons["Lisää sukulainen"]
+        for _ in 0 ..< 4 where !row.exists { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "the way to add a relative")
+        row.tap()
+        let friend = app.buttons["Lisää ystävä"]
+        XCTAssertTrue(friend.waitForExistence(timeout: 10), "the sheet offers no friend")
+        friend.tap()
+
+        XCTAssertTrue(app.navigationBars["Kuka on ystävä?"].waitForExistence(timeout: 10), "the picker does not ask for a friend")
+        let someoneNew = app.buttons["Joku uusi"]
+        XCTAssertTrue(someoneNew.waitForExistence(timeout: 10), "the picker")
+        someoneNew.tap()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the name field")
+        field.tap()
+        field.typeText(name)
+        app.buttons["Tallenna"].tap()
+    }
+}

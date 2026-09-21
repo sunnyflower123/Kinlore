@@ -386,6 +386,7 @@ enum ArchiveExport {
         if let children = names(.parentOf, asParent: true) { lines.append(String(localized: "Lapset: \(children)")) }
         if let spouse = names(.spouseOf) { lines.append(String(localized: "Puoliso: \(spouse)")) }
         if let siblings = names(.siblingOf) { lines.append(String(localized: "Sisarukset: \(siblings)")) }
+        if let friends = names(.friendOf) { lines.append(String(localized: "Ystävät: \(friends)")) }
         return lines
     }
 
