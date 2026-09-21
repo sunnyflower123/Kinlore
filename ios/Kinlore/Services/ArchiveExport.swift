@@ -390,11 +390,13 @@ enum ArchiveExport {
         return lines
     }
 
+    /// The phone's own numeric date, like the page around it, which is written
+    /// in the phone's language. Pinned to `fi_FI` until 21 Sep 2026, so an
+    /// export made on an English phone said *"Exported 12.8.2026."* — the 8th
+    /// of December to an American reader. A Finnish phone still writes
+    /// *12.8.2026*.
     private static func dateText(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fi_FI")
-        formatter.dateFormat = "d.M.yyyy"
-        return formatter.string(from: date)
+        date.formatted(date: .numeric, time: .omitted)
     }
 
     /// A memory can contain anything a person said, including the characters

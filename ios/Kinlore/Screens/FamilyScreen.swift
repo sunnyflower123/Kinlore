@@ -449,14 +449,17 @@ private struct MemberRow: View {
             .accessibilityLabel("Poista \(member.displayName) perheestä")
     }
 
-    /// A plain Finnish date. Not "2 viikkoa sitten": the question this answers
-    /// is which day somebody appeared, and a relative phrase makes the reader do
-    /// the arithmetic.
+    /// A plain date, in the phone's own numeric form. Not "2 viikkoa sitten":
+    /// the question this answers is which day somebody appeared, and a relative
+    /// phrase makes the reader do the arithmetic.
+    ///
+    /// Pinned to `fi_FI` and `d.M.yyyy` until 21 Sep 2026, a choice from before
+    /// the app had a second language: an English phone read *"Founder ·
+    /// 12.8.2026"*, which an American reads as the 8th of December. The
+    /// phone's own form is *8/12/2026* there and exactly *12.8.2026* on a
+    /// Finnish phone, so nothing a Finnish reader sees has changed.
     private static func joined(_ timestamp: Double) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fi_FI")
-        formatter.dateFormat = "d.M.yyyy"
-        return formatter.string(from: Date(timeIntervalSince1970: timestamp))
+        Date(timeIntervalSince1970: timestamp).formatted(date: .numeric, time: .omitted)
     }
 }
 
