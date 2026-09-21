@@ -128,6 +128,17 @@ sync_fields() {
 		&& "$OUT/sync-fields-check"
 }
 
+# A telling filed under a card somebody merged away, on every phone and not
+# only the merging one. The server keeps the forwarding address and refuses
+# to re-point another member's telling, so each phone moves it itself — and
+# a telling that is on no card looks exactly like one nobody told.
+merge_chain() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/merge-chain-check" scripts/merge-chain-check.swift \
+		ios/Kinlore/Services/MergeChain.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/merge-chain-check"
+}
+
 # Which question the app decides to put in front of an 80-year-old. A
 # staircase over three UserDefaults keys, and both ways of being wrong are
 # silent: the wall that makes an elderly teller give up, and the run of naming
@@ -266,6 +277,7 @@ run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock
 run "a confirmed colouring survives an older phone" colour_sync
 run "a pull from zero changes nothing here" sync_fields
+run "a merged card's tellings reach its survivor" merge_chain
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over

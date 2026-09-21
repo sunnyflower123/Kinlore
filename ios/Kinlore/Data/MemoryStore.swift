@@ -125,14 +125,11 @@ final class MemoryStore {
     /// A rejected subject resolves to nothing at all, which is the point of
     /// rejecting it: a memory may still list it among the names it mentioned,
     /// and that mention must stop producing a person.
+    ///
+    /// The walk itself is `MergeChain.resolve`, the one `followMerges()` moves
+    /// references by, so the two cannot disagree about where an id lands.
     func subject(id: String) -> Subject? {
-        var current = subjects.first { $0.id == id && $0.deletedAt == nil }
-        // Cycle guard: broken data must not hang the UI.
-        for _ in 0 ..< 8 {
-            guard let target = current?.mergedInto else { return current }
-            current = subjects.first { $0.id == target }
-        }
-        return current
+        MergeChain.resolve(id) { id in subjects.first { $0.id == id } }
     }
 
     /// Merged subjects are no longer their own, so they do not appear in lists.
@@ -552,6 +549,10 @@ final class MemoryStore {
             // See docs/ARCHITECTURE.md §2.5.
             subjects[index].mergedInto = existing.id
             dirtyMemories.formUnion(touched)
+            // What that loop leaves moves too — a question asked about this
+            // card, a telling it is named as the teller of — and none of it
+            // is queued: every phone draws it from the address (`MergeChain`).
+            followMerges()
             // The relationships move too. They did not, until 4 Sep 2026:
             // `relatives(of:)` reads this side of every edge by raw id, so a
             // confirmed spouse of the tombstoned card simply vanished from
@@ -1085,7 +1086,24 @@ final class MemoryStore {
             }
         }
 
+        // The server keeps another member's telling as its author left it,
+        // merged card and all, and the pull has just written that copy here.
+        followMerges()
         advance(seq: reply.seq)
+    }
+
+    /// Every telling and question moved to the card its reference already
+    /// resolves to, and not queued — see `MergeChain` for why neither.
+    ///
+    /// Assigned only when something moved: these are observed arrays, and a
+    /// write that changes nothing would still redraw every screen reading them.
+    private func followMerges() {
+        var memories = self.memories
+        var questions = self.questions
+        guard MergeChain.follow(memories: &memories, questions: &questions, subjects: subjects) > 0
+        else { return }
+        self.memories = memories
+        self.questions = questions
     }
 
     /// The pull cursor, moved from a pull reply and from nothing else.
@@ -2102,6 +2120,9 @@ final class MemoryStore {
         dirtyQuestions = snapshot.dirtyQuestions
         relations = snapshot.relations
         dirtyRelations = snapshot.dirtyRelations
+        // A file saved before 21 Sep 2026 can hold another member's telling
+        // under a card somebody merged away. See `MergeChain`.
+        followMerges()
         if snapshot.unreadRelations > 0 {
             // A count and nothing else (rule 9). The next save writes the
             // file without these rows; the server keeps every one that was

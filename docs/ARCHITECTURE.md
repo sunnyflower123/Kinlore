@@ -164,6 +164,18 @@ ALTER TABLE subject ADD COLUMN merged_into TEXT REFERENCES subject(id);
 The merged row stays in place with a `merged_into` reference, and all references
 follow the chain. Nothing points at nothing, and the merge can even be undone.
 
+**On the merging phone only, until 21 Sep 2026.** The forwarding address
+travelled and the re-pointing did not, wherever the telling was somebody else's.
+The server writes a telling only for its author — rule 3's half of the memory
+upsert, which `memory-rules-check.mjs` holds on purpose — and a question's
+subject only once, so the merging phone's push of another member's telling was
+refused, and counted as accepted. Measured over the shipping `sync.ts` in
+SQLite. On every other phone that telling stayed under the tombstone, which no
+list shows: on no card, in no count, and left out of the export's readable page.
+Every phone now draws the merge's conclusion itself, after loading its file and
+after every pull (`MergeChain`, held by `merge-chain-check.swift`), and none of
+it is queued.
+
 ## 3. Sync
 
 ### Routes
@@ -200,7 +212,8 @@ above had said "every". **A mention is now stored as the set the client
 sent.** `sync.ts` deletes the edges a push omits before re-inserting the ones
 it names, scoped by an `EXISTS` to the pusher's own family, and the Swift half
 queues every memory whose `mentionedSubjectIDs` it remapped — so `rename` and
-`split` both travel. `memory-rules-check.mjs` asserts it.
+`split` both travel, for the pusher's own tellings. Another member's is refused
+whole, mentions and all (§2.5). `memory-rules-check.mjs` asserts it.
 
 Soft deletion is mandatory: a hard delete never reaches the other device, which
 would go on showing the deleted row forever.
