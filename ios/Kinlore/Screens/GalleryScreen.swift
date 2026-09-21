@@ -161,9 +161,12 @@ struct GalleryScreen: View {
     /// like the Kerro tab's, and gone once answered.
     @State private var blind: BlindConfirmation.Card?
     @AppStorage(Elder.largerTextKey) private var largerText = false
-    /// The cards pushed on top of this tab. Owned here so a pop-back can be
-    /// told apart from an arrival — see `isReturningFromCard`.
-    @State private var path: [Subject] = []
+    /// The cards pushed on top of this tab — and, since 21 Sep 2026, the map
+    /// of places, which is why this is a `NavigationPath` and not `[Subject]`:
+    /// under a card opened from the map the path holds a `PlacesMapRoute`
+    /// first. Owned here so a pop-back can be told apart from an arrival —
+    /// see `isReturningFromCard`.
+    @State private var path = NavigationPath()
     /// Whether the next appearance of this root is a return from a pushed
     /// card rather than an arrival at the tab. Set when a push covers the
     /// root (the path is non-empty at that moment), consumed by `onAppear`.
@@ -272,6 +275,17 @@ struct GalleryScreen: View {
         .onDisappear {
             isReturningFromCard = !path.isEmpty
         }
+        #if DEBUG
+        // `-screen placesMap` opens the map of places on launch, the way
+        // RootView's `.task` opens the people tab's screens: the sweep
+        // measures it at the largest text size from here, and a screenshot
+        // from a seeded launch needs no tap. `-tab memories` beside it.
+        .task {
+            if UserDefaults.standard.string(forKey: "screen") == "placesMap", path.isEmpty {
+                path.append(PlacesMapRoute())
+            }
+        }
+        #endif
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 // A menu rather than two buttons: the bar has room for one
@@ -303,6 +317,14 @@ struct GalleryScreen: View {
         }
         .navigationDestination(for: Subject.self) { subject in
             SubjectDetailScreen(subject: subject)
+        }
+        // On the same stack as the cards, so a chip on the map pushes the
+        // card above the map and the back chevron walks back through both.
+        // Pushed as a value rather than presented from a Boolean because the
+        // path is what `isReturningFromCard` reads: with the map up it is
+        // non-empty, and returning to the album from the map is a return.
+        .navigationDestination(for: PlacesMapRoute.self) { _ in
+            PlacesMapScreen()
         }
         .onChange(of: picked) { _, items in
             guard !items.isEmpty else { return }
@@ -680,7 +702,15 @@ struct GalleryScreen: View {
                 // nothing on them yet, and an empty card here is an invitation
                 // exactly as it is on the person list.
                 if !places.isEmpty {
-                    listSection("Paikat", of: places)
+                    listSection("Paikat", of: places) {
+                        // Only when there is something to draw, and not
+                        // while searching: a search lists what matched, and
+                        // the map shows everything.
+                        if !isSearching,
+                           places.contains(where: { $0.place?.precision.mapSpanMetres != nil }) {
+                            mapButton
+                        }
+                    }
                 }
             }
             .padding(Elder.screenPadding)
@@ -712,8 +742,20 @@ struct GalleryScreen: View {
     /// rests on. A second row type for places would have been the beginning of
     /// the parallel implementations CLAUDE.md forbids.
     private func listSection(_ title: LocalizedStringKey, of subjects: [Subject]) -> some View {
+        listSection(title, of: subjects) { EmptyView() }
+    }
+
+    /// The same section with one control under its heading, which only the
+    /// places have: the way to the map of them. An accessory and not a third
+    /// section type, for the reason above.
+    private func listSection<Accessory: View>(
+        _ title: LocalizedStringKey,
+        of subjects: [Subject],
+        @ViewBuilder accessory: () -> Accessory
+    ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeading(title)
+            accessory()
             ForEach(subjects) { subject in
                 NavigationLink(value: subject) {
                     SubjectRow(subject: subject)
@@ -721,6 +763,19 @@ struct GalleryScreen: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    /// The third way to a place card, after its row here and a memory that
+    /// names it: the map of every confirmed place with a coordinate
+    /// (`PlacesMapScreen`, ARCHITECTURE §18). Shown on a grandparent's phone
+    /// too — `PlacePinSheet` already hands her a map that pans, and a button
+    /// that leads to a screen is not the search field §8.12 keeps from her.
+    private var mapButton: some View {
+        NavigationLink(value: PlacesMapRoute()) {
+            Label("Näytä kartalla", systemImage: "map")
+        }
+        .elderPrimary(false)
+        .elderTapTarget()
     }
 
     private func importPhotos(_ items: [PhotosPickerItem]) async {
@@ -1301,7 +1356,11 @@ private struct FoundMemoryRow: View {
 
 /// A moment or a place, listed. The icon is the only difference between them,
 /// and it comes from the kind rather than from a row written per kind.
-private struct SubjectRow: View {
+///
+/// Not private since 21 Sep 2026: at the accessibility text sizes
+/// `PlacesMapScreen` lists the same places under its map, and rule 1 wants
+/// them to be these rows and not a second kind.
+struct SubjectRow: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
 
@@ -1455,6 +1514,12 @@ private struct SubjectRow: View {
         }
     }
 }
+
+/// What the album pushes to show the map of places: a value with nothing in
+/// it, because the screen reads the store itself. A route type rather than a
+/// Boolean so that the map lives on the same `NavigationStack` as the cards
+/// it opens (see `path`).
+private struct PlacesMapRoute: Hashable {}
 
 #Preview {
     GalleryScreen()

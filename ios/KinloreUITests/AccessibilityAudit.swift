@@ -331,6 +331,12 @@ extension XCTestCase {
 /// what broke the exemption below when English was added.
 private let searchFieldClearButtonLabels: Set<String> = ["Clear text", "Poista teksti"]
 
+/// MapKit's own name for the attribution link it draws at the bottom-left of
+/// every `Map`, in every language this app ships. The system's string, like the
+/// clear button's, and it changes with the app's language the same way: the
+/// Finnish one is the label the audit printed on 21 Sep 2026.
+private let mapLegalLinkLabels: Set<String> = ["Lakitiedot", "Legal"]
+
 /// The findings that are decisions rather than defects.
 ///
 /// Every one is listed with a reason. Narrowing the audit to a few types would
@@ -690,6 +696,47 @@ enum AccessibilityPolicy {
            element.elementType == .button,
            searchFieldClearButtonLabels.contains(label) {
             return true
+        }
+
+        // **MapKit's legal link.** Every `Map` draws Apple's attribution as a
+        // link of about 50 × 11 pt in its bottom-left corner, and there is no
+        // API to make it bigger or to move it — it belongs to MapKit the way
+        // the clear button above belongs to UIKit's search field. The place
+        // card never met this finding because its map is one element
+        // (`.accessibilityElement()`), which hides the link along with
+        // everything else on the tile. The map of places (`PlacesMapScreen`,
+        // 21 Sep 2026) cannot do the same: its chips are the buttons that
+        // make it a screen, and they have to stay in the tree.
+        //
+        // Accepted for the clear button's reason — nothing in this app
+        // depends on hitting it. It opens Apple's notice about the map data,
+        // which is Apple's to show and not a step in anything the family
+        // does.
+        //
+        // Matched two ways, because the audit hands the finding over in two
+        // shapes. Measured 21 Sep 2026 on the same screen and the same
+        // 49.9 × 10.7 pt link: twelve launches of a probe reported it with
+        // the element attached — a `.link` named "Lakitiedot" — and the next
+        // seven, two runs of the sweep and five launches of a second probe on
+        // the final build, with `element` nil and nothing left to match but
+        // the audit's own sentence, which the probe printed: *"The size of
+        // this MKAttributionLabel is too small for user to interact"*.
+        // `MKAttributionLabel` is MapKit's class for this
+        // one control, in every language, so the sentence is the more exact
+        // of the two matches; the label set is kept for the shape that names
+        // the element, as the clear button's is, and a third language adds
+        // its word there. Neither condition reaches any button of ours: one
+        // needs the link type and a system name, the other a class this app
+        // does not contain.
+        if issue.auditType == .hitRegion {
+            if let element = issue.element,
+               element.elementType == .link,
+               mapLegalLinkLabels.contains(label) {
+                return true
+            }
+            if issue.detailedDescription.contains("MKAttributionLabel") {
+                return true
+            }
         }
 
         // A Menu reports a label frame smaller than the text it draws. Checked

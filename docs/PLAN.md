@@ -509,6 +509,19 @@ finished.**
   perheeltä"* section, and what it spent was the §5 row 7 slot — which is still
   empty, because a card is not a phase. If a browsable map is ever proposed
   again, it owes its own removal and this paragraph is not a precedent for it.
+
+  **Proposed again and built, 21 Sep 2026 — with the removal still owed.** The
+  founder asked how the archive could be browsed on a map and then asked for
+  it to be started, and it was built the same day in the cheapest shape it
+  has: `PlacesMapScreen`, one screen on the album's own stack, every confirmed
+  place with a coordinate drawn by the card's rule and each one a chip that
+  opens the card the Paikat list already opens (ARCHITECTURE §18). It reads
+  what this row said would keep accumulating and adds nothing to the Worker,
+  which is why it took a session rather than the phase this row priced. What
+  this row asked for and did not get is the removal: nothing was taken out
+  beside it. Which addition pays is the founder's decision, and this
+  paragraph does not make it — it records the debt as open, so that the next
+  reader does not take a built map for a paid one.
 - ~~**Prices.**~~ **Decided 12 Sep 2026: two purchases, each made once — a
   year at 50 € and the archive for ever at 80 €. The monthly plan goes.**
   Free stays as it is and as `wrangler.jsonc` has it: 20 photographs in

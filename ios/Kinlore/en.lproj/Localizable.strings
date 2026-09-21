@@ -718,3 +718,8 @@
 "Vaihda vuosi" = "Change the year";
 "Vaihda kuukausi" = "Change the month";
 "Poista ajankohta" = "Remove the date";
+"Näytä kartalla" = "Show on the map";
+"Kartta" = "Map";
+"Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Map. Every place is a button that opens the place's card.";
+"Avaa paikan kortin." = "Opens the place's card.";
+"Kartta perheen paikoista." = "A map of the family's places.";

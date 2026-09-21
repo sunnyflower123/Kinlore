@@ -1621,4 +1621,32 @@ final class AccessibilitySweepTests: XCTestCase {
             reach(app.buttons["Jatka"], in: app, "the way on from the answer")
         }
     }
+
+    /// The map of places, which ARCHITECTURE §18 said until 21 Sep 2026 did
+    /// not exist on purpose. Opened from the album's Paikat section on the
+    /// film-week archive, the one seeded launch with three places to draw —
+    /// Puumala, Savonlinna and Sulkava, all municipalities — so that the
+    /// chips are measured beside each other and not one alone: Savonlinna
+    /// and Sulkava are 27 km apart, and at the largest text size that is
+    /// where two chips would overlap.
+    ///
+    /// Puumala's chip is what proves arrival. A chip is a button whose label
+    /// is the place's name, and the album's row of the same name is under the
+    /// map by then.
+    func testPlacesMap() throws {
+        try sweep("Paikkojen kartta", arguments: ["-seed", "film-week", "-tab", "memories"]) { app, _ in
+            // Below a week of tellings, which at the largest size is more
+            // than `reach`'s four swipes.
+            let button = app.buttons["Näytä kartalla"]
+            for _ in 0 ..< 10 where !button.exists { app.swipeUp() }
+            require(button, "the album's way to the map").tap()
+            require(app.navigationBars["Kartta"], "the map of places")
+            let chip = app.buttons
+                .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
+                .firstMatch
+            // Tiles arrive over several frames; the chip's frame is what is
+            // waited for, as the place card's map is.
+            settle(require(chip, "Puumala's chip on the map"))
+        }
+    }
 }

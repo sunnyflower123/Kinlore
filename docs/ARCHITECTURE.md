@@ -72,7 +72,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 68 sweep tests, each auditing one screen at the default text size and again at the largest, out of 198 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 69 sweep tests, each auditing one screen at the default text size and again at the largest, out of 200 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -3180,6 +3180,18 @@ those same categories, which is how the contrast problem survived this long.
   keyboard's delete key clears the field and "Peruuta" beside it is a full-size
   target. If search ever stops being the grandchild's tool, the answer is our
   own field rather than a wider exemption.
+- **MapKit's legal link.** Every `Map` draws Apple's attribution as a link
+  of about 50 × 11 pt in its bottom-left corner, and there is no API to make
+  it bigger or to move it. The place card never met the finding because its
+  map is one element; the map of places (§18, 21 Sep 2026) cannot be, because
+  its chips are the buttons that make it a screen. Accepted for the clear
+  button's reason — nothing depends on hitting it, it opens Apple's notice
+  about the map data — and matched two ways, because the audit hands the
+  finding over in two shapes: by type and name in both languages when the
+  element is attached, like the clear button, and by the audit's own sentence
+  naming `MKAttributionLabel` when it is not. Measured on one screen and one
+  link on 21 Sep 2026: twelve launches attached the element, the next seven
+  did not.
 - Settings' own footer, *"Kertomasi muistot ovat vain tässä laitteessa."* — and
   this one is worth the sentence it costs. It passed for as long as it did, and
   the moment a row was added above it the audit called the same unchanged
@@ -3634,17 +3646,54 @@ the list only *"if it could be pointed to on a map by name"*. What was missing
 was the point itself.
 
 `subject` now carries three more columns — `lat`, `lon`, `geo_precision` — filled
-in by `PlaceResolver` on the device. **There is no map screen, and that is
-deliberate**: the columns and the lookup cost an hour, a map costs a phase (see
-PLAN.md §5), and the archive that is being recorded this week is the one a map
-would eventually draw. Data first, so that the family's places accumulate while
-the decision is still open. A place is already openable like any other subject
-(§8).
+in by `PlaceResolver` on the device. **There was no map screen until 21 Sep
+2026, and that was deliberate**: the columns and the lookup cost an hour, a map
+costs a phase (see PLAN.md §5), and the archive that was being recorded that
+week is the one a map would eventually draw. Data first, so that the family's
+places accumulate while the decision is still open. A place is already openable
+like any other subject (§8).
 
-Read that as written: there is no screen **of places**, no browsing the
-family's archive on a map. Two maps of a single place do exist — the card the
-next paragraph is about, and since 19 Sep 2026 the one that card opens so the
-point can be moved by hand.
+**Since 21 Sep 2026 there is one, at the founder's request, and it is a third
+door to the same card.** `PlacesMapScreen` draws every confirmed place with a
+coordinate on one map, by the rule the place card already follows — a pin for
+`exact`, a circle a third of the span for `town` and `region`, nothing for
+`unknown` — and puts a chip on each with the name and the memory count. The
+chip is a `NavigationLink` to the same `SubjectDetailScreen` the Paikat list
+opens. The map is pushed on the album's own stack from a *"Näytä kartalla"*
+button under the Paikat heading, shown only when there is something to draw
+and not while searching, so the back chevron walks back through map and card
+alike and `isReturningFromCard` keeps reading the path (`GalleryScreen`'s
+`path` became a `NavigationPath` for it). Nothing is stored, fetched or
+extracted for the screen: zero Worker rows, zero columns. The Paikat list
+stays as the way in for VoiceOver and for every place without a coordinate —
+nine of the ten in production on the day the map was built, read from the
+13 Sep export. `testPlacesMap` audits it on the film-week archive, the one
+seeded launch with three places, at both text sizes; `PlacesMapTests`
+follows a chip through to the card. The phase §5 priced a map at was the
+phase of a map that had to be designed; this one reuses a drawing rule, a
+stack and a card, and took a session.
+
+**At the accessibility text sizes the chips give way to the album's own rows
+under a map that does not pan**, and that was measured rather than designed.
+On the film-week archive at the largest size a chip is 215–290 pt wide on a
+402 pt screen, Sulkava's lay across Savonlinna's at every framing tried, and
+MapKit's annotation container leaves a chip that crosses the edge of the map
+out of the accessibility tree — Savonlinna's was absent at 1.5, 2.0 and 2.5
+times the places' spread, Puumala's at 1.5 — so VoiceOver was offered one
+place of three and zooming out cannot fix what zooming out causes. The rows
+are `SubjectRow`, the same rows as the Paikat list, under a 300 pt map that
+is one element and does not take the drag, for the place card's reason. Two
+smaller findings from the same evening: the chips' words are drawn at their
+own size (`.fixedSize()`), because without it the audit reported every chip
+as clipped at the default size and the finding was indifferent to everything
+else that was varied, six variants on one build; and MapKit's own legal link,
+about 50 × 11 pt in the map's corner, is forgiven in `AccessibilityPolicy`
+the way the search field's clear button is (§15). **§5's condition that a browsable map
+owes its own removal is still owed**, and that row says so.
+
+The two maps of a single place are unchanged — the card the next paragraph is
+about, and since 19 Sep 2026 the one that card opens so the point can be moved
+by hand.
 
 **Confirmed places only, since 12 Sep 2026.** `placesAwaitingCoordinates`
 skips a place nobody has vouched for. A name the extraction heard is a guess
