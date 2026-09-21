@@ -472,6 +472,59 @@ enum FamilyTreeLayoutCheck {
             check("and the same drawing twice", FamilyTreeLayout.layout(people: people, links: links) == r)
         }
 
+        /// What, in a child's column, belongs to some other brood — the one
+        /// way the bars can state a parent the archive does not hold. A bar
+        /// of somebody else's at the child's own height is the child hung on
+        /// it: fused with its own or hung from its end. A bar of somebody
+        /// else's through the child's line — below where the line starts,
+        /// which is the child's own bar or its own parent's card straight
+        /// above — is a crossing that reads as a join. A vertical of somebody
+        /// else's is a stranger's drop or anchor standing over the child.
+        /// The child's own parent standing straight above it is not a
+        /// stranger, and nor is the anchor of its own parents' marriage; a
+        /// bar that passes over the column above where the child's line
+        /// starts touches nothing of the child's and is not counted.
+        func strangers(_ r: FamilyTreeLayout.Result, _ links: [L], depth: (String) -> Double) -> [String] {
+            var folks: [String: Set<String>] = [:]
+            for link in links where link.kind == .parent {
+                guard let up = r.placements[link.from], let down = r.placements[link.to], down.row == up.row + 1 else { continue }
+                folks[link.to, default: []].insert(link.from)
+            }
+            var wed = Set<String>()
+            for link in links where link.kind == .spouse { wed.insert([link.from, link.to].sorted().joined(separator: "|")) }
+            var found: [String] = []
+            for (child, p) in r.placements {
+                guard let mine = folks[child] else { continue }
+                let x = p.x, below = Double(p.row), above = below - 1
+                guard let own = r.segments.first(where: {
+                    $0.kind == .descent && $0.x1 == x && $0.x2 == x && $0.y2 == below && $0.y1 > above
+                }) else { continue }
+                let siblings = folks.filter { $0.value == mine }.keys.compactMap { r.placements[$0]?.x }
+                let parentsX = mine.sorted().compactMap { r.placements[$0]?.x }
+                let married = mine.count == 2 && wed.contains(mine.sorted().joined(separator: "|"))
+                let anchor = parentsX.reduce(0, +) / Double(parentsX.count)
+                let reach = married ? [anchor] : parentsX
+                let low = (siblings + reach).min()!, high = (siblings + reach).max()!
+                let cards = mine.compactMap { r.placements[$0]?.x == x ? above + depth($0) : nil }
+                let top = min(own.y1, cards.min() ?? own.y1)
+                for s in r.segments where s.kind == .descent && s.y1 >= above && s.y1 <= below && s.y2 > above && s.y2 <= below {
+                    if s.y1 == s.y2 {
+                        guard s.x1 <= x, x <= s.x2 else { continue }
+                        if s.y1 == own.y1 {
+                            if !(s.x1 == low && s.x2 == high) { found.append("\(child) hung on somebody else's bar") }
+                        } else if top < s.y1, s.y1 < below {
+                            found.append("a bar of somebody else's through \(child)'s line at \(((s.y1 - above) * 1000).rounded() / 1000)")
+                        }
+                    } else if s.x1 == x && s.x2 == x && s != own {
+                        if cards.contains(s.y1) { continue }
+                        if married && anchor == x && s.y1 <= above + 0.4 { continue }
+                        found.append("a line of somebody else's down \(child)'s column from \(((s.y1 - above) * 1000).rounded() / 1000)")
+                    }
+                }
+            }
+            return found.sorted()
+        }
+
         print("— a line leaves a person from under their name —")
         do {
             // The layout draws in rows and knows nothing about text, so the
@@ -521,45 +574,75 @@ enum FamilyTreeLayoutCheck {
                 sibling("Jaakko", "Erkko"), sibling("Anna", "Juhani"), sibling("Antti", "Annukka"),
             ]
             let people = ["Jaakko", "Erkko", "Anna", "Antti", "Juhani", "Annukka", "Paula", "Jorma", "Suoma", "Pertti"]
-            let r = FamilyTreeLayout.layout(people: people, links: phone) { $0 == "Jaakko" ? yours : card }
+            let onPhone: (String) -> Double = { $0 == "Jaakko" ? yours : card }
+            let r = FamilyTreeLayout.layout(people: people, links: phone, depth: onPhone)
             let p = r.placements
             check("everybody is placed, once", p.count == people.count && noOverlap(r), "\(p.count)")
             check("three generations", r.rows == 3 && p["Anna"]?.row == 1 && p["Jaakko"]?.row == 2)
-            func drop(from id: String, to y: Double) -> Bool {
-                guard let place = p[id] else { return false }
+            check("and nobody left of the picture's edge", p.values.allSatisfy { $0.x >= 0 }, "\(p)")
+            /// The height the bar a child hangs from, from the child's own drop.
+            func hang(_ id: String, in r: FamilyTreeLayout.Result) -> Double? {
+                guard let place = r.placements[id] else { return nil }
+                return r.segments.first {
+                    $0.kind == .descent && $0.x1 == place.x && $0.x2 == place.x
+                        && $0.y2 == Double(place.row) && $0.y1 > Double(place.row) - 1
+                }?.y1
+            }
+            /// A drop from under somebody's name to a height.
+            func drop(from id: String, to y: Double?, in r: FamilyTreeLayout.Result) -> Bool {
+                guard let place = r.placements[id], let y else { return false }
                 return r.segments.contains {
                     $0.kind == .descent && $0.x1 == place.x && $0.x2 == place.x
                         && $0.y1 == Double(place.row) + card && $0.y2 == y
                 }
             }
-            check("Jaakko hangs from under Anna's name", drop(from: "Anna", to: 1.5))
-            check("and from under Antti's", drop(from: "Antti", to: 1.5))
+            let jaakko = hang("Jaakko", in: r), erkko = hang("Erkko", in: r)
+            check("Jaakko hangs from under Anna's name", drop(from: "Anna", to: jaakko, in: r),
+                  "\(r.segments.filter { $0.kind == .descent && $0.y1 > 1 && $0.y1 < 2 })")
+            check("and from under Antti's", drop(from: "Antti", to: jaakko, in: r))
             let between = ((p["Anna"]?.x ?? 0) + (p["Antti"]?.x ?? 0)) / 2
             check("and not from the empty space between two people the picture has not joined",
-                  !r.segments.contains { $0.kind == .descent && $0.x1 == between && $0.x2 == between && $0.y1 < 1.5 },
-                  "\(r.segments.filter { $0.kind == .descent && $0.y2 == 1.5 })")
-            let bar = r.segments.first { $0.kind == .descent && $0.y1 == 1.5 && $0.y2 == 1.5 && $0.x1 <= min(p["Anna"]!.x, p["Antti"]!.x) && $0.x2 >= max(p["Anna"]!.x, p["Antti"]!.x) }
+                  !r.segments.contains { $0.kind == .descent && $0.x1 == between && $0.x2 == between && $0.y1 < (jaakko ?? 0) })
+            let bar = r.segments.first {
+                $0.kind == .descent && $0.y1 == jaakko && $0.y2 == jaakko
+                    && $0.x1 <= min(p["Anna"]!.x, p["Antti"]!.x) && $0.x2 >= max(p["Anna"]!.x, p["Antti"]!.x)
+            }
             check("one bar reaches from the first parent to the last", bar != nil && bar!.x1 <= p["Jaakko"]!.x && bar!.x2 >= p["Jaakko"]!.x,
-                  "\(r.segments.filter { $0.kind == .descent && $0.y1 == 1.5 && $0.y2 == 1.5 })")
-            check("Erkko hangs from under Anna's name alone", drop(from: "Anna", to: 1.5)
-                  && !r.segments.contains { $0.kind == .descent && $0.x1 == p["Anna"]!.x && $0.x2 == p["Anna"]!.x && $0.y1 == 1.0 })
-            check("Juhani hangs from under Paula's name", drop(from: "Paula", to: 0.5))
+                  "\(r.segments.filter { $0.kind == .descent && $0.y1 == $0.y2 })")
+            check("and Jaakko hangs from between his parents, not under either",
+                  p["Jaakko"]!.x > min(p["Anna"]!.x, p["Antti"]!.x) && p["Jaakko"]!.x < max(p["Anna"]!.x, p["Antti"]!.x))
+            // Erkko is Anna's alone. Until 21 Sep 2026 he stood straight under
+            // her and hung from the end of the bar to Antti, the T that reads
+            // as Antti's son. Now he stands beside her, on the far side from
+            // Antti, and his bar leaves her line at a height of its own that
+            // no line of Antti's reaches.
+            check("Erkko stands beside Anna, on the far side from Antti",
+                  (p["Erkko"]!.x - p["Anna"]!.x) * (p["Antti"]!.x - p["Anna"]!.x) < 0 && abs(p["Erkko"]!.x - p["Anna"]!.x) <= 1,
+                  "Erkko \(p["Erkko"]!.x) Anna \(p["Anna"]!.x) Antti \(p["Antti"]!.x)")
+            check("and hangs from a bar at a height of its own", erkko != nil && erkko != jaakko, "\(String(describing: erkko)) \(String(describing: jaakko))")
+            check("which Anna's line reaches", drop(from: "Anna", to: erkko, in: r))
+            check("and no line of Antti's does",
+                  !r.segments.contains { $0.kind == .descent && $0.x1 == p["Antti"]!.x && $0.x2 == p["Antti"]!.x && $0.y2 == erkko }
+                  && !r.segments.contains { $0.kind == .descent && $0.y1 == erkko && $0.y2 == erkko && $0.x1 <= p["Antti"]!.x && p["Antti"]!.x <= $0.x2 })
+            check("Juhani stands beside Paula, on the far side from Jorma",
+                  (p["Juhani"]!.x - p["Paula"]!.x) * (p["Jorma"]!.x - p["Paula"]!.x) < 0)
+            check("and hangs from under Paula's name", drop(from: "Paula", to: hang("Juhani", in: r), in: r))
+            check("Anna hangs from between Paula and Jorma", p["Anna"]!.x == (p["Paula"]!.x + p["Jorma"]!.x) / 2, "\(p["Anna"]!)")
             check("no marriage is drawn where none was entered", !r.segments.contains { $0.kind == .couple })
-            check("and no line runs through anybody's name", throughAName(r) { $0 == "Jaakko" ? yours : card }.isEmpty,
-                  "\(throughAName(r) { $0 == "Jaakko" ? yours : card })")
+            check("no line runs through anybody's name", throughAName(r, depth: onPhone).isEmpty, "\(throughAName(r, depth: onPhone))")
+            check("and nothing of another brood in any child's column", strangers(r, phone, depth: onPhone).isEmpty, "\(strangers(r, phone, depth: onPhone))")
 
             // The same family with the marriages entered: back to one drop
             // from between each couple, from the line that joins them.
             let married = phone + [spouse("Anna", "Antti"), spouse("Paula", "Jorma"), spouse("Suoma", "Pertti")]
-            let m = FamilyTreeLayout.layout(people: people, links: married) { $0 == "Jaakko" ? yours : card }
+            let m = FamilyTreeLayout.layout(people: people, links: married, depth: onPhone)
             let wedBetween = ((m.placements["Anna"]?.x ?? 0) + (m.placements["Antti"]?.x ?? 0)) / 2
             check("married, Jaakko hangs from between his parents",
-                  m.segments.contains { $0.kind == .descent && $0.x1 == wedBetween && $0.x2 == wedBetween && $0.y1 == 1.0 && $0.y2 == 1.5 },
-                  "\(m.segments.filter { $0.kind == .descent && $0.y2 == 1.5 })")
-            check("Erkko still from under Anna's name",
-                  m.segments.contains { $0.kind == .descent && $0.x1 == m.placements["Anna"]!.x && $0.x2 == m.placements["Anna"]!.x && $0.y1 == 1.0 + card })
-            check("and still nothing through a name", throughAName(m) { $0 == "Jaakko" ? yours : card }.isEmpty,
-                  "\(throughAName(m) { $0 == "Jaakko" ? yours : card })")
+                  m.segments.contains { $0.kind == .descent && $0.x1 == wedBetween && $0.x2 == wedBetween && $0.y1 == 1.0 && $0.y2 == hang("Jaakko", in: m) },
+                  "\(m.segments.filter { $0.kind == .descent && $0.y1 > 1 && $0.y1 < 2 })")
+            check("Erkko still from under Anna's name", drop(from: "Anna", to: hang("Erkko", in: m), in: m))
+            check("and still nothing through a name", throughAName(m, depth: onPhone).isEmpty, "\(throughAName(m, depth: onPhone))")
+            check("and nothing of another brood in any child's column", strangers(m, married, depth: onPhone).isEmpty, "\(strangers(m, married, depth: onPhone))")
 
             // A line that leaves the phone's own card starts under *Sinä*,
             // which is deeper than a name.
@@ -571,27 +654,20 @@ enum FamilyTreeLayoutCheck {
             // A marriage is bent under the row only round somebody. It used
             // to be bent by distance, `right - left > 1`, and a row whose
             // places are means of thirds puts a couple one place and 2⁻⁵²
-            // apart: Bertta and Daniel below, found by trying 30 000 random
-            // families through the old drawing, which bent 17 of them round
-            // nobody.
+            // apart: found by trying 30 000 random families through the old
+            // drawing, which bent 17 of them round nobody. Bertta and Daniel
+            // are one unit and want the mean of three parents — her two, his
+            // one — and the family holds no child placed beside a parent,
+            // which would move everybody by a fraction and put the pair
+            // exactly one apart, as it did to the fixture this replaced on
+            // 21 Sep 2026.
             let thirds = [
-                spouse("Daniel", "Bertta"), spouse("Eero", "Aada"),
-                parent("Fanni", "Bertta"), parent("Greta", "Bertta"), parent("Fanni", "Daniel"),
-                parent("Cecilia", "Fanni"), parent("Cecilia", "Greta"), parent("Aada", "Greta"),
+                parent("Aada", "Bertta"), parent("Cecilia", "Bertta"), parent("Fanni", "Daniel"),
+                spouse("Bertta", "Daniel"), spouse("Aada", "Eero"),
             ]
             let t = FamilyTreeLayout.layout(
-                people: ["Aada", "Bertta", "Cecilia", "Heikki", "Daniel", "Eero", "Fanni", "Greta"], links: thirds
+                people: ["Aada", "Bertta", "Cecilia", "Daniel", "Eero", "Fanni"], links: thirds
             )
-            let tb = t.placements["Bertta"]!, td = t.placements["Daniel"]!
-            check("a couple on a row of thirds is one place and a rounding error apart",
-                  tb.row == td.row && td.x - tb.x > 1 && td.x - tb.x < 1.000001, "\(tb) \(td)")
-            check("with nobody between them",
-                  !t.placements.contains { $0.value.row == tb.row && tb.x < $0.value.x && $0.value.x < td.x })
-            check("and their marriage is drawn straight",
-                  t.segments.contains { $0.kind == .couple && $0.y1 == Double(tb.row) && $0.y2 == Double(tb.row) && $0.x1 == tb.x && $0.x2 == td.x }
-                  && !t.segments.contains { $0.kind == .couple && $0.y1 != $0.y1.rounded(.down) },
-                  "\(t.segments.filter { $0.kind == .couple })")
-
             // The dip a marriage makes round somebody runs under the names
             // it goes round — and the one card it cannot keep out of is the
             // phone's own, with *Sinä* under the name, which the check lets
@@ -629,6 +705,203 @@ enum FamilyTreeLayoutCheck {
                 parent("C", "E"), parent("D", "F"), spouse("E", "F"),
             ]) { _ in card }
             check("a ring: nothing through a name", throughAName(ring) { _ in card }.isEmpty, "\(throughAName(ring) { _ in card })")
+        }
+
+        print("— half-siblings: a child of one parent is not hung on the other's brood —")
+        do {
+            let card = 0.381
+            let flat: (String) -> Double = { _ in card }
+            /// The height a child hangs from, from its own drop.
+            func hang(_ id: String, in r: FamilyTreeLayout.Result) -> Double? {
+                guard let place = r.placements[id] else { return nil }
+                return r.segments.first {
+                    $0.kind == .descent && $0.x1 == place.x && $0.x2 == place.x
+                        && $0.y2 == Double(place.row) && $0.y1 > Double(place.row) - 1
+                }?.y1
+            }
+            /// Bars on one row, at one height, that touch or overlap.
+            func fused(_ r: FamilyTreeLayout.Result) -> [(FamilyTreeLayout.Segment, FamilyTreeLayout.Segment)] {
+                let bars = r.segments.filter { $0.kind == .descent && $0.y1 == $0.y2 }
+                var pairs: [(FamilyTreeLayout.Segment, FamilyTreeLayout.Segment)] = []
+                for i in bars.indices { for j in bars.indices where j > i {
+                    let a = bars[i], b = bars[j]
+                    if a.y1 == b.y1 && a.x1 <= b.x2 && b.x1 <= a.x2 { pairs.append((a, b)) }
+                } }
+                return pairs
+            }
+
+            // The smallest family with the defect: no grandparents to make
+            // room, so Erkko can only go beside Anna by the family moving
+            // over one place.
+            let small = [parent("Anna", "Jaakko"), parent("Antti", "Jaakko"), parent("Anna", "Erkko")]
+            let s = FamilyTreeLayout.layout(people: ["Anna", "Antti", "Jaakko", "Erkko"], links: small, depth: flat)
+            let sp = s.placements
+            check("Erkko beside Anna, away from Antti, with the family moved over for him",
+                  sp["Erkko"]!.x == 0 && sp["Anna"]!.x == 1 && sp["Antti"]!.x == 2, "\(sp)")
+            check("Jaakko between his parents", sp["Jaakko"]!.x == 1.5, "\(sp["Jaakko"]!)")
+            check("at two heights, the child of one parent the shallower", hang("Erkko", in: s) == 0.5 && hang("Jaakko", in: s) == 0.7,
+                  "\(String(describing: hang("Erkko", in: s))) \(String(describing: hang("Jaakko", in: s)))")
+            check("and nothing of another brood in any child's column", strangers(s, small, depth: flat).isEmpty, "\(strangers(s, small, depth: flat))")
+
+            // A couple with three children beside her child from before,
+            // which used to be one bar with four children on it.
+            let wide = [
+                spouse("Antti", "Anna"), parent("Anna", "Jaakko"), parent("Antti", "Jaakko"),
+                parent("Anna", "Jussi"), parent("Antti", "Jussi"), parent("Anna", "Jenni"), parent("Antti", "Jenni"),
+                parent("Anna", "Erkko"),
+            ]
+            let w = FamilyTreeLayout.layout(people: ["Antti", "Anna", "Jaakko", "Jussi", "Jenni", "Erkko"], links: wide, depth: flat)
+            let couple = w.segments.first { $0.kind == .descent && $0.y1 == $0.y2 && $0.y1 == hang("Jaakko", in: w) }
+            check("the couple's three hang from one bar, centred under the couple",
+                  couple != nil && [ "Jaakko", "Jussi", "Jenni" ].allSatisfy { hang($0, in: w) == couple!.y1 }
+                  && (couple!.x1 + couple!.x2) / 2 == (w.placements["Anna"]!.x + w.placements["Antti"]!.x) / 2,
+                  "\(String(describing: couple)) \(w.placements)")
+            check("Erkko beyond it, from a bar of his own at another height",
+                  w.placements["Erkko"]!.x > couple!.x2 && hang("Erkko", in: w) != couple!.y1, "\(w.placements["Erkko"]!) \(String(describing: hang("Erkko", in: w)))")
+            check("and nothing of another brood in any child's column", strangers(w, wide, depth: flat).isEmpty, "\(strangers(w, wide, depth: flat))")
+
+            // Children by two people, neither married to her: her line
+            // reaches both bars, each of theirs one.
+            let two = [parent("Anna", "Jaakko"), parent("Antti", "Jaakko"), parent("Anna", "Erkko"), parent("Pekka", "Erkko")]
+            let d = FamilyTreeLayout.layout(people: ["Antti", "Anna", "Pekka", "Jaakko", "Erkko"], links: two, depth: flat)
+            func reaches(_ id: String, _ y: Double?, in r: FamilyTreeLayout.Result) -> Bool {
+                guard let place = r.placements[id], let y else { return false }
+                return r.segments.contains { $0.kind == .descent && $0.x1 == place.x && $0.x2 == place.x && $0.y2 == y }
+            }
+            check("two bars at two heights", hang("Jaakko", in: d) != nil && hang("Erkko", in: d) != nil && hang("Jaakko", in: d) != hang("Erkko", in: d))
+            check("Anna's line reaches both", reaches("Anna", hang("Jaakko", in: d), in: d) && reaches("Anna", hang("Erkko", in: d), in: d))
+            check("Antti's one and Pekka's the other",
+                  reaches("Antti", hang("Jaakko", in: d), in: d) && !reaches("Antti", hang("Erkko", in: d), in: d)
+                  && reaches("Pekka", hang("Erkko", in: d), in: d) && !reaches("Pekka", hang("Jaakko", in: d), in: d))
+            check("and nothing of another brood in any child's column", strangers(d, two, depth: flat).isEmpty, "\(strangers(d, two, depth: flat))")
+
+            // A second marriage: two children of each. The children of each
+            // used to go down one at a time from their parents' place, so
+            // the first marriage's second child stood where the second
+            // marriage's children start and the bars met. As a block
+            // centred under each couple, the first marriage's two sit under
+            // it; the second marriage's two start where those end, one
+            // place short of centred, because the parents' row was placed
+            // before it knew how wide the row below would be. The bars
+            // keep half a place between them and both keep the half-row
+            // height.
+            let twice = [
+                spouse("Aapo", "Hilma"), spouse("Aapo", "Lyyli"),
+                parent("Aapo", "Kaisa"), parent("Hilma", "Kaisa"), parent("Aapo", "Kalle"), parent("Hilma", "Kalle"),
+                parent("Aapo", "Liisa"), parent("Lyyli", "Liisa"), parent("Aapo", "Lauri"), parent("Lyyli", "Lauri"),
+            ]
+            let re = FamilyTreeLayout.layout(people: ["Aapo", "Hilma", "Lyyli", "Kaisa", "Kalle", "Liisa", "Lauri"], links: twice, depth: flat)
+            let rp = re.placements
+            check("the first marriage's children are centred under it",
+                  (rp["Kaisa"]!.x + rp["Kalle"]!.x) / 2 == (rp["Aapo"]!.x + rp["Hilma"]!.x) / 2, "\(rp)")
+            check("and the second's start where they end",
+                  min(rp["Liisa"]!.x, rp["Lauri"]!.x) == max(rp["Kaisa"]!.x, rp["Kalle"]!.x) + 1, "\(rp)")
+            let second = re.segments.first { $0.kind == .descent && $0.y1 == $0.y2 && $0.x2 == max(rp["Liisa"]!.x, rp["Lauri"]!.x) }
+            check("from a bar that reaches from their parents' anchor to the last of them",
+                  second != nil && second!.x1 == (rp["Aapo"]!.x + rp["Lyyli"]!.x) / 2 && hang("Liisa", in: re) == second!.y1 && hang("Lauri", in: re) == second!.y1,
+                  "\(String(describing: second))")
+            check("both bars at half a row, and apart", ["Kaisa", "Kalle", "Liisa", "Lauri"].allSatisfy { hang($0, in: re) == 0.5 } && fused(re).isEmpty,
+                  "\(re.segments.filter { $0.y1 == $0.y2 })")
+            check("and nothing of another brood in any child's column", strangers(re, twice, depth: flat).isEmpty, "\(strangers(re, twice, depth: flat))")
+
+            // Three of the first marriage and two of the second is what a
+            // row placed from the top down cannot make room for: the third
+            // child stands under the second marriage's anchor. The bars are
+            // at two heights, so nobody is hung on the wrong one, and what is
+            // left is pinned here by name — the next thing a wider row would
+            // mend, and not something a change should alter unnoticed.
+            let thrice = twice + [parent("Aapo", "Kerttu"), parent("Hilma", "Kerttu")]
+            let re3 = FamilyTreeLayout.layout(people: ["Aapo", "Hilma", "Lyyli", "Kaisa", "Kalle", "Kerttu", "Liisa", "Lauri"], links: thrice, depth: flat)
+            check("three and two: the two bars are at two heights", fused(re3).isEmpty && hang("Kerttu", in: re3) != hang("Liisa", in: re3),
+                  "\(re3.segments.filter { $0.y1 == $0.y2 })")
+            check("and what remains is the second anchor down Kerttu's column",
+                  strangers(re3, thrice, depth: flat) == [
+                      "a bar of somebody else's through Kerttu's line at 0.7",
+                      "a line of somebody else's down Kerttu's column from 0.0",
+                  ], "\(strangers(re3, thrice, depth: flat))")
+
+            // And at large: the same random families every run, through a
+            // generator seeded by hand. What the three heights promise is
+            // that two bars sharing a height never touch unless one of them
+            // already had every height taken over it — a row no family has
+            // had yet. The rest is counted and printed, not promised: a row
+            // placed from the top down has no room to widen for the row
+            // below it, and a child under a stranger's anchor, or a line
+            // through a stranger's bar, is what that costs.
+            struct Dice {
+                var state: UInt64
+                mutating func next() -> UInt64 { state = state &* 6364136223846793005 &+ 1442695040888963407; return state >> 33 }
+                mutating func below(_ n: Int) -> Int { Int(next() % UInt64(n)) }
+                mutating func chance(_ p: Double) -> Bool { Double(next() % 10000) / 10000 < p }
+            }
+            var dice = Dice(state: 20260921)
+            var children = 0, hungWrong = 0, crossed = 0, overshadowed = 0, unseparated = 0
+            for _ in 0 ..< 5000 {
+                let n = 4 + dice.below(9)
+                let people = (0 ..< n).map { "P\($0)" }
+                let gens = 2 + dice.below(3)
+                var gen: [String: Int] = [:]
+                for person in people { gen[person] = dice.below(gens) }
+                var links: [L] = []
+                for person in people where gen[person]! > 0 {
+                    let above = people.filter { gen[$0] == gen[person]! - 1 }
+                    guard !above.isEmpty else { continue }
+                    let howMany = dice.chance(0.3) ? 0 : (dice.chance(0.6) ? 2 : 1)
+                    var chosen = Set<String>()
+                    for _ in 0 ..< howMany { chosen.insert(above[dice.below(above.count)]) }
+                    for q in chosen.sorted() { links.append(parent(q, person)) }
+                }
+                for person in people where dice.chance(0.35) {
+                    let same = people.filter { gen[$0] == gen[person] && $0 != person }
+                    if let q = same.isEmpty ? nil : same[dice.below(same.count)] {
+                        links.append(dice.chance(0.7) ? spouse(person, q) : sibling(person, q))
+                    }
+                }
+                let r = FamilyTreeLayout.layout(people: people, links: links, depth: flat)
+                // Every brood as the layout groups them, from the links rather
+                // than the drawing: the one child straight under its one
+                // parent draws no bar and still takes a height.
+                var folks: [String: Set<String>] = [:]
+                for link in links where link.kind == .parent {
+                    guard let up = r.placements[link.from], let down = r.placements[link.to], down.row == up.row + 1 else { continue }
+                    folks[link.to, default: []].insert(link.from)
+                }
+                var wedded = Set<String>()
+                for link in links where link.kind == .spouse { wedded.insert([link.from, link.to].sorted().joined(separator: "|")) }
+                var broods: [(row: Int, low: Double, high: Double, height: Double)] = []
+                for mine in Set(folks.values) {
+                    let kids = folks.filter { $0.value == mine }.keys.sorted()
+                    guard let first = kids.first, let place = r.placements[first], let height = hang(first, in: r) else { continue }
+                    let parentsX = mine.sorted().compactMap { r.placements[$0]?.x }
+                    let reach = mine.count == 2 && wedded.contains(mine.sorted().joined(separator: "|"))
+                        ? [parentsX.reduce(0, +) / Double(parentsX.count)] : parentsX
+                    let xs = kids.compactMap { r.placements[$0]?.x } + reach
+                    // 2.6 − 2 is not 0.6 in a Double; the tenth is.
+                    broods.append((place.row - 1, xs.min()!, xs.max()!, ((height - Double(place.row - 1)) * 10).rounded() / 10))
+                }
+                func over(_ i: Int, _ j: Int) -> Bool {
+                    broods[i].row == broods[j].row && broods[i].low <= broods[j].high && broods[j].low <= broods[i].high
+                }
+                for i in broods.indices { for j in broods.indices where j > i && over(i, j) && broods[i].height == broods[j].height {
+                    // The fallback is the last of the three heights, and only
+                    // for a bar that found the other two taken over it.
+                    let excused = broods[i].height == 0.6 && [i, j].contains { k in
+                        let heights = Set(broods.indices.filter { $0 != k && over($0, k) }.map { broods[$0].height })
+                        return heights.contains(0.5) && heights.contains(0.7)
+                    }
+                    if !excused { unseparated += 1 }
+                } }
+                for line in strangers(r, links, depth: flat) {
+                    if line.hasSuffix("bar") { hungWrong += 1 }
+                    else if line.hasPrefix("a bar") { crossed += 1 }
+                    else { overshadowed += 1 }
+                }
+                children += r.placements.filter { child, p in
+                    links.contains { $0.kind == .parent && $0.to == child && r.placements[$0.from]?.row == p.row - 1 }
+                }.count
+            }
+            check("in 5 000 random families, two bars share a height and touch only where one had every height taken over it", unseparated == 0, "\(unseparated)")
+            print("       \(children) children with a parent on the row above; hung on somebody else's bar \(hungWrong), a stranger's bar through the line \(crossed), a stranger's line down the column \(overshadowed)")
         }
 
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) check(s) failed")

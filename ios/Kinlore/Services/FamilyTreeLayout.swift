@@ -107,6 +107,23 @@ enum FamilyTreeLayout {
     /// a row.
     private static let roundAbout = 0.4
 
+    /// How far under a row the bar over a family's children hangs, in rows:
+    /// half a row, unless it would meet another bar on the same row.
+    ///
+    /// Two bars at one height that touch are one bar, and every child on it
+    /// reads as every parent's. The first family entered on a phone had a
+    /// child of one parent beside a child of two, and the picture said the
+    /// second parent was hers too (21 Sep 2026); a couple with three
+    /// children next to anybody's one did the same, and 14 683 of 20 000
+    /// random families had at least one such pair. So the bars on a row are
+    /// dealt out — fewest parents first, then from the left — and each takes
+    /// the first of these that no bar it would touch has taken. The order
+    /// is what the drawing has room for: the sibling bar of the row below
+    /// runs at six tenths, the discs begin at about 0.85, and the third of
+    /// these is for a person with children by two others and alone, which
+    /// nobody has entered yet.
+    private static let broodDepths = [0.5, 0.7, 0.6]
+
     /// `depth` is how far below a row's centre line a person's card reaches,
     /// in rows: the lower half of the disc, the gap, the name and a little
     /// air under it — and, on the phone's own card, the word *Sinä* under
@@ -307,9 +324,29 @@ enum FamilyTreeLayout {
                 // Each unit wants to sit under its parents — a couple between
                 // both sets — and a sibling nobody has entered parents for
                 // borrows the parents of a sibling somebody has.
+                //
+                // A child of one parent, where that parent also has children
+                // with somebody on her own row, wants the place beside her
+                // on the far side from them (21 Sep 2026). Straight under
+                // her, the child's line left from the end of the bar to the
+                // other parent, and the first family entered on a phone read
+                // Erkko as Antti's and Juhani as Jorma's from exactly that
+                // T. Beside her, the bar to the child leaves her line on its
+                // own side, at its own height, and nothing else touches it.
+                // With a partner on each side of her the child stays under
+                // her: that is the one shape a row cannot mend.
                 func wanted(_ unit: [String]) -> Double? {
-                    let above = unit.flatMap { parents[$0] ?? [] }.compactMap { x[$0] }
-                    if !above.isEmpty { return above.reduce(0, +) / Double(above.count) }
+                    let raw = unit.flatMap { parents[$0] ?? [] }
+                    let above = raw.compactMap { x[$0] }
+                    if !above.isEmpty {
+                        if unit.count == 1, Set(raw).count == 1, let only = raw.first, let place = x[only] {
+                            let others = parents.values.filter { $0.contains(only) }.flatMap { $0 }
+                                .filter { $0 != only && row[$0] == row[only] }.compactMap { x[$0] }
+                            let toRight = others.contains { $0 > place }, toLeft = others.contains { $0 < place }
+                            if toRight != toLeft { return toRight ? place - 1 : place + 1 }
+                        }
+                        return above.reduce(0, +) / Double(above.count)
+                    }
                     let borrowed = unit.flatMap { siblings[$0] ?? [] }.flatMap { parents[$0] ?? [] }.compactMap { x[$0] }
                     if !borrowed.isEmpty { return borrowed.reduce(0, +) / Double(borrowed.count) }
                     return nil
@@ -326,17 +363,47 @@ enum FamilyTreeLayout {
                         }
                     }
 
+                // Siblings want the same place, their parents', and go down
+                // as one block centred under it rather than one at a time
+                // from it. One at a time, each began where the one before
+                // ended, so a first marriage's second child stood where the
+                // second marriage's children start, and the two bars met
+                // (21 Sep 2026).
+                //
+                // The first block may start left of the family's edge — the
+                // child beside her parent, with nobody to her left. The
+                // whole family is moved right by that much once its rows
+                // are placed.
                 var next = offset
-                for entry in ordered {
-                    let width = Double(entry.unit.count)
-                    // Centred under what it wants, but never over the unit before it.
-                    let start = entry.want.map { max(next, $0 - (width - 1) / 2) } ?? next
-                    for (i, id) in entry.unit.enumerated() { x[id] = start + Double(i) }
-                    next = start + width
+                if let first = ordered.first, let want = first.want {
+                    let width = ordered.prefix { $0.want == want }.reduce(0.0) { $0 + Double($1.unit.count) }
+                    next = min(next, want - (width - 1) / 2)
+                }
+                var i = 0
+                while i < ordered.count {
+                    let want = ordered[i].want
+                    var block = [ordered[i]]
+                    while let want, i + block.count < ordered.count, ordered[i + block.count].want == want {
+                        block.append(ordered[i + block.count])
+                    }
+                    let width = block.reduce(0.0) { $0 + Double($1.unit.count) }
+                    // Centred under what it wants, but never over the block before it.
+                    var start = want.map { max(next, $0 - (width - 1) / 2) } ?? next
+                    for entry in block {
+                        for (k, id) in entry.unit.enumerated() { x[id] = start + Double(k) }
+                        start += Double(entry.unit.count)
+                    }
+                    next = start
+                    i += block.count
                 }
                 rightEdge = max(rightEdge, next)
             }
-            let places = members.compactMap { x[$0] }
+            var places = members.compactMap { x[$0] }
+            if let leftmost = places.min(), leftmost < offset {
+                for id in members { x[id]? += offset - leftmost }
+                rightEdge += offset - leftmost
+                places = members.compactMap { x[$0] }
+            }
             result.familyExtents.append(
                 Extent(minX: places.min() ?? offset, maxX: places.max() ?? offset, rows: depth)
             )
@@ -416,14 +483,44 @@ enum FamilyTreeLayout {
         for (child, theirParents) in parents {
             broods[Array(Set(theirParents)).sorted(), default: []].append(child)
         }
+        struct Bar {
+            let folks: [String]
+            let below: [Double]
+            let row: Int
+            let wed: Bool
+            let low: Double
+            let high: Double
+        }
+        var bars: [Bar] = []
         for (theirParents, children) in broods {
             guard let r = row[theirParents[0]] else { continue }
             let above = theirParents.compactMap { x[$0] }
             let below = children.compactMap { x[$0] }
             guard !above.isEmpty, !below.isEmpty else { continue }
-            let middle = Double(r) + 0.5
-            var low = below.min()!
-            var high = below.max()!
+            // From between the parents when the archive has them as a
+            // couple; from under each parent's own name otherwise.
+            let wed = theirParents.count == 2
+                && spouses[theirParents[0]]?.contains(theirParents[1]) == true
+            let reach = wed ? [above.reduce(0, +) / Double(above.count)] : above
+            bars.append(Bar(folks: theirParents, below: below, row: r, wed: wed,
+                            low: (below + reach).min()!, high: (below + reach).max()!))
+        }
+        // Dealt in a fixed order, so the same family is always the same
+        // drawing: fewest parents first, then from the left.
+        bars.sort { a, b in
+            (a.folks.count, a.low, a.high, a.folks.joined(separator: "|"))
+                < (b.folks.count, b.low, b.high, b.folks.joined(separator: "|"))
+        }
+        var hangs: [Double] = []
+        for (i, bar) in bars.enumerated() {
+            let taken = bars.indices.filter { j in
+                j < i && bars[j].row == bar.row && bars[j].low <= bar.high && bar.low <= bars[j].high
+            }.map { hangs[$0] }
+            hangs.append(broodDepths.first { !taken.contains($0) } ?? broodDepths.last!)
+        }
+        for (i, bar) in bars.enumerated() {
+            let r = bar.row
+            let hang = Double(r) + hangs[i]
             // From between the parents when the archive has them as a
             // couple: from their line, or — where it had to dip under the
             // row to get round somebody — from the dip, so the children are
@@ -436,28 +533,23 @@ enum FamilyTreeLayout {
             // not infer — and its children hung from the empty space between
             // two people the picture had not joined, while a child of one
             // parent hung from a line run down through her name.
-            let wed = theirParents.count == 2
-                && spouses[theirParents[0]]?.contains(theirParents[1]) == true
-            if wed {
+            if bar.wed {
+                let above = bar.folks.compactMap { x[$0] }
                 let anchor = above.reduce(0, +) / Double(above.count)
                 let top = somebodyBetween(above.min()!, above.max()!, on: r) ? Double(r) + roundAbout : Double(r)
-                segments.append(Segment(x1: anchor, y1: top, x2: anchor, y2: middle))
-                low = min(low, anchor)
-                high = max(high, anchor)
+                segments.append(Segment(x1: anchor, y1: top, x2: anchor, y2: hang))
             } else {
-                for parent in theirParents {
+                for parent in bar.folks {
                     guard let place = x[parent], row[parent] == r else { continue }
-                    let top = Double(r) + min(depth(parent), 0.5)
-                    if top < middle {
-                        segments.append(Segment(x1: place, y1: top, x2: place, y2: middle))
+                    let top = Double(r) + min(depth(parent), hangs[i])
+                    if top < hang {
+                        segments.append(Segment(x1: place, y1: top, x2: place, y2: hang))
                     }
-                    low = min(low, place)
-                    high = max(high, place)
                 }
             }
-            if low < high { segments.append(Segment(x1: low, y1: middle, x2: high, y2: middle)) }
-            for childX in below {
-                segments.append(Segment(x1: childX, y1: middle, x2: childX, y2: Double(r + 1)))
+            if bar.low < bar.high { segments.append(Segment(x1: bar.low, y1: hang, x2: bar.high, y2: hang)) }
+            for childX in bar.below {
+                segments.append(Segment(x1: childX, y1: hang, x2: childX, y2: Double(r + 1)))
             }
         }
 

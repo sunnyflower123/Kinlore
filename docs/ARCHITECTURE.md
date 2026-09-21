@@ -1912,6 +1912,42 @@ Not built:
      the reader's own, where at the default size it runs in the air between
      the name and *Sinä*, three points above the word, which is where the
      arithmetic puts it and nothing has yet shown on a screen.
+   - **A child of one parent is not hung on the other's brood, and two bars
+     that touch never share a height** (21 Sep 2026). The first family on a
+     phone showed it, in the picture the fix above left behind: Erkko is
+     Anna's alone, stood straight under her, and hung from the end of the
+     bar that runs from Anna to Antti — a T that reads as Antti's son, which
+     is rule 4's wrong relationship drawn as fact. Three things put him
+     there, and `FamilyTreeLayout` answers each. A child with exactly one
+     parent, whose parent shares that row's broods with somebody else, now
+     wants the place beside the parent on the far side from the co-parents —
+     Erkko to Anna's left, Juhani to Paula's, away from Jorma — and a family
+     whose leftmost place then falls past its own edge is moved over as a
+     whole. Siblings are placed as one block centred under what they want
+     rather than one at a time, because a first marriage's second child used
+     to stand exactly where the second marriage's children start, and the
+     two bars met. And a row's bars are dealt three depths, `broodDepths` —
+     0.5, 0.7, 0.6 — fewest parents first and then from the left, so that no
+     two bars whose spans touch or overlap sit at one height: 0.7 is as deep
+     as a bar can go before the discs of the row below, and 0.6, where the
+     sibling bar of the row below already sits, is the third answer, for a
+     person with children by two others and alone. The order of the three
+     was tried three ways and the counts moved within noise;
+     fewest-parents-first stayed because it keeps a single parent's branch
+     shallow on that parent's own line. `FamilyTreeView` needed nothing: it
+     strokes whatever segments it is handed. Measured by
+     `family-tree-layout-check`'s own metric over 5 000 seeded families —
+     what stands in a child's column and belongs to another brood — with
+     the same script run against the layout as it was: children hung on
+     somebody else's bar 4 766 before and 106 after, every one of the 106
+     where a bar found all three depths taken over it already, which the
+     check asserts is the only way two touching bars still share a height;
+     a stranger's line down a child's column 1 119 before and 620 after.
+     What the change adds, 2 126 lines through a stranger's bar, is the cost
+     of placing rows from the top down: a row cannot widen to make room for
+     the one below, so three children of a first marriage beside two of a
+     second put the third under the second marriage's anchor, and the check
+     pins that residual by name (`thrice`) rather than promising it away.
    - **The bands stop at your own family.** Two families that share nobody are
      drawn side by side and both start at row 0, because neither knows
      anything about the other's age. Shading across both and calling the band
