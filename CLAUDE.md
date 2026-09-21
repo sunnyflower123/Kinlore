@@ -99,6 +99,16 @@ touching anything.** Since 30 Aug 2026:
   30 Aug 2026 and an English phone still read "Valokuva" on every untitled
   photograph until 6 Sep, and the check above could not see it: it counts keys,
   not lookups.
+- **A ternary of literals is a literal here.** `Text(a ? "x" : "y")`,
+  `Label(n == 0 ? "Kerro" : "\(n)", …)` and the same inside `Button`,
+  `navigationTitle` or `accessibilityLabel` are typed `LocalizedStringKey`,
+  and every branch is looked up. It is a `String` only when a branch is one
+  — `String(localized:)`, a `+`, a variable — or when the ternary sits inside
+  an interpolation. Nineteen comments in the app said otherwise until 21 Sep
+  2026, and each sentence they cited as having reached an English screen in
+  Finnish had never had a key: a ternary's branches are where
+  `localisation-check.mjs` does not look. `swiftc -dump-ast` settled it, and
+  an English simulator reads that `Label`, the Albumi badge, as "Tell".
 
 Two things stay Finnish even though no user reads them, and each has a reason:
 

@@ -404,9 +404,7 @@ struct PeopleScreen: View {
             // Sukupuu, because a tab that renames itself under a typing
             // finger is the worse of the two faults. The tree has no title
             // at all since 19 Sep 2026: it is a map, drawn under the bar,
-            // and the tab is the one word that names it. Both sides are
-            // keys: a ternary of two plain literals is a String, and is never
-            // looked up.
+            // and the tab is the one word that names it.
             .navigationTitle(showsTree ? LocalizedStringKey("") : LocalizedStringKey("Ihmiset"))
             // Out of the way until it is wanted: iOS keeps the field hidden
             // above the list until somebody pulls down, which is the right
@@ -588,8 +586,7 @@ struct HeardNamesDoorLabel: View {
         // An HStack rather than a Label, and fixedSize on the Text
         // itself: as a Label's title the sentence was measured clipped
         // at the default size — one line, cut with an ellipsis — on the
-        // audit's first run. Two literal keys rather than a ternary,
-        // which would be a String and never looked up.
+        // audit's first run.
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: "ear")
                 .foregroundStyle(Elder.supporting)
@@ -637,8 +634,6 @@ private struct PersonRow: View {
                         .font(.subheadline.weight(.semibold))
                 } else {
                     let count = store.memories(for: subject.id).count
-                    // A ternary hides the literal from SwiftUI's key lookup and from
-                    // scripts/localisation-check.mjs alike; as its own Text it is a key.
                     Group {
                         if count == 1 {
                             Text("1 muisto")
@@ -983,9 +978,7 @@ struct SubjectDetailScreen: View {
             if memories.isEmpty {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
-                        // Nothing at all, or nothing of its own. Each as its own
-                        // `Text`: a ternary hides the literal from SwiftUI's key
-                        // lookup and from scripts/localisation-check.mjs alike.
+                        // Nothing at all, or nothing of its own.
                         if mentions.isEmpty {
                             Text("Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.")
                                 .elderBody()
@@ -1039,8 +1032,6 @@ struct SubjectDetailScreen: View {
                     // A List styles its own headers and footers below the
                     // contrast minimum. Saying the colour out loud is the only
                     // way to raise it.
-                    // A ternary hides the literal from SwiftUI's key lookup and from
-                    // scripts/localisation-check.mjs alike; as its own Text it is a key.
                     Group {
                         if memories.count == 1 {
                             Text("1 muisto")
@@ -1261,9 +1252,10 @@ private struct MemoryRow: View {
     /// has stopped asking about. Then the month's minutes, which used to fall
     /// through to "myöhemmin" — a word that read as a delay while the truth
     /// was "not until next month, unless somebody pays", on every phone in
-    /// the family (findings #103, #107). A `LocalizedStringKey` from a
-    /// function rather than a nested ternary: the ternary was a String, and
-    /// not one of these four had ever been looked up.
+    /// the family (findings #103, #107). A `LocalizedStringKey` property
+    /// rather than the nested ternary that sat in the `Label` until 4 Sep
+    /// 2026, whose three sentences had no key: a ternary's branches are
+    /// nowhere `localisation-check.mjs` looks, so nothing said so.
     private var awaitingText: LocalizedStringKey {
         if session.isLocalByChoice { return "Ääni tallessa — voit kirjoittaa tekstin itse" }
         if TranscriptionAttempts.hasGivenUp(on: memory.id) {

@@ -198,9 +198,7 @@ struct SettingsScreen: View {
                     // phone the export is the only copy that opens anywhere
                     // else — and the app cannot tell whether iCloud Keychain
                     // would carry the key on. Said here, beside the one act
-                    // that changes it. Two `Text`s rather than a ternary: a
-                    // ternary of two literals is a String, and is never looked
-                    // up.
+                    // that changes it.
                     if case .local = session.mode {
                         Text("Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.")
                     } else if case .inFamily = session.mode, (session.family?.members.count ?? 0) <= 1 {
@@ -360,8 +358,7 @@ struct SettingsScreen: View {
             }
 
             // "Silti" when the sentence above has just said what is lost:
-            // the same act, named for what it is on this phone. Two buttons
-            // rather than a ternary — a ternary of literals is a String.
+            // the same act, named for what it is on this phone.
             if case .inFamily = session.mode, !canLeave, missingLocally > 0 {
                 Button("Tyhjennä silti", role: .destructive) {
                     Task { await wipe() }
@@ -405,8 +402,9 @@ struct SettingsScreen: View {
             // vientiin" is true while somebody else holds the archive; on the
             // last copy it was the reassurance before the wipe that made it
             // false (finding #43), and on a local archive a file that is not
-            // here is not anywhere. Texts, not a ternary: a ternary of
-            // literals is a String and neither sentence had been looked up.
+            // here is not anywhere. While the first two were one ternary's
+            // branches neither had a key, and nothing noticed:
+            // `localisation-check.mjs` does not look inside a ternary.
             Group {
                 if canLeave {
                     if missingFromExport == 1 {

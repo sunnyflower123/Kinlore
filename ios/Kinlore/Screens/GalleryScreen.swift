@@ -914,13 +914,12 @@ private struct PhotoQuotaNote: View {
     var body: some View {
         if refused > 0 {
             VStack(alignment: .leading, spacing: 12) {
-                // Two labels rather than a ternary, for the reason TellScreen
-                // already carries beside "Selvä": a ternary of literals is a
-                // String, and a String is not looked up. Neither table had
-                // ever seen these two sentences, so an English phone read the
-                // Finnish — found by launching `-photos-refused 1` in English
-                // and looking, which is the only thing that finds this class.
-                // `localisation-check.mjs` passes either way; it counts keys.
+                // Neither table had ever seen these two sentences, so an
+                // English phone read the Finnish — found by launching
+                // `-photos-refused 1` in English and looking. As one ternary's
+                // branches they were nowhere `localisation-check.mjs` looks,
+                // so it passed; `localisation-lookup-check.mjs` has read a
+                // ternary's branches since 21 Sep 2026.
                 Group {
                     if refused == 1 {
                         Label(
@@ -1444,8 +1443,6 @@ private struct SubjectRow: View {
             Label("Kerro tästä", systemImage: "mic.fill")
                 .font(.subheadline.weight(.semibold))
         } else {
-            // A ternary hides the literal from SwiftUI's key lookup and from
-            // scripts/localisation-check.mjs alike; as its own Text it is a key.
             Group {
                 if count == 1 {
                     Text("1 muisto")

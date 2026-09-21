@@ -9,11 +9,12 @@ import SwiftUI
 /// perheestä"* on every row but their own. It is the only visibility into that
 /// boundary, and the only hand on it.
 ///
-/// Every sentence here that used to be a `String` — a ternary handed to `Text`,
-/// a computed `String` property — is a `Text` with a literal key now. A
-/// `String` is never looked up, and this screen showed *"Käytetty 2 kertaa"*
-/// and *"kaikki lähetetty klo 9.05"* on an English phone (founder's-eye
-/// review, 3 Sep 2026, finding #38).
+/// Every sentence here that used to be a computed `String` property is a
+/// `Text` with a literal key now, because a `String` is never looked up. This
+/// screen showed *"Käytetty 2 kertaa"* and *"kaikki lähetetty klo 9.05"* on an
+/// English phone (founder's-eye review, 3 Sep 2026, finding #38), and neither
+/// had a key: the first sat in a ternary, where `localisation-check.mjs` does
+/// not look, and the second was a `String` as well.
 struct FamilyScreen: View {
     @Environment(Session.self) private var session
     @Environment(MemoryStore.self) private var store
@@ -55,8 +56,6 @@ struct FamilyScreen: View {
                             .foregroundStyle(Elder.supporting)
                     }
                     LabeledContent("Tila") {
-                        // Two keys, not one ternary: `Text(a ? "x" : "y")` is a
-                        // String and is never looked up.
                         Group {
                             if family.entitlement == "archive" {
                                 Text("Maksullinen")
@@ -322,8 +321,7 @@ struct FamilyScreen: View {
         return Text("kaikki lähetetty \(at.formatted(date: .numeric, time: .shortened))")
     }
 
-    /// The month's telling, as one `Text`. Two keys rather than a ternary:
-    /// `Text(a ? "x" : "y")` is a String and is never looked up.
+    /// The month's telling, as one `Text`.
     private func minutesText(_ usage: EntitlementClient.Usage) -> Text {
         guard let limit = usage.aiSeconds.limit else { return Text("rajaton") }
         return Text("\(usage.aiSeconds.used / 60) / \(limit / 60) min")

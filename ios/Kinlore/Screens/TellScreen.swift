@@ -1754,8 +1754,6 @@ private struct ResultView: View {
                             .foregroundStyle(Elder.supporting)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    // Two buttons rather than a ternary label: a ternary of
-                    // literals is a String and is never looked up.
                     if subject.kind == .place {
                         Button("Eri paikka") { model.splitMention(subject) }
                             .buttonStyle(.bordered)
@@ -2147,8 +2145,6 @@ private struct AudioSavedView: View {
 
             // The one case this screen must not open on its usual sentence:
             // the recording could not be kept (`TellViewModel.audioLost`).
-            // Two titles rather than a ternary — a ternary of literals is a
-            // String and is never looked up.
             Image(systemName: model.audioLost ? "exclamationmark.triangle" : "waveform.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(model.audioLost ? Elder.proposal : Color.accentColor)
@@ -2174,8 +2170,9 @@ private struct AudioSavedView: View {
             // the §16 lie all over again; in the second it was a delay's
             // words on a wall that lifts on a date, or when somebody pays —
             // so the date is said, and the way to lift it is beside it.
-            // Three `Text`s and not a ternary: a ternary of literals is a
-            // String, and neither of the two here had ever been looked up.
+            // Until 4 Sep 2026 two of these were one ternary's branches, and
+            // neither had a key: `localisation-check.mjs` does not look
+            // inside a ternary.
             Group {
                 if model.audioLost {
                     Text("Puhelin ei saanut äänitystä talteen. Vapauta tilaa puhelimesta ja kerro uudelleen, tai kirjoita muisto itse nyt, kun se on vielä mielessä.")
@@ -2243,8 +2240,6 @@ private struct AudioSavedView: View {
                 Button {
                     if let onClose { onClose() } else { model.reset() }
                 } label: {
-                    // Two labels rather than a ternary: a ternary of literals
-                    // is a String, and "Selvä" was never looked up here.
                     Group {
                         if onClose == nil {
                             Text("Selvä")

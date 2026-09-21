@@ -118,9 +118,6 @@ struct TellerCard: View {
 
     private var answered: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // Two sentences rather than one with a ternary inside it: a
-            // ternary of literals is a String and is never looked up, which is
-            // the lesson this file inherits from the saved-audio screen.
             if model.tellerIsHidden {
                 Text("Nimeä ei näytetä tämän muiston vieressä.")
                     .font(.body)
