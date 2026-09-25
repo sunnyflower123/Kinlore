@@ -1677,51 +1677,95 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// Moving that point to where the place actually is.
-    ///
-    /// The screen this sweep exists for is a full-bleed map with a mark drawn
-    /// over it, a sentence and two buttons — and it is the map that makes it
-    /// worth measuring twice. It is the only view in the app that can yield
-    /// height: at the largest size the sentence and the buttons take most of
-    /// the sheet, and if the map refused to shrink the buttons would be pushed
-    /// off the bottom of a screen that has no scroll. That failure is silent
-    /// in a screenshot taken at the default size, which is the only size
-    /// anybody looks at.
-    ///
-    /// Puumala is a municipality in the demo archive, so the card's map is
-    /// found by the circle's spoken label. A run that found the pin's wording
-    /// here would mean a fixture's precision had been rounded on the way.
-    func testPlacePinSheet() throws {
-        try sweep("Tarkka paikka", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
+    /// A place card with nothing on the map yet: a confirmed farm the
+    /// gazetteer did not know, which is most of a family's places (§18).
+    /// Where the map would be, the card says "Merkitse kartalle", in the
+    /// date row's shape — a row whose words grow, because a toolbar
+    /// button's barely do.
+    func testPlaceDetailWithNoPoint() throws {
+        try sweep("Paikka ilman karttaa", arguments: ["-seed", "unplaced", "-tab", "memories"]) { app, _ in
             let row = app.buttons
-                .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
+                .matching(NSPredicate(format: "label BEGINSWITH %@", "Koivula"))
                 .firstMatch
-            reach(row, in: app, "the place's row in Muistot").tap()
-            // Two taps since 25 Sep 2026: the card's map opens the family's
-            // map on the place, and moving the point is asked for there. What
-            // the first tap is found by is the map's spoken label, which is
-            // the same one `testPlaceDetail` audits.
-            reach(
-                app.buttons["Suunnilleen tällä seudulla kartalla"],
-                in: app,
-                "the card's map, which opens the family's map on the place"
-            ).tap()
-            reach(
-                app.buttons["Muuta sijaintia"],
-                in: app,
-                "the family's map, which offers to move the point"
-            ).tap()
-            let map = require(
-                app.otherElements["Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla."],
-                "the map the mark sits on"
-            )
-            // For the reason `testPlaceDetail` gives: a map draws itself over
-            // several frames and its tiles arrive from a cache rather than
-            // instantly. The frame is what is waited for and not the drawing —
-            // a map's tiles keep arriving, so two identical screenshots are a
-            // promise this screen cannot make.
-            settle(map)
+            reach(row, in: app, "the unplaced place's row in Muistot").tap()
+            settle(require(app.buttons["Merkitse kartalle"], "the card's way onto the map"))
         }
+    }
+
+    /// Putting a place's point where the place actually is, on the family's
+    /// map itself (25 Sep 2026). The panel under the map is the tallest
+    /// shape this screen has — a sentence, the two rows of how sure,
+    /// "Tallenna" and "Peruuta", and "Poista sijainti" — and at the default
+    /// size it floats over a map that has to keep enough of itself to be
+    /// tapped. At the largest size the map is 300 points of a page that
+    /// scrolls, and the rows under it are what has to fit.
+    ///
+    /// Opened the way the card's "Merkitse kartalle" opens it, on Puumala,
+    /// whose name is in the sentence that proves arrival.
+    func testPlacesMapEditing() throws {
+        try sweep("Kartta, merkintä", arguments: editingPuumala) { app, _ in
+            settle(require(
+                app.staticTexts["Napauta karttaa kohtaan, jossa Puumala on."],
+                "the panel that asks for a tap"
+            ))
+        }
+    }
+
+    /// The same panel after a tap: the mark is down, the camera has moved in
+    /// to it and "Tallenna" is live, which is the one prominent button this
+    /// screen has. The mark is a graphic over ground nobody can predict —
+    /// which is why it is wax on a cream ring — and this is the state in
+    /// which it is drawn.
+    func testPlacesMapEditingWithAMark() throws {
+        try sweep("Kartta, merkki", arguments: editingPuumala) { app, _ in
+            let map = require(app.otherElements["Kartta. Napautus merkitsee kohdan."], "the map a tap marks")
+            map.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.3)).tap()
+            // Waited for rather than read at once, for the reason
+            // `PlacePinTests.tapTheMap(in:)` gives.
+            let save = require(app.buttons["Tallenna"], "the editor's save")
+            XCTAssertTrue(
+                save.wait(for: \.isEnabled, toEqual: true, timeout: 10),
+                "the tap put no mark down, so this would audit the untouched panel"
+            )
+            settle(save)
+        }
+    }
+
+    /// Taking the point off the map, which asks in the panel rather than in
+    /// an alert and says what stays.
+    func testPlacesMapRemoval() throws {
+        try sweep("Kartta, poisto", arguments: editingPuumala) { app, _ in
+            require(app.buttons["Poista sijainti"], "the way to take the point off the map").tap()
+            settle(require(
+                app.staticTexts["Poistetaanko sijainti kartalta? Puumala ja sen muistot säilyvät."],
+                "the question that asks first"
+            ))
+        }
+    }
+
+    /// The places the map cannot draw, opened from the count under it: a
+    /// sheet of the album's own rows, each a way into placing its place.
+    func testPlacesMapUnplacedList() throws {
+        try sweep(
+            "Ei vielä kartalla",
+            arguments: ["-seed", "unplaced", "-tab", "memories", "-screen", "placesMap"]
+        ) { app, _ in
+            require(app.buttons["1 paikka ei vielä kartalla"], "the map's count of what it cannot draw").tap()
+            require(app.navigationBars["Ei vielä kartalla"], "the sheet of places not on the map")
+            settle(require(
+                app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Koivula")).firstMatch,
+                "Koivula's row"
+            ))
+        }
+    }
+
+    /// The editor on Puumala, opened as the card's "Merkitse kartalle" opens
+    /// it — the launch hook's `-screen placesMapEditing`.
+    private var editingPuumala: [String] {
+        [
+            "-seed", "archive", "-tab", "memories",
+            "-screen", "placesMapEditing", "-place", "demo-puumala",
+        ]
     }
 
     /// The way out of a misheard name. A sheet with a text field on it is the

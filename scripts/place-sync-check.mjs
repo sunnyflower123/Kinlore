@@ -191,7 +191,7 @@ try {
 		JSON.stringify({ lat: row?.lat, lon: row?.lon }),
 	)
 
-	// 6. A point somebody in the family placed by hand (`PlacePinSheet`) is
+	// 6. A point somebody in the family placed by hand (`PlacesMapScreen`) is
 	//    `exact`, and every other phone is still holding the municipality the
 	//    gazetteer answered with. Those phones push their copy with the next
 	//    thing anybody changes about the place, so without a rule the family's

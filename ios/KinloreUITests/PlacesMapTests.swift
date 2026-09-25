@@ -132,6 +132,80 @@ final class PlacesMapTests: XCTestCase {
         )
     }
 
+    /// A confirmed place with nothing to draw — a farm the gazetteer did not
+    /// know, which is most of them (§18) — says "Merkitse kartalle" where its
+    /// map would be, and that opens the family's map already placing it.
+    /// "Peruuta" comes straight back to the card, which is where the change
+    /// began; a tap and "Tallenna" leave a card with a map on it.
+    func testTheCardMarksAPlaceWithNoPoint() {
+        let app = launch(["-seed", "unplaced", "-tab", "memories"])
+        open("Koivula", in: app)
+
+        let mark = app.buttons["Merkitse kartalle"]
+        for _ in 0 ..< 4 where !mark.exists { app.swipeUp() }
+        XCTAssertTrue(mark.waitForExistence(timeout: 10), "a place with no point offers no way onto the map")
+        mark.tap()
+        XCTAssertTrue(
+            app.staticTexts["Napauta karttaa kohtaan, jossa Koivula on."].waitForExistence(timeout: 10),
+            "the map did not open placing the place"
+        )
+
+        app.buttons["Peruuta"].tap()
+        XCTAssertTrue(mark.waitForExistence(timeout: 10), "\"Peruuta\" did not come back to the card")
+
+        mark.tap()
+        tapTheEditableMap(in: app)
+        let save = app.buttons["Tallenna"]
+        XCTAssertTrue(save.wait(for: \.isEnabled, toEqual: true, timeout: 10), "the tap on the map left nothing to save")
+        save.tap()
+        XCTAssertTrue(
+            app.staticTexts["Tarkka kohta. Vahvisti Minä."].waitForExistence(timeout: 10),
+            "the point never reached the archive as somebody's word"
+        )
+        app.navigationBars["Kartta"].buttons.firstMatch.tap()
+        XCTAssertTrue(
+            app.buttons["Tarkka sijainti kartalla"].waitForExistence(timeout: 10),
+            "the card of the placed place draws no map"
+        )
+    }
+
+    /// The map counts the places it cannot draw, and the count is a door: a
+    /// sheet of those places, where a row starts placing its place on the
+    /// map under the sheet. Once placed, the place has a chip like any other
+    /// and the count has nothing left to count.
+    func testTheMapListsThePlacesItCannotDraw() {
+        let app = launch(["-seed", "unplaced", "-tab", "memories", "-screen", "placesMap"])
+
+        let count = app.buttons["1 paikka ei vielä kartalla"]
+        XCTAssertTrue(count.waitForExistence(timeout: 10), "the map does not say what it cannot draw")
+        count.tap()
+        XCTAssertTrue(
+            app.navigationBars["Ei vielä kartalla"].waitForExistence(timeout: 10),
+            "the count did not open the places it counts"
+        )
+        let row = app.buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Koivula"))
+            .firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Koivula is not among the places the map cannot draw")
+        row.tap()
+        XCTAssertTrue(
+            app.staticTexts["Napauta karttaa kohtaan, jossa Koivula on."].waitForExistence(timeout: 10),
+            "choosing the place did not start placing it"
+        )
+
+        tapTheEditableMap(in: app)
+        let save = app.buttons["Tallenna"]
+        XCTAssertTrue(save.wait(for: \.isEnabled, toEqual: true, timeout: 10), "the tap on the map left nothing to save")
+        save.tap()
+        XCTAssertTrue(
+            app.staticTexts["Tarkka kohta. Vahvisti Minä."].waitForExistence(timeout: 10),
+            "the point never reached the archive as somebody's word"
+        )
+        app.buttons["Näytä kaikki paikat"].tap()
+        XCTAssertTrue(chip("Koivula", in: app).waitForExistence(timeout: 10), "the placed place has no chip")
+        XCTAssertFalse(count.exists, "the map still counts a place it now draws")
+    }
+
     /// A place's chip: a button inside the map whose label starts with the
     /// place's name. Inside the map, because the back button to a place card
     /// is called by the card's title as well.
@@ -155,10 +229,25 @@ final class PlacesMapTests: XCTestCase {
         card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
+    /// The map while a place is being placed, tapped well inside it and away
+    /// from its middle. One element with one sentence: a tap anywhere on it
+    /// is the control. What the tap changes is waited for, for the reason
+    /// `PlacePinTests.tapTheMap(in:)` gives.
+    private func tapTheEditableMap(in app: XCUIApplication) {
+        let map = app.otherElements["Kartta. Napautus merkitsee kohdan."]
+        XCTAssertTrue(map.waitForExistence(timeout: 10), "never arrived: the map a tap marks")
+        map.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.3)).tap()
+    }
+
     /// The demo archive's confirmed place, opened from Albumi.
     private func openPuumala(in app: XCUIApplication) {
+        open("Puumala", in: app)
+    }
+
+    /// A place, opened from Albumi by its row.
+    private func open(_ name: String, in app: XCUIApplication) {
         let row = app.buttons
-            .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
+            .matching(NSPredicate(format: "label BEGINSWITH %@", name))
             .firstMatch
         for _ in 0 ..< 4 where !row.exists { app.swipeUp() }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "never arrived: the place's row in Albumi")

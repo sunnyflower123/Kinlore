@@ -29,10 +29,11 @@ struct PlaceMapCard: View {
 
     /// A tap on the card opens the family's map on this place
     /// (`PlacesMapRoute(focus:)`), where it is seen among the family's other
-    /// places and moved only when somebody asks to ("Muuta sijaintia"). Until
-    /// 25 Sep 2026 it opened `PlacePinSheet` straight away, whose mark sat in
-    /// the middle of the screen while the map moved under it, so looking
-    /// around a place and moving it were one and the same gesture.
+    /// places and moved only when somebody asks to ("Muuta sijaintia"), on
+    /// that same map. Until 25 Sep 2026 it opened a sheet of its own straight
+    /// away, whose mark sat in the middle of the screen while the map moved
+    /// under it, so looking around a place and moving it were one and the
+    /// same gesture.
     ///
     /// **Inside the card and not in a row of its own, which is a measurement
     /// rather than a preference.** Written as an ordinary row under the map it

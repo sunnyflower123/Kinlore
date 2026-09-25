@@ -719,7 +719,7 @@ final class MemoryStore {
     }
 
     /// Records a location: the one `PlaceLookup` found, or the one somebody in
-    /// the family moved the mark to (`PlacePinSheet`).
+    /// the family put there on the family's map (`PlacesMapScreen`).
     ///
     /// Queued for the server, unlike a downloaded photo's filename: the answer
     /// to "where is Puumala" is the same on every phone in the family, so it is
@@ -1562,6 +1562,7 @@ final class MemoryStore {
         }
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "faces",
+            "unplaced",
             "film", "film-untold", "film-week", "film-family", "film-tree",
             "aimed",
         ].contains(seed) else { return }
@@ -2151,6 +2152,16 @@ final class MemoryStore {
             // "Valokuva". The plain archive's stays untitled, because every
             // sweep that taps the tile finds it by that word.
             subjects[index].title = "Mökin ranta"
+        }
+        // `-seed unplaced`: the archive with a confirmed place that nobody
+        // has put on the map — a farm name the gazetteer does not know, which
+        // is what most of a family's places are (§18). Without it the card's
+        // "Merkitse kartalle" and the map's list of places not yet on it are
+        // unreachable from every seeded launch, because `PlaceResolver` looks
+        // nothing up under a seed and the fixture's two places both carry a
+        // point.
+        if seed == "unplaced" {
+            subjects.append(Subject(id: "demo-koivula", kind: .place, title: "Koivula"))
         }
         questions = mummoAsks + aimedAsks
         // `-seed related`: the archive with one confirmed relationship, Eeva

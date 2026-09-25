@@ -65,6 +65,14 @@ final class PlaceResolver {
 
     /// One name, one lookup, one write. Both callers go through here so that
     /// `missed` means the same thing whichever of them asked.
+    ///
+    /// The write asks again whether the place still has no point, because
+    /// the lookup is a network round trip and a person is faster than it:
+    /// the card that asked for the answer also offers "Merkitse kartalle",
+    /// and a point somebody put there while the gazetteer was thinking is
+    /// their word, which a municipality's centre arriving a second later
+    /// must not replace (§18). The same holds for a title corrected in the
+    /// meantime, whose answer this no longer is.
     private func lookUp(_ subject: Subject, in store: MemoryStore) async {
         let key = subject.title.lowercased()
         guard !missed.contains(key) else { return }
@@ -72,6 +80,11 @@ final class PlaceResolver {
             missed.insert(key)
             return
         }
+        guard let current = store.subject(id: subject.id),
+              current.id == subject.id,
+              current.place == nil,
+              current.title == subject.title
+        else { return }
         store.setPlace(subjectID: subject.id, place: place)
     }
 

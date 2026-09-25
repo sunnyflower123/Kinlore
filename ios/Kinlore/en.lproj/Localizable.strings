@@ -598,12 +598,29 @@
 "Tarkka sijainti kartalla" = "Exact location on the map";
 "Suunnilleen tällä seudulla kartalla" = "Roughly in this area, on the map";
 
-/* Moving that point by hand (19 Sep 2026). "Merkki" is the mark in the
-   middle of the map, not a pin the finger carries -- the map moves under it. */
-"Tarkka paikka" = "The exact spot";
-"Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee." = "Drag the map until the mark sits on the right spot. Two fingers bring it closer.";
-"Tallenna tämä paikka" = "Save this spot";
-"Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla." = "Map. The mark stays in the middle and the map moves underneath it.";
+/* Putting a place on the family's map by hand (25 Sep 2026), on the map
+   itself: a tap puts the mark where the finger was, and a drag only moves
+   the map. The two rows are how sure the person is -- "Tarkka kohta" a spot,
+   "Suunnilleen tällä seudulla" around it -- and without the full stop they
+   are choices, where the sentences with one are the panel describing a point
+   already stored. "Merkitse kartalle" is a place card's row for a place with
+   nothing to draw; "ei vielä kartalla" counts those places on the map. The
+   removal question says what stays, because a place taken off the map is
+   still a place with its memories. */
+"Tarkka kohta" = "The exact spot";
+"Suunnilleen tällä seudulla" = "Roughly in this area";
+"Napauta karttaa kohtaan, jossa %@ on." = "Tap the map where %@ is.";
+"Poista sijainti" = "Remove the location";
+"Poistetaanko sijainti kartalta? %@ ja sen muistot säilyvät." = "Remove the location from the map? %@ and its memories are kept.";
+"Sijainti on oikein" = "The location is right";
+"Kartta. Napautus merkitsee kohdan." = "Map. A tap marks the spot.";
+"Uusi kohta" = "New spot";
+"1 paikka ei vielä kartalla" = "1 place not on the map yet";
+"%lld paikkaa ei vielä kartalla" = "%lld places not on the map yet";
+"Ei vielä kartalla" = "Not on the map yet";
+"Napauta paikkaa, niin voit merkitä sen kartalle." = "Tap a place to mark it on the map.";
+"Merkitse kartalle" = "Mark on the map";
+"Avaa kartan, jolla paikan voi merkitä napauttamalla." = "Opens a map where the place can be marked with a tap.";
 
 /* --- The failure paths, 12 Sep 2026 --------------------------------------
    Every one of these was Finnish on an English phone, and the check could not

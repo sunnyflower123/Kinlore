@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 80 sweep tests, each auditing one screen at the default text size and again at the largest, out of 236 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 84 sweep tests, each auditing one screen at the default text size and again at the largest, out of 246 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -3596,9 +3596,10 @@ about 50 × 11 pt in the map's corner, is forgiven in `AccessibilityPolicy`
 the way the search field's clear button is (§15). **§5's condition that a browsable map
 owes its own removal is still owed**, and that row says so.
 
-The two maps of a single place are unchanged — the card the next paragraph is
-about, and since 19 Sep 2026 the one that card opens so the point can be moved
-by hand.
+A single place keeps the map on its own card, `PlaceMapCard` (below). The
+second one, the sheet that card opened from 19 Sep 2026 so that the point could
+be moved by hand, went on 25 Sep: the card opens this map instead, and the point
+is moved on it (*The one answer a gazetteer cannot give*, below).
 
 **Confirmed places only, since 12 Sep 2026.** `placesAwaitingCoordinates`
 skips a place nobody has vouched for. A name the extraction heard is a guess
@@ -3739,21 +3740,35 @@ circle and *"Siirrä paikkaa kartalla"* over a point, are what keeps the control
 from being a secret.
 
 **Since 25 Sep 2026 the card's map opens the family's map instead**, centred
-on the place, and the sheet is one button further on: *"Muuta sijaintia"* in
-the panel under that map. The founder's report was that the land around a
-point could not be looked at without the point going with it — the sheet was
-the only larger map a place had, so every look was also an edit. On the
-family's map the camera is only a camera. The card's corner now says where
-the tap goes, *"Avaa kartta"*, and both phrases above left the tables with it.
+on the place, and the sheet is gone. The founder's report was that the land
+around a point could not be looked at without the point going with it — the
+sheet was the only larger map a place had, so every look was also an edit. On
+the family's map the camera is only a camera, and *"Muuta sijaintia"* in the
+panel under it turns that same map into the editor: the panel asks for a tap,
+and the mark goes where the finger was. A drag still only moves the map, which
+keeps what the fixed mark was right about — a mark under a finger is the one
+thing nobody can see while placing it, and dragging accurately is the gesture
+this app's user has least of — while giving back the pan the sheet took away.
+A tap on a map showing more than five kilometres across is followed by a
+closer look, because at a municipality's scale a fingertip is a kilometre wide
+and the miss should be seen while it can still be tapped again. The card's
+corner now says where its own tap goes, *"Avaa kartta"*, and both phrases above
+left the tables with the sheet. A confirmed place with nothing to draw says
+*"Merkitse kartalle"* where its map would be, and opens the same editor
+straight away.
 
-**Nothing is saved until the mark has moved**, measured in metres against where
-the screen opened. That guard is rule 5 rather than tidiness: the stored answer
-for *Puumala* is a municipality, and writing it back as `exact` because
-somebody opened the map and pressed the blue button turns fourteen kilometres
-of parish into a claim about one farmyard. Only a person can make this point
-exact, and moving the map is how they say so. `PlacePinTests` drives both
-halves — the untouched map offering nothing, and a drag reaching the archive,
-which the card answers by speaking as a pin instead of a circle.
+**Nothing is saved until somebody has tapped**, measured in metres against the
+point the place already has. That guard is rule 5 rather than tidiness: the
+stored answer for *Puumala* is a municipality, and writing it back as `exact`
+because somebody opened the editor and pressed its prominent button turns
+fourteen kilometres of parish into a claim about one farmyard. Only a person
+can make a point exact, and the tap is how they say so. *"Suunnilleen tällä
+seudulla"* goes the other way without one, because claiming less needs no
+evidence. The same panel takes a point off the map (*"Poista sijainti"*,
+stored as `.unknown` under the person's word, so that no lookup puts it back)
+and vouches for a point the gazetteer found as it stands (*"Sijainti on
+oikein"*, the same word with nothing moved). `PlacePinTests` drives each of
+these, and a drag that must move nothing.
 
 **Two limits, both deliberate for v1.** A hand-placed point is
 indistinguishable from a street address the gazetteer resolved, because the
@@ -3904,10 +3919,9 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
   pair as one opaque blob, keep null as the only server-visible state — and it
   is recorded here so it is a decision to revisit rather than a discovery to
   make twice.
-- Only `PlaceMapCard`, `PlacesMapScreen` and `PlacePinSheet` read a
-  coordinate, and all three read the local archive rather than D1, so what
-  accumulates before v1.1 is bounded and re-sealable by the same sweep that
-  resolved it.
+- Only `PlaceMapCard` and `PlacesMapScreen` read a coordinate on screen,
+  and both read the local archive rather than D1, so what accumulates before
+  v1.1 is bounded and re-sealable by the same sweep that resolved it.
 
 `InviteShare`'s doc comment beside the invite text already says the smaller
 thing lever 3 promises about the key; this paragraph is where the whole of

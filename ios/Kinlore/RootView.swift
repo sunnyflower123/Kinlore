@@ -857,6 +857,29 @@ struct SubjectDetailScreen: View {
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 }
+            } else if current.kind == .place, current.confirmed {
+                // And the way to put it there, for a place with nowhere to be
+                // drawn: a farm the gazetteer did not know, which is most of
+                // them (§18), or a point somebody took off the map. It opens
+                // the family's map already placing this place, and "Peruuta"
+                // there comes straight back here. Confirmed only, like the
+                // lookup: a point under a name nobody has vouched for is the
+                // guess drawn (rule 4). The shape of the date row below, for
+                // the date row's reason.
+                Section {
+                    NavigationLink(value: PlacesMapRoute(focus: current.id, editing: true)) {
+                        HStack(spacing: 10) {
+                            Image(systemName: "mappin.and.ellipse")
+                            Text("Merkitse kartalle")
+                                .font(.body)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .foregroundStyle(Elder.supporting)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .elderTapTarget()
+                    }
+                    .accessibilityHint("Avaa kartan, jolla paikan voi merkitä napauttamalla.")
+                }
             }
 
             // The date, and the way to put one there. It used to be a label that

@@ -524,11 +524,21 @@
 "Tarkka sijainti kartalla" = "Tarkka sijainti kartalla";
 "Suunnilleen tällä seudulla kartalla" = "Suunnilleen tällä seudulla kartalla";
 
-/* Moving that point by hand — see en.lproj. */
-"Tarkka paikka" = "Tarkka paikka";
-"Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee." = "Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee.";
-"Tallenna tämä paikka" = "Tallenna tämä paikka";
-"Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla." = "Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla.";
+/* Putting a place on the family's map by hand — see en.lproj. */
+"Tarkka kohta" = "Tarkka kohta";
+"Suunnilleen tällä seudulla" = "Suunnilleen tällä seudulla";
+"Napauta karttaa kohtaan, jossa %@ on." = "Napauta karttaa kohtaan, jossa %@ on.";
+"Poista sijainti" = "Poista sijainti";
+"Poistetaanko sijainti kartalta? %@ ja sen muistot säilyvät." = "Poistetaanko sijainti kartalta? %@ ja sen muistot säilyvät.";
+"Sijainti on oikein" = "Sijainti on oikein";
+"Kartta. Napautus merkitsee kohdan." = "Kartta. Napautus merkitsee kohdan.";
+"Uusi kohta" = "Uusi kohta";
+"1 paikka ei vielä kartalla" = "1 paikka ei vielä kartalla";
+"%lld paikkaa ei vielä kartalla" = "%lld paikkaa ei vielä kartalla";
+"Ei vielä kartalla" = "Ei vielä kartalla";
+"Napauta paikkaa, niin voit merkitä sen kartalle." = "Napauta paikkaa, niin voit merkitä sen kartalle.";
+"Merkitse kartalle" = "Merkitse kartalle";
+"Avaa kartan, jolla paikan voi merkitä napauttamalla." = "Avaa kartan, jolla paikan voi merkitä napauttamalla.";
 
 /* --- The failure paths, 12 Sep 2026 — see en.lproj. */
 " Sovellus avautuu ensimmäiselle näytölle." = " Sovellus avautuu ensimmäiselle näytölle.";

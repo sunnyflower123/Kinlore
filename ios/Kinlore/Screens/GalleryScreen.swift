@@ -281,10 +281,15 @@ struct GalleryScreen: View {
         // measures it at the largest text size from here, and a screenshot
         // from a seeded launch needs no tap. `-tab memories` beside it, and
         // `-place <subject id>` to open it on one place, as a place card's
-        // own map does.
+        // own map does. `-screen placesMapEditing` opens it already placing
+        // that place, as the card's "Merkitse kartalle" does.
         .task {
-            if UserDefaults.standard.string(forKey: "screen") == "placesMap", path.isEmpty {
-                path.append(PlacesMapRoute(focus: UserDefaults.standard.string(forKey: "place")))
+            let screen = UserDefaults.standard.string(forKey: "screen")
+            if screen == "placesMap" || screen == "placesMapEditing", path.isEmpty {
+                path.append(PlacesMapRoute(
+                    focus: UserDefaults.standard.string(forKey: "place"),
+                    editing: screen == "placesMapEditing"
+                ))
             }
         }
         #endif
@@ -797,7 +802,7 @@ struct GalleryScreen: View {
     /// The third way to a place card, after its row here and a memory that
     /// names it: the map of every confirmed place with a coordinate
     /// (`PlacesMapScreen`, ARCHITECTURE §18). Shown on a grandparent's phone
-    /// too — `PlacePinSheet` already hands her a map that pans, and a button
+    /// too — the place card already hands her a map that pans, and a button
     /// that leads to a screen is not the search field §8.12 keeps from her.
     private var mapButton: some View {
         NavigationLink(value: PlacesMapRoute()) {

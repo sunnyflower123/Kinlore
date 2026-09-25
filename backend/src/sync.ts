@@ -481,7 +481,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   --
 				   -- And a coarser point never displaces an exact one under the
 				   -- same title (19 Sep 2026). A person can now move the mark to
-				   -- where the place actually is -- PlacePinSheet on the phone --
+				   -- where the place actually is -- the family's map on the phone --
 				   -- and that is stored as exact; every other phone in the family
 				   -- is still holding the municipality the gazetteer answered
 				   -- with, and pushes it with the next thing anybody changes
