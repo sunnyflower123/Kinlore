@@ -524,6 +524,19 @@ finished.**
   beside it. Which addition pays is the founder's decision, and this
   paragraph does not make it — it records the debt as open, so that the next
   reader does not take a built map for a paid one.
+
+  **Grown again on 25 Sep 2026, and the debt left open by decision.** The
+  founder asked for the map to be somewhere a person finds it without looking
+  — the album's top bar, in every album — and reported that the land around a
+  point could not be looked at without the point moving with it. Both were
+  answered on the one screen, with no second map: looking moves nothing, and
+  *"Muuta sijaintia"* turns the same map into an editor where a tap puts the
+  mark down. A point somebody places now carries who and when, the first
+  columns this row's map has ever added to the Worker, and the map gained an
+  aerial photograph and, in its editor, a search by name (ARCHITECTURE §18).
+  Asked what should go to pay for it, the founder answered that nothing is
+  removed now. So the removal is still owed, and it is now owed by a decision
+  somebody took rather than by an oversight nobody noticed.
 - ~~**Prices.**~~ **Decided 12 Sep 2026: two purchases, each made once — a
   year at 50 € and the archive for ever at 80 €. The monthly plan goes.**
   Free stays as it is and as `wrangler.jsonc` has it: 20 photographs in

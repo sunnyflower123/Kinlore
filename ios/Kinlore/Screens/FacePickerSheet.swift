@@ -14,13 +14,13 @@ import SwiftUI
 /// Only photographs on this phone are offered: a face cannot be tapped on a
 /// picture that is still only a key.
 ///
-/// **What VoiceOver gets here is the screen and not the task**, as on the
-/// family's map while a place is being put on it (`PlacesMapScreen`). Each
+/// **What VoiceOver gets here is the screen and not the task**, as it did
+/// on the family's map until that map had a search (`PlacesMapScreen`). Each
 /// photograph is a button with its name, the spot is the middle unless
 /// somebody who can see the picture taps elsewhere, and "Tallenna" works
-/// from the middle. Finding a face in a group photograph is
-/// visual work, and a set of "move left" actions over a picture nothing can
-/// describe would be the appearance of an answer.
+/// from the middle. Finding a face in a group photograph is visual work, and
+/// a set of "move left" actions over a picture nothing can describe would be
+/// the appearance of an answer.
 struct FacePickerSheet: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss

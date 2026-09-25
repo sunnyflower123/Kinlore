@@ -540,6 +540,18 @@
 "Merkitse kartalle" = "Merkitse kartalle";
 "Avaa kartan, jolla paikan voi merkitä napauttamalla." = "Avaa kartan, jolla paikan voi merkitä napauttamalla.";
 
+/* Finding a place by name, and the aerial photograph — see en.lproj. */
+"Etsi nimellä" = "Etsi nimellä";
+"Etsi kylä, tila tai osoite" = "Etsi kylä, tila tai osoite";
+"Hae" = "Hae";
+"Haetaan…" = "Haetaan…";
+"Tyhjennä haku" = "Tyhjennä haku";
+"Haku ei onnistunut. Voit napauttaa kohdan kartalta." = "Haku ei onnistunut. Voit napauttaa kohdan kartalta.";
+"Tällä nimellä ei löytynyt paikkaa. Voit kokeilla toista nimeä tai napauttaa kohdan kartalta." = "Tällä nimellä ei löytynyt paikkaa. Voit kokeilla toista nimeä tai napauttaa kohdan kartalta.";
+"Näyttää kohdan kartalla ennen tallennusta." = "Näyttää kohdan kartalla ennen tallennusta.";
+"Hakutulos: %@" = "Hakutulos: %@";
+"Ilmakuva" = "Ilmakuva";
+
 /* --- The failure paths, 12 Sep 2026 — see en.lproj. */
 " Sovellus avautuu ensimmäiselle näytölle." = " Sovellus avautuu ensimmäiselle näytölle.";
 "Arkiston vienti ei onnistunut" = "Arkiston vienti ei onnistunut";

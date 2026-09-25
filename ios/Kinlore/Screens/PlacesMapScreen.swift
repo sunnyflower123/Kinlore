@@ -69,12 +69,15 @@ extension View {
 /// the same two words the card's map says out loud, and where the point came
 /// from.
 ///
-/// **What VoiceOver gets while editing is the screen and not the task.** The
-/// map is one labelled element and the rest are ordinary buttons, so a person
-/// who cannot see the map can read what the screen is for, choose "Poista
-/// sijainti", or leave it as it was. Placing a point inside a landscape is
-/// visual work, and four "move north" actions over ground nothing can name
-/// would be the appearance of an answer rather than one.
+/// **VoiceOver gets the task, and not only the screen.** Placing a point
+/// inside a landscape is visual work, and four "move north" actions over
+/// ground nothing can name would be the appearance of an answer rather than
+/// one, so while editing the map is one labelled element. The way in that is
+/// not visual is "Etsi nimellä" (`PlaceSearchSheet`): the answers are rows of
+/// words, choosing one proposes the point at the precision it came with, and
+/// the rows of how sure and "Tallenna" are ordinary buttons. The screen this
+/// replaced, `PlacePinSheet`, could only let a person who cannot see the map
+/// read what it was for.
 ///
 /// The Paikat list stays. This is a third way to the same card, not the only
 /// one: VoiceOver walks the list, and a place without a coordinate — nine of
@@ -102,6 +105,11 @@ struct PlacesMapScreen: View {
     @State private var edit: Edit?
     /// The places with nowhere to be drawn, opened from the panel.
     @State private var isListing = false
+    /// "Etsi nimellä", open over the map while a change is on its way.
+    @State private var isSearching = false
+    /// The map or an aerial photograph. Kept on this phone and never synced:
+    /// it is how this person likes to look, not something the family knows.
+    @AppStorage("map.aerial") private var aerial = false
     private let opensEditing: Bool
 
     init(route: PlacesMapRoute) {
@@ -126,6 +134,15 @@ struct PlacesMapScreen: View {
         var rowChosen = false
         /// "Poista sijainti", chosen and waiting to be confirmed.
         var removing = false
+        /// The search answer the mark stands on, until a tap moves it.
+        var found: PlaceLookup.Found?
+
+        /// What "around here" stores: a province when that is what the
+        /// search answered, a municipality otherwise. Never narrower than
+        /// the answer, because a province is not a claim about a parish.
+        var around: GeoPrecision {
+            found?.hint.precision == .region ? .region : .town
+        }
     }
 
     /// The same filter as `GalleryScreen.places`, narrowed to what has
@@ -192,6 +209,20 @@ struct PlacesMapScreen: View {
         // "Peruuta". A back chevron would be a third that says neither, and
         // what it did to the change would be a guess on the person's behalf.
         .navigationBarBackButtonHidden(edit != nil)
+        .toolbar {
+            // A picture and not a word, for the album bar's reason: a word
+            // in a bar stays one size while the text around it grows, and the
+            // audit says so (`GalleryScreen`). A toggle, so that VoiceOver
+            // hears which of the two the map is showing.
+            ToolbarItem(placement: .topBarTrailing) {
+                Toggle(isOn: $aerial) {
+                    Image(systemName: "globe.europe.africa")
+                        .elderTapTarget()
+                }
+                .toggleStyle(.button)
+                .accessibilityLabel("Ilmakuva")
+            }
+        }
         .elderSurface()
         .onAppear {
             // Once. A pop back from a card is the same visit, and the map
@@ -201,9 +232,20 @@ struct PlacesMapScreen: View {
             camera = startingFrame
             if opensEditing, let subject = focus.flatMap(store.subject(id:)) {
                 beginEditing(subject, leavesTheScreen: true)
+                // A place with nowhere to be drawn gives the map nothing to
+                // tap beside, so the card's "Merkitse kartalle" arrives with
+                // the search open on its name. The gazetteer has been asked
+                // that name once already; this time every answer is shown
+                // rather than the first.
+                if subject.place?.precision.mapSpanMetres == nil { isSearching = true }
             }
         }
         .sheet(isPresented: $isListing) { unplacedList }
+        .sheet(isPresented: $isSearching) {
+            PlaceSearchSheet(query: edited?.title ?? "") { found in
+                take(found)
+            }
+        }
     }
 
     /// The focused place with its neighbours around it, or every place.
@@ -292,9 +334,10 @@ struct PlacesMapScreen: View {
                                 .tint(faded ? Elder.wax.opacity(0.35) : Elder.wax)
                                 .annotationTitles(.hidden)
                         } else {
-                            MapCircle(center: centre, radius: span / 3)
-                                .foregroundStyle(Elder.wax.opacity(faded ? 0.05 : 0.14))
-                                .stroke(Elder.wax.opacity(faded ? 0.35 : 1), lineWidth: 2)
+                            circle(
+                                centre, radius: span / 3,
+                                fill: faded ? 0.05 : 0.14, edge: faded ? 0.35 : 1, lineWidth: 2
+                            )
                         }
                         // Not on the place the map was opened on: the panel
                         // names it, and its chip would only lead back to the
@@ -336,16 +379,19 @@ struct PlacesMapScreen: View {
                         }
                         .annotationTitles(.hidden)
                     } else {
-                        MapCircle(center: centre, radius: span / 3)
-                            .foregroundStyle(Elder.wax.opacity(0.14))
-                            .stroke(Elder.wax, lineWidth: 3)
+                        circle(centre, radius: span / 3, fill: 0.14, edge: 1, lineWidth: 3)
                     }
                 }
             }
             // Points of interest off, for the card's reason: this is where the
             // family's memories happened, and a shoal of restaurant pins over
-            // them is somebody else's map.
-            .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+            // them is somebody else's map. The aerial photograph is `.hybrid`
+            // rather than `.imagery`, so that the roads and the villages keep
+            // their names over it: a yard is recognised from above, and found
+            // by the road that leads to it.
+            .mapStyle(aerial
+                ? .hybrid(elevation: .flat, pointsOfInterest: .excludingAll)
+                : .standard(elevation: .flat, pointsOfInterest: .excludingAll))
             .onMapCameraChange(frequency: .onEnd) { context in
                 shown = context.region
             }
@@ -360,6 +406,32 @@ struct PlacesMapScreen: View {
                 including: edit == nil ? .subviews : .all
             )
         }
+    }
+
+    /// A circle the way the map draws "around here": wax, and over the aerial
+    /// photograph on a cream line as well, for the mark's reason. Wax edges
+    /// the street map's pale ground at 4.09:1, and against the photograph's
+    /// forest and water it is gone, 1.03–1.07:1 at the median, where cream
+    /// is 5.75–6.00:1 (measured 25 Sep 2026, ARCHITECTURE §18); cream on wax
+    /// is 5.59:1 whatever the photograph holds. MapKit draws its overlays in
+    /// the order given, so the cream one goes first and the wax lies along
+    /// its middle.
+    @MapContentBuilder
+    private func circle(
+        _ centre: CLLocationCoordinate2D,
+        radius: Double,
+        fill: Double,
+        edge: Double,
+        lineWidth: CGFloat
+    ) -> some MapContent {
+        if aerial {
+            MapCircle(center: centre, radius: radius)
+                .foregroundStyle(Color.clear)
+                .stroke(Elder.cream.opacity(edge), lineWidth: lineWidth + 4)
+        }
+        MapCircle(center: centre, radius: radius)
+            .foregroundStyle(Elder.wax.opacity(fill))
+            .stroke(Elder.wax.opacity(edge), lineWidth: lineWidth)
     }
 
     /// What the map says under itself: about the place it was opened on, the
@@ -468,6 +540,22 @@ struct PlacesMapScreen: View {
                 Text("Napauta karttaa kohtaan, jossa \(subject.displayTitle) on.")
                     .elderBody()
                     .accessibilityAddTraits(.isHeader)
+                // Which answer the mark stands on, in the words the search
+                // gave it: the one thing on the screen that tells somebody
+                // who cannot see the map what "Tallenna" would save.
+                if let found = edit.found {
+                    let words = [found.name, found.detail].compactMap { $0 }.joined(separator: ", ")
+                    Text("Hakutulos: \(words)")
+                        .elderBody()
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Button {
+                    isSearching = true
+                } label: {
+                    buttonText("Etsi nimellä")
+                }
+                .elderPrimary(false)
+                .elderTapTarget()
                 precisionRow("Tarkka kohta", isChosen: edit.exact) { choose(exact: true) }
                 precisionRow("Suunnilleen tällä seudulla", isChosen: !edit.exact) { choose(exact: false) }
             }
@@ -480,6 +568,7 @@ struct PlacesMapScreen: View {
                 Button {
                     self.edit?.removing = true
                     self.edit?.draft = nil
+                    self.edit?.found = nil
                 } label: {
                     buttonText("Poista sijainti")
                 }
@@ -677,6 +766,15 @@ struct PlacesMapScreen: View {
             .padding(.vertical, 10)
             .frame(minWidth: Elder.minTapTarget, minHeight: Elder.minTapTarget)
             .background(Elder.wax, in: RoundedRectangle(cornerRadius: 14))
+            // Over the aerial photograph, the circles' cream line (`circle`):
+            // the words are on wax either way, and it is the chip's edge that
+            // dark forest would take away.
+            .overlay {
+                if aerial {
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Elder.cream, lineWidth: 2)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
@@ -712,6 +810,7 @@ struct PlacesMapScreen: View {
         guard var change = edit else { return }
         if !change.rowChosen { change.exact = true }
         change.draft = point
+        change.found = nil
         change.removing = false
         edit = change
         guard change.exact, let shown else { return }
@@ -735,7 +834,7 @@ struct PlacesMapScreen: View {
         edit?.rowChosen = true
         if !exact, let point = edit?.draft ?? edited?.place.map({
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-        }), let span = GeoPrecision.town.mapSpanMetres {
+        }), let span = edit?.around.mapSpanMetres {
             withAnimation {
                 camera = .region(MKCoordinateRegion(
                     center: point,
@@ -755,6 +854,12 @@ struct PlacesMapScreen: View {
     /// way needs none: "around here" over a spot claims less, and a person
     /// may always say they are less sure.
     ///
+    /// **A search answer is held to the same rule.** A street address the
+    /// search found is a spot, and saves as one; a municipality or a province
+    /// it found is a circle of its own size under either row, until a tap
+    /// says where in it. A province stays a province under "around here"
+    /// (`Edit.around`) rather than shrinking to a parish.
+    ///
     /// **Five metres, not equality**, for whether a tap moved anything: a
     /// map does not hand a coordinate back exactly as it was given one, and
     /// five metres is under anything a finger can mean and over anything the
@@ -771,7 +876,8 @@ struct PlacesMapScreen: View {
             return PlaceHint(latitude: current.latitude, longitude: current.longitude, precision: .unknown)
         }
         if let draft = edit.draft {
-            let precision: GeoPrecision = edit.exact ? .exact : .town
+            if edit.exact, let found = edit.found, !found.hint.precision.deservesAPin { return nil }
+            let precision: GeoPrecision = edit.exact ? .exact : edit.around
             if let current, current.precision == precision,
                CLLocation(latitude: draft.latitude, longitude: draft.longitude)
                    .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude)) <= 5 {
@@ -783,6 +889,32 @@ struct PlacesMapScreen: View {
             return PlaceHint(latitude: current.latitude, longitude: current.longitude, precision: .town)
         }
         return nil
+    }
+
+    /// An answer chosen in "Etsi nimellä": the mark goes where the answer is
+    /// and the rows say what it pinned down, and the camera shows it the way
+    /// the map will draw it — a street address close up, a municipality or a
+    /// province whole. The row is the answer's and not a person's choice, so
+    /// a tap afterwards is a spot, as a tap always is.
+    private func take(_ found: PlaceLookup.Found) {
+        guard var change = edit else { return }
+        let point = CLLocationCoordinate2D(latitude: found.hint.latitude, longitude: found.hint.longitude)
+        change.draft = point
+        change.found = found
+        change.exact = found.hint.precision.deservesAPin
+        change.rowChosen = false
+        change.removing = false
+        edit = change
+        let across = found.hint.precision.deservesAPin
+            ? 1_500
+            : (found.hint.precision.mapSpanMetres ?? 14_000) * 1.3
+        withAnimation {
+            camera = .region(MKCoordinateRegion(
+                center: point,
+                latitudinalMeters: across,
+                longitudinalMeters: across
+            ))
+        }
     }
 
     /// Stores the change as this person's word (§18): who and when, which

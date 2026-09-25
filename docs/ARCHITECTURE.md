@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 84 sweep tests, each auditing one screen at the default text size and again at the largest, out of 246 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 88 sweep tests, each auditing one screen at the default text size and again at the largest, out of 255 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -3596,6 +3596,26 @@ about 50 × 11 pt in the map's corner, is forgiven in `AccessibilityPolicy`
 the way the search field's clear button is (§15). **§5's condition that a browsable map
 owes its own removal is still owed**, and that row says so.
 
+**Since 25 Sep 2026 the same map can be an aerial photograph**, from a globe in
+its top bar. It is `.hybrid` rather than `.imagery`, so that the roads and the
+villages keep their names over it — a yard is recognised from above and found
+by the road that leads to it — and the choice is kept on the phone as
+`map.aerial` and never synced, because it is how one person likes to look and
+not something the family knows. Over the photograph the circles gain a cream
+line under their wax and the chips a cream edge, and that was measured rather
+than assumed: a shape against a ground nobody can predict is the one contrast
+the palette cannot state in advance, and a circle is drawn by MapKit rather
+than being an element on screen, so the audit has nothing of it to measure. On
+the film-week archive at the default size, the ground in a 4 pt band just
+outside each of the three circles had a median relative luminance of about
+0.12. Wax against it measured 1.03–1.07:1 at the median and reached 3:1 on
+none of those pixels; cream measured 5.75–6.00:1 and reached 3:1 on
+97.8–99.4 % of them, the rest being the palest ground in the band. The street
+map turns this round — wax 4.09:1 at the median and at least 3:1 on 99.1–100 %
+of the same band, cream 1.37:1 — which is why the cream line is drawn over the
+photograph and nowhere else. `testPlacesMapAerial` audits the screen at both
+sizes.
+
 A single place keeps the map on its own card, `PlaceMapCard` (below). The
 second one, the sheet that card opened from 19 Sep 2026 so that the point could
 be moved by hand, went on 25 Sep: the card opens this map instead, and the point
@@ -3649,7 +3669,11 @@ the check above is written against the precision either way.
 quota to meter, no Worker round trip, and **no location permission** — looking up
 a name is not asking where the phone is, so `Info.plist` gains nothing and the
 80-year-old is asked nothing. What leaves the device is the place name and
-nothing else: not the memory, not the transcript, not who told it.
+nothing else: not the memory, not the transcript, not who told it. Since
+25 Sep 2026 the family's map has a search of its own, *"Etsi nimellä"*, and
+what it sends is what somebody typed, under the same bias and the same
+boundary — the family's map never asks where the phone is either, and
+somebody who wants their own yard on it finds it by name or taps it.
 
 The lookup lives in `PlaceLookup`, apart from the resolver that walks the
 archive, so that both tables below can be re-measured against the shipping code:
@@ -3755,7 +3779,7 @@ and the miss should be seen while it can still be tapped again. The card's
 corner now says where its own tap goes, *"Avaa kartta"*, and both phrases above
 left the tables with the sheet. A confirmed place with nothing to draw says
 *"Merkitse kartalle"* where its map would be, and opens the same editor
-straight away.
+straight away, with the search open on its name (below).
 
 **Nothing is saved until somebody has tapped**, measured in metres against the
 point the place already has. That guard is rule 5 rather than tidiness: the
@@ -3789,12 +3813,37 @@ Vahvisti Aino."* A corrected title keeps such a point on both sides
 that stays, and only a newer word moves it. Sync below has the rules and what
 checks them.
 
-**What VoiceOver gets is the screen and not the task.** The map is one labelled
-element with a hint, the buttons are ordinary buttons, and somebody who cannot
-see the map can read what the screen is for and leave the stored point as it
-was. Placing a point inside a landscape is visual work; four "move north"
-actions over ground nothing can name would be the appearance of an answer
-rather than one.
+**VoiceOver got the screen and not the task until 25 Sep 2026.** The map was
+one labelled element with a hint, the buttons were ordinary buttons, and
+somebody who could not see the map could read what the screen was for and
+leave the stored point as it was. Placing a point inside a landscape is visual
+work, and four "move north" actions over ground nothing can name would be the
+appearance of an answer rather than one — so the map in the editor is still
+one element. What changed is a way in that is not visual. *"Etsi nimellä"* in
+the editor's panel opens `PlaceSearchSheet`, where the answers are rows of
+words: a name in bold and the line that tells two of the same name apart.
+Choosing one proposes the point rather than saving it, and the panel names
+the answer the mark stands on (*"Hakutulos: Koivulantie 12, 52200 Puumala"*),
+which is the one sentence that tells somebody who cannot see the map what
+*"Tallenna"* would save. The card's *"Merkitse kartalle"* arrives with the
+search already open on the place's name, because a place with nowhere to be
+drawn gives the map nothing to tap beside, and this time every answer is
+shown rather than the first.
+
+**An answer keeps the precision it came with**, which is the tap rule of the
+paragraph above applied to the gazetteer. A street address the search found is
+a spot and saves as one; a municipality or a province is a circle of its own
+size under either row, and *"Tarkka kohta"* cannot turn it into a spot until a
+tap says where in it. *"Suunnilleen tällä seudulla"* stores a province as a
+province rather than shrinking it to a parish. A tap after an answer is a tap,
+and the answer's name leaves the panel with it. A search that does not get
+through answers differently from one that found nothing — MapKit reports
+*nothing found* as an error of its own, `MKError.placemarkNotFound`, and that
+one error is read as the empty list — because the two ask the person for
+different things, and both sentences say that the map still takes a tap.
+`-placeSearch stub` and `-placeSearch failing` give the tests three fixed
+answers and a failure, since a real search needs a network and answers
+differently from one day to the next; `PlacePinTests` drives each rule.
 
 The affordance is inside the card rather than in a row beneath it, and that too
 was measured. As a row it pushed the card's last memory sixty points down onto
@@ -4787,14 +4836,14 @@ the disc a shape (WCAG 1.4.11), in the same ink at 75 % the filled disc
 measured against both grounds in §15. An unconfirmed person keeps the
 proposal ring and the badge over the face, as over the letter.
 
-What VoiceOver gets here is the screen and not the task, as on the map in
-§18. Each photograph is a button with its name, the picture on the focus
-screen says *"Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta"*,
-and the spot is the middle until somebody who can see the picture taps
-elsewhere — so *"Tallenna"* is never disabled and a face can be saved
-without a tap nobody can aim. The avatar itself stays hidden from the
-accessibility tree, as every avatar is: the name is in the row beside it,
-and "image" is all a face could add.
+What VoiceOver gets here is the screen and not the task, as it did on the map
+in §18 before that screen had a search. Each photograph is a button with its
+name, the picture on the focus screen says *"Kasvot otetaan kuvan keskeltä,
+ellei muuta kohtaa napauteta"*, and the spot is the middle until somebody who
+can see the picture taps elsewhere — so *"Tallenna"* is never disabled and a
+face can be saved without a tap nobody can aim. The avatar itself stays
+hidden from the accessibility tree, as every avatar is: the name is in the
+row beside it, and "image" is all a face could add.
 
 ### The rules on the wire
 

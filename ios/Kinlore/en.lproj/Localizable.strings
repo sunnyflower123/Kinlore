@@ -622,6 +622,22 @@
 "Merkitse kartalle" = "Mark on the map";
 "Avaa kartan, jolla paikan voi merkitä napauttamalla." = "Opens a map where the place can be marked with a tap.";
 
+/* Finding a place by name on the family's map, and the aerial photograph
+   (25 Sep 2026). What leaves the phone is what was typed and nothing else,
+   and the search is how VoiceOver places a point at all. "Hakutulos" names
+   the answer the mark stands on until a tap moves it. "Ilmakuva" is the
+   bar's toggle between the street map and the photograph from above. */
+"Etsi nimellä" = "Find by name";
+"Etsi kylä, tila tai osoite" = "Search for a village, farm or address";
+"Hae" = "Search";
+"Haetaan…" = "Searching…";
+"Tyhjennä haku" = "Clear the search";
+"Haku ei onnistunut. Voit napauttaa kohdan kartalta." = "The search did not work. You can tap the spot on the map.";
+"Tällä nimellä ei löytynyt paikkaa. Voit kokeilla toista nimeä tai napauttaa kohdan kartalta." = "No place was found by that name. You can try another name or tap the spot on the map.";
+"Näyttää kohdan kartalla ennen tallennusta." = "Shows the spot on the map before anything is saved.";
+"Hakutulos: %@" = "Search result: %@";
+"Ilmakuva" = "Aerial photo";
+
 /* --- The failure paths, 12 Sep 2026 --------------------------------------
    Every one of these was Finnish on an English phone, and the check could not
    see one of them: each sat in a ternary, an assignment or a returned String

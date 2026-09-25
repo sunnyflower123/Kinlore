@@ -1759,6 +1759,66 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// "Etsi nimellä" with its answers in: a sheet of rows over the map, each
+    /// a name in bold and the line under it that tells two of the same name
+    /// apart, in the supporting colour. The search is stubbed
+    /// (`-placeSearch stub`), because a real one needs a network and answers
+    /// differently from one day to the next.
+    func testPlaceSearch() throws {
+        try sweep("Etsi nimellä", arguments: editingPuumala + ["-placeSearch", "stub"]) { app, _ in
+            require(app.buttons["Etsi nimellä"], "the editor's way to search").tap()
+            settle(require(
+                app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Koivulantie 12")).firstMatch,
+                "the search's answers"
+            ))
+        }
+    }
+
+    /// The search that did not get through, which says so in the warning
+    /// colour and says what is still possible.
+    func testPlaceSearchFailing() throws {
+        try sweep("Etsi nimellä, ei yhteyttä", arguments: editingPuumala + ["-placeSearch", "failing"]) { app, _ in
+            require(app.buttons["Etsi nimellä"], "the editor's way to search").tap()
+            settle(require(
+                app.staticTexts["Haku ei onnistunut. Voit napauttaa kohdan kartalta."],
+                "the failed search's sentence"
+            ))
+        }
+    }
+
+    /// The editor after an answer was chosen, which is the tallest its panel
+    /// gets: the sentence, the answer named under it, the search, the two
+    /// rows of how sure, and the buttons.
+    func testPlacesMapEditingWithAnAnswer() throws {
+        try sweep("Kartta, hakutulos", arguments: editingPuumala + ["-placeSearch", "stub"]) { app, _ in
+            require(app.buttons["Etsi nimellä"], "the editor's way to search").tap()
+            require(
+                app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Koivulantie 12")).firstMatch,
+                "the search's answers"
+            ).tap()
+            settle(require(
+                app.staticTexts["Hakutulos: Koivulantie 12, 52200 Puumala"],
+                "the chosen answer, named under the map"
+            ))
+        }
+    }
+
+    /// The map over the aerial photograph, on the film-week archive's three
+    /// places: the chips on ground nobody can predict, and the circles on
+    /// the cream line that ground asks for. `-map.aerial YES` is the bar's
+    /// toggle, set the way the phone keeps it.
+    func testPlacesMapAerial() throws {
+        try sweep(
+            "Kartta, ilmakuva",
+            arguments: ["-seed", "film-week", "-tab", "memories", "-screen", "placesMap", "-map.aerial", "YES"]
+        ) { app, _ in
+            let place = app.buttons
+                .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
+                .firstMatch
+            settle(require(place, "Puumala on the aerial map"))
+        }
+    }
+
     /// The editor on Puumala, opened as the card's "Merkitse kartalle" opens
     /// it — the launch hook's `-screen placesMapEditing`.
     private var editingPuumala: [String] {

@@ -134,30 +134,44 @@ final class PlacesMapTests: XCTestCase {
 
     /// A confirmed place with nothing to draw — a farm the gazetteer did not
     /// know, which is most of them (§18) — says "Merkitse kartalle" where its
-    /// map would be, and that opens the family's map already placing it.
+    /// map would be, and that opens the family's map already placing it,
+    /// with the search open on the place's name: the map has nothing of the
+    /// place's to tap beside. Closing the search leaves the map placing it,
     /// "Peruuta" comes straight back to the card, which is where the change
-    /// began; a tap and "Tallenna" leave a card with a map on it.
+    /// began, and an answer and "Tallenna" leave a card with a map on it.
     func testTheCardMarksAPlaceWithNoPoint() {
-        let app = launch(["-seed", "unplaced", "-tab", "memories"])
+        let app = launch(["-seed", "unplaced", "-tab", "memories", "-placeSearch", "stub"])
         open("Koivula", in: app)
 
         let mark = app.buttons["Merkitse kartalle"]
         for _ in 0 ..< 4 where !mark.exists { app.swipeUp() }
         XCTAssertTrue(mark.waitForExistence(timeout: 10), "a place with no point offers no way onto the map")
         mark.tap()
-        XCTAssertTrue(
-            app.staticTexts["Napauta karttaa kohtaan, jossa Koivula on."].waitForExistence(timeout: 10),
-            "the map did not open placing the place"
+        let answer = app.buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Koivulantie 12"))
+            .firstMatch
+        XCTAssertTrue(answer.waitForExistence(timeout: 10), "the map did not open searching for the place")
+        XCTAssertEqual(
+            app.textFields.firstMatch.value as? String, "Koivula",
+            "the search did not start from the place's own name"
         )
 
+        app.collectionViews.buttons["Peruuta"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Napauta karttaa kohtaan, jossa Koivula on."].waitForExistence(timeout: 10),
+            "closing the search did not leave the map placing the place"
+        )
         app.buttons["Peruuta"].tap()
         XCTAssertTrue(mark.waitForExistence(timeout: 10), "\"Peruuta\" did not come back to the card")
 
         mark.tap()
-        tapTheEditableMap(in: app)
-        let save = app.buttons["Tallenna"]
-        XCTAssertTrue(save.wait(for: \.isEnabled, toEqual: true, timeout: 10), "the tap on the map left nothing to save")
-        save.tap()
+        XCTAssertTrue(answer.waitForExistence(timeout: 10), "the second visit did not open searching")
+        answer.tap()
+        XCTAssertTrue(
+            app.staticTexts["Hakutulos: Koivulantie 12, 52200 Puumala"].waitForExistence(timeout: 10),
+            "the chosen answer is not what the map proposes"
+        )
+        app.buttons["Tallenna"].tap()
         XCTAssertTrue(
             app.staticTexts["Tarkka kohta. Vahvisti Minä."].waitForExistence(timeout: 10),
             "the point never reached the archive as somebody's word"

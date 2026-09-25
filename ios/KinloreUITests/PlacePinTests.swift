@@ -175,6 +175,141 @@ final class PlacePinTests: XCTestCase {
         XCTAssertFalse(right.exists, "a point somebody vouched for still asks to be vouched for")
     }
 
+    /// "Etsi nimellä": the answers are rows of words, and choosing one
+    /// proposes the point rather than saving it. The panel names the answer
+    /// the mark stands on — the one thing that tells somebody who cannot see
+    /// the map what "Tallenna" would save — and a street address is a spot,
+    /// so it reaches the archive as one, under the person's word.
+    ///
+    /// Stubbed (`-placeSearch stub`) because a real search needs a network
+    /// and answers differently from one day to the next.
+    func testASearchAnswerPlacesThePoint() {
+        let app = launch(["-seed", "archive", "-tab", "memories", "-placeSearch", "stub"])
+        openPuumalasMap(in: app)
+        startChanging(in: app)
+        search(in: app)
+        answer("Koivulantie 12", in: app).tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Hakutulos: Koivulantie 12, 52200 Puumala"].waitForExistence(timeout: 10),
+            "the chosen answer is not what the panel says the mark stands on"
+        )
+        XCTAssertTrue(app.buttons["Tarkka kohta"].isSelected, "a street address was not offered as a spot")
+        let save = app.buttons["Tallenna"]
+        XCTAssertTrue(save.isEnabled, "a chosen answer left nothing to save")
+        save.tap()
+        XCTAssertTrue(
+            app.staticTexts["Tarkka kohta. Vahvisti Minä."].waitForExistence(timeout: 10),
+            "the answer did not reach the archive as a spot under somebody's word"
+        )
+    }
+
+    /// A province the search found is a province (rule 5). It arrives as
+    /// "around here", "Tarkka kohta" cannot turn it into a spot nobody
+    /// tapped, and choosing "around here" again saves it as a circle.
+    func testAProvinceFoundIsNotASpot() {
+        let app = launch(["-seed", "archive", "-tab", "memories", "-placeSearch", "stub"])
+        openPuumalasMap(in: app)
+        startChanging(in: app)
+        search(in: app)
+        answer("Etelä-Savo", in: app).tap()
+
+        let save = app.buttons["Tallenna"]
+        let around = app.buttons["Suunnilleen tällä seudulla"]
+        XCTAssertTrue(around.waitForExistence(timeout: 10), "the sheet did not close on the editor")
+        XCTAssertTrue(around.isSelected, "a province was offered as a spot")
+        XCTAssertTrue(save.isEnabled, "a chosen province left nothing to save")
+
+        app.buttons["Tarkka kohta"].tap()
+        XCTAssertFalse(save.isEnabled, "a province the search found was about to be saved as a spot nobody tapped")
+
+        around.tap()
+        save.tap()
+        XCTAssertTrue(
+            app.staticTexts["Suunnilleen tällä seudulla. Vahvisti Minä."].waitForExistence(timeout: 10),
+            "the province did not reach the archive as a circle under somebody's word"
+        )
+    }
+
+    /// A tap after an answer is a tap: the mark moves to the finger and the
+    /// panel stops naming an answer the mark no longer stands on.
+    func testATapAfterAnAnswerIsASpot() {
+        let app = launch(["-seed", "archive", "-tab", "memories", "-placeSearch", "stub"])
+        openPuumalasMap(in: app)
+        startChanging(in: app)
+        search(in: app)
+        answer("Etelä-Savo", in: app).tap()
+
+        let named = app.staticTexts["Hakutulos: Etelä-Savo, Suomi"]
+        XCTAssertTrue(named.waitForExistence(timeout: 10), "the chosen answer is not named under the map")
+        tapTheMap(in: app)
+        XCTAssertTrue(named.waitForNonExistence(timeout: 10), "the panel still names an answer the mark no longer stands on")
+        XCTAssertTrue(app.buttons["Tarkka kohta"].isSelected, "a tap after the answer was not taken as a spot")
+        XCTAssertTrue(app.buttons["Tallenna"].isEnabled, "the tap left nothing to save")
+    }
+
+    /// A search that does not get through says so, and says what is still
+    /// possible: the map under the sheet takes a tap without a network.
+    func testASearchThatFailsLeavesTheMap() {
+        let app = launch(["-seed", "archive", "-tab", "memories", "-placeSearch", "failing"])
+        openPuumalasMap(in: app)
+        startChanging(in: app)
+        search(in: app)
+
+        XCTAssertTrue(
+            app.staticTexts["Haku ei onnistunut. Voit napauttaa kohdan kartalta."].waitForExistence(timeout: 10),
+            "a search that did not get through does not say so"
+        )
+        app.collectionViews.buttons["Peruuta"].tap()
+        tapTheMap(in: app)
+        XCTAssertTrue(
+            app.buttons["Tallenna"].wait(for: \.isEnabled, toEqual: true, timeout: 10),
+            "the map took no tap after the search failed"
+        )
+    }
+
+    /// The field wraps, so that an address typed at the largest text size
+    /// can be read whole, and a field that wraps takes the return key as a
+    /// new line. Here it is "Hae" instead: nothing breaks the line, and the
+    /// keyboard goes away so that the answers under it can be seen.
+    func testReturnSearchesRatherThanBreakingTheLine() {
+        let app = launch(["-seed", "archive", "-tab", "memories", "-placeSearch", "stub"])
+        openPuumalasMap(in: app)
+        startChanging(in: app)
+        search(in: app)
+
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search has no field")
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "never arrived: the keyboard")
+        field.typeText("\n")
+        XCTAssertTrue(
+            app.keyboards.firstMatch.waitForNonExistence(timeout: 10),
+            "the return key left the keyboard over the answers"
+        )
+        XCTAssertEqual(field.value as? String, "Puumala", "the return key broke the line instead of searching")
+    }
+
+    /// "Etsi nimellä" from the editor's panel. The sheet opens on the place's
+    /// name and searches it at once.
+    private func search(in app: XCUIApplication) {
+        let button = app.buttons["Etsi nimellä"]
+        XCTAssertTrue(button.waitForExistence(timeout: 10), "the editor offers no way to search")
+        button.tap()
+        XCTAssertTrue(
+            app.navigationBars["Etsi nimellä"].waitForExistence(timeout: 10),
+            "never arrived: the search"
+        )
+    }
+
+    /// One of the search's answers, by the name it starts with; the line
+    /// under the name follows it in the same label.
+    private func answer(_ name: String, in app: XCUIApplication) -> XCUIElement {
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "the search did not answer with \(name)")
+        return row
+    }
+
     /// The map in the editor, which is one element with one sentence: a tap
     /// anywhere on it is the control.
     private func editableMap(in app: XCUIApplication) -> XCUIElement {
