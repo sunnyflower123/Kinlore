@@ -273,9 +273,11 @@ instead of presenting only the half that flatters.
 
 What the repo does guarantee: `OPENROUTER_API_KEY` exists only as a Worker
 secret, `provider: { data_collection: "deny" }` is unconditional and never a
-per-call flag, and the cause of an error never reaches the client — upstream
-bodies can echo back the memory that was just told, so they go to
-`console.error` and the app gets `{ error: "upstream_failed" }`.
+per-call flag, and an upstream error's own words reach neither the client nor
+the log. The app gets `{ error: "upstream_failed" }`. The Worker's log gets the
+HTTP status and the provider's own error code, and never an upstream body:
+those can echo back the memory that was just told, and Workers Logs is a store
+the family can neither export nor clear.
 
 ## Layout
 
@@ -290,7 +292,7 @@ bodies can echo back the memory that was just told, so they go to
 ## Setting it up
 
 **Prerequisites:** Xcode 26.6 (iOS 26.5 simulator SDK), XcodeGen
-(`brew install xcodegen`), Node 20+. **Nothing from Apple beyond Xcode** — no
+(`brew install xcodegen`), Node 22.18+. **Nothing from Apple beyond Xcode** — no
 paid developer account, no certificates, no Sign in with Apple. What else is not
 needed, and why, is in [`SETUP.md`](docs/SETUP.md#what-is-not-needed).
 
@@ -331,8 +333,8 @@ curl -s http://localhost:8787/health
 ```
 
 `{"ok":true,"hasKey":true}` means the key is in place. If `hasKey` is `false`,
-extraction answers `502 upstream_failed` and the cause goes to the Worker's log
-only — upstream bodies can echo back the memory that was just told.
+extraction answers `502 upstream_failed`, and the Worker's log records the
+status, 401, and nothing more.
 
 ### 3. Point the app at it
 

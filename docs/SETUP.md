@@ -95,9 +95,10 @@ curl -s http://localhost:8787/health
 ```
 
 Returns `{"ok":true,"hasKey":true}` when the key is in place. If `hasKey` is
-`false`, extraction answers `502 upstream_failed` — the cause goes only to the
-Worker's log, never to the app, because it can contain account details or echo
-back the memory the user just told.
+`false`, extraction answers `502 upstream_failed`, and the Worker's log records
+the status, 401, and nothing more. No upstream body reaches either the app or
+the log, because it can contain account details or echo back the memory the
+user just told.
 
 ### iOS app — public
 

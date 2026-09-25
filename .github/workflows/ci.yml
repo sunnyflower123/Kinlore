@@ -66,7 +66,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Not 20. Seven checks in verify.sh import the backend's TypeScript
+          # directly, and Node strips types by default only from 22.18. Measured
+          # 25 Sep 2026 with `--no-experimental-strip-types`, which is where 20
+          # stands: all seven fail with ERR_UNKNOWN_FILE_EXTENSION, and pass
+          # without the flag on 24, the version verify.sh is run on here.
+          node-version: 24
           cache: npm
           cache-dependency-path: backend/package-lock.json
 
