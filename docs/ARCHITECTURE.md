@@ -1,12 +1,14 @@
-# Architecture — the remaining half
+# Architecture
 
-This document designs what had not been built yet. The finished part is
-described in [PLAN.md](PLAN.md) §7 and in the code.
+This document explains how Kinlore works and why, one mechanism to a section.
+It began in August as the design of what had not been built yet, and most of
+that has been built since; what was finished before it began is described in
+[PLAN.md](PLAN.md) §7.
 
 **If you read one section, read [§1](#1-where-things-stand)** — an inventory of
 what is built and what is not, ending in a warning about why that inventory has
-been wrong before. Sections 15 to 20 are each one bug: what it was, how it hid,
-and what found it.
+been wrong before. Sections 15 to 20 are about things that were wrong: what
+they were, how they hid, and what found them.
 
 ## Contents
 
@@ -30,6 +32,7 @@ and what found it.
 [14. Settings — taking the archive out, and leaving](#14-settings--taking-the-archive-out-and-leaving) ·
 [21. The words](#21-the-words) ·
 [22. The one blue button](#22-the-one-blue-button) ·
+[23. The card, and why the front door was a blank page](#23-the-card-and-why-the-front-door-was-a-blank-page) ·
 [24. Colours by the telling](#24-colours-by-the-telling) ·
 [25. A face on the card](#25-a-face-on-the-card)
 
@@ -1865,7 +1868,7 @@ Built, in the order they were built:
     unconfirmed proposal, and a proposal on a tile is rule 4 inverted; and
     nothing renames a photograph yet, so a wrong caption would be for keeps.
 
-Not built:
+Cut from v1, and then built after all:
 
 13. ~~**Family tree** — a drawn graph. **A trap.**~~ **Built on 13 Sep 2026**,
    on a family member's phone only. Relationships stay lists on the person
@@ -2520,11 +2523,13 @@ Decisions, in the order they were argued about:
 One knowingly open edge: every round adds three questions and answers one, so
 a long interview grows the open-question list. That is today's behaviour for
 every answered question, not something the loop introduced — if it starts to
-hurt, the cap belongs in the store, not here.
+hurt, the cap belongs in the store, not here. It went there on 25 Sep 2026:
+one subject carries at most five open questions (§12).
 
 The pairing required by "every addition requires a removal" (CLAUDE.md): the
 drawn family-tree graph, already last in line in §8, is now formally out of
-v1. The person-card lists carry the same information.
+v1. The person-card lists carry the same information. It was built after all
+on 13 Sep 2026 (§8, item 13), and the lists are still there.
 
 ## 11. Asked questions
 
