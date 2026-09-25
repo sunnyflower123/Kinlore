@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 75 sweep tests, each auditing one screen at the default text size and again at the largest, out of 218 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 77 sweep tests, each auditing one screen at the default text size and again at the largest, out of 224 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -3798,9 +3798,12 @@ coordinate on one map, by the rule the place card already follows — a pin for
 chip is a `NavigationLink` to the same `SubjectDetailScreen` the Paikat list
 opens. The map is pushed on the album's own stack from a *"Näytä kartalla"*
 button under the Paikat heading, shown only when there is something to draw
-and not while searching, so the back chevron walks back through map and card
-alike and `isReturningFromCard` keeps reading the path (`GalleryScreen`'s
-`path` became a `NavigationPath` for it). Nothing is stored, fetched or
+and not while searching — and since 25 Sep 2026 from a map icon in the
+album's top bar too, in every album including an empty one, because a door
+that appears only once there are places is a door nobody learns — so the
+back chevron walks back through map and card alike and `isReturningFromCard`
+keeps reading the path (`GalleryScreen`'s `path` became a `NavigationPath`
+for it). Nothing is stored, fetched or
 extracted for the screen: zero Worker rows, zero columns. The Paikat list
 stays as the way in for VoiceOver and for every place without a coordinate —
 nine of the ten in production on the day the map was built, read from the
@@ -3970,6 +3973,14 @@ has least of. The words in the card's corner, *"Merkitse tarkka paikka"* over a
 circle and *"Siirrä paikkaa kartalla"* over a point, are what keeps the control
 from being a secret.
 
+**Since 25 Sep 2026 the card's map opens the family's map instead**, centred
+on the place, and the sheet is one button further on: *"Muuta sijaintia"* in
+the panel under that map. The founder's report was that the land around a
+point could not be looked at without the point going with it — the sheet was
+the only larger map a place had, so every look was also an edit. On the
+family's map the camera is only a camera. The card's corner now says where
+the tap goes, *"Avaa kartta"*, and both phrases above left the tables with it.
+
 **Nothing is saved until the mark has moved**, measured in metres against where
 the screen opened. That guard is rule 5 rather than tidiness: the stored answer
 for *Puumala* is a municipality, and writing it back as `exact` because
@@ -4092,9 +4103,10 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
   pair as one opaque blob, keep null as the only server-visible state — and it
   is recorded here so it is a decision to revisit rather than a discovery to
   make twice.
-- Only `PlaceMapCard` and `PlacePinSheet` read a coordinate, and both read the
-  local archive rather than D1, so what accumulates before v1.1 is bounded and
-  re-sealable by the same sweep that resolved it.
+- Only `PlaceMapCard`, `PlacesMapScreen` and `PlacePinSheet` read a
+  coordinate, and all three read the local archive rather than D1, so what
+  accumulates before v1.1 is bounded and re-sealable by the same sweep that
+  resolved it.
 
 `InviteShare`'s doc comment beside the invite text already says the smaller
 thing lever 3 promises about the key; this paragraph is where the whole of

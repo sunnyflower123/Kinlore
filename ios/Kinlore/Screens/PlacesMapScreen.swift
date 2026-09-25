@@ -1,21 +1,58 @@
 import MapKit
 import SwiftUI
 
+/// What opens the family's map, and where it opens.
+///
+/// A value on the navigation path rather than a Boolean, so that the map lives
+/// on the same `NavigationStack` as the cards it opens and the back chevron
+/// walks back through both (see `GalleryScreen.path`). Both stacks that can
+/// show a place card register it (`placesMapDestinations`): the album's, and
+/// Ihmiset's, where a place card is reached through a person's memories.
+struct PlacesMapRoute: Hashable {
+    /// The place the map opens centred on, by subject id — what a place
+    /// card's own small map asks for. Nil opens on every place at once, which
+    /// is what the album's two doors ask for.
+    var focus: String?
+}
+
+extension View {
+    /// The family's map, on a stack that shows place cards.
+    func placesMapDestinations() -> some View {
+        navigationDestination(for: PlacesMapRoute.self) { route in
+            PlacesMapScreen(route: route)
+        }
+    }
+}
+
 /// The family's places on one map, every one of them a door to the card
 /// that already exists.
 ///
 /// ARCHITECTURE §18 said until 21 Sep 2026 that there was no screen of
 /// places and that the absence was deliberate; PLAN.md §5 keeps the reasons,
 /// and its condition that a browsable map "owes its own removal" is still
-/// owed. The founder asked for the map on 21 Sep, and this is the cheapest
-/// shape it has: nothing new is stored or fetched, and nothing is drawn here
-/// that `PlaceMapCard` does not already draw. Each confirmed place with a
+/// owed. The founder asked for the map on 21 Sep, and asked on 25 Sep for it
+/// to be somewhere a person finds without looking for it — the album's top
+/// bar — and for looking at it to move nothing. Each confirmed place with a
 /// coordinate is drawn by the card's rule — a pin for an exact answer, a
 /// circle a third of the span for a municipality (rule 5) — and carries a
 /// chip with its name and how many memories it holds. The chip is a
 /// `NavigationLink` to the same `SubjectDetailScreen` the Paikat list opens,
 /// pushed on the same stack, so the back chevron and the list underneath
 /// are unchanged.
+///
+/// **Looking is not editing.** The mark that corrected a place used to sit in
+/// the middle of the screen and read its point off the camera
+/// (`PlacePinSheet`), so every pan was also a move and nobody could look
+/// around a place without moving it. Here the camera is only a camera: it
+/// can be dragged and pinched anywhere, and no point changes until somebody
+/// asks for that with "Muuta sijaintia".
+///
+/// **Opened from a place card, the map is about that place.** The camera
+/// starts on it (`framing(focus:among:)`), its own chip is left off because
+/// the panel under the map names it and the chip would lead back to the
+/// card just left, and the panel says how sure the archive is of the point:
+/// the same two words the card's map says out loud, and where the point came
+/// from.
 ///
 /// The Paikat list stays. This is a third way to the same card, not the only
 /// one: VoiceOver walks the list, and a place without a coordinate — nine of
@@ -24,11 +61,46 @@ struct PlacesMapScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dynamicTypeSize) private var typeSize
 
+    /// The place the panel speaks for, by subject id. The route's to begin
+    /// with, and let go by "Näytä kaikki paikat".
+    @State private var focus: String?
+    /// Where the map is looking. A binding rather than `initialPosition`, so
+    /// that "Näytä kaikki paikat" can move it — and so that coming back from a
+    /// card finds the map where it was left rather than framed again.
+    @State private var camera: MapCameraPosition = .automatic
+    @State private var hasFramed = false
+    /// "Muuta sijaintia": the sheet the card used to open.
+    @State private var isPinning = false
+
+    init(route: PlacesMapRoute) {
+        _focus = State(initialValue: route.focus)
+    }
+
     /// The same filter as `GalleryScreen.places`, narrowed to what has
     /// somewhere to be drawn.
     private var places: [Subject] {
         store.subjects(of: .place)
             .filter { $0.confirmed && $0.place?.precision.mapSpanMetres != nil }
+    }
+
+    /// The place the map was opened on, as the store has it now: a point
+    /// moved on another phone while the map is open is the point drawn. Only
+    /// while it has something to draw — a focus on nothing is no focus.
+    private var focused: Subject? {
+        guard let focus, let subject = store.subject(id: focus),
+              subject.place?.precision.mapSpanMetres != nil
+        else { return nil }
+        return subject
+    }
+
+    /// What the map draws: the family's places, and the place it was opened
+    /// on even before anybody has confirmed it. That place's own card draws
+    /// it already, and a map opened on a place that is missing from it reads
+    /// as a map that failed. It gets no chip and no row; the panel is what
+    /// names it.
+    private var drawn: [Subject] {
+        guard let focused, !places.contains(where: { $0.id == focused.id }) else { return places }
+        return places + [focused]
     }
 
     var body: some View {
@@ -39,11 +111,42 @@ struct PlacesMapScreen: View {
                 map(withChips: true)
                     .accessibilityElement(children: .contain)
                     .accessibilityLabel("Kartta. Jokainen paikka on nappi, joka avaa paikan kortin.")
+                    .safeAreaInset(edge: .bottom) {
+                        panel
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
+                    }
             }
         }
         .navigationTitle("Kartta")
         .navigationBarTitleDisplayMode(.inline)
         .elderSurface()
+        .onAppear {
+            // Once. A pop back from a card is the same visit, and the map
+            // stays where it was left.
+            guard !hasFramed else { return }
+            hasFramed = true
+            camera = startingFrame
+        }
+        // Framed again on the point that was saved, so the move is seen.
+        .sheet(isPresented: $isPinning, onDismiss: {
+            withAnimation { camera = startingFrame }
+        }) {
+            if let subject = focused, let place = subject.place {
+                PlacePinSheet(subject: subject, place: place)
+            }
+        }
+    }
+
+    /// The focused place with its neighbours around it, or every place.
+    private var startingFrame: MapCameraPosition {
+        if let place = focused?.place {
+            return Self.framing(
+                focus: place,
+                among: places.filter { $0.id != focused?.id }.compactMap(\.place)
+            )
+        }
+        return Self.framing(places.compactMap(\.place))
     }
 
     /// At the accessibility text sizes the chips give way to the album's own
@@ -62,7 +165,8 @@ struct PlacesMapScreen: View {
     /// the same list (rule 1 is why they are here at all). The map above
     /// them shows where and the rows say which; it does not pan, for the
     /// place card's reason (`PlaceMapCard`): a map that takes the drag takes
-    /// the page's scroll with it.
+    /// the page's scroll with it. The panel sits between the two, where the
+    /// picture it describes is still in view.
     private var pictureAndRows: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -72,6 +176,7 @@ struct PlacesMapScreen: View {
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     .accessibilityElement()
                     .accessibilityLabel("Kartta perheen paikoista.")
+                panel
                 ForEach(places) { subject in
                     NavigationLink(value: subject) {
                         SubjectRow(subject: subject)
@@ -84,8 +189,8 @@ struct PlacesMapScreen: View {
     }
 
     private func map(withChips: Bool) -> some View {
-        Map(initialPosition: Self.framing(places.compactMap(\.place))) {
-            ForEach(places) { subject in
+        Map(position: $camera) {
+            ForEach(drawn) { subject in
                 if let place = subject.place, let span = place.precision.mapSpanMetres {
                     let centre = CLLocationCoordinate2D(
                         latitude: place.latitude,
@@ -102,7 +207,9 @@ struct PlacesMapScreen: View {
                             .foregroundStyle(Elder.wax.opacity(0.14))
                             .stroke(Elder.wax, lineWidth: 2)
                     }
-                    if withChips {
+                    // Not on the place the map was opened on: the panel names
+                    // it, and its chip would only lead back to the card.
+                    if withChips, subject.id != focused?.id {
                         // Above the point rather than on it, so that what the
                         // card draws stays in view: centred on a municipality
                         // the chip covered the whole circle at the framing
@@ -126,6 +233,82 @@ struct PlacesMapScreen: View {
         // family's memories happened, and a shoal of restaurant pins over
         // them is somebody else's map.
         .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
+    }
+
+    /// What the map says under itself: about the place it was opened on, or
+    /// that there is nothing on it yet. Nothing at all on a map of every
+    /// place, which is a map and needs no caption.
+    @ViewBuilder
+    private var panel: some View {
+        if let subject = focused, let place = subject.place {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(verbatim: subject.displayTitle)
+                    .font(Elder.display(.title2))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                Text(provenance(place))
+                    .elderBody()
+                    .foregroundStyle(Elder.supporting)
+                // One under the other at every size. Side by side, the
+                // default size's screenshot (25 Sep 2026) had "Näytä kaikki
+                // paikat" wrapped onto two lines beside a one-line "Muuta
+                // sijaintia", two buttons of two heights — and `ViewThatFits`
+                // had chosen that row itself.
+                VStack(spacing: 12) { focusButtons }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .elderCard()
+        } else if store.subjects(of: .place).filter(\.confirmed).isEmpty {
+            // Framed on Finland (`framing`), which is where these places will
+            // be: a blank map of nowhere would read as a map that failed.
+            Text("Kun kerrotte paikoista, ne tulevat tähän kartalle.")
+                .elderBody()
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .elderCard()
+        }
+    }
+
+    @ViewBuilder
+    private var focusButtons: some View {
+        Button {
+            isPinning = true
+        } label: {
+            buttonText("Muuta sijaintia")
+        }
+        .elderPrimary(false)
+        .elderTapTarget()
+        Button {
+            focus = nil
+            withAnimation { camera = startingFrame }
+        } label: {
+            buttonText("Näytä kaikki paikat")
+        }
+        .elderPrimary(false)
+        .elderTapTarget()
+    }
+
+    /// A label that wraps rather than truncates and fills its button, the
+    /// shape `PlacePinSheet`'s save button settled on after the audit read
+    /// every other one as clipped.
+    private func buttonText(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .font(.body.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+    }
+
+    /// How sure the archive is of the point, and where it came from. A circle
+    /// is only ever the lookup's answer — the only other way to write a point,
+    /// `PlacePinSheet`, writes an exact one — and an exact point says nothing
+    /// about its source, because the archive cannot tell a street address the
+    /// gazetteer found from a yard somebody marked by hand (§18).
+    private func provenance(_ place: PlaceHint) -> LocalizedStringKey {
+        place.precision.deservesAPin
+            ? "Tarkka kohta."
+            : "Suunnilleen tällä seudulla. Haettu paikan nimellä."
     }
 
     /// The place's name and how many memories it holds, on wax so that the
@@ -189,9 +372,13 @@ struct PlacesMapScreen: View {
     /// and not `.automatic`, because `.automatic` frames the coordinates and
     /// not the chips drawn around them, and a chip cut by the edge of the
     /// screen is a button that cannot be read.
+    ///
+    /// With nothing to draw, the lookup's own Finland (`PlaceLookup`): the
+    /// places the family tells about will land there, and a blank map of
+    /// wherever MapKit starts reads as a map that failed.
     static func framing(_ hints: [PlaceHint]) -> MapCameraPosition {
         let drawable = hints.filter { $0.precision.mapSpanMetres != nil }
-        guard let first = drawable.first else { return .automatic }
+        guard let first = drawable.first else { return .region(PlaceLookup.searchRegion) }
         var south = first.latitude, north = first.latitude
         var west = first.longitude, east = first.longitude
         var largestSpan = 0.0
@@ -221,11 +408,37 @@ struct PlacesMapScreen: View {
             longitudinalMeters: side * framingMargin
         ))
     }
+
+    /// Where the camera starts when the map is opened on one place: centred on
+    /// it, wide enough that the family's nearest other place is on the screen
+    /// too, and never so wide that the place itself stops being the subject.
+    ///
+    /// Three times the distance to the nearest neighbour puts that neighbour
+    /// two thirds of the way from the middle to the edge. Clamped to two to
+    /// six times the place's own span — the width its card's map shows — so
+    /// that a neighbour across the country does not shrink the place to a
+    /// dot, and a place with no neighbour at all still opens wider than the
+    /// card it came from.
+    static func framing(focus: PlaceHint, among others: [PlaceHint]) -> MapCameraPosition {
+        guard let span = focus.precision.mapSpanMetres else { return framing([focus]) }
+        let here = CLLocation(latitude: focus.latitude, longitude: focus.longitude)
+        let nearest = others
+            .filter { $0.precision.mapSpanMetres != nil }
+            .map { here.distance(from: CLLocation(latitude: $0.latitude, longitude: $0.longitude)) }
+            .filter { $0 > 1 }
+            .min()
+        let side = min(max(3 * (nearest ?? 0), 2 * span), 6 * span)
+        return .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: focus.latitude, longitude: focus.longitude),
+            latitudinalMeters: side,
+            longitudinalMeters: side
+        ))
+    }
 }
 
 #Preview {
     NavigationStack {
-        PlacesMapScreen()
+        PlacesMapScreen(route: PlacesMapRoute())
             .environment(MemoryStore(filename: "preview-store.json"))
     }
 }

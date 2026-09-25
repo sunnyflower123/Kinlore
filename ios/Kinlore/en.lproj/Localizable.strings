@@ -592,17 +592,12 @@
 "Tarkka sijainti kartalla" = "Exact location on the map";
 "Suunnilleen tällä seudulla kartalla" = "Roughly in this area, on the map";
 
-/* Moving that point by hand (19 Sep 2026). The row's wording follows what is
-   drawn now: a circle is asking to become a point, a point is only ever being
-   nudged. "Merkki" is the mark in the middle of the map, not a pin the finger
-   carries -- the map moves under it. */
-"Merkitse tarkka paikka" = "Mark the exact spot";
-"Siirrä paikkaa kartalla" = "Move the spot on the map";
+/* Moving that point by hand (19 Sep 2026). "Merkki" is the mark in the
+   middle of the map, not a pin the finger carries -- the map moves under it. */
 "Tarkka paikka" = "The exact spot";
 "Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee." = "Drag the map until the mark sits on the right spot. Two fingers bring it closer.";
 "Tallenna tämä paikka" = "Save this spot";
 "Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla." = "Map. The mark stays in the middle and the map moves underneath it.";
-"Avaa kartan, jolla paikan voi merkitä tarkemmin." = "Opens a map where the spot can be marked more precisely.";
 
 /* --- The failure paths, 12 Sep 2026 --------------------------------------
    Every one of these was Finnish on an English phone, and the check could not
@@ -739,6 +734,19 @@
 "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Map. Every place is a button that opens the place's card.";
 "Avaa paikan kortin." = "Opens the place's card.";
 "Kartta perheen paikoista." = "A map of the family's places.";
+
+/* The family's map opened on one place (25 Sep 2026), from the small map on a
+   place card. Its corner says where the tap goes rather than what could be
+   done there, because looking is not editing: "Muuta sijaintia" is the one
+   way to moving the point. "Haettu paikan nimellä" is where a circle came
+   from -- the lookup, by the name somebody said. */
+"Avaa kartta" = "Open the map";
+"Avaa perheen kartan tämän paikan kohdalta." = "Opens the family's map at this place.";
+"Muuta sijaintia" = "Change the location";
+"Näytä kaikki paikat" = "Show all places";
+"Tarkka kohta." = "The exact spot.";
+"Suunnilleen tällä seudulla. Haettu paikan nimellä." = "Roughly in this area. Found by the place's name.";
+"Kun kerrotte paikoista, ne tulevat tähän kartalle." = "Places you tell about will appear on this map.";
 
 // A face on a person's card (21 Sep 2026): the picker, the tap and the disc.
 "Valitse kasvot" = "Choose a face";

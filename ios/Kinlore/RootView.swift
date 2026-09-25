@@ -438,6 +438,9 @@ struct PeopleScreen: View {
             .navigationDestination(for: SharingRoute.self) { _ in
                 EnableSharingScreen()
             }
+            // A place card opens on this stack too, through the memories on a
+            // person's card, and the small map on it opens the family's map.
+            .placesMapDestinations()
             .toolbar {
                 // Settings belongs under People rather than as its own tab:
                 // three tabs is already the limit of what an 80-year-old holds
@@ -682,8 +685,6 @@ struct SubjectDetailScreen: View {
     @State private var isCorrectingName = false
     @State private var isDating = false
     @State private var isRenaming = false
-    /// The map opened to move a place's point by hand.
-    @State private var isPinning = false
     /// The picker for the face on a person's card (§25).
     @State private var isChoosingFace = false
     @State private var isConfirmingRemoval = false
@@ -837,14 +838,14 @@ struct SubjectDetailScreen: View {
             // and its date. The condition now says what the card says.
             if current.kind == .place, current.place?.precision.mapSpanMetres != nil {
                 Section {
-                    // Tapping it opens the map that can be moved. §18 measures
-                    // how coarse the lookup's answer usually is — a farm name
-                    // comes back as its municipality — so the circle here is
-                    // nearly always the best a gazetteer can do and nearly
-                    // never the best anybody in the family can do.
-                    // `PlacePinSheet` is where they say so, and the card's own
-                    // corner is where they are told they may.
-                    PlaceMapCard(subject: current) { isPinning = true }
+                    // Tapping it opens the family's map on this place, where
+                    // it can be looked at among the others and moved only on
+                    // request ("Muuta sijaintia"). §18 measures how coarse the
+                    // lookup's answer usually is — a farm name comes back as
+                    // its municipality — so the circle here is nearly always
+                    // the best a gazetteer can do and nearly never the best
+                    // anybody in the family can do.
+                    PlaceMapCard(subject: current)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 }
@@ -1223,14 +1224,6 @@ struct SubjectDetailScreen: View {
         }
         .sheet(isPresented: $isChoosingFace) {
             FacePickerSheet(subject: current)
-        }
-        // `current.place` and not the one the row was drawn from: the sheet
-        // opens on the archive as it is now, so a point another phone resolved
-        // while this card was open is the point the map starts at.
-        .sheet(isPresented: $isPinning) {
-            if let place = current.place {
-                PlacePinSheet(subject: current, place: place)
-            }
         }
         .sheet(isPresented: $isRenaming) {
             NameSheet(

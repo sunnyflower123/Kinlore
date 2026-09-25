@@ -27,8 +27,12 @@ import SwiftUI
 struct PlaceMapCard: View {
     let subject: Subject
 
-    /// What a tap on the card does — in practice, open `PlacePinSheet` so that
-    /// somebody who has stood in the yard can move the point to it.
+    /// A tap on the card opens the family's map on this place
+    /// (`PlacesMapRoute(focus:)`), where it is seen among the family's other
+    /// places and moved only when somebody asks to ("Muuta sijaintia"). Until
+    /// 25 Sep 2026 it opened `PlacePinSheet` straight away, whose mark sat in
+    /// the middle of the screen while the map moved under it, so looking
+    /// around a place and moving it were one and the same gesture.
     ///
     /// **Inside the card and not in a row of its own, which is a measurement
     /// rather than a preference.** Written as an ordinary row under the map it
@@ -95,38 +99,29 @@ struct PlaceMapCard: View {
     /// green over nothing. A screen that reports at one size and not at the
     /// other is worth a probe before it is worth a conclusion.
     ///
-    /// It is also the truer control. The map is the thing being corrected, so
-    /// tapping the map is where the correction starts; the words in the corner
-    /// are what stops that being a secret.
-    ///
-    /// Nil leaves the card exactly what it was: a drawing that takes no
-    /// touches.
-    var onPlace: (() -> Void)?
-
+    /// It is also the truer control. The map is what a tap asks to see more
+    /// of, so tapping the map is where the larger one opens; the words in the
+    /// corner are what stops that being a secret.
     var body: some View {
         if let place = subject.place, place.precision.mapSpanMetres != nil {
-            if let onPlace {
-                Button(action: onPlace) {
-                    drawing(place)
-                        // Without this the button has no tap region at all.
-                        // Its whole label is a map that takes no touches (see
-                        // `drawing`), so hit testing finds nothing inside it
-                        // and the tap lands on the row behind — measured:
-                        // every test that opens this screen failed at once,
-                        // and not one of them failed on the button, which
-                        // XCUITest could see and tap and which simply did
-                        // nothing.
-                        .contentShape(RoundedRectangle(cornerRadius: 14))
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(spoken(place))
-                .accessibilityHint("Avaa kartan, jolla paikan voi merkitä tarkemmin.")
-            } else {
+            NavigationLink(value: PlacesMapRoute(focus: subject.id)) {
                 drawing(place)
-                    .accessibilityElement()
-                    .accessibilityLabel(spoken(place))
+                    // Without this the link has no tap region at all. Its
+                    // whole label is a map that takes no touches (see
+                    // `drawing`), so hit testing finds nothing inside it and
+                    // the tap lands on the row behind — measured when it was
+                    // a button: every test that opens this screen failed at
+                    // once, and not one of them failed on the button, which
+                    // XCUITest could see and tap and which simply did nothing.
+                    .contentShape(RoundedRectangle(cornerRadius: 14))
             }
+            .buttonStyle(.plain)
+            // A link in a list row gets a chevron, and one beside a map that
+            // fills the row reads as a second control.
+            .navigationLinkIndicatorVisibility(.hidden)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(spoken(place))
+            .accessibilityHint("Avaa perheen kartan tämän paikan kohdalta.")
         }
     }
 
@@ -182,22 +177,19 @@ struct PlaceMapCard: View {
     /// 5.59:1, and a label lying straight on tiles has no ratio anybody can
     /// state in advance.
     ///
-    /// Present only when the card can be tapped, and worded by what is drawn:
-    /// a circle is asking to become a point, a point is only being nudged.
-    @ViewBuilder
+    /// One wording for a circle and a point alike since 25 Sep 2026. It used
+    /// to say what could be done to what was drawn — mark the exact spot, move
+    /// the spot — because the tap went straight to the correction; now the
+    /// tap opens the family's map, and the corner says where it goes.
     private var invitation: some View {
-        if onPlace != nil, let place = subject.place {
-            Text(place.precision.deservesAPin
-                ? String(localized: "Siirrä paikkaa kartalla")
-                : String(localized: "Merkitse tarkka paikka"))
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Elder.cream)
-                .multilineTextAlignment(.trailing)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Elder.wax, in: RoundedRectangle(cornerRadius: 10))
-                .padding(10)
-        }
+        Text("Avaa kartta")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Elder.cream)
+            .multilineTextAlignment(.trailing)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Elder.wax, in: RoundedRectangle(cornerRadius: 10))
+            .padding(10)
     }
 }

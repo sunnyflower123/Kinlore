@@ -1627,9 +1627,9 @@ final class AccessibilitySweepTests: XCTestCase {
                 .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
                 .firstMatch
             reach(row, in: app, "the place's row in Muistot").tap()
-            // A button since 19 Sep 2026, and it was `otherElements` before:
-            // the card opens the screen its point is moved on, so the map is
-            // a control rather than a picture.
+            // A control since 19 Sep 2026, and it was `otherElements` before:
+            // the card's map opens a larger one — the screen its point was
+            // moved on until 25 Sep, the family's map on this place since.
             let map = require(
                 app.buttons["Suunnilleen tällä seudulla kartalla"],
                 "the place card's map"
@@ -1652,25 +1652,28 @@ final class AccessibilitySweepTests: XCTestCase {
     /// in a screenshot taken at the default size, which is the only size
     /// anybody looks at.
     ///
-    /// Puumala is a municipality in the demo archive, so the row that opens
-    /// this reads *"Merkitse tarkka paikka"* — the wording for a circle asking
-    /// to become a point. A run that found the other wording here would mean a
-    /// fixture's precision had been rounded on the way.
+    /// Puumala is a municipality in the demo archive, so the card's map is
+    /// found by the circle's spoken label. A run that found the pin's wording
+    /// here would mean a fixture's precision had been rounded on the way.
     func testPlacePinSheet() throws {
         try sweep("Tarkka paikka", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             let row = app.buttons
                 .matching(NSPredicate(format: "label BEGINSWITH %@", "Puumala"))
                 .firstMatch
             reach(row, in: app, "the place's row in Muistot").tap()
-            // The card's map is the control. Puumala is a municipality in the
-            // demo archive, so the card draws a circle and its corner reads
-            // *"Merkitse tarkka paikka"* — the wording for a circle asking to
-            // become a point. What the tap is found by is the map's spoken
-            // label, which is the same one `testPlaceDetail` audits.
+            // Two taps since 25 Sep 2026: the card's map opens the family's
+            // map on the place, and moving the point is asked for there. What
+            // the first tap is found by is the map's spoken label, which is
+            // the same one `testPlaceDetail` audits.
             reach(
                 app.buttons["Suunnilleen tällä seudulla kartalla"],
                 in: app,
-                "the card's map, which opens the placing screen"
+                "the card's map, which opens the family's map on the place"
+            ).tap()
+            reach(
+                app.buttons["Muuta sijaintia"],
+                in: app,
+                "the family's map, which offers to move the point"
             ).tap()
             let map = require(
                 app.otherElements["Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla."],
@@ -1922,6 +1925,44 @@ final class AccessibilitySweepTests: XCTestCase {
             // Tiles arrive over several frames; the chip's frame is what is
             // waited for, as the place card's map is.
             settle(require(chip, "Puumala's chip on the map"))
+        }
+    }
+
+    /// The same map opened on one place, the way a place card's own map
+    /// opens it: centred on Puumala with its neighbours in view, and a panel
+    /// under it that names the place, says how sure the archive is of the
+    /// point and offers two buttons. That panel is the new shape here. At
+    /// the default size it floats over the map's lower edge, where the tab
+    /// bar also is; at the largest it sits between the picture and the rows,
+    /// and its two buttons stack when they no longer fit side by side.
+    ///
+    /// "Muuta sijaintia" is what proves arrival — it exists only while the
+    /// map is about one place.
+    func testPlacesMapOnOnePlace() throws {
+        try sweep(
+            "Kartta, yksi paikka",
+            arguments: [
+                "-seed", "film-week", "-tab", "memories",
+                "-screen", "placesMap", "-place", "demo-puumala",
+            ]
+        ) { app, _ in
+            settle(require(app.buttons["Muuta sijaintia"], "the panel of the map opened on Puumala"))
+        }
+    }
+
+    /// And opened on nothing at all: an album with no places, whose bar has
+    /// the door all the same. The map frames Finland and the panel says what
+    /// will come; a blank sea with no sentence would read as a map that
+    /// failed.
+    func testPlacesMapEmpty() throws {
+        try sweep(
+            "Kartta, tyhjä",
+            arguments: ["-seed", "empty", "-tab", "memories", "-screen", "placesMap"]
+        ) { app, _ in
+            settle(require(
+                app.staticTexts["Kun kerrotte paikoista, ne tulevat tähän kartalle."],
+                "the empty map's sentence"
+            ))
         }
     }
 }

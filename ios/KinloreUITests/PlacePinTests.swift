@@ -64,27 +64,39 @@ final class PlacePinTests: XCTestCase {
         XCTAssertTrue(save.isEnabled, "the map was dragged and the save stayed inactive")
         save.tap()
 
-        // The card's own map speaks the precision it holds, so this is the
-        // archive answering rather than the screen remembering: a circle says
-        // *"suunnilleen tällä seudulla"* and the point that replaced it says
-        // *"tarkka sijainti"*.
+        // The family's map is under the sheet, and its panel reads the
+        // precision out of the archive: a circle was *"suunnilleen tällä
+        // seudulla"*, and the point that replaced it is a *"tarkka kohta"*.
+        XCTAssertTrue(
+            app.staticTexts["Tarkka kohta."].waitForExistence(timeout: 10),
+            "the placed point did not reach the archive, or did not reach the map that draws it"
+        )
+        // And the card under the map, which speaks the precision it holds, so
+        // this is the archive answering rather than the screen remembering.
+        app.navigationBars["Kartta"].buttons.firstMatch.tap()
         XCTAssertTrue(
             app.buttons["Tarkka sijainti kartalla"].waitForExistence(timeout: 10),
-            "the placed point did not reach the archive, or did not reach the card that draws it"
+            "the placed point did not reach the card that draws it"
         )
     }
 
-    /// The card's map, which is the control: tapping it opens the screen the
-    /// point is moved on. The corner of the card says so in words; VoiceOver
-    /// is told by the map's own label and the hint beside it, which is what
-    /// this finds it by.
+    /// The card's map, which opens the family's map on the place, and the
+    /// panel's "Muuta sijaintia", which opens the screen the point is moved
+    /// on. Two taps since 25 Sep 2026, because looking is not editing: the
+    /// card used to open the moving screen straight away, and every look
+    /// around the place moved it. VoiceOver finds the card's map by its own
+    /// label and the hint beside it, which is what this finds it by.
     private func openTheMap(in app: XCUIApplication) {
         let map = app.buttons
             .matching(NSPredicate(format: "label ENDSWITH %@", "kartalla"))
             .firstMatch
         for _ in 0 ..< 4 where !map.exists { app.swipeUp() }
-        XCTAssertTrue(map.waitForExistence(timeout: 10), "the place card offers no way to place the mark")
+        XCTAssertTrue(map.waitForExistence(timeout: 10), "the place card offers no way to its map")
         map.tap()
+
+        let change = app.buttons["Muuta sijaintia"]
+        XCTAssertTrue(change.waitForExistence(timeout: 10), "the family's map offers no way to move the point")
+        change.tap()
     }
 
     /// The demo archive's confirmed place, opened from Albumi.

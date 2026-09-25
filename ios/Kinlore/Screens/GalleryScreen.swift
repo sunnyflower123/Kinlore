@@ -279,18 +279,49 @@ struct GalleryScreen: View {
         // `-screen placesMap` opens the map of places on launch, the way
         // RootView's `.task` opens the people tab's screens: the sweep
         // measures it at the largest text size from here, and a screenshot
-        // from a seeded launch needs no tap. `-tab memories` beside it.
+        // from a seeded launch needs no tap. `-tab memories` beside it, and
+        // `-place <subject id>` to open it on one place, as a place card's
+        // own map does.
         .task {
             if UserDefaults.standard.string(forKey: "screen") == "placesMap", path.isEmpty {
-                path.append(PlacesMapRoute())
+                path.append(PlacesMapRoute(focus: UserDefaults.standard.string(forKey: "place")))
             }
         }
         #endif
         .toolbar {
+            // The family's map, where somebody finds it without looking for
+            // it: in the bar of every album, the empty one included, and not
+            // only under a Paikat section that a family with no places yet
+            // does not have.
+            //
+            // A picture and not a word, like the people tab's three, and that
+            // was measured rather than preferred (25 Sep 2026). The word was
+            // tried twice — `Button("Kartta")`, which the bar draws itself,
+            // and a word drawn by hand beside the icon — and both stayed one
+            // size while the text around them grew: the audit reported each
+            // as Dynamic Type "partially unsupported" at both sizes it
+            // measures. The Kerro sheet's "Sulje" is a word in a bar too, but
+            // the audit forgives any label of five letters or fewer, a rule
+            // written for the photo tile's count, and "Kartta" has six. The
+            // icon alone audits clean beside the menu at both sizes, in all
+            // three album sweeps (`testMemoriesWithContent`,
+            // `testMemoriesEmpty`, `testMemoriesWithTheBlindCard`). The word
+            // is still on the way in for whoever reads rather than
+            // recognises: VoiceOver says "Kartta", and "Näytä kartalla" under
+            // the places is one.
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    path.append(PlacesMapRoute())
+                } label: {
+                    Image(systemName: "map")
+                        .elderTapTarget()
+                }
+                .accessibilityLabel("Kartta")
+            }
             ToolbarItem(placement: .topBarTrailing) {
-                // A menu rather than two buttons: the bar has room for one
-                // control at the largest text size, and the second way in
-                // would be the one to fall off it.
+                // A menu rather than two buttons on this side: the bar has
+                // room for one control here at the largest text size, and the
+                // second way in would be the one to fall off it.
                 //
                 // The camera is first because it is the case this app is
                 // for. `PhotosPicker` does not survive being a menu row, so
@@ -323,9 +354,7 @@ struct GalleryScreen: View {
         // Pushed as a value rather than presented from a Boolean because the
         // path is what `isReturningFromCard` reads: with the map up it is
         // non-empty, and returning to the album from the map is a return.
-        .navigationDestination(for: PlacesMapRoute.self) { _ in
-            PlacesMapScreen()
-        }
+        .placesMapDestinations()
         .onChange(of: picked) { _, items in
             guard !items.isEmpty else { return }
             Task { await importPhotos(items) }
@@ -1514,12 +1543,6 @@ struct SubjectRow: View {
         }
     }
 }
-
-/// What the album pushes to show the map of places: a value with nothing in
-/// it, because the screen reads the store itself. A route type rather than a
-/// Boolean so that the map lives on the same `NavigationStack` as the cards
-/// it opens (see `path`).
-private struct PlacesMapRoute: Hashable {}
 
 #Preview {
     GalleryScreen()

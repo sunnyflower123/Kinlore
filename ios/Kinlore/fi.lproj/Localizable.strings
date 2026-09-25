@@ -519,13 +519,10 @@
 "Suunnilleen tällä seudulla kartalla" = "Suunnilleen tällä seudulla kartalla";
 
 /* Moving that point by hand — see en.lproj. */
-"Merkitse tarkka paikka" = "Merkitse tarkka paikka";
-"Siirrä paikkaa kartalla" = "Siirrä paikkaa kartalla";
 "Tarkka paikka" = "Tarkka paikka";
 "Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee." = "Siirrä karttaa niin, että merkki osuu oikeaan paikkaan. Kahdella sormella kartta lähenee.";
 "Tallenna tämä paikka" = "Tallenna tämä paikka";
 "Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla." = "Kartta. Merkki pysyy keskellä ja kartta liikkuu sen alla.";
-"Avaa kartan, jolla paikan voi merkitä tarkemmin." = "Avaa kartan, jolla paikan voi merkitä tarkemmin.";
 
 /* --- The failure paths, 12 Sep 2026 — see en.lproj. */
 " Sovellus avautuu ensimmäiselle näytölle." = " Sovellus avautuu ensimmäiselle näytölle.";
@@ -629,6 +626,15 @@
 "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin.";
 "Avaa paikan kortin." = "Avaa paikan kortin.";
 "Kartta perheen paikoista." = "Kartta perheen paikoista.";
+
+/* The family's map opened on one place — see en.lproj. */
+"Avaa kartta" = "Avaa kartta";
+"Avaa perheen kartan tämän paikan kohdalta." = "Avaa perheen kartan tämän paikan kohdalta.";
+"Muuta sijaintia" = "Muuta sijaintia";
+"Näytä kaikki paikat" = "Näytä kaikki paikat";
+"Tarkka kohta." = "Tarkka kohta.";
+"Suunnilleen tällä seudulla. Haettu paikan nimellä." = "Suunnilleen tällä seudulla. Haettu paikan nimellä.";
+"Kun kerrotte paikoista, ne tulevat tähän kartalle." = "Kun kerrotte paikoista, ne tulevat tähän kartalle.";
 
 // A face on a person's card (21 Sep 2026): the picker, the tap and the disc.
 "Valitse kasvot" = "Valitse kasvot";
