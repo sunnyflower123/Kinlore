@@ -154,8 +154,6 @@
 "Lisää lapsi" = "Add a child";
 "Lisää puoliso" = "Add a spouse";
 "Lisää sisarus" = "Add a sibling";
-"Pienennä" = "Zoom out";
-"Suurenna" = "Zoom in";
 "Kenen muistot haluat tallentaa?" = "Whose memories do you want to keep?";
 "Kirjoita hänen nimensä, niin hän saa oman kortin. Hän voi kertoa omalla puhelimellaan tai tällä." = "Write their name, and they get a card of their own. They can tell on their own phone, or on this one.";
 "%@ on nyt arkistossa" = "%@ is in the archive now";
@@ -683,18 +681,40 @@
 "Kootaan värikuvia %lld/%lld" = "Gathering coloured photographs %lld/%lld";
 "Värit kerronnan mukaan, vahvisti %@" = "Colours by the telling, confirmed by %@";
 
-/* The family tree's rail and legend: which generation a row is, and
-   what a line between two people means. */
-"Isovanhempiesi polvi" = "Your grandparents' generation";
-"Vanhempiesi polvi" = "Your parents' generation";
-"Sinun polvesi" = "Your generation";
-"Lastesi polvi" = "Your children's generation";
-"Lastenlastesi polvi" = "Your grandchildren's generation";
-"%lld. polvi" = "Generation %lld";
-"%lld polvea ylempänä" = "%lld generations above you";
-"%lld polvea alempana" = "%lld generations below you";
+/* The family tree's captions, its legend and the button that fits the whole
+   family in the window. The generation words that stood on a rail beside
+   the drawing until 25 Sep 2026 are gone with the rail. */
 "Toinen perhe" = "Another family";
 "Pariskunta" = "A couple";
+"Koko suku" = "Whole family";
+
+/* The word under every card in the tree, said from the phone owner's point
+   of view (25 Sep 2026): gender-neutral by construction, because the
+   archive stores no gender, and looked up in `Kinship.Word.label` rather than
+   written into a `Text`, because it reaches the screen as a String. A card
+   gets one only when it is exact; otherwise none. */
+"Vanhempasi" = "Your parent";
+"Isovanhempasi" = "Your grandparent";
+"Isoisovanhempasi" = "Your great-grandparent";
+"Lapsesi" = "Your child";
+"Lapsenlapsesi" = "Your grandchild";
+"Lastenlastenlapsesi" = "Your great-grandchild";
+"Puolisosi" = "Your spouse";
+"Sisaruksesi" = "Your sibling";
+"Vanhempasi sisarus" = "Your parent's sibling";
+"Serkkusi" = "Your cousin";
+"Isovanhempasi sisarus" = "Your grandparent's sibling";
+"Vanhempasi serkku" = "Your parent's cousin";
+"Pikkuserkkusi" = "Your second cousin";
+"Sisaruksesi lapsi" = "Your sibling's child";
+"Sisaruksesi lapsenlapsi" = "Your sibling's grandchild";
+"Sisaruksesi puoliso" = "Your sibling's spouse";
+"Puolisosi vanhempi" = "Your spouse's parent";
+"Puolisosi sisarus" = "Your spouse's sibling";
+"Puolisosi lapsi" = "Your spouse's child";
+"Lapsesi puoliso" = "Your child's spouse";
+"Vanhempasi puoliso" = "Your parent's spouse";
+"Ystäväsi" = "Your friend";
 
 /* What the archive holds and the drawing cannot say, 19 Sep 2026. A person is
    of one generation in a picture, so a marriage across two of them, or a pair

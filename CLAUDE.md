@@ -822,13 +822,32 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 # Where the family tree puts people, and the lines it draws. Pure arithmetic
 # over confirmed people and relationships, and every way of being wrong is
 # silent: a child drawn a row above her mother, a couple split by a stranger,
-# a brother with no line to his sister. None of them fails a build, and a
-# screenshot shows a tree either way. Costs nothing. Run it after touching
+# a brother with no line to his sister, two broods on one bar. None of them
+# fails a build, and a screenshot shows a tree either way. Costs nothing.
+# Engine and check were rewritten from zero on 25 Sep 2026 against the nine
+# requirements in ARCHITECTURE §8 item 13. Run it after touching
 # FamilyTreeLayout.swift.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -parse-as-library -o /tmp/family-tree-layout-check \
   scripts/family-tree-layout-check.swift ios/Kinlore/Services/FamilyTreeLayout.swift \
   && /tmp/family-tree-layout-check
+
+# The word under every card in the tree — *Vanhempasi*, *Sisaruksesi lapsi*,
+# *Puolisosi vanhempi* — said from the phone owner's point of view, and only
+# where it is exact. A wrong word is rule 4's wrong relationship drawn as
+# fact, and it is silent: *Serkkusi* on a card looks exactly like
+# *Pikkuserkkusi* to anybody who does not already know, and a build and a
+# screenshot are both fine either way. Derives every word of `-seed clan`
+# from Elina's card and from seven other phones, then holds the engine over
+# seeded random families against a brute-force walk of every shortest path
+# — and against each word's mirror wherever a pair has one shortest reading,
+# because two siblings married to two siblings are *Sisaruksesi puoliso*
+# from both ends and no table order can make them differ. Costs nothing.
+# Run it after touching Kinship.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/kinship-check \
+  scripts/kinship-check.swift ios/Kinlore/Services/Kinship.swift \
+  && /tmp/kinship-check
 
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
@@ -1076,6 +1095,17 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   dead run or a surprising finding, and delete your own device when you are
   finished rather than leaving it booted for the next session to inherit. Two
   sessions keeping one each is fine; six is the error above.
+- **A timeout that reproduces alone is not the machine, and it does not end
+  when the audit does.** Measured 25 Sep 2026: `testFamilyTreeAtSize` timed
+  out at the largest text size on every run at any load, because the audit's
+  contrast check reads a text element's pixels into a set of colours, and
+  text on glass or under it — a `.bordered` capsule, the tab bar — is more
+  colours than its fifteen seconds hold. And every audit that gave up left a
+  thread of testmanagerd running, until twenty of them had the daemon at
+  800 % of a core and every session's tests failing to start with "Timed out
+  waiting for AX loaded notification". `sample <pid>` names the work in a
+  minute; `kill -9` is what ends it; the header of
+  `AccessibilitySweepTests.swift` has the measurement.
 - `xcrun simctl` is not on the path xcodebuild hands to its own child processes,
   so a test run ends with `unable to find utility "simctl"` while collecting
   diagnostics. It is noise from a run that had already failed, not the failure.

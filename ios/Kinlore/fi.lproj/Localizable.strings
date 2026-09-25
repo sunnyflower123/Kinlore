@@ -140,8 +140,6 @@
 "Lisää lapsi" = "Lisää lapsi";
 "Lisää puoliso" = "Lisää puoliso";
 "Lisää sisarus" = "Lisää sisarus";
-"Pienennä" = "Pienennä";
-"Suurenna" = "Suurenna";
 "Kenen muistot haluat tallentaa?" = "Kenen muistot haluat tallentaa?";
 "Kirjoita hänen nimensä, niin hän saa oman kortin. Hän voi kertoa omalla puhelimellaan tai tällä." = "Kirjoita hänen nimensä, niin hän saa oman kortin. Hän voi kertoa omalla puhelimellaan tai tällä.";
 "%@ on nyt arkistossa" = "%@ on nyt arkistossa";
@@ -590,18 +588,35 @@
 "Kootaan värikuvia %lld/%lld" = "Kootaan värikuvia %lld/%lld";
 "Värit kerronnan mukaan, vahvisti %@" = "Värit kerronnan mukaan, vahvisti %@";
 
-/* The family tree's rail and legend: which generation a row is, and
-   what a line between two people means. */
-"Isovanhempiesi polvi" = "Isovanhempiesi polvi";
-"Vanhempiesi polvi" = "Vanhempiesi polvi";
-"Sinun polvesi" = "Sinun polvesi";
-"Lastesi polvi" = "Lastesi polvi";
-"Lastenlastesi polvi" = "Lastenlastesi polvi";
-"%lld. polvi" = "%lld. polvi";
-"%lld polvea ylempänä" = "%lld polvea ylempänä";
-"%lld polvea alempana" = "%lld polvea alempana";
+/* The family tree's captions, its legend and the fit button — see en.lproj. */
 "Toinen perhe" = "Toinen perhe";
 "Pariskunta" = "Pariskunta";
+"Koko suku" = "Koko suku";
+
+/* The word under every card in the tree, from the phone owner's point of
+   view — see en.lproj. */
+"Vanhempasi" = "Vanhempasi";
+"Isovanhempasi" = "Isovanhempasi";
+"Isoisovanhempasi" = "Isoisovanhempasi";
+"Lapsesi" = "Lapsesi";
+"Lapsenlapsesi" = "Lapsenlapsesi";
+"Lastenlastenlapsesi" = "Lastenlastenlapsesi";
+"Puolisosi" = "Puolisosi";
+"Sisaruksesi" = "Sisaruksesi";
+"Vanhempasi sisarus" = "Vanhempasi sisarus";
+"Serkkusi" = "Serkkusi";
+"Isovanhempasi sisarus" = "Isovanhempasi sisarus";
+"Vanhempasi serkku" = "Vanhempasi serkku";
+"Pikkuserkkusi" = "Pikkuserkkusi";
+"Sisaruksesi lapsi" = "Sisaruksesi lapsi";
+"Sisaruksesi lapsenlapsi" = "Sisaruksesi lapsenlapsi";
+"Sisaruksesi puoliso" = "Sisaruksesi puoliso";
+"Puolisosi vanhempi" = "Puolisosi vanhempi";
+"Puolisosi sisarus" = "Puolisosi sisarus";
+"Puolisosi lapsi" = "Puolisosi lapsi";
+"Lapsesi puoliso" = "Lapsesi puoliso";
+"Vanhempasi puoliso" = "Vanhempasi puoliso";
+"Ystäväsi" = "Ystäväsi";
 
 /* The relationships the rows cannot hold — see en.lproj. */
 "Nämä eivät mahdu kuvaan" = "Nämä eivät mahdu kuvaan";

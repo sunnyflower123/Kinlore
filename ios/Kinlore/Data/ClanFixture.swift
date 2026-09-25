@@ -39,8 +39,8 @@ import Foundation
 /// * People related to nobody yet, below everything.
 /// * A name long enough to test what a name does to the place it is in.
 ///
-/// Launch it with a card of your own to see the rail's words counted from
-/// somebody in the middle:
+/// Launch it with a card of your own to see the word under every card said
+/// from somebody in the middle (25 Sep 2026):
 ///
 ///     -seed clan -you clan-elina -people tree
 enum ClanFixture {

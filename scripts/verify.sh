@@ -201,12 +201,23 @@ date_hint() {
 # Where the family tree puts people and the lines between them. Pure arithmetic
 # over confirmed people and relationships, and each way of being wrong is
 # silent: a child drawn a row above her mother still draws. Added 13 Sep 2026
-# with the drawn tree.
+# with the drawn tree; engine and check both rewritten from zero 25 Sep 2026.
 family_tree_layout() {
 	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
 		-o "$OUT/family-tree-layout-check" scripts/family-tree-layout-check.swift \
 		ios/Kinlore/Services/FamilyTreeLayout.swift \
 		&& "$OUT/family-tree-layout-check"
+}
+
+# The word under every card in the tree, from the phone owner's point of
+# view. A wrong word is rule 4's wrong relationship drawn as fact, and it is
+# silent: *Serkkusi* on a card looks exactly like *Pikkuserkkusi* to anybody
+# who does not already know. Added 25 Sep 2026 with the words.
+kinship() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/kinship-check" scripts/kinship-check.swift \
+		ios/Kinlore/Services/Kinship.swift \
+		&& "$OUT/kinship-check"
 }
 
 # Hermetic in a different way: it loads the shipping schema.sql into an
@@ -273,6 +284,7 @@ run "a question aims at what the archive lacks" extraction_context
 run "no date is sharper than what was said" date_hint
 run "the app stops asking, and not for the weather" transcription_catchup
 run "a child is drawn below her parents" family_tree_layout
+run "every word in the tree is exact" kinship
 run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock
 run "a confirmed colouring survives an older phone" colour_sync

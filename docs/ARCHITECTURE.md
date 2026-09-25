@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 77 sweep tests, each auditing one screen at the default text size and again at the largest, out of 224 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 77 sweep tests, each auditing one screen at the default text size and again at the largest, out of 228 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -1871,586 +1871,268 @@ Built, in the order they were built:
 Cut from v1, and then built after all:
 
 13. ~~**Family tree** — a drawn graph. **A trap.**~~ **Built on 13 Sep 2026**,
-   on a family member's phone only. Relationships stay lists on the person
-   card — the same information, at the largest text size and aloud with
-   VoiceOver — and those lists are all a grandparent's phone and VoiceOver get.
-   What made the drawing a trap was her phone, so the drawing is where her
-   phone does not go: what Ihmiset opens on, titled *Sukupuu*, with the list
-   one tap away — `FamilyTreeView` over `FamilyTreeLayout`, confirmed people
-   and confirmed relationships only (rule 4). Everybody confirmed is in the
-   picture, with the people related to nobody drawn apart below it rather than
-   listed under it — and the family's friends on a band of their own above
-   them, since 21 Sep 2026 (item 5) — and a person tapped in it takes a new
-   relative, or a friend, through the
-   card's own `RelationPicker`, so the tree grows where it is looked at. The card this phone's member is
-   linked to says *Sinä* under the name (`member.person_subject_id`, §4). Where
-   somebody lands is arithmetic no screenshot can check, so
-   `scripts/family-tree-layout-check.swift` checks it: a child below her
-   parents, a couple side by side, nobody sharing a place.
+   on a family member's phone only, **and rebuilt from zero on 25 Sep 2026.**
+   Relationships stay lists on the person card — the same information, at the
+   largest text size and aloud with VoiceOver — and those lists are all a
+   grandparent's phone and VoiceOver get. What made the drawing a trap was her
+   phone, so the drawing is where her phone does not go: what Ihmiset opens
+   on, with the list one tap away through its menu — `FamilyTreeView` over
+   `FamilyTreeLayout` and `Kinship`, confirmed people and confirmed
+   relationships only (rule 4). Everybody confirmed is in the picture, the
+   family's friends on a band of their own under the generations (item 5) and
+   the people related to nobody under them, and a person tapped in it takes a
+   new relative, or a friend, through the card's own `RelationPicker`, so the
+   tree grows where it is looked at.
 
-   **And then somebody used it, and it explained nothing** (16 Sep 2026). The
-   first evening with it produced one sentence — *"it is not very clear yet how
-   this works"* — about a drawing that was, on its own terms, correct. Five
-   discs and four kinds of line, and nothing on the screen said what a row was
-   or what a line meant. Four ways out of that were drawn up and one was built:
-   the generations named.
+   **Why from zero.** The first shape (13–21 Sep 2026) explained its rows with
+   a rail down the window's left edge — *Vanhempiesi polvi*, *Sinun polvesi*,
+   *3 polvea ylempänä* — pinned to the window over a drawing that moved under
+   it. On the iPhone 17 Pro simulator it was measured and passed every sweep;
+   on an iPhone 13 mini it was used, and the rail took 156 of the phone's 375
+   points, so the words stood over the names in any family wider than what
+   was left, which at 132 points a place is a family of three. A word pinned
+   to the window cannot be kept apart from a drawing that moves under it on a
+   phone that narrow, so the question was not where to put the rail but
+   whether anything may be pinned at all. Nothing is. Every word on the
+   screen is inside the drawing, moves with it and scales with it, and what
+   the rail said about a row each card now says about itself. The placement
+   engine went with the screen: its rows were the rail's unit, a generation
+   counted from the reader, and the screen needs a family's rows and a
+   reader's words — which is what the assessment of 25 Sep 2026 (section 05
+   of the 16 Sep artifact) chose over repairing the rail.
 
-   - **A rail down the left names each generation**, counted from your own row:
-     *Vanhempiesi polvi*, *Sinun polvesi*, *Lastesi polvi*, and beyond two
-     either way a count — *3 polvea ylempänä*. Counted from you because the
-     archive stores no gender, so a word for one person would have to read
-     *"Eevan vanhempi"*; a generation has a name in Finnish that needs none.
-     **Worded as a generation and not as a relationship since 19 Sep 2026.**
-     The words were *Vanhemmat*, *Isovanhemmat* and *Lapset* for three days,
-     and the first family entered on a phone showed why that could not stand:
-     the row above the reader held his mother, his father, his mother's
-     brother and his father's sister, under a word that means two people —
-     *"eihän minulla voi olla neljää vanhempaa"*. Every row is a generation
-     and holds the brothers, sisters and spouses of the people it is named
-     for, and only the reader's own row had been worded to say so. The count
-     starts one generation earlier than it did, because the words are
-     longer: *Isoisovanhempiesi polvi* and *Lastenlastenlastesi polvi* are
-     134 and 138 points of `.caption` at the default size and the rail's
-     word is one line. Two lines were tried first and measured out: the rail
-     grew to 140 points so that *Isovanhempiesi polvi* (117) stays on one,
-     and at the smallest zoom a second line stood on the names in the row
-     above, because the words do not zoom and the air between rows does. A
-     phone linked to no card gets the drawing's own numbering instead, which
-     claims nothing. The
-     rail does not scroll sideways with the drawing and does not shrink with
-     the zoom: in a family that needs scrolling, a label that scrolls away
-     names the rows you are no longer looking at.
-   - **A band to every other generation**, `Elder.card` on `Elder.paper` —
-     1.11:1, a tint and not an edge — so a row reads as one row across a family
-     too wide to see at once. Names measure 16.81:1 on it against 15.17:1 off
-     it, so no name is harder to read for being in a shaded generation.
-   - **A couple is two lines**, the way a genealogy draws a marriage, and a
-     legend says so: *pariskunta*, *lapset*, *sisarukset*. Three kinds of line
-     are drawn and none of them is guessable. It is above the drawing, where a
-     key is read before the picture — in the bar it cost 150 points of an
-     874-point screen for three words — and it is a column rather than a row:
-     as a `ViewThatFits` folding a row into a column, the audit called all
-     three words partially unsupported Dynamic Type, in both tree sweeps, at
-     the default text size. One arrangement at every size passes.
-   - **A line leaves a person from under their name, and the children of two
-     people nobody has married hang from both** (19 Sep 2026).
-     `FamilyTreeLayout` draws in rows and knows nothing about text, so the
-     screen tells it how deep a card is — half a disc, the gap, a name and
-     two fifths of a line of air under it, about two fifths of a row at
-     every text size, and the word *Sinä* more on the reader's own card —
-     and every line that leaves somebody downwards starts there. The air is
-     measured, not assumed: the first build started the line at the foot of
-     the name's frame, 51 points under the disc's centre, and the letters of
-     *Jorma* on the simulator ended at 52.7, so the line stood on the
-     baseline. Until then it started at the centre of the disc and ran
-     down through the name whenever the drop was from one person: a child
-     with one parent entered, which the first family on a phone had twice.
-     The same family had a child entered from each of two parents and no
-     marriage, which rule 4 will not infer, and its bracket hung from the
-     empty space between two people the picture had not joined; now a drop
-     from under each parent meets one bar, and the bar reaches from the first
-     parent to the last child. A marriage's dip under the row moved from a
-     quarter of a row to two fifths for the same reason — a quarter ran
-     through the name of whoever it went round — and it is drawn only round
-     somebody. It used to be drawn by distance, `right - left > 1`, and a row
-     whose places are means of thirds puts a couple one place and 2⁻⁵² apart:
-     17 of 30 000 random families bent a marriage under the row round nobody,
-     and the same 30 000 through the new test bend none.
-     `family-tree-layout-check` walks every line against every card, and the
-     one line it lets through is that dip under a card deeper than the dip —
-     the reader's own, where at the default size it runs in the air between
-     the name and *Sinä*, three points above the word, which is where the
-     arithmetic puts it and nothing has yet shown on a screen.
-   - **A child of one parent is not hung on the other's brood, and two bars
-     that touch never share a height** (21 Sep 2026). The first family on a
-     phone showed it, in the picture the fix above left behind: Erkko is
-     Anna's alone, stood straight under her, and hung from the end of the
-     bar that runs from Anna to Antti — a T that reads as Antti's son, which
-     is rule 4's wrong relationship drawn as fact. Three things put him
-     there, and `FamilyTreeLayout` answers each. A child with exactly one
-     parent, whose parent shares that row's broods with somebody else, now
-     wants the place beside the parent on the far side from the co-parents —
-     Erkko to Anna's left, Juhani to Paula's, away from Jorma — and a family
-     whose leftmost place then falls past its own edge is moved over as a
-     whole. Siblings are placed as one block centred under what they want
-     rather than one at a time, because a first marriage's second child used
-     to stand exactly where the second marriage's children start, and the
-     two bars met. And a row's bars are dealt three depths, `broodDepths` —
-     0.5, 0.7, 0.6 — fewest parents first and then from the left, so that no
-     two bars whose spans touch or overlap sit at one height: 0.7 is as deep
-     as a bar can go before the discs of the row below, and 0.6, where the
-     sibling bar of the row below already sits, is the third answer, for a
-     person with children by two others and alone. The order of the three
-     was tried three ways and the counts moved within noise;
-     fewest-parents-first stayed because it keeps a single parent's branch
-     shallow on that parent's own line. `FamilyTreeView` needed nothing: it
-     strokes whatever segments it is handed. Measured by
-     `family-tree-layout-check`'s own metric over 5 000 seeded families —
-     what stands in a child's column and belongs to another brood — with
-     the same script run against the layout as it was: children hung on
-     somebody else's bar 4 766 before and 106 after, every one of the 106
-     where a bar found all three depths taken over it already, which the
-     check asserts is the only way two touching bars still share a height;
-     a stranger's line down a child's column 1 119 before and 620 after.
-     What the change adds, 2 126 lines through a stranger's bar, is the cost
-     of placing rows from the top down: a row cannot widen to make room for
-     the one below, so three children of a first marriage beside two of a
-     second put the third under the second marriage's anchor, and the check
-     pins that residual by name (`thrice`) rather than promising it away.
-   - **The bands stop at your own family.** Two families that share nobody are
-     drawn side by side and both start at row 0, because neither knows
-     anything about the other's age. Shading across both and calling the band
-     a generation says something nobody entered — measured with `-seed clan`,
-     where a couple related to nobody was drawn level with somebody's
-     great-great-grandparents and labelled as them. `Result.family` and
-     `Result.familyExtents` are what the drawing asks to avoid it. The band
-     ends at your family's last column and the rail stops at your family's
-     depth.
-   - **The drawing opens on your own line rather than in its own corner**
-     (19 Sep 2026). A family of 53 is 2376 points wide against a 324-point
-     canvas, so a picture that opens at its left edge opens on whichever
-     branch happened to be drawn first — Hilma, Aapo and half of Lyyli, six of
-     the fifty-three, with the person holding the phone four places away and
-     nothing on screen to say which way that was. A `ScrollViewReader` now
-     carries her column into the window as the tree appears, once and without
-     animation.
+   **One word under every card**, said from whoever holds the phone
+   (`member.person_subject_id`, §4): *Vanhempasi*, *Isovanhempasi*,
+   *Lapsesi*, *Puolisosi*, *Sisaruksesi*, *Serkkusi*, *Pikkuserkkusi*,
+   *Sisaruksesi puoliso*, *Puolisosi vanhempi* — twenty-two in all, in
+   `Kinship.Word` — and *Sinä* on your own card.
+   `Kinship.words(from:people:ties:)` walks the confirmed relationships from
+   your card, finds the shortest path to each person, and matches every path
+   of that length against a table of paths in the table's order; a person
+   none of whose shortest paths is in the table gets no word, and no longer
+   path is tried. That is rule 4 for words. *Serkkusi* on a card looks
+   exactly like *Pikkuserkkusi* to anybody who does not already know, so a
+   near word is the wrong relationship drawn as fact, and a card with none
+   says only that the app is not sure. Gender-neutral by construction in
+   both languages — *Vanhempasi*, never *Äitisi* — because the archive stores
+   no gender (§2). A word reaches the screen as a `String`, so `Word.label`
+   is `String(localized:)` and both tables carry all twenty-two (CLAUDE.md,
+   Language). A friend's word is the whole one-step path from you and
+   nothing longer: *Ystäväsi* names Jonne, and nobody is reached through him.
+   A cousin who is also a friend reads *Ystäväsi*, the shorter of two true
+   words. And the words are read from the bonds the drawing keeps: a parent
+   bond entered the other way round after its reverse is left out, as the
+   layout leaves it undrawn, so from Sulo's phone Onni — drawn as his
+   child — reads *Lapsesi*, where an engine handed both bonds matched upward
+   before downward and called him *Vanhempasi*.
 
-     **What it scrolls to is not a person, and that is the whole difficulty.**
-     A place in the drawing is an `.offset`, which moves what is painted and
-     leaves the layout frame where it started, so every node reports the
-     drawing's own top left corner and a reader handed a person scrolls to the
-     corner it is already showing — measured on a tree that did not move at
-     all, for anybody. `FamilyTreeView.anchors` lays one empty rectangle per
-     place in the grid, over the scaled drawing rather than inside it, since
-     `scaleEffect` is a rendering transform for the same reason; nothing is
-     drawn and nothing is read, and the scroll views have geometry they can
-     see.
+   **Captions inside the drawing.** *Ystävät* and *Ei vielä sukupuussa* stand
+   on the caption rows the layout leaves empty above each band, drawn
+   `captionBand` tall — 44 points at the default size — rather than a
+   generation tall. When the archive holds families that share nobody,
+   *Toinen perhe* stands over every family but the first in a band across
+   the top, and it says why their cards carry no word: every family starts
+   at row 0, and nothing is known about the second one's age either way.
+   Each wraps at the window's width, measured from the canvas and handed
+   in with the drawing: a name stops at its place's edge and a caption has
+   no edge to stop at, and *Ei vielä sukupuussa* at the largest text size
+   ran 461 points across a window of 402 before it did (25 Sep 2026). A
+   band of `Elder.card` shades every other generation of each family, counted
+   from your own row in yours so that yours is always a shaded one, so a row
+   reads as one row across a family too wide to see at once. Card on paper is
+   1.11:1, a tint and not an edge; the names measure 16.81:1 on it against
+   15.17:1 on paper, so no name gets harder to read for being in a shaded
+   generation.
 
-     **Sideways only, and the reason is the audit rather than the arithmetic.**
-     Driving the up-and-down scroll works — a second set of handholds beside
-     the rail, outside the sideways view, opened the tree on Elina with her
-     parents above and her daughter below — and it costs the screen its
-     accessibility sweep. Between the scroll view's fold and the tab bar lie
-     some 52 points that are on the screen without being in the scroll view;
-     the zoom bar is drawn there, opaque, and whatever the fold cuts off lands
-     behind it, laid out and painted nowhere. Measured from the pixels of the
-     audit's own frames: *Saima* 1.03:1, *Lauri* 1.04:1, twelve shades of
-     paper and no ink in either. Rows repeat every 156 points and a name is 20
-     tall, so better than one stopping place in two strands one there —
-     centring your own row failed at the default text size, centring the row
-     above it failed at the largest, each passing where the other failed. It
-     is not new: one `swipeUp()` added to the sweep at `e396bfb` fails the same
-     way on a disc cut by the right-hand edge, so the screen has never passed
-     its audit anywhere but at rest in its own corner, which until now was the
-     only place anybody had seen it. Closing it means that strip cannot hold
-     opaque chrome, and where the zoom buttons would go instead is a question
-     about the screen. Sideways alone is clean at both text sizes, and
-     sideways is the larger half: seven windows across against two down.
-   - **And the rail's words stop where your family does** (19 Sep 2026). Until
-     then only half of the paragraph above was answered: the band ended at
-     your family, but the rail is one column for the whole picture and does
-     not scroll, so scrolling right to Otto and Helmi left them standing level
-     with *4 polvea ylempänä* — a generation counted from a person they are
-     not related to, which is the same thing a marriage drawn through a third
-     person said and falls under the same rule. The screen now asks
-     `FamilyTreeLayout.inView`, which is the one line of arithmetic in this:
-     whether any of your family is still inside the window, measured in
-     person-widths from the drawing's own frame so that the centring of a
-     narrow family and the scrolling of a wide one are the same question. In
-     view, the words; out of it, *Toinen perhe*, because a column that empties
-     itself explains nothing. The drawing's own numbering, which a phone
-     linked to no card gets, is left alone: every family starts at row 0, so a
-     row counted from the top of the drawing is as true of one as of another.
+   **The drawing is a map**: a `UIScrollView` whose zooming view is the SwiftUI
+   drawing. It moves in both directions under one finger and grows about two
+   fingers between 0.4× and 2.5×, and when the pinch ends the drawing is laid
+   out again at the new scale, so the text is rendered at its size rather
+   than stretched. The pinch is a recognizer of our own on the scroll view
+   (`TreePinch`), because the scroll view's own never fires here: SwiftUI's
+   responder recognizer on the hosted drawing recognises on the first touch
+   and prevents every other recognizer in the chain, so a pinch that began
+   on two cards — where the fingers land more often than not — was two
+   taps, a sheet and no zoom. Measured 25 Sep 2026, with the built-in
+   recognizer holding two touches at the first event and none from the first
+   move. `TreePinch` refuses to be prevented, and a gate keeps the presses
+   that ran through it from being taps
+   (`testTheTreeZoomsUnderTwoFingersAndKeepsItsPeople` asserts both the
+   growth and the absence of a sheet). Two buttons take the place of the magnifiers a hand that
+   cannot pinch used to get. They are paper capsules with a hairline rather
+   than the system's bordered style, which is glass on iOS 26, and the
+   drawing stops at the tab bar instead of running under it: the audit's
+   contrast check reads a text element's pixels into a set of colours one by
+   one, and text on glass or under it at the largest size is more colours
+   than the check's fifteen seconds hold — measured 25 Sep 2026 in a sample
+   of testmanagerd, and the reason `testFamilyTreeAtSize` timed out on every
+   run until then (the header of `AccessibilitySweepTests.swift`). The
+   buttons sit 24 points above the bar rather than 8, because XCUITest's
+   zoom-out pinch begins its second finger nine points inside the element's
+   bottom-right corner — under the bar and beside the tabs while the drawing
+   ran under it, on the *Sinä* button once it stopped — and a button takes
+   the finger: the recognizer saw one touch, the scroll view panned, and
+   `testTheTreeZoomsUnderTwoFingersAndKeepsItsPeople` said a name was still
+   drawn at the smallest zoom, alone, on the first run inside the bars.
+   *Koko suku* fits the whole family in the window,
+   never above 1×; *Sinä* flies to your own card at 1×, into the upper part of
+   the window — the card's centre at half the width and three tenths of the
+   height, so that your parents are above it and your children below. A tap
+   on a person flies the same way at 1× or the current scale if it is
+   larger, and their sheet comes up with the word, how many memories the
+   archive holds about them when it holds any — the count the person list
+   shows, and the map plan's *2 muistoa* on a chip — *Avaa kortti* and the
+   five ways to add a relative. The sheet is the window's full height, and
+   the medium detent that would have kept the card in view over it is
+   gone: iOS 26 lays a half-height sheet's content out at the window's
+   width and draws it at the sheet's — 402 laid out, 386 drawn, every frame
+   a multiple of a 67th — so every line in it is 4 % smaller than the size
+   the reader asked for, and the audit reported each one clipped at both
+   text sizes, twice alone on 25 Sep 2026, and nothing once the detent went.
+   When the sheet goes, the person is where the flight left them, with their
+   name. The flight is 420 milliseconds ease-in-out, and none under Reduce
+   Motion. **Below 0.65× the
+   names, the words and the captions are not drawn at all** — a name at the
+   smallest zoom would be 6.8 points of ink in the shape of a word — and the
+   discs stay, each still a tap target of `Elder.minTapTarget` on the screen
+   whatever the scale. A tap at that size flies to the person at 1× with
+   their name back, so the pinch is optional and *Koko suku* is a picture of
+   the family's shape.
 
-     **What this cost was a test that had been measuring the defect.**
-     `testTheGenerationsStayNamedAfterScrollingAcrossTheFamily` swiped three
-     times and asserted the words were still there; a flick carries some 700
-     of the drawing's 2376 points, so three of them land past the end of your
-     own family on Otto and Helmi, and the assertion was the wrong behaviour
-     written down as a requirement. It swipes once now and measures the
-     drawing itself — your own card carried left by more than 100 points —
-     rather than naming whoever happens to be at the far end of one flick,
-     which cost a second recalibration the same morning when the picture began
-     opening somewhere new.
-   - **A generation comes from blood, and what still will not fit is named**
-     (19 Sep 2026). Fifty-three people offer 75 relationships and 74 survive
-     de-duplication; two of those cannot be drawn, because everybody is of one
-     generation in a picture and a bond may disagree with the rows. Dropping
-     the line is right — rule 4, a wrong relationship is worse than a missing
-     one — but *which* line was dropped fell to whichever the breadth-first
-     walk happened to reach first, and in the fixture's family it fell the
-     wrong way: Eemeli took his generation from his wife Sirkka, landed a row
-     below his own brother Oiva, and the brotherhood was the line that went,
-     where the marriage is the bond that crosses two generations and
-     `ClanFixture` says so in as many words beside it.
+   **Where the picture begins.** At its natural size and never smaller:
+   centred, when the whole family fits the window; on your own card when it
+   does not; and at its own top left corner, like any picture, on a phone
+   linked to no card. The first draft of this opening fitted a family that
+   fit at a scale that still had names, and the audit is what refused it —
+   the same way it refused the rail's shrinking names on 19 Sep. Its
+   default-size run steps the text through twelve sizes, the drawing was
+   fitted again at each, and at the sizes where the family nearly fit it was
+   shrunk to fit: every name on the screen reported clipped, twice alone on
+   25 Sep 2026. The reader may shrink this drawing and the app may not do
+   it for them; *Koko suku* is the same fit, and the reader's to press. The
+   opening is taken again whenever the
+   window's size or its insets change, until the reader has moved the
+   drawing — which is what the accessibility audit needs, because its screen
+   is laid out once with the tab bar and once without, and the first shape
+   opened against the wrong one. Two measurements it waits for: the bars'
+   insets are read from the scroll view's own `safeAreaInsets` with
+   `contentInsetAdjustmentBehavior = .never`, and the two buttons' band is
+   measured with `onGeometryChange` into `controlsHeight`, and no opening is
+   taken before it is known, because an opening taken against a window
+   without the band is moved when the band arrives, and a name under a
+   button is one the audit reads as paper on paper
+   (`testTheTreeOpensWithNothingUnderItsButtons`, at both text sizes).
 
-     Parent and sibling links are now walked to exhaustion before any
-     marriage, because descent says which generation somebody is of and whom
-     they married does not. It is an order and not a ban: a marriage still
-     answers for whoever has no blood relative in the tree at all, which is
-     everybody who married in. One person of the fifty-three moves under the
-     rule, onto his brother's row, and the drawing narrows from eighteen
-     places to seventeen.
+   **What is deliberately not there.** No `accessibilityZoomAction`: VoiceOver
+   never reaches this screen, because `PeopleTab.showsTree` sends it to the
+   list, so a zoom action here would be code nothing can run. No zoom
+   buttons: fit, home and closer are the two named buttons and a tap on a
+   person. No word for a relationship the table does not name — a
+   great-great-grandparent, a parent's cousin's wife, a second cousin's
+   daughter — because Finnish has no word anybody says for most of them, and
+   an approximation is the failure rule 4 is about.
 
-     **The drop itself was the silent half.** A line quietly absent looks, from
-     the picture alone, exactly like a bond nobody has entered yet — the one
-     reading that sends somebody off to enter it a second time.
-     `Result.undrawn` carries the refused links out of the arithmetic and
-     `FamilyTreeView.undrawnNote` names them under the drawing: *Eemeli ja
-     Sirkka — aviopuolisot*, *Onni ja Sulo — vanhempi ja lapsi*, the second
-     being a pair each entered as the other's parent, which is what a proposal
-     confirmed from both ends looks like in an archive. Nothing on that screen
-     calls anybody wrong, because the app does not know which of the two
-     answers the family meant. Three cases in
-     `scripts/family-tree-layout-check.swift` hold both halves, and they could
-     have failed: compiled against the old walk with `undrawn` kept, the
-     blood-before-marriage case goes red in three places.
-   - **The drawing keeps the reader's own text size, and opens on a card
-     rather than on a grid square** (19 Sep 2026, after half a day of getting
-     it wrong). A place and a generation are `@ScaledMetric`, so the picture
-     grows with the text and the phone does not: at the largest accessibility
-     size the rail takes 248 of the 402 points the phone has and the drawing
-     is left with 153, which is not a whole card. The answer taken that
-     morning was `FamilyTreeView.fit`, an opening scale of
-     `window.width / (2 x columnWidth)` capped at 1, so that a couple was
-     always in view.
+   **Where everybody lands is `FamilyTreeLayout`**, rewritten with the screen,
+   and `scripts/family-tree-layout-check.swift` with it. Nine requirements,
+   each a way of being wrong that draws just as well: everybody placed once, a
+   place apart, the leftmost at zero; generations as rows, per family, every
+   family starting at row 0 and drawn side by side, yours first and the rest
+   by their earliest card; an
+   earlier relationship winning over a later one that contradicts it, the
+   loser returned in `undrawn` for the menu to name rather than dropped, and
+   an exact or reversed duplicate dropped in silence; a couple adjacent,
+   somebody twice married between the first two spouses, and a couple's line
+   dipping round a third person rather than running through them; a bracket
+   from a couple's union to their children at a hang dealt so that two broods'
+   bars never share a height where they overlap, with the children contiguous
+   and centred; a bar at `row − 0.4` over siblings who share no entered
+   parent; the
+   same picture whatever order the family was entered in; the friends' band
+   and then the loose row under the families, an empty caption row over each,
+   wrapped at the drawing's width; and fast, because it runs on every change.
+   `scripts/family-tree-layout-check.swift` drives them over the clan — six
+   generations with the root on the fifth, Aapo between Hilma and Lyyli with
+   each marriage's children hung from its own midpoint, Impi and Urho a
+   couple with nobody under them, Sulo's one child under his own name, Oiva
+   and Eemeli on a sibling bar, Rauha among her kin and Jonne on the friends'
+   band, the loose seven on one row, the bands on rows 7 and 9 with their
+   captions on 6 and 8 — then the same clan with every symmetric link turned
+   round and shuffled twenty times, and the cases the clan has no room for:
+   a person married three times, a couple's line dipping under the root's
+   own card with the child's stem starting on the dip, contradictions
+   undrawn once in input order, repeats dropped in silence, a link to nobody
+   known ignored, siblings with and without parents entered, unmarried
+   parents and three parents each with a stem under their own name, children
+   centred, the bands wrapped at a family two wide. Then 5 000 seeded random
+   families — 121 938 links between them — with the eight invariants derived
+   from the input again and audited on every one, 4 548 of them re-run with
+   their links reversed or shuffled and the picture compared, and the cost:
+   the clan's 55 people laid out in half a millisecond and the whole check
+   in about two seconds, unoptimised, as `verify.sh` compiles it. One thing
+   the check excuses rather than asserts, and proves before it excuses:
+   where the couples rule cannot hold at all — somebody entered as the
+   neighbour of three people, or marriages that close a ring — the check
+   shows it for that family, excuses exactly those claims and prints the
+   reason, and every other claim in the same family is still asserted. Two
+   named cases pin the proof; none of the 5 000 needed it, and 2 of the
+   20 000 the sample was cut from did.
 
-     **That factor was Dynamic Type inverted and the accessibility sweep said
-     so immediately.** It shrinks the drawing by as much as the text grew, so
-     the larger a reader sets their type the smaller this screen draws its
-     names: measured from the sweep's own screenshots on `-seed related`, one
-     launch at each size, *Eeva* is a 37.33 x 20.33 point line at the default
-     size and 22.95 x 13.05 at AccessibilityXXXL — on a screen where the
-     title, the legend, the rail and the sentence under the drawing had all
-     grown by three. The sweep reported all four names and the caption as
-     *Text clipped* at both sizes, and nothing on the screen was cut; the size
-     was the defect. `testFamilyTree` is green at `b6c1fec`, red at `da5d5ae`
-     and red at `d4889b6` with byte-identical frames, each measured alone on a
-     private simulator within the same half hour.
+   **Which word each card gets is `Kinship`**, and
+   `scripts/kinship-check.swift` derives it rather than asserting it: every
+   card of `-seed clan` from Elina's phone against the words worked out by
+   hand from the fixture, the same from seven other phones and from Sulo's
+   for the contradiction, then 600 seeded random families and a thousand
+   random tangles of ties against a reference that walks every shortest
+   path by brute force — under three seconds unoptimised, the engine itself
+   some sixty microseconds a phone. Its one concession is the mirror. A
+   word is required to mirror its reverse — *Vanhempasi* one way, *Lapsesi*
+   the other — only where the pair has a single shortest reading, because
+   two siblings married to two siblings are *Sisaruksesi puoliso* from both
+   ends and no order of the table can make them differ: 616 such pairs
+   among 2 164 ambiguous ones on the last run, every one of them that
+   exchange. Broken on purpose in twenty ways — two table rows swapped, a
+   longer path accepted, a path continued through a friend, half-siblings
+   lost, a neighbouring key under a word — the engine failed the check in
+   seventeen; the three it did not catch cannot change an answer.
 
-     One thing hid the second half of that for a while, and it is worth
-     knowing before reading any sweep log: `continueAfterFailure` is false, so
-     a sweep that fails at the default size never launches the largest at all.
-     Both of the tree's failures were reported as *default text size* only,
-     and the five findings at the largest size — the ones carrying the
-     inverted numbers — were never printed. A passing sweep opens the app
-     twice; a failing one opens it once.
+   **What the tests hold.** `FamilyTreeTests` asks over a family of three
+   whether the screen works: Ihmiset opens on the tree with everybody
+   confirmed in it and nothing else on the screen, the list and every other
+   door are in the menu, your card says *Sinä* and your husband's *Puolisosi*
+   inside their own buttons and inside the scroll view, the picture zooms
+   under two fingers and keeps its people as tap targets at the smallest
+   size, a person's sheet says how many memories the archive holds about
+   them and opens their card or takes a new relative on the spot, and a
+   grandparent's phone keeps the list. `FamilyTreeCrowdTests` asks over
+   `-seed clan` what only happens at size: the thirteen words Elina's family
+   has, counted card by card against what the kinship check derives — two
+   *Vanhempasi*, four *Isovanhempasi*, five *Isovanhempasi sisarus*, one
+   *Ystäväsi* — and seventeen people who get none; nothing on a phone linked
+   to no card; the words moving with the drawing under a flick; *Toinen
+   perhe* over Otto and Helmi eight screens away; the opening on Elina with
+   her parents above and her children below and nobody under the buttons at
+   either text size; the discs alone at the smallest zoom, Aapo still a
+   44-point target and his name back on a tap; *Sinä* flying home from the
+   far end; a tapped card in the upper half of the window over its sheet; the
+   legend and the two undrawn bonds in the menu; Onni reading *Lapsesi* from
+   Sulo's phone, the way he is drawn; each caption a caption's height under
+   what it follows; and a name larger at the largest text size
+   than at the default. The sweeps *Sukupuu*, *Sukupuu, iso suku*, *Sukupuu,
+   valikko* and *Sukupuu, henkilö* audit the four screens at both text sizes.
 
-     So the factor is gone and the drawing is drawn at the reader's own size.
-     What answers the original complaint instead is where the picture opens.
-     `anchors` hung one handhold per whole place and `show` rounded a person
-     to it, `Int(place.x.rounded())`, which is half a place of error — 66
-     points at the default text size, where the card still lands on the
-     screen, and enough at the largest to put the whole card outside a
-     153-point window: Elina's card at x 68.67 in a window beginning at
-     248.67, a tree that opens on the lines between two strangers. There is
-     now one handhold per person, a point wide, on their own centre line, and
-     `show` scrolls to the person rather than to a grid square. The vertical
-     handhold is `cardBand` — the air above the discs, a disc, the gap under
-     it and a line of the name — rather than the whole row: `scrollTo` aligns
-     a fraction of the target with the same fraction of the window, so a
-     target taller than the window cannot put its contents anywhere the reader
-     can see them, which at the largest size opened the tree on a disc with
-     its name below the fold. `openingRow` moved from 0.35 to 0.31 with it and
-     the picture at the default size is the same to a point, which is the
-     arithmetic in the comment and was confirmed by
-     `testTheTreeOpensWithNothingUnderTheZoomBar` naming the three names that
-     0.35 of a band left under the bar.
-
-     `testTheDrawingsNamesGrowWithTheReadersText` replaces the test that
-     asserted two places fit, which was the wrong claim to hold. It launches
-     `-seed clan` twice and asks that the same name be taller at
-     AccessibilityXXXL than at the default size and hittable where the drawing
-     opens. It could have failed: run against the view as it was, it reports
-     that 13.05 is not greater than 20.33.
-
-     One finding was left over and is a hole in the audit rather than in the
-     screen. With the drawing at its full size, a six-generation family always
-     has names below the fold, and the sweep reported *Contrast failed* on
-     *Matti* at y 1084.33 of an 874-point screen — twice alone, identically,
-     and *unmeasurable*, because `ContrastMeter` will not crop off the
-     picture. `AccessibilityPolicy` already forgives contrast above the
-     viewport for exactly that reason; it now forgives it below the screen as
-     well, contrast only and only where the element is wholly past the bottom
-     edge. A name half on the screen still has pixels and is still judged.
-   - **The drawing opens on your own row, and not four generations above it**
-     (19 Sep 2026). `show` had one handhold, the cell, and a cell lies inside
-     the horizontal scroll view which lies inside the vertical one — so
-     `scrollTo` moved the inner view alone and the picture opened on your own
-     column at the top of the drawing. On `-seed clan` that is your
-     great-great-grandparents, with the rail beside them reading *4 polvea
-     ylempänä*: the drawing saying in words how far from you it had opened.
-     Measured at both text sizes, Elina sat at y=947 on an 874-point screen
-     and could not be tapped.
-
-     The second handhold is a column of its own beside the rail, outside the
-     horizontal view and therefore able to drive only the other one. The
-     afternoon went on the first attempt, which hung those handholds on
-     `.offset`: that moves what is drawn and not what is laid out, so every
-     one of them sat at the rail's top and every row scrolled to the same
-     place. Laid out instead as a `VStack` of measured heights — the shape
-     `anchors` has carried in this file for exactly this reason — she opens at
-     349 points at the default size and 375 at the largest, her parents' row
-     above her and her children's below. The second of those two numbers was
-     taken while the drawing was still scaled down to fit two places in the
-     window, and does not describe the screen after the entry above.
-
-     Where it stops is measured rather than chosen, because the fold now cuts
-     a screen somebody is looking at. The scroll view's fold lies where the
-     zoom bar begins, and whatever it cuts stays in the accessibility tree
-     while being painted nowhere: VoiceOver reads a name no eye can find, and
-     the audit measures paper on paper. Four stopping places were tried on the
-     same seed. Centring her leaves six names under the bar — Saima, Lauri and
-     Hellin with their initials — 0.42 and 0.6 leave three each, and a third
-     of the way down leaves none; at the largest size nothing of the drawing
-     reaches the strip at all. `FamilyTreeView.openingRow` was that 0.35 — it
-     is 0.31 since the entry above gave it a card band to take a fraction of
-     instead of a whole row, which is the same opening to within a point — and
-     `testTheTreeOpensWithNothingUnderTheZoomBar` measures the strip rather
-     than trusting it, so a phone shaped differently enough to break the
-     constant says so. Both new tests could have failed: without the second
-     handhold the opening test reports that the tree does not open on you, and
-     with her centred the strip test names those three.
-
-     One thing this does not fix and does make more visible. The tree's
-     accessibility sweep is red before the change and after it, on every
-     visible name, with `Text clipped` — six findings at the old opening and
-     ten at the new one, because four more names are now in the window. Same
-     defect, same kind, more of it on screen; it is the drawing's name labels
-     and not the scrolling, and it is the next thing to measure.
-   - **A man married twice stands between his wives.** The row used to pair
-     him with whichever marriage the archive holds first and put the second
-     wife beyond her, so the line to that marriage ran straight through the
-     first wife and the bracket to its children dropped from the middle of the
-     couple — with a wife on each side of him, her own place. The picture said
-     *Hilma and Lyyli are a couple* and *Kerttu hangs from Hilma*, and the
-     archive says neither. A row's unit is now the whole chain of marriages
-     rather than a pair, walked from whoever married fewest to the partner
-     with fewest marriages left, which leaves the one married twice in the
-     middle: over the fixture's 53, both his lines are one place long and both
-     brackets drop at 0.5 and 1.5, between people rather than on one. Three
-     marriages are one more than a row can put side by side — the third bends
-     a quarter of a row below and goes round whoever stands between, and its
-     children hang from that bent line instead of from her. The bend is
-     arithmetic no screenshot has shown yet: `-seed clan` has a second
-     marriage and no third.
-   - **The caption's dead generation is gone.** The layout leaves an empty row
-     above the people related to nobody for the screen's caption; the screen
-     now takes the air back out of it — 134 points of nothing at the default
-     text size — instead of only doing so when there was no tree above it.
-   - **The zoom bar is below the drawing rather than over it.** As a
-     `safeAreaInset` it floated on top, and in a family of any size somebody is
-     always under it: the audit measured two names at 1.04:1, which is paper on
-     paper — not dimmed, covered.
-   - **The drawing is a map, and nothing else is on the screen** (19 Sep
-     2026). Asked for in two sentences: take everything that is not the tree
-     off the screen and put it behind one small button, and let the picture
-     be dragged and zoomed like a map. Until then `FamilyTreeView` was a
-     vertical page with a horizontal strip cut into it — two nested
-     `ScrollView`s, because the rail had to stay put sideways — with the
-     legend, a sentence of instructions, the note on undrawn bonds and the
-     door to the heard names stacked around the drawing, and a
-     `MagnifyGesture` over a `scaleEffect` anchored at the drawing's corner.
-     A page of that kind cannot be dragged diagonally, grows about the wrong
-     point, and at the largest text size left the family a 153-point sliver
-     between a 248-point rail and a sentence a third of the screen tall.
-
-     `TreeCanvas` is a `UIScrollView` under a `UIViewRepresentable`, and the
-     drawing inside it is the same SwiftUI canvas as before, hosted. UIKit's
-     pan is the reason: two axes at once, with deceleration. Its pinch is not
-     used, because `UIScrollView` zooms by transforming the view and text is
-     stretched from its rendered pixels until the gesture ends; a
-     `UIPinchGestureRecognizer` of the screen's own drives the SwiftUI scale
-     instead and the drawing is laid out again at every step, sharp at every
-     size, with the point under the fingers put back under the fingers by
-     arithmetic — the same arithmetic the two buttons use about the middle of
-     the window. The drawing is laid out under the bars (`ignoresSafeArea`,
-     the insets handed to the scroll view as `contentInset`), centred when it
-     is smaller than the window, and the generation words and the caption
-     over the people related to nobody are labels pinned to the window's
-     edge on scraps of paper, placed from what the scroll view reports of its
-     offset. So the words keep their own size while the drawing zooms, the
-     caption is no longer painted four places off the screen whenever the
-     picture opens on somebody's own column, and `FamilyTreeLayout.inView`
-     still swaps the words for *Toinen perhe* out past your own family.
-     Each word stands in the air above its row's discs rather than on them:
-     the first screenshot had *Vanhemmat* laid over the top of a disc in the
-     first column, a quarter cut out of Tuula, and a word over the air
-     between generations covers only lines. The words were wide enough for
-     *Lastenlastenlapset* on one line now that their width is no longer
-     taken from the picture, so the hyphenation the 16 Sep entry lists is
-     gone with the rail; the generation words that replaced them the same
-     evening are one line each at 140 points, measured above.
-
-     **What the screenshots and the test runs measured that the arithmetic
-     had not, 19 Sep 2026.** The generation words stood two rows below their
-     rows, placed as though the drawing had not been scrolled: the first
-     update of the scroll view reports its window deferred, the first layout
-     reports its own at once, and the deferred one — taken before the
-     opening — was delivered after it and wrote it over. A deferred report
-     now delivers the newest window at the moment of delivery. The caption
-     over the loose people was the same defect measured, 440 points from the
-     last row instead of under 156.
-
-     The bars' insets are UIKit's to report, on the scroll view itself. They
-     came from a `GeometryReader` around the canvas until a probe logged
-     them: a top inset of 116 points for a frame that already began below
-     the bar, and nothing for the tab bar the frame ran under — so the
-     drawing kept 116 points of air over its first row, opened with its last
-     row under the tabs, and moved 83 points when the proxy's late second
-     answer arrived. An audit that began between the two read every name in
-     three rows off pixels 83 points away from it and called ten of them
-     low-contrast, all of them ink on paper. `safeAreaInsets` on the scroll
-     view answers 0 at the top and the tab bar's 83 at the bottom, and
-     `safeAreaInsetsDidChange` says when that changes. The zoom buttons'
-     band is the one part of the inset UIKit cannot know; it is measured
-     from the buttons and the opening waits for it, so that the picture is
-     placed once, against the window it will have.
-
-     **The rail is the drawing's leading inset too** (21 Sep 2026). The
-     words stand over the air between rows, which is where the bars run, and
-     the drawing began at the window's own edge underneath them. The first
-     family entered on a phone showed the cost: zoomed out to fit, in
-     English, where every word is two lines, the scraps covered the left two
-     columns and a half of every gap — Paula's name, the bar from her to
-     Jorma, and the lines down to Juhani and to Erkko, each the child of one
-     parent and placed on that parent's far side, which is the left. Both
-     read as children of nobody and Anna as Jorma's alone, from a drawing
-     with nothing wrong in it but a word laid over the line. The words' band
-     — their offset from the edge, the widest scrap, the offset again as
-     air, 156 points at the default size — is the scroll view's left inset
-     now, as the buttons' band is its bottom one: a family that fits the
-     window rests beside the words with none of it under them; one that
-     does not opens on your own column in what is left of the window, and
-     whatever lies left of that column is under the words until the reader
-     moves it. Measured on the same family at the smallest zoom, in English
-     on the 402-point simulator: the widest word ends at 125.7 points and
-     the leftmost name, Juhani's, begins at 153.6. Never more than half the
-     window, because at the largest text size the words are wider than a
-     phone and a drawing left no room is not a picture; there the words wrap
-     inside the half they have, hyphenated where one word is longer than it
-     — given their scaled width instead, *Sinun polvesi* lay across the
-     reader's own disc at the opening. The price is width: a 375-point phone
-     shows four columns beside the rail at the smallest zoom where it showed
-     seven with nearly three of them under the words, and the zoom's floor
-     stays at 0.4.
-
-     **And the words stand beside their rows' discs now, not over the air
-     above them.** The inset answers the family that fits; a family wider
-     than the window opens on your own column, and whatever is left of it
-     lies under the rail, so the words still cover what runs there. Over
-     the air, that is the bars — and the 19 Sep choice of the air over the
-     discs ("a word over the air between generations covers only lines")
-     had the harms the wrong way round: a covered disc is visibly covered,
-     a covered bar is a child of nobody. English settled it. Every one of
-     its generation words is two lines at any width a phone can give the
-     rail — *Your grandparents' generation* is 172 points of `.caption`,
-     *Grandchildren's generation* 154 without *your* — and a two-line scrap
-     standing on the discs reached 36 points up into the 23 the deepest
-     bar leaves under the parents' row at the default size: at the opening
-     on the same phone family, in English, the bar from Paula to Jorma
-     went under *Your parents' generation* with the rail already inset.
-     Centred on the discs, a two-line word is inside the disc's height at
-     the default size, at the largest, and at every zoom the buttons reach
-     — at 0.4 its top edge touches the deepest bar's underside and no
-     more. The words are the same; only their place changed, and
-     `FamilyTreeTests` holds it.
-
-     The drawing no longer lies under the top bar, only under the tabs:
-     Eeva's card in the person sweep opened at eight points from the top,
-     under the bar and not hittable, and the status bar fades whatever
-     scrolls beneath it into a colour the audit reads as the name's own —
-     the policy forgives that under the tab bar alone, where it was
-     measured. The opening then moves the picture the least that takes
-     every name out from under the buttons' band: lifted until the caught
-     row's names end at the band's top when your own card stays whole,
-     pushed below the band when it stays whole that way instead, and left
-     to the fraction when neither move keeps it. *Lauri* and *Hellin* were
-     five points under the buttons' top edge at the default size with the
-     fraction alone deciding; lifting every row that ended short of the
-     drawing's end carried Elina off the top at the largest text size,
-     where the last row is a screen and a half below her; lifting the last
-     row alone left the next row's disc under the buttons at that size,
-     where a row is taller than the window and a disc is under something
-     whatever the opening. A disc's edge is the map's business and a
-     finger's; the names are the words. The strip test counts a text longer
-     than a letter for the same reason: the runner sees a disc's initial as
-     a text, `accessibilityHidden` or not. And the list's search field is on
-     the list alone: over the tree it surfaced whenever the picture was
-     scrolled to its top, and a search is answered as a list in any case.
-
-     The audit moves the drawing itself. `performAccessibilityAudit` steps
-     the text size through twelve categories and back, the drawing is laid
-     out again at each, and a smaller drawing under the old offset is
-     clamped by the scroll view to an offset the old size never asked for.
-     Probed 19 Sep 2026: the first step shrank the drawing from 1136 to 981
-     points, the offset went from 478 to 396 and stayed there when the size
-     came back, with the loose row under the buttons and six names' colours
-     read off pixels the drawing had left — ink on paper, every one. A new
-     size re-applies the opening exactly as a new inset does, for as long
-     as the reader has not moved the picture.
-
-     The rest is behind one button. The bar over the tree has no title and
-     one item, *Valikko*, with an `Elder.proposal` dot on it while heard
-     names wait; the list's three toolbar items — a new person, the settings,
-     the switch — are not drawn over the tree at all. `TreeMenuSheet` is a
-     sheet of plain buttons and not a `Menu`, for the reason the person's
-     sheet is: a menu's rows barely grow with the text size and no UI test
-     here has been able to open one. It holds the list, a new person, the
-     door to the heard names with the same words as under the list, the
-     settings, the key to the lines and the bonds the rows cannot hold, and a
-     door chosen in it is opened after the sheet has gone down. The zoom
-     buttons are two `.bordered` circles in the lower trailing corner, where
-     the opening leaves nothing under them:
-     `testTheTreeOpensWithNothingUnderItsButtons` measures all three floating
-     controls against every card at both text sizes. The film's tree take
-     waits on Helmi's disc now rather than on a title.
-
-     What this does not change: where anybody lands, the rows, the bands, and
-     the opening on your own line — `openingRow` is the same 0.31 over the
-     same card band, applied once by the scroll view's coordinator the first
-     time it has a size. The family of 53 that did not fit still does not:
-     2376 points against a 402-point window is 5.9 windows rather than 7.3,
-     and the same picture at the smallest zoom.
-
-   **`-seed clan` is the fixture all of that was measured against**: six
-   generations, 55 confirmed people — 53 until 21 Sep 2026, when a friend who
-   is nobody's kin and a sister who is also a friend were added for item 5 —
-   a second marriage and the half-siblings
+   **`-seed clan` is the fixture all of that is measured against**: six
+   generations, 55 confirmed people, a second marriage and the half-siblings
    from it, a sibship of six, a childless couple, a child with one parent, two
    cousin marriages, a marriage the generations cannot hold, siblings with no
    parents entered, two families sharing nobody, a contradiction, a duplicate
-   link, an unconfirmed person, and seven people related to nobody. Every
-   defect above is one that five people cannot show. `FamilyTreeCrowdTests`
-   and the *Sukupuu, iso suku* sweep run against it, and the layout check now
-   builds an eighty-person family of its own and asks the same questions of it
-   that it asks of five. **The question it asks about lines is
-   `throughSomebody`**: whether any line in a drawing is over somebody it is
-   not about — a marriage across a third person, or a drop to children that
-   starts on one. It is asked of every family in the file, the eighty
-   included, because the shape that broke it is not rare and the failure is
-   silent: a line over a stranger draws exactly as well as a line between the
-   two it belongs to.
-
-   **What it still gets wrong, measured and not fixed.** None of these is new
-   on 16 Sep; each needed a family big enough to show it.
-
-   - **A link the placement cannot honour is dropped in silence.** Two of the
-     75 the fixture offers: the brother of a man drawn in his wife's
-     generation, and the second half of a contradiction. The drawing simply
-     has no line for them and nothing on the screen says a line is missing —
-     and which of the two ends loses its line depends on the order the family
-     was entered in.
-   - **A family of 53 does not fit at any zoom the app offers.** The drawing is
-     2376 × 1136 points at the default text size; the canvas beside the rail is
-     324 points wide. That is 7.3 canvases at 1×, and 2.9 at the smallest zoom
-     — where a name is `.body` at 0.4, which is 6.8 points. So a big family is
-     read either through a narrow window or too small to read. Option 03 of the
-     16 Sep artifact, one person and their immediate family at a time, was
-     filed as *later, if families grow*; this is that case.
-   - **The rail hyphenates.** Neither *Isoisovanhemmat* nor *Isovanhemmat*
-     fits 78 points at the default text size; they break as *Isoisovan-hemmat*
-     and *Isovan-hemmat*.
+   link, an unconfirmed person, a friend who is nobody's kin, a sister who is
+   also a friend, and seven people related to nobody. Every defect the first
+   shape found is one that five people cannot show. The two bonds the rows
+   cannot hold — *Eemeli ja Sirkka — aviopuolisot*, *Onni ja Sulo — vanhempi
+   ja lapsi* — are named in the menu under *Nämä eivät mahdu kuvaan* rather
+   than dropped, because from the picture a dropped line is indistinguishable
+   from a bond nobody has entered yet, which is the reading that sends
+   somebody off to enter it a second time.
 
 ## 9. Build order
 

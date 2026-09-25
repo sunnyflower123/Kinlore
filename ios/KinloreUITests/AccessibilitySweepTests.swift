@@ -82,6 +82,38 @@ import XCTest
 /// Three greens are not proof the test is sound: the third test above gave two
 /// greens before two reds. They are enough to say this red was not a
 /// measurement of the screen.
+///
+/// **One timeout has a measured cause now, and it is not load.** On 25 Sep
+/// 2026 `testFamilyTreeAtSize` gave up at the largest text size on every
+/// run — alone, on a private simulator, at a load of 20 and of 700 alike —
+/// and the contrast check did it by itself: 15.0 s with a handler that only
+/// counted, while each of the other six checks finished in under four. A
+/// `sample` of that simulator's testmanagerd named the work: twenty leaked
+/// `com.apple.axAudit.automation` queues, one per audit that had given up,
+/// every one still inside `-[AXAuditContrastDetectionManager
+/// _topColorsForImageData:optimized:]` walking `-[UIDeviceRGBColor
+/// isEqual:]` chains. The check reads a text element's pixels into a set of
+/// colours one by one, and a region with thousands of distinct colours is
+/// one it does not finish. Glass is such a region: the tree's two
+/// `.bordered` capsules were text on it and its tab bar was glass over the
+/// row beneath, and at the largest size those regions run to hundreds of
+/// thousands of pixels. The same check over main's tree, on the same
+/// simulator two minutes apart, took 0.8 s — its buttons were images and
+/// its opening kept the names out of the strip. With the capsules paper and
+/// the drawing inside the tab bar: 0.3 s.
+///
+/// Two things follow that are worth more than the finding. **An audit that
+/// gives up does not stop.** Its thread runs on, each timeout slows every
+/// audit after it on that simulator, and after enough of them the runner
+/// cannot start at all — "Timed out waiting for AX loaded notification",
+/// testmanagerd at 800 % of a core, the machine's load in the hundreds for
+/// every session on it. That is what the evening's two "runaway
+/// testmanagerd"s were, and only `kill -9` ends one. And **a red that
+/// reproduces alone at any load is a finding**, whatever the paragraphs
+/// above say about company: the pixel method in CLAUDE.md answers a colour
+/// the audit reported, and this audit reported nothing — which the lines
+/// above already say to reproduce before believing, and which, reproduced,
+/// still took a sample of the daemon to explain.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 
@@ -1129,19 +1161,18 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     /// The same tree at the size a family reaches: six generations and
-    /// fifty-three people, with the generation labels riding the window's
-    /// edge (`-seed clan`).
+    /// fifty-five people, with a kinship word under every card in Elina's
+    /// family (`-seed clan`, `-you clan-elina`).
     ///
     /// The small fixture cannot answer what this one does. The shaded bands
-    /// are new ground under every name in the drawing, and the labels are
-    /// words on scraps of paper over whatever the drawing has under them —
-    /// which at the largest size is a column of hyphenated words over a
-    /// picture three times the size. Both are the kind of thing that measures
-    /// fine at the default size and clips at the largest.
+    /// are ground under every name in the drawing, and the words under the
+    /// names — *Isovanhempasi sisarus* is the widest — wrap inside a place
+    /// at the largest size, which is the kind of thing that measures fine at
+    /// the default size and clips at the largest.
     func testFamilyTreeAtSize() throws {
         try sweep("Sukupuu, iso suku", arguments: ["-seed", "clan", "-tab", "people", "-screen", "tree", "-you", "clan-elina"]) { app, _ in
             require(app.buttons["Aapo"], "the oldest generation")
-            require(app.staticTexts["Sinun polvesi"], "the generation labels")
+            require(app.staticTexts.matching(identifier: "Vanhempasi").firstMatch, "the word under a parent's name")
         }
     }
 

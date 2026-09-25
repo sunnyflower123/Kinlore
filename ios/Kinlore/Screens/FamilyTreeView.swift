@@ -1,40 +1,49 @@
 import SwiftUI
 import UIKit
 
-/// The family drawn as a tree: a generation to a row, a line between a couple,
-/// a bracket from parents down to their children — and, below them, everybody
-/// nobody has said anything about yet.
+/// The family drawn as a tree: a generation to a row, a line between a
+/// couple, a bracket from parents down to their children, a bar over
+/// siblings — and under every name, one word for what that person is to
+/// whoever holds the phone.
 ///
-/// What Ihmiset opens on, on a family member's phone, since 13 Sep 2026, with
-/// the list one tap away (`PeopleScreen`). A grandparent's phone (the
-/// text-floor signal) and VoiceOver get the list, and the relationships as
-/// lists on each person's card, where they read at the largest size and aloud
-/// — a picture of lines is nothing to read. That was the whole case against
-/// drawing the tree (ARCHITECTURE §8, item 13), and it is why the cut could be
-/// reversed: the phone it was a trap for does not see it.
+/// Rebuilt from zero on 25 Sep 2026, after the shape before it was used on an
+/// iPhone 13 mini. That one named the generations on a rail down the window's
+/// left edge, and the rail took 156 of the phone's 375 points: the words
+/// stood over the names whenever the family was wider than what was left,
+/// which at 132 points a place is any family of three. Words pinned to the
+/// window over a drawing that moves under them cannot be kept apart from it
+/// on a phone that narrow, so nothing is pinned any more. Every word is inside
+/// the drawing and moves and scales with it, and what the rail used to say
+/// about a row, each card now says about itself — *Vanhempasi*,
+/// *Sisaruksesi*, *Puolisosi vanhempi* (`Kinship`), and *Sinä* on your own.
+/// Gender-neutral by construction in both languages, because the archive
+/// stores no gender, and said only where it is exact: a wrong relationship is
+/// worse than a missing one (rule 4), for a word as much as for a line.
 ///
-/// **A map since 19 Sep 2026, and nothing else on the screen by default.** The
-/// drawing fills the window, moves in both directions under one finger with
-/// the momentum a map has, and grows about the two fingers pinching it; the
-/// generation words ride the window's left edge, and everything that used to
-/// stand around the picture — the key to its lines, the way to the list, the
-/// door to the names heard, the note about bonds the rows cannot hold, the
-/// settings — waits behind one button in the bar (`TreeMenuSheet`). Until
-/// then the picture sat inside a vertical page with a horizontal strip cut
-/// into it: two nested scroll views, which cannot be dragged diagonally, a
-/// zoom anchored at the drawing's corner rather than the fingers, and at the
-/// largest text size a rail of generation names taking more than half the
-/// width and a sentence of instructions a third of the height, with the
-/// family left a sliver between them.
+/// The drawing is a map. It moves in both directions under one finger, grows
+/// about two fingers pinching it, and two buttons take the place of the
+/// magnifiers a hand that cannot pinch used to get: *Koko suku* fits the whole
+/// family in the window, and *Sinä* flies to your own card at its natural
+/// size. A tap on a person flies to them as well, into the upper part of the
+/// window, and their sheet comes up; when it goes, they are there with their
+/// name. Below `detail` the names and words go and the discs stay, each still
+/// a tap target; a tap at that size flies to the person at 1×, so the pinch
+/// is optional. The map opens at its natural size and never smaller: the
+/// reader may shrink this drawing, the app may not do it for them
+/// (`Coordinator.open`).
 ///
-/// A person in the tree is tapped for what can be done from there: their card,
-/// or a relative added on the spot through the same `RelationPicker` the card
-/// uses, so the tree grows where it is looked at.
+/// Confirmed people and confirmed relationships only (rule 4): a proposal in
+/// a picture of the family is the guess drawn as fact. Where everybody lands
+/// is `FamilyTreeLayout`, checked by `scripts/family-tree-layout-check.swift`;
+/// which word each card gets is `Kinship`, checked by
+/// `scripts/kinship-check.swift`. This view draws both and decides nothing.
 ///
-/// Confirmed people and confirmed relationships only (rule 4): a proposal in a
-/// picture of the family is the guess drawn as fact. Where everybody lands is
-/// `FamilyTreeLayout`, checked on its own by
-/// `scripts/family-tree-layout-check.swift`; this view only draws it.
+/// A grandparent's phone (the text-floor signal) and VoiceOver get the list,
+/// and the relationships as lists on each person's card, where they read at
+/// the largest size and aloud — a picture of lines is nothing to read. That
+/// was the whole case against drawing the tree (ARCHITECTURE §8, item 13),
+/// and it is why the cut could be reversed: the phone it was a trap for does
+/// not see it.
 struct FamilyTreeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -51,27 +60,29 @@ struct FamilyTreeView: View {
     var onList: () -> Void = {}
     var onAddPerson: () -> Void = {}
 
-    /// The scale the drawing is laid out at. A pinch changes it about the
-    /// fingers and the two buttons about the window's middle; either way the
-    /// words are laid out again at the new size rather than stretched, which
-    /// is what keeps them sharp.
-    @State private var zoom: CGFloat = 1
+    /// The last thing asked of the map — fit, fly, zoom — numbered so that
+    /// the canvas performs each once and only once.
+    @State private var command: TreeCommand?
+    @State private var serial = 0
 
-    /// Where the drawing is under the window, reported by the scroll view as
-    /// it moves. The generation words are placed by it, and it decides
-    /// whether they are about the family in view at all.
-    @State private var window: TreeWindow?
-
-    /// How much of the window's bottom the two zoom buttons take, measured
-    /// from the buttons themselves. It is handed to the scroll view as part
-    /// of its bottom inset, so the last row can be scrolled clear of the
-    /// buttons and the drawing opens with nothing under them.
+    /// How much of the window's bottom the two buttons take, measured from
+    /// the buttons themselves and handed to the canvas as part of its bottom
+    /// inset, so the last row can be scrolled clear of them and the drawing
+    /// opens with nothing under them.
     @State private var controlsHeight: CGFloat = 0
+
+    /// The window's width, measured from the canvas, so that a caption inside
+    /// the drawing wraps at it rather than running off it at the largest
+    /// text sizes.
+    @State private var windowWidth: CGFloat = 0
 
     /// The person whose sheet is up, and what was asked of it. Acted on once
     /// the sheet has gone, so a card or a second sheet never arrives under one
     /// still on its way down.
     @State private var chosen: Subject?
+    /// Shut while two fingers are on the drawing, so that a card's press
+    /// that ran through a pinch is not a tap (`TreePinch`).
+    @State private var gate = TreeGate()
     @State private var pendingOpen: Subject?
     @State private var pendingRelative: RelativeRequest?
     @State private var relative: RelativeRequest?
@@ -82,62 +93,34 @@ struct FamilyTreeView: View {
     @State private var pendingDoor: TreeDoor?
 
     /// One place and one generation, growing with the text inside them, so a
-    /// name at a larger size does not run into its neighbour.
+    /// name at a larger size does not run into its neighbour. A generation is
+    /// taller than it was with the rail (156): every card carries a word now,
+    /// and the bar from parents to children runs under the word, not through
+    /// it — `TreeGeometry` says where.
     @ScaledMetric(relativeTo: .body) private var columnWidth: CGFloat = 132
-    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 156
+    @ScaledMetric(relativeTo: .body) private var rowHeight: CGFloat = 168
     /// The same base size and text style `SubjectAvatar` scales by, so the
     /// lines can find the middle of each disc at every text size.
     @ScaledMetric(relativeTo: .body) private var discSize: CGFloat = 48
-    /// The caption's own band above the people related to nobody.
+    /// A caption's own band: over the friends, over the people related to
+    /// nobody, and over a family that shares nobody with yours.
     @ScaledMetric(relativeTo: .headline) private var captionBand: CGFloat = 44
-    /// The widest a generation's word may be before it wraps. Wide enough
-    /// for *Lastenlastenlapset* on one line at the default text size: the
-    /// words float over the drawing now rather than beside it, so their
-    /// width is no longer taken from the picture, and *Isoisovan-hemmat*
-    /// was the one hyphenation anybody had noticed.
-    /// 140 since 19 Sep 2026: the widest generation word, *Isovanhempiesi
-    /// polvi*, is 117.3 points of `.caption` at the default text size, and
-    /// in the 116 that 128 left it it broke at the space into two lines —
-    /// which zoomed out to the smallest covered the names in the row above,
-    /// because the rail's words do not zoom and the air between rows does.
-    @ScaledMetric(relativeTo: .caption) private var railWidth: CGFloat = 140
-    /// The room a generation's word is given beside its row: three lines of
-    /// the caption face, centred on the row's discs. Beside the discs and not
-    /// over the air between one generation and the next, where the lines run:
-    /// a word over the air hid a bar, and the child on the bar read as
-    /// nobody's (21 Sep 2026). It stood on the top of the discs until then
-    /// because a word laid on a disc cut a quarter out of whoever stood in the
-    /// first column (19 Sep 2026) — true while the drawing began at the
-    /// window's edge, and answered since by the inset (`TreeCanvas`'s `rail`)
-    /// rather than by where the word stands. What a word can cover now is the
-    /// disc of a column that lies under the rail, put there by the opening or
-    /// by the reader, and a covered disc is visibly covered; a covered bar was
-    /// a child of nobody. English is why the air would not do: every one of
-    /// its words is two lines at any width a phone can give the rail —
-    /// *Grandchildren's generation* is 154 points of `.caption` without *your*
-    /// — and two lines standing on the discs reached 36 points up into the 23
-    /// the deepest bar leaves at the default size.
-    @ScaledMetric(relativeTo: .caption) private var railBand: CGFloat = 60
-    /// One line of a name under a disc, which is 21 points of `.body` at the
-    /// default text size. It is here so that `cardBand` can be said in the
-    /// same units the drawing is drawn in.
+    /// One line of a name under a disc, 21 points of `.body` at the default
+    /// text size, and one line of the word under it in the footnote face.
     @ScaledMetric(relativeTo: .body) private var nameLine: CGFloat = 21
-    /// One line of *Sinä* under your own name, in the footnote face.
-    @ScaledMetric(relativeTo: .footnote) private var youLine: CGFloat = 18
+    @ScaledMetric(relativeTo: .footnote) private var wordLine: CGFloat = 18
 
     /// From the top of a generation's row to the top of its discs.
     private static let rowInset: CGFloat = 8
 
-    /// The band of a row that the people in it are actually drawn in: the air
-    /// above the discs, a disc, the gap under it and a line of the name.
-    /// `rowHeight` is this plus the air between one generation and the next,
-    /// and the difference matters only to where the drawing opens — a row is
-    /// 156 points at the default text size and 487 at AccessibilityXXXL,
-    /// where the window under the page's own heading is about 440, so the
-    /// middle of a row there is below everything drawn in it.
-    private var cardBand: CGFloat { Self.rowInset + discSize + 6 + nameLine }
-
     private static let zoomRange: ClosedRange<CGFloat> = 0.4 ... 2.5
+
+    /// Under this the names and words are not drawn, only the discs. A body
+    /// name at 0.65 is 11 points, which is the smallest anybody reads; below
+    /// it a name is ink in the shape of a word, and the picture reads better
+    /// without it — the same threshold the study map in Opinnot uses to
+    /// drop its labels.
+    static let detail: CGFloat = 0.65
 
     /// The card this phone's member is in the tree, followed through a merge,
     /// or nil while the family's server links them to none (`Session.linkMe`).
@@ -153,129 +136,111 @@ struct FamilyTreeView: View {
             .sorted { $0.createdAt < $1.createdAt }
     }
 
-    private var layout: FamilyTreeLayout.Result {
-        let ids = Set(people.map(\.id))
-        let live = store.relations.filter { relation in
-            relation.confirmed && relation.deletedAt == nil
-                && ids.contains(relation.fromSubjectID) && ids.contains(relation.toSubjectID)
-        }
-        // A friendship is not a line in a family tree (§21: a friend is not
-        // suku), and the layout is never handed one — as a link it would be
-        // placed as a sibling. It is handed who is joined to the family by
-        // friendship alone, and draws them apart under it; a friend who is
-        // also somebody's kin is placed by the kinship.
-        let links = live.compactMap { relation -> FamilyTreeLayout.Link? in
-            let kind: FamilyTreeLayout.Kind
-            switch relation.kind {
-            case .parentOf: kind = .parent
-            case .spouseOf: kind = .spouse
-            case .siblingOf: kind = .sibling
-            case .friendOf: return nil
-            }
-            return FamilyTreeLayout.Link(from: relation.fromSubjectID, to: relation.toSubjectID, kind: kind)
-        }
-        let kin = Set(links.flatMap { [$0.from, $0.to] })
-        let aside = live.filter { $0.kind == .friendOf }
-            .flatMap { [$0.fromSubjectID, $0.toSubjectID] }
-            .filter { !kin.contains($0) }
-        // How deep a card reaches below the row's centre line, in rows, so
-        // that a line leaving somebody starts under their name: half the
-        // disc, the gap and the name, and two fifths of a line more for the
-        // descenders and some air — measured on the simulator, the letters
-        // of a name reach 52.7 points below the disc's centre at the default
-        // size, and a line started at the arithmetic's 51 sat on the
-        // baseline. On your own card *Sinä* sits under the name, and its
-        // letters end 74.7 points down; the bar to your children runs at 78.
-        let you = yourCardID
-        let name = discSize / 2 + 6 + nameLine
-        let card = name + nameLine * 0.4
-        let yours = name + 6 + youLine
-        return FamilyTreeLayout.layout(people: people.map(\.id), links: links, aside: aside) { id in
-            Double((id == you ? yours : card) / rowHeight)
-        }
-    }
-
     var body: some View {
-        let result = layout
         let people = people
         let you = yourCardID
-        // Nothing fits the drawing to the window, and the one thing that did
-        // was removed on 19 Sep 2026. A place and a generation are
-        // `@ScaledMetric`, so the picture grows with the reader's text while
-        // the phone does not, and the obvious answer is to open it at
-        // `window.width / (2 * columnWidth)` so that a couple is always in
-        // view. That factor is Dynamic Type inverted: it shrinks the drawing
-        // by as much as the text grew, so the larger a reader sets their type
-        // the smaller this screen draws its names.
-        // `testTheDrawingsNamesGrowWithTheReadersText` holds it now. The
-        // reader may shrink this drawing; the app may not do it for them.
+        let ids = people.map(\.id)
+        let live = liveRelations(among: ids)
+        // The words first: how deep a card reaches depends on whether it has
+        // one, and the layout is told how deep every card is.
+        let words = you.map { Kinship.words(from: $0, people: ids, ties: Self.ties(live)) } ?? [:]
+        // How deep a card reaches below the row's centre line, in rows, so
+        // that a line leaving somebody downwards starts under their words:
+        // half the disc, the gap, the name, the word when there is one, and
+        // two fifths of a line more for the descenders and some air. Measured
+        // on the simulator before the rail went, the letters of a name reach
+        // 52.7 points below the disc's centre at the default size, and a
+        // line started at the arithmetic's 51 sat on the baseline.
+        let plain = (discSize / 2 + 6 + nameLine + nameLine * 0.4) / rowHeight
+        let worded = (discSize / 2 + 6 + nameLine + 4 + wordLine + nameLine * 0.4) / rowHeight
+        let result = FamilyTreeLayout.layout(
+            people: ids,
+            links: Self.links(live),
+            friends: Self.friends(live),
+            root: you
+        ) { id in Double(id == you || words[id] != nil ? worded : plain) }
+        let geometry = TreeGeometry(
+            result: result,
+            columnWidth: columnWidth,
+            rowHeight: rowHeight,
+            discSize: discSize,
+            captionBand: captionBand,
+            rowInset: Self.rowInset
+        )
+        let key = DrawingKey(result: result, people: people, you: you, words: words, wrap: windowWidth)
+        let yours = you.flatMap { result.places[$0] }.map { geometry.disc(of: $0) }
+
         ZStack(alignment: .bottomTrailing) {
-            // Under the tab bar, the way a map is, and the scroll view keeps
-            // that much of the drawing out from under it at the end, so the
-            // last row can be scrolled clear of the tabs. Not under the top
-            // bar: the status bar fades whatever scrolls beneath it, the
-            // audit reads the fade as the name's own colour, and the policy
-            // forgives that under the tab bar alone — where it was measured.
-            // A grandparents' row faded to grey under the clock is not a
-            // colour anybody chose, and the audit would be right to say so.
-            //
-            // The bars' insets are UIKit's to report, on the scroll view
-            // itself, and not a GeometryReader's: measured 19 Sep 2026, a
-            // proxy around this canvas answered a top inset of 116 points
-            // for a frame that already began below the bar and nothing at
-            // all for the tab bar the frame ran under, so the drawing kept
-            // 116 points of air over its first row and opened with its last
-            // row under the tabs.
+            // Inside both bars. Not under the top bar, because the status
+            // bar fades whatever scrolls beneath it and the audit reads the
+            // fade as the name's own colour; and since 25 Sep 2026 not under
+            // the tab bar either, the way a map would be, because the bar is
+            // glass and the fade above it a gradient, and a name under either
+            // at the largest text size is more colours than the audit's
+            // contrast check counts in the fifteen seconds it has (the note
+            // at `controls(yours:)`). At the default size the same names
+            // were eight forgiven findings on every run, each costing the
+            // sweep a dozen element reads.
             TreeCanvas(
-                scale: $zoom,
+                size: geometry.size,
                 range: Self.zoomRange,
-                size: CGSize(width: width(of: result), height: height(of: result)),
                 controls: controlsHeight,
-                // The words' band, and the drawing rests beside it rather
-                // than under it (21 Sep 2026). The scraps stand over the
-                // air between rows, which is where the bars run, and the
-                // first family entered on a phone showed what that hides:
-                // zoomed out to fit, in English, where every word is two
-                // lines, the scraps covered the left two columns and a
-                // half of every gap — Paula's name, the bar from her to
-                // Jorma, and the lines down to Juhani and to Erkko, each
-                // the child of one parent and placed on that parent's
-                // far side, which is the left. Both read as the child of
-                // nobody and Anna as Jorma's alone, from a picture with
-                // nothing wrong in it but a word laid over the line.
-                rail: railWidth + 16,
-                opening: opening(result, you: you),
-                key: DrawingKey(result: result, people: people, you: you),
-                onWindow: { window = $0 }
+                opening: yours,
+                key: key,
+                command: command,
+                gate: gate
             ) { scale in
-                canvas(result, people: people, you: you)
-                    .scaleEffect(scale, anchor: .topLeading)
-                    .frame(
-                        width: width(of: result) * scale,
-                        height: height(of: result) * scale,
-                        alignment: .topLeading
-                    )
-                    // The drawing is hosted by UIKit and inherits
-                    // nothing from this view's environment on its own.
-                    .environment(store)
-                    .environment(session)
+                TreeDrawing(
+                    result: result,
+                    people: people,
+                    you: you,
+                    words: words,
+                    geometry: geometry,
+                    wrap: windowWidth,
+                    detailed: scale >= Self.detail,
+                    // A disc alone is 19 points at the smallest zoom, and a
+                    // tap target is 44 whatever the zoom: the place's frame
+                    // is stretched to make up the difference, before the
+                    // scale takes it back down.
+                    tapHeight: Elder.minTapTarget / scale
+                ) { person, point in
+                    guard !gate.pinching else { return }
+                    fire(.focus(point, atLeast: 1), animated: true)
+                    chosen = person
+                }
+                .scaleEffect(scale, anchor: .topLeading)
+                .frame(
+                    width: geometry.size.width * scale,
+                    height: geometry.size.height * scale,
+                    alignment: .topLeading
+                )
+                // The drawing is hosted by UIKit and inherits nothing from
+                // this view's environment on its own.
+                .environment(store)
+                .environment(session)
             }
-            .overlay(alignment: .topLeading) {
-                labels(result, you: you)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                windowWidth = width
             }
-            .ignoresSafeArea(edges: .bottom)
 
             // Inside the safe area, so they sit above the tabs and not under
-            // them. Two small discs in a corner rather than a bar across the
-            // bottom: the bar covered a name of any family at rest — Liisa
-            // and Veikko at 1.04:1 on 16 Sep 2026 — and the corner covers
-            // nothing where the drawing opens, which
-            // `testTheTreeOpensWithNothingUnderTheZoomBar` measures.
-            zoomButtons
+            // them, in the corner a map keeps its controls in — and 24 points
+            // up from the bar rather than 8, for the test's fingers.
+            // XCUITest's zoom-out pinch puts one finger seven points in and
+            // nine down from the top-left corner of the element's frame inset
+            // 50 from each side, and the other the same way inside the
+            // bottom-right corner. A button in that corner takes the second
+            // finger, the recognizer sees one touch, and the scroll view pans
+            // where it should have zoomed. Measured 25 Sep 2026, the day the
+            // drawing stopped running under the tab bar: until then that
+            // corner was under the bar, beside the tabs, and the finger
+            // landed on the drawing. Within nine points of the bottom a
+            // control fails `testTheTreeZoomsUnderTwoFingersAndKeepsItsPeople`.
+            controls(yours: yours)
                 .padding(.trailing, 16)
-                .padding(.bottom, 8)
+                .padding(.bottom, 24)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                    controlsHeight = height + 8
+                    controlsHeight = height + 24
                 }
         }
         .toolbar {
@@ -311,7 +276,11 @@ struct FamilyTreeView: View {
             TreeMenuSheet(
                 heardCount: heardCount,
                 undrawn: result.undrawn.map { link in
-                    UndrawnBond(from: name(link.from, in: people), to: name(link.to, in: people), bond: bond(link.kind))
+                    UndrawnBond(
+                        from: name(link.from, in: people),
+                        to: name(link.to, in: people),
+                        bond: Self.bond(link.bond)
+                    )
                 },
                 choose: { door in
                     pendingDoor = door
@@ -322,6 +291,8 @@ struct FamilyTreeView: View {
         .sheet(item: $chosen, onDismiss: afterPersonSheet) { person in
             TreePersonSheet(
                 person: person,
+                word: person.id == you ? String(localized: "Sinä") : words[person.id]?.label,
+                memories: store.memories(for: person.id).count,
                 open: {
                     pendingOpen = person
                     chosen = nil
@@ -331,6 +302,15 @@ struct FamilyTreeView: View {
                     chosen = nil
                 }
             )
+            // The window's full height, and no medium detent, though half a
+            // window would have left the card just flown to in view over
+            // its own sheet. iOS 26 lays a half-height sheet's content out
+            // at the window's width and draws it at the sheet's — 402 laid
+            // out, 386 drawn, every frame a multiple of a 67th — so every
+            // line in it is 4 % smaller than the size the reader asked for,
+            // and the audit reported each one clipped at both text sizes.
+            // Measured 25 Sep 2026, twice alone on a private simulator, and
+            // clean the moment the detent went.
         }
         .sheet(item: $relative) { request in
             RelationPicker(subject: request.person, kind: request.kind, asChild: request.asChild) {
@@ -361,542 +341,477 @@ struct FamilyTreeView: View {
         }
     }
 
-    // MARK: - Drawing
+    private func fire(_ move: TreeMove, animated: Bool) {
+        serial += 1
+        command = TreeCommand(serial: serial, move: move, animated: animated)
+    }
 
-    private func canvas(_ result: FamilyTreeLayout.Result, people: [Subject], you: String?) -> some View {
-        let yours = yourRow(result, you: you)
-        return ZStack(alignment: .topLeading) {
-            // A band to a generation, every other one, so a row reads as one
-            // row across a family too wide to see at once. Counted from your
-            // own generation, so yours is always one of the shaded ones and
-            // the word for it lands on a band rather than beside one.
-            //
-            // `Elder.card` on `Elder.paper` measures 1.11:1 — a tint and not
-            // an edge, which is what this is for. What matters under rule 1 is
-            // what the names measure against it, and primary text on card is
-            // 16.81:1 against 15.17:1 on paper: both sides of the stripe are
-            // comfortably over the minimum, so no name gets harder to read for
-            // being in a shaded generation.
-            let band = yourFamily(result, you: you)
-            ForEach(treeRows(result, you: you), id: \.self) { row in
-                if (row - (yours ?? 0)).isMultiple(of: 2) {
-                    Rectangle()
-                        .fill(Elder.card)
-                        .frame(
-                            width: CGFloat(band.map { $0.maxX - $0.minX + 1 } ?? max(result.width, 1)) * columnWidth,
-                            height: rowHeight
-                        )
-                        .offset(x: CGFloat(band?.minX ?? 0) * columnWidth, y: y(ofRow: row, result))
-                        .accessibilityHidden(true)
+    /// The two buttons for a hand that cannot pinch, and for anybody: the
+    /// whole family in the window, and your own card at its natural size.
+    /// Words rather than magnifiers, because each does one thing that can
+    /// be named — and *Sinä* is the same word as under your card, and takes
+    /// the reader to the same place.
+    private func controls(yours: CGPoint?) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                fire(.fit, animated: true)
+            } label: {
+                Text("Koko suku")
+                    .font(.body.weight(.medium))
+                    .elderTapTarget()
+            }
+            if let yours {
+                Button {
+                    fire(.home(yours), animated: true)
+                } label: {
+                    Text("Sinä")
+                        .font(.body.weight(.medium))
+                        .elderTapTarget()
                 }
             }
+        }
+        // Paper with a hairline, and not the system's bordered style, which
+        // is glass on iOS 26. Glass refracts whatever is under it into a
+        // gradient, and the audit's contrast check reads a text element's
+        // pixels into a set of colours one by one — sampled 25 Sep 2026 in
+        // testmanagerd: `-[AXAuditContrastDetectionManager
+        // _topColorsForImageData:optimized:]` walking `-[UIDeviceRGBColor
+        // isEqual:]` chains. Two labels of glass at the largest text size
+        // were more colours than its fifteen seconds hold, the check gave
+        // up with "Audit failed to complete in time" on every run, and every
+        // audit that gave up left its thread running: twenty of them had
+        // testmanagerd at 800 % of a core by the end of the evening, twice.
+        .buttonStyle(PaperCapsule())
+    }
 
-            // Under the people, and through the middle of their discs: every
-            // disc has a paper backing, so a line meets it edge to edge. A
-            // couple's line runs at that height, above every name, and a line
-            // that leaves a person downwards starts under their name — the
-            // layout is told how deep a card is — so nothing runs through a
-            // word.
-            Canvas { context, _ in
-                for segment in result.segments {
-                    let from = point(segment.x1, segment.y1, result)
-                    let to = point(segment.x2, segment.y2, result)
-                    // A couple is two lines, the way a genealogy draws a
-                    // marriage — which is the one line on this canvas that
-                    // joins equals rather than a generation to the next, and
-                    // the only way to tell it from a sibling bar at a glance.
-                    let offsets: [CGFloat] = segment.kind == .couple ? [-2.5, 2.5] : [0]
-                    // The pair is drawn across the line rather than always
-                    // under it, and each part reaches a little past its own
-                    // ends. A marriage the row could not put side by side —
-                    // the third one of a man married three times — bends below
-                    // the row to get round whoever stands between, and it has
-                    // to read as a marriage all the way round: offset downward
-                    // the two uprights of that bend would be one line drawn
-                    // twice, and square corners would gape.
-                    let run = CGPoint(x: to.x - from.x, y: to.y - from.y)
-                    let length = max((run.x * run.x + run.y * run.y).squareRoot(), 0.001)
-                    let along = CGPoint(x: run.x / length, y: run.y / length)
-                    let reach: CGFloat = segment.kind == .couple ? 2.5 : 0
-                    for shift in offsets {
-                        let across = CGPoint(x: -along.y * shift, y: along.x * shift)
-                        var path = Path()
-                        path.move(to: CGPoint(x: from.x + across.x - along.x * reach,
-                                              y: from.y + across.y - along.y * reach))
-                        path.addLine(to: CGPoint(x: to.x + across.x + along.x * reach,
-                                                 y: to.y + across.y + along.y * reach))
-                        context.stroke(path, with: .color(Elder.supporting), lineWidth: 2)
-                    }
-                }
+    // MARK: - From the archive to the engines
+
+    /// Confirmed and not deleted, between people in the picture.
+    private func liveRelations(among ids: [String]) -> [Relation] {
+        let known = Set(ids)
+        return store.relations.filter { relation in
+            relation.confirmed && relation.deletedAt == nil
+                && known.contains(relation.fromSubjectID) && known.contains(relation.toSubjectID)
+        }
+    }
+
+    /// A friendship is not a line in a family tree (§21: a friend is not
+    /// suku), and the layout is never handed one — as a link it would be
+    /// placed as a sibling.
+    private static func links(_ relations: [Relation]) -> [FamilyTreeLayout.Link] {
+        relations.compactMap { relation in
+            let bond: FamilyTreeLayout.Bond
+            switch relation.kind {
+            case .parentOf: bond = .parent
+            case .spouseOf: bond = .spouse
+            case .siblingOf: bond = .sibling
+            case .friendOf: return nil
             }
-            .accessibilityHidden(true)
+            return FamilyTreeLayout.Link(from: relation.fromSubjectID, to: relation.toSubjectID, bond: bond)
+        }
+    }
 
+    /// Who is joined to the family by friendship, each once. The layout
+    /// draws them apart under it, and places anybody among them who is also
+    /// somebody's kin by the kinship instead.
+    private static func friends(_ relations: [Relation]) -> [String] {
+        var seen = Set<String>()
+        return relations.filter { $0.kind == .friendOf }
+            .flatMap { [$0.fromSubjectID, $0.toSubjectID] }
+            .filter { seen.insert($0).inserted }
+    }
+
+    /// What the words are read from: everything live, except a parent bond
+    /// entered the other way round after its reverse. The layout keeps the
+    /// earlier of two bonds that contradict each other and names the later
+    /// in `undrawn`, and the words have to follow the drawing: handed both,
+    /// Sulo's phone read Onni — drawn as his child — as *Vanhempasi*,
+    /// because the engine takes its ties as given and matches upward before
+    /// downward. A wrong word on a card is rule 4's failure whichever
+    /// engine made it. `-seed clan` has the pair;
+    /// `testAContradictedBondReadsTheWayItIsDrawn` reads it from his phone.
+    private static func ties(_ relations: [Relation]) -> [Kinship.Tie] {
+        var children: [String: Set<String>] = [:]
+        return relations.compactMap { relation in
+            let bond: Kinship.Bond
+            switch relation.kind {
+            case .parentOf:
+                if children[relation.toSubjectID]?.contains(relation.fromSubjectID) == true { return nil }
+                children[relation.fromSubjectID, default: []].insert(relation.toSubjectID)
+                bond = .parent
+            case .spouseOf: bond = .spouse
+            case .siblingOf: bond = .sibling
+            case .friendOf: bond = .friend
+            }
+            return Kinship.Tie(from: relation.fromSubjectID, to: relation.toSubjectID, bond: bond)
+        }
+    }
+
+    private func name(_ id: String, in people: [Subject]) -> String {
+        people.first { $0.id == id }?.displayTitle ?? ""
+    }
+
+    /// The bond as the menu names it, when the rows could not hold it. In
+    /// the plural or as a pair, the way the cards' own sections are titled.
+    private static func bond(_ bond: FamilyTreeLayout.Bond) -> String {
+        switch bond {
+        case .spouse: String(localized: "aviopuolisot")
+        case .parent: String(localized: "vanhempi ja lapsi")
+        case .sibling: String(localized: "sisarukset")
+        }
+    }
+}
+
+// MARK: - The drawing
+
+/// Layout units to points: where every row begins, and where a disc's
+/// middle is. A place is `columnWidth` wide and a generation `rowHeight`
+/// tall; a caption's row is `captionBand` tall instead, because a
+/// generation's height over one line of text is a hole — 134 points of
+/// nothing at the default size, measured before there were captions at all.
+private struct TreeGeometry: Equatable {
+    let columnWidth: CGFloat
+    let rowHeight: CGFloat
+    let discSize: CGFloat
+    let captionBand: CGFloat
+    let rowInset: CGFloat
+    /// The top of each row, and one more for the bottom of the last.
+    let tops: [CGFloat]
+    /// A caption's band over the families, when there is more than one:
+    /// *Toinen perhe* over every family but the first.
+    let familyBand: CGFloat
+    let size: CGSize
+
+    init(
+        result: FamilyTreeLayout.Result,
+        columnWidth: CGFloat,
+        rowHeight: CGFloat,
+        discSize: CGFloat,
+        captionBand: CGFloat,
+        rowInset: CGFloat
+    ) {
+        self.columnWidth = columnWidth
+        self.rowHeight = rowHeight
+        self.discSize = discSize
+        self.captionBand = captionBand
+        self.rowInset = rowInset
+        familyBand = result.families.count > 1 ? captionBand : 0
+        // Siblings nobody has entered parents for hang from a bar 0.4 rows
+        // above their own, and on the first row that is above the drawing.
+        // Room for it, and only when it is drawn.
+        let overhang = result.lines.contains { min($0.y1, $0.y2) < 0 }
+            ? max(0, 0.4 * rowHeight - discSize / 2 - rowInset + 6)
+            : 0
+        var tops = [familyBand + overhang]
+        for row in 0 ..< result.rows {
+            tops.append(tops[row] + (result.captionRows.contains(row) ? captionBand : rowHeight))
+        }
+        self.tops = tops
+        size = CGSize(
+            width: max(CGFloat(result.width), 1) * columnWidth,
+            height: max(tops[result.rows], rowHeight)
+        )
+    }
+
+    func x(_ x: Double) -> CGFloat {
+        (CGFloat(x) + 0.5) * columnWidth
+    }
+
+    /// A whole row lands on the middle of that generation's discs; a
+    /// fraction of one, where a bar runs, lands that far towards the next.
+    /// Lines never enter a caption's row, so the fraction is always of a
+    /// generation's height.
+    func y(_ y: Double) -> CGFloat {
+        let row = min(max(Int(y.rounded(.down)), 0), max(tops.count - 2, 0))
+        return tops[row] + rowInset + discSize / 2 + (CGFloat(y) - CGFloat(row)) * rowHeight
+    }
+
+    func top(ofRow row: Int) -> CGFloat {
+        tops[min(max(row, 0), tops.count - 1)]
+    }
+
+    func disc(of place: FamilyTreeLayout.Place) -> CGPoint {
+        CGPoint(x: x(place.x), y: top(ofRow: place.row) + rowInset + discSize / 2)
+    }
+}
+
+/// The family, at scale 1: the bands, the lines, the captions and the people.
+/// Everything in it moves and scales with it; nothing on the screen is
+/// pinned over it.
+private struct TreeDrawing: View {
+    let result: FamilyTreeLayout.Result
+    let people: [Subject]
+    let you: String?
+    let words: [String: Kinship.Word]
+    let geometry: TreeGeometry
+    /// The window's width, or zero before it is known: how wide a caption
+    /// may be before it wraps.
+    let wrap: CGFloat
+    /// Names and words, or discs alone.
+    let detailed: Bool
+    /// The least a place may be tall, in the drawing's own points, so that
+    /// it is still a tap target once the scale has shrunk it.
+    let tapHeight: CGFloat
+    let onTap: (Subject, CGPoint) -> Void
+
+    /// A name wraps inside this, and the gap to the next place stays clear.
+    private var nodeWidth: CGFloat { geometry.columnWidth - 20 }
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            bands
+            lines
+            captions
             ForEach(people) { person in
-                if let place = result.placements[person.id] {
+                if let place = result.places[person.id] {
                     // By its top, not its centre: a name that wraps to two
                     // lines must not lift its disc off the line it hangs on.
                     node(person, isYou: person.id == you)
                         .offset(
-                            x: point(place.x, Double(place.row), result).x - nodeWidth / 2,
-                            y: y(ofRow: place.row, result) + Self.rowInset
+                            x: geometry.x(place.x) - (detailed ? nodeWidth : geometry.columnWidth) / 2,
+                            y: geometry.top(ofRow: place.row) + geometry.rowInset
                         )
                 }
             }
         }
-        .frame(width: width(of: result), height: height(of: result), alignment: .topLeading)
+        .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
     }
 
-    /// Where the window goes when the drawing first appears: your own column
-    /// in its middle, and your own row a little under a third of the way
-    /// down. A family of 53 is 2376 points wide against a 402-point window
-    /// and 1136 tall, so a picture that opens at its own top left corner
-    /// opens on whoever happens to be oldest — measured 19 Sep 2026: six of
-    /// the fifty-three on screen and the person holding the phone four
-    /// places across and three rows down, reachable only by scrolling blind
-    /// in two directions at once. Nil on a phone linked to no card, which
-    /// opens at the top left like any picture.
-    private func opening(_ result: FamilyTreeLayout.Result, you: String?) -> TreeOpening? {
-        guard let you, let place = result.placements[you] else { return nil }
-        let top = y(ofRow: place.row, result)
-        let span = y(ofRow: place.row + 1, result) - top
-        return TreeOpening(
-            centreX: (CGFloat(place.x) + 0.5) * columnWidth,
-            bandTop: top,
-            // The band the people are in, not the row they belong to. A
-            // target taller than the window cannot put its contents anywhere
-            // the reader can see them: at AccessibilityXXXL the tree opened
-            // on a disc with its name below the fold and nothing else, which
-            // is what a row-tall target bought. A band shorter than the
-            // window always lands.
-            // Your own card has a line more than the others, the word under
-            // the name, and it is the one card the opening keeps whole.
-            bandHeight: min(span, cardBand + 6 + youLine),
-            row: Self.openingRow,
-            // The top of every row with people in it — the rows the layout
-            // leaves empty for a caption have no names — so the opening can
-            // tell which names the fraction would put under the buttons.
-            rows: (0 ..< result.rows)
-                .filter { !result.captionRows.contains($0) }
-                .map { y(ofRow: $0, result) },
-            card: cardBand,
-            name: nameLine
-        )
-    }
-
-    /// Where your own card sits when the picture opens: a little under a
-    /// third of the way down rather than halfway, which is a measurement and
-    /// not a taste. Halfway left six names in the strip the zoom bar covered —
-    /// Saima, Lauri and Hellin with their initials — 0.42 left three, 0.6
-    /// left three, and a third of the way down left none. The bar is two
-    /// discs in a corner now and the test that fitted this number measures
-    /// the discs instead, so the number is kept for the picture it gives —
-    /// your parents above you and your children below — rather than for the
-    /// strip.
-    private static let openingRow: CGFloat = 0.31
-
-    private func node(_ person: Subject, isYou: Bool) -> some View {
-        Button {
-            chosen = person
-        } label: {
-            VStack(spacing: 6) {
-                SubjectAvatar(subject: person, size: 48)
-                    // A paper disc under the ink one. `SubjectAvatar` fills
-                    // with ink at 75 %, so a line behind it ran straight
-                    // through the letter (seen on 13 Sep 2026). The avatar
-                    // draws its disc from its top-leading corner, so the
-                    // backing sits there too, at the disc's own size.
-                    .background(alignment: .topLeading) {
-                        Circle()
-                            .fill(Elder.paper)
-                            .frame(width: discSize, height: discSize)
-                    }
-                Text(person.displayTitle)
-                    .font(.body.weight(.medium))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                // Which person in the family holds this phone, since 13 Sep
-                // 2026: a word under the name rather than a colour, so it does
-                // not rest on colour alone (rule 1).
-                if isYou {
-                    Text("Sinä")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(Elder.supporting)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            // No card behind the name. A card hid the line between a couple,
-            // leaving a dash floating between two names (seen on 13 Sep 2026).
-            .frame(width: nodeWidth, alignment: .top)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isYou ? Text("\(person.displayTitle), sinä") : Text(person.displayTitle))
-    }
-
-    /// Two buttons for a hand that cannot pinch, in the corner a map keeps
-    /// its controls in.
-    private var zoomButtons: some View {
-        HStack(spacing: 12) {
-            Button {
-                zoom = clamped(zoom / 1.25)
-            } label: {
-                Image(systemName: "minus.magnifyingglass")
-                    .font(.title3)
-                    .elderTapTarget()
-            }
-            .accessibilityLabel("Pienennä")
-
-            Button {
-                zoom = clamped(zoom * 1.25)
-            } label: {
-                Image(systemName: "plus.magnifyingglass")
-                    .font(.title3)
-                    .elderTapTarget()
-            }
-            .accessibilityLabel("Suurenna")
-        }
-        // The system's bordered style, which is glass on iOS 26 and a tinted
-        // disc before it: an edge of its own on paper and on the bands alike,
-        // where a paper disc with a hairline would have none (`Elder.rule`).
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.circle)
-    }
-
-    // MARK: - Words on the window
-
-    /// The words that stay where the reader can see them while the drawing
-    /// moves: which generation each row is, down the left edge of the window,
-    /// and the caption over the people related to nobody.
+    /// A band to a generation, every other one, so a row reads as one row
+    /// across a family too wide to see at once. Per family, since each
+    /// starts at row 0 and knows nothing of the others' age; in yours,
+    /// counted from your own row, so it is always one of the shaded ones.
     ///
-    /// The tree drew five discs and some lines and said nothing about what any
-    /// row was, and that was the first thing anybody asked of it (16 Sep 2026).
-    /// The words are counted from your own row, because that is the only
-    /// anchor the archive has: it stores no gender, so a per-person word would
-    /// have to read *"Eevan vanhempi"*, while a generation has a name in
-    /// Finnish that needs none.
-    ///
-    /// They ride the window rather than the drawing, and they keep their own
-    /// size while the drawing zooms: in a family wide enough to need
-    /// scrolling, a word that scrolls away names the rows you are no longer
-    /// looking at, and zooming out to see the whole family must leave the one
-    /// thing that explains it readable. Until 19 Sep 2026 they were a column
-    /// beside the drawing, which is the same promise kept at the price of the
-    /// column's width — more than half the screen at the largest text size —
-    /// and the caption was painted into the drawing's own left edge, four
-    /// places off the screen whenever the picture opened on somebody's own
-    /// column.
-    private func labels(_ result: FamilyTreeLayout.Result, you: String?) -> some View {
-        ZStack(alignment: .topLeading) {
-            if let window {
-                let yours = yourRow(result, you: you)
-                // Counted from your own row, so they are about the picture
-                // only while your own family is in it. Scrolled sideways on
-                // to a family that shares nobody with yours — which starts at
-                // row 0 because neither family knows anything about the
-                // other's age — the same words would call its oldest
-                // generation your great-grandparents, and nobody entered
-                // that. The drawing's own numbering, which a phone linked to
-                // no card gets, stays where it is: every family starts at
-                // row 0, so a row counted from the top of the drawing is as
-                // true of one as of another.
-                let mine = yours == nil
-                    || FamilyTreeLayout.inView(yourFamily(result, you: you), columns(in: window))
-                let left = window.edge + 8
-                // The words' own room: the band less its margin on each
-                // side and the scrap's padding. 128 points at the default
-                // size, which is what every word was measured against.
-                let room = max(window.rail - 16 - 12, 1)
-                if mine {
-                    ForEach(treeRows(result, you: you), id: \.self) { row in
-                        railWord(generationName(row, from: yours), bold: row == yours, room: room)
-                            .frame(height: railBand, alignment: .leading)
-                            .offset(
-                                x: left,
-                                y: (y(ofRow: row, result) + Self.rowInset + discSize / 2) * window.scale
-                                    + window.shift.y - railBand / 2
-                            )
-                    }
-                } else {
-                    // Not nothing. The words leaving is the whole point, and
-                    // a reader who watched them go is owed the reason they
-                    // went — that these people are not counted from anybody.
-                    railWord(Text("Toinen perhe"), bold: false, room: room)
-                        .offset(x: left, y: window.visible.minY + 8)
-                }
-
-                // In the empty row the layout leaves above each band of
-                // people drawn apart — the friends, and the people related to
-                // nobody — standing on the bottom of that row so it stays
-                // with them at every text size and every zoom. Shown with no
-                // tree above them too: then they are the whole family, and
-                // the caption says why nobody is joined.
-                if let asideRow = result.asideRow {
-                    caption(Text("Ystävät"), over: asideRow, result, scale: window.scale, shiftY: window.shift.y, left: left)
-                }
-                if let looseRow = result.looseRow {
-                    caption(Text("Ei vielä sukupuussa"), over: looseRow, result, scale: window.scale, shiftY: window.shift.y, left: left)
+    /// `Elder.card` on `Elder.paper` measures 1.11:1 — a tint and not an
+    /// edge, which is what this is for. What matters under rule 1 is what
+    /// the names measure against it, and primary text on card is 16.81:1
+    /// against 15.17:1 on paper: both sides of the stripe are comfortably
+    /// over the minimum, so no name gets harder to read for being in a
+    /// shaded generation.
+    private var bands: some View {
+        let yourRow = you.flatMap { result.places[$0]?.row }
+        return ForEach(Array(result.families.enumerated()), id: \.offset) { index, family in
+            let origin = index == 0 && you.map(family.members.contains) == true ? (yourRow ?? 0) : 0
+            ForEach(0 ..< family.rows, id: \.self) { row in
+                if (row - origin).isMultiple(of: 2) {
+                    Rectangle()
+                        .fill(Elder.card)
+                        .frame(
+                            width: CGFloat(family.maxX - family.minX + 1) * geometry.columnWidth,
+                            height: geometry.top(ofRow: row + 1) - geometry.top(ofRow: row)
+                        )
+                        .offset(x: CGFloat(family.minX) * geometry.columnWidth, y: geometry.top(ofRow: row))
+                        .accessibilityHidden(true)
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .clipped()
     }
 
-    /// One generation's word. On a scrap of paper so that it reads across
-    /// whatever part of the drawing happens to be under the window's edge —
-    /// since 21 Sep 2026 only a disc, at the opening or carried there by the
-    /// reader, because the drawing rests beside the rail and not under it
-    /// (`TreeCanvas`'s `rail`); on a band the scrap is a tint lighter than the
-    /// band, which is what the band's own colour was chosen to allow. As wide
-    /// as the band leaves it and no wider, so that a word never crosses into
-    /// the drawing's own part: the 128 points of `railWidth` at the default
-    /// size, and at the largest text size the half of the window the band is
-    /// capped to, where a word longer than that wraps or hyphenates. Given its
-    /// scaled width there instead, *Sinun polvesi* lay across the reader's own
-    /// disc at the opening (21 Sep 2026).
-    private func railWord(_ word: Text, bold: Bool, room: CGFloat) -> some View {
-        word
-            .font(.caption)
-            .fontWeight(bold ? .bold : .regular)
-            .foregroundStyle(Elder.supporting)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: room, alignment: .leading)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(Elder.paper, in: RoundedRectangle(cornerRadius: 6))
+    /// Under the people, and through the middle of their discs: every disc
+    /// has a paper backing, so a line meets it edge to edge. A couple's line
+    /// runs at that height, above every name, and a line that leaves a
+    /// person downwards starts under their words — the layout is told how
+    /// deep a card is — so nothing runs through one.
+    private var lines: some View {
+        Canvas { context, _ in
+            for line in result.lines {
+                let from = CGPoint(x: geometry.x(line.x1), y: geometry.y(line.y1))
+                let to = CGPoint(x: geometry.x(line.x2), y: geometry.y(line.y2))
+                // A couple is two lines, the way a genealogy draws a
+                // marriage — the one line on this canvas that joins equals
+                // rather than a generation to the next, and the only way to
+                // tell it from a sibling bar at a glance. The pair is drawn
+                // across the line and each part reaches a little past its
+                // ends, so a marriage that dips under the row to get round
+                // whoever stands between reads as a marriage all the way
+                // round: square corners would gape.
+                let couple = line.stroke == .couple
+                let run = CGPoint(x: to.x - from.x, y: to.y - from.y)
+                let length = max((run.x * run.x + run.y * run.y).squareRoot(), 0.001)
+                let along = CGPoint(x: run.x / length, y: run.y / length)
+                let reach: CGFloat = couple ? 2.5 : 0
+                for shift in (couple ? [-2.5, 2.5] : [0]) as [CGFloat] {
+                    let across = CGPoint(x: -along.y * shift, y: along.x * shift)
+                    var path = Path()
+                    path.move(to: CGPoint(x: from.x + across.x - along.x * reach,
+                                          y: from.y + across.y - along.y * reach))
+                    path.addLine(to: CGPoint(x: to.x + across.x + along.x * reach,
+                                             y: to.y + across.y + along.y * reach))
+                    context.stroke(path, with: .color(Elder.supporting), lineWidth: 2)
+                }
+            }
+        }
+        .accessibilityHidden(true)
     }
 
-    /// The window in the drawing's own units — `x` in person-widths, which is
-    /// what an `Extent` is measured in.
-    private func columns(in window: TreeWindow) -> ClosedRange<Double> {
-        // A pinch in progress can hand this a magnification near zero, and a
-        // place is never narrower than a point.
-        let place = max(columnWidth * window.scale, 1)
-        let first = Double((window.visible.minX - window.shift.x) / place)
-        return first ... max(first, Double((window.visible.maxX - window.shift.x) / place))
-    }
-
-    /// What a row is called, counted from yours. Nobody linked to a card — a
-    /// phone with no family behind it — gets the drawing's own numbering
-    /// instead, which claims nothing it cannot know.
-    /// A `Text` rather than a key on purpose: `localisation-check.mjs` reads
-    /// the literal inside a `Text(` call and nothing else, so a word handed to
-    /// a helper as a key has no English and nothing says so. That is exactly
-    /// how the help page stayed Finnish on an English phone until 4 Sep 2026.
-    private func generationName(_ row: Int, from yours: Int?) -> Text {
-        guard let yours else { return Text("\(row + 1). polvi") }
-        switch row - yours {
-        // Worded as generations, the way your own row is, and not as
-        // relationships (19 Sep 2026): the row above you holds your parents'
-        // brothers and sisters and the people they married, and *Vanhemmat*
-        // over four of them read as four parents. Two generations each way
-        // have a word; from three on it is a count, because
-        // *Isoisovanhempiesi polvi* and *Lastenlastenlastesi polvi* are 134
-        // and 138 points of `.caption` and the rail's word is one line — a
-        // second line, standing over the air between rows as the words did
-        // until 21 Sep 2026, hid the names in the row above at the smallest
-        // zoom.
-        case -2: return Text("Isovanhempiesi polvi")
-        case -1: return Text("Vanhempiesi polvi")
-        case 0: return Text("Sinun polvesi")
-        case 1: return Text("Lastesi polvi")
-        case 2: return Text("Lastenlastesi polvi")
-        case let above where above < 0: return Text("\(-above) polvea ylempänä")
-        case let below: return Text("\(below) polvea alempana")
+    /// The three captions, each in its own band inside the drawing: over a
+    /// family that shares nobody with the first, over the friends, and over
+    /// the people related to nobody. In the drawing rather than on the
+    /// window, so they scroll and shrink with what they are about — and go
+    /// with the names below `detail`, where a headline is seven points.
+    /// Wrapped at the window's width all the same: a name stops at its
+    /// place's edge and a caption has no edge to stop at, so *Ei vielä
+    /// sukupuussa* at the largest text size ran 461 points across a window
+    /// of 402, and the audit reported it clipped (25 Sep 2026).
+    @ViewBuilder
+    private var captions: some View {
+        if detailed {
+            ForEach(Array(result.families.enumerated().dropFirst()), id: \.offset) { _, family in
+                // Drawn beside it and starting at row 0 like every family,
+                // which is no claim about its age — so nothing here counts
+                // its rows from yours, and the caption says why the words
+                // stop at its edge.
+                caption(Text("Toinen perhe"), x: CGFloat(family.minX) * geometry.columnWidth, top: 0, alignment: .topLeading)
+            }
+            if let row = result.friendsRow {
+                caption(Text("Ystävät"), x: 0, top: geometry.top(ofRow: row - 1), alignment: .bottomLeading)
+            }
+            if let row = result.looseRow {
+                caption(Text("Ei vielä sukupuussa"), x: 0, top: geometry.top(ofRow: row - 1), alignment: .bottomLeading)
+            }
         }
     }
 
-    /// The name on somebody's card, for a sentence rather than a disc.
-    private func name(_ id: String, in people: [Subject]) -> String {
-        people.first { $0.id == id }?.displayTitle ?? id
-    }
-
-    /// What two people were entered as, in a word. Built with
-    /// `String(localized:)` because it is a `String` and not a literal inside
-    /// `Text`: handed a variable, `Text` shows it verbatim, and an English
-    /// phone would read one Finnish word in the middle of the sentence.
-    /// `localisation-check.mjs` counts keys, not lookups, so nothing else
-    /// would report it.
-    private func bond(_ kind: FamilyTreeLayout.Kind) -> String {
-        switch kind {
-        case .spouse: return String(localized: "aviopuolisot")
-        case .sibling: return String(localized: "sisarukset")
-        case .parent: return String(localized: "vanhempi ja lapsi")
-        }
-    }
-
-    /// A caption over a band of people drawn apart from the generations,
-    /// standing on the bottom of the empty row the layout leaves over it.
-    private func caption(
-        _ text: Text, over first: Int, _ result: FamilyTreeLayout.Result,
-        scale: CGFloat, shiftY: CGFloat, left: CGFloat
-    ) -> some View {
-        text
+    private func caption(_ text: Text, x: CGFloat, top: CGFloat, alignment: Alignment) -> some View {
+        // The room a caption has: the window's width once it is known and
+        // the drawing's until then, from the caption's own left edge, less
+        // its offset and the same air on the right.
+        let room = (wrap > 0 ? min(wrap, geometry.size.width - x) : geometry.size.width - x) - 16
+        return text
             .font(.headline)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(Elder.paper, in: RoundedRectangle(cornerRadius: 6))
-            .frame(height: captionBand, alignment: .bottomLeading)
-            .offset(x: left, y: (y(ofRow: first - 1, result) + captionBand) * scale + shiftY - captionBand)
+            .frame(maxWidth: max(room, 44), alignment: .leading)
+            .frame(height: geometry.captionBand, alignment: alignment)
+            .offset(x: x + 8, y: top)
     }
 
-    // MARK: - Arithmetic
-
-    /// A name wraps inside this, and the gap to the next place stays clear.
-    private var nodeWidth: CGFloat { columnWidth - 20 }
-
-    /// Layout units to points. A whole row lands on the middle of that
-    /// generation's discs; a half row, where a bracket crosses, lands halfway to
-    /// the next generation's.
-    private func point(_ x: Double, _ y: Double, _ result: FamilyTreeLayout.Result) -> CGPoint {
-        CGPoint(
-            x: (CGFloat(x) + 0.5) * columnWidth,
-            y: CGFloat(y) * rowHeight + Self.rowInset + discSize / 2 - shift(atRow: y, result)
-        )
+    private func node(_ person: Subject, isYou: Bool) -> some View {
+        Button {
+            onTap(person, geometry.disc(of: result.places[person.id] ?? FamilyTreeLayout.Place(row: 0, x: 0)))
+        } label: {
+            VStack(spacing: 6) {
+                SubjectAvatar(subject: person, size: 48)
+                    // A paper disc under the ink one. `SubjectAvatar` fills
+                    // with ink at 75 %, so a line behind it ran straight
+                    // through the letter. The avatar draws its disc from its
+                    // top-leading corner, so the backing sits there too, at
+                    // the disc's own size.
+                    .background(alignment: .topLeading) {
+                        Circle()
+                            .fill(Elder.paper)
+                            .frame(width: geometry.discSize, height: geometry.discSize)
+                    }
+                if detailed {
+                    Text(person.displayTitle)
+                        .font(.body.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    // What this person is to whoever holds the phone, in one
+                    // word — and *Sinä* on your own card, a word rather than
+                    // a colour, so it does not rest on colour alone (rule 1).
+                    // Nothing when the word would not be exact.
+                    if isYou {
+                        word(Text("Sinä"))
+                    } else if let word = words[person.id] {
+                        self.word(Text(word.label))
+                    }
+                }
+            }
+            // No card behind the name. A card hid the line between a couple,
+            // leaving a dash floating between two names.
+            .frame(width: detailed ? nodeWidth : geometry.columnWidth, alignment: .top)
+            .frame(minHeight: detailed ? 0 : tapHeight, alignment: .top)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isYou ? Text("\(person.displayTitle), sinä") : Text(person.displayTitle))
     }
 
-    /// The generations the words are about: the ones your own family has.
-    ///
-    /// Not every row on the canvas. A family that shares nobody with yours is
-    /// drawn beside it and starts at row 0 like every family does, which is no
-    /// claim about its age — so a band across it, and a word beside it, would
-    /// be. The friends and the people related to nobody are under their
-    /// captions and are not generations either: a friend is not one, and
-    /// nobody has said what the rest are to anyone.
-    private func treeRows(_ result: FamilyTreeLayout.Result, you: String?) -> [Int] {
-        let end = yourFamily(result, you: you)?.rows ?? result.bandStart
-        return end > 0 ? Array(0 ..< end) : []
-    }
-
-    /// The family this phone's card is in, or the first one drawn when it is
-    /// in none — which is the family the tree grew from.
-    private func yourFamily(_ result: FamilyTreeLayout.Result, you: String?) -> FamilyTreeLayout.Extent? {
-        let index = you.flatMap { result.family[$0] } ?? 0
-        return result.familyExtents.indices.contains(index) ? result.familyExtents[index] : nil
-    }
-
-    /// Your own row, when this phone is linked to a card that is in the tree.
-    /// Nil when it is not, and nil when your card is drawn apart — a friend of
-    /// the family, or related to nobody — since from down there you are not a
-    /// generation to count from.
-    private func yourRow(_ result: FamilyTreeLayout.Result, you: String?) -> Int? {
-        guard let you, let place = result.placements[you] else { return nil }
-        guard place.row < result.bandStart else { return nil }
-        return place.row
-    }
-
-    /// The top of a row, in points.
-    private func y(ofRow row: Int, _ result: FamilyTreeLayout.Result) -> CGFloat {
-        CGFloat(row) * rowHeight - shift(atRow: Double(row), result)
-    }
-
-    private func width(of result: FamilyTreeLayout.Result) -> CGFloat {
-        CGFloat(max(result.width, 1)) * columnWidth
-    }
-
-    private func height(of result: FamilyTreeLayout.Result) -> CGFloat {
-        CGFloat(max(result.rows, 1)) * rowHeight - captionTrim * CGFloat(result.captionRows.count)
-    }
-
-    /// The layout leaves a whole empty generation above each band of people
-    /// drawn apart — the friends, and the people related to nobody — for its
-    /// caption. A generation's height over one line of text is a hole — 134
-    /// points of nothing at the default text size, measured on 16 Sep 2026 —
-    /// so everything from a caption down moves up by the difference and the
-    /// drawing loses the hole, once for every caption above the row.
-    ///
-    /// Nothing above the first caption moves, so no line needs a share of it:
-    /// the layout draws none below the last generation.
-    private func shift(atRow row: Double, _ result: FamilyTreeLayout.Result) -> CGFloat {
-        let bandsAbove = [result.asideRow, result.looseRow].compactMap { $0 }.filter { row >= Double($0) }.count
-        return captionTrim * CGFloat(bandsAbove)
-    }
-
-    private var captionTrim: CGFloat { max(0, rowHeight - captionBand) }
-
-    private func clamped(_ value: CGFloat) -> CGFloat {
-        min(max(value, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
+    private func word(_ text: Text) -> some View {
+        text
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Elder.supporting)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, -2)
     }
 }
 
-// MARK: - The map
-
-/// Where the drawing is under the window: the position of its top left
-/// corner in the scroll view's own bounds, the scale it is drawn at, the
-/// part of the bounds not under a bar, the buttons or the rail — the
-/// drawing's own — and the edge the rail stands against, left of that.
-private struct TreeWindow: Equatable {
-    var shift: CGPoint
-    var scale: CGFloat
-    var visible: CGRect
-    var edge: CGFloat
-    /// The rail's band between `edge` and `visible`, as applied: the words'
-    /// room, which at the largest text size is less than they asked for.
-    var rail: CGFloat
+/// The tree's two buttons: accent on paper in a capsule with a hairline, and
+/// flat. Not `.bordered`, which is glass on iOS 26 — `controls(yours:)` says
+/// what glass under a text element costs the audit.
+private struct PaperCapsule: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .foregroundStyle(Color.accentColor)
+            .background(Elder.paper, in: Capsule())
+            .overlay(Capsule().stroke(Elder.rule, lineWidth: 1))
+            .opacity(configuration.isPressed ? 0.6 : 1)
+    }
 }
 
-/// Where the window is put the first time the drawing's size is known, in the
-/// drawing's own unscaled points: a column to centre, and a band to stand a
-/// fraction of the way down the window.
-private struct TreeOpening: Equatable {
-    var centreX: CGFloat
-    var bandTop: CGFloat
-    var bandHeight: CGFloat
-    var row: CGFloat
-    /// The top of every row that has people in it, in the drawing's points.
-    var rows: [CGFloat]
-    /// A row's card band, and the line of the name at the bottom of it.
-    var card: CGFloat
-    var name: CGFloat
-}
-
-/// Everything the drawing is drawn from. The scroll view lays the drawing out
-/// again only when this changes, and not on every report of where the window
-/// has scrolled to — which arrives every frame, and each of which evaluates
-/// the body this view is built in.
+/// What the canvas is drawn from. When any of it changes the drawing is laid
+/// out again; the reader's own moves do not touch it.
 private struct DrawingKey: Equatable {
     var result: FamilyTreeLayout.Result
     var people: [Subject]
     var you: String?
+    var words: [String: Kinship.Word]
+    /// The window's width the captions wrap at; a window of a new width is
+    /// a new drawing, so a caption wrapped for the old one is not kept.
+    var wrap: CGFloat
 }
 
-/// A `UIScrollView` around the drawing: one finger moves it in both directions
-/// at once and lets go with momentum, two fingers scale it about themselves,
-/// and the two buttons scale it about the window's middle.
+// MARK: - The map
+
+/// Something asked of the map, in the drawing's own points at scale 1.
+private enum TreeMove: Equatable {
+    /// The whole family in the window, at whatever scale fits it, never
+    /// larger than natural.
+    case fit
+    /// This point into the upper part of the window, at the natural scale
+    /// if the map was smaller, and at its own if it was larger.
+    case focus(CGPoint, atLeast: CGFloat)
+    /// This point into the upper part of the window at the natural scale
+    /// exactly: where the *Sinä* button takes the reader.
+    case home(CGPoint)
+}
+
+private struct TreeCommand: Equatable {
+    let serial: Int
+    let move: TreeMove
+    let animated: Bool
+}
+
+/// The scroll view the drawing lives in — a map's: both directions under one
+/// finger with the momentum a map has, and a pinch about the fingers.
 ///
-/// Why UIKit, and why not its own zoom. SwiftUI's `ScrollView` scrolls two
-/// axes but has no pinch of its own, and the previous shape of this screen —
-/// a `MagnifyGesture` over a `scaleEffect` anchored at the drawing's corner —
-/// grew the picture about that corner rather than the fingers, which is the
-/// difference between a map and a page. `UIScrollView` has the pan and the
-/// deceleration. It also has a pinch, and that one is not used: it zooms by
-/// transforming the view, so text is stretched from its rendered pixels and
-/// blurs until the gesture ends. Here the pinch drives the SwiftUI scale
-/// instead and the drawing is laid out again at every step, sharp at every
-/// size, with the point under the fingers put back under the fingers by
-/// arithmetic — the same arithmetic the buttons use about the middle.
+/// The pinch is `TreePinch`, a recognizer of our own on the scroll view
+/// that drives the scroll view's zoom: it transforms the drawing while the
+/// fingers are down, which is smooth and slightly soft, and when they lift
+/// the transform is made permanent: the drawing is laid out again at the new
+/// size, sharp, with the same part of the family under the window
+/// (`Coordinator.settleZoom`). The shape before this one laid the drawing
+/// out on every change of a custom pinch instead, at a cost nobody measured.
 private struct TreeCanvas<Content: View>: UIViewRepresentable {
-    @Binding var scale: CGFloat
-    let range: ClosedRange<CGFloat>
     /// The drawing's own size at scale 1.
     let size: CGSize
-    /// The band the zoom buttons take at the window's bottom, from the
-    /// buttons themselves. The bars' own insets are read off the scroll
-    /// view, which UIKit keeps current for a view under a tab bar.
+    let range: ClosedRange<CGFloat>
+    /// The band the buttons take at the window's bottom, from the buttons
+    /// themselves. The bars' own insets are read off the scroll view, which
+    /// UIKit keeps current for a view under a tab bar.
     let controls: CGFloat
-    /// The band the generation words take at the window's leading edge, from
-    /// the rail's own metrics: the words' offset from the edge, the widest
-    /// scrap, and the same offset again as air. The drawing rests to its
-    /// right, so a family that fits the window is all beside the words and
-    /// none of it under them; one that does not opens on your own column in
-    /// what is left of the window, and whatever lies left of that column is
-    /// under the words until the reader moves it. Never more than half the
-    /// window: at the largest text size the words are wider than a phone, and
-    /// a drawing left no room is not a picture.
-    let rail: CGFloat
-    let opening: TreeOpening?
+    /// Your own disc, when this phone's card is in the tree: where the
+    /// drawing opens when the whole family does not fit at a readable size.
+    let opening: CGPoint?
     let key: DrawingKey
-    let onWindow: (TreeWindow) -> Void
+    let command: TreeCommand?
+    let gate: TreeGate
     @ViewBuilder let content: (CGFloat) -> Content
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -906,353 +821,363 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         let coordinator = context.coordinator
         coordinator.scrollView = scrollView
         scrollView.delegate = coordinator
+        coordinator.gate = gate
+        coordinator.pinchTarget.handle = { [weak coordinator] in coordinator?.pinched($0) }
+        scrollView.addGestureRecognizer(
+            TreePinch(target: coordinator.pinchTarget, action: #selector(PinchTarget.pinched(_:)))
+        )
+        // The bars' insets are the scroll view's business, below, and not
+        // UIKit's: with the adjustment on, a drawing under a tab bar opened
+        // with its first row under the top bar's inset as well.
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.alwaysBounceVertical = true
         scrollView.alwaysBounceHorizontal = true
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.showsHorizontalScrollIndicator = false
         scrollView.backgroundColor = .clear
 
-        let host = UIHostingController(rootView: AnyView(content(scale)))
+        let host = UIHostingController(rootView: AnyView(content(1)))
         host.view.backgroundColor = .clear
         // The window's bars are the scroll view's business, above; the
         // drawing is laid out edge to edge in its own frame.
         host.safeAreaRegions = []
         scrollView.addSubview(host.view)
         coordinator.host = host
-
-        let pinch = UIPinchGestureRecognizer(target: coordinator, action: #selector(Coordinator.pinched(_:)))
-        pinch.delegate = coordinator
-        scrollView.addGestureRecognizer(pinch)
-        scrollView.onLayout = { [weak coordinator] in coordinator?.layoutChanged() }
-        scrollView.onSafeArea = { [weak coordinator] in coordinator?.safeAreaChanged() }
+        scrollView.onLayout = { [weak coordinator] in coordinator?.settle() }
+        scrollView.onSafeArea = { [weak coordinator] in coordinator?.settle() }
         return scrollView
     }
 
     func updateUIView(_ scrollView: TreeScrollView, context: Context) {
         let coordinator = context.coordinator
-        coordinator.updating = true
-        defer { coordinator.updating = false }
         coordinator.content = { AnyView(content($0)) }
-        coordinator.onWindow = onWindow
-        let binding = _scale
-        coordinator.setScale = { binding.wrappedValue = $0 }
         coordinator.range = range
         coordinator.opening = opening
 
-        coordinator.strip = controls
-        coordinator.rail = rail
-        // The zoom buttons are measured after the first layout: measured
-        // 19 Sep 2026, an opening taken once at that layout was clamped
-        // against a bottom inset without them and the drawing sat 73 points
-        // lower than asked, at its own end. So the opening is applied again
-        // for as long as the reader has not moved the picture.
-        var reopen = coordinator.applyInsets()
-
-        var redraw = false
-        if coordinator.size != size {
+        var changed = false
+        if coordinator.controls != controls {
+            coordinator.controls = controls
+            changed = true
+        }
+        if coordinator.size != size || coordinator.key != key {
             coordinator.size = size
-            redraw = true
-        }
-        if coordinator.key != key {
             coordinator.key = key
-            redraw = true
-        }
-        if coordinator.scale != scale {
-            // The buttons: about the middle of what the reader can see.
-            coordinator.moved = true
-            coordinator.apply(scale: scale, about: coordinator.visibleRect.middle, settle: true)
-        } else if redraw {
             coordinator.render()
-            coordinator.place()
-            // A drawing of a new size under the old offset shows some other
-            // part of the family, and a smaller one is clamped by the scroll
-            // view to an offset the old size never asked for. Measured
-            // 19 Sep 2026: the accessibility audit steps the text size
-            // through twelve categories and back, the first of them shrank
-            // the drawing from 1136 to 981 points, the offset went from 478
-            // to 396 and stayed there when the size came back — the loose
-            // row under the buttons, and six names' colours read off pixels
-            // the drawing had left. So the opening is applied again for a
-            // new size as it is for a new inset, for as long as the reader
-            // has not moved the picture.
-            reopen = true
+            changed = true
         }
-        if reopen {
-            coordinator.open()
-            coordinator.report()
+        // A drawing of a new size under the old offset shows some other part
+        // of the family, and a smaller one is clamped by the scroll view to
+        // an offset the old size never asked for: the accessibility audit
+        // steps the text size through twelve categories and back. So the
+        // opening is applied again for a new size as it is for a new inset,
+        // for as long as the reader has not moved the picture.
+        if changed {
+            coordinator.settle()
+        }
+        if let command, command.serial != coordinator.served {
+            coordinator.served = command.serial
+            coordinator.perform(command)
         }
     }
 
-    final class Coordinator: NSObject, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+    final class Coordinator: NSObject, UIScrollViewDelegate {
         weak var scrollView: TreeScrollView?
         var host: UIHostingController<AnyView>?
         var content: ((CGFloat) -> AnyView)?
-        var onWindow: ((TreeWindow) -> Void)?
-        var setScale: ((CGFloat) -> Void)?
         var range: ClosedRange<CGFloat> = 0.4 ... 2.5
-        var opening: TreeOpening?
-        /// The zoom buttons' band at the bottom, part of the inset there.
-        var strip: CGFloat = 0
-        /// The rail's band at the leading edge, part of the inset there.
-        var rail: CGFloat = 0
+        var opening: CGPoint?
+        var controls: CGFloat = 0
+        var size: CGSize = .zero
+        var key: DrawingKey?
+        var served = 0
+        var gate: TreeGate?
+        let pinchTarget = PinchTarget()
+        /// The zoom when the fingers came down, and the point of the drawing
+        /// that was under them then, in the drawing's own coordinates.
+        private var pinchFrom: CGFloat = 1
+        private var pinchAnchor: CGPoint = .zero
+
+        /// The scale the drawing is laid out at.
+        private(set) var scale: CGFloat = 1
         /// True once the reader has dragged, pinched or pressed a button:
         /// from then on the picture is where they put it, and the opening
         /// is not applied again.
-        var moved = false
-        var size: CGSize = .zero
-        var key: DrawingKey?
-        /// The scale the drawing is laid out at now.
-        var scale: CGFloat = 1
-        /// True while SwiftUI is updating this view, when a report back into
-        /// its state has to wait for the update to end.
-        var updating = false
-        private var pinchStart: CGFloat = 1
-        private var lastWindow: TreeWindow?
+        private var moved = false
+        private var settling = false
 
-        /// Where the drawing's top left corner is in the content: zero, or
-        /// the margin that centres a drawing smaller than the window.
-        var origin: CGPoint { host?.view.frame.origin ?? .zero }
+        /// Where your own card is put when the drawing opens on it or flies
+        /// to somebody: the window's middle across, and a little under a
+        /// third of the way down — your parents above you and your children
+        /// below, in the same window as yourself, and the card clear of the
+        /// buttons in the corner. Computed, because the coordinator is nested
+        /// in a generic type and a stored static is not allowed there.
+        private static var focus: CGPoint { CGPoint(x: 0.5, y: 0.3) }
 
-        /// The bars the window runs under, from UIKit, the buttons' band and
-        /// the rail's, as the content's insets. True when they changed.
-        func applyInsets() -> Bool {
-            guard let scrollView else { return false }
-            let safe = scrollView.safeAreaInsets
-            let width = max(0, scrollView.bounds.width - safe.left - safe.right)
-            let inset = UIEdgeInsets(
-                top: safe.top,
-                left: safe.left + min(rail, width / 2),
-                bottom: safe.bottom + strip,
-                right: safe.right
-            )
-            guard scrollView.contentInset != inset else { return false }
-            scrollView.contentInset = inset
-            scrollView.verticalScrollIndicatorInsets = inset
-            scrollView.horizontalScrollIndicatorInsets = inset
-            return true
-        }
+        private var bars: UIEdgeInsets { scrollView?.safeAreaInsets ?? .zero }
 
-        /// The part of the bounds not under a bar, the buttons or the rail,
-        /// in the frame's own points: the drawing's own.
-        var visibleRect: CGRect {
+        /// The part of the scroll view's frame not under a bar or the
+        /// buttons, in its own frame's coordinates.
+        private var window: CGRect {
             guard let scrollView else { return .zero }
-            let inset = scrollView.contentInset
+            let bounds = scrollView.bounds
             return CGRect(
-                x: inset.left,
-                y: inset.top,
-                width: max(0, scrollView.bounds.width - inset.left - inset.right),
-                height: max(0, scrollView.bounds.height - inset.top - inset.bottom)
+                x: bars.left,
+                y: bars.top,
+                width: max(0, bounds.width - bars.left - bars.right),
+                height: max(0, bounds.height - bars.top - bars.bottom - controls)
             )
         }
 
-        /// The drawing laid out again at the current scale.
+        /// The scale at which the whole drawing is inside the window.
+        private var fit: CGFloat {
+            let window = window
+            guard window.width > 0, window.height > 0, size.width > 0, size.height > 0 else { return 1 }
+            return min(window.width / size.width, window.height / size.height)
+        }
+
+        /// The drawing laid out at `scale`.
         func render() {
-            guard let host, let content else { return }
+            guard let host, let scrollView, let content else { return }
             host.rootView = content(scale)
-            // Now rather than on the next turn of the run loop, so that the
-            // picture and its frame change in the same frame.
-            host.view.setNeedsLayout()
-            host.view.layoutIfNeeded()
-        }
-
-        /// The drawing's frame and the content around it. A drawing smaller
-        /// than the window is drawn in its middle rather than against a
-        /// corner, which a scroll view does not do on its own: the content
-        /// is padded to the window and the drawing set in the middle of it.
-        func place() {
-            guard let scrollView, let host else { return }
             let drawn = CGSize(width: size.width * scale, height: size.height * scale)
-            let visible = visibleRect.size
-            let content = CGSize(width: max(drawn.width, visible.width), height: max(drawn.height, visible.height))
-            host.view.frame = CGRect(
-                origin: CGPoint(x: (content.width - drawn.width) / 2, y: (content.height - drawn.height) / 2),
-                size: drawn
-            )
-            scrollView.contentSize = content
+            host.view.frame = CGRect(origin: .zero, size: drawn)
+            scrollView.contentSize = drawn
+            // The pinch works on top of the layout's own scale, so its
+            // limits are the range less what the layout already holds.
+            scrollView.minimumZoomScale = range.lowerBound / scale
+            scrollView.maximumZoomScale = range.upperBound / scale
+            // The scroll view's own pinch would zoom as well on the rare
+            // touch that begins beside the drawing rather than on it, and
+            // one pinch is enough (`TreePinch`).
+            scrollView.pinchGestureRecognizer?.isEnabled = false
         }
 
-        /// A new scale, with the drawing point under `point` put back under
-        /// it. `point` is in the frame's own coordinates — where the fingers
-        /// are, or the middle of what can be seen. A pinch in progress is
-        /// allowed to overshoot the content, since the pan under the same
-        /// fingers is still going; a button settles inside it at once.
-        func apply(scale new: CGFloat, about point: CGPoint, settle: Bool) {
+        /// The bars' insets, the buttons' band, and the air that centres a
+        /// drawing smaller than the window.
+        private func applyInsets() {
             guard let scrollView else { return }
-            let clamped = min(max(new, range.lowerBound), range.upperBound)
-            let old = scale
-            guard clamped != old else { return }
-            let offset = scrollView.contentOffset
-            // The drawing point under the finger, in the drawing's own units.
-            let under = CGPoint(
-                x: (point.x + offset.x - origin.x) / old,
-                y: (point.y + offset.y - origin.y) / old
+            let window = window
+            let drawn = scrollView.contentSize
+            let spareX = max(0, (window.width - drawn.width) / 2)
+            let spareY = max(0, (window.height - drawn.height) / 2)
+            let inset = UIEdgeInsets(
+                top: bars.top + spareY,
+                left: bars.left + spareX,
+                bottom: bars.bottom + controls + spareY,
+                right: bars.right + spareX
             )
-            scale = clamped
-            render()
-            place()
-            let target = CGPoint(
-                x: origin.x + under.x * clamped - point.x,
-                y: origin.y + under.y * clamped - point.y
-            )
-            scrollView.contentOffset = settle ? clamp(target) : target
-            if !updating { setScale?(clamped) }
-            report()
+            if scrollView.contentInset != inset {
+                scrollView.contentInset = inset
+            }
         }
 
-        /// The offsets the scroll view would settle at on its own.
-        func clamp(_ offset: CGPoint) -> CGPoint {
+        private func clamp(_ offset: CGPoint) -> CGPoint {
             guard let scrollView else { return offset }
             let inset = scrollView.contentInset
             let minX = -inset.left
-            let maxX = max(minX, scrollView.contentSize.width - scrollView.bounds.width + inset.right)
             let minY = -inset.top
-            let maxY = max(minY, scrollView.contentSize.height - scrollView.bounds.height + inset.bottom)
+            let maxX = max(minX, scrollView.contentSize.width + inset.right - scrollView.bounds.width)
+            let maxY = max(minY, scrollView.contentSize.height + inset.bottom - scrollView.bounds.height)
             return CGPoint(x: min(max(offset.x, minX), maxX), y: min(max(offset.y, minY), maxY))
         }
 
-        /// The window has a size, or a new one.
-        func layoutChanged() {
-            _ = applyInsets()
-            place()
-            open()
-            report()
-        }
-
-        /// UIKit has the bars' insets for this window, or new ones.
-        func safeAreaChanged() {
-            guard applyInsets() else { return }
-            place()
-            open()
-            report()
-        }
-
-        /// Without animation: this is where the picture begins rather than
-        /// somewhere it has been carried. Applied at every change of size or
-        /// inset until the reader moves the picture themselves.
-        func open() {
-            // Not before the buttons have been measured: an opening taken
-            // against a window without their band is moved when it arrives,
-            // and an audit that began between the two read every name's
-            // colour off pixels 83 points away from it (19 Sep 2026).
-            guard !moved, strip > 0, let scrollView, scrollView.bounds.width > 0, scrollView.bounds.height > 0 else { return }
-            let visible = visibleRect
-            guard let opening else {
-                scrollView.contentOffset = CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
-                return
-            }
-            let band = opening.bandHeight * scale
-            let yours = origin.y + opening.bandTop * scale
-            var y = yours + opening.row * band - visible.minY - opening.row * visible.height
-            // Then the names, if the fraction has left a row's under the
-            // buttons: lifted until they end at the strip's top when your
-            // own card stays whole, pushed below the strip when it stays
-            // whole that way instead, and left where the fraction put them
-            // when neither move keeps it. Under the tab bar is below the
-            // fold and a finger's business; the strip is the one piece of
-            // chrome that stands on the drawing. A disc's edge under a
-            // button is the map's own business too — at the largest text
-            // size a row is taller than the window, so a disc is under
-            // something whatever the opening — and the names are the
-            // words. At most one row's names can be in the strip at once,
-            // since the air between two rows' names is wider than it, and
-            // a move that clears one row cannot carry another in.
-            //
-            // The last row is the case this began as: measured 19 Sep 2026
-            // at the default size, "Saima" and "Lauri" five points under
-            // the buttons' top edge with the strip counted and the fraction
-            // alone deciding. The first version lifted every row that ended
-            // short of the drawing's end and carried Elina off the top at
-            // the largest size (y −273); the second lifted the last row
-            // alone, and the next row down at that size stood under the
-            // buttons with nothing said about it.
-            let strip = visible.maxY ..< visible.maxY + strip
-            for top in opening.rows {
-                let bottom = origin.y + (top + opening.card) * scale - y
-                let start = bottom - opening.name * scale
-                guard start < strip.upperBound, bottom > strip.lowerBound else { continue }
-                let lift = bottom - strip.lowerBound
-                let push = strip.upperBound - start
-                if yours - (y + lift) >= visible.minY {
-                    y += lift
-                } else if yours + band - (y - push) <= visible.maxY {
-                    y -= push
-                }
-                break
-            }
-            scrollView.contentOffset = clamp(CGPoint(
-                x: origin.x + opening.centreX * scale - visible.midX,
-                y: y
+        /// The offset that puts a point of the drawing at a fraction of the
+        /// window, as far as the drawing's edges allow.
+        private func offset(showing point: CGPoint, at fraction: CGPoint) -> CGPoint {
+            let window = window
+            return clamp(CGPoint(
+                x: point.x * scale - (window.minX + fraction.x * window.width),
+                y: point.y * scale - (window.minY + fraction.y * window.height)
             ))
         }
 
-        /// Where the drawing is now, to whoever placed the words on the window.
-        func report() {
-            guard let scrollView, let onWindow else { return }
-            let window = TreeWindow(
-                shift: CGPoint(x: origin.x - scrollView.contentOffset.x, y: origin.y - scrollView.contentOffset.y),
-                scale: scale,
-                visible: visibleRect,
-                edge: scrollView.safeAreaInsets.left,
-                rail: scrollView.contentInset.left - scrollView.safeAreaInsets.left
-            )
-            guard window != lastWindow else { return }
-            lastWindow = window
-            if updating {
-                // The newest window at delivery, not the one in hand: the
-                // first update's report is deferred and the first layout's
-                // is not, so a deferred report delivered as taken landed
-                // after the layout's and put every word where the drawing
-                // had been before it opened (measured 19 Sep 2026, the
-                // generation words two rows below their rows).
-                DispatchQueue.main.async { [weak self] in
-                    guard let self, let latest = self.lastWindow else { return }
-                    self.onWindow?(latest)
-                }
+        private var start: CGPoint {
+            guard let scrollView else { return .zero }
+            return CGPoint(x: -scrollView.contentInset.left, y: -scrollView.contentInset.top)
+        }
+
+        private func set(scale new: CGFloat) {
+            let clamped = min(max(new, range.lowerBound), range.upperBound)
+            guard clamped != scale else { return }
+            scale = clamped
+            render()
+        }
+
+        /// The window has a size, or a new one, or new insets: the drawing
+        /// is centred in it if it is smaller, opened in it if the reader
+        /// has not moved it yet, and kept inside it otherwise.
+        func settle() {
+            guard let scrollView, !settling, scrollView.bounds.width > 0, scrollView.bounds.height > 0 else { return }
+            settling = true
+            defer { settling = false }
+            applyInsets()
+            if moved {
+                scrollView.contentOffset = clamp(scrollView.contentOffset)
             } else {
-                onWindow(window)
+                open()
             }
         }
 
-        func scrollViewDidScroll(_ scrollView: UIScrollView) {
-            report()
+        /// Where the picture begins: at its natural size, centred when the
+        /// whole family fits the window; on your own card when it does not;
+        /// and at its own top left corner like any picture on a phone linked
+        /// to no card.
+        ///
+        /// Never smaller than natural, not even for a family that would fit
+        /// whole at 0.9×. The reader may shrink this drawing and the app may
+        /// not do it for them: the rule of 19 Sep 2026, and the audit is what
+        /// measures it. Its default-size run steps the text through twelve
+        /// sizes, and an opening that fitted a family — this one did, down to
+        /// `detail` — shrank the drawing at the sizes where the family nearly
+        /// fit, and the audit reported every name on the screen clipped,
+        /// twice alone on 25 Sep 2026. *Koko suku* is the same fit, and the
+        /// reader's to press.
+        ///
+        /// Not before the buttons have been measured: an opening taken
+        /// against a window without their band is moved when it arrives.
+        private func open() {
+            guard let scrollView, controls > 0 else { return }
+            set(scale: 1)
+            applyInsets()
+            if let opening, fit < 1 {
+                scrollView.contentOffset = offset(showing: opening, at: Self.focus)
+            } else {
+                scrollView.contentOffset = clamp(start)
+            }
+        }
+
+        func perform(_ command: TreeCommand) {
+            guard let scrollView, scrollView.bounds.width > 0 else { return }
+            moved = true
+            let target: CGPoint
+            switch command.move {
+            case .fit:
+                set(scale: min(fit, 1))
+                applyInsets()
+                target = clamp(start)
+            case let .focus(point, atLeast):
+                set(scale: max(scale, atLeast))
+                applyInsets()
+                target = offset(showing: point, at: Self.focus)
+            case let .home(point):
+                set(scale: 1)
+                applyInsets()
+                target = offset(showing: point, at: Self.focus)
+            }
+            // The map's flight: 420 milliseconds, the study map's, and none
+            // at all for a reader who has asked the phone for less motion.
+            if command.animated, !UIAccessibility.isReduceMotionEnabled {
+                UIView.animate(withDuration: 0.42, delay: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
+                    scrollView.contentOffset = target
+                }
+            } else {
+                scrollView.contentOffset = target
+            }
+        }
+
+        // MARK: UIScrollViewDelegate
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+            host?.view
         }
 
         func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
             moved = true
         }
 
-        @objc func pinched(_ gesture: UIPinchGestureRecognizer) {
-            guard let scrollView else { return }
-            switch gesture.state {
+        func scrollViewWillBeginZooming(_ scrollView: UIScrollView, with view: UIView?) {
+            moved = true
+        }
+
+        func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            // A drawing pinched smaller than the window stays centred in it.
+            applyInsets()
+        }
+
+        func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale zoomed: CGFloat) {
+            settleZoom()
+        }
+
+        /// The two fingers, from `TreePinch`: the scroll view's zoom driven
+        /// about the point that was under them, and made permanent when they
+        /// lift.
+        func pinched(_ pinch: UIPinchGestureRecognizer) {
+            guard let scrollView, let host else { return }
+            switch pinch.state {
             case .began:
                 moved = true
-                pinchStart = scale
+                gate?.pinching = true
+                pinchFrom = scrollView.zoomScale
+                pinchAnchor = pinch.location(in: host.view)
             case .changed:
-                // `location(in:)` answers in the scroll view's bounds, whose
-                // origin is the content offset; the frame's own point is
-                // that less the offset.
-                let inContent = gesture.location(in: scrollView)
-                let point = CGPoint(
-                    x: inContent.x - scrollView.contentOffset.x,
-                    y: inContent.y - scrollView.contentOffset.y
-                )
-                apply(scale: pinchStart * gesture.scale, about: point, settle: false)
+                guard pinch.numberOfTouches == 2 else { return }
+                let zoom = min(max(pinchFrom * pinch.scale, scrollView.minimumZoomScale), scrollView.maximumZoomScale)
+                // Where the fingers are in the window, and where the point
+                // that was under them has gone at the new zoom: the offset
+                // that puts it back under them.
+                let fingers = pinch.location(in: scrollView)
+                let inWindow = CGPoint(x: fingers.x - scrollView.contentOffset.x, y: fingers.y - scrollView.contentOffset.y)
+                scrollView.zoomScale = zoom
+                let anchor = host.view.convert(pinchAnchor, to: scrollView)
+                scrollView.contentOffset = clamp(CGPoint(x: anchor.x - inWindow.x, y: anchor.y - inWindow.y))
             case .ended, .cancelled, .failed:
-                // Back inside the content, the way the pan bounces back.
-                scrollView.setContentOffset(clamp(scrollView.contentOffset), animated: true)
+                settleZoom()
+                // The cards' presses complete as the fingers lift, in an
+                // order UIKit does not promise, so the gate stays shut a
+                // moment longer.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                    self?.gate?.pinching = false
+                }
             default:
                 break
             }
         }
 
-        /// The pinch and the scroll view's own pan at once, so two fingers
-        /// that drift while they pinch move the drawing as well as scale it.
-        func gestureRecognizer(
-            _ gestureRecognizer: UIGestureRecognizer,
-            shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer
-        ) -> Bool {
-            true
+        /// The transform the fingers left, made permanent: laid out again at
+        /// the new size, with the same part of the family under the window.
+        /// The offset is in the zoomed content's own coordinates already,
+        /// which are the new layout's, so it is kept across the change.
+        private func settleZoom() {
+            guard let scrollView, !settling else { return }
+            settling = true
+            defer { settling = false }
+            let zoomed = scrollView.zoomScale
+            let offset = scrollView.contentOffset
+            scrollView.zoomScale = 1
+            set(scale: scale * zoomed)
+            applyInsets()
+            scrollView.contentOffset = clamp(offset)
         }
     }
+}
+
+/// Shut while two fingers are on the drawing. SwiftUI's presses on the cards
+/// run on through a pinch and complete when the fingers lift, so the
+/// coordinator says when it is pinching and the card's action asks.
+private final class TreeGate {
+    var pinching = false
+}
+
+/// The two-finger zoom, as a recognizer of the scroll view's own kind that
+/// cannot be prevented. UIScrollView brings one, and it never fires here:
+/// the drawing is SwiftUI, and SwiftUI's responder recognizer on the hosted
+/// view recognises on the first touch and prevents every other recognizer
+/// in the chain, the scroll view's pinch among them. Measured 25 Sep 2026:
+/// that pinch held two touches at the first event and none from the first
+/// move, and a pinch that had begun on two cards ended as two taps, a
+/// sheet and no zoom. This one refuses to be prevented and drives the
+/// scroll view's zoom the way its own would have (`Coordinator.pinched`);
+/// the presses it ran through still complete, which is what `TreeGate`
+/// is for.
+private final class TreePinch: UIPinchGestureRecognizer {
+    override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+}
+
+/// `TreePinch`'s target: a class of its own, because the coordinator is
+/// nested in a generic type, where an `@objc` method is not allowed.
+private final class PinchTarget: NSObject {
+    var handle: ((UIPinchGestureRecognizer) -> Void)?
+    @objc func pinched(_ pinch: UIPinchGestureRecognizer) { handle?(pinch) }
 }
 
 /// A scroll view that says when its size is known or has changed — which is
@@ -1262,34 +1187,29 @@ private final class TreeScrollView: UIScrollView {
     var onSafeArea: (() -> Void)?
     private var laidOut: CGSize = .zero
 
-    override func safeAreaInsetsDidChange() {
-        super.safeAreaInsetsDidChange()
-        onSafeArea?()
-    }
-
     override func layoutSubviews() {
         super.layoutSubviews()
-        // On a change of size only: a scroll view lays itself out on every
-        // move, and the drawing must not be placed again on each of them.
         if bounds.size != laidOut {
             laidOut = bounds.size
             onLayout?()
         }
     }
+
+    override func safeAreaInsetsDidChange() {
+        super.safeAreaInsetsDidChange()
+        onSafeArea?()
+    }
 }
 
-private extension CGRect {
-    var middle: CGPoint { CGPoint(x: midX, y: midY) }
-}
+// MARK: - The sheets
 
-// MARK: - The menu
-
-/// A door the menu opens, taken once the sheet has gone down.
+/// The doors the menu opens. The tree asks Ihmiset for them rather than
+/// pushing them: the navigation stack is the tab's.
 private enum TreeDoor {
     case list, addPerson, heard, settings
 }
 
-/// A bond the drawing could not hold, as a sentence's three parts.
+/// A bond the rows could not hold, named for the menu.
 private struct UndrawnBond: Identifiable {
     let id = UUID()
     let from: String
@@ -1297,9 +1217,8 @@ private struct UndrawnBond: Identifiable {
     let bond: String
 }
 
-/// Everything that used to stand around the drawing, behind one button: the
-/// ways out of the screen, the key to its lines, and what the drawing cannot
-/// say.
+/// Everything that stands around the drawing, behind one button: the ways
+/// out of the screen, the key to its lines, and what the drawing cannot say.
 ///
 /// A sheet of plain buttons rather than a menu, like the person's sheet: a
 /// menu's rows barely grow with the text size, and no UI test here has been
@@ -1341,13 +1260,12 @@ private struct TreeMenuSheet: View {
 
                     // The drawing is a code — two lines for a couple, a
                     // bracket down to the children, a bar over siblings —
-                    // and until 16 Sep 2026 nothing on the screen said so.
-                    // One under the other, and not three across a row that
-                    // folds into a column when the words outgrow it:
-                    // `ViewThatFits` was the first shape and the audit
-                    // refused it — "Dynamic Type font sizes are partially
-                    // unsupported" on all three words. A column is one
-                    // arrangement at every size, and it reads as a key.
+                    // and nothing on the drawing says so. One under the
+                    // other, and not three across a row that folds into a
+                    // column when the words outgrow it: the audit refused a
+                    // `ViewThatFits` here as "Dynamic Type font sizes are
+                    // partially unsupported" on all three words. A column is
+                    // one arrangement at every size, and it reads as a key.
                     Text("Mitä viivat tarkoittavat")
                         .font(.headline)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1361,11 +1279,9 @@ private struct TreeMenuSheet: View {
                     // Everybody is of one generation in a picture, so a
                     // marriage between two of them, or a pair each entered as
                     // the other's parent, leaves a bond with nowhere to go,
-                    // and `FamilyTreeLayout` drops the line rather than draw
-                    // a relationship nobody entered — which is rule 4, and
-                    // the easy half of it.
-                    //
-                    // This is the other half (19 Sep 2026). A line quietly
+                    // and `FamilyTreeLayout` names it rather than draw a
+                    // relationship nobody entered — which is rule 4, and the
+                    // easy half of it. This is the other half: a line quietly
                     // absent is the picture disagreeing with the cards, and
                     // from the drawing alone it looks exactly like a bond
                     // nobody has entered yet — the one reading that sends
@@ -1464,6 +1380,15 @@ private struct TreePersonSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let person: Subject
+    /// The same word as under the card, so the sheet says whose it is in
+    /// the same terms; nil where the card has none.
+    let word: String?
+    /// How many memories the archive holds about them — the count under the
+    /// name on the person list, the map plan's *"2 muistoa"* on a chip — so
+    /// the sheet says whether the card has anything before *Avaa kortti*
+    /// is tapped. Nothing when none: fifty-five cards saying *0 muistoa*
+    /// would be the drawing repeating itself.
+    let memories: Int
     let open: () -> Void
     let add: (RelationKind, Bool) -> Void
 
@@ -1474,9 +1399,21 @@ private struct TreePersonSheet: View {
                     Text(person.displayTitle)
                         .font(Elder.display(.title2))
                         .fixedSize(horizontal: false, vertical: true)
-                        .padding(.bottom, 8)
+                    if let word {
+                        Text(word)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Elder.supporting)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if memories > 0 {
+                        Text("\(memories) muistoa")
+                            .font(.subheadline)
+                            .foregroundStyle(Elder.supporting)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     action("Avaa kortti") { open() }
+                        .padding(.top, 8)
 
                     Text("Lisää sukulainen")
                         .font(.headline)
@@ -1487,8 +1424,8 @@ private struct TreePersonSheet: View {
                     action("Lisää lapsi") { add(.parentOf, true) }
                     action("Lisää puoliso") { add(.spouseOf, false) }
                     action("Lisää sisarus") { add(.siblingOf, false) }
-                    // Not kin, and drawn apart (21 Sep 2026): after a gap,
-                    // under the heading the card's own menu keeps it under.
+                    // Not kin, and drawn apart: after a gap, under the
+                    // heading the card's own menu keeps it under.
                     action("Lisää ystävä") { add(.friendOf, false) }
                         .padding(.top, 8)
 
@@ -1509,8 +1446,7 @@ private struct TreePersonSheet: View {
 
     /// A title and nothing else: with an icon beside the words the audit has
     /// measured rows like these as not following Dynamic Type. The width is
-    /// inside the label, so the whole row takes the tap. Outside it only the
-    /// words did, and a tap in the middle of the row met nothing (13 Sep 2026).
+    /// inside the label, so the whole row takes the tap.
     private func action(_ title: LocalizedStringKey, perform: @escaping () -> Void) -> some View {
         Button(action: perform) {
             Text(title)

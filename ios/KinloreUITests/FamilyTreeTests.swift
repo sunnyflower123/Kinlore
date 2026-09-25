@@ -1,14 +1,18 @@
 import XCTest
 
 /// The family tree, on a family member's phone since 13 Sep 2026, and what
-/// Ihmiset opens on there.
+/// Ihmiset opens on there — rebuilt from zero on 25 Sep 2026, with a word on
+/// every card in place of a rail of generation words pinned to the window.
 ///
-/// Where people land is `scripts/family-tree-layout-check.swift`'s question.
-/// These ask what only a running app can answer: that Ihmiset opens on the
-/// tree with the whole confirmed family in it and nothing else on the screen,
-/// that the list and every other door are behind the one menu button, that a
-/// person in the tree opens their card or takes a new relative on the spot,
-/// and that a grandparent's phone keeps the list.
+/// Where people land is `scripts/family-tree-layout-check.swift`'s question,
+/// and which word a card gets is `scripts/kinship-check.swift`'s. These ask
+/// what only a running app can answer: that Ihmiset opens on the tree with
+/// the whole confirmed family in it and nothing else on the screen, that the
+/// list and every other door are behind the one menu button, that a person
+/// in the tree opens their card or takes a new relative on the spot, that
+/// every word is inside the drawing, that the picture zooms under two
+/// fingers and keeps its people as tap targets at the smallest size, and
+/// that a grandparent's phone keeps the list.
 ///
 /// The suite's launch helper passes `-people list`, so the tests written about
 /// the list keep testing the list. These pass `-people tree`, or `default` to
@@ -32,12 +36,16 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Ei vielä sukupuussa"].exists, "the people related to nobody have no caption")
         XCTAssertFalse(app.buttons["Aino"].exists, "a name nobody has checked is drawn in the tree")
         XCTAssertTrue(app.buttons["Valikko"].exists, "no menu over the tree")
-        // Nothing else. Since 19 Sep 2026 the drawing is the screen, and the
-        // three doors the list keeps in its bar wait behind the menu.
+        XCTAssertTrue(app.buttons["Koko suku"].exists, "no way to fit the whole family")
+        // Nothing else. The drawing is the screen, and the three doors the
+        // list keeps in its bar wait behind the menu.
         XCTAssertFalse(app.buttons["Luettelo"].exists, "the way to the list stands on the tree rather than in the menu")
         XCTAssertFalse(app.buttons["Lisää henkilö"].exists, "the way to add a person stands on the tree rather than in the menu")
         XCTAssertFalse(app.buttons["Asetukset"].exists, "the settings stand on the tree rather than in the menu")
+        // A phone linked to no card has nobody to say *Sinä* about, and no
+        // card to fly home to.
         XCTAssertFalse(app.staticTexts["Sinä"].exists, "somebody is marked as you on a phone linked to no card")
+        XCTAssertFalse(app.buttons["Sinä"].exists, "a way to your own card on a phone linked to no card")
     }
 
     /// The menu holds everything the tree does not show: the list, a new
@@ -59,13 +67,26 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Kuullut nimet"].waitForExistence(timeout: 10), "the door to the names heard did not open")
     }
 
-    /// The card this phone's member is linked to says so. `-you` links the
-    /// demo family's "you" to Eeva's card, as `PATCH /family/me` does for real.
-    func testYourOwnCardSaysItIsYou() {
+    /// The card this phone's member is linked to says so, and every other
+    /// card says what that person is to them: Kalle is Eeva's husband, so
+    /// his card reads *Puolisosi*, and Sanni is related to nobody and gets no
+    /// word — a wrong relationship is worse than a missing one. `-you` links
+    /// the demo family's "you" to Eeva's card, as `PATCH /family/me` does for
+    /// real. The words are read inside each card's own button: *Sinä* is
+    /// also the name of the button that flies home.
+    func testYourOwnCardSaysItIsYouAndTheOthersSayWhatTheyAreToYou() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "tree", "-you", "demo-eeva"])
-        XCTAssertTrue(app.buttons["Eeva, sinä"].waitForExistence(timeout: 10), "your card does not say it is you")
-        XCTAssertTrue(app.staticTexts["Sinä"].exists, "no word under your name")
-        XCTAssertTrue(app.buttons["Kalle"].exists, "somebody else was marked as you as well")
+        let eeva = app.buttons["Eeva, sinä"]
+        XCTAssertTrue(eeva.waitForExistence(timeout: 10), "your card does not say it is you")
+        XCTAssertTrue(eeva.staticTexts["Sinä"].exists, "no word under your name")
+        let kalle = app.buttons["Kalle"]
+        XCTAssertTrue(kalle.exists, "somebody else was marked as you as well")
+        XCTAssertTrue(kalle.staticTexts["Puolisosi"].exists, "your husband's card does not say what he is to you")
+        let sanni = app.buttons["Sanni"]
+        XCTAssertTrue(sanni.exists, "somebody related to nobody is not in the picture")
+        XCTAssertEqual(sanni.staticTexts.count, kalle.staticTexts.count - 1,
+                       "somebody related to nobody was given a word")
+        XCTAssertTrue(app.buttons["Sinä"].exists, "no way to your own card")
     }
 
     /// The list is two taps away through the menu and the tree one tap back,
@@ -103,6 +124,9 @@ final class FamilyTreeTests: XCTestCase {
 
         let open = app.buttons["Avaa kortti"]
         XCTAssertTrue(open.waitForExistence(timeout: 10), "the person's sheet in the tree")
+        // The fixture gives Kalle one memory, and the sheet says so before
+        // the card is opened — the count the person list shows under him.
+        XCTAssertTrue(app.staticTexts["1 muistoa"].exists, "the sheet does not say how much the archive holds about Kalle")
         open.tap()
         XCTAssertTrue(app.navigationBars["Kalle"].waitForExistence(timeout: 10), "the card did not open")
     }
@@ -133,52 +157,63 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Valikko"].exists, "adding a relative left the tree")
     }
 
-    /// The two zoom buttons are the way for a hand that cannot pinch, and the
-    /// tree has to survive both ends of them.
-    func testTheTreeZoomsBothWays() {
+    /// The drawing zooms under two fingers, and the people survive both ends
+    /// of it. Zoomed in, a name is drawn larger. Zoomed out past 0.65 the
+    /// names are not drawn at all and the discs stay, each still a tap
+    /// target — a name at that size is ink in the shape of a word. And
+    /// *Koko suku* brings a family that fits the window back to its natural
+    /// size, names and all.
+    func testTheTreeZoomsUnderTwoFingersAndKeepsItsPeople() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "tree"])
-        XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "the tree did not open")
-        let larger = app.buttons["Suurenna"]
-        let smaller = app.buttons["Pienennä"]
-        XCTAssertTrue(larger.exists && smaller.exists, "the zoom buttons")
-        for _ in 0 ..< 6 { larger.tap() }
-        XCTAssertTrue(app.buttons["Eeva"].exists, "Eeva is gone at the largest zoom")
-        for _ in 0 ..< 12 { smaller.tap() }
+        let eeva = app.buttons["Eeva"]
+        XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the tree did not open")
+        let map = app.scrollViews.firstMatch
+        XCTAssertTrue(map.exists, "the drawing is not in a scroll view")
+        let name = app.staticTexts["Eeva"].frame.height
+
+        map.pinch(withScale: 2, velocity: 1)
+        XCTAssertTrue(app.staticTexts["Eeva"].waitForExistence(timeout: 10), "Eeva's name is gone after zooming in")
+        XCTAssertGreaterThan(app.staticTexts["Eeva"].frame.height, name * 1.5, "the name did not grow with the pinch")
+        // The fingers of a pinch land on cards more often than not, and
+        // the cards' presses run on through it: measured as two taps and
+        // a sheet where a zoom should have been.
+        XCTAssertFalse(app.buttons["Avaa kortti"].exists, "a pinch that began on two cards opened a sheet")
+
+        map.pinch(withScale: 0.2, velocity: -1)
+        XCTAssertTrue(app.staticTexts["Eeva"].waitForNonExistence(timeout: 10), "a name is still drawn at the smallest zoom")
+        XCTAssertTrue(eeva.exists, "Eeva is gone at the smallest zoom")
         XCTAssertTrue(app.buttons["Kalle"].exists, "Kalle is gone at the smallest zoom")
-        // Every tap has to land on the button it was aimed at. While the
-        // buttons scrolled with the tree, a tap landed on the door to the
-        // names heard instead, and the test ended on that screen.
-        XCTAssertTrue(app.buttons["Valikko"].exists, "a zoom tap opened another screen")
+        XCTAssertGreaterThanOrEqual(eeva.frame.width, 44, "a place is too narrow to tap at the smallest zoom")
+        XCTAssertGreaterThanOrEqual(eeva.frame.height, 44, "a place is too short to tap at the smallest zoom")
+
+        app.buttons["Koko suku"].tap()
+        XCTAssertTrue(app.staticTexts["Eeva"].waitForExistence(timeout: 10), "the names did not come back when the family was fitted")
+        XCTAssertEqual(app.staticTexts["Eeva"].frame.height, name, accuracy: 1, "a family that fits the window is not drawn at its natural size")
+        XCTAssertTrue(app.buttons["Valikko"].exists, "zooming opened another screen")
     }
 
-    /// The drawing rests beside the generation words and not under them
-    /// (21 Sep 2026). The words stand on scraps over the air between rows,
-    /// which is where the bars run, and the drawing used to begin at the
-    /// window's own edge underneath them. The first family entered on a
-    /// phone, zoomed out to fit and in English, where every word is two
-    /// lines, had its first column's bars and drops under the scraps, and
-    /// two children of one parent each read as children of nobody. The
-    /// words' band is the drawing's leading inset now, and the words stand
-    /// beside their rows' discs, where a two-line English word reaches no
-    /// bar: at the opening the first column stands clear of the word, and
-    /// still does at the smallest zoom, where the whole family fits beside
-    /// it. Eeva is the first column, and *Sinun polvesi* on her row is the
-    /// widest word the fixture of five gets.
-    func testTheDrawingRestsBesideTheGenerationWords() {
+    /// Every word is inside the drawing, in the card it is about. The shape
+    /// before this one pinned the generation words to the window's edge over
+    /// a drawing that moved under them, and on a 375-point phone the words
+    /// stood over the names in any family wider than a place and a half.
+    /// Nothing is pinned now: *Sinä* is inside your own card's frame and
+    /// *Puolisosi* inside your husband's, and both are descendants of the
+    /// scroll view that carries the drawing.
+    func testEveryWordIsInsideTheDrawing() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "tree", "-you", "demo-eeva"])
         let eeva = app.buttons["Eeva, sinä"]
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the tree did not open")
-        let word = app.staticTexts["Sinun polvesi"]
-        XCTAssertTrue(word.exists, "your own row is not named")
-        XCTAssertGreaterThan(eeva.frame.minX, word.frame.maxX, "the first column opened under the generation word")
-        // And beside the row's discs rather than in the air above them,
-        // where the bars run: the word's middle is within your own card.
-        XCTAssertGreaterThan(word.frame.midY, eeva.frame.minY, "the word stands in the air above its row")
-        XCTAssertLessThan(word.frame.midY, eeva.frame.maxY, "the word stands below its row")
-        let edge = word.frame.minX
-        for _ in 0 ..< 12 { app.buttons["Pienennä"].tap() }
-        XCTAssertGreaterThan(eeva.frame.minX, word.frame.maxX, "the first column is under the generation word at the smallest zoom")
-        XCTAssertEqual(word.frame.minX, edge, accuracy: 1, "the word moved when the drawing shrank")
+        let map = app.scrollViews.firstMatch
+        XCTAssertTrue(map.buttons["Eeva, sinä"].exists, "your card is not inside the drawing")
+        let you = eeva.staticTexts["Sinä"]
+        XCTAssertTrue(you.exists, "no word under your name")
+        XCTAssertTrue(eeva.frame.contains(you.frame), "the word under your name stands outside your card")
+        let kalle = app.buttons["Kalle"]
+        let word = kalle.staticTexts["Puolisosi"]
+        XCTAssertTrue(word.exists, "no word under your husband's name")
+        XCTAssertTrue(kalle.frame.contains(word.frame), "the word stands outside the card it is about")
+        XCTAssertTrue(map.staticTexts["Puolisosi"].exists, "the word is not inside the drawing")
+        XCTAssertFalse(word.frame.intersects(eeva.frame), "your husband's word stands over your own card")
     }
 
     /// A grandparent's phone keeps the list: no picture of lines, and no way to
@@ -237,6 +272,7 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(friends.waitForExistence(timeout: 20), "the friends have no caption")
         let jonne = app.buttons["Jonne"]
         XCTAssertTrue(jonne.exists, "the friend is not in the picture")
+        XCTAssertTrue(jonne.staticTexts["Ystäväsi"].exists, "the friend's card does not say what he is to you")
         let loose = app.staticTexts["Ei vielä sukupuussa"]
         XCTAssertTrue(loose.exists, "the people related to nobody lost their caption")
         XCTAssertLessThan(friends.frame.minY, jonne.frame.minY, "the friend stands above his own caption")
@@ -246,7 +282,7 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertLessThan(rauha.frame.minY, friends.frame.minY, "somebody's kin is drawn among the friends")
     }
 
-    /// And no caption over nobody: the fixture of five has no friend in it.
+    /// And no caption over nobody: the fixture of three has no friend in it.
     func testTheFriendsCaptionWaitsForAFriend() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "tree"])
         XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "the tree")
