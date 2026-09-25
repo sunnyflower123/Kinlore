@@ -414,7 +414,8 @@ IDX=$(mktemp)                                    # never .git/index, which is sh
 # write HEAD's version of the file plus ONLY your hunks to $BLENDED
 GIT_INDEX_FILE=$IDX git read-tree HEAD
 BLOB=$(git hash-object -w "$BLENDED")
-GIT_INDEX_FILE=$IDX git update-index --cacheinfo 100644 "$BLOB" <path>
+MODE=$(git ls-tree HEAD -- <path> | cut -d' ' -f1)   # HEAD's mode, never a guess
+GIT_INDEX_FILE=$IDX git update-index --cacheinfo "$MODE" "$BLOB" <path>
 TREE=$(GIT_INDEX_FILE=$IDX git write-tree)
 NEW=$(git commit-tree "$TREE" -p HEAD -F <message-file>)
 git update-ref refs/heads/main "$NEW" "$(git rev-parse HEAD)"   # compare-and-swap
@@ -430,6 +431,16 @@ HEAD without the line — no conflict, no warning, and a message about something
 else. `git reset -q -- <path>` resets that one entry to HEAD and touches
 neither the working tree nor any other path; with it, the staged diff is empty
 and a plain commit refuses.
+
+**The mode is read from HEAD, because this recipe used to write `100644` for
+every file.** On 21 Sep 2026 that took the executable bit off
+`scripts/subject-rules-check.mjs` in db685c6 — the only time a tracked file has
+changed mode anywhere in this repository's history. It broke nothing, since
+`verify.sh` runs that file through `node`. What it left was an `M` in every
+session's `git status` for four days, and on 25 Sep it was the one line in a
+census of uncommitted work that no session could claim. The same recipe run on
+`scripts/verify.sh` would publish a script that CI, which calls
+`./scripts/verify.sh`, can no longer execute.
 
 **The recipe has a premise it never states: your own change has to be on
 disk.** `$BLENDED` is HEAD's copy of the file with your hunks written back into
