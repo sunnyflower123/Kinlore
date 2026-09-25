@@ -24,18 +24,40 @@ struct PaywallSheet: View {
     /// `spreadToFamily`.
     @State private var isWaitingForTheFamily = false
 
+    /// Set by a completed purchase and spent by the request to close that
+    /// RevenueCatUI sends straight after it — see `onRequestedDismissal`.
+    @State private var declinesNextDismissal = false
+
     var body: some View {
         PaywallView(displayCloseButton: true)
             // Restore matters more here than in most apps: the person who pays
             // may reinstall, change phone, or be a different family member than
             // the one who benefits.
             .onPurchaseCompleted { (info: CustomerInfo) in
+                declinesNextDismissal = true
                 Task { await spreadToFamily(info) }
             }
             .onRestoreCompleted { (info: CustomerInfo) in
                 Task { await spreadToFamily(info) }
             }
-            .onRequestedDismissal { dismiss() }
+            // RevenueCatUI asks to close once a purchase completes, one
+            // main-queue turn after `onPurchaseCompleted` — before the family
+            // has the archive. Obeying it closed the sheet over the alert below
+            // within half a second of the alert appearing (measured 21 Sep
+            // 2026). Against a real Worker, where `syncPurchase` waits on the
+            // network, it would close the sheet before the answer and leave
+            // the alert no screen to appear on. So that one request is
+            // declined and `spreadToFamily` closes the sheet. The close button
+            // still works meanwhile, because a sync that fails can take tens
+            // of seconds to say so. A restore sends no such request
+            // (RevenueCatUI 5.83.2).
+            .onRequestedDismissal {
+                if declinesNextDismissal {
+                    declinesNextDismissal = false
+                } else {
+                    dismiss()
+                }
+            }
             // The one moment in this app where somebody has parted with money,
             // and it used to end in a sheet closing over an unchanged screen.
             .alert("Kiitos — maksu meni läpi", isPresented: $isWaitingForTheFamily) {
