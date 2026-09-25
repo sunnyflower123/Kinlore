@@ -332,6 +332,9 @@ export async function leaveFamily(env: Env, session: Session) {
 		env.DB.prepare(
 			`UPDATE member SET left_at = ?, role = 'member' WHERE id = ? AND family_id = ?`,
 		).bind(timestamp, session.memberID, session.familyID),
+		// Their phones stop being notified. The send already skips a member
+		// who has left; this is the token itself, which is theirs to take.
+		env.DB.prepare('DELETE FROM push_token WHERE member_id = ?').bind(session.memberID),
 	]
 
 	if (session.role === 'owner') {
@@ -445,6 +448,7 @@ export async function removeMember(env: Env, session: Session, memberID: string)
 		env.DB.prepare(
 			'UPDATE invite SET revoked_at = ? WHERE family_id = ? AND revoked_at IS NULL',
 		).bind(timestamp, session.familyID),
+		env.DB.prepare('DELETE FROM push_token WHERE member_id = ?').bind(memberID),
 	])
 	return { removed: true as const }
 }

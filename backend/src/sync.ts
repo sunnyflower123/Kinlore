@@ -75,11 +75,17 @@ export type QuestionRow = {
 	// derived on read from `member.display_name`, like a memory's author.
 	author_id: string | null
 	author_name?: string
+	// Who it is aimed at; null for the whole family. Named on read like the
+	// asker. Set once, by the asker — see the upsert below.
+	target_member: string | null
+	target_name?: string
 	text: string
 	// How much the question asks of the answerer, 1–5. Null when nobody labelled
 	// it; the client then reads it off the wording. See docs/ARCHITECTURE.md §12.
 	level: number | null
 	status: string
+	// The telling that answered it. Sticky once set.
+	answered_memory_id: string | null
 	created_at: number
 	deleted_at: number | null
 	seq: number
@@ -199,9 +205,12 @@ export async function pull(env: Env, session: Session, since: number) {
 
 	const questions = await env.DB.prepare(
 		`SELECT q.id, q.subject_id, q.text, q.level, q.status, q.created_at,
-		        q.deleted_at, q.seq, q.author_id, mem.display_name AS author_name
+		        q.deleted_at, q.seq, q.author_id, mem.display_name AS author_name,
+		        q.target_member, target.display_name AS target_name,
+		        q.answered_memory_id
 		 FROM prompt_question q
 		 LEFT JOIN member mem ON mem.id = q.author_id
+		 LEFT JOIN member target ON target.id = q.target_member
 		 WHERE q.family_id = ? AND q.seq > ? ORDER BY q.seq LIMIT ?`,
 	)
 		.bind(family, since, MAX_ROWS)
@@ -634,21 +643,48 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		}
 	}
 
-	for (const question of (payload.questions ?? []).slice(0, MAX_ROWS)) {
+	// The pushed questions as they stood before this push, so that a
+	// notification fires on a change and never on a re-send: the outbox
+	// retries, and a question pushed twice must not ring a phone twice.
+	const pushedQuestions = (payload.questions ?? []).slice(0, MAX_ROWS)
+	const questionIDs = pushedQuestions
+		.filter((question) => typeof question.id === 'string' && question.text)
+		.map((question) => question.id as string)
+	const questionsBefore = await questionStates(env, family, questionIDs)
+
+	for (const question of pushedQuestions) {
 		if (!question.id || !question.text) continue
+		// A client may claim itself as the asker, or nobody (a question the
+		// extraction generated) — never another member. The same rule as a
+		// memory's author, relaxed to allow the machine.
+		const asker = question.author_id === session.memberID ? session.memberID : null
 		statements.push(
 			env.DB.prepare(
-				`INSERT INTO prompt_question (id, family_id, subject_id, author_id, text, level, status,
+				`INSERT INTO prompt_question (id, family_id, subject_id, author_id, target_member,
+				                              text, level, status, answered_memory_id,
 				                              created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				 VALUES (?, ?, ?, ?,
+				         (SELECT id FROM member WHERE id = ? AND family_id = ? AND left_at IS NULL),
+				         ?, ?, ?,
+				         (SELECT id FROM memory WHERE id = ? AND family_id = ?),
+				         ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   status = excluded.status,
 				   -- Authorship is sticky: an older device re-pushing the same
 				   -- question without an asker must not strip the name off it.
 				   author_id = COALESCE(prompt_question.author_id, excluded.author_id),
+				   -- Aimed once, and only by the asker: anybody else aiming it
+				   -- would send a notification carrying the asker's name on a
+				   -- request the asker never made.
+				   target_member = COALESCE(
+				     prompt_question.target_member,
+				     CASE WHEN prompt_question.author_id IS excluded.author_id
+				          THEN excluded.target_member END),
 				   -- The level is sticky for the same reason, and because only
 				   -- the device that extracted the question ever knew it.
 				   level = COALESCE(prompt_question.level, excluded.level),
+				   answered_memory_id = COALESCE(prompt_question.answered_memory_id,
+				                                 excluded.answered_memory_id),
 				   deleted_at = COALESCE(excluded.deleted_at, prompt_question.deleted_at),
 				   seq = excluded.seq
 				 WHERE prompt_question.family_id = excluded.family_id`,
@@ -656,10 +692,14 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				question.id,
 				family,
 				question.subject_id ?? null,
-				// A client may claim itself as the asker, or nobody (a question
-				// the extraction generated) — never another member. The same
-				// rule as a memory's author, relaxed to allow the machine.
-				question.author_id === session.memberID ? session.memberID : null,
+				asker,
+				// Both references are looked up rather than bound: D1 enforces
+				// foreign keys, and one id that does not resolve would fail the
+				// whole batch — every row of this push, not just this one — on
+				// every retry. A member who has left, another family's member or
+				// a telling this Worker has never seen is stored as nothing.
+				asker ? (question.target_member ?? null) : null,
+				family,
 				question.text,
 				// Out of range or missing is stored as null rather than
 				// rejected: the level is an optimisation, the question is not.
@@ -667,6 +707,8 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 					? Math.round(question.level)
 					: null,
 				question.status ?? 'open',
+				question.answered_memory_id ?? null,
+				family,
 				question.created_at ?? timestamp,
 				question.deleted_at ?? null,
 				seq,
@@ -708,5 +750,90 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		.bind(timestamp, session.memberID)
 		.run()
 
-	return { seq, accepted: statements.length }
+	const notices = noticesFor(
+		session.memberID,
+		questionsBefore,
+		await questionStates(env, family, questionIDs),
+	)
+	return { seq, accepted: statements.length, notices }
+}
+
+// ---------------------------------------------------------------- notices
+
+/// Somebody to tell, about one question. What the notification says is
+/// decided in `apns.ts`; what it is allowed to know is only this.
+export type Notice = {
+	memberID: string
+	kind: 'asked' | 'answered'
+	questionID: string
+	/// The asker's display name, for 'asked'. An answer names nobody: who
+	/// told it is chosen on the result screen after the telling has been
+	/// pushed, may be a person card whose name is sealed, and may be a
+	/// teller who asked not to be named — so any name here could be wrong,
+	/// and a wrong name is worse than none.
+	askerName: string | null
+}
+
+type QuestionState = {
+	id: string
+	status: string
+	author_id: string | null
+	author_name: string | null
+	target_member: string | null
+	deleted_at: number | null
+}
+
+/// The stored state of the questions a push names, in batches for D1's
+/// hundred-parameter limit (see `pull`) — ninety-nine ids and the family.
+async function questionStates(env: Env, family: string, ids: string[]) {
+	const states = new Map<string, QuestionState>()
+	const BATCH = 99
+	for (let start = 0; start < ids.length; start += BATCH) {
+		const batch = ids.slice(start, start + BATCH)
+		const rows = await env.DB.prepare(
+			`SELECT q.id, q.status, q.author_id, mem.display_name AS author_name,
+			        q.target_member, q.deleted_at
+			 FROM prompt_question q
+			 LEFT JOIN member mem ON mem.id = q.author_id
+			 WHERE q.family_id = ? AND q.id IN (${batch.map(() => '?').join(',')})`,
+		)
+			.bind(family, ...batch)
+			.all<QuestionState>()
+		for (const row of rows.results ?? []) states.set(row.id, row)
+	}
+	return states
+}
+
+/// Who a push should notify, from the change it made. Two events and no
+/// others: a question newly aimed at a member, who is told somebody asked
+/// them; and a question with an asker newly answered, which tells the
+/// asker. Nobody is told about their own push, and a deleted question tells
+/// nobody anything.
+function noticesFor(
+	pusher: string,
+	before: Map<string, QuestionState>,
+	after: Map<string, QuestionState>,
+): Notice[] {
+	const notices: Notice[] = []
+	for (const [id, row] of after) {
+		if (row.deleted_at !== null || !row.author_id) continue
+		const was = before.get(id)
+		if (
+			row.target_member &&
+			!was?.target_member &&
+			row.status === 'open' &&
+			row.target_member !== pusher
+		) {
+			notices.push({
+				memberID: row.target_member,
+				kind: 'asked',
+				questionID: id,
+				askerName: row.author_name,
+			})
+		}
+		if (row.status === 'answered' && was?.status !== 'answered' && row.author_id !== pusher) {
+			notices.push({ memberID: row.author_id, kind: 'answered', questionID: id, askerName: null })
+		}
+	}
+	return notices
 }

@@ -29,6 +29,7 @@ import {
 	recordColourisation,
 	usage,
 } from './quota'
+import { notify, registerToken, unregisterToken } from './apns'
 import { pull, push } from './sync'
 import { transcribe } from './transcribe'
 
@@ -51,6 +52,12 @@ export interface Env {
 	/// `withinRateLimit`.
 	FAMILY_JOIN_LIMIT?: RateLimit
 	FAMILY_CREATE_LIMIT?: RateLimit
+	/// Apple push: the .p8 key's contents, its key id and the team id.
+	/// Optional — without all three the Worker notifies nobody and everything
+	/// else runs unchanged (`apns.ts`).
+	APNS_KEY_P8?: string
+	APNS_KEY_ID?: string
+	APNS_TEAM_ID?: string
 }
 
 const json = (data: unknown, status = 200) =>
@@ -150,7 +157,7 @@ function isSubjectID(value: unknown): value is string {
 }
 
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url)
 
 		if (url.pathname === '/health') {
@@ -332,9 +339,28 @@ export default {
 			const body = await readJSON<Parameters<typeof push>[2]>(request)
 			if (!body) return json({ error: 'invalid_json' }, 400)
 			try {
-				return json(await push(env, session, body))
+				const { notices, ...reply } = await push(env, session, body)
+				// After the reply, never before it: a notification is a
+				// courtesy, and APNs being slow or down must not hold up a sync.
+				if (notices.length > 0) ctx.waitUntil(notify(env, session.familyID, notices))
+				return json(reply)
 			} catch (err) {
 				return failure(err, 'sync-push')
+			}
+		}
+
+		if (url.pathname === '/push/token' && (request.method === 'POST' || request.method === 'DELETE')) {
+			if (!session) return json({ error: 'unauthorized' }, 401)
+			const body = await readJSON<{ token?: unknown; environment?: unknown }>(request)
+			if (!body) return json({ error: 'invalid_json' }, 400)
+			try {
+				const result =
+					request.method === 'POST'
+						? await registerToken(env, session, body.token, body.environment)
+						: await unregisterToken(env, session, body.token)
+				return 'error' in result ? json(result, 400) : json(result)
+			} catch (err) {
+				return failure(err, 'push-token')
 			}
 		}
 
