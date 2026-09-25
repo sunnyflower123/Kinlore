@@ -238,11 +238,16 @@ final class MemoryStore {
         limit: Int = 3,
         for subjectID: String? = nil,
         excludingAuthor: String? = nil,
-        onlyAuthored: Bool = false
+        onlyAuthored: Bool = false,
+        viewer: String? = nil
     ) -> [FollowUpQuestion] {
         let open = questions.filter { question in
             guard !question.answered else { return false }
             if onlyAuthored, question.authorID == nil { return false }
+            // The Kerro tab passes whose phone it is: a question aimed at
+            // somebody else is theirs to be asked. It stays on the card, where
+            // anybody who knows may still answer it.
+            if let viewer, let aimed = question.targetMemberID, aimed != viewer { return false }
             // A question whose subject is no longer there has nothing left to be
             // answered about: the person was rejected, or the telling that
             // created the subject was taken back. It would otherwise keep being
@@ -256,7 +261,20 @@ final class MemoryStore {
             if let author = excludingAuthor, question.authorID == author { return false }
             return subjectID == nil || question.subjectID == subjectID
         }
-        return QuestionLadder.select(open, comfort: QuestionLadder.comfort, limit: limit)
+        // Asked of this member by name, so first, oldest first, and outside the
+        // ladder: somebody chose this person to ask, and a question a person
+        // asked is already pinned rather than ranked (`QuestionLadder.select`).
+        let aimed = open
+            .filter { viewer != nil && $0.targetMemberID == viewer }
+            .sorted { $0.createdAt < $1.createdAt }
+        guard !aimed.isEmpty else {
+            return QuestionLadder.select(open, comfort: QuestionLadder.comfort, limit: limit)
+        }
+        let rest = open.filter { question in !aimed.contains { $0.id == question.id } }
+        let ranked = QuestionLadder.select(
+            rest, comfort: QuestionLadder.comfort, limit: max(0, limit - aimed.count)
+        )
+        return Array((aimed + ranked).prefix(limit))
     }
 
     /// What to offer on a subject nobody has spoken about yet. These are
@@ -933,9 +951,10 @@ final class MemoryStore {
         return out
     }
 
-    func markAnswered(questionID: String) {
+    func markAnswered(questionID: String, by memoryID: String? = nil) {
         guard let index = questions.firstIndex(where: { $0.id == questionID }) else { return }
         questions[index].answered = true
+        if let memoryID { questions[index].answeredMemoryID = memoryID }
         dirtyQuestions.insert(questionID)
         save()
     }

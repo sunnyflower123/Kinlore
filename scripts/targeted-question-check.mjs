@@ -341,7 +341,9 @@ console.log('answers')
 		],
 		questions: [question('a1', { status: 'answered', answered_memory_id: 'm2' })],
 	})
-	check('the first answer stays the answer', row('a1').answered_memory_id === 'm1')
+	check('a later answer is the one recorded', row('a1').answered_memory_id === 'm2')
+	await push(env, as('mummo'), { questions: [question('a1', { status: 'answered' })] })
+	check('a push that names no telling leaves the recorded one', row('a1').answered_memory_id === 'm2')
 
 	await push(env, as('sanna'), { questions: [question('a2', { author_id: 'sanna' })] })
 	const own = await push(env, as('sanna'), {

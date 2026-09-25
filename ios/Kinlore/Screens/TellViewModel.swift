@@ -644,7 +644,7 @@ final class TellViewModel {
         guard let question else { return }
         // A starter is not a stored row, so this finds nothing and does nothing
         // — a starter is a prompt, not a debt. The ladder still learns from it.
-        store.markAnswered(questionID: question.id)
+        store.markAnswered(questionID: question.id, by: savedMemoryID)
         guard let answer else { return }
         QuestionLadder.record(
             QuestionLadder.outcome(

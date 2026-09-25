@@ -390,4 +390,14 @@ struct FollowUpQuestion: Identifiable, Codable, Hashable {
     /// Optional so stores written before the field existed still decode.
     var authorID: String?
     var authorName: String?
+    /// Who it is aimed at: a member id, or nil for the whole family. The asker
+    /// chooses it once (`AskQuestionSheet`), and it narrows two things — whose
+    /// Kerro tab offers the question, and who is notified — never who may
+    /// answer: every member still sees it on the card. Optional, like every
+    /// field added to this model (CLAUDE.md, rule 10).
+    var targetMemberID: String?
+    var targetName: String?
+    /// The telling that answered it, when this phone knows. Recorded so the
+    /// archive keeps which telling answered which question.
+    var answeredMemoryID: String?
 }

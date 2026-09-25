@@ -683,8 +683,11 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   -- The level is sticky for the same reason, and because only
 				   -- the device that extracted the question ever knew it.
 				   level = COALESCE(prompt_question.level, excluded.level),
-				   answered_memory_id = COALESCE(prompt_question.answered_memory_id,
-				                                 excluded.answered_memory_id),
+				   -- The latest telling that answered it. Not sticky: an answer
+				   -- taken back reopens the question (MemoryStore.reopen), and
+				   -- the telling that answers it next is the one to record.
+				   answered_memory_id = COALESCE(excluded.answered_memory_id,
+				                                 prompt_question.answered_memory_id),
 				   deleted_at = COALESCE(excluded.deleted_at, prompt_question.deleted_at),
 				   seq = excluded.seq
 				 WHERE prompt_question.family_id = excluded.family_id`,

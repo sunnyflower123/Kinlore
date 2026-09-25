@@ -85,6 +85,14 @@ struct QuestionDTO: Codable {
     var author_id: String?
     /// Incoming only: derived on the server from `member.display_name`.
     var author_name: String?
+    /// Outgoing: the member it is aimed at, or nil for the whole family. The
+    /// server keeps it only from the asker, only once, and only for a member
+    /// still in the family. Incoming: as stored, with the name derived like
+    /// the asker's.
+    var target_member: String?
+    var target_name: String?
+    /// The telling that answered it. An id, never content.
+    var answered_memory_id: String?
 }
 
 struct RelationDTO: Codable {
@@ -451,7 +459,10 @@ extension FollowUpQuestion {
             author_id: authorID,
             // Never sent: the server derives the name from the member record,
             // so a renamed member is right everywhere at once.
-            author_name: nil
+            author_name: nil,
+            target_member: targetMemberID,
+            target_name: nil,
+            answered_memory_id: answeredMemoryID
         )
     }
 
@@ -464,7 +475,10 @@ extension FollowUpQuestion {
             answered: dto.status != "open",
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             authorID: dto.author_id,
-            authorName: dto.author_name
+            authorName: dto.author_name,
+            targetMemberID: dto.target_member,
+            targetName: dto.target_name,
+            answeredMemoryID: dto.answered_memory_id
         )
     }
 }

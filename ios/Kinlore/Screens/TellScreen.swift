@@ -344,7 +344,7 @@ struct TellScreen: View {
         guard usesDeck,
               store.openQuestions(
                   limit: 1, excludingAuthor: session.identity.memberID,
-                  onlyAuthored: true
+                  onlyAuthored: true, viewer: session.identity.memberID
               ).isEmpty
         else { return nil }
         return Deck.next(in: store)
@@ -370,7 +370,7 @@ struct TellScreen: View {
         guard usesDeck, !UserDefaults.standard.bool(forKey: Elder.largerTextKey),
               store.openQuestions(
                   limit: 1, excludingAuthor: session.identity.memberID,
-                  onlyAuthored: true
+                  onlyAuthored: true, viewer: session.identity.memberID
               ).isEmpty
         else { return nil }
         return BlindConfirmation.next(in: store)
@@ -526,7 +526,8 @@ private struct IdleView: View {
     private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
         guard let target = model.target else {
             let open = store.openQuestions(
-                limit: 2, excludingAuthor: session.identity.memberID, onlyAuthored: true
+                limit: 2, excludingAuthor: session.identity.memberID, onlyAuthored: true,
+                viewer: session.identity.memberID
             )
             return open.isEmpty ? (store.openingQuestions(), true) : (open, false)
         }
@@ -825,9 +826,17 @@ private struct IdleView: View {
                                     // request from a person — the strongest
                                     // reason there is to press the button.
                                     if let asker = question.authorName {
-                                        Text("\(asker) kysyy")
-                                            .font(.subheadline.weight(.semibold))
-                                            .foregroundStyle(.tint)
+                                        // Asked of this phone's member by
+                                        // name, which is a stronger pull still.
+                                        Group {
+                                            if question.targetMemberID == session.identity.memberID {
+                                                Text("\(asker) kysyy sinulta")
+                                            } else {
+                                                Text("\(asker) kysyy")
+                                            }
+                                        }
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.tint)
                                     }
                                     Text(question.text)
                                         .elderBody()

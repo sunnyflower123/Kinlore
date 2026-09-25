@@ -379,8 +379,8 @@ CREATE TABLE prompt_question (
   --   ALTER TABLE prompt_question ADD COLUMN level INTEGER;
   level         INTEGER,
   status        TEXT NOT NULL DEFAULT 'open',  -- 'open'|'answered'|'dismissed'
-  -- The telling that answered it, which is how the asker hears back. Sticky
-  -- once set, and only ever a memory of this family.
+  -- The telling that answered it: the latest one, since an answer taken back
+  -- reopens the question. Only ever a memory of this family.
   answered_memory_id TEXT REFERENCES memory(id),
   created_at    INTEGER NOT NULL,
   deleted_at    INTEGER,
