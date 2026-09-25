@@ -293,12 +293,17 @@ struct SyncFieldsCheck {
 
         let question = FollowUpQuestion(
             id: "question", subjectID: "subject", text: "a question", storedLevel: 4,
-            answered: true, createdAt: then, authorID: "member", authorName: "a member's name"
+            answered: true, createdAt: then, authorID: "member", authorName: "a member's name",
+            targetMemberID: "another member", targetName: "another member's name",
+            answeredMemoryID: "memory"
         )
+        // The aim's name is the asker's twice over: never sent, and derived
+        // by the server from the member it names.
         let questionRoads: [String: Road] = [
             "id": .wire, "subjectID": .wire, "text": .wire, "storedLevel": .wire,
             "answered": .wire, "createdAt": .wire, "authorID": .wire,
-            "authorName": .server,
+            "authorName": .server, "targetMemberID": .wire, "targetName": .server,
+            "answeredMemoryID": .wire,
         ]
         _ = audit(
             "FollowUpQuestion",
@@ -306,7 +311,10 @@ struct SyncFieldsCheck {
             specimen: question,
             roads: questionRoads,
             send: \.dto,
-            serverFills: { $0.author_name = question.authorName },
+            serverFills: { dto in
+                dto.author_name = question.authorName
+                dto.target_name = question.targetName
+            },
             receive: FollowUpQuestion.init(dto:)
         )
 
