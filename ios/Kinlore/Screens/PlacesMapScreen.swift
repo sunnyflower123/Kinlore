@@ -300,13 +300,19 @@ struct PlacesMapScreen: View {
             .frame(maxWidth: .infinity)
     }
 
-    /// How sure the archive is of the point, and where it came from. A circle
-    /// is only ever the lookup's answer — the only other way to write a point,
-    /// `PlacePinSheet`, writes an exact one — and an exact point says nothing
-    /// about its source, because the archive cannot tell a street address the
-    /// gazetteer found from a yard somebody marked by hand (§18).
+    /// How sure the archive is of the point, and where it came from. A point
+    /// somebody in the family put there carries their name since 25 Sep 2026,
+    /// and the panel says it: that name is what tells a yard somebody marked
+    /// by hand from a street address the gazetteer found, which the archive
+    /// could not do before (§18). Without one the point is the lookup's
+    /// answer, and a circle says so.
     private func provenance(_ place: PlaceHint) -> LocalizedStringKey {
-        place.precision.deservesAPin
+        if place.isConfirmed, let name = place.confirmedByName, !name.isEmpty {
+            return place.precision.deservesAPin
+                ? "Tarkka kohta. Vahvisti \(name)."
+                : "Suunnilleen tällä seudulla. Vahvisti \(name)."
+        }
+        return place.precision.deservesAPin
             ? "Tarkka kohta."
             : "Suunnilleen tällä seudulla. Haettu paikan nimellä."
     }

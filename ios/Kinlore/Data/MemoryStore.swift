@@ -605,13 +605,38 @@ final class MemoryStore {
             if subjects[index].confirmed, !existing.confirmed {
                 confirm(subjectID: existing.id)
             }
+            // Where somebody put the place goes to the card that stays (25 Sep
+            // 2026): it is their word about the place, and the card it was said
+            // on is now a forwarding address that no screen draws. Unless the
+            // survivor has a word of its own — it is the card the family kept —
+            // and a looked-up point stays behind either way, because it was
+            // only the answer to a name the survivor has its own answer to.
+            // Copied rather than moved: the tombstone stays whole, which is
+            // what keeps the merge reversible (above), and the server keeps the
+            // word on it regardless. It takes somebody else's word from a phone
+            // only where it holds that word already, on this card or on one
+            // merged into it (`sync.ts`), so a relay cannot put a point in
+            // anybody's mouth.
+            if let placed = subjects[index].place, placed.isConfirmed,
+               let target = subjects.firstIndex(where: { $0.id == existing.id }),
+               subjects[target].place?.isConfirmed != true {
+                subjects[target].place = placed
+                dirtySubjects.insert(existing.id)
+            }
         } else {
             subjects[index].title = trimmed
             // The coordinates were the answer to the old name. "Sortavala"
             // corrected from "Sortala" is a different point on the map, and a
             // stale one is worse than none: a wrong place looks like a fact.
             // `PlaceResolver` looks the new name up on the next sweep.
-            subjects[index].place = nil
+            //
+            // Unless somebody in the family put it there (25 Sep 2026). That
+            // point was never an answer to the name: it is where they said the
+            // place is, and "Mummon talo" corrected to "Mummola" moves no
+            // house. The server keeps it by the same rule (`sync.ts`).
+            if subjects[index].place?.isConfirmed != true {
+                subjects[index].place = nil
+            }
         }
         dirtySubjects.insert(subjectID)
         save()
@@ -703,12 +728,13 @@ final class MemoryStore {
     /// it again.
     ///
     /// The two callers are one method because the archive stores one point per
-    /// place and has no field for who put it there (§18). What keeps a
-    /// gazetteer's answer from landing on top of a family's is a rule on the
-    /// server rather than a flag here: a stored `exact` is not displaced by a
-    /// coarser push under the same title. Locally nothing can overwrite it at
-    /// all — `placesAwaitingCoordinates` only ever offers a place with no
-    /// point.
+    /// place, and since 25 Sep 2026 the point says which of them wrote it: a
+    /// hand-placed one carries who and when (`PlaceHint.confirmedAt`), a
+    /// looked-up one carries nobody. What keeps a gazetteer's answer from
+    /// landing on top of a family's is a rule on the server rather than a flag
+    /// here: a confirmed point moves only for a newer confirmation (§18).
+    /// Locally nothing can overwrite it at all — `placesAwaitingCoordinates`
+    /// only ever offers a place with no point.
     func setPlace(subjectID: String, place: PlaceHint) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].place = place
@@ -1092,8 +1118,10 @@ final class MemoryStore {
                 let merged = incoming.withColours(from: subjects[index])
                 if let stale = merged.stale { MediaStore.delete(filename: stale) }
                 // And the face on a person's card, by the same rule again:
-                // a row that says nothing about it takes nothing away.
+                // a row that says nothing about it takes nothing away. So
+                // does a place's point that somebody put on the map.
                 subjects[index] = merged.row.withPortrait(from: subjects[index])
+                    .withPlace(from: subjects[index])
             } else {
                 subjects.append(incoming)
             }

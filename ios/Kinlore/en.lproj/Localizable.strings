@@ -774,6 +774,8 @@
 "Näytä kaikki paikat" = "Show all places";
 "Tarkka kohta." = "The exact spot.";
 "Suunnilleen tällä seudulla. Haettu paikan nimellä." = "Roughly in this area. Found by the place's name.";
+"Tarkka kohta. Vahvisti %@." = "The exact spot. Confirmed by %@.";
+"Suunnilleen tällä seudulla. Vahvisti %@." = "Roughly in this area. Confirmed by %@.";
 "Kun kerrotte paikoista, ne tulevat tähän kartalle." = "Places you tell about will appear on this map.";
 
 // A face on a person's card (21 Sep 2026): the picker, the tap and the disc.

@@ -211,11 +211,12 @@ CREATE TABLE subject (
 
   -- kind = 'place'
   --
-  -- Where the place is, once its name has been looked up. A place is born as a
-  -- name somebody said out loud ("Puumala", "Sortavala") and stays that way:
-  -- these two columns are a cache of a lookup, never something the family
-  -- provided. NULL means nobody has looked it up yet, or no gazetteer knew the
-  -- name — a village that no longer exists is a real case here.
+  -- Where the place is: what a gazetteer made of its name, or where somebody
+  -- in the family put it. A place is born as a name somebody said out loud
+  -- ("Puumala", "Sortavala"), and until somebody puts it on the map these two
+  -- columns are a cache of a lookup. NULL means nobody has looked it up yet,
+  -- or no gazetteer knew the name — a village that no longer exists is a real
+  -- case here.
   lat           REAL,
   lon           REAL,
   -- How precisely the coordinates locate the memory, in the same spirit as
@@ -227,6 +228,17 @@ CREATE TABLE subject (
   --   ALTER TABLE subject ADD COLUMN lon REAL;
   --   ALTER TABLE subject ADD COLUMN geo_precision TEXT;
   geo_precision TEXT,                 -- 'exact'|'town'|'region'|'unknown'
+  -- Who put the place where it is, and when; NULL under a lookup's answer.
+  -- A confirmed point is the family's word rather than a cache: a corrected
+  -- title keeps it, a lookup cannot replace it, and only a newer confirmation
+  -- moves it -- the colours' rule. 'unknown' under a confirmation is a
+  -- removal: somebody said the place belongs on no map, and no phone looks
+  -- the name up again. A member can put only their own name on a new one;
+  -- sync.ts has the one exception. For existing databases:
+  --   ALTER TABLE subject ADD COLUMN geo_confirmed_by TEXT REFERENCES member(id);
+  --   ALTER TABLE subject ADD COLUMN geo_confirmed_at INTEGER;
+  geo_confirmed_by TEXT REFERENCES member(id),
+  geo_confirmed_at INTEGER,
 
   -- Uncertain dating is the rule, not the exception. "Sometime in the fifties"
   -- is stored as the range [1950, 1959] with precision 'decade' — neither

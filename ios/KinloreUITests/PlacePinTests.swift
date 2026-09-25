@@ -66,10 +66,13 @@ final class PlacePinTests: XCTestCase {
 
         // The family's map is under the sheet, and its panel reads the
         // precision out of the archive: a circle was *"suunnilleen tällä
-        // seudulla"*, and the point that replaced it is a *"tarkka kohta"*.
+        // seudulla"*, and the point that replaced it is a *"tarkka kohta"* —
+        // with who put it there, since 25 Sep 2026, because a placed point is
+        // somebody's word. The seeded archive's author is the default,
+        // *"Minä"*, which is the colours' caption on this phone too.
         XCTAssertTrue(
-            app.staticTexts["Tarkka kohta."].waitForExistence(timeout: 10),
-            "the placed point did not reach the archive, or did not reach the map that draws it"
+            app.staticTexts["Tarkka kohta. Vahvisti Minä."].waitForExistence(timeout: 10),
+            "the placed point did not reach the archive as somebody's word, or did not reach the map that draws it"
         )
         // And the card under the map, which speaks the precision it holds, so
         // this is the archive answering rather than the screen remembering.

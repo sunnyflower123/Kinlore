@@ -131,7 +131,7 @@ the meter said no. Every push still gets the backend type check, on Linux.
 | Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 236 UI tests, 80 of them an accessibility sweep at both text sizes |
 | One purchase unlocks one family, and never a second | `node scripts/entitlement-binding-check.mjs` |
 | The paid archive is offered on a rhythm, and never beside a name a human is being asked to confirm | `swiftc … scripts/upsell-rhythm-check.swift` |
-| A place's coordinates follow its title through sync, and rubbish is refused | `node scripts/place-sync-check.mjs` |
+| A place's looked-up coordinates follow its title through sync, a point somebody placed stays where they put it, and rubbish is refused | `node scripts/place-sync-check.mjs` |
 | Extraction gets Finnish names, dates and relations out of a transcript | `node scripts/extract-tests.mjs` |
 | The whole pipeline runs end to end | `scripts/smoke-pipeline.sh` |
 

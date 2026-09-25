@@ -125,16 +125,32 @@ enum GeoPrecision: String, Codable {
     var deservesAPin: Bool { self == .exact }
 }
 
-/// Where a place is, once its name has been looked up.
+/// Where a place is: what a gazetteer made of its name, or where somebody in
+/// the family put it.
 ///
-/// Never entered by a person: a place subject is a name somebody said out loud,
-/// and this is a cache of what a gazetteer made of that name. Nil until
-/// something resolves it, nil again the moment the name is corrected, and nil
-/// forever for a village that no longer exists.
+/// The confirmation is what tells the two apart. A lookup (`PlaceResolver`)
+/// writes a point with nobody's name on it — a cache of the answer to the
+/// title, nil until something resolves it, nil again the moment the name is
+/// corrected, and nil forever for a village that no longer exists. A point
+/// somebody placed carries who and when (25 Sep 2026), and it is the family's
+/// word rather than a cache: a corrected title keeps it, a lookup on another
+/// phone cannot displace it, and only a newer word replaces it (`sync.ts`).
+/// `.unknown` under a confirmation is a word too — the family saying the place
+/// is on no map — and nothing looks it up again, because
+/// `placesAwaitingCoordinates` only offers a place with no point at all.
+///
+/// Optional, all three, because `PlaceHint` has no hand-written decoder and a
+/// file written before they existed must still load (rule 10).
 struct PlaceHint: Codable, Hashable {
     var latitude: Double
     var longitude: Double
     var precision: GeoPrecision
+    var confirmedByID: String?
+    var confirmedByName: String?
+    var confirmedAt: Date?
+
+    /// Whether this is the family's word rather than a lookup's answer.
+    var isConfirmed: Bool { confirmedAt != nil }
 }
 
 struct Subject: Identifiable, Codable, Hashable {

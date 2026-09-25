@@ -33,6 +33,12 @@ struct SubjectDTO: Codable {
     var lat: Double?
     var lon: Double?
     var geo_precision: String?
+    /// Who in the family vouched for that point, and when — optional for the
+    /// same reason, and the name derived on read like the colours' and never
+    /// sent.
+    var geo_confirmed_by: String?
+    var geo_confirmed_by_name: String?
+    var geo_confirmed_at: Double?
     var date_start: Double?
     var date_end: Double?
     var date_precision: String?
@@ -239,6 +245,9 @@ extension Subject {
             lat: place?.latitude,
             lon: place?.longitude,
             geo_precision: place?.precision.rawValue,
+            geo_confirmed_by: place?.confirmedByID,
+            geo_confirmed_by_name: nil,
+            geo_confirmed_at: place?.confirmedAt?.timeIntervalSince1970,
             date_start: dateHint?.start?.timeIntervalSince1970,
             date_end: dateHint?.end?.timeIntervalSince1970,
             date_precision: dateHint?.precision.rawValue,
@@ -329,6 +338,23 @@ extension Subject {
         return row
     }
 
+    /// A pulled row laid over this phone's copy of it, as far as the point on
+    /// the map goes.
+    ///
+    /// The server keeps the family's newest word on where a place is
+    /// (`sync.ts`), and a pull is its answer — with the exception the colours
+    /// and the face have too: a row that says nothing about who placed the
+    /// point takes nothing away from a phone that knows. A Worker that has not
+    /// been redeployed sends no `geo_confirmed_at`, and its own rule keeps a
+    /// stored exact point over anything coarser, so its answer to a point the
+    /// family had just taken off the map would be the point, back on it.
+    func withPlace(from local: Subject) -> Subject {
+        guard local.place?.isConfirmed == true, place?.isConfirmed != true else { return self }
+        var row = self
+        row.place = local.place
+        return row
+    }
+
     private static func hint(from dto: SubjectDTO) -> DateHint? {
         guard let raw = dto.date_precision,
               let precision = DatePrecision(rawValue: raw),
@@ -349,7 +375,10 @@ extension Subject {
         return PlaceHint(
             latitude: lat,
             longitude: lon,
-            precision: dto.geo_precision.flatMap(GeoPrecision.init(rawValue:)) ?? .unknown
+            precision: dto.geo_precision.flatMap(GeoPrecision.init(rawValue:)) ?? .unknown,
+            confirmedByID: dto.geo_confirmed_by,
+            confirmedByName: dto.geo_confirmed_by_name,
+            confirmedAt: dto.geo_confirmed_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
 }

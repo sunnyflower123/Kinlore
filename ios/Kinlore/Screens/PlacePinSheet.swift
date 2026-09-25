@@ -24,12 +24,11 @@ import SwiftUI
 /// zoom, which is how every map that asks this question does it.
 ///
 /// **What is saved is `.exact`, and that is the honest reading**: the family
-/// said this is the spot, so the card may draw a pin there. Two limits follow
-/// from having no field for who said it, and both are deliberate for v1 (§18).
-/// A hand-placed point is indistinguishable from a street address the
-/// gazetteer resolved, and correcting the place's *name* still clears it —
-/// the coordinates answer the title, and `MemoryStore.rename` cannot tell a
-/// point somebody stood on from a point somebody looked up.
+/// said this is the spot, so the card may draw a pin there. Since 25 Sep 2026
+/// it also says who said it and when (`PlaceHint.confirmedAt`), which lifted
+/// the two limits this comment used to list (§18): a hand-placed point is no
+/// longer indistinguishable from a street address the gazetteer resolved, and
+/// correcting the place's *name* no longer clears it.
 ///
 /// **What VoiceOver gets here is the screen and not the task.** The map is one
 /// labelled element, the buttons are ordinary buttons, and a person who cannot
@@ -40,6 +39,7 @@ import SwiftUI
 /// otherwise.
 struct PlacePinSheet: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
 
     let subject: Subject
@@ -194,7 +194,10 @@ struct PlacePinSheet: View {
             place: PlaceHint(
                 latitude: centre.latitude,
                 longitude: centre.longitude,
-                precision: .exact
+                precision: .exact,
+                confirmedByID: session.identity.memberID,
+                confirmedByName: store.authorName,
+                confirmedAt: .now
             )
         )
         dismiss()

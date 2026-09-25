@@ -31,11 +31,17 @@ export type SubjectRow = {
 	portrait_focus_x: number | null
 	portrait_focus_y: number | null
 	portrait_set_at: number | null
-	// Where a place is, once its name has been looked up on a device. Null until
-	// something resolved it, and null again when the name is corrected.
+	// Where a place is: a device's lookup of its name, or where somebody in the
+	// family put it. Null until one of the two has happened. A lookup's point is
+	// null again when the name is corrected; a confirmed one is not.
 	lat: number | null
 	lon: number | null
 	geo_precision: string | null
+	// Who put the place there and when, null under a lookup's answer. The name
+	// is derived on read, like a colouring's.
+	geo_confirmed_by: string | null
+	geo_confirmed_by_name?: string | null
+	geo_confirmed_at: number | null
 	date_start: number | null
 	date_end: number | null
 	date_precision: string | null
@@ -183,9 +189,12 @@ export async function pull(env: Env, session: Session, since: number) {
 		        s.confirmed, s.merged_into, s.created_at, s.deleted_at, s.seq,
 		        s.colour_r2_key, s.colour_confirmed_by, s.colour_confirmed_at,
 		        s.portrait_subject_id, s.portrait_focus_x, s.portrait_focus_y, s.portrait_set_at,
-		        confirmer.display_name AS colour_confirmed_by_name
+		        s.geo_confirmed_by, s.geo_confirmed_at,
+		        confirmer.display_name AS colour_confirmed_by_name,
+		        placer.display_name AS geo_confirmed_by_name
 		 FROM subject s
 		 LEFT JOIN member confirmer ON confirmer.id = s.colour_confirmed_by
+		 LEFT JOIN member placer ON placer.id = s.geo_confirmed_by
 		 WHERE s.family_id = ? AND s.seq > ? ORDER BY s.seq LIMIT ?`,
 	)
 		.bind(family, since, MAX_ROWS)
@@ -290,6 +299,45 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 	const pushedSubjects = (payload.subjects ?? [])
 		.slice(0, MAX_ROWS)
 		.sort((a, b) => Number(a.kind !== 'photo') - Number(b.kind !== 'photo'))
+
+	// Somebody else's word on where a place is can be carried on by any phone
+	// that holds it -- a merge carries one to the surviving place that way --
+	// but only a word the server already has, on the same place or on one
+	// merged into it. The proof is the word's pair, the member and the moment, and the
+	// point comes from the row that holds it rather than from the phone: a
+	// relay can repeat what somebody said, never put words in their mouth.
+	// Asked only when a push carries somebody else's pair at all.
+	type Proof = {
+		id: string
+		merged_into: string | null
+		geo_confirmed_by: string
+		geo_confirmed_at: number
+		lat: number | null
+		lon: number | null
+		geo_precision: string | null
+	}
+	const proofs = new Map<string, Proof[]>()
+	const mergedHere = new Map<string, string>()
+	for (const s of pushedSubjects) {
+		if (typeof s.id === 'string' && typeof s.merged_into === 'string') mergedHere.set(s.id, s.merged_into)
+	}
+	if (
+		pushedSubjects.some(
+			(s) => s.kind === 'place' && typeof s.geo_confirmed_by === 'string' && s.geo_confirmed_by !== session.memberID,
+		)
+	) {
+		const rows = await env.DB.prepare(
+			`SELECT id, merged_into, geo_confirmed_by, geo_confirmed_at, lat, lon, geo_precision FROM subject
+			 WHERE family_id = ? AND kind = 'place' AND geo_confirmed_at IS NOT NULL`,
+		)
+			.bind(family)
+			.all<Proof>()
+		for (const row of rows.results ?? []) {
+			const pair = `${row.geo_confirmed_by} ${row.geo_confirmed_at}`
+			proofs.set(pair, [...(proofs.get(pair) ?? []), row])
+		}
+	}
+
 	for (const subject of pushedSubjects) {
 		if (!subject.id || !subject.kind) continue
 		// Both halves or neither. A lone latitude is not half a location, it is a
@@ -297,6 +345,44 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 		const lat = coordinate(subject.lat, 90)
 		const lon = coordinate(subject.lon, 180)
 		const hasPoint = lat !== null && lon !== null
+		let point = {
+			lat: hasPoint ? lat : null,
+			lon: hasPoint ? lon : null,
+			precision:
+				hasPoint && subject.geo_precision && GEO_PRECISIONS.has(subject.geo_precision)
+					? subject.geo_precision
+					: null,
+		}
+		// A place's point under somebody's word travels like a colouring: the
+		// pusher's own member id, a moment that has already happened, and a
+		// point for the word to be about -- 'unknown' among them, which is a
+		// removal. Somebody else's travels only as a relay of a pair the server
+		// holds, with the point that row proves. Anything short of that is sent
+		// on as no word at all, and the rules below take the point for what it
+		// then is, a lookup's answer.
+		let placedBy: string | null = null
+		let placedAt: number | null = null
+		if (
+			subject.kind === 'place' &&
+			typeof subject.geo_confirmed_at === 'number' &&
+			Number.isFinite(subject.geo_confirmed_at)
+		) {
+			const relay = (proofs.get(`${subject.geo_confirmed_by} ${subject.geo_confirmed_at}`) ?? []).find(
+				(row) =>
+					row.id === subject.id || row.merged_into === subject.id || mergedHere.get(row.id) === subject.id,
+			)
+			if (subject.geo_confirmed_by === session.memberID && point.precision !== null) {
+				placedBy = session.memberID
+				// Whole seconds, like the server's own clock. A relay is matched
+				// on this number exactly, so it is better as an integer than as
+				// whatever fraction a phone's clock carried.
+				placedAt = Math.floor(Math.min(subject.geo_confirmed_at, timestamp))
+			} else if (typeof subject.geo_confirmed_by === 'string' && relay) {
+				placedBy = subject.geo_confirmed_by
+				placedAt = subject.geo_confirmed_at
+				point = { lat: relay.lat, lon: relay.lon, precision: relay.geo_precision }
+			}
+		}
 		// A colouring travels only with its file, its own member's name and a
 		// moment that has already happened. Anything short of that is sent on as
 		// nothing, which the upsert reads as "no opinion": a member cannot put
@@ -333,7 +419,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				`INSERT INTO subject (id, family_id, kind, title, r2_key,
 				                      colour_r2_key, colour_confirmed_by, colour_confirmed_at,
 				                      portrait_subject_id, portrait_focus_x, portrait_focus_y, portrait_set_at,
-				                      lat, lon, geo_precision,
+				                      lat, lon, geo_precision, geo_confirmed_by, geo_confirmed_at,
 				                      date_start, date_end,
 				                      date_precision, confirmed, merged_into, created_by,
 				                      created_at, deleted_at, seq)
@@ -355,7 +441,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                            WHERE p.id = ? AND p.family_id = ? AND p.kind = 'photo'
 				                              AND p.deleted_at IS NULL)
 				              THEN ? ELSE NULL END,
-				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   title = excluded.title,
 				   r2_key = COALESCE(excluded.r2_key, subject.r2_key),
@@ -405,27 +491,47 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   -- say so. Re-placing the mark still works: that is exact over
 				   -- exact, and excluded wins.
 				   --
+				   -- Both rules above are about a lookup's answer, and since
+				   -- 25 Sep 2026 they come second. A point somebody in the family
+				   -- confirmed is their word rather than a cache of anything, so
+				   -- the first two questions are whether the push carries a newer
+				   -- word -- then it moves whole, the colours' rule -- and whether
+				   -- the row already holds one, which nothing but a newer word
+				   -- moves: not a corrected title, not a gazetteer, not a phone
+				   -- that has never heard of it, sending no moment at all.
+				   --
 				   -- No backtick anywhere in this string. The whole statement is
 				   -- a JS template literal, so one would end it -- the build
 				   -- fails at the next word with "Expected )", which names a
 				   -- column in the SQL and not the quote that caused it.
-				   lat = CASE WHEN excluded.title IS NOT subject.title THEN excluded.lat
+				   lat = CASE WHEN excluded.geo_confirmed_at > COALESCE(subject.geo_confirmed_at, 0) THEN excluded.lat
+				              WHEN subject.geo_confirmed_at IS NOT NULL THEN subject.lat
+				              WHEN excluded.title IS NOT subject.title THEN excluded.lat
 				              WHEN excluded.lat IS NULL THEN subject.lat
 				              WHEN subject.geo_precision = 'exact'
 				                   AND excluded.geo_precision IS NOT 'exact' THEN subject.lat
 				              ELSE excluded.lat END,
-				   lon = CASE WHEN excluded.title IS NOT subject.title THEN excluded.lon
+				   lon = CASE WHEN excluded.geo_confirmed_at > COALESCE(subject.geo_confirmed_at, 0) THEN excluded.lon
+				              WHEN subject.geo_confirmed_at IS NOT NULL THEN subject.lon
+				              WHEN excluded.title IS NOT subject.title THEN excluded.lon
 				              WHEN excluded.lon IS NULL THEN subject.lon
 				              WHEN subject.geo_precision = 'exact'
 				                   AND excluded.geo_precision IS NOT 'exact' THEN subject.lon
 				              ELSE excluded.lon END,
-				   geo_precision = CASE WHEN excluded.title IS NOT subject.title
+				   geo_precision = CASE WHEN excluded.geo_confirmed_at > COALESCE(subject.geo_confirmed_at, 0)
+				                        THEN excluded.geo_precision
+				                        WHEN subject.geo_confirmed_at IS NOT NULL THEN subject.geo_precision
+				                        WHEN excluded.title IS NOT subject.title
 				                        THEN excluded.geo_precision
 				                        WHEN excluded.geo_precision IS NULL THEN subject.geo_precision
 				                        WHEN subject.geo_precision = 'exact'
 				                             AND excluded.geo_precision IS NOT 'exact'
 				                        THEN subject.geo_precision
 				                        ELSE excluded.geo_precision END,
+				   geo_confirmed_by = CASE WHEN excluded.geo_confirmed_at > COALESCE(subject.geo_confirmed_at, 0)
+				                           THEN excluded.geo_confirmed_by ELSE subject.geo_confirmed_by END,
+				   geo_confirmed_at = CASE WHEN excluded.geo_confirmed_at > COALESCE(subject.geo_confirmed_at, 0)
+				                           THEN excluded.geo_confirmed_at ELSE subject.geo_confirmed_at END,
 				   -- The same shape as the point above, and for the same reason.
 				   -- A device pushes its whole local row, so one that has never
 				   -- seen the date sends three nulls — and a plain assignment
@@ -475,11 +581,11 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				faceID,
 				family,
 				faceAt,
-				hasPoint ? lat : null,
-				hasPoint ? lon : null,
-				hasPoint && subject.geo_precision && GEO_PRECISIONS.has(subject.geo_precision)
-					? subject.geo_precision
-					: null,
+				point.lat,
+				point.lon,
+				point.precision,
+				placedBy,
+				placedAt,
 				subject.date_start ?? null,
 				subject.date_end ?? null,
 				subject.date_precision ?? null,

@@ -912,8 +912,13 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 
 # Place coordinates through sync. Checks the four rules that are silent when
 # broken: a resolved point round-trips, a device that has not looked the name up
-# cannot wipe it, correcting the title clears it, and rubbish is refused. Costs
-# nothing — no AI call — but needs `npx wrangler dev` running.
+# cannot wipe it, correcting the title clears it, and rubbish is refused. And
+# since 25 Sep 2026 the rules for a point somebody placed, which is their word
+# rather than a lookup: it keeps who and when, survives lookups, older phones
+# and a corrected title, moves only for a newer word, and another phone may
+# repeat that word only where the server already holds it. Costs nothing — no
+# AI call — but needs `npx wrangler dev` running, on a local database that has
+# the `geo_confirmed_*` columns (the ALTERs are in schema.sql).
 node scripts/place-sync-check.mjs
 
 # The pull cursor, which is the delivery guarantee itself. Three defects lived

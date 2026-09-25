@@ -3764,6 +3764,16 @@ point somebody looked up. What is not left to chance is the family's point
 being replaced by a machine's: a stored `exact` is not displaced by a coarser
 push under the same title (see Sync below).
 
+**Both were lifted on 25 Sep 2026, by the field this paragraph said was
+missing.** A point somebody places now carries who and when —
+`geo_confirmed_by` and `geo_confirmed_at` on the row; `confirmedByID`,
+`confirmedByName` and `confirmedAt` on `PlaceHint`, optional all three for
+rule 10 — and the panel under the family's map says the name: *"Tarkka kohta.
+Vahvisti Aino."* A corrected title keeps such a point on both sides
+(`MemoryStore.rename`, the `CASE` in `sync.ts`), a merge carries it to the card
+that stays, and only a newer word moves it. Sync below has the rules and what
+checks them.
+
 **What VoiceOver gets is the screen and not the task.** The map is one labelled
 element with a hint, the buttons are ordinary buttons, and somebody who cannot
 see the map can read what the screen is for and leave the stored point as it
@@ -3837,15 +3847,41 @@ be replaced by the circle it was placed to correct, and nothing on any screen
 would say so. Placing the mark again is `exact` over `exact`, so a correction
 of a correction still works.
 
+**Since 25 Sep 2026 a point somebody placed is their word, and it follows the
+colours' rule instead.** A point with a member and a moment on it is not an
+answer to the title, so both rules above come second. The first question is
+whether the push carries a newer word, which then moves the point whole; the
+second is whether the row already holds one, which nothing else moves — not a
+corrected title, not a gazetteer, not an older build pushing a bare `exact`.
+`unknown` under a word is how a place is taken off the map, and it holds for
+the same reason; nothing looks it up again either, because
+`placesAwaitingCoordinates` only offers a place with no point at all.
+
+A word travels like a colouring: under the pusher's own member id, and with a
+moment capped at the server's clock, so a phone whose clock runs fast cannot
+hold a place for years. The one difference is that a phone may repeat somebody
+else's word. It has to, because every phone pushes its whole row and a merge
+carries the word to the card that stays, when that card has none of its own
+(`MemoryStore.rename`) — but only a word the server already holds, on the
+same place or on one merged into it, and then with the point from the row
+that proves it. A pair on any other place is not taken as a word
+at all, and the point under it is kept as what the server can vouch for, a
+lookup's answer. On the phone, a pull that carries no word keeps the one this
+phone has (`Subject.withPlace(from:)`), because a Worker that has not been
+redeployed sends none, and its own rule would hand back a point the family had
+just taken off the map.
+
 Every one of those rules is silent when broken: memories still sync, places
-still open, and the only evidence would be a point on a map nobody has built
-yet. So they are checked through the running Worker rather than asserted —
-`scripts/place-sync-check.mjs`, eight checks, no AI call and no credits spent.
-The check was itself checked twice, and the second time was the new rule's: run
-against a Worker built from the previous commit in a worktree of its own, the
-older cases pass and *"a looked-up circle does not displace a point the family
-placed by hand"* fails. Earlier, with the `CASE` replaced by a plain
-`COALESCE`, case 3 fails and the script exits non-zero.
+still open, and the only evidence would be a point on the family's map
+standing somewhere other than where somebody put it. So they are checked through the running Worker rather than asserted —
+`scripts/place-sync-check.mjs`, twenty-three checks, no AI call and no credits
+spent. The check has been checked three times. With the `CASE` replaced by a
+plain `COALESCE`, case 3 fails and the script exits non-zero. Against a Worker
+built from the commit before 19 Sep's rule, the older cases pass and *"a
+looked-up circle does not displace a point the family placed by hand"* fails.
+And against one from the commit before the placed word (25 Sep 2026), the
+first eight pass and fourteen of the fifteen new ones fail; the one that
+passes is a later word moving the point, which exact over exact did already.
 
 ### What the columns tell the server — a decided leak
 
@@ -3880,7 +3916,7 @@ subject titles, question text, and the R2 bytes. In the clear: the family's
 own name and its members' display names, timestamps and the carefully kept
 dates with their precision (rule 5), subject kinds, memory sources and audio
 lengths, sequence numbers, relationships, the mention graph — which memory
-names which subject — and points for places.
+names which subject — and points for places, with who placed them and when.
 Anyone weighing the app against that list is weighing the truth.
 
 **Corrected 9 Sep 2026, in one claim and several omissions.** The mention graph

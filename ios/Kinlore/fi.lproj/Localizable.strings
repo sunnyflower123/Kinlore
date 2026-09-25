@@ -657,6 +657,8 @@
 "Näytä kaikki paikat" = "Näytä kaikki paikat";
 "Tarkka kohta." = "Tarkka kohta.";
 "Suunnilleen tällä seudulla. Haettu paikan nimellä." = "Suunnilleen tällä seudulla. Haettu paikan nimellä.";
+"Tarkka kohta. Vahvisti %@." = "Tarkka kohta. Vahvisti %@.";
+"Suunnilleen tällä seudulla. Vahvisti %@." = "Suunnilleen tällä seudulla. Vahvisti %@.";
 "Kun kerrotte paikoista, ne tulevat tähän kartalle." = "Kun kerrotte paikoista, ne tulevat tähän kartalle.";
 
 // A face on a person's card (21 Sep 2026): the picker, the tap and the disc.
