@@ -130,22 +130,22 @@ waitFor(14)
 }
 
 const container = simctl('get_app_container', udid, BUNDLE, 'data')
-// The zip carries its date — Muistoarkisto-2026-09-05.zip — so a family's
+// The zip carries its date — MemoryArchive-2026-09-05.zip — so a family's
 // yearly copies do not write over each other. The newest is the one just made.
 const tmp = join(container, 'tmp')
 const zips = existsSync(tmp)
-	? readdirSync(tmp).filter((name) => /^Muistoarkisto-\d{4}-\d{2}-\d{2}\.zip$/.test(name)).sort()
+	? readdirSync(tmp).filter((name) => /^MemoryArchive-\d{4}-\d{2}-\d{2}\.zip$/.test(name)).sort()
 	: []
-const zip = zips.length ? join(tmp, zips[zips.length - 1]) : join(tmp, 'Muistoarkisto-<date>.zip')
+const zip = zips.length ? join(tmp, zips[zips.length - 1]) : join(tmp, 'MemoryArchive-<date>.zip')
 check('the export wrote a file with the date in its name', zips.length > 0, zip)
 if (!zips.length) process.exit(1)
 
 const out = mkdtempSync(join(tmpdir(), 'kinlore-export-'))
 execFileSync('unzip', ['-q', zip, '-d', out])
-const root = join(out, 'Muistoarkisto')
+const root = join(out, 'MemoryArchive')
 
 console.log('— what a family opens —')
-const pagePath = join(root, 'muistot.html')
+const pagePath = join(root, 'memories.html')
 check('there is a readable page', existsSync(pagePath))
 const page = existsSync(pagePath) ? readFileSync(pagePath, 'utf8') : ''
 
@@ -187,7 +187,7 @@ if (audio) {
 }
 
 console.log('— what a program reads —')
-const jsonPath = join(root, 'arkisto.json')
+const jsonPath = join(root, 'archive.json')
 check('there is a machine-readable copy', existsSync(jsonPath))
 if (existsSync(jsonPath)) {
 	const archive = JSON.parse(readFileSync(jsonPath, 'utf8'))
@@ -228,10 +228,10 @@ console.log('— what the page does not assert —')
 launch(udid, ['-seed', 'archive', '-tab', 'people', '-screen', 'export', '-api', ''])
 waitFor(14)
 {
-	const again = readdirSync(tmp).filter((name) => /^Muistoarkisto-\d{4}-\d{2}-\d{2}\.zip$/.test(name)).sort()
+	const again = readdirSync(tmp).filter((name) => /^MemoryArchive-\d{4}-\d{2}-\d{2}\.zip$/.test(name)).sort()
 	const demoOut = mkdtempSync(join(tmpdir(), 'kinlore-export-demo-'))
 	execFileSync('unzip', ['-q', join(tmp, again[again.length - 1]), '-d', demoOut])
-	const demoPage = readFileSync(join(demoOut, 'Muistoarkisto', 'muistot.html'), 'utf8')
+	const demoPage = readFileSync(join(demoOut, 'MemoryArchive', 'memories.html'), 'utf8')
 	const emptyList = [...demoPage.matchAll(/<p class="open">(?!<strong>)([^<]*)<\/p>/g)].map((m) => m[1])
 	check('the demo export lists the subjects nobody has spoken about', emptyList.length === 1, `${emptyList.length} lists`)
 	const names = (emptyList[0] ?? '').replace(/^[^:]*:\s*/, '').replace(/\.$/, '').split(', ')

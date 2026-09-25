@@ -25,12 +25,15 @@ enum ArchiveExport {
         let missingMedia: Int
     }
 
-    /// `Muistoarkisto-2026-09-05.zip`. The date, so that the copy a family
+    /// `MemoryArchive-2026-09-05.zip`. The date, so that the copy a family
     /// makes every year does not write over the last one in the folder it
     /// keeps them in (founder's-eye review, finding #88). ISO order, because
     /// the folder sorts it and no locale is asked.
+    ///
+    /// English, and the same English on every phone — see the note beside
+    /// the folder names below.
     static func zipName(for date: Date) -> String {
-        "Muistoarkisto-\(date.formatted(.iso8601.year().month().day())).zip"
+        "MemoryArchive-\(date.formatted(.iso8601.year().month().day())).zip"
     }
 
     /// Builds the zip and returns its location in the temporary directory. The
@@ -45,12 +48,28 @@ enum ArchiveExport {
         progress: (String) -> Void
     ) async throws -> Export {
         let root = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Muistoarkisto", isDirectory: true)
+            .appendingPathComponent("MemoryArchive", isDirectory: true)
         try? FileManager.default.removeItem(at: root)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
-        let photos = root.appendingPathComponent("kuvat", isDirectory: true)
-        let audio = root.appendingPathComponent("aani", isDirectory: true)
+        // `photos`, `audio`, `memories.html`, `archive.json` and the folder
+        // above them were `kuvat`, `aani`, `muistot.html` and `arkisto.json`
+        // until 25 Sep 2026, and they were kept Finnish on purpose: they are
+        // the format rather than prose, and the prose describing them is
+        // translated around them. What changed is who reads them. The demo
+        // film draws this folder open, name by name, and it is watched and
+        // judged in English — so five Finnish words sat in the one shot whose
+        // whole argument is that the archive outlives the app and opens
+        // anywhere. They are English now, and the same English on every
+        // phone: one layout, so two members of one family produce archives
+        // that look alike.
+        //
+        // Nothing reads an older archive back in. The export is one-way
+        // (ARCHITECTURE §12) — every path inside a zip is written by the same
+        // run that writes the page referencing it, so an archive exported
+        // before today keeps its own names and its own page, and still opens.
+        let photos = root.appendingPathComponent("photos", isDirectory: true)
+        let audio = root.appendingPathComponent("audio", isDirectory: true)
         try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: audio, withIntermediateDirectories: true)
 
@@ -135,8 +154,8 @@ enum ArchiveExport {
             audioNames: audioNames,
             missingMedia: missing
         )
-        try Data(page.utf8).write(to: root.appendingPathComponent("muistot.html"))
-        try store.exportJSON().write(to: root.appendingPathComponent("arkisto.json"))
+        try Data(page.utf8).write(to: root.appendingPathComponent("memories.html"))
+        try store.exportJSON().write(to: root.appendingPathComponent("archive.json"))
 
         progress(String(localized: "Pakataan"))
         try Task.checkCancellation()
@@ -263,7 +282,7 @@ enum ArchiveExport {
 
         out += "<p class=\"meta\">"
         out += String(localized: "Viety \(dateText(.now)).")
-        out += String(localized: " Äänitiedostot ovat kansiossa <code>aani</code> ja kuvat kansiossa <code>kuvat</code>. Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa.")
+        out += String(localized: " Äänitiedostot ovat kansiossa <code>audio</code> ja kuvat kansiossa <code>photos</code>. Tiedosto <code>archive.json</code> sisältää kaiken koneluettavassa muodossa.")
         out += "</p>\n"
 
         // The page says what it is missing. A zip built offline used to look
@@ -307,7 +326,7 @@ enum ArchiveExport {
             out += "<p class=\"meta\">\(escaped(meta.joined(separator: " · ")))</p>\n"
 
             if let filename = photoNames[subject.id] {
-                out += "<img src=\"kuvat/\(escaped(filename))\" alt=\"\(escaped(subject.displayTitle))\">\n"
+                out += "<img src=\"photos/\(escaped(filename))\" alt=\"\(escaped(subject.displayTitle))\">\n"
             }
             // Under the photograph and never in its place, captioned with whose
             // word the colours stand on. The palette is in the image itself.
@@ -316,7 +335,7 @@ enum ArchiveExport {
                     String(localized: "Värit kerronnan mukaan, vahvisti \($0)")
                 } ?? String(localized: "Värit kerronnan mukaan")
                 let described = String(localized: "Väritetty kuva. Värit ovat tekoälyn arvaus kerrotun mukaan.")
-                out += "<figure><img src=\"kuvat/\(escaped(filename))\" alt=\"\(escaped(described))\">"
+                out += "<figure><img src=\"photos/\(escaped(filename))\" alt=\"\(escaped(described))\">"
                 out += "<figcaption class=\"meta\">\(escaped(caption))</figcaption></figure>\n"
             }
 
@@ -346,7 +365,7 @@ enum ArchiveExport {
                     }
                 }
                 if let filename = audioNames[memory.id] {
-                    out += "<audio controls src=\"aani/\(escaped(filename))\"></audio>\n"
+                    out += "<audio controls src=\"audio/\(escaped(filename))\"></audio>\n"
                 }
                 // The teller when somebody named one, and the day alone when
                 // the teller asked not to be named — the same three answers

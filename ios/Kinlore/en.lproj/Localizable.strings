@@ -313,13 +313,18 @@
 /* --- The exported archive ------------------------------------------------
    The one output that leaves this app for good, and the only one that has to
    read well on a machine that has never heard of it. The FOLDER names inside
-   the archive stay Finnish — "aani" and "kuvat" are the format, referenced from
-   arkisto.json and already sitting inside every archive anybody has exported.
-   Renaming them would break those. The prose that describes them does not have
-   to be in the same language as they are. */
+   the archive used to stay Finnish — "aani", "kuvat", "arkisto.json",
+   "muistot.html" — on the argument that a name is format rather than prose and
+   the prose around it is translated anyway. That argument held until 25 Sep
+   2026, when the demo film drew the folder open name by name in front of a
+   jury that watches it in English. They are English on every phone now
+   (ArchiveExport.swift says why at length), and the same English everywhere,
+   so two members of one family export archives that look alike. Only the prose
+   below is translated; an archive exported before that day keeps its own names
+   and its own page, and still opens, because nothing ever reads one back in. */
 "Muistoarkisto" = "Memory archive";
 "Viety %@." = "Exported %@.";
-" Äänitiedostot ovat kansiossa <code>aani</code> ja kuvat kansiossa <code>kuvat</code>. Tiedosto <code>arkisto.json</code> sisältää kaiken koneluettavassa muodossa." = " The recordings are in the <code>aani</code> folder and the photographs in <code>kuvat</code>. The file <code>arkisto.json</code> holds everything in machine-readable form.";
+" Äänitiedostot ovat kansiossa <code>audio</code> ja kuvat kansiossa <code>photos</code>. Tiedosto <code>archive.json</code> sisältää kaiken koneluettavassa muodossa." = " The recordings are in the <code>audio</code> folder and the photographs in <code>photos</code>. The file <code>archive.json</code> holds everything in machine-readable form.";
 "Huom:" = "Note:";
 "Yksi kuva tai äänitys ei ollut saatavilla, kun tämä arkisto vietiin. Se on tallessa ja tulee mukaan seuraavaan vientiin." = "One photograph or recording was not available when this archive was exported. It is safe, and it will come with the next export.";
 "%lld kuvaa tai äänitystä ei ollut saatavilla, kun tämä arkisto vietiin. Ne ovat tallessa ja tulevat mukaan seuraavaan vientiin." = "%lld photographs or recordings were not available when this archive was exported. They are safe, and they will come with the next export.";

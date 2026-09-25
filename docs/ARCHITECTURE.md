@@ -2945,9 +2945,25 @@ One zip through the share sheet:
 
 | In the zip | Why |
 |---|---|
-| `muistot.html` | Every memory under its subject, dates as they were told, photos inline, audio playable |
-| `kuvat/`, `aani/` | The originals, byte for byte — audio is never re-encoded, here least of all |
-| `arkisto.json` | The archive as a model — subjects, memories, questions, relations; the outbox and the sync cursor left out |
+| `memories.html` | Every memory under its subject, dates as they were told, photos inline, audio playable |
+| `photos/`, `audio/` | The originals, byte for byte — audio is never re-encoded, here least of all |
+| `archive.json` | The archive as a model — subjects, memories, questions, relations; the outbox and the sync cursor left out |
+
+**Those four names were Finnish — `muistot.html`, `kuvat/`, `aani/`,
+`arkisto.json`, under `Muistoarkisto/` — until 25 Sep 2026**, on the argument
+that a filename is format rather than prose and the prose describing it is
+translated around it. What changed is who reads them: the demo film draws this
+folder open, name by name, in the one shot whose whole argument is that the
+archive outlives the app, and that film is watched and judged in English. They
+are English on every phone now rather than following the device, so two members
+of one family produce archives that look alike. The rename costs nothing
+because **the export is one-way**: every path inside a zip is written by the
+same run that writes the page referencing it, and nothing anywhere reads an
+exported archive back in, so a zip made before that day keeps its own names and
+its own page and still opens. Only the sentence naming the folders is
+translated, and `<h1>` stays prose — *Muistoarkisto* on a Finnish phone,
+*Memory archive* on an English one, which is how `export-check.mjs` tells which
+language a page is in.
 
 Four decisions:
 
@@ -2986,7 +3002,7 @@ Four decisions:
 And four more since 5 Sep 2026, from the review's finding #88 — *the export does
 not carry a real family's archive, and nobody is ever told to run it*:
 
-- **The zip carries its date.** `Muistoarkisto-2026-09-05.zip`, ISO order, so
+- **The zip carries its date.** `MemoryArchive-2026-09-05.zip`, ISO order, so
   the copy a family makes every year does not write over the last one in the
   folder they keep them in. `export-check.mjs` picks the newest by name.
 - **The media are hard-linked into the export, not copied.** The export folder
@@ -3126,9 +3142,9 @@ in a family, and they are genuinely separate — so the screen names both:
 leaves the app for good, and its promise — *"sen voi avata millä tahansa
 koneella ilman tätä sovellusta"* — had never been checked against an actual
 file. It was: run on the simulator, pulled out of the app container, unzipped.
-The page carries the memories, `arkisto.json` carries the model, and a recorded
-memory travels as `aani/memory-….m4a` — real M4A by `file`, not by extension —
-with the page linking it as `<audio controls src="aani/…">`, a relative path
+The page carries the memories, `archive.json` carries the model, and a recorded
+memory travels as `audio/memory-….m4a` — real M4A by `file`, not by extension —
+with the page linking it as `<audio controls src="audio/…">`, a relative path
 into the same folder. Opened in a browser, grandmother's voice plays out of the
 zip.
 
