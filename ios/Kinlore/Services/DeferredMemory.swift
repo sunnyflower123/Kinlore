@@ -76,9 +76,15 @@ enum DeferredMemory {
             mentionedSubjectIDs: mentioned.map(\.id)
         )
 
-        let questions = extracted.questions.map {
-            FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level)
-        }
+        // The same gate as the ordinary path (`TellViewModel.save`): no repeat
+        // of a question already open, and no more than `openQuestionCap` open
+        // on one subject. A recording that waited a week is no reason to go
+        // over it.
+        let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }.map(\.text)
+        let admitted = ExtractionContext.admitted(extracted.questions.map(\.text), against: open)
+        let questions = extracted.questions
+            .filter { admitted.contains($0.text) }
+            .map { FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level) }
         store.add(questions: questions)
 
         // Whatever this recording cost in failed attempts, it is finished now

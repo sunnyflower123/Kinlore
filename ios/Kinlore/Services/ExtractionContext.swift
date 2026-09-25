@@ -211,6 +211,36 @@ extension ExtractionContext {
         )
     }
 
+    /// The most questions one subject carries open before a model's reply
+    /// adds no more to it.
+    ///
+    /// De-duplication stops the list repeating itself; it does not stop it
+    /// growing, because every telling brings three new questions and answers at
+    /// most one. A photograph somebody has talked about eight times would have
+    /// twenty questions waiting under it, and a pile that size gives the
+    /// family nothing to act on. Five is enough for the ladder to choose from
+    /// at every level. A question a person asked is never held back
+    /// (`AskQuestionSheet`), but it does count towards the five.
+    static let openQuestionCap = 5
+
+    /// What the archive takes from a model's reply: the questions that are not
+    /// a repeat, and only as many of them as fit under `openQuestionCap`.
+    ///
+    /// `answeringNow` is the question the telling was an answer to. It is
+    /// still open when this runs, so it still counts as something already
+    /// asked, but its slot is free: an answer should make room for the next
+    /// question rather than be blocked by the question it just answered.
+    ///
+    /// When there is room for fewer than all of them, the first ones are kept
+    /// in the model's order. When the teller's level is sent, the prompt asks
+    /// for the easier question first (QUESTION DEMAND in `extract.ts`). The
+    /// model is not bound by that, but it is the only ordering there is.
+    static func admitted(_ incoming: [String], against open: [String], answeringNow: String? = nil) -> [String] {
+        let freed = answeringNow.map { open.contains($0) ? 1 : 0 } ?? 0
+        let room = max(0, openQuestionCap - (open.count - freed))
+        return Array(deduplicated(incoming, against: open).prefix(room))
+    }
+
     /// How much of the shorter question is contained in the longer one.
     ///
     /// Not a symmetric measure on purpose: *"Millainen ihminen Aino oli?"* and

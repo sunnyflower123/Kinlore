@@ -762,11 +762,15 @@ final class TellViewModel {
         // model was asked, not obeyed, and `add(questions:)` appends whatever
         // it is handed. Three per telling for ever, with nothing in between, is
         // why a fourth telling about one photograph used to produce the first
-        // telling's questions again.
-        let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }.map(\.text)
-        let unrepeated = ExtractionContext.deduplicated(extracted.questions.map(\.text), against: open)
+        // telling's questions again. No repeat, and never more than
+        // `openQuestionCap` open on one subject (`ExtractionContext.admitted`).
+        let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }
+        let answeringNow = open.first { $0.id == question?.id }?.text
+        let admitted = ExtractionContext.admitted(
+            extracted.questions.map(\.text), against: open.map(\.text), answeringNow: answeringNow
+        )
         let questions = extracted.questions
-            .filter { unrepeated.contains($0.text) }
+            .filter { admitted.contains($0.text) }
             .map { FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level) }
         store.add(questions: questions)
         newQuestions = questions

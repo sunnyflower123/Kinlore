@@ -2794,6 +2794,18 @@ drops a restatement on the client as well, so the archive's question list stops
 growing by three a round whether or not the model cooperated — which is the cap
 §10 deferred to "the store" and the note above claimed was already closed.
 
+It stopped the repeats, not the growth, because each telling still brings three
+questions and answers at most one. **Since 25 Sep 2026 one subject carries at
+most five open questions** (`ExtractionContext.openQuestionCap`). A model's
+reply adds only as many as fit: the de-duplicated questions first, in the
+model's order. The question being answered frees its own slot. Both paths a
+reply takes into the archive go through the same `admitted` gate, the
+ordinary telling and the catch-up in `DeferredMemory`, and before this the
+catch-up did not de-duplicate at all. A question a person asked is never
+held back, though it counts towards the five. Neither is a question synced
+from another phone, which is why the count can go past five. The gate decides
+only what this phone adds.
+
 ## 13. The guessing round — built, then cut
 
 **Cut on 16 Aug 2026** (PLAN.md §5, row 8). The code is gone: `GuessRound.swift`,

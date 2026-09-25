@@ -235,6 +235,44 @@ struct ExtractionContextCheck {
             ["Missä tämä on otettu?"], against: []
         ), ["Missä tämä on otettu?"])
 
+        // MARK: - Not more than five
+
+        print("\n— one subject carries at most five open questions —")
+        let fresh = ["Minä vuonna Aino syntyi?", "Missä tämä on otettu?", "Kuka souti veneen saareen?"]
+        let two = ["Millainen ihminen Aino oli?", "Mitä Toivo teki työkseen?"]
+        let four = two + ["Milloin mökki rakennettiin?", "Kenen koira pihalla juoksee?"]
+        let five = four + ["Mitä saaressa syötiin?"]
+        check("two open leave room for all three", ExtractionContext.admitted(fresh, against: two), fresh)
+        check("four open leave room for the first one only", ExtractionContext.admitted(fresh, against: four), [fresh[0]])
+        check("five open take nothing more", ExtractionContext.admitted(fresh, against: five), [String]())
+        check(
+            "a sixth already open, synced from another phone, is not a negative room",
+            ExtractionContext.admitted(fresh, against: five + ["Kuka otti kuvan?"]),
+            [String]()
+        )
+        // The cap counts after the repeat is gone, so a restatement does not use
+        // up a slot the next question could have had.
+        check(
+            "a repeat is dropped before the cap is counted",
+            ExtractionContext.admitted(["Millainen ihminen Aino oikein oli?"] + fresh, against: four),
+            [fresh[0]]
+        )
+        check(
+            "the question being answered frees its slot",
+            ExtractionContext.admitted(fresh, against: five, answeringNow: "Mitä saaressa syötiin?"),
+            [fresh[0]]
+        )
+        check(
+            "and is still a repeat to ask again",
+            ExtractionContext.admitted(["Mitä saaressa oikein syötiin?"], against: five, answeringNow: "Mitä saaressa syötiin?"),
+            [String]()
+        )
+        check(
+            "a question that is not open frees nothing",
+            ExtractionContext.admitted(fresh, against: five, answeringNow: "Mistä haluaisit kertoa?"),
+            [String]()
+        )
+
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
 
