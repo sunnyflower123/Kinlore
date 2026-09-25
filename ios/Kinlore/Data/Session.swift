@@ -378,6 +378,37 @@ final class Session {
     /// to pay twice. What was missing is anyone saying so.
     @discardableResult
     func syncPurchase(customerID: String) async -> Bool {
+        #if DEBUG
+        // The stubbed world has no server to ask, so until 24 Sep 2026 a
+        // completed purchase here always ended in the alert that says the
+        // archive did not open. That is the right answer when a family's
+        // entitlement lives on a server that is not there — and the wrong
+        // thing to put in front of somebody being shown the app, because the
+        // last word on buying becomes a notice that the thing bought has not
+        // arrived. Transcription, extraction and colourisation each have a
+        // stub for exactly this reason; the entitlement was the one service
+        // without one.
+        //
+        // Narrow on purpose: DEBUG, no address, and a seeded demo. A build
+        // with `-api` or a Release build still asks the server and still
+        // reports exactly what it answered. A device that has bought stays
+        // bought across launches (`syncEntitlementIfPurchased`), so a take
+        // that needs the offer card runs on an app installed fresh.
+        if AppServices.apiBaseURL == nil, UserDefaults.standard.string(forKey: "seed") != nil {
+            // The wait is not decoration. `PaywallSheet` declines exactly one
+            // dismissal request after a purchase — RevenueCatUI sends one the
+            // turn after `onPurchaseCompleted` — and closes the sheet itself
+            // once the family has the archive. Answering instantly inverts
+            // that order: the sheet's own `dismiss()` lands while the
+            // purchase is still animating, is dropped, and then the declined
+            // request is the only one left, so the sheet stays open for ever.
+            // Measured on the first recorded take, 24 Sep 2026. A server
+            // round trip is never this fast; neither is this.
+            try? await Task.sleep(for: .milliseconds(700))
+            openArchiveWithoutAServer()
+            return true
+        }
+        #endif
         guard let entitlements else { return false }
         let reported = (try? await entitlements.sync(customerID: customerID)) != nil
         await refresh()
@@ -560,6 +591,24 @@ final class Session {
     // MARK: - Helpers
 
     #if DEBUG
+    /// The paid state as the server would have reported it: neither meter
+    /// limited, and the family row reading `archive` so that every screen
+    /// asking a different question of the same fact agrees — `FamilyScreen`
+    /// reads `family.entitlement`, the offer slot reads `usage`.
+    private func openArchiveWithoutAServer() {
+        if let family {
+            self.family = Family(
+                id: family.id, name: family.name, entitlement: "archive",
+                you: family.you, members: family.members, invites: family.invites
+            )
+        }
+        usage = EntitlementClient.Usage(
+            entitlement: "archive",
+            aiSeconds: .init(used: usage?.aiSeconds.used ?? 0, limit: nil),
+            photos: .init(used: usage?.photos.used ?? 0, limit: nil)
+        )
+    }
+
     /// A family with no server behind it, for `-seed family`.
     ///
     /// The invite rows are the one part of this app nothing could ever look at.

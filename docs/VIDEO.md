@@ -44,6 +44,13 @@ xcrun simctl install "$SIM" <path-to>/Kinlore.app
 xcrun simctl status_bar "$SIM" override --time "9:41" --batteryLevel 100
 xcrun simctl privacy "$SIM" grant microphone com.kinlore.app  # no Allow popup on camera
 
+# The REGION, which is not the language and is what formats money and dates.
+# A simulator created here inherits the host's: measured 25 Sep 2026, the
+# shared iPhone 17 Pro still reads en_FI. Set it before the app's first
+# launch and read it back.
+xcrun simctl spawn "$SIM" defaults write .GlobalPreferences AppleLocale -string en_US
+xcrun simctl spawn "$SIM" defaults read .GlobalPreferences AppleLocale
+
 # Record. Ctrl-C stops it; h264 .mov, plays everywhere.
 xcrun simctl io "$SIM" recordVideo --codec h264 scene.mov
 ```
@@ -58,6 +65,18 @@ alone — walking slowly enough to be read. It runs only on a simulator whose
 name contains "film", so an ordinary test run pays nothing for it, and it
 passes neither `-testLanguage fi` nor `-testRegion FI` — filming is the one
 case that wants the device's own English.
+
+**English is not enough, because iOS formats numbers and dates by region.**
+The language decides the words; the region decides `80,00 US$` against
+`$80.00` and `24.9.2026` against `Sep 24, 2026`. A simulator created on this
+machine takes the host's region, so it is `en_FI`: English words, Finnish
+figures. That went unnoticed until 25 Sep 2026, when three finished takes —
+the paywall with both products, the album's list of moments, and the result
+screen's teller question — were found carrying Finnish prices and Finnish
+dates in an otherwise English film, and all three had to be shot again. The
+`defaults write` above is the whole fix, and the read-back beside it is there
+because nothing else reports the setting: the app looks right, the words are
+right, and only a number on screen says otherwise.
 
 ```bash
 xcrun simctl io "$SIM" recordVideo --codec h264 take.mov &

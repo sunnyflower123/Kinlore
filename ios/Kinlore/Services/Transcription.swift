@@ -56,6 +56,23 @@ struct StubTranscriptionService: TranscriptionService {
     /// made of it.
     static let film = "That's Puumala, at the jetty. Helmi and Toivo. It was the thirties, I was small then."
 
+    /// The canned memory `-screen interview` puts on the result screen, when
+    /// the same `-sample film` is set. English for exactly the reason `film`
+    /// above is: the app is filmed in English, and until 25 Sep 2026 this
+    /// screen carried `samples[2]` — a Finnish paragraph held for ten seconds
+    /// over the paywall beat, which is the one place in the film an isolated
+    /// judge read as a rules failure rather than a flaw ("All materials in
+    /// English or with an English translation").
+    ///
+    /// `samples` itself stays Finnish and is not the thing to translate: it is
+    /// the input the app processes, and an English sample would be testing a
+    /// different thing. This is the demo aid's copy of it, nothing else.
+    static let filmMemory = """
+        We had a wooden house in Kuopio, it had a big kitchen and that is \
+        where we always sat. Eevert lived next door and he came round every \
+        single day. Well — those were good times. I cannot really explain it.
+        """
+
     func transcribe(audioURL: URL) async throws -> String {
         try await Task.sleep(for: simulatedDelay)
         if UserDefaults.standard.string(forKey: "sample") == "film" { return Self.film }

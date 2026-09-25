@@ -24,6 +24,19 @@ struct StubColourisationService: ColourisationService {
 
     func colourise(canvas: Data, told: [String], aspect: String) async throws -> Data {
         try await Task.sleep(for: simulatedDelay)
+        #if DEBUG
+        // The film's own captured reply, when a shooting day has put one in
+        // the container. Same arrangement as `MemoryStore.filmPhotoFile()` and
+        // the same reason as `StubExtractionService.filmResult`: what a take
+        // shows has to be what the real pipeline answered, not what a
+        // development stub invented. `ColourLock` still decides how much of it
+        // may be laid on the photograph, so this is a reply and not a result.
+        if let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
+           let captured = try? Data(contentsOf: documents.appendingPathComponent("film-coloured.jpg")),
+           !captured.isEmpty {
+            return captured
+        }
+        #endif
         guard let input = CIImage(data: canvas) else { throw RemoteError.emptyResult }
         let tinted = input.applyingFilter("CIColorMatrix", parameters: [
             "inputRVector": CIVector(x: 1.08, y: 0.06, z: 0, w: 0),

@@ -331,6 +331,12 @@ final class FilmDriver: XCTestCase {
             "-seed", "family",
             "-defer", "structure",
             "-screen", "interview",
+            // The canned memory this screen holds for ten seconds, in the
+            // language the film is shot in. Without it `-screen interview`
+            // draws `samples[2]`, which is Finnish, and the paywall beat —
+            // the one a monetisation judge reads hardest — carries a
+            // paragraph nobody in the audience can read (25 Sep 2026).
+            "-sample", "film",
             "-tellings-since-upsell", "2",
         ])
         _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 60)
@@ -347,12 +353,33 @@ final class FilmDriver: XCTestCase {
         // it out; the take has to get past it.
         beat(0.8)
         try tap(app.buttons, ["Test valid purchase"], timeout: 30)
-        _ = try find(
-            app.staticTexts,
-            ["Thank you — the payment went through", "Kiitos — maksu meni läpi"],
-            timeout: 40
+        // Nothing left to tap. The sheet closes itself once the family has
+        // the archive (`PaywallSheet.spreadToFamily`), and behind it is the
+        // same result screen with the offer card gone — that absence is the
+        // shot. Until 24 Sep 2026 this take waited for the opposite: the
+        // alert saying the payment went through and the archive had not
+        // opened, which is what the stubbed world answered when it had no
+        // server to ask. An isolated judge read it as the only outcome the
+        // film shows of buying anything (REVIEW-v21h.md §5.1).
+        //
+        // Waited for rather than assumed: a purchase that does not reach the
+        // archive leaves the card exactly where it was, and a take of that is
+        // a take of the bug.
+        let offerEN = app.staticTexts["The free archive"]
+        let offerFI = app.staticTexts["Ilmainen arkisto"]
+        let deadline = Date().addingTimeInterval(40)
+        while offerEN.exists || offerFI.exists, Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        XCTAssertFalse(
+            offerEN.exists || offerFI.exists,
+            "the offer card is still on the result screen — the purchase did not open the archive"
         )
-        beat(3.0)
+        beat(1.6) // the sheet closes on the answer
+        // The same place on the same screen, where the offer card stood two
+        // taps ago. An absence is only legible against where the thing was.
+        app.swipeUp(velocity: .slow)
+        beat(4.0) // the result screen, with nothing left on it to buy
     }
 
     /// 8 · The name still waiting, alone: behind the people list's one quiet
@@ -374,6 +401,44 @@ final class FilmDriver: XCTestCase {
         try tap(app.buttons, ["1 name waiting to be checked", "1 nimi odottaa tarkistusta"])
         _ = try reveal(app, app.buttons, [Self.filmProposal])
         beat(8.0)
+    }
+
+    /// 4b · The colours come back, and a person decides whether they stay.
+    ///
+    /// ARCHITECTURE §24. The photograph's card offers *"Colour it by the
+    /// telling"* once somebody has told something about it — `colourable`,
+    /// which is why this runs on `-seed film` and not `film-untold`. What
+    /// comes back is a proposal and nothing else: `ColourLock` keeps the
+    /// photograph's own lightness and takes only the hue from the reply, and
+    /// `ColourSheet` asks *"Does it look like this?"* before a single byte is
+    /// saved. The take ends on somebody answering it, because rule 4 —
+    /// the AI proposes, a human confirms — is the scene rather than the
+    /// colours.
+    ///
+    /// `-api ""` puts `StubColourisationService` behind the button, so the
+    /// take needs no key, no network and no credit. What the stub returns is
+    /// the film's own captured reply when the shooting day has put one in
+    /// `Documents/film-coloured.jpg`, and its warm tint otherwise — the same
+    /// arrangement as `filmPhotoFile()`, and for the same reason: a take has
+    /// to show what the app really made of what is on its soundtrack.
+    func testFilmTheColouring() throws {
+        let app = try roll(["-seed", "film", "-tab", "memories"])
+        beat(1.6) // the album, and the photograph in it
+        try reveal(app, app.buttons, ["Photograph", "Valokuva"]).tap()
+        beat(2.6) // the card: the picture, the decade, what was told about it
+        try reveal(app, app.buttons, ["Colour it by the telling", "Väritä kerronnan mukaan"]).tap()
+        beat(1.0) // "Colouring by the telling…"
+        _ = try find(app.staticTexts, ["Does it look like this?", "Näyttääkö tältä?"], timeout: 30)
+        beat(3.4) // the colouring, read before anybody answers it
+        try tap(app.buttons, ["Yes, keep the colours", "Kyllä, tallenna värit"])
+        beat(1.2) // the sheet closes on the answer
+        // Back to the top of the card. `reveal` scrolled down to reach the
+        // button, so by the time the photograph has colours it is above the
+        // fold — and the photograph with its colours beside it, never in its
+        // place, is the shot this take exists for.
+        app.swipeDown(velocity: .slow)
+        app.swipeDown(velocity: .slow)
+        beat(4.0)
     }
 
     // MARK: - The hand

@@ -171,7 +171,11 @@ struct TellScreen: View {
                     // rotate from the first, so the opening telling and the
                     // first round never share their names — which is what
                     // lets a test see whether the rounds accumulate.
-                    created.draft = StubTranscriptionService.samples[2]
+                    // English under `-sample film`, Finnish otherwise;
+                    // see `StubTranscriptionService.filmMemory`.
+                    created.draft = UserDefaults.standard.string(forKey: "sample") == "film"
+                        ? StubTranscriptionService.filmMemory
+                        : StubTranscriptionService.samples[2]
                     await created.submitTyped()
                     await created.beginInterview()
                     // beginInterview returns once the question has been spoken
@@ -196,7 +200,11 @@ struct TellScreen: View {
             if UserDefaults.standard.string(forKey: "screen") == "interviewed" {
                 Task {
                     created.beginWriting()
-                    created.draft = StubTranscriptionService.samples[2]
+                    // English under `-sample film`, Finnish otherwise;
+                    // see `StubTranscriptionService.filmMemory`.
+                    created.draft = UserDefaults.standard.string(forKey: "sample") == "film"
+                        ? StubTranscriptionService.filmMemory
+                        : StubTranscriptionService.samples[2]
                     await created.submitTyped()
                     await created.beginInterview()
                     try? await Task.sleep(for: .seconds(3))
