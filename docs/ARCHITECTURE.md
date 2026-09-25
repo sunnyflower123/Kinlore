@@ -2238,10 +2238,90 @@ a local D1:
 - Authorship is sticky under sync: an older device re-pushing the same
   question without the field cannot strip the name off it.
 
-`prompt_question.target_member` (aim a question at one person) has existed in
-the schema from the start and stays unused: routing to a specific member needs
-a picker and a visibility explanation, and the family-wide version already
-carries the emotional core.
+### Asked of one person — 25 Sep 2026
+
+`prompt_question.target_member` sat in the schema unused from the first day,
+and on 25 Sep 2026 the ask sheet started setting it: *"Kenelle?"* offers
+*"Koko perhe"* and the family's other members by name. What the aim narrows is
+kept small on purpose:
+
+- **Everyone still sees it.** The card shows every question to every member,
+  with *"Kenelle: Aino"* under one asked of somebody else, and anyone who knows
+  may answer it there. A question hidden from the rest of the family would be a
+  private message, and this app has none.
+- **Only the Kerro tab narrows.** `MemoryStore.openQuestions(…, viewer:)` puts
+  a question asked of this phone's member first, oldest first, headed *"Mummo
+  kysyy sinulta"*, and leaves out the ones asked of somebody else. The
+  family-wide questions follow exactly as before.
+- **The server keeps the asker's rules.** Only the asker aims, and only once: a
+  target is bound only when `author_id` is the session's own member, and a
+  re-push cannot move it (`COALESCE`, as for authorship). A target that is not
+  a current member of this family is nulled by a subselect rather than refused,
+  because D1 enforces foreign keys and a push is one transaction — one bad
+  reference would otherwise fail every row of it, on every retry.
+- **The answer is the latest one.** `answered_memory_id`, unused until then as
+  well, records the newest telling that answered the question rather than the
+  first: an answer taken back reopens the question (`MemoryStore.reopen`), and
+  the telling that answers it next is the one the asker should be pointed to.
+
+The name travels like the asker's: `target_name` is derived on read from
+`member.display_name`, and the asking phone writes it locally so the line shows
+before the first sync. **One edge is known and left:** a question asked of
+somebody who has since left the family is offered on nobody's Kerro tab. It is
+still on the card, where anyone can answer it.
+
+§12 paid for a removal by keeping this column unused, and that removal is not
+restored in its place. The addition has none beside it, by the user's decision
+of 25 Sep 2026 — PLAN §5, row 11.
+
+### Two notifications — 25 Sep 2026
+
+Nothing rings a phone except these two: *"Mummo kysyi sinulta jotain."* to the
+member a question is aimed at, and *"Kysymykseesi tuli vastaus."* to its asker.
+Neither can say what was asked or told, and that is not a choice made in the
+Worker: both texts are sealed on the phone (lever 3), so it has no words to put
+in one. The asker's display name is the one thing a notification carries, and
+it is plaintext on `member` already. The sentence is a `loc-key` looked up in
+the phone's own `Localizable.strings`, so the Worker never needs to know which
+language a phone speaks.
+
+- **Who is told is `sync.ts`'s decision** (`noticesFor`). It reads each pushed
+  question's state before and after the batch: a question that has just been
+  aimed at somebody tells them, and a question a person asked that has just
+  been answered tells its asker. Never the member who pushed, never about a
+  machine's question, and a re-send tells nobody.
+- **`apns.ts` only delivers**, after the reply and under `waitUntil`: an ES256
+  provider token signed with WebCrypto from the Worker secret `APNS_KEY_P8`
+  (beside `APNS_KEY_ID` and `APNS_TEAM_ID`), kept for fifty minutes per
+  isolate, and sent to the endpoint each token belongs to. Nothing is retried
+  and nothing can fail a sync — the question is on the card and in the Kerro
+  tab either way. A token APNs calls dead (410, `BadDeviceToken`,
+  `DeviceTokenNotForTopic`) is deleted. The log carries status, APNs's own
+  reason and counts: never a token, never a name (rule 9).
+- **`push_token`** is one row per phone, keyed by the token, so a phone that
+  registers under a new identity moves its row rather than adding a second
+  one. Leaving the family and being removed from it delete a member's rows,
+  and the wipe in Settings asks the server to forget this phone's before the
+  identity is renewed, best effort.
+- **The phone never asks.** `PushNotifications` requests *provisional*
+  authorization, which iOS grants without a dialog: notifications arrive
+  quietly in Notification Center, and the first one offers to keep them or
+  turn them off. A permission prompt on an elder's phone is the cost UX §6
+  named when it put push in v1.1, and the rule since 25 Sep 2026 is not to pay
+  it when a feature can work without one. A tap on a question asked of you
+  opens Kerro; a tap on an answer opens Albumi.
+
+**What is not verified yet, and why.** APNs speaks only HTTP/2, which a
+deployed Worker's `fetch` does and `wrangler dev` on macOS does not (workerd
+issue #4841), so no notification can leave a local Worker at all.
+`scripts/targeted-question-check.mjs` runs the real push, pull and notify over
+`schema.sql` in an in-memory SQLite with `fetch` replaced, which covers
+everything up to the wire; the wire itself is checked once, deployed. And the
+app registers only when it is signed with the `aps-environment` entitlement,
+which needs Push Notifications on the App ID — a capability Apple gives the
+paid Developer Program and not a personal team (SETUP). Until then the
+registration fails, is logged as a domain and a code, and nothing else
+changes.
 
 ## 12. The question ladder
 
@@ -2400,6 +2480,9 @@ becomes permanent. It has been unused in the schema from the start, and a ladder
 that picks questions for the person in front of it makes routing to a named
 member more tempting than it is worth — it would need a picker, a visibility
 explanation, and a second selection rule competing with this one.
+**Reversed on 25 Sep 2026 by the user's decision** (§11): the column is used,
+and the ladder keeps its rule for everything else — a question asked of this
+member by name is simply offered before the ladder's own choice.
 
 As a side effect this closes the open edge left in §10: the open-question list
 grows by three every round, and ordering plus the return of skipped questions is

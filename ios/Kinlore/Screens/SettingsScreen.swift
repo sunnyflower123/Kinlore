@@ -511,6 +511,10 @@ struct SettingsScreen: View {
         // And whose phone this is, which is asked in onboarding and was the
         // one answer that used to outlive the archive it was given for.
         Elder.forgetLargerText()
+        // The phone's push token, on the server, under the identity about to
+        // go: otherwise this phone goes on being told about questions asked of
+        // a member it no longer is.
+        PushNotifications.shared.forget(identity: session.identity)
         // Last, because it is what makes the wipe stick: with the old identity
         // the next sync would pull the whole archive straight back.
         session.renewIdentity()

@@ -310,6 +310,12 @@ run "the purchase is verified rather than believed" node scripts/entitlement-syn
 # do, and one that downgrades on a timeout looks like a subscription that
 # ended. Seven deliberate breakages, seven caught, before this line was added.
 run "a stale tier is re-asked, not guessed" node scripts/entitlement-reconcile-check.mjs
+# A question asked of one member by name, and the two notifications it can
+# cause. The real push, pull and notify over the shipping schema with fetch
+# replaced: an aim that does not resolve is stored as nothing instead of
+# failing the whole batch, only the asker aims, a notice fires on a change and
+# never on a re-send, and the log carries neither a token nor a name.
+run "a question asked by name reaches the one it was asked of" node scripts/targeted-question-check.mjs
 # Rule 8, without making the request. `complete()` is imported straight out of
 # openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
 # something that keeps the body. Nothing leaves the machine and nothing is

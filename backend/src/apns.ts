@@ -23,8 +23,9 @@
 //
 // APNs speaks only HTTP/2. A deployed Worker's `fetch` does; `wrangler dev` on
 // macOS does not (workerd issue #4841), so a notification cannot be sent from
-// a local Worker at all. `scripts/apns-check.mjs` checks everything up to the
-// wire with `fetch` replaced, and the wire itself is checked once, deployed.
+// a local Worker at all. `scripts/targeted-question-check.mjs` checks
+// everything up to the wire with `fetch` replaced, and the wire itself is
+// checked once, deployed.
 
 import type { Session } from './auth'
 import type { Notice } from './sync'

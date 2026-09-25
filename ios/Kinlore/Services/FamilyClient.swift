@@ -173,6 +173,34 @@ struct FamilyClient {
         )
     }
 
+    // MARK: - Push
+
+    /// This phone may be told when a question is asked of this member, or one
+    /// of theirs is answered (`PushNotifications`). The environment says which
+    /// of Apple's two push servers knows the token.
+    func registerPush(token: String, environment: String) async throws {
+        struct Body: Encodable { let token: String; let environment: String }
+        struct Reply: Decodable { let registered: Bool }
+        let _: Reply = try await send(
+            "push/token",
+            method: "POST",
+            body: Body(token: token, environment: environment),
+            authenticated: true
+        )
+    }
+
+    /// Forgets this phone for this member, before a wipe takes the identity.
+    func unregisterPush(token: String) async throws {
+        struct Body: Encodable { let token: String }
+        struct Reply: Decodable { let unregistered: Bool }
+        let _: Reply = try await send(
+            "push/token",
+            method: "DELETE",
+            body: Body(token: token),
+            authenticated: true
+        )
+    }
+
     // MARK: - Transport
 
     private func split(_ token: String) -> (id: String, secret: String) {

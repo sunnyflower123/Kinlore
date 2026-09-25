@@ -14,6 +14,8 @@ struct KinloreApp: App {
     /// One resolver for the whole app, so that its record of names nothing
     /// recognised survives from screen to screen.
     @State private var places = PlaceResolver()
+    /// The token and a tapped notification, which SwiftUI has no modifier for.
+    @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -105,6 +107,7 @@ struct KinloreApp: App {
                     // read nil, rendered nothing — and the rhythm counter was
                     // spent on the empty view all the same.
                     await session.refresh()
+                    await registerForNotifications()
                     // Before the catch-up, not after: if this device is carrying
                     // a purchase the server has not heard about, the minutes it
                     // needs are one call away.
@@ -184,7 +187,12 @@ struct KinloreApp: App {
                     // for the next launch or foreground — on a phone that is
                     // never quit, that is an arrival with nothing arriving.
                     guard case .inFamily = mode else { return }
-                    Task { await sync?.sync() }
+                    Task {
+                        await sync?.sync()
+                        // And the joiner's phone can now be told when a
+                        // question is asked of them by name.
+                        await registerForNotifications()
+                    }
                 }
                 .onOpenURL { url in
                     guard let code = Self.inviteCode(from: url) else { return }
@@ -244,6 +252,14 @@ struct KinloreApp: App {
                 in: store, me: session.identity.memberID
             ).isEmpty)
         }
+    }
+
+    /// Quiet notifications for a question asked of this member by name, or an
+    /// answer to one they asked (`PushNotifications`). Only in a family: on a
+    /// phone that is not in one, nobody can ask it anything.
+    private func registerForNotifications() async {
+        guard case .inFamily = session.mode else { return }
+        await PushNotifications.shared.register(identity: session.identity)
     }
 
     /// Tells the server if this device has a purchase. The server verifies it

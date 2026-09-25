@@ -975,6 +975,17 @@ node scripts/entitlement-sync-check.mjs
 # After touching entitlement.ts or quota.ts.
 node scripts/entitlement-reconcile-check.mjs
 
+# A question asked of one member by name, and the two notifications it can
+# send. Runs the real push, pull and notify over schema.sql in an in-memory
+# SQLite with `fetch` replaced — no Worker, no key, no network — and pins who
+# may aim a question, that nobody else can move the aim, that one reference
+# that does not resolve cannot fail a batch, who is told and who never is,
+# and that a notification carries no words. The wire to APNs is the one part
+# it cannot reach: `wrangler dev` on macOS has no HTTP/2 for it, so that is
+# checked once, deployed (ARCHITECTURE §11). After touching sync.ts, apns.ts
+# or the question fields in MemoryStore+Sync.swift.
+node scripts/targeted-question-check.mjs
+
 # The transcription's output budget. `complete()` sends no cap unless told
 # one, and the route's default is low: a long telling came back cut off, was
 # rejected whole, and after three attempts the catch-up gave up on it. The

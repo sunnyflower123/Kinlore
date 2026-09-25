@@ -1535,6 +1535,7 @@ final class MemoryStore {
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "faces",
             "film", "film-untold", "film-week", "film-family", "film-tree",
+            "aimed",
         ].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
@@ -1561,6 +1562,35 @@ final class MemoryStore {
                 authorID: "demo-mummo",
                 authorName: "Mummo"
             )]
+            : []
+
+        // `-seed aimed` is the archive with two of Mummo's questions asked by
+        // name, and the family seeded beside it (`Session`): one asked of this
+        // phone's own member, which the Kerro tab offers first, and one asked
+        // of Aino, which only the photograph's card shows here. The member id
+        // is the Keychain's, the same one `Session` reads, because an aim can
+        // only name a member and this phone's is the one a seed can know.
+        let aimedAsks: [FollowUpQuestion] = seed == "aimed"
+            ? [
+                FollowUpQuestion(
+                    id: "demo-question-you",
+                    subjectID: "demo-photo",
+                    text: "Kuka souti veneen saareen sinä aamuna?",
+                    authorID: "demo-mummo",
+                    authorName: "Mummo",
+                    targetMemberID: Identity.loadOrCreate().memberID,
+                    targetName: String(localized: "Minä")
+                ),
+                FollowUpQuestion(
+                    id: "demo-question-aino",
+                    subjectID: "demo-photo",
+                    text: "Mitä mökillä syötiin juhannuksena?",
+                    authorID: "demo-mummo",
+                    authorName: "Mummo",
+                    targetMemberID: "demo-aino",
+                    targetName: "Aino"
+                ),
+            ]
             : []
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
@@ -2094,7 +2124,7 @@ final class MemoryStore {
             // sweep that taps the tile finds it by that word.
             subjects[index].title = "Mökin ranta"
         }
-        questions = mummoAsks
+        questions = mummoAsks + aimedAsks
         // `-seed related`: the archive with one confirmed relationship, Eeva
         // and Kalle as spouses (and Toivo, above). NameCorrectionTests merges
         // Eeva into Aino and expects Kalle on Aino's card afterwards; adding

@@ -28,6 +28,7 @@ to the Worker sits on the critical path of week 2.
 | `RC_SECRET_KEY` | RevenueCat's v2 REST API. The backend verifies the payer's entitlement and maps it to the whole family. |
 | `RC_PROJECT_ID` | The project identifier from the dashboard (not a secret, lives in `wrangler.jsonc` vars). |
 | `RC_WEBHOOK_SECRET` | Authentication for subscription events (renewal, cancellation) → `family.entitlement`. Without it anyone could forge a subscription. |
+| `APNS_KEY_P8`, `APNS_KEY_ID`, `APNS_TEAM_ID` | Optional: the two notifications of ARCHITECTURE §11. Without them the Worker logs *"not sent: no key"* and nothing else changes. See *Apple push* below — they cannot be had on a free account. |
 
 ```bash
 cd backend
@@ -138,6 +139,37 @@ refuses to create a profile unless it is passed `-allowProvisioningUpdates`.
 Xcode's own build does that step itself, which is why the app installs from the
 IDE and the same command does not.
 
+### Apple push — the one thing a free account cannot do
+
+The two notifications in ARCHITECTURE §11 need an APNs key, and Apple issues
+one only to the paid Developer Program: a personal team cannot add the Push
+Notifications capability at all. Nothing depends on it. Without it the app's
+registration fails and is logged, the Worker logs *"not sent: no key"*, and
+every question is still on the card and in the Kerro tab.
+
+With the program, four steps, and each is the account holder's to take:
+
+1. Certificates, Identifiers & Profiles → Identifiers → `com.kinlore.app` →
+   **Push Notifications** on.
+2. Keys → a new key with **Apple Push Notifications service (APNs)**. The
+   `.p8` downloads once and Apple does not issue it again; note its Key ID
+   and the Team ID. `*.p8` is in `.gitignore`, and the file goes into the
+   Worker and nowhere else:
+
+   ```bash
+   cd backend
+   npx wrangler secret put APNS_KEY_P8 < AuthKey_XXXXXXXXXX.p8
+   npx wrangler secret put APNS_KEY_ID
+   npx wrangler secret put APNS_TEAM_ID
+   ```
+
+3. The production database gets the `push_token` table: the two statements
+   beside it in `schema.sql` are the migration.
+4. The app gets `aps-environment` in its entitlements, and a signed device
+   build (CLAUDE.md, Commands) has to pass before it is committed — a build
+   asking for an entitlement its App ID does not have fails to sign, which is
+   why it is not in the repository before step 1.
+
 ## Launch arguments
 
 Everything the app can be told from outside, in one place. In Xcode they go
@@ -188,6 +220,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | `-defer silence` | DEBUG | The same recording, but **every** transcription in the run fails the way a recording with nothing said into it fails. The catch-up is meant to count it, move on to the next recording rather than stopping, and stop asking after three — which is only visible across four launches, and only with a failure that never relents. Launch once plainly, then with `-tab memories` so the Tell screen does not record a second one. |
 | `-seed arrival` | DEBUG | The joiner's landing, held still: sets the same one-shot flag a real join sets — so the app opens on Albumi with no `-tab` argument — and forces the gallery's waiting state, which otherwise exists only while the first pull is in flight. Empties the archive the way `-seed empty` does. See docs/UX.md §4.3. |
 | `-seed alone` | DEBUG | A family of one, with no server behind it: the state where the finished-memory screen's offer slot carries the invitation instead of the paid archive. Empties the archive. See docs/UX.md §3.2. |
+| `-seed aimed` | DEBUG | The demo archive with two questions asked by name on its photograph — one of this phone's member, one of Aino — and the demo family beside them for the ask sheet's *"Kenelle?"* to choose from. The Kerro tab offers the first and says nothing of the second; the card shows both. See `TargetedQuestionTests` and ARCHITECTURE §11. |
 | `-invite <code-or-url>` | DEBUG | Feeds the invite-link handler at launch, as though the link had been tapped. A bare code reaches the handler directly; a full `kinlore://join?code=…#…` URL goes through the real parser, fragment and all — which is how the family key riding the fragment is tested rather than bypassed. The only way a test run can reach the wrong-time answers and the parser at once. |
 | `-seed deck` | DEBUG | The archive plus one photograph nobody has spoken about, which is what the Kerro tab's card is drawn from. The plain archive has none on purpose — a card on the idle screen would change what every other test is looking at. |
 | `-seed blind` | DEBUG | The archive with a **file on its photograph**, which is what the blind confirmation is drawn from: the fixture already had an unconfirmed person whose name was heard in a telling about `demo-photo`, and the only thing missing was a face to put in front of somebody. The picture is also the guard — `BlindConfirmation` builds no card without one, because *"kuka tässä on?"* over a grey placeholder asks nothing — which is why the plain archive is untouched by the feature. |
@@ -215,11 +248,13 @@ before typing anything.
 
 ## What is NOT needed
 
-- **Apple: nothing beyond Xcode.** No $99 account, no Sign in with Apple, no
-  APNs certificate — the app builds, runs and is tested on a free account.
+- **Apple: nothing beyond Xcode, except for push.** No Sign in with Apple and
+  no certificate — the app builds, runs and is tested on a free account. The
+  two notifications are the one thing that needs the paid program (above), and
+  nothing else waits on them.
 - **Google / Firebase:** nothing.
 - **Email service:** nothing, because authentication is device based.
-- **OneSignal:** dropped from scope along with push notifications.
+- **OneSignal:** not needed. The Worker speaks to APNs itself (`apns.ts`).
 
 ## Authentication without a login screen
 

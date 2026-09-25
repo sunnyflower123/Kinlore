@@ -186,6 +186,14 @@ struct RootView: View {
         .sheet(isPresented: $isShowingFirstMinute) {
             FirstMinuteSheet()
         }
+        // A tapped notification: asked something → Kerro, where the question
+        // is offered first; an answer → Albumi, where it is new from the
+        // family. Read once and cleared, so the tab is hers again at once.
+        .onChange(of: PushNotifications.shared.route, initial: true) { _, route in
+            guard let route else { return }
+            selection = route == .tell ? .tell : .memories
+            PushNotifications.shared.route = nil
+        }
         .task {
             guard UserDefaults.standard.bool(forKey: Session.firstMinutePendingKey) else { return }
             UserDefaults.standard.removeObject(forKey: Session.firstMinutePendingKey)
@@ -1108,12 +1116,28 @@ struct SubjectDetailScreen: View {
                             // conjugation and direction.
                             if let asker = question.authorName,
                                question.authorID != session.identity.memberID {
-                                Text("\(asker) kysyy")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.tint)
+                                Group {
+                                    if question.targetMemberID == session.identity.memberID {
+                                        Text("\(asker) kysyy sinulta")
+                                    } else {
+                                        Text("\(asker) kysyy")
+                                    }
+                                }
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.tint)
                             }
                             Label(question.text, systemImage: "questionmark.circle")
                                 .elderBody()
+                            // Asked of somebody else by name. Everyone sees it
+                            // here and anyone who knows may answer — only the
+                            // Kerro tab and the notification are theirs alone —
+                            // so the family is told whose question it is.
+                            if let target = question.targetName, !target.isEmpty,
+                               question.targetMemberID != session.identity.memberID {
+                                Text("Kenelle: \(target)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Elder.supporting)
+                            }
                         }
                         .padding(.vertical, 2)
                     }

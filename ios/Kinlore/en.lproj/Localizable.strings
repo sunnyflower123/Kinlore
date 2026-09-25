@@ -91,6 +91,8 @@
 "Kysyn nämä ääneen, ja voit vastata puhumalla." = "I will ask these out loud, and you can answer by speaking.";
 "Avoimia kysymyksiä" = "Open questions";
 "%@ kysyy" = "%@ asks";
+"%@ kysyy sinulta" = "%@ asks you";
+"Kenelle: %@" = "For %@";
 "%@ kertoi" = "%@ told this";
 
 /* Who told it. The author is the phone and the teller is the voice, and one
@@ -116,6 +118,12 @@
 "Lähetä kysymys" = "Send the question";
 "Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen." = "The question appears for the whole family on the Tell screen, and the answer is saved as a memory here.";
 "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän." = "The question appears for the family on the Tell screen, and the answer is saved here.";
+"Kenelle?" = "Who is it for?";
+"Koko perhe" = "The whole family";
+"Kysymys näkyy koko perheelle, mutta Kerro-näytöllä se tarjotaan vain valitsemallesi ihmiselle. Vastaus tallentuu muistoksi tähän kohteeseen." = "The whole family can see the question, but the Tell screen offers it only to the person you chose. The answer is saved as a memory here.";
+"%@ kysyi sinulta jotain." = "%@ asked you something.";
+"Kysymykseesi tuli vastaus." = "Your question has been answered.";
+"Sinulle on uusi kysymys." = "You have a new question.";
 
 /* --- People, and the family tree ----------------------------------------- */
 "Ihmiset" = "People";

@@ -357,6 +357,13 @@ Push notifications are the honest full answer to reading and are explicitly
 and a permission prompt on an elder's phone — three expensive things, one of
 them paid in her attention. The section is the v1 instrument.
 
+Two narrower ones exist since 25 Sep 2026 — a question asked of you by name,
+and an answer to one you asked (ARCHITECTURE §11) — and the cost paid in her
+attention is not among what they pay: authorization is provisional, so no
+prompt is ever shown, and they arrive quietly in Notification Center. A
+notification for a new telling, which is what this section is about, is still
+v1.1.
+
 ## 7. The production address — the fork above every arrival
 
 Everything in §3–§6 is unreachable in a real install until the app ships with

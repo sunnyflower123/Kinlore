@@ -83,6 +83,8 @@
 "Kysyn nämä ääneen, ja voit vastata puhumalla." = "Kysyn nämä ääneen, ja voit vastata puhumalla.";
 "Avoimia kysymyksiä" = "Avoimia kysymyksiä";
 "%@ kysyy" = "%@ kysyy";
+"%@ kysyy sinulta" = "%@ kysyy sinulta";
+"Kenelle: %@" = "Kenelle: %@";
 "%@ kertoi" = "%@ kertoi";
 "Kuka kertoi tämän muiston?" = "Kuka kertoi tämän muiston?";
 "Nimi tulee muiston viereen perheen arkistoon." = "Nimi tulee muiston viereen perheen arkistoon.";
@@ -104,6 +106,12 @@
 "Lähetä kysymys" = "Lähetä kysymys";
 "Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen." = "Kysymys näkyy koko perheelle Kerro-näytöllä, ja vastaus tallentuu muistoksi tähän kohteeseen.";
 "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän." = "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.";
+"Kenelle?" = "Kenelle?";
+"Koko perhe" = "Koko perhe";
+"Kysymys näkyy koko perheelle, mutta Kerro-näytöllä se tarjotaan vain valitsemallesi ihmiselle. Vastaus tallentuu muistoksi tähän kohteeseen." = "Kysymys näkyy koko perheelle, mutta Kerro-näytöllä se tarjotaan vain valitsemallesi ihmiselle. Vastaus tallentuu muistoksi tähän kohteeseen.";
+"%@ kysyi sinulta jotain." = "%@ kysyi sinulta jotain.";
+"Kysymykseesi tuli vastaus." = "Kysymykseesi tuli vastaus.";
+"Sinulle on uusi kysymys." = "Sinulle on uusi kysymys.";
 "Ihmiset" = "Ihmiset";
 "Suku" = "Suku";
 "Ei vielä ihmisiä" = "Ei vielä ihmisiä";

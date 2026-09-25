@@ -173,6 +173,11 @@ final class Session {
             seedDemoFamily()
             UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
             return
+        case "aimed":
+            // The store seeds two questions asked by name (`MemoryStore`);
+            // the family is what the ask sheet's "Kenelle?" chooses from.
+            seedDemoFamily()
+            return
         case "alone":
             // A family of one: the state where the finished-memory screen's
             // offer slot carries the invitation instead of the paid archive.

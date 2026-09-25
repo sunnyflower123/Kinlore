@@ -1762,6 +1762,52 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same sheet asked of somebody by name, since 25 Sep 2026: a menu of
+    /// the family's other members, and a sentence that changes with the
+    /// choice. Audited with the choice made, because that is the longer
+    /// sentence and the only state in which the menu shows a name.
+    func testAskQuestionSheetByName() throws {
+        try sweep("Kysy nimeltä", arguments: ["-seed", "aimed", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Kysy perheeltä"], in: app, "the ask button").tap()
+            let field = require(app.textFields.firstMatch, "the question field")
+            field.tap()
+            field.typeText("Kuka rakensi saunan?")
+            // One button whose label is the picker's own and the choice it
+            // shows, joined: "Kenelle?, Koko perhe" until somebody is chosen.
+            require(
+                app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Kenelle?,")).firstMatch,
+                "the Kenelle? menu"
+            ).tap()
+            require(app.buttons["Ville"], "Ville in the menu").tap()
+            require(
+                app.staticTexts.matching(NSPredicate(
+                    format: "label BEGINSWITH %@", "Kysymys näkyy koko perheelle, mutta"
+                )).firstMatch,
+                "the sentence for a question asked by name"
+            )
+        }
+    }
+
+    /// Kerro with a question asked of this phone's member by name: offered
+    /// first, under "Mummo kysyy sinulta" — the ordinary offer row with a
+    /// longer heading, which is the part that grows at the largest size.
+    func testTellAskedOfYou() throws {
+        try sweep("Kerro, kysytty sinulta", arguments: ["-seed", "aimed", "-tab", "tell"]) { app, _ in
+            reach(app.staticTexts["Mummo kysyy sinulta"], in: app, "the question asked of you")
+        }
+    }
+
+    /// The photograph's card with one question asked of Aino by name and one
+    /// asked of you. "Kenelle: Aino" is a line of its own under the question,
+    /// and the one new thing on the card.
+    func testPhotoDetailAskedByName() throws {
+        try sweep("Photo detail, kysytty nimeltä", arguments: ["-seed", "aimed", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            settle(reach(app.staticTexts["Kenelle: Aino"], in: app, "the line naming whom it was asked of"))
+        }
+    }
+
     /// The question over a colouring: the picture, a heading in the serif, and
     /// three answers. `-seed blind` is the fixture whose photograph has both a
     /// picture and a telling, which is what the colour button waits for, and

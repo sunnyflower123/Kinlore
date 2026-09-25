@@ -2,6 +2,9 @@
 node_modules/
 .wrangler/
 .dev.vars
+# An Apple push key, as Apple issues it (`AuthKey_<id>.p8`). It goes into the
+# Worker as the secret APNS_KEY_P8 and nowhere else.
+*.p8
 
 # Machine-local Claude Code settings, nothing shareable. launch.json points at
 # a dev-server script under this machine's scratchpad, so it is broken anywhere

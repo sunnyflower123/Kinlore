@@ -81,6 +81,16 @@ const PATTERNS = [
 		specimen: () => 'xox' + 'b-' + '123456789012-abcdefghijkl',
 	},
 	{
+		// An armoured private key with its body — the Apple push key
+		// (`AuthKey_<id>.p8`) that `APNS_KEY_P8` holds is one, and none of any
+		// kind belongs in this tree. The body is what makes it a key: the
+		// armour alone is also the text of code that strips it, and of a check
+		// that builds a throwaway key at run time.
+		name: 'a private key',
+		re: /-----BEGIN (?:[A-Z]+ )?PRIVATE KEY-----\s+[A-Za-z0-9+/]{40,}/,
+		specimen: () => '-----BEGIN ' + 'PRIVATE KEY-----\n' + 'MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg',
+	},
+	{
 		// The shape a `.dev.vars` line has, wherever it is pasted. Sixteen
 		// characters of value at least, so `OPENROUTER_API_KEY: string` in a
 		// type and `env.OPENROUTER_API_KEY` in code are not it.
