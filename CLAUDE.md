@@ -515,6 +515,56 @@ cheaper check was run: the same test passed on its own minutes later. **A red
 audit that does not reproduce alone has already answered the question** — the
 arithmetic is for the one that does.
 
+### Worktrees — whoever makes one removes it, in the turn its work lands
+
+On 25 Sep 2026 this repository still carried three worktrees and seven
+branches that no session was using. `.claude/worktrees/colourise` and
+`.claude/worktrees/family-tree-2` were still checked out twelve days after both
+branches had merged. A subagent's `worktree-agent-*` branch held work that had
+long since landed, and a cloud session had left a branch on origin whose one
+commit `main` still lacks. The expensive one was
+`.claude/worktrees/keen-napier-ce00c4`: its branch held nine commits from
+10–12 Sep that never reached `main`, and five of them were still worth having
+when they were found — a stricter localisation scanner, a fix for a test that
+races, and a missing setup step. None of these was wrong when it was made. Each
+outlived its task because removing it was nobody's step, and once nobody can
+account for a list of worktrees, finished work and unfinished work look the
+same.
+
+There are four kinds here, and each has exactly one owner:
+
+- **A session's worktree** (`.claude/worktrees/<name>`, made by the desktop
+  app). The session lands its commits on `main`, pushes, and removes the
+  worktree and its branch before it reports done.
+- **A subagent's worktree.** Every subagent that edits files is started with
+  `isolation: "worktree"`, never in the shared tree. Its worktree disappears by
+  itself only if the agent changed nothing. If it committed, the worktree stays,
+  and the parent lands the work and removes it.
+- **A measurement or experiment** (`git worktree add --detach /tmp/<name> HEAD`,
+  as above). Whoever made it removes it as soon as the number has been read.
+- **A cloud session's branch** (`claude/<name>` on origin). Deleted with
+  `git push origin --delete <branch>` once its commit is on `main`, or once it
+  has been judged obsolete.
+
+Removal, in this order:
+
+    rm <path>/backend/node_modules     # if you symlinked it (it must be a symlink)
+    git cherry origin/main <branch>    # no "+" lines: nothing is left unlanded
+    git worktree remove <path>         # no --force: a refusal means work is still there
+    git branch -d <branch>             # -d refuses an unmerged branch, and that refusal is the check
+
+Both of the stale worktrees above had `backend/node_modules` symlinked into
+*this* tree, which is how a worktree gets the backend's dependencies without a
+second install. `rm` on the link removes the link. With a trailing slash it does
+not: measured on this machine on 25 Sep 2026, `rm -rf <link>/` deleted the
+directory the link pointed to and left the link behind. Here that directory is
+the shared tree's dependencies, so every session would lose them at once.
+
+`--force` belongs only to the throwaway experiment above, whose changes you made
+and mean to throw away. A `+` line from `git cherry` is not proof of lost work,
+because a commit rebased through a conflict gets a new patch-id. It is,
+however, the owner's to explain and nobody else's to delete.
+
 ## Commands
 
 **Most of the checks below are also one command.** `./scripts/verify.sh` runs
