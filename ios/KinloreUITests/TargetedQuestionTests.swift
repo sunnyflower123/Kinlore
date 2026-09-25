@@ -113,6 +113,34 @@ final class TargetedQuestionTests: XCTestCase {
         )
     }
 
+    /// The same sheet at the ordinary size, outside a family: no "Kenelle?",
+    /// and a sentence under the field that the buttons covered at rest, cut
+    /// through a line, while they were stacked (25 Sep 2026). The audit
+    /// cannot see that once the bar is opaque — text under paper is not text
+    /// it judges — so a frame is asked instead.
+    ///
+    /// Not asserted in a family, where it is not true: "Kenelle?" puts the
+    /// sentence's last line under the buttons until the list is scrolled.
+    func testTheAskSheetShowsItsSentenceAtTheOrdinarySize() {
+        let app = launch(["-seed", "archive", "-tab", "memories"])
+        openPhoto(in: app)
+        reach(app.buttons["Kysy perheeltä"], in: app).tap()
+
+        let keyboard = app.keyboards.firstMatch
+        XCTAssertTrue(keyboard.waitForExistence(timeout: 10), "the field did not take the keyboard")
+        let send = app.buttons["Lähetä kysymys"]
+        XCTAssertTrue(send.waitForExistence(timeout: 10), "never arrived: the ask sheet")
+        let sentence = app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH %@", "Kysymys näkyy koko perheelle"
+        )).firstMatch
+        XCTAssertTrue(sentence.waitForExistence(timeout: 10), "the sheet says nothing under the field")
+        // The bar begins `Elder.screenPadding` (24 pt) above its buttons.
+        XCTAssertTrue(
+            settles { sentence.frame.maxY <= send.frame.minY - 24 + 1 },
+            "the sentence is under the buttons: \(sentence.frame) against \(send.frame)"
+        )
+    }
+
     // MARK: - Helpers
 
     /// True once the condition holds, asked again for up to five seconds.
