@@ -97,6 +97,10 @@ struct RelationsSection: View {
             } header: {
                 Text("Ystävät")
                     .foregroundStyle(Elder.supporting)
+                    // Keyed for the audit's default-size simulation since the
+                    // Tiedot section stood above it (26 Sep 2026); the
+                    // measurement is in `AccessibilityPolicy`.
+                    .accessibilityIdentifier("friends.heading")
             }
         }
     }

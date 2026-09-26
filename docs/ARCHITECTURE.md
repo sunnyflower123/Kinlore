@@ -76,7 +76,8 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 103 sweep tests, each auditing one screen at the default text size and again at the largest, out of 296 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 305 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -5394,3 +5395,207 @@ same day, because the edge answers 403 to any request that carries one.
   fetched the photograph.** By design, and unmeasured on a real family.
 - **Places have no face**, and a photograph is its own picture.
 - **The tree at 48 points has not been looked at with a real face in it.**
+
+## 26. The facts on a person's card
+
+A person's card held a name, a face and the tellings about her, and nothing
+that a family knows about somebody without a story to hang it on: when she
+was born and where, when she died, the name she was born with, what she did
+for a living, where she lived. Every one of those came up in tellings and
+went into a transcript, and none of them had a place of its own. Since
+26 Sep 2026 the card has a **Tiedot** section, under the face and the name
+and above *"Kerro tästä muisto"*, and each row of it is one fact, written by
+a hand: *"Syntynyt 1930-luku, Puumala"*, *"Ammatti: Kansakoulunopettaja,
+1960-luku"*, *"Muu nimi: o.s. Virtanen"*. Rule 4 is kept by omission — the
+model proposes no fact, and nothing in `extract.ts` knows the section
+exists. Rule 5 is kept by reuse — the time of a fact is a `DateHint` with
+its precision, written through the same `DateSheet` a photograph's date is
+written through, so *"sometime in the thirties"* is stored as the decade it
+is. And the place of a fact is not a word. It is a reference to one of the
+archive's own place cards, which is what puts a birthplace on
+`PlacesMapScreen` beside the places the family has told about.
+
+### The flow
+
+The section's last row is **"Lisää tieto"**. It opens `FactSheet` on its
+first step, *"Mikä tieto?"*, six rows: *Syntymä*, *Kuolema*, *Muu nimi*,
+*Ammatti*, *Asuinpaikka*, *Lisätieto*. A tap goes to the second step, which
+is the parts that kind asks for and nothing else. A birth asks a time and a
+place, and the footer says *"Riittää, että tiedät ajan tai paikan."*; a
+trade asks a word and, if the teller has it, a time; a home asks a place and
+a time; a name and a note ask a word. The time row reads *"Lisää ajankohta"*
+until it has been answered and the answer's own words after —
+*"1930-luku"*, *"noin 1950"* — and it opens `DateSheet`, which since this
+section takes a `current` hint and hands its answer back through a closure
+rather than writing it onto a subject; *"En tiedä"* on a fact means the fact
+has no time. The place row reads *"Valitse paikka"* and opens
+`FactPlaceSheet`: the archive's places in alphabetical order with a check on
+the chosen one, and above them a field, *"Paikan nimi"*, with **"Lisää
+paikka"** — which makes the card through `MemoryStore.addPlace(named:)`, the
+same `findOrCreateSubject` the extraction uses for a place it heard, marked
+confirmed because a hand typed it, and asks `PlaceLookup` for its
+coordinates the way every place card is asked. **"Tallenna"** stays disabled
+until the kind's `needs` are met.
+
+A row on the card is a button and reopens the same sheet as *"Muuta
+tietoa"*, on the second step, with the parts filled in and **"Poista
+tieto"** under them in `Elder.destructive`. The removal asks first —
+*"Poistetaanko tieto?"*, *"Tieto poistuu kortilta kaikissa perheen
+puhelimissa."* — because it is a removal on every phone, and a wrong tap on
+a card an 80-year-old is reading should cost a second tap and not a fact.
+
+What VoiceOver says is not what the row shows. The row's text runs the
+kind's word into its parts, *"Syntynyt 1930-luku, Puumala"*; its
+accessibility label puts a pause after the word, *"Syntynyt, 1930-luku,
+Puumala"*, because a word and a number run together are read as one thing.
+`FactRow.text` and `FactRow.spoken` are the two, and every test in
+`FactTests` reads the row by the spoken one — so a row that showed the right
+words and spoke them wrong would fail there, which it should.
+
+### The kinds are a table, not a switch
+
+`PersonFactKind.known` is six rows, and a seventh kind is a seventh row: the
+word stored in `PersonFact.kind` and sent over the wire, the label the sheet
+offers, the word the card starts the row with, the parts it asks in the
+order it asks them, and the one part without which the fact says nothing.
+The sheet offers the rows in that order, the card sorts by it, and neither
+switches on a kind anywhere. `PersonFact.kind` is a `String` and not an
+enum for rule 10's other direction (§3): a `String` enum makes every value
+a later build adds a decoding error, and a fact is a row in a list inside a
+column, so one unknown value would have failed the whole list. A kind this
+build has no word for is `PersonFactKind.unknown` — the word *"Tieto:"* on
+the card, and all three parts on the sheet, so the older phone shows the
+fact, speaks it, and can change or remove it; what it cannot do is name the
+kind, and that is the whole cost.
+
+### On the phone
+
+`Subject.facts: [PersonFact]?` and `Subject.factsSetAt: Date?`, both
+optional for rule 10 — `Subject` has no hand-written decoder, so optional
+is the only shape a new field can take. A `PersonFact` is an id, the kind,
+an optional word, an optional `DateHint`, an optional place card's id, the
+moment it was last written, and an optional moment it was removed. Its
+decoder is hand-written and asks for the id alone: a missing kind is the
+empty string, a missing moment is the epoch and so older than anything, a
+date whose precision this build has no case for is no date and the fact
+stays, and a field a later build wrote is passed over. The list itself is
+read row by row through `Lenient` — moved from `MemoryStore.swift`, where
+it was private, to `Models.swift`, so that the check can compile it — and a
+row without an id is left out rather than failing the person.
+
+The section, its rows and its two sheets are one file, `PersonFacts.swift`,
+and `SubjectDetailScreen` says only where the section goes:
+`PersonFactsSection(subject:)` in the person branch, one line, so that the
+card's other sections can be moved without moving this one. Each row
+presents its own sheet, because a sheet on a `List` row is in the
+hierarchy exactly when the row is, and a sheet on the section's header
+would not be once the header had scrolled off.
+
+A removal is a tombstone. `removeFact` calls `PersonFact.remove(at:)`,
+which sets `deletedAt` and empties the words, the time and the place — a
+fact somebody took off should not go on crossing between phones for as
+long as the list lives — and `liveFacts` leaves tombstones out and sorts
+the rest by the table's rank and then by the moment written. Every write
+goes through `setFact` or `removeFact`, which stamp `updatedAt` on the fact
+and `factsSetAt` on the person, mark the subject dirty and save; the local
+file carries both, and a file written before the section existed loads
+with neither.
+
+The list has a ceiling, and it is the phone's own and well under the
+Worker's. `PersonFact.textLimit` is 300 characters, cut by the field as it
+is typed and again by `PersonFact.cut` on the way in; and
+`PersonFact.listByteLimit` is 40 000 bytes of the list as JSON, which
+`setFact` refuses to pass and the sheet asks about first
+(`factsHaveRoom`), so that *"Tallenna"* is disabled under a sentence —
+*"Kortille ei mahdu enempää tietoja."* — rather than doing nothing. Sealed,
+40 000 bytes are about 53 400 on the wire, against the Worker's 65 536 on
+the column; the two numbers have to stand apart, because a list the Worker
+refused would leave the server's older one standing, the join below would
+differ from it on every pull, and the phone would push the same refusal
+for ever. The check measures the largest list the phone will write rather
+than trusting the arithmetic: twenty-odd facts of the longest words in the
+widest letters, or a hundred trades of thirty.
+
+### On the wire
+
+The list crosses as one column, `facts`, and one moment, `facts_set_at`,
+both or neither. The column is the list as JSON — keys sorted, dates as
+seconds — sealed under the family key with `FamilyCrypto.seal`, so the
+Worker holds ciphertext: not a name, not a trade, not the kind, not which
+place card a birth points at. That is lever 3 as the titles have it (§10),
+and it decides the server's rule, because a server that cannot read a list
+cannot merge one. So the server keeps the newer list whole — *newest moment
+wins, NULL is never later than anything, a moment ahead of the clock is
+capped at now, and a value that is not a string with a finite moment sets
+the pair to NULL* — which is the rule the colours, the face and the placed
+point already follow (§24, §25, §18), on two more columns. The list goes
+through the same gate as every other word: `SyncSeal.push` seals the
+payload with `facts` among its columns, a phone with no key has no
+`SyncSeal` and pushes nothing (`keyless-sync-check`), and `SyncSeal.pull`
+opens the reply, a list under another key opening to nothing.
+
+The phone's half is where a list becomes two phones' lists again.
+`applyRemote` lays a pulled row over the local one through `withFacts`,
+after the place and the face, and it has three answers. A row that says
+nothing about facts — an older Worker, a phone that never had the column,
+or a blob sealed under a key this phone does not hold, which
+`PersonFact.decodedList` returns as *nil* and not as an empty list — leaves
+this phone's list alone **and marks nothing to push**; that is *"a device
+that does not know the field must not wipe it"* from the pulling side, and
+the second half of it is what keeps a phone from pushing at a Worker that
+has not been deployed, on every sync, for ever. A list that can be opened
+is joined with this phone's by `PersonFact.joined`: the union by id; a
+removal standing over every live copy of the same id, whatever the two
+clocks said; between two live copies the newer `updatedAt` winning; and on
+the same moment this phone's copy standing, since it may carry a part the
+other build wrote back without. The removal's precedence is a decision and
+not an accident of the clocks: a fact somebody took off is more often
+wrong than a change to it was right, and its return from a phone whose
+clock ran ahead would be the worse mistake (rule 4). What that accepts is
+the limit of the other rule — between two live copies, the difference
+between two phones' clocks decides, per fact.
+
+And if the join differs from what was pulled, the row is marked dirty
+under a moment one millisecond past the server's, or this phone's *now* if
+that is later — past the server's and not merely *now*, because a phone
+whose clock runs behind would otherwise lose that push to the server's
+moment every time and push again on every pull until its clock caught up;
+the column is a REAL, so a millisecond survives the wire. The next
+`sync()` pushes the joined list and the server's "newer list whole"
+becomes the union. Two phones that each add a fact while apart both hold
+both after two rounds, and a fact taken off on one phone stays off however
+many copies the other one sends. Without the join, the newer phone's list
+would have won whole and the other phone's fact would have gone with it —
+silently, and looking exactly like a fact nobody wrote.
+
+### What is checked
+
+| Claim | Check |
+|---|---|
+| A fact of an unknown kind comes back from the file and from the wire as it went; a row without an id is left out and the rest kept; a missing moment is older than anything; an unknown precision is no date; a person written before facts existed loads; the wire carries no word, kind or place id in the clear and a list under another key is *nil*, not empty; a row that says nothing leaves this phone's list alone and marks nothing to push; the union, the newer copy, two phones' facts both surviving whichever list the server chose, the tie; a removal standing over a live copy written after it, from either side, and keeping no words; a phone ten minutes behind pushing once and not again; the words trimmed and cut at the limit; the largest list the phone will write, sealed, under the Worker's cap with room, and a hundred ordinary trades fitting | `facts-check.swift` — 53 checks, in `verify.sh` |
+| The server keeps the newer list whole, the pair or neither: a list under a moment is stored; an older phone's row without the columns, with a NULL pair, with an older moment or with the same moment leaves it; a newer list replaces it, an emptied list is a list, and an older one cannot bring the old list back; a non-string, an object, a moment that is not a number, a list without its moment, a moment without its list, 65 537 characters and facts on a photograph are refused; a moment ahead of the clock is held to now, and the next phone with the right time still writes | `facts-sync-check.mjs` — 18 checks, over a keyless Worker and D1 of its own, in `verify.sh` when a Worker answers |
+| Both fields have a road through sync, and a pull from zero leaves neither at a default it was not at | `sync-fields-check.swift` — the two roads added |
+| A birth with a decade and a place, written through the two sheets, is on the card as *"Syntynyt, 1930-luku, Puumala"*; a place the archive lacks is made by name and the row says it; a fact is taken off from its own sheet and its neighbours stay; and on an English phone the same rows read *"Born, 1930s, Puumala"* and *"Died, February 4, 2001"* — the English table's word, the decade through its key, the day in the phone's own format | `FactTests` — 4 tests |
+| The card with four facts, the kinds, a birth's parts, the place chooser and a fact being changed, each at both text sizes; and the card with a friend, whose *"Ystävät"* heading the section now stands above | `AccessibilitySweepTests` — 5 sweeps, and `testPersonCardWithAFriend` keyed for the audit's default-size simulation |
+| A file written by an older build still loads, with the section empty | `SilentFailureTests`, `-store outdated`, unchanged and still green |
+
+### Not yet
+
+- **Production.** The two `ALTER TABLE` statements and the Worker deploy
+  are a decision taken at the keyboard, not in a commit; this section
+  records the date when it has happened.
+- **The export does not carry the facts.** `ArchiveExport` is unchanged;
+  the tellings a fact came from are in it, the row on the card is not.
+- **The tree draws no years.** Deliberately: a birth on the card is a fact
+  about a person, and the tree stays the drawing of who belongs to whom.
+- **The model proposes no fact**, and will not. A birth year heard in a
+  telling stays in the transcript until a hand writes it here.
+- **A tombstone never leaves the list.** It holds no words since
+  `remove(at:)`, costs about a hundred bytes of the 40 000, and counts
+  against that ceiling like every other row, so a card written and
+  unwritten some hundreds of times fills up; nothing prunes.
+- **A place made by name on the fact sheet is on the map only once
+  `PlaceLookup` has answered**, like every place card; a name the
+  gazetteer does not know is a card without a point.
+- **A fact of a kind this build has no word for reads *"Tieto:"***, which
+  is the older build's word and not the newer one's.

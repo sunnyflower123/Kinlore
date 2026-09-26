@@ -221,6 +221,7 @@ struct SyncFieldsCheck {
             "colourConfirmedAt": .wire,
             "portraitSubjectID": .wire, "portraitFocusX": .wire, "portraitFocusY": .wire,
             "portraitSetAt": .wire,
+            "facts": .wire, "factsSetAt": .wire,
             "confirmed": .wire, "createdAt": .wire, "mergedInto": .wire, "deletedAt": .wire,
         ]
         let subject = Subject(
@@ -232,6 +233,13 @@ struct SyncFieldsCheck {
             colourConfirmedByID: "member", colourConfirmedByName: "a member's name",
             colourConfirmedAt: later,
             portraitSubjectID: "photo-of-them", portraitFocusX: 0.4, portraitFocusY: 0.3, portraitSetAt: later,
+            facts: [
+                PersonFact(
+                    id: "fact", kind: "birth", text: "words", date: DateHint(start: then, end: later, precision: .year),
+                    placeSubjectID: "place", updatedAt: then, deletedAt: later
+                ),
+            ],
+            factsSetAt: later,
             confirmed: false, createdAt: then, mergedInto: "subject-kept", deletedAt: later
         )
         let pulledSubject = audit(

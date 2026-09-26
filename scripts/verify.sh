@@ -128,6 +128,22 @@ sync_fields() {
 		&& "$OUT/sync-fields-check"
 }
 
+# The facts on a person's card, on the phone's side (ARCHITECTURE §26). A
+# list inside one sealed column, and three ways of being wrong that no screen
+# shows: a kind this build has no word for must come out of the decoder and go
+# back in as it came, or the first phone to edit the card writes the family's
+# list back without it; the wire carries ciphertext only, so the server can
+# read no name and no trade; and two phones' lists are joined rather than
+# chosen between, with a removal that stays a removal however many older
+# copies arrive. Costs nothing — no simulator, no Worker.
+person_facts() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/facts-check" scripts/facts-check.swift \
+		ios/Kinlore/Services/FamilyCrypto.swift ios/Kinlore/Data/MemoryStore+Sync.swift \
+		ios/Kinlore/Model/Models.swift \
+		&& "$OUT/facts-check"
+}
+
 # A telling filed under a card somebody merged away, on every phone and not
 # only the merging one. The server keeps the forwarding address and refuses
 # to re-point another member's telling, so each phone moves it itself — and
@@ -304,6 +320,7 @@ run "the family's bytes end up on every phone" full_copy
 run "a photograph keeps its face under new colours" colour_lock
 run "a confirmed colouring survives an older phone" colour_sync
 run "a pull from zero changes nothing here" sync_fields
+run "a fact of a kind this build has no word for survives it" person_facts
 run "a merged card's tellings reach its survivor" merge_chain
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "a phone with no key sends the family nothing" keyless_sync
@@ -545,6 +562,10 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# confirming a rule: a date the family was careful about was erased by any
 	# push from a phone that had not seen it.
 	run "a date survives an older phone" node scripts/subject-rules-check.mjs
+	# The facts on a person's card, the server's half (§26): one sealed list
+	# under a moment, the newest kept whole, an older phone renaming the
+	# person and wiping nothing, and what the Worker refuses.
+	run "a person's facts survive an older phone" node scripts/facts-sync-check.mjs
 	# The pull cursor, which is the delivery guarantee itself: a number that
 	# runs ahead skips other members' rows silently and forever. Three defects
 	# lived in it (23 Aug 2026, §3) and every one looked like a working app.

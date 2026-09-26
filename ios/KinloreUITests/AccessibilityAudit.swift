@@ -1042,6 +1042,49 @@ enum AccessibilityPolicy {
     ///     (`testSettings`, `testSettingsInFamily`), and the real
     ///     AccessibilityXXXL launch, judged page by page down to the wipe row
     ///     with nothing forgiven, was clean on every run.
+    ///   * The card's *"Lisää tieto"* row, the last of the Tiedot section
+    ///     (26 Sep 2026, §26). `testPersonCardWithFacts` reported the row's
+    ///     words partially unsupported at the default size, 78 × 20.33 pt at
+    ///     y 622.83, alone twice at a load of 5 and of 40 with the frame
+    ///     identical to the decimal — and again at y 474.83 when the sweep
+    ///     dragged the row up there, which is the memories heading's shape,
+    ///     red at every height. Keyed on the label, as *"Lisää sukulainen"*
+    ///     is. The real AccessibilityXXXL launch is not forgiven, and was
+    ///     not clean by itself: with a fourth fact on the card the row,
+    ///     reached and left where the swipes put it — 228.33 × 63.33 pt at
+    ///     y 693.33 in company, then y 704 and y 695.33 alone, over a bar at
+    ///     791 — was reported partially unsupported on every run, and drawn
+    ///     whole in the audit's own screenshot. Dragged to y 330 before the
+    ///     audit, as the memories heading is, the same row audits clean
+    ///     (alone, 39.6 s, at a load of 8). The finding moved with the row
+    ///     and not with its code, which is the position signature; so the
+    ///     sweep drags at the largest size and forgives nothing there.
+    ///   * The card's *"Ystävät"* heading, once the Tiedot section stood
+    ///     above it (the same day). `testPersonCardWithAFriend` reported the
+    ///     heading partially unsupported at the default size, 370 × 40.33 pt
+    ///     at y 682.33, alone twice with the frame identical to the decimal,
+    ///     the heading's own code untouched and the same sweep green on the
+    ///     commit before the section: two rows more above it is the whole
+    ///     difference, the *"Lisää sukulainen"* shape. Clean at the real
+    ///     largest size, where the friend's row is reached.
+    ///   * The story-less card's byline at the real largest size, once the
+    ///     Tiedot section stood above the row that mentions her (the same
+    ///     day, later). `testPersonCardWithoutAStory` reaches *"Poista
+    ///     henkilö"* by swipes, and where they stopped the button was below
+    ///     the fold and the mention row's *"Mummo · 26.9.2026"* under the
+    ///     navigation bar — 141.67 × 232.67 pt at y 18.67, then at y 38.33
+    ///     on the next build, the frame identical to the decimal — reported
+    ///     partially unsupported both times, one finding per run, at a load
+    ///     under five; drawn whole in the audit's own screenshot, four lines
+    ///     beside the listen button. The same sweep on the same card code
+    ///     one run earlier had been clean, so the swipes' resting place is
+    ///     the only thing that differed, and it differed by 20 pt between
+    ///     the two red runs. The button dragged to y 700 before the audit —
+    ///     330 pt and then a correction of 21 or 37 — as somebody about to
+    ///     press it would, the row above leaves by the top and the same card
+    ///     audits clean at both sizes (alone twice, 45.1 s and 44.3 s, at a
+    ///     load of 5). The position signature at the top edge; the sweep
+    ///     drags at the largest size and forgives nothing there.
     ///
     /// Clipping is forgiven for the two texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
@@ -1086,6 +1129,9 @@ enum AccessibilityPolicy {
         // Settings' archive footer on a phone kept to itself, both sentences
         // (26 Sep 2026): whose copy it is, and what the export holds.
         "archive.onlyHere", "archive.exportNote",
+        // The card's "Lisää tieto" row, the last of the Tiedot section, and
+        // the "Ystävät" heading that section now stands above (26 Sep 2026).
+        "fact.add", "friends.heading",
     ]
 
     /// The two that also reported `.textClipped` at the default size, and

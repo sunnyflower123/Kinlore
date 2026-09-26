@@ -1630,11 +1630,19 @@ final class AccessibilitySweepTests: XCTestCase {
     /// A person's card while nothing has been told about them, which is when
     /// the card can be deleted: the fixture's Aino.
     func testPersonCardWithoutAStory() throws {
-        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, isLargest in
             // Through the door: a name nobody has checked is not on the list.
             require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
             require(app.staticTexts["Aino"], "the name heard").tap()
-            reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person")
+            let removal = reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person")
+            // At the largest size the swipes stop with the button under the
+            // tab bar and the row that mentions her under the navigation bar,
+            // where its byline was reported partially unsupported once the
+            // card above it grew (26 Sep 2026; the entry on `memory.byline`
+            // in `AccessibilityPolicy`). The button is dragged clear of the
+            // bar, as somebody about to press it would, and the card is
+            // judged there.
+            if isLargest { drag(removal, toMinY: 700, in: app) }
         }
     }
 
@@ -1776,6 +1784,79 @@ final class AccessibilitySweepTests: XCTestCase {
         ) { app, _ in
             reach(app.buttons["Valitse kasvot"], in: app, "the row that chooses a face").tap()
             require(app.buttons["Valitse puhelimen kuvista"], "the way in from the phone's own photographs")
+        }
+    }
+
+    // MARK: The facts on a person's card (§26)
+
+    /// The Tiedot section with four facts on it: a birth with a decade and
+    /// a place, a death on a day, a trade with a decade, a name — each row
+    /// one sentence.
+    func testPersonCardWithFacts() throws {
+        try sweep(
+            "Person card with facts",
+            arguments: ["-seed", "facts", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, isLargest in
+            require(app.buttons["Syntynyt, 1930-luku, Puumala"], "the birth on the card")
+            // The section's last row, below the fold at the largest size: a
+            // List realises only the rows on screen, so it is scrolled to,
+            // not waited for. At the default size the row's words are the
+            // audit's simulation artefact, measured and keyed as `fact.add`
+            // in `AccessibilityPolicy`; nothing else here is forgiven.
+            // At the largest size the row is then dragged to mid-screen, as
+            // the photograph's memories heading is, and judged there.
+            let add = reach(app.buttons["Lisää tieto"], in: app, "the row that adds a fact")
+            if isLargest { drag(add, toMinY: 330, in: app) }
+        }
+    }
+
+    /// The sheet's first step: the kinds of fact, as rows.
+    func testPersonCardFactSheetKinds() throws {
+        try sweep(
+            "Person card, add a fact, the kinds",
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            require(app.buttons["Lisää tieto"], "the row that adds a fact").tap()
+            require(app.buttons["Syntymä"], "the kinds to choose from")
+        }
+    }
+
+    /// The second step for a birth: the time row, the place row, the save
+    /// that waits for one of them, and the way out.
+    func testPersonCardFactSheetBirthParts() throws {
+        try sweep(
+            "Person card, add a fact, a birth's parts",
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            require(app.buttons["Lisää tieto"], "the row that adds a fact").tap()
+            require(app.buttons["Syntymä"], "the kinds to choose from").tap()
+            require(app.buttons["Valitse paikka"], "the place row of a birth")
+        }
+    }
+
+    /// The place chooser: a field for a new name, and the archive's places.
+    func testPersonCardFactPlaceChooser() throws {
+        try sweep(
+            "Person card, add a fact, the place chooser",
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            require(app.buttons["Lisää tieto"], "the row that adds a fact").tap()
+            require(app.buttons["Syntymä"], "the kinds to choose from").tap()
+            require(app.buttons["Valitse paikka"], "the place row of a birth").tap()
+            require(app.buttons["Puumala"], "the archive's places")
+            require(app.buttons["Lisää paikka"], "the button that makes a place by name")
+        }
+    }
+
+    /// A fact opened to change: its parts filled in, and the removal in the
+    /// colour eyes cannot check.
+    func testPersonCardFactBeingChanged() throws {
+        try sweep(
+            "Person card, a fact being changed",
+            arguments: ["-seed", "facts", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            require(app.buttons["Syntynyt, 1930-luku, Puumala"], "the birth on the card").tap()
+            require(app.buttons["Poista tieto"], "the removal on the sheet")
         }
     }
 

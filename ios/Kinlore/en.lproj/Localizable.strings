@@ -876,3 +876,33 @@
 
 // The question screen's speaker while the question is being read aloud (26 Sep 2026).
 "Luen kysymyksen ääneen" = "Reading the question aloud";
+// What the family knows about a person in words (26 Sep 2026): the Tiedot section on the person card, the fact sheet and the place chooser (§26).
+"Tiedot" = "Facts";
+"Lisää tieto" = "Add a fact";
+"Muuta tietoa" = "Change the fact";
+"Mikä tieto?" = "Which fact?";
+"Syntymä" = "Birth";
+"Kuolema" = "Death";
+"Muu nimi" = "Other name";
+"Ammatti" = "Occupation";
+"Asuinpaikka" = "Home";
+"Lisätieto" = "Note";
+"Tieto" = "Fact";
+"Syntynyt" = "Born";
+"Kuollut" = "Died";
+"Muu nimi:" = "Other name:";
+"Ammatti:" = "Occupation:";
+"Asuinpaikka:" = "Lived in:";
+"Lisätieto:" = "Note:";
+"Tieto:" = "Fact:";
+"Riittää, että tiedät ajan tai paikan." = "The time or the place is enough.";
+"Poista tieto" = "Remove the fact";
+"Poistetaanko tieto?" = "Remove this fact?";
+"Tieto poistuu kortilta kaikissa perheen puhelimissa." = "The fact leaves the card on every phone in the family.";
+"Valitse paikka" = "Choose a place";
+"Paikan nimi" = "Name of the place";
+"Lisää paikka" = "Add the place";
+"Uusi paikka" = "New place";
+"Arkiston paikat" = "The archive's places";
+"Ei paikkaa" = "No place";
+"Kortille ei mahdu enempää tietoja." = "The card has no room for more facts.";

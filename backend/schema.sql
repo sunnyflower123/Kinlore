@@ -209,6 +209,18 @@ CREATE TABLE subject (
   portrait_focus_y    REAL,
   portrait_set_at     INTEGER,
 
+  -- The facts on the card (ARCHITECTURE §26): born, died, an earlier name, a
+  -- trade, a home, a note. One list in one column, sealed under the family
+  -- key like a title, so the Worker can read none of it and merge none of
+  -- it: the newest list wins whole, by the moment beside it, and a NULL
+  -- moment is never later than anything. The phone joins two phones' lists
+  -- itself and pushes the union under a newer moment. Null on every other
+  -- kind of subject. For existing databases:
+  --   ALTER TABLE subject ADD COLUMN facts TEXT;
+  --   ALTER TABLE subject ADD COLUMN facts_set_at REAL;
+  facts               TEXT,
+  facts_set_at        REAL,
+
   -- kind = 'place'
   --
   -- Where the place is: what a gazetteer made of its name, or where somebody

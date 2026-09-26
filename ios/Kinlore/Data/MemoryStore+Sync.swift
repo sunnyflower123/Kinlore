@@ -28,6 +28,15 @@ struct SubjectDTO: Codable {
     var portrait_focus_x: Double?
     var portrait_focus_y: Double?
     var portrait_set_at: Double?
+    /// What the family knows about a person in words (§26), as one sealed
+    /// JSON list, and the moment the list last changed, which is the server's
+    /// tiebreak between two phones' lists: the newer moment wins whole there,
+    /// since a sealed list is all the server can see, and the phones join
+    /// the lists fact by fact (`withFacts`). Optional in both directions like
+    /// the rest: a server not yet redeployed sends neither, and most subjects
+    /// have none.
+    var facts: String?
+    var facts_set_at: Double?
     /// A place's coordinates. Optional in both directions: a server that has not
     /// been redeployed does not send them, and most subjects are not places.
     var lat: Double?
@@ -174,6 +183,9 @@ extension SyncPayload {
             row.title = subject.title.map { title in
                 title.isEmpty ? title : (FamilyCrypto.sealDeterministically(title, with: key) ?? title)
             }
+            // The facts are words too — a name, a trade, a note — and the
+            // server compares nothing in them, so the ordinary seal.
+            row.facts = subject.facts.map { FamilyCrypto.seal($0, with: key) ?? $0 }
             return row
         }
         copy.memories = memories.map { memory in
@@ -206,6 +218,7 @@ extension SyncPullReply {
         copy.subjects = subjects.map { subject in
             var row = subject
             row.title = subject.title.map { FamilyCrypto.open($0, with: key) ?? $0 }
+            row.facts = subject.facts.map { FamilyCrypto.open($0, with: key) ?? $0 }
             return row
         }
         copy.memories = memories.map { memory in
@@ -292,6 +305,11 @@ extension Subject {
             portrait_focus_x: portraitFocusX,
             portrait_focus_y: portraitFocusY,
             portrait_set_at: portraitSetAt?.timeIntervalSince1970,
+            // Both or neither: a list without its moment is no opinion to
+            // the server, and a moment without a list would be one about
+            // nothing.
+            facts: factsSetAt == nil ? nil : facts.flatMap(PersonFact.encodedList),
+            facts_set_at: facts == nil ? nil : factsSetAt?.timeIntervalSince1970,
             lat: place?.latitude,
             lon: place?.longitude,
             geo_precision: place?.precision.rawValue,
@@ -328,6 +346,8 @@ extension Subject {
             portraitFocusX: dto.portrait_focus_x,
             portraitFocusY: dto.portrait_focus_y,
             portraitSetAt: dto.portrait_set_at.map { Date(timeIntervalSince1970: $0) },
+            facts: dto.facts.flatMap(PersonFact.decodedList),
+            factsSetAt: dto.facts_set_at.map { Date(timeIntervalSince1970: $0) },
             confirmed: dto.confirmed == 1,
             createdAt: Date(timeIntervalSince1970: dto.created_at),
             mergedInto: dto.merged_into,
@@ -405,6 +425,39 @@ extension Subject {
         return row
     }
 
+    /// A pulled row laid over this phone's copy of it, as far as the facts go.
+    ///
+    /// The server keeps the newer of two lists whole (`sync.ts`), because a
+    /// sealed list is all it can see; the phones can see inside, and join
+    /// them fact by fact (`PersonFact.joined`). A row that says nothing about
+    /// facts takes nothing away and marks nothing to push — a Worker not yet
+    /// redeployed sends none, and a phone that pushed on every pull because
+    /// of it would push for ever; neither does a list this phone's key could
+    /// not open, which reads as no list at all. When the join holds anything
+    /// the server did not send, the row has to go up again, under a moment
+    /// strictly later than the server's: on the same moment the server would
+    /// keep its own list, and the fact the other phone wrote would never land
+    /// there. Later than the server's and not merely this phone's *now*,
+    /// because a phone whose clock runs behind would otherwise lose that
+    /// push every time, and push again on every pull until its clock caught
+    /// up. One millisecond past the server's moment is enough, and the
+    /// column is a REAL.
+    func withFacts(from local: Subject, now: Date = .now) -> (row: Subject, needsPush: Bool) {
+        var row = self
+        guard let pulled = facts else {
+            row.facts = local.facts
+            row.factsSetAt = local.factsSetAt
+            return (row, false)
+        }
+        let joined = PersonFact.joined(local.facts ?? [], with: pulled)
+        row.facts = joined
+        let differs = Set(joined) != Set(pulled)
+        if differs {
+            row.factsSetAt = max(now, (factsSetAt ?? .distantPast).addingTimeInterval(0.001))
+        }
+        return (row, differs)
+    }
+
     private static func hint(from dto: SubjectDTO) -> DateHint? {
         guard let raw = dto.date_precision,
               let precision = DatePrecision(rawValue: raw),
@@ -430,6 +483,48 @@ extension Subject {
             confirmedByName: dto.geo_confirmed_by_name,
             confirmedAt: dto.geo_confirmed_at.map { Date(timeIntervalSince1970: $0) }
         )
+    }
+}
+
+extension PersonFact {
+    /// The list as one JSON string for the wire: dates as seconds since 1970
+    /// and keys in order, so the same list is the same bytes. Nothing
+    /// compares them today; a web client reading the same blob one day
+    /// (`webcrypto-interop-check`) is easier to write against a fixed shape.
+    static func encodedList(_ facts: [PersonFact]) -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .secondsSince1970
+        return (try? encoder.encode(facts)).flatMap { String(data: $0, encoding: .utf8) }
+    }
+
+    /// The most bytes a list may take as JSON before it is sealed, against
+    /// the Worker's 65 536 on the sealed column (`MAX_FACTS_LENGTH` in
+    /// `sync.ts`). Sealing adds 28 bytes and base64 a third, so the largest
+    /// list this phone will write crosses at about 53 400 — which
+    /// `facts-check.swift` measures rather than trusts. The two numbers have
+    /// to stand well apart: a list the Worker refused would leave the
+    /// server's older one standing, the join here would differ from it on
+    /// every pull, and the phone would push the same refusal for ever.
+    static let listByteLimit = 40_000
+
+    /// Whether a list is one this phone may write.
+    static func fits(_ facts: [PersonFact]) -> Bool {
+        guard let json = encodedList(facts) else { return false }
+        return json.utf8.count <= listByteLimit
+    }
+
+    /// The list read back, row by row: a row that is not a fact is left out
+    /// rather than failing the list, and a string that is not a list at all
+    /// — a blob the key could not open — is nil, which `Subject.withFacts`
+    /// treats as no opinion.
+    static func decodedList(_ json: String) -> [PersonFact]? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        guard let data = json.data(using: .utf8),
+              let rows = try? decoder.decode([Lenient<PersonFact>].self, from: data)
+        else { return nil }
+        return rows.compactMap(\.value)
     }
 }
 

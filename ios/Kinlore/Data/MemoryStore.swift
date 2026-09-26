@@ -391,6 +391,19 @@ final class MemoryStore {
         return subject(id: person.id) ?? person
     }
 
+    /// A place by name, for a fact on a person's card (`FactPlaceSheet`,
+    /// §26): the same rule as a person above, so a name the archive already
+    /// has answers with that card rather than a second one, and a proposal
+    /// of that name becomes confirmed. Confirmed is what lets
+    /// `PlaceResolver` look it up, which is how it reaches the map.
+    func addPlace(named name: String) -> Subject? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let place = findOrCreateSubject(named: trimmed, kind: .place, confirmed: true)
+        if !place.confirmed { confirm(subjectID: place.id) }
+        return subject(id: place.id) ?? place
+    }
+
     /// "Not that Matti": a fresh, unconfirmed card with the same name, and the
     /// given memories now mention it instead of the familiar one. The
     /// familiar card keeps everything else it has; nothing is merged or
@@ -509,6 +522,48 @@ final class MemoryStore {
     func setDateHint(subjectID: String, hint: DateHint?) {
         guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
         subjects[index].dateHint = hint
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
+    /// A fact on a person's card, written or changed (§26). The store stamps
+    /// the moment — on the fact, for the join between phones, and on the
+    /// list, for the server's tiebreak — so that no caller can write a fact
+    /// that loses to the copy it replaces; and it cuts the words as
+    /// `PersonFact.cut` cuts them. False, and nothing written, where the
+    /// list would pass `PersonFact.listByteLimit` — the one refusal here,
+    /// which the sheet asks about first (`factsHaveRoom`) so that it is
+    /// never a silent one.
+    @discardableResult
+    func setFact(_ fact: PersonFact, on subjectID: String) -> Bool {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return false }
+        var stamped = fact
+        stamped.text = fact.text.flatMap(PersonFact.cut)
+        stamped.updatedAt = .now
+        let facts = PersonFact.placing(stamped, in: subjects[index].facts ?? [])
+        guard PersonFact.fits(facts) else { return false }
+        subjects[index].facts = facts
+        subjects[index].factsSetAt = stamped.updatedAt
+        dirtySubjects.insert(subjectID)
+        save()
+        return true
+    }
+
+    /// Whether the card has room for this fact, written or changed.
+    func factsHaveRoom(for fact: PersonFact, on subjectID: String) -> Bool {
+        guard let subject = subject(id: subjectID) else { return false }
+        return PersonFact.fits(PersonFact.placing(fact, in: subject.facts ?? []))
+    }
+
+    /// A fact taken off the card: a removal that stays in the list, for the
+    /// reason `PersonFact` gives, with nothing but its id and kind left.
+    func removeFact(id factID: String, from subjectID: String) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }),
+              let held = subjects[index].facts?.firstIndex(where: { $0.id == factID })
+        else { return }
+        let now = Date.now
+        subjects[index].facts?[held].remove(at: now)
+        subjects[index].factsSetAt = now
         dirtySubjects.insert(subjectID)
         save()
     }
@@ -1143,8 +1198,15 @@ final class MemoryStore {
                 // And the face on a person's card, by the same rule again:
                 // a row that says nothing about it takes nothing away. So
                 // does a place's point that somebody put on the map.
-                subjects[index] = merged.row.withPortrait(from: subjects[index])
+                // And the facts, which are the one thing here two phones can
+                // both have written: joined fact by fact, and a join that
+                // holds what the server did not send goes up on the next
+                // round (`withFacts`).
+                let facts = merged.row.withPortrait(from: subjects[index])
                     .withPlace(from: subjects[index])
+                    .withFacts(from: subjects[index])
+                subjects[index] = facts.row
+                if facts.needsPush { dirtySubjects.insert(dto.id) }
             } else {
                 subjects.append(incoming)
             }
@@ -1594,7 +1656,7 @@ final class MemoryStore {
             return
         }
         guard [
-            "archive", "unseen", "deck", "blind", "related", "dated", "faces",
+            "archive", "unseen", "deck", "blind", "related", "dated", "faces", "facts",
             "unplaced", "unarrived",
             "film", "film-untold", "film-week", "film-family", "film-tree",
             "aimed",
@@ -1656,7 +1718,49 @@ final class MemoryStore {
             : []
 
         let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
-        let eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
+        var eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
+        // `-seed facts` is the archive with four things written on Eeva's
+        // card (§26): a birth in the thirties at Puumala, a death on a day —
+        // the one precision whose words are the phone's own date format —
+        // a trade, and the name she was born with. The sweep of the Tiedot
+        // section and the tests that read a row back need a card that
+        // already has some; the plain archive stays without, so that every
+        // other sweep's card is the card it was.
+        if seed == "facts" {
+            let written = Date(timeIntervalSince1970: 1_700_000_000)
+            eeva.facts = [
+                PersonFact(
+                    id: "demo-fact-birth", kind: "birth",
+                    date: DateHint(
+                        start: Date(timeIntervalSince1970: -1_262_304_000),
+                        end: Date(timeIntervalSince1970: -946_771_201),
+                        precision: .decade
+                    ),
+                    placeSubjectID: "demo-puumala", updatedAt: written
+                ),
+                PersonFact(
+                    id: "demo-fact-death", kind: "death",
+                    // 4 Feb 2001, Helsinki midnight, as `DateSheet` writes a day.
+                    date: DateHint(
+                        start: Date(timeIntervalSince1970: 981_237_600),
+                        end: Date(timeIntervalSince1970: 981_237_600),
+                        precision: .day
+                    ),
+                    updatedAt: written
+                ),
+                PersonFact(
+                    id: "demo-fact-trade", kind: "occupation", text: "Kansakoulunopettaja",
+                    date: DateHint(
+                        start: Date(timeIntervalSince1970: -315_619_200),
+                        end: Date(timeIntervalSince1970: -1),
+                        precision: .decade
+                    ),
+                    updatedAt: written
+                ),
+                PersonFact(id: "demo-fact-name", kind: "other_name", text: "o.s. Virtanen", updatedAt: written),
+            ]
+            eeva.factsSetAt = written
+        }
         var kalle = Subject(id: "demo-kalle", kind: .person, title: "Kalle")
         let sanni = Subject(id: "demo-sanni", kind: .person, title: "Sanni")
         // `-seed blind` is the archive with a face on its one photograph.
@@ -2509,15 +2613,5 @@ extension MemoryStore.Snapshot {
         unreadRelations = rows.count - relations.count
         dirtyRelations = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyRelations) ?? []
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion)
-    }
-}
-
-/// One row of a list, or nil where this version could not read it. The list
-/// still fails as a whole when it is not a list at all; only its rows are
-/// forgiven, one at a time.
-private struct Lenient<Row: Decodable>: Decodable {
-    let value: Row?
-    init(from decoder: Decoder) throws {
-        value = try? Row(from: decoder)
     }
 }

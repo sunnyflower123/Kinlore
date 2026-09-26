@@ -153,6 +153,196 @@ struct PlaceHint: Codable, Hashable {
     var isConfirmed: Bool { confirmedAt != nil }
 }
 
+/// One thing the family knows about a person and says in words rather than
+/// in a telling — when and where she was born, what she was called, what she
+/// did, where she lived (docs/ARCHITECTURE.md §26). Written by a person on
+/// the card and never by the extraction (rule 4).
+///
+/// `kind` is a `String` and not an enum, and that is rule 10's other
+/// direction: a `String` enum in a persisted model turns every value a later
+/// version adds into a decoding error, which is how one relationship row
+/// used to fail a whole file. A kind this build has no word for is kept,
+/// shown under the one word that is true of it (*"Tieto"*), and pushed back
+/// as it came. `PersonFactKind` is the table of the kinds this build knows.
+///
+/// A fact is never taken out of the list. Taking one off the card writes
+/// `deletedAt` and empties the rest (`remove(at:)`), and the removal
+/// travels: two phones' lists are joined fact by fact
+/// (`Subject.withFacts`), and a removal stands over every live copy of the
+/// same id whatever the two clocks said — a fact somebody took off is more
+/// often wrong than a change to it was right (rule 4), and its return from
+/// an older phone would be the worse mistake. Between two live copies the
+/// newer `updatedAt` wins, which makes the difference between two phones'
+/// clocks the accepted limit of that rule, per fact.
+struct PersonFact: Identifiable, Codable, Hashable {
+    var id: String = UUID().uuidString
+    var kind: String
+    /// The words, where the kind has any: the other name, the occupation, the
+    /// note. Nil for a birth or a death, which are a time and a place.
+    var text: String?
+    /// When, as exactly as the family knows (rule 5).
+    var date: DateHint?
+    /// Where: a `place` subject of this archive, by id, so that the place is
+    /// one card and one point on the map rather than a spelling in every
+    /// fact that names it. The name is read from that card when the fact is
+    /// shown.
+    var placeSubjectID: String?
+    /// When this fact was written or last changed, for the join above.
+    var updatedAt: Date = .now
+    /// When it was taken off the card, or nil while it stands.
+    var deletedAt: Date?
+
+    var isLive: Bool { deletedAt == nil }
+
+    /// The most characters a fact's words may run to: a note is a sentence
+    /// or two and a trade a word. The number exists for the list's size on
+    /// the wire, which `listByteLimit` bounds in bytes; this is the half of
+    /// it a person can see, on the field.
+    static let textLimit = 300
+
+    /// The words as the list keeps them: trimmed, cut at `textLimit`, and
+    /// nil where nothing is left.
+    static func cut(_ text: String) -> String? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : String(trimmed.prefix(textLimit))
+    }
+
+    /// Taken off the card: a tombstone, which keeps its id and its kind and
+    /// nothing else. The words of a fact somebody took off should not go on
+    /// crossing between phones for as long as the list lives.
+    mutating func remove(at now: Date) {
+        text = nil
+        date = nil
+        placeSubjectID = nil
+        updatedAt = now
+        deletedAt = now
+    }
+
+    /// The list with this fact in it: in place of the copy it changes, or
+    /// at the end.
+    static func placing(_ fact: PersonFact, in facts: [PersonFact]) -> [PersonFact] {
+        var list = facts
+        if let held = list.firstIndex(where: { $0.id == fact.id }) {
+            list[held] = fact
+        } else {
+            list.append(fact)
+        }
+        return list
+    }
+
+    init(
+        id: String = UUID().uuidString, kind: String, text: String? = nil, date: DateHint? = nil,
+        placeSubjectID: String? = nil, updatedAt: Date = .now, deletedAt: Date? = nil
+    ) {
+        self.id = id
+        self.kind = kind
+        self.text = text
+        self.date = date
+        self.placeSubjectID = placeSubjectID
+        self.updatedAt = updatedAt
+        self.deletedAt = deletedAt
+    }
+
+    /// Read with every key but `id` forgiven, so that a row a later build
+    /// wrote, or one missing a field this build expects, is still a fact
+    /// rather than a decoding error for the whole list. The one thing a row
+    /// cannot do without is its id, which is what two phones' lists are
+    /// joined on; a row without one is what `Lenient` leaves out. A date
+    /// this build cannot read — a precision it has no case for — is read as
+    /// no date, and the rest of the fact stays.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        kind = try c.decodeIfPresent(String.self, forKey: .kind) ?? ""
+        text = try c.decodeIfPresent(String.self, forKey: .text)
+        date = (try? c.decodeIfPresent(DateHint.self, forKey: .date)) ?? nil
+        placeSubjectID = try c.decodeIfPresent(String.self, forKey: .placeSubjectID)
+        updatedAt = try c.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date(timeIntervalSince1970: 0)
+        deletedAt = try c.decodeIfPresent(Date.self, forKey: .deletedAt)
+    }
+
+    /// Two phones' lists as one, fact by fact: a fact only one side holds is
+    /// kept; where both hold it a removal stands over any live copy, whatever
+    /// the clocks say, and between two live copies the newer `updatedAt`
+    /// wins. On the same moment this phone's copy stands, because it is the
+    /// one that may carry a field the other build could not read and wrote
+    /// back without. This phone's facts first, in their order, then the
+    /// other side's new ones in theirs.
+    static func joined(_ mine: [PersonFact], with theirs: [PersonFact]) -> [PersonFact] {
+        var held: [String: PersonFact] = [:]
+        var order: [String] = []
+        for fact in mine + theirs {
+            guard let holding = held[fact.id] else {
+                held[fact.id] = fact
+                order.append(fact.id)
+                continue
+            }
+            if holding.isLive, !fact.isLive || fact.updatedAt > holding.updatedAt {
+                held[fact.id] = fact
+            }
+        }
+        return order.compactMap { held[$0] }
+    }
+}
+
+/// The kinds of fact this build has words for, and what each one asks — one
+/// row per kind, and a new kind is one row. The sheet offers `known` in this
+/// order, the card sorts by it, and both read `asks` and `needs` rather than
+/// switching on the kind anywhere. `id` is the word stored in
+/// `PersonFact.kind` and sent over the wire, so it never changes once used.
+struct PersonFactKind: Identifiable, Hashable {
+    enum Part { case text, date, place }
+    /// The one part without which the fact says nothing.
+    enum Need { case text, place, dateOrPlace }
+
+    let id: String
+    /// What the sheet offers: *"Syntymä"*.
+    let label: String
+    /// The word the card puts before the value: *"Syntynyt"*. It ends in a
+    /// colon where the value is a name or a word rather than a time.
+    let word: String
+    /// What the sheet asks, in the order it asks.
+    let asks: [Part]
+    let needs: Need
+
+    static let known: [PersonFactKind] = [
+        PersonFactKind(id: "birth", label: String(localized: "Syntymä"), word: String(localized: "Syntynyt"), asks: [.date, .place], needs: .dateOrPlace),
+        PersonFactKind(id: "death", label: String(localized: "Kuolema"), word: String(localized: "Kuollut"), asks: [.date, .place], needs: .dateOrPlace),
+        PersonFactKind(id: "other_name", label: String(localized: "Muu nimi"), word: String(localized: "Muu nimi:"), asks: [.text], needs: .text),
+        PersonFactKind(id: "occupation", label: String(localized: "Ammatti"), word: String(localized: "Ammatti:"), asks: [.text, .date], needs: .text),
+        PersonFactKind(id: "residence", label: String(localized: "Asuinpaikka"), word: String(localized: "Asuinpaikka:"), asks: [.place, .date], needs: .place),
+        PersonFactKind(id: "note", label: String(localized: "Lisätieto"), word: String(localized: "Lisätieto:"), asks: [.text], needs: .text),
+    ]
+
+    /// The row for a kind this build has no word for: the one word that is
+    /// true of it, and every part the fact carries shown.
+    static let unknown = PersonFactKind(
+        id: "", label: String(localized: "Tieto"), word: String(localized: "Tieto:"),
+        asks: [.text, .date, .place], needs: .text
+    )
+
+    /// The kind a stored word names, or `unknown`.
+    static func of(_ id: String) -> PersonFactKind {
+        known.first { $0.id == id } ?? unknown
+    }
+
+    /// Where a kind sorts on the card: known kinds in the table's order,
+    /// unknown ones after them.
+    static func rank(_ id: String) -> Int {
+        known.firstIndex { $0.id == id } ?? known.count
+    }
+}
+
+/// One row of a list, or nil where this version could not read it. The list
+/// still fails as a whole when it is not a list at all; only its rows are
+/// forgiven, one at a time.
+struct Lenient<Row: Decodable>: Decodable {
+    let value: Row?
+    init(from decoder: Decoder) throws {
+        value = try? Row(from: decoder)
+    }
+}
+
 struct Subject: Identifiable, Codable, Hashable {
     var id: String = UUID().uuidString
     var kind: SubjectKind
@@ -201,6 +391,15 @@ struct Subject: Identifiable, Codable, Hashable {
     var portraitFocusX: Double?
     var portraitFocusY: Double?
     var portraitSetAt: Date?
+    /// What the family knows about a person in words (§26): births, deaths,
+    /// names, occupations, homes. Nil on every other kind and on a person
+    /// nobody has written about; `PersonFact` says why a fact taken off the
+    /// card stays in the list. `factsSetAt` is when the list last changed
+    /// on any phone, which is the server's tiebreak between two phones'
+    /// lists (`sync.ts`) — the phones themselves join fact by fact
+    /// (`withFacts`). Optional, both, for rule 10.
+    var facts: [PersonFact]?
+    var factsSetAt: Date?
     /// A subject proposed by the AI is created unconfirmed. Unconfirmed never
     /// appears in the family tree as fact — a wrong relationship is worse than a
     /// missing one.
@@ -218,6 +417,16 @@ struct Subject: Identifiable, Codable, Hashable {
     /// rejecting is only offered in the seconds after telling, so what came back
     /// could never be got rid of again.
     var deletedAt: Date?
+
+    /// The facts still on the card, in the order the card shows them: by
+    /// kind as `PersonFactKind` lists them, and within a kind by when they
+    /// were written.
+    var liveFacts: [PersonFact] {
+        (facts ?? []).filter(\.isLive).sorted {
+            let (a, b) = (PersonFactKind.rank($0.kind), PersonFactKind.rank($1.kind))
+            return a != b ? a < b : $0.updatedAt < $1.updatedAt
+        }
+    }
 
     /// A photo is imported without a title on purpose, because nobody will name
     /// thirty scanned photographs. The name arrives when someone talks about it.

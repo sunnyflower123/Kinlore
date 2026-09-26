@@ -1109,6 +1109,16 @@ struct SubjectDetailScreen: View {
                 }
             }
 
+            // What the family knows about this person in words (§26): where
+            // and when she was born, what she was called, what she did. Under
+            // the face and the name and above everything told, because it is
+            // what a card says first — and written by a person, never by the
+            // extraction (rule 4). The section, its rows and its sheets are
+            // `PersonFacts.swift`'s; this screen only says where it goes.
+            if subject.kind == .person {
+                PersonFactsSection(subject: current)
+            }
+
             Section {
                 Button {
                     isTelling = true

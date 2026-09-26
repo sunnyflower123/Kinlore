@@ -26,13 +26,34 @@ struct DateSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     /// What is being dated. One from a subject's own card, many straight after
-    /// an import.
+    /// an import — or, since 26 Sep 2026, nothing of the archive's at all: a
+    /// fact on a person's card (`FactSheet`, §26) asks the same question and
+    /// takes the answer back through `onAnswer` instead of having it written
+    /// to a subject.
     let subjects: [Subject]
+    /// What the archive holds already, which the rows below tick.
+    private let current: DateHint?
+    private let onAnswer: ((DateHint) -> Void)?
 
-    init(subject: Subject) { self.subjects = [subject] }
-    init(subjects: [Subject]) { self.subjects = subjects }
+    init(subject: Subject) {
+        subjects = [subject]
+        current = subject.dateHint
+        onAnswer = nil
+    }
 
-    private var single: Subject? { subjects.count == 1 ? subjects.first : nil }
+    init(subjects: [Subject]) {
+        self.subjects = subjects
+        current = subjects.count == 1 ? subjects[0].dateHint : nil
+        onAnswer = nil
+    }
+
+    init(current: DateHint?, onAnswer: @escaping (DateHint) -> Void) {
+        subjects = []
+        self.current = current
+        self.onAnswer = onAnswer
+    }
+
+    private var many: Bool { subjects.count > 1 }
 
     /// How sure the person is.
     ///
@@ -208,7 +229,7 @@ struct DateSheet: View {
                     Text("Kuinka tarkkaan tiedät?")
                         .foregroundStyle(Elder.supporting)
                 } footer: {
-                    Text(single == nil
+                    Text(many
                         ? String(localized: "Vastaus koskee kaikkia \(subjects.count) kuvaa. Voit muuttaa yksittäisen kuvan ajankohtaa myöhemmin sen omalta kortilta.")
                         : String(localized: "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa."))
                         .foregroundStyle(Elder.supporting)
@@ -304,7 +325,7 @@ struct DateSheet: View {
                         .foregroundStyle(Elder.supporting)
                 }
             }
-            .navigationTitle(single == nil ? String(localized: "Milloin nämä olivat?") : String(localized: "Milloin tämä oli?"))
+            .navigationTitle(many ? String(localized: "Milloin nämä olivat?") : String(localized: "Milloin tämä oli?"))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 load()
@@ -410,7 +431,7 @@ struct DateSheet: View {
     /// many, "the stored one" is a question with several answers, and a tick
     /// that means "some of them" says less than no tick at all.
     private var stored: (precision: DatePrecision, year: Int, month: Int, day: Int)? {
-        guard let subject = single, let hint = subject.dateHint, let start = hint.start else { return nil }
+        guard let hint = current, let start = hint.start else { return nil }
         let parts = Self.calendar.dateComponents([.year, .month, .day], from: start)
         return (hint.precision, parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
@@ -475,6 +496,11 @@ struct DateSheet: View {
         // absence would come back on the next sync from somebody's older copy.
         // It is the same reason the sheet asks how sure you are before it asks
         // for a number.
+        if let onAnswer {
+            onAnswer(answer)
+            dismiss()
+            return
+        }
         for subject in subjects {
             store.setDateHint(subjectID: subject.id, hint: answer)
         }

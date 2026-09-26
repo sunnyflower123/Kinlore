@@ -12,6 +12,11 @@ import type { Env } from './worker'
 /// misbehaving client from sending a megabyte at once.
 const MAX_ROWS = 500
 
+/// Upper bound for a person's sealed list of facts. Fifty facts with their
+/// tombstones seal to a few kilobytes; this stops a misbehaving client from
+/// filling a column, and nothing legitimate comes near it.
+const MAX_FACTS_LENGTH = 65_536
+
 export type SubjectRow = {
 	id: string
 	kind: string
@@ -31,6 +36,11 @@ export type SubjectRow = {
 	portrait_focus_x: number | null
 	portrait_focus_y: number | null
 	portrait_set_at: number | null
+	// The facts on a person's card: one list, sealed under the family key,
+	// and the moment it was written. The Worker stores the bytes and reads
+	// nothing in them. Null on every other kind of subject.
+	facts: string | null
+	facts_set_at: number | null
 	// Where a place is: a device's lookup of its name, or where somebody in the
 	// family put it. Null until one of the two has happened. A lookup's point is
 	// null again when the name is corrected; a confirmed one is not.
@@ -189,6 +199,7 @@ export async function pull(env: Env, session: Session, since: number) {
 		        s.confirmed, s.merged_into, s.created_at, s.deleted_at, s.seq,
 		        s.colour_r2_key, s.colour_confirmed_by, s.colour_confirmed_at,
 		        s.portrait_subject_id, s.portrait_focus_x, s.portrait_focus_y, s.portrait_set_at,
+		        s.facts, s.facts_set_at,
 		        s.geo_confirmed_by, s.geo_confirmed_at,
 		        confirmer.display_name AS colour_confirmed_by_name,
 		        placer.display_name AS geo_confirmed_by_name
@@ -414,11 +425,28 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 			faceID !== null && typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1
 				? value
 				: null
+		// The facts on a person's card: one sealed list under a moment, and
+		// only a person has one. The Worker can read nothing in the list, so
+		// the rule is the face's -- the newest wins whole, and a NULL moment
+		// is never later than anything. Both or neither: a list that is not
+		// a string, one past the cap, or a moment that is not a finite number
+		// is no opinion, and the rules below leave the row's own alone. A
+		// moment ahead of the clock is held to now, so it cannot lock out
+		// every later list.
+		const facts =
+			subject.kind === 'person' &&
+			typeof subject.facts === 'string' &&
+			subject.facts.length <= MAX_FACTS_LENGTH &&
+			typeof subject.facts_set_at === 'number' &&
+			Number.isFinite(subject.facts_set_at)
+		const factsList = facts ? (subject.facts as string) : null
+		const factsAt = facts ? Math.min(subject.facts_set_at as number, timestamp) : null
 		statements.push(
 			env.DB.prepare(
 				`INSERT INTO subject (id, family_id, kind, title, r2_key,
 				                      colour_r2_key, colour_confirmed_by, colour_confirmed_at,
 				                      portrait_subject_id, portrait_focus_x, portrait_focus_y, portrait_set_at,
+				                      facts, facts_set_at,
 				                      lat, lon, geo_precision, geo_confirmed_by, geo_confirmed_at,
 				                      date_start, date_end,
 				                      date_precision, confirmed, merged_into, created_by,
@@ -441,7 +469,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                            WHERE p.id = ? AND p.family_id = ? AND p.kind = 'photo'
 				                              AND p.deleted_at IS NULL)
 				              THEN ? ELSE NULL END,
-				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   title = excluded.title,
 				   r2_key = COALESCE(excluded.r2_key, subject.r2_key),
@@ -473,6 +501,17 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                           THEN excluded.portrait_focus_y ELSE subject.portrait_focus_y END,
 				   portrait_set_at = CASE WHEN excluded.portrait_set_at > COALESCE(subject.portrait_set_at, 0)
 				                          THEN excluded.portrait_set_at ELSE subject.portrait_set_at END,
+				   -- The facts on a person's card, by the face's rule once more:
+				   -- one sealed list, the newest wins whole, and a NULL moment
+				   -- is never later than anything. A phone that never had the
+				   -- column sends neither and changes nothing; a phone that
+				   -- pulls a list it disagrees with joins the two and pushes
+				   -- the union under a newer moment, which is how two phones'
+				   -- facts both survive a rule that can only choose (§26).
+				   facts = CASE WHEN excluded.facts_set_at > COALESCE(subject.facts_set_at, 0)
+				                THEN excluded.facts ELSE subject.facts END,
+				   facts_set_at = CASE WHEN excluded.facts_set_at > COALESCE(subject.facts_set_at, 0)
+				                       THEN excluded.facts_set_at ELSE subject.facts_set_at END,
 				   -- The coordinates answer the title, so they follow it. A device
 				   -- that has not looked the name up sends null and must not wipe
 				   -- what another one resolved — but when the title itself changes,
@@ -581,6 +620,8 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				faceID,
 				family,
 				faceAt,
+				factsList,
+				factsAt,
 				point.lat,
 				point.lon,
 				point.precision,
