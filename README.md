@@ -43,10 +43,10 @@ several of them sharing one tree. Read it after the code, not before.
 > follow-up questions back.
 
 <p align="center">
-  <img src="docs/media/demo.gif" alt="The app launching, showing Järjestelen muistoa while it works, and arriving at a saved memory placed at Puumalassa in the 1950s with three proposed subjects waiting to be confirmed." width="320">
+  <img src="docs/media/demo.gif" alt="The app at work — Putting the memory in order, finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s, and the question Who told this memory? with the answers Me, Someone else and I would rather not be named." width="320">
 </p>
 
-<p align="center"><sub>Simulator, stub pipeline — the waiting is real, the model call is canned.<br>Reproduce it with <code>-screen result</code> and <code>scripts/frames-to-gif.swift</code>.</sub></p>
+<p align="center"><sub>Simulator, stub pipeline — the waiting is real, the model call is canned.<br>Reproduce it, and every picture on this page, with <code>scripts/readme-shots.sh</code>.</sub></p>
 
 ```
 audio → ASR (Finnish) → raw_transcript (kept verbatim)
@@ -58,7 +58,7 @@ memory.body           mentioned subjects      follow-up questions
 (cleaned text)        (confirmed = 0)         (prompt_question)
 ```
 
-| <img src="docs/media/01-tell.png" alt="The Tell screen: a large red microphone button under the heading Kerro mitä muistat, with Paina ja ala puhua below it and a link offering to type instead."> | <img src="docs/media/02-result.png" alt="The result screen: Muisto tallennettu, the memory placed at Puumalassa 1950-luku, the spoken text kept as it was said, and three proposed subjects each with a cross and a tick."> |
+| <img src="docs/media/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, freely, a large red microphone button with Press and start talking under it, and a Write instead link."> | <img src="docs/media/02-result.png" alt="The result screen: Memory saved, a Move to another card button, the date 1950s, the card Who told this memory? with the answers Me, Someone else and I would rather not be named, and below it the beginning of the spoken text kept as it was said — in Finnish, because the sample telling is."> |
 |---|---|
 | **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. |
 
@@ -75,10 +75,10 @@ without a tap. That matters because the person it is for should not have to
 operate anything while she is remembering:
 
 <p align="center">
-  <img src="docs/media/demo-interview.gif" alt="The app organising a memory, then asking Kuka muu oli paikalla and listening with a live waveform, then organising again and asking Minä vuonna tämä suunnilleen oli — two full rounds with no tap in between." width="320">
+  <img src="docs/media/demo-interview.gif" alt="The app putting a memory in order, then asking Who else was there? and listening with a running timer, then writing the speech down as text, putting it in order again and asking What sort of person was Aino? — two full rounds with no tap in between." width="320">
 </p>
 
-<p align="center"><sub>Two rounds, hands-free. The 1:14 on the timer is real waiting, not a cut.<br>Reproduce it with <code>-screen interview</code>.</sub></p>
+<p align="center"><sub>Two rounds, hands-free. The timer counts real seconds, not a cut.<br>Reproduce it with <code>scripts/readme-shots.sh</code>, which runs <code>-screen interview</code>.</sub></p>
 
 How the questions are chosen, and why they get more personal only as the
 answers earn it, is the question ladder in
@@ -116,9 +116,9 @@ attaches to any subject. That is why *"write a memory about this photo"* and
 path, and why the family tree is just the edges between person subjects.
 Schema: [`backend/schema.sql`](backend/schema.sql).
 
-| <img src="docs/media/04-person.png" alt="A person card for Sanni: a large blue button reading Kerro tästä muisto, an empty Suku section offering to add a relative, one memory, and a button to ask the family."> | <img src="docs/media/05-family.png" alt="The family screen for the Virtaset family on the free tier: 7 of 10 minutes of telling used this month, 12 of 20 photos, and three members with the dates they joined."> |
+| <img src="docs/media/04-person.png" alt="A person card for Sanni: Choose a face, a large blue button reading Tell a memory about this, an empty Relatives section offering Add a relative, one memory told by Mummo — in Finnish, because the demo archive is — and an Ask the family button."> | <img src="docs/media/05-family.png" alt="The family screen for the Virtaset family on the Free tier: everything sent, the copy on this phone, this month's usage — 7 of 10 minutes of transcription time and 12 of 20 photographs — and the members with the dates they joined."> |
 |---|---|
-| A person card is the same screen as a photo, because a person is the same row. The empty **Suku** section is the point: a gap is an invitation, not an error. | One archive, several members, one shared quota. The quota belongs to the family rather than to whoever paid for it — see **Who pays**. |
+| A person card is the same screen as a photo, because a person is the same row. The empty **Relatives** section is the point: a gap is an invitation, not an error. | One archive, several members, one shared quota. The quota belongs to the family rather than to whoever paid for it — see **Who pays**. |
 
 ## How to check any of this yourself
 
@@ -186,7 +186,7 @@ session, the 15 Aug commit reported 15 failures that were not real — see
 But the number is not the argument. This is one screen at the default text size
 and at the largest one iOS offers, which is the size rule 1 is actually about:
 
-| <img src="docs/media/02-result.png" alt="The result screen at the default text size: heading, placement, the spoken text, and three proposed subjects all visible at once."> | <img src="docs/media/06-result-xxxl.png" alt="The same result screen at the largest accessibility text size: the heading wraps to two lines, the text reflows, nothing is clipped or truncated, and the screen scrolls instead."> |
+| <img src="docs/media/02-result.png" alt="The result screen at the default text size: Memory saved, Move to another card, the date 1950s, the whole Who told this memory? card and the start of the spoken text, all visible at once."> | <img src="docs/media/06-result-xxxl.png" alt="The same result screen at the largest accessibility text size: Memory saved wraps to two lines, Move to another card to two and Who told this memory? to three, nothing is clipped or truncated, and the screen scrolls instead."> |
 |---|---|
 | Default | Accessibility XXXL |
 
