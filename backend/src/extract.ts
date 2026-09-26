@@ -138,7 +138,10 @@ export const extractionSchema = (lang: Lang) => ({
 /// identifies nobody; (4) never invent, an invented relative is worse than a
 /// missing one; (5) preserve uncertainty, a decade stays a decade; (6) exactly
 /// three follow-up questions aimed at the gaps, each labelled with how much it
-/// asks of the answerer.
+/// asks of the answerer — and after a telling about a death, a war, abuse or
+/// grief, aimed at the person, the place and the everyday life around it rather
+/// than at the event, with no level 5 among them. The app asks those questions
+/// with nobody beside the teller (docs/ARCHITECTURE.md §12).
 const SYSTEM_PROMPT_FI = `Autat suomalaista perhettä säilyttämään muistoja. Käyttäjä on usein iäkäs ja puhuu rönsyillen, keskeneräisin lausein ja epävarmoin ajankohdin. Se on normaalia, ei virhe.
 
 TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdottomasti:
@@ -155,6 +158,8 @@ TEHTÄVÄSI on jäsentää puhe rakenteeksi. Noudata näitä sääntöjä ehdott
 
 6. KOLME KYSYMYSTÄ. Kysy siitä mitä puheesta jäi puuttumaan: mainittu henkilö josta ei kerrottu mitään, paikka josta tiedetään vain nimi, tai aistimuisto. Kysy lämpimästi ja lyhyesti, yksi asia kerrallaan. Puhuttele suoraan ("Millainen ihminen Aino oli?"). Älä kysy asiaa johon puhe jo vastasi. Merkitse jokaiseen kysymykseen level-arvo sen mukaan kuinka pitkän vastauksen se vaatii.
 
+Jos muisto kertoo kuolemasta, sodasta, kaltoinkohtelusta tai surusta, kysymykset eivät kaiva itse tapahtumaa: eivät kuolemaa, rintamaa, pommituksia tai väkivaltaa, eivätkä mitään sen päivää ensimmäisestä viimeiseen, lähtö ja paluu mukaan lukien. Älä kysy siitä aistimuistoa äläkä kysy, miltä se tuntui. Kysy sen sijaan ihmisestä, paikasta tai arjesta tapahtuman ympärillä: millainen hän oli, mitä hän teki mielellään, keitä muita siellä oli, miten arki jatkui sen jälkeen. Syy: kysymyksen esittää sovellus eikä ihminen, eikä kukaan ole vieressä, jos muisto satuttaa. Tällaisesta muistosta ei kysytä tason 5 kysymystä. Kysymyksiä on silti kolme.
+
 Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan name-kenttä on perusmuodossa.`
 
 /// The same six rules for a language that does not inflect. Rule 1 is not the
@@ -163,7 +168,9 @@ Kysymysteksteissä saat taivuttaa nimiä luonnollisesti. Vain mentions-listan na
 /// much less and still has to ask. Rules 2, 3 and 5 keep their structure and
 /// lose their Finnish examples entirely: "niinku" is not "like", it is the
 /// filler a Finnish speaker reaches for, and "mummola" has no English word at
-/// all. The examples are the tuning; they had to be chosen again.
+/// all. The examples are the tuning; they had to be chosen again. Rule 6's
+/// paragraph on painful memories is the exception: it says the same thing in
+/// both, because nothing in it depends on the language.
 const SYSTEM_PROMPT_EN = `You are helping a family keep its memories. The person speaking is often elderly and rambles, leaves sentences unfinished and is unsure of dates. That is normal, not an error.
 
 YOUR TASK is to turn speech into structure. Follow these rules absolutely:
@@ -178,7 +185,9 @@ YOUR TASK is to turn speech into structure. Follow these rules absolutely:
 
 5. KEEP THE UNCERTAINTY. "Sometime in the fifties" is precision "decade", start_year 1950, end_year 1959 — do not force a single year. A bare two-digit decade means the 1900s, because the speech is about old photographs.
 
-6. THREE QUESTIONS. Ask about what the speech left out: a person who was named but not described, a place known only by its name, or a memory of a smell or a sound. Ask warmly and briefly, one thing at a time. Address the speaker directly ("What sort of person was Aino?"). Do not ask what the speech has already answered. Give every question a level according to how long an answer it asks for.`
+6. THREE QUESTIONS. Ask about what the speech left out: a person who was named but not described, a place known only by its name, or a memory of a smell or a sound. Ask warmly and briefly, one thing at a time. Address the speaker directly ("What sort of person was Aino?"). Do not ask what the speech has already answered. Give every question a level according to how long an answer it asks for.
+
+If the memory is about a death, a war, abuse or grief, the questions do not dig into the event itself: not the death, the front, the bombing or the violence, and not any day of it from the first to the last, the leaving and the coming home included. Do not ask for a smell or a sound of it, and do not ask how it felt. Ask about the person, the place or the everyday life around it instead: what they were like, what they loved doing, who else was there, how everyday life went on afterwards. The reason: the app is asking, not a person, and nobody is there if the memory hurts. A memory like this gets no level 5 question. It still gets three questions.`
 
 /// Extra instruction for when the user has corrected the names that speech
 /// recognition heard.
@@ -228,6 +237,13 @@ Korjaa nimi myös muiston tekstiin, ja TAIVUTA SE OIKEIN asiayhteyteen. Jos teks
 /// Without this the questions come out at level 3–4 almost every time, because a
 /// question aimed at a gap is naturally a "tell me about" question. That is a
 /// wall for somebody who has not answered anything yet.
+///
+/// After a painful telling (rule 6) the question from level 5 comes from level
+/// 3. Level 5 asks what something meant or how it felt, and after a death or a
+/// war that is the loss itself; level 3 is a few sentences about the person or
+/// the place, which is what the rule asks for. Rule 6 already forbids level 5,
+/// and the line is repeated here because this instruction is the one that asks
+/// for it.
 function levelInstruction(level: number, lang: Lang): string {
 	const below = Math.max(1, level - 1)
 	const above = Math.min(5, level + 1)
@@ -242,7 +258,9 @@ QUESTION DEMAND. The teller is at level ${level} right now. Give three questions
 4 = a story with a beginning and an end ("Tell me about the day you moved to Oulu.")
 5 = a reflection on meaning or feeling ("What would you want your grandchildren to know?")
 
-If the teller is at level 1 or 2, do not ask for a story or a reflection. An easy question an elderly person can answer is worth more than a deep one they leave alone.`
+If the teller is at level 1 or 2, do not ask for a story or a reflection. An easy question an elderly person can answer is worth more than a deep one they leave alone.
+
+If the memory is the painful kind rule 6 describes, the question from level 5 comes from level 3 instead.`
 	}
 	return `
 
@@ -254,7 +272,9 @@ KYSYMYSTEN VAATIVUUS. Kertoja on tällä hetkellä tasolla ${level}. Anna kolme 
 4 = kertomus jolla on alku ja loppu ("Kerro päivästä jolloin muutitte Ouluun.")
 5 = pohdinta merkityksestä tai tunteesta ("Mitä toivoisit lastenlastesi tietävän?")
 
-Jos kertoja on tasolla 1 tai 2, älä pyydä kertomusta tai pohdintaa. Helppo kysymys johon iäkäs ihminen osaa vastata heti on arvokkaampi kuin syvällinen kysymys johon hän ei uskalla tarttua.`
+Jos kertoja on tasolla 1 tai 2, älä pyydä kertomusta tai pohdintaa. Helppo kysymys johon iäkäs ihminen osaa vastata heti on arvokkaampi kuin syvällinen kysymys johon hän ei uskalla tarttua.
+
+Jos muisto on säännön 6 tarkoittama kipeä muisto, tason 5 kysymyksen tilalle tulee kysymys tasolta 3.`
 }
 
 export type Correction = { from: string; to: string }

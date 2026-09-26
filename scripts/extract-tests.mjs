@@ -211,6 +211,79 @@ const CASES = [
     transcript: 'Toivo otti sen kuvan mökin rannassa.',
     expect: { questionCount: 3 },
   },
+
+  // ---------------------------------------------------------------- painful
+  // Added 26 Sep 2026 with the part of rule 6 that keeps the questions off a
+  // death, a war, abuse or grief (ARCHITECTURE §12). These check the two
+  // things about it that a string can decide: the number of questions, and
+  // the level each one is labelled with. Whether a question still DIGS is not
+  // one of them — "Millainen Marjatta oli?" and "Millainen Marjatan viimeinen
+  // päivä oli?" are the same shape to any matcher, and "tuntui" cannot be a
+  // needle in a language where "tunsitko hänet" means "did you know him". So
+  // that half was measured by hand, and a green run here says nothing about it.
+  //
+  // All four send level 4, which is what the app sends and where the level
+  // instruction asks for a level-5 question that the rule then takes away. A
+  // model that obeys by asking one question fewer passes the level check and
+  // fails the count, which is why the count is asked at the same level.
+  {
+    name: 'a painful memory still gets three questions',
+    level: 4,
+    why:
+      'The rule must change what is asked, not how much. At level 4 it swaps the level-5 ' +
+      'question for a level-3 one, and a model could meet it by dropping the question instead. ' +
+      'The server caps a reply at three and never adds one, so the ladder would have one ' +
+      'question fewer to find an easy one among.',
+    transcript:
+      'Meidän Marjatta kuoli kurkkumätään, kun se oli kolmen vanha. Se oli keväällä 1947. Mä ' +
+      'muistan, kun lääkäri tuli hevosella Sonkajärveltä asti, mutta se oli jo myöhäistä. ' +
+      'Marjatta haudattiin kirkkomaahan, ja äiti ei sen jälkeen laulanut enää koskaan. Mä olin ' +
+      'silloin yhdeksän.',
+    expect: { questionCount: 3 },
+  },
+  {
+    name: 'a painful memory gets no level-5 question, even when the level asks for one',
+    level: 4,
+    why:
+      'Level 5 is a reflection on meaning or feeling, and after a telling about the front ' +
+      'that is the war itself. At level 4 the prompt before this rule gave every painful ' +
+      'telling one, 6 of 6. The check reads the label, which is what the ladder reads.',
+    transcript:
+      'Isä lähti talvisotaan syksyllä 39, mä olin silloin kuuden vanha. Se oli Kannaksella, ' +
+      'Summassa, ja tuli kotiin lomalle vaan kerran. Jatkosodassa se sitten haavoittui Syvärillä ' +
+      'ja makasi pitkään sotilassairaalassa Joensuussa. Kun se lopulta tuli kotiin, se ei puhunut ' +
+      'rintamasta ikinä mitään, ja öisin se huusi unissaan. Äiti sanoi meille lapsille, että ' +
+      'antakaa isän olla.',
+    expect: { noQuestionAtLevel: 5 },
+  },
+  {
+    name: 'a painful memory still gets three questions',
+    lang: 'en',
+    level: 4,
+    why:
+      'The English prompt carries its own copy of the rule, so it gets its own case, at the ' +
+      'same level 4 where the swap could lose a question instead of replacing it.',
+    transcript:
+      'I was evacuated in 1939 with my sister Joan, to a farm near Hereford. The woman there, ' +
+      'Mrs Pritchard, was cruel to us. She made us sleep in the outhouse, and she took a strap to ' +
+      'Joan if we spoke at the table. We were there nearly two years before Mum came and fetched ' +
+      'us home to Bermondsey.',
+    expect: { questionCount: 3 },
+  },
+  {
+    name: 'a painful memory gets no level-5 question, even when the level asks for one',
+    lang: 'en',
+    level: 4,
+    why:
+      'The same cap in the English prompt. After a telling about a brother killed in an air ' +
+      'raid, a question about meaning or feeling is a question about the loss.',
+    transcript:
+      'We were bombed out in the Blitz, in the November of 1940, in Coventry. Our house on Much ' +
+      'Park Street took a direct hit while we were down in the Anderson shelter at the bottom of ' +
+      'the garden. My brother Dennis was out on fire-watch that night and he never came home. ' +
+      'They found him two days later. Mum kept his bicycle in the shed for years after.',
+    expect: { noQuestionAtLevel: 5 },
+  },
 ]
 
 // ---------------------------------------------------------------- checking
@@ -263,6 +336,17 @@ function check(result, expect) {
   }
   if (expect.questionCount !== undefined && result.questions.length !== expect.questionCount) {
     problems.push(`expected ${expect.questionCount} questions, got ${result.questions.length}`)
+  }
+  if (expect.noQuestionAtLevel !== undefined) {
+    // An unlabelled question, or no question at all, would pass this by saying
+    // nothing, so both count as failures here rather than as a pass.
+    const labels = result.questions.map((q) => q.level ?? null)
+    if (labels.length === 0 || labels.includes(null)) {
+      problems.push(`every question needs a level for this check, got [${labels.join(', ')}]`)
+    }
+    for (const q of result.questions.filter((q) => q.level === expect.noQuestionAtLevel)) {
+      problems.push(`a question is labelled ${expect.noQuestionAtLevel}: "${q.text}"`)
+    }
   }
   for (const needle of expect.bodyIncludes ?? []) {
     if (!result.body.includes(needle)) {
@@ -332,6 +416,9 @@ for (const testCase of CASES) {
         // Absent means Finnish, which is what every case written before
         // 30 Aug 2026 assumed and what the Worker still defaults to.
         lang: testCase.lang ?? 'fi',
+        // Where the teller is on the ladder. Only the cases that need the
+        // level instruction send one; absent, the prompt carries none.
+        ...(testCase.level ? { level: testCase.level } : {}),
       }),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)

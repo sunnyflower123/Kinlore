@@ -2689,6 +2689,58 @@ held back, though it counts towards the five. Neither is a question synced
 from another phone, which is why the count can go past five. The gate decides
 only what this phone adds.
 
+### What the questions leave alone — 26 Sep 2026
+
+Rule 6 asks for what the speech left out, and after a telling about a death, a
+war, abuse or grief, what it leaves out is usually the event itself. So that is
+what the model asked about: *"Kerro siitä kevätpäivästä, kun lääkäri
+hälytettiin"*, what happened in the shelter the night of the bombing, and a
+closing question about what the loss had meant. A person
+asking could see the answer coming and stop. The app asks with nobody there,
+and in this generation such memories are common. Finns sent abroad as war
+children had more depressive symptoms in their sixties (Pesonen et al. 2007),
+combat memories return as losses mount in late life (Davison et al. 2016), and
+reminiscence that revives bitterness goes with lower wellbeing (Cappeliez et
+al. 2005). Rule 6 now carries a paragraph in both prompts. After such a telling
+the questions ask about the person, the place or the everyday life around the
+event: what they were like, what they loved doing, who else was there, how life
+went on afterwards. They do not ask about any day of the event from the first
+to the last, the leaving and the coming home included. There are still exactly
+three.
+
+**Only level 5 is capped, not the whole ladder.** Levels 1–4 are shapes of
+answer, and *"Millainen ihminen hän oli?"* is level 3 and exactly the question
+the rule wants. Level 5 is by definition a reflection on meaning or feeling,
+which after a death is the loss itself. Rule 6 forbids it. `levelInstruction`,
+the one place that asks for level 5, asks for a level 3 question in its place,
+because before the change the level 3 questions dug into the event 0 times in 6,
+the level 4 questions 5 in 6 and the level 5 questions 6 in 6.
+
+Measured the same day with `google/gemini-3.6-flash` through a local Worker, at
+level 4 (the app always sends a level), on written tellings in both languages.
+Six were painful, a war child among them, and six were everyday. Before the
+change, 11 of the 18 questions on the painful tellings dug into the event, 6 in
+Finnish and 5 in English. Counting only questions about the death, the front,
+the violence or feelings, it was 8 of 18. A first wording listed "the leaving
+and the coming back" and still let through the day an evacuee was fetched home,
+1 of 18. The wording that shipped scored 0 of 18, and 0 of 18 again when the
+same twelve tellings were run a second time. A level 5 question came on 6 of 6
+painful tellings before and on 0 of 6 after, both times. All six everyday
+tellings kept one question at each of levels 3, 4 and 5 before the change and
+in both runs after it, so the cap did not spread to them, and the level 3
+question still went to a gap rule 6 names: a named person in eleven of the
+twelve everyday answers, a place known only by its name once.
+
+`scripts/extract-tests.mjs` grew from 22 cases to 26: the count and the level
+cap in each language, all at level 4, where a model could obey the cap by
+dropping a question instead of replacing it. All 26 passed against the new
+prompt, as the 22 had against the old one. Whether a question digs is not
+among them. No string can tell *"Millainen Marjatta oli?"* from *"Millainen
+Marjatan viimeinen päivä oli?"*, so that half stays a measurement made by hand.
+Not measured: level 5, where two slots ask for level 5; levels 1–3; a telling
+sent with no level; the smell-or-sound gap, which no telling produced either
+before or after; and real elderly speech.
+
 ## 13. The guessing round — built, then cut
 
 **Cut on 16 Aug 2026** (PLAN.md §5, row 8). The code is gone: `GuessRound.swift`,
