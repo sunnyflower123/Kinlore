@@ -43,10 +43,15 @@ final class SharedAppleIDTests: XCTestCase {
     /// way left to tell, and the one a grandparent's phone takes.
     func testAnInvitationForSomebodyElseIsTold() {
         let app = join(as: "Aino", code: "demo-kaarina")
+        let alert = app.alerts[notice]
         XCTAssertTrue(
-            app.alerts[notice].waitForExistence(timeout: 10),
+            alert.waitForExistence(timeout: 10),
             "a phone let in on Kaarina's invitation as Aino was not told so"
         )
+        // Read before the test ends: unread, it is owed to the next launch on
+        // this device, and most seeds open the archive it is shown over.
+        alert.buttons["Selvä"].tap()
+        XCTAssertTrue(alert.waitForNonExistence(timeout: 10), "the notice did not close on Selvä")
     }
 
     /// Nothing typed, over an invitation made for nobody: nothing to compare,
