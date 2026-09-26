@@ -1406,10 +1406,20 @@ private struct TreePersonSheet: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if memories > 0 {
-                        Text("\(memories) muistoa")
-                            .font(.subheadline)
-                            .foregroundStyle(Elder.supporting)
-                            .fixedSize(horizontal: false, vertical: true)
+                        // Two keys, as on the person list: with no plural
+                        // rule the count does not inflect by itself, and one
+                        // memory read "1 muistoa" here — "1 memories" on an
+                        // English phone — until 26 Sep 2026.
+                        Group {
+                            if memories == 1 {
+                                Text("1 muisto")
+                            } else {
+                                Text("\(memories) muistoa")
+                            }
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
                     }
 
                     action("Avaa kortti") { open() }

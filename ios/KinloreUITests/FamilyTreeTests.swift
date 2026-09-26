@@ -126,7 +126,7 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(open.waitForExistence(timeout: 10), "the person's sheet in the tree")
         // The fixture gives Kalle one memory, and the sheet says so before
         // the card is opened — the count the person list shows under him.
-        XCTAssertTrue(app.staticTexts["1 muistoa"].exists, "the sheet does not say how much the archive holds about Kalle")
+        XCTAssertTrue(app.staticTexts["1 muisto"].exists, "the sheet does not say how much the archive holds about Kalle")
         open.tap()
         XCTAssertTrue(app.navigationBars["Kalle"].waitForExistence(timeout: 10), "the card did not open")
     }
