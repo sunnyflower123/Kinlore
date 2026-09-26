@@ -536,6 +536,10 @@
 "%@, %lld muistoa" = "%@, %lld muistoa";
 "%@, 1 muisto" = "%@, 1 muisto";
 
+// Albumi: who told about a photograph, read after its count; the initials on the card say the same (26 Sep 2026).
+"kertojana %@" = "kertojana %@";
+"kertojina %@" = "kertojina %@";
+
 // A name typed by hand: the photograph, the moment, oneself (6 Sep 2026).
 "Anna kuvalle nimi" = "Anna kuvalle nimi";
 "Vaihda kuvan nimi" = "Vaihda kuvan nimi";

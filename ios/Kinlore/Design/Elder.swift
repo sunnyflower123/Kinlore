@@ -140,9 +140,10 @@ enum Elder {
     /// glyph or a shape — judged at 3:1 — and never a sentence.
     ///
     /// Against `paper` it measures **1.10:1**: no edge at all. So a honey
-    /// surface carries `rule` round it and a shadow under it, and the fill is
-    /// warmth rather than the boundary — the same argument as `elderCard`'s
-    /// hairline, one step warmer.
+    /// surface carries `rule` round it, and the fill is warmth rather than
+    /// the boundary — the same argument as `elderCard`'s hairline, one step
+    /// warmer. The button adds a shadow under it because it is pressed; a
+    /// card is read, and carries none.
     static let honey = Color("Honey")
 
     /// Every card's corner, and the secondary button's: 22 points on a

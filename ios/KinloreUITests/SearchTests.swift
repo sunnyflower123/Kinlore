@@ -16,8 +16,12 @@ final class SearchTests: XCTestCase {
     /// pulled down; iOS 26 draws it under the title on arrival, so since
     /// 19 Sep 2026 her half is kept by the album carrying no field at all on
     /// a phone with `elder.largerText` set. These tests run on a reader's.
+    /// Since 26 Sep 2026 the album's field waits behind a magnifier in the
+    /// bar until somebody taps it; the people list's is still under its title.
     private func search(_ text: String, in app: XCUIApplication) {
         let field = app.searchFields.firstMatch
+        let magnifier = app.navigationBars.buttons["Etsi"]
+        if !field.exists, magnifier.waitForExistence(timeout: 5) { magnifier.tap() }
         for _ in 0 ..< 3 where !field.exists { app.swipeDown() }
         XCTAssertTrue(field.waitForExistence(timeout: 10), "never arrived: the search field")
         field.tap()

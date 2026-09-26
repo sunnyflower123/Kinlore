@@ -1080,6 +1080,15 @@ final class AccessibilitySweepTests: XCTestCase {
     /// the reader's phone the server forgot before anything arrived, which is
     /// the case the note was written for and the branch that used to draw no
     /// notes at all.
+    ///
+    /// The empty one is also where the album's layout is held, because it is
+    /// the tallest thing an empty album draws. Until 26 Sep 2026 it was a
+    /// stack of text centred on the screen and not a scroll view, so at the
+    /// largest size it ran off both ends at once: "Ei vielä kuvia" was drawn
+    /// across the title, and the button under it could not be reached at all.
+    /// Every audit passed, because nothing on it was clipped — it was on top
+    /// of something else. So the note's first line has to start under the
+    /// bar, and the heading has to come to rest between the two bars.
     func testMemoriesRefused() throws {
         try sweep(
             "Muistot, palvelin ei tunnista",
@@ -1092,6 +1101,26 @@ final class AccessibilitySweepTests: XCTestCase {
             arguments: ["-seed", "empty", "-tab", "memories", "-sync", "refused"]
         ) { app, _ in
             require(app.buttons["Liity uudella kutsulla"], "the way back on an empty archive")
+            let note = require(
+                app.staticTexts.matching(
+                    NSPredicate(format: "label BEGINSWITH %@", "Perheen palvelin ei enää tunnista")
+                ).firstMatch,
+                "the refused note's words"
+            )
+            XCTAssertGreaterThanOrEqual(
+                note.frame.minY, app.navigationBars["Albumi"].frame.maxY - 1,
+                "the note starts under the title: \(note.frame)"
+            )
+            let heading = require(app.staticTexts["Ei vielä kuvia"], "the empty album's heading")
+            drag(heading, toMinY: app.navigationBars["Albumi"].frame.maxY + 4, in: app)
+            XCTAssertGreaterThanOrEqual(
+                heading.frame.minY, app.navigationBars["Albumi"].frame.maxY - 1,
+                "the empty album's heading is drawn over the title: \(heading.frame)"
+            )
+            XCTAssertLessThanOrEqual(
+                heading.frame.maxY, app.tabBars.firstMatch.frame.minY + 1,
+                "the empty album's heading cannot be brought out from under the tab bar: \(heading.frame)"
+            )
         }
     }
 
@@ -1194,8 +1223,8 @@ final class AccessibilitySweepTests: XCTestCase {
     func testMemoriesSearching() throws {
         try sweep("Muistot, haku", arguments: ["-seed", "archive", "-tab", "memories"]) { app, _ in
             require(app.navigationBars["Albumi"], "the gallery")
+            require(app.navigationBars.buttons["Etsi"], "the album's magnifier").tap()
             let field = app.searchFields.firstMatch
-            for _ in 0 ..< 3 where !field.exists { app.swipeDown() }
             require(field, "the search field").tap()
             field.typeText("traktori")
             require(app.staticTexts["Ei osumia"], "the fruitless search")

@@ -123,8 +123,12 @@ final class SyncVisibilityTests: XCTestCase {
 
         let tile = tile(beginning: "Valokuva", in: app)
         XCTAssertTrue(tile.exists, "never arrived: the photograph's tile")
+        // Since 27 Sep 2026 the value begins with who told it — "kertojana
+        // Mummo, …", which is the album's to say — and the sentence this test
+        // is about is the last part of it.
         XCTAssertEqual(
-            tile.value as? String, "Kuva ei ole vielä tullut perille",
+            (tile.value as? String)?.components(separatedBy: ", ").last,
+            "Kuva ei ole vielä tullut perille",
             "the tile did not say that its picture has not arrived"
         )
         tile.tap()

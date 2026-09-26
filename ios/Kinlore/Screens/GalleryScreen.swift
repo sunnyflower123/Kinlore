@@ -32,35 +32,26 @@ struct GalleryScreen: View {
     @State private var didSeedImport = false
     #endif
 
-    /// Bigger tiles when the text is bigger. The memory-count badge scales with
-    /// Dynamic Type, and at accessibility sizes it was clipped by a 110 pt tile —
-    /// the count simply ran off the edge. Larger photographs are the right answer
-    /// for this user anyway; the grid just holds fewer per row.
+    /// The photographs two to a row, and one across the whole row when it is
+    /// the last of an odd number.
     ///
-    /// From the text floor up, and not only from the accessibility sizes,
-    /// since 19 Sep 2026. A grandparent's phone is given `Elder.textFloor` and
-    /// nothing larger unless she asked iOS for it, so her album was the same
-    /// grid as a grandchild's: three across, 111 points a side, a face in a
-    /// group portrait a few points wide — on the screen whose own comment says
-    /// a photograph is recognised by looking. Two across is 172 points a side,
-    /// 2.4 times the area, at the cost of a longer scroll; the decade headings
-    /// already break that scroll into pages. Measured on `-seed film-week` at
-    /// the floor before and after.
+    /// Two across has been the grandparent's grid since 19 Sep 2026, when her
+    /// phone's `Elder.textFloor` stopped getting a grandchild's three across
+    /// of 111 points a side — a face in a group portrait a few points wide,
+    /// on the screen whose own comment says a photograph is recognised by
+    /// looking. Since 26 Sep 2026 it is everybody's, because every card
+    /// carries a footer of names under its picture and a third of the
+    /// screen has no room for one. On the 375-point phones — the minis and
+    /// the SE, and this project's test phone — two cards are 157.5 points
+    /// each, which the 158-point floor of the old grid was chosen to keep.
     ///
-    /// The minimum is 158 and not 170 because of the 375-point phones — the
-    /// 12 mini, the 13 mini and the SE, the narrowest that run iOS 26, and
-    /// the width of this project's only test phone. `Elder.screenPadding`
-    /// takes 48 and the gap 10, which leaves 317 for two tiles: 158.5 each.
-    /// At 170 the adaptive grid fell to ONE column on that width — a
-    /// 327-point tile and a scroll 3.7 times the two-across one — while the
-    /// 402-point simulator every earlier measurement was taken on showed
-    /// two. Measured 19 Sep 2026 on a 13 mini simulator with the tile edges
-    /// read from the pixels: 24.0–351.0 points at 170, 24.0–182.3 at 158, on
-    /// `-seed dated` and `-seed archive` and at XXXL alike. On a 17 Pro
-    /// simulator the tile is 24.0–196.0 with either number: 158 is a floor,
-    /// not a size.
-    private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: typeSize >= Elder.textFloor ? 158 : 110), spacing: 10)]
+    /// One to a row at the accessibility sizes, where the footer's words
+    /// would not fit half a screen.
+    private func photoRows(_ photos: [Subject]) -> [[Subject]] {
+        let perRow = typeSize.isAccessibilitySize ? 1 : 2
+        return stride(from: 0, to: photos.count, by: perRow).map {
+            Array(photos[$0 ..< min($0 + perRow, photos.count)])
+        }
     }
 
     private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
@@ -197,8 +188,16 @@ struct GalleryScreen: View {
             // points that put the blind card's fourth name under the tab bar.
             // So the promise is kept here instead, by the same signal the
             // people tab and the blind card follow: whose phone this is.
+            //
+            // And on a reader's phone the field is a magnifier in the bar
+            // since 26 Sep 2026, opened when it is wanted, rather than the
+            // same grey box between the title and the album on every visit.
             if largerText {
                 archive
+            } else if #available(iOS 26.0, *) {
+                archive
+                    .searchable(text: $query, prompt: Text("Etsi"))
+                    .searchToolbarBehavior(.minimize)
             } else {
                 archive.searchable(text: $query, prompt: Text("Etsi"))
             }
@@ -225,16 +224,23 @@ struct GalleryScreen: View {
                 // is exactly where a reader's phone the server has
                 // forgotten stands: nothing arrived, nothing will, and the
                 // invitation to photograph an album is the wrong sentence.
-                VStack(spacing: 0) {
-                    RefusedNote()
-                        .padding([.horizontal, .top], Elder.screenPadding)
-                    if isAwaitingFamilyContent {
-                        arrivalState
-                    } else if isMissingFamilyContent {
-                        notArrivedState
-                    } else {
-                        emptyState
+                //
+                // Scrolling, since 26 Sep 2026. It was a bare stack centred
+                // in the screen, so at the largest text size it ran off both
+                // ends: "Ei vielä kuvia" was drawn across the title and the
+                // button under it could not be reached. The minimum height
+                // lays it out exactly as before wherever it fits, as on the
+                // Kerro tab. Not `ViewThatFits` choosing between the two: the
+                // audit refused that at the ordinary size, "Dynamic Type font
+                // sizes are partially unsupported" on every word of the
+                // invitation (27 Sep 2026), the finding the family tree met
+                // with it first.
+                GeometryReader { proxy in
+                    ScrollView {
+                        emptyArchive
+                            .frame(maxWidth: .infinity, minHeight: proxy.size.height)
                     }
+                    .scrollBounceBehavior(.basedOnSize)
                 }
             } else {
                 content
@@ -439,6 +445,22 @@ struct GalleryScreen: View {
         .elderSurface()
     }
 
+    /// An album with nothing in it, in whichever of its three states it is,
+    /// under the note that the server has stopped knowing this phone.
+    private var emptyArchive: some View {
+        VStack(spacing: 0) {
+            RefusedNote()
+                .padding([.horizontal, .top], Elder.screenPadding)
+            if isAwaitingFamilyContent {
+                arrivalState
+            } else if isMissingFamilyContent {
+                notArrivedState
+            } else {
+                emptyState
+            }
+        }
+    }
+
     /// The first pull after joining is running and nothing has arrived yet.
     ///
     /// Only while it actually runs: a pull that failed leaves the ordinary
@@ -640,19 +662,7 @@ struct GalleryScreen: View {
                     }
 
                     if !newFromFamily.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            SectionHeading("Uutta perheeltä")
-                            ForEach(newFromFamily) { memory in
-                                // A telling whose subject is gone — rejected,
-                                // or taken back — has nowhere to lead.
-                                if let subject = store.subject(id: memory.subjectID) {
-                                    NavigationLink(value: subject) {
-                                        NewTellingRow(memory: memory, subject: subject)
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        }
+                        newFromFamilyCard
                     }
 
                     // Whether what she told has actually reached the family. The
@@ -700,10 +710,16 @@ struct GalleryScreen: View {
 
                 if !photos.isEmpty {
                     VStack(alignment: .leading, spacing: 12) {
-                        SectionHeading("Kuvat")
+                        // Named only inside a search, where photographs are
+                        // one kind of answer among three. Otherwise the album
+                        // is its photographs, and the decades are the
+                        // headings that say something.
+                        if isSearching {
+                            SectionHeading("Kuvat")
+                        }
                         // A decade's heading belongs to the row under it, so
-                        // the gap above it is three times the gap below it.
-                        // With one spacing for both, every heading after the
+                        // the gap above it is twice the gap below it. With
+                        // one spacing for both, every heading after the
                         // first sat exactly halfway between the previous
                         // decade's last row and its own first one, and read
                         // as a caption of the one as easily as the title of
@@ -711,16 +727,24 @@ struct GalleryScreen: View {
                         // film-week`, where the decades are one row each.
                         VStack(alignment: .leading, spacing: 24) {
                             ForEach(photoGroups) { group in
-                                VStack(alignment: .leading, spacing: 8) {
+                                VStack(alignment: .leading, spacing: 12) {
                                     if let heading = group.heading {
                                         groupHeading(heading)
                                     }
-                                    LazyVGrid(columns: columns, spacing: 10) {
-                                        ForEach(group.photos) { photo in
-                                            NavigationLink(value: photo) {
-                                                PhotoTile(subject: photo)
+                                    LazyVStack(spacing: 12) {
+                                        ForEach(photoRows(group.photos), id: \.[0].id) { row in
+                                            HStack(alignment: .top, spacing: 12) {
+                                                ForEach(row) { photo in
+                                                    NavigationLink(value: photo) {
+                                                        PhotoTile(subject: photo, isWide: row.count == 1)
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
                                             }
-                                            .buttonStyle(.plain)
+                                            // Both cards of a row as tall as
+                                            // the taller, so that their
+                                            // footers end together.
+                                            .fixedSize(horizontal: false, vertical: true)
                                         }
                                     }
                                 }
@@ -753,8 +777,56 @@ struct GalleryScreen: View {
         }
     }
 
+    /// What the family told while this phone was away, as one card rather
+    /// than a heading over a stack of them: it is one piece of news, and
+    /// honey is the surface this app gives what somebody said
+    /// (`Elder.honey`). The rows inside are ruled apart, not boxed.
+    ///
+    /// No shadow under it: a honey button carries one because it is pressed,
+    /// and this is read.
+    private var newFromFamilyCard: some View {
+        // A telling whose subject is gone — rejected, or taken back — has
+        // nowhere to lead, so it is not a row, and not the first row either.
+        let first = newFromFamily.first { store.subject(id: $0.subjectID) != nil }?.id
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("Uutta perheeltä")
+                .font(Elder.display(.headline))
+                .accessibilityAddTraits(.isHeader)
+            ForEach(newFromFamily) { memory in
+                if let subject = store.subject(id: memory.subjectID) {
+                    VStack(spacing: 0) {
+                        if memory.id != first {
+                            Rectangle()
+                                .fill(Elder.rule)
+                                .frame(height: 1)
+                        }
+                        NavigationLink(value: subject) {
+                            NewTellingRow(memory: memory, subject: subject)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(EdgeInsets(top: 14, leading: 14, bottom: 4, trailing: 14))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Elder.honey,
+            in: RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+        )
+        // Honey against the paper is 1.10:1, no edge at all; the hairline
+        // is the corner, as on every other card.
+        .overlay(
+            RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+                .strokeBorder(Elder.rule, lineWidth: 1)
+        )
+    }
+
     /// A decade, or the basket for what nobody has dated. A header for
     /// VoiceOver too, so the decades can be walked by heading.
+    ///
+    /// In ink and the display face since 26 Sep 2026: the decades are the
+    /// album's chapters, and in the grey of a caption they read as one.
     private func groupHeading(_ heading: PhotoGroup.Heading) -> some View {
         Group {
             switch heading {
@@ -766,8 +838,7 @@ struct GalleryScreen: View {
             case .undated: Text("Ilman ajankohtaa")
             }
         }
-        .font(.headline)
-        .foregroundStyle(Elder.supporting)
+        .font(Elder.display(.title2))
         .accessibilityAddTraits(.isHeader)
     }
 
@@ -1165,76 +1236,41 @@ private struct SectionHeading: View {
     }
 }
 
+/// A photograph in the album, as a card: the picture, and under it what the
+/// family has made of it.
+///
+/// Until 26 Sep 2026 a tile was the picture alone with a count on it — "2"
+/// in a capsule — and a count says that something was told without saying
+/// who, which is the reason anybody opens a photograph their family has
+/// talked about. The footer says it now: the photograph's own name when
+/// somebody gave it one, and the initials of whoever told about it, or the
+/// invitation to be the first. The count is still read out, in the label,
+/// where it always was.
 private struct PhotoTile: View {
     @Environment(MemoryStore.self) private var store
-    @Environment(Session.self) private var session
     let subject: Subject
-
-    @State private var thumbnail: UIImage?
+    /// Alone on its row: the last of an odd number, or any card at the
+    /// accessibility sizes. A wider frame then, because a square the width
+    /// of the screen is a whole screen of one photograph.
+    let isWide: Bool
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Rectangle()
-                .fill(.quaternary)
-                .aspectRatio(1, contentMode: .fill)
-                .overlay {
-                    if let thumbnail {
-                        Image(uiImage: thumbnail)
-                            .resizable()
-                            .scaledToFill()
-                    } else if MediaLoader.hasNotArrived(subject) {
-                        // Nothing is on its way to this tile, and grey alone
-                        // reads as something still loading. The words are the
-                        // tile's accessibility value and the card's sentence.
-                        Image(systemName: "hourglass")
-                            .font(.title2)
-                            .foregroundStyle(Elder.supporting)
-                            .accessibilityHidden(true)
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-
-            // The memory count says what has already been talked about and what
-            // has not. An empty photo is not an error but an invitation — which
-            // is why the badge is always visible.
-            let count = store.memories(for: subject.id).count
-            Label(
-                count == 0 ? "Kerro" : "\(count)",
-                systemImage: count == 0 ? "mic.fill" : "text.bubble.fill"
-            )
-            .font(.caption.weight(.semibold))
-            .labelStyle(.titleAndIcon)
-            // Bounded growth: the badge sits on top of a photograph, so past a
-            // point it stops being a label and starts being the tile. The count
-            // is also in the tile's accessibility label and on the detail screen,
-            // so nothing is only available here.
-            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            // Opaque, not a material. The capsule sits on a photograph, and a
-            // frosted one takes its colour from whatever is under it: the
-            // first sweep to put untold photographs with real pictures on
-            // this grid (6 Sep 2026, the decades) read "Kerro" as failing
-            // contrast on all three. The system background under the primary
-            // text is the one pair whose contrast does not depend on the
-            // picture, in either appearance.
-            .background(Elder.card, in: Capsule())
-            .padding(8)
+        let count = store.memories(for: subject.id).count
+        let tellers = store.tellers(of: subject.id)
+        let shape = RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear
+                .aspectRatio(isWide ? 640.0 / 429.0 : 1 / 0.9, contentMode: .fit)
+                .overlay { PhotoThumbnail(subject: subject) }
+            footer(count: count, tellers: tellers)
         }
-        // Keyed, because a photograph another member added can arrive as a
-        // card before it has a key to fetch by; run once, the tile stayed grey
-        // after the key came.
-        .task(id: [subject.r2Key, subject.imageFilename]) {
-            guard thumbnail == nil else { return }
-            // A photo added by another family member is at first only a key: it
-            // is fetched when the screen actually needs it.
-            guard let filename = await MediaLoader.imageFilename(
-                for: subject, store: store, session: session
-            ) else { return }
-            thumbnail = await Task.detached(priority: .userInitiated) {
-                MediaStore.loadThumbnail(named: filename)
-            }.value
-        }
+        // As tall as the other card on its row (the row's `fixedSize`).
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .clipShape(shape)
+        .elderCard()
+        // The picture is cut to its frame and not only drawn inside it, and
+        // a tap belongs to the card it lands on.
+        .contentShape(shape)
         .accessibilityElement(children: .combine)
         // The photograph's own name first, when it has one. From 15 Aug to
         // 12 Sep 2026 a telling that named a place or a time gave its
@@ -1242,14 +1278,53 @@ private struct PhotoTile: View {
         // tile reads that out. It never used to: thirty tiles were thirty
         // "Valokuva" to VoiceOver (founder's-eye review, finding #12). An
         // untitled one still is.
-        .accessibilityLabel(tileLabel)
-        .accessibilityValue(
-            MediaLoader.hasNotArrived(subject) ? Text("Kuva ei ole vielä tullut perille") : Text(verbatim: "")
-        )
+        .accessibilityLabel(tileLabel(count: count))
+        .accessibilityValue(tileValue(tellers: tellers))
     }
 
-    private var tileLabel: LocalizedStringKey {
-        let count = store.memories(for: subject.id).count
+    private func footer(count: Int, tellers: [String]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Its own name only. An untitled photograph is "Valokuva" in the
+            // label, and a card that says "Photograph" under a photograph has
+            // said nothing.
+            if !subject.title.isEmpty {
+                Text(subject.title)
+                    .font(.subheadline.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            // What has been talked about and what has not. An untold
+            // photograph is not an error but an invitation, which is why
+            // one of the two is always there.
+            if count == 0 {
+                tellChip
+            } else {
+                TellerDiscs(names: tellers)
+            }
+        }
+        .padding(EdgeInsets(top: 10, leading: 12, bottom: 12, trailing: 12))
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The invitation where a count of nothing used to stand: the Kerro tab's
+    /// own word and symbol, in the red of whatever starts a telling
+    /// (`Elder.wax`, 5.67:1 on the card). A label and not a button — the whole
+    /// card is one, and it leads to the card where telling starts.
+    ///
+    /// It grows with the text now. The count it replaces sat on the picture
+    /// and was held at the second accessibility size, because past that it
+    /// covered the photograph; under the picture there is nothing to cover.
+    private var tellChip: some View {
+        Label("Kerro", systemImage: "mic.fill")
+            .labelStyle(.titleAndIcon)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Elder.wax)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .frame(minHeight: 36)
+            .overlay(Capsule().strokeBorder(Elder.wax, lineWidth: 1.5))
+    }
+
+    private func tileLabel(count: Int) -> LocalizedStringKey {
         // Three keys rather than a plural rule: there is no stringsdict in
         // this project, so the count does not inflect by itself, and every
         // tile with one memory was read out as "1 muistoa" — "Photograph,
@@ -1260,17 +1335,158 @@ private struct PhotoTile: View {
         default: return "\(subject.displayTitle), \(count) muistoa"
         }
     }
+
+    /// The discs' letters said in full, after the count — "Mökin ranta,
+    /// 2 muistoa, kertojina Aino ja Eero" — with the list joined in the
+    /// phone's own language. Then, for a picture that is not on this phone,
+    /// the sentence the card itself says.
+    private func tileValue(tellers: [String]) -> Text {
+        var parts: [String] = []
+        if !tellers.isEmpty {
+            let names = tellers.formatted(.list(type: .and))
+            parts.append(tellers.count == 1
+                ? String(localized: "kertojana \(names)")
+                : String(localized: "kertojina \(names)"))
+        }
+        if MediaLoader.hasNotArrived(subject) {
+            parts.append(String(localized: "Kuva ei ole vielä tullut perille"))
+        }
+        return Text(verbatim: parts.joined(separator: ", "))
+    }
+}
+
+/// A photograph's picture, cut to whatever frame it is given — a card's in the
+/// album, a row's in "Uutta perheeltä" — and read from the phone off the main
+/// thread.
+private struct PhotoThumbnail: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(Session.self) private var session
+    let subject: Subject
+
+    @State private var thumbnail: UIImage?
+
+    var body: some View {
+        Rectangle()
+            // The paper showing through where the picture will be.
+            .fill(Elder.paper)
+            .overlay {
+                if let thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                } else if MediaLoader.hasNotArrived(subject) {
+                    // Nothing is on its way to this frame, and an empty one
+                    // reads as something still loading. The words are the
+                    // card's accessibility value and the photograph's own
+                    // screen's sentence.
+                    Image(systemName: "hourglass")
+                        .font(.title2)
+                        .foregroundStyle(Elder.supporting)
+                        .accessibilityHidden(true)
+                }
+            }
+            .clipped()
+            // Keyed, because a photograph another member added can arrive as
+            // a card before it has a key to fetch by; run once, the frame
+            // stayed empty after the key came.
+            .task(id: [subject.r2Key, subject.imageFilename]) {
+                guard thumbnail == nil else { return }
+                // A photo added by another family member is at first only a
+                // key: it is fetched when the screen actually needs it.
+                guard let filename = await MediaLoader.imageFilename(
+                    for: subject, store: store, session: session
+                ) else { return }
+                thumbnail = await Task.detached(priority: .userInitiated) {
+                    MediaStore.loadThumbnail(named: filename)
+                }.value
+            }
+    }
+}
+
+/// Who told about something, as the initials the people tab draws them with
+/// (`SubjectAvatar`): ink discs with a cream letter, overlapping, the first
+/// teller first. Three at most and a count of the rest, because seven letters
+/// in a row are a word nobody can read.
+///
+/// Hidden from VoiceOver, which is read the names in full.
+private struct TellerDiscs: View {
+    let names: [String]
+    /// What the discs lie on. Each is ringed in it, so that where two overlap
+    /// the edge between them is the ground and not a smudge of ink.
+    let ground: Color
+
+    /// Grows with the text, because the letter inside it does.
+    @ScaledMetric private var size: CGFloat
+
+    init(names: [String], ground: Color = Elder.card, size: CGFloat = 24) {
+        self.names = names
+        self.ground = ground
+        _size = ScaledMetric(wrappedValue: size, relativeTo: .caption)
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if names.isEmpty {
+                // Told, by somebody who asked not to be named: the shape of a
+                // telling with no letter in it, because a letter would be a
+                // guess.
+                disc {
+                    Image(systemName: "text.bubble.fill")
+                        .font(.caption2)
+                }
+            } else {
+                HStack(spacing: -size / 4) {
+                    ForEach(names.prefix(3), id: \.self) { name in
+                        disc {
+                            Text(verbatim: name.first.map { String($0).uppercased() } ?? "")
+                                .font(Elder.display(.caption))
+                        }
+                    }
+                }
+                if names.count > 3 {
+                    Text(verbatim: "+\(names.count - 3)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Elder.supporting)
+                }
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Ink at 75 % with cream on it, the pair `SubjectAvatar` measured: the
+    /// disc clears 3:1 against the card and the paper both.
+    private func disc<Mark: View>(@ViewBuilder _ mark: () -> Mark) -> some View {
+        Circle()
+            .fill(Elder.supporting)
+            .overlay {
+                mark()
+                    .foregroundStyle(Elder.cream)
+                    .minimumScaleFactor(0.6)
+                    .padding(2)
+            }
+            .frame(width: size, height: size)
+            .background(Circle().fill(ground).padding(-2))
+    }
 }
 
 /// A telling by another member that this phone has not seen yet. It leads to
 /// the subject's card, where the memory itself is — the same place every other
 /// row on this screen leads, so reading it teaches nothing new.
+///
+/// A line of the honey card since 26 Sep 2026, and no longer a card of its
+/// own: three white cards in a column read as three more things in the album,
+/// and these are one thing, news. The row keeps no surface of its own, so its
+/// shape is what takes the tap.
 private struct NewTellingRow: View {
     let memory: Memory
     let subject: Subject
 
     @Environment(MemoryStore.self) private var store
     @Environment(\.dynamicTypeSize) private var typeSize
+
+    /// The picture's side, the same as the initial's disc beside it on a
+    /// person's row, so that a column of mixed rows keeps one edge.
+    @ScaledMetric(relativeTo: .body) private var thumbnailSize: CGFloat = 52
 
     /// Side by side normally, stacked at accessibility sizes.
     ///
@@ -1286,7 +1502,7 @@ private struct NewTellingRow: View {
             if typeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        avatar
+                        thumbnail
                         Spacer()
                         chevron
                     }
@@ -1294,7 +1510,7 @@ private struct NewTellingRow: View {
                 }
             } else {
                 HStack(spacing: 14) {
-                    avatar
+                    thumbnail
                     words
                     Spacer()
                     chevron
@@ -1302,19 +1518,49 @@ private struct NewTellingRow: View {
             }
         }
         .padding(.vertical, 10)
-        .padding(.horizontal, 14)
-        .elderCard()
+        .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
 
+    /// What the telling is about, as a picture: the photograph itself since
+    /// 26 Sep 2026, where the row used to say "a photograph" with a symbol.
     @ViewBuilder
-    private var avatar: some View {
-        // A person gets their initial; a place and an event keep their
-        // symbol, because a pin and a calendar say what kind of thing the
-        // row is where a letter in a circle would not.
-        if subject.kind == .person {
-            SubjectAvatar(subject: subject)
-        } else {
+    private var thumbnail: some View {
+        switch subject.kind {
+        case .photo:
+            let corner = RoundedRectangle(cornerRadius: thumbnailSize * 15 / 52, style: .continuous)
+            PhotoThumbnail(subject: subject)
+                .frame(width: thumbnailSize, height: thumbnailSize)
+                .clipShape(corner)
+                .overlay(corner.strokeBorder(Elder.rule, lineWidth: 1))
+                // The same frame as the disc's, badge room and all, so a
+                // photograph's row and a person's start their words at one
+                // edge.
+                .frame(width: thumbnailSize + 6, height: thumbnailSize + 6, alignment: .topLeading)
+                .accessibilityHidden(true)
+        case .person:
+            // A person gets their initial, or their face.
+            SubjectAvatar(subject: subject, size: 52)
+        default:
+            plate
+        }
+    }
+
+    /// A place and an event keep their symbol, because a pin and a calendar
+    /// say what kind of thing the row is where a letter in a circle would not.
+    private var plate: some View {
+        let corner = RoundedRectangle(cornerRadius: thumbnailSize * 15 / 52, style: .continuous)
+        return ZStack(alignment: .bottomTrailing) {
+            corner
+                .fill(Elder.card)
+                .overlay(corner.strokeBorder(Elder.rule, lineWidth: 1))
+                .overlay {
+                    Image(systemName: subject.kind.symbolName)
+                        .font(.title2)
+                        .foregroundStyle(Elder.supporting)
+                }
+                .frame(width: thumbnailSize, height: thumbnailSize)
+
             // The badge belongs on the symbol too. It lives inside
             // `SubjectAvatar`, and the split above is a decision about
             // AVATARS — an initial tells two people apart where a pin
@@ -1322,29 +1568,25 @@ private struct NewTellingRow: View {
             // unconfirmed place carried no mark at all while an
             // unconfirmed person carried one here and three on the people
             // list. Nobody decided that; it fell out of the avatar.
-            ZStack(alignment: .bottomTrailing) {
-                Image(systemName: subject.kind.symbolName)
-                    .font(.title2)
-                    .foregroundStyle(Elder.supporting)
-                    .frame(width: 34)
-
-                if !subject.confirmed {
-                    Image(systemName: "questionmark.circle.fill")
-                        .font(.footnote)
-                        .foregroundStyle(Elder.proposal)
-                        // Its own plate, so the badge does not sit half on
-                        // the symbol and half on the paper and read as
-                        // neither.
-                        .background(Circle().fill(Elder.paper).padding(-1))
-                }
+            if !subject.confirmed {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.system(size: thumbnailSize * 0.36))
+                    .foregroundStyle(Elder.proposal)
+                    // Its own plate, so the badge does not sit half on
+                    // the symbol and half on the paper and read as
+                    // neither.
+                    .background(Circle().fill(Elder.paper).padding(-1))
+                    .offset(x: 3, y: 3)
             }
         }
+        .frame(width: thumbnailSize + 6, height: thumbnailSize + 6, alignment: .topLeading)
+        .accessibilityHidden(true)
     }
 
     private var words: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(subject.displayTitle)
-                .font(.body.weight(.medium))
+                .font(.body.weight(.semibold))
                 .foregroundStyle(.primary)
             // "Kertoi" — the act this whole app is named after, in the
             // past tense; the teller's name is the reason to tap (§11's
@@ -1357,9 +1599,17 @@ private struct NewTellingRow: View {
             // named, and then the row says when instead of who — the same
             // words an untitled moment is listed under.
             if let teller = store.byline(for: memory) {
-                Text("\(teller) kertoi")
-                    .font(.subheadline)
-                    .foregroundStyle(Elder.supporting)
+                HStack(spacing: 6) {
+                    // Their initial, as the album's cards draw it. Not at
+                    // the accessibility sizes, where the row is stacked and
+                    // the name is the line's whole width.
+                    if !typeSize.isAccessibilitySize {
+                        TellerDiscs(names: [teller], ground: Elder.honey, size: 20)
+                    }
+                    Text("\(teller) kertoi")
+                        .font(.subheadline)
+                        .foregroundStyle(Elder.supporting)
+                }
             } else {
                 Text("Kerrottu \(memory.createdAt.formatted(date: .abbreviated, time: .omitted))")
                     .font(.subheadline)
