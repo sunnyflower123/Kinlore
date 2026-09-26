@@ -616,6 +616,53 @@ html[data-bigtext] .stage-inner { overflow-y: auto; }
   .wire { display: none; }
   .phone { height: 76vh; }
 }
+/* Two clips at the act's end, both silent. The stage clips as designed, so the
+   page scrolled on and simply never showed them. In a 1280×600 window (a
+   1280×720 laptop, less the browser), the annotation's last sentence ran 30 px
+   under the edge. The phone's own screen ran 113 px past its frame, and those
+   113 px were "I would still ask" and all three questions: the half of the
+   result this act exists to show. Nothing below removes a word. The spacing
+   tightens, the caption takes one line, and the phone takes the height the
+   caption gives back. Under 1100 px the tree is a bar at the bottom and keeps
+   its share. */
+@media (min-width: 1000px) and (max-height: 719px) {
+  .act--tell .stage-inner { padding-top: calc(var(--k-chrome-h) + 0.25rem); }
+  .tell { row-gap: 0.5rem; }
+  .mechanism { max-width: 48rem; }
+  .phone { height: min(40rem, 76vh); }
+  .wire { padding: 0.7rem 0.9rem; }
+  .wire__h { margin-bottom: 0.35rem; }
+  .wire__raw { line-height: 1.4; min-height: 5.6em; margin-bottom: 0.6rem; }
+  .wire__code { line-height: 1.4; }
+  .wire__note { margin-top: 0.45rem; line-height: 1.4; }
+  .scr { gap: 0.3rem; padding: 0.55rem 0.7rem; }
+  .rec-body { line-height: 1.3; }
+  .listen__note { line-height: 1.2; }
+  .props__row { padding: 0.25rem 0.45rem; margin-bottom: 0.2rem; }
+  .props__h, .asks__h { margin-bottom: 0.2rem; }
+  .asks li { padding: 0.18rem 0; }
+}
+@media (min-width: 1100px) and (max-height: 719px) {
+  .act--tell .stage-inner { padding-bottom: 0.5rem; }
+  .phone { height: min(40rem, 84vh); }
+}
+/* The same questions were cut on a phone. From 720 px up the annotation
+   returns, while the screen above it stayed at 57vh and stopped at 32rem. So
+   every phone or tablet tall enough to show both lost the end of the result:
+   +47 px at 400×800 and +75 px at 820×1100. The text on the screen is sized
+   in vh, so the screen has to keep pace with it: 65vh less 2.25rem, up to a
+   ceiling of 38rem that a tablet reaches. */
+@media (max-width: 999px) and (min-height: 720px) {
+  .act--tell .stage-inner { gap: 0.4rem; }
+  .phone { height: min(38rem, calc(65vh - 2.25rem)); }
+  .wire { padding: 0.55rem 0.85rem; }
+  .wire__h { margin-bottom: 0.3rem; }
+  .wire__short { gap: 0.15rem; margin-bottom: 0; line-height: 1.35; }
+  .scr { gap: 0.3rem; }
+  .props__row { padding: 0.25rem 0.45rem; margin-bottom: 0.2rem; }
+  .props__h, .asks__h { margin-bottom: 0.2rem; }
+  .asks li { padding: 0.15rem 0; }
+}
 
 /* 4 · the confirm gate ----------------------------------------------------- */
 /* One column, not two. Two short columns left a void under both of them that
