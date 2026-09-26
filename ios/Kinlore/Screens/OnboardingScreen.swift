@@ -345,6 +345,8 @@ struct OnboardingScreen: View {
                         .elderTapTarget()
                 }
                 .controlSize(.large)
+                // Ink, not the accent: wax is the button above (`Elder.wax`).
+                .foregroundStyle(Color.primary)
             }
 
             // Over a local archive the fork is a sheet, and a sheet needs a way
@@ -352,6 +354,7 @@ struct OnboardingScreen: View {
             if fromLocalArchive || rejoining {
                 Button("Peruuta") { dismiss() }
                     .controlSize(.large)
+                    .foregroundStyle(Color.primary)
                     .elderTapTarget()
             }
 

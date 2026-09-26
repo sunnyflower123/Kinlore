@@ -241,6 +241,9 @@ struct CameraScreen: View {
     private var done: some View {
         Button("Valmis") { dismiss() }
             .font(.body.weight(.medium))
+            // Ink, not the accent: wax is the shutter, or the prominent
+            // button when there is no camera (`Elder.wax`).
+            .foregroundStyle(Color.primary)
             .frame(maxWidth: .infinity)
             .elderTapTarget()
     }

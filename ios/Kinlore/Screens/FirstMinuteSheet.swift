@@ -16,7 +16,8 @@ import SwiftUI
 /// asked for that second answer on first sight of the sheet, when it offered
 /// the invitation and a "Valmis" that did not say it meant "no invitation".
 ///
-/// One blue button (§22), and a way out of the first step that creates nobody.
+/// One prominent button (§22), and a way out of the first step that creates
+/// nobody.
 /// Scrolls, because at the largest text size a title, a sentence, a field and
 /// two buttons do not fit on a screen — the lesson `InviteShareButton`'s sheet
 /// records.
@@ -63,7 +64,7 @@ struct FirstMinuteSheet: View {
                 .textInputAutocapitalization(.words)
                 .font(.body)
                 .padding(12)
-                .elderCard(radius: 16)
+                .elderCard()
 
             Button {
                 person = store.addPerson(named: trimmed)
@@ -79,6 +80,8 @@ struct FirstMinuteSheet: View {
             .disabled(trimmed.isEmpty)
 
             Button("Sulje") { dismiss() }
+                // Ink, not the accent: wax is *Jatka* above (`Elder.wax`).
+                .foregroundStyle(Color.primary)
                 .frame(maxWidth: .infinity)
                 .elderTapTarget()
         }
@@ -117,7 +120,7 @@ struct FirstMinuteSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.elderSecondary)
             .elderTapTarget()
 
             Text("Jos hänellä ei ole älypuhelinta, hän voi kertoa tällä. Kutsun voi lähettää myöhemmin Asetuksista.")

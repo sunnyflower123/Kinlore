@@ -144,6 +144,8 @@ struct PlaceSearchSheet: View {
                         Text("Peruuta")
                             .frame(maxWidth: .infinity)
                     }
+                    // Ink, for `NameSheet`'s reason: *Hae* keeps the accent.
+                    .foregroundStyle(Color.primary)
                     .elderTapTarget()
                 }
             }

@@ -14,10 +14,10 @@ import SwiftUI
 /// or was rejected, the initial is drawn as before — silently, because the
 /// server keeps the choice and the phone may catch up.
 ///
-/// The initial in the serif is what the film puts in the same place, and it
-/// does the one thing the SF Symbol it replaces could not: it tells two people
-/// apart at a glance on a list of five, where every row used to carry the same
-/// grey outline of a head.
+/// The initial in the display face is what the film puts in the same place,
+/// and it does the one thing the SF Symbol it replaces could not: it tells two
+/// people apart at a glance on a list of five, where every row used to carry
+/// the same grey outline of a head.
 ///
 /// **The badge on an unconfirmed subject is not decoration.** A proposal has to
 /// be distinguishable by SHAPE and not by colour alone — rule 1, and the symbol

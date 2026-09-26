@@ -977,7 +977,7 @@ private struct WritingView: View {
             }
             .frame(maxHeight: .infinity)
             .padding(10)
-            .elderCard(radius: 16)
+            .elderCard()
         }
     }
 }
@@ -1031,8 +1031,8 @@ private struct RecordingView: View {
             // it.
             if let question = model.question {
                 Text(question.text)
-                    // The same serif it wore on the screen before this one:
-                    // it is the same question, still being answered.
+                    // The same display face it wore on the screen before this
+                    // one: it is the same question, still being answered.
                     .font(Elder.display(.title3))
                     .foregroundStyle(Elder.supporting)
                     .multilineTextAlignment(.center)
@@ -1085,6 +1085,8 @@ private struct RecordingView: View {
             if model.isInterviewing {
                 Button("Riittää tältä erää") { Task { await model.finishAfterThisAnswer() } }
                     .controlSize(.large)
+                    // Ink: wax is the disc above it (`Elder.wax`).
+                    .foregroundStyle(Color.primary)
                     .elderTapTarget()
             }
 
@@ -1282,6 +1284,7 @@ private struct AskingView: View {
 
             Button("Riittää tältä erää") { model.endInterview() }
                 .controlSize(.large)
+                .foregroundStyle(Color.primary)
                 .elderTapTarget()
 
             Spacer(minLength: 0)
@@ -1669,12 +1672,13 @@ private struct ResultView: View {
                 VStack(spacing: 12) {
                     // Prominent only when nothing above it already is.
                     //
-                    // With follow-up questions on the screen the blue button is
-                    // "Jatketaan jutellen" — carrying on about the memory she
-                    // has just told is worth more than starting a second one,
-                    // and it is the loop this app was built around (§10). With
-                    // no questions there is nothing above to defer to, and
-                    // telling another is the whole of what is left to do.
+                    // With follow-up questions on the screen the prominent
+                    // button is "Jatketaan jutellen" — carrying on about
+                    // the memory she has just told is worth more than
+                    // starting a second one, and it is the loop this app
+                    // was built around (§10). With no questions there is
+                    // nothing above to defer to, and telling another is the
+                    // whole of what is left to do.
                     //
                     // Chosen rather than accumulated: see docs/ARCHITECTURE.md
                     // §22.
@@ -1702,6 +1706,9 @@ private struct ResultView: View {
                     if let onClose {
                         Button("Valmis") { onClose() }
                             .controlSize(.large)
+                            // Ink: in the accent it was the red of the
+                            // removal below it (`Elder.wax`).
+                            .foregroundStyle(Color.primary)
                             .frame(maxWidth: .infinity)
                             .elderTapTarget()
                     }
@@ -1781,7 +1788,7 @@ private struct ResultView: View {
                 // talked about the cottage, and the card is wrong the same way.
                 if model.savedMemoryID != nil {
                     Button("Siirrä toiselle kortille") { isMoving = true }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.elderSecondary)
                         .elderTapTarget()
                 }
 
@@ -1810,7 +1817,7 @@ private struct ResultView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.elderSecondary)
                     .elderTapTarget()
                 }
             }
@@ -1900,12 +1907,12 @@ private struct ResultView: View {
                     }
                     if subject.kind == .place {
                         Button("Eri paikka") { model.splitMention(subject) }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.elderSecondary)
                             .elderTapTarget()
                             .accessibilityLabel("Eri paikka kuin \(subject.title)")
                     } else {
                         Button("Eri henkilö") { model.splitMention(subject) }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.elderSecondary)
                             .elderTapTarget()
                             .accessibilityLabel("Eri henkilö kuin \(subject.title)")
                     }
@@ -1913,7 +1920,7 @@ private struct ResultView: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .elderCard(radius: 16)
+                .elderCard()
             }
         }
     }
@@ -1956,11 +1963,12 @@ private struct ResultView: View {
                             .frame(maxWidth: .infinity)
                     }
                 }
-                // Bordered, not prominent. It confirms something already typed
+                // Secondary, not prominent. It confirms something already typed
                 // into the row above it, which is not what this screen is for —
                 // and it used to be one of four blue buttons down one scroll.
-                // See docs/ARCHITECTURE.md §22.
-                .buttonStyle(.bordered)
+                // See docs/ARCHITECTURE.md §22. The control size is for the
+                // spinner while the correction runs; the style has its own.
+                .buttonStyle(.elderSecondary)
                 .controlSize(.large)
                 .disabled(model.isCorrecting)
                 .elderTapTarget()
@@ -2029,8 +2037,8 @@ private struct UpsellCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Ilmainen arkisto", systemImage: "sparkles")
-                // The serif, like every other card title that names what the
-                // card is about.
+                // The display face, like every other card title that names
+                // what the card is about.
                 .font(Elder.display(.title3))
 
             // The meter by its own name. "Kertomista jäljellä" said on this
@@ -2074,7 +2082,7 @@ private struct UpsellCard: View {
         // screen the loudest thing on a warm page. What marks it as an offer
         // is the prominent button inside it — ARCHITECTURE §22 gives a screen
         // exactly one — and not a second colour saying the same thing.
-        .elderCard(radius: 18)
+        .elderCard()
         .paywallSheet(isPresented: $isShowingPaywall)
     }
 }
@@ -2091,8 +2099,8 @@ private struct InviteCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Perheen arkisto", systemImage: "person.2")
-                // The serif, like every other card title that names what the
-                // card is about.
+                // The display face, like every other card title that names
+                // what the card is about.
                 .font(Elder.display(.title3))
 
             Text("Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa.")
@@ -2111,7 +2119,7 @@ private struct InviteCard: View {
         // screen the loudest thing on a warm page. What marks it as an offer
         // is the prominent button inside it — ARCHITECTURE §22 gives a screen
         // exactly one — and not a second colour saying the same thing.
-        .elderCard(radius: 18)
+        .elderCard()
     }
 }
 
@@ -2135,7 +2143,7 @@ private struct MemoryCard: View {
         .padding(20)
         // A block and not a card: this is what the telling became, and the one
         // card on the screen worth a thickness.
-        .elderBlock(radius: 20)
+        .elderBlock()
     }
 }
 
@@ -2241,7 +2249,7 @@ private struct ProposalRow: View {
         // The rows a person acts on. The slab makes them read as separate
         // things to press rather than as bands of one list — the film's
         // "blocks", which is what the user asked for by that name.
-        .elderBlock(radius: 16)
+        .elderBlock()
     }
 }
 
@@ -2390,6 +2398,7 @@ private struct AudioSavedView: View {
                             .elderTapTarget()
                     }
                     .controlSize(.large)
+                    .foregroundStyle(Color.primary)
                 }
 
                 // *Valmis* closes the sheet this screen is on; *Selvä*, on the
@@ -2414,6 +2423,8 @@ private struct AudioSavedView: View {
                     .elderTapTarget()
                 }
                 .controlSize(.large)
+                // Ink, for the result screen's *Valmis*: the removal is below.
+                .foregroundStyle(Color.primary)
 
                 // The same way out as on the result screen. A telling somebody
                 // did not mean to keep is not any more meant once the quota

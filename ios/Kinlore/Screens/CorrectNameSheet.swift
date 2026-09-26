@@ -91,7 +91,9 @@ struct CorrectNameSheet: View {
                         .elderTapTarget()
                         .disabled(isUnchanged)
 
+                    // Ink, for `NameSheet`'s reason.
                     Button("Peruuta") { dismiss() }
+                        .foregroundStyle(Color.primary)
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
                 }

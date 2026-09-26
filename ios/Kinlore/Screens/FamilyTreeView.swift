@@ -381,18 +381,18 @@ struct FamilyTreeView: View {
                 }
             }
         }
-        // Paper with a hairline, and not the system's bordered style, which
-        // is glass on iOS 26. Glass refracts whatever is under it into a
-        // gradient, and the audit's contrast check reads a text element's
-        // pixels into a set of colours one by one — sampled 25 Sep 2026 in
-        // testmanagerd: `-[AXAuditContrastDetectionManager
+        // Honey with a hairline (`elderSecondary`), and not the system's
+        // bordered style, which is glass on iOS 26. Glass refracts whatever
+        // is under it into a gradient, and the audit's contrast check reads
+        // a text element's pixels into a set of colours one by one — sampled
+        // 25 Sep 2026 in testmanagerd: `-[AXAuditContrastDetectionManager
         // _topColorsForImageData:optimized:]` walking `-[UIDeviceRGBColor
         // isEqual:]` chains. Two labels of glass at the largest text size
         // were more colours than its fifteen seconds hold, the check gave
         // up with "Audit failed to complete in time" on every run, and every
         // audit that gave up left its thread running: twenty of them had
         // testmanagerd at 800 % of a core by the end of the evening, twice.
-        .buttonStyle(PaperCapsule())
+        .buttonStyle(.elderSecondary)
     }
 
     // MARK: - From the archive to the engines
@@ -748,21 +748,6 @@ private struct TreeDrawing: View {
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, -2)
-    }
-}
-
-/// The tree's two buttons: accent on paper in a capsule with a hairline, and
-/// flat. Not `.bordered`, which is glass on iOS 26 — `controls(yours:)` says
-/// what glass under a text element costs the audit.
-private struct PaperCapsule: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .foregroundStyle(Color.accentColor)
-            .background(Elder.paper, in: Capsule())
-            .overlay(Capsule().stroke(Elder.rule, lineWidth: 1))
-            .opacity(configuration.isPressed ? 0.6 : 1)
     }
 }
 
@@ -1331,6 +1316,9 @@ private struct TreeMenuSheet: View {
                     .padding(.top, 16)
                 }
                 .padding(Elder.screenPadding)
+                // A sheet of text buttons, so ink and not the accent
+                // (`Elder.wax`, which is the red of removal).
+                .tint(Color.primary)
             }
             .elderSurface()
         }
@@ -1464,6 +1452,8 @@ private struct TreePersonSheet: View {
                     .padding(.top, 12)
                 }
                 .padding(Elder.screenPadding)
+                // Ink, for the menu sheet's reason above.
+                .tint(Color.primary)
             }
             .elderSurface()
         }

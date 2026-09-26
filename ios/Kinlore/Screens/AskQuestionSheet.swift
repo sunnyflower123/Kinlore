@@ -58,7 +58,7 @@ struct AskQuestionSheet: View {
                     .font(.body)
                     .lineSpacing(Elder.lineSpacing)
                     .padding(12)
-                    .elderCard(radius: 16)
+                    .elderCard()
                     .focused($isFocused)
 
                     if !others.isEmpty {
@@ -77,6 +77,10 @@ struct AskQuestionSheet: View {
                                 }
                             }
                             .pickerStyle(.menu)
+                            // Ink, not the accent: wax is the red of removal
+                            // since 26 Sep 2026 (`Elder.wax`), and it belongs
+                            // to *Lähetä kysymys* below.
+                            .tint(Color.primary)
                             .elderTapTarget()
                         }
                     }
@@ -178,6 +182,7 @@ struct AskQuestionSheet: View {
     // saw it once the test started actually opening this sheet.
     private var cancelButton: some View {
         Button("Peruuta") { dismiss() }
+            .foregroundStyle(Color.primary)
             .frame(maxWidth: .infinity)
             .elderTapTarget()
     }

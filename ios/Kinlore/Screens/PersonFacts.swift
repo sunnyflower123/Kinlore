@@ -39,7 +39,7 @@ private struct FactRowButton: View {
             isChanging = true
         } label: {
             // In the ink of the tellings below and not the accent: a fact is
-            // what the card says, and a sentence in link blue reads as
+            // what the card says, and a sentence in the accent reads as
             // somewhere to go. The row that adds one is the action, in the
             // date row's grey.
             Text(FactRow.text(for: fact, in: store))
@@ -145,6 +145,10 @@ struct FactSheet: View {
                     kinds
                 }
             }
+            // A form of text buttons, so ink and not the accent: *Tallenna*
+            // and *Peruuta* in wax were the red of *Poista tieto* between
+            // them (`Elder.wax`).
+            .tint(Color.primary)
             .elderSurface()
             .navigationTitle(existing == nil ? String(localized: "Lisää tieto") : String(localized: "Muuta tietoa"))
             .navigationBarTitleDisplayMode(.inline)
@@ -396,6 +400,8 @@ struct FactPlaceSheet: View {
                     }
                 }
             }
+            // Ink, for `FactSheet`'s reason.
+            .tint(Color.primary)
             .elderSurface()
             .navigationTitle("Valitse paikka")
             .navigationBarTitleDisplayMode(.inline)

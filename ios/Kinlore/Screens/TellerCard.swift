@@ -22,7 +22,7 @@ import SwiftUI
 /// named at all — `Memory.tellerHidden`, which shows the day instead of a
 /// name everywhere a name would otherwise stand.
 ///
-/// No prominent button here (ARCHITECTURE §22): the blue one on this screen
+/// No prominent button here (ARCHITECTURE §22): the one on this screen
 /// belongs to *"Jatketaan jutellen"* or *"Kerro toinen muisto"*, and a
 /// question that must be answered before either would be a fourth.
 struct TellerCard: View {
@@ -43,7 +43,7 @@ struct TellerCard: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .elderCard(radius: 16)
+        .elderCard()
         .sheet(isPresented: $isPicking) {
             TellerSheet(model: model)
         }
@@ -72,8 +72,7 @@ struct TellerCard: View {
             } label: {
                 Text("Minä").modifier(ChoiceLabel())
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.elderSecondary)
 
             // Whoever spoke last time, and the time before. Built from what
             // has been chosen rather than from the person list: a family of
@@ -89,8 +88,7 @@ struct TellerCard: View {
                     // quietly looking up *"Aino"*.
                     Text(verbatim: person.displayTitle).modifier(ChoiceLabel())
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(.elderSecondary)
             }
 
             Button {
@@ -98,8 +96,7 @@ struct TellerCard: View {
             } label: {
                 Text("Joku muu").modifier(ChoiceLabel())
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
+            .buttonStyle(.elderSecondary)
 
             // Quiet and last. A telling nobody wants their name on is still a
             // telling worth keeping — rule 2 read one step further — and the
@@ -163,8 +160,7 @@ struct TellerCard: View {
                     }
                     .modifier(ChoiceLabel())
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(.elderSecondary)
             }
 
             Button("Vaihda kertoja") { model.clearTellerChoice() }
@@ -288,6 +284,9 @@ struct TellerSheet: View {
                     .padding(Elder.screenPadding)
                     .background(.bar)
             }
+            // Names to choose from and a way out, in ink and not the accent,
+            // which is the red of removal since 26 Sep 2026 (`Elder.wax`).
+            .tint(Color.primary)
             .elderSurface()
         }
     }

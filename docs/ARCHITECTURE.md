@@ -31,7 +31,7 @@ they were, how they hid, and what found them.
 [12. The question ladder](#12-the-question-ladder) ·
 [14. Settings — taking the archive out, and leaving](#14-settings--taking-the-archive-out-and-leaving) ·
 [21. The words](#21-the-words) ·
-[22. The one blue button](#22-the-one-blue-button) ·
+[22. The one prominent button](#22-the-one-prominent-button) ·
 [23. The card, and why the front door was a blank page](#23-the-card-and-why-the-front-door-was-a-blank-page) ·
 [24. Colours by the telling](#24-colours-by-the-telling) ·
 [25. A face on the card](#25-a-face-on-the-card)
@@ -3258,7 +3258,7 @@ audit in one sentence.
 
 | Default | Measured | Replaced with |
 |---|---|---|
-| iOS blue `#007AFF` on white | **4.0:1** | `AccentColor` `#0B57D0` — **5.54:1 on the paper** |
+| iOS blue `#007AFF` on white | **4.0:1** | `AccentColor` `#0B57D0` — **5.54:1 on the paper**; since 26 Sep 2026 the same value as `Elder.wax` `#B4392B` — **5.12:1 on the paper** |
 | `.secondary` label | **≈4.2:1** | `Elder.supporting`, 75 % of primary — **≈6.6:1** |
 | iOS orange `#FF9500` on white | **2.2:1** | `Elder.proposal` `#B23C0B` — **5.14:1 on the paper** |
 
@@ -4754,12 +4754,23 @@ tables on 12 Sep 2026.
 
 ---
 
-## 22. The one blue button
+## 22. The one prominent button
 
 The same problem as §21, one layer up. A word teaches a thing; a **prominent
 button teaches "this is what you do here"**, and a screen with four of them has
-taught nothing. For a user who is slow to trust a phone, the blue button has to
-mean one thing.
+taught nothing. For a user who is slow to trust a phone, the prominent button
+has to mean one thing.
+
+It was blue when this section was written, and it is wax since 26 Sep 2026,
+when the accent became `Elder.wax`. Every quieter button became ink on honey
+(`ElderSecondaryButtonStyle` in `Elder.swift`) rather than the system's
+bordered style, which draws its label in the accent, and every text button
+became ink — *Peruuta*, *Valmis*, *Sulje* — except a form's own action row,
+which stands where a prominent button would (`Elder.wax` says which). The rule
+did not move with the colour. What the colour change added is that the
+prominent button is now the same red as removal, 1.11:1 from
+`Elder.destructive`, so a removal says what it is in its word and its icon and
+never in its colour alone.
 
 The survey was mechanical: every `.buttonStyle(.borderedProminent)` in the app,
 mapped to the view that owns it rather than to the file. Every screen had exactly
@@ -4777,16 +4788,15 @@ Two of them are now quieter:
 - **The name correction** confirms something typed into the row above it. It is
   the row's own button, not the screen's purpose.
 - **"Kerro toinen muisto" is prominent only when nothing above it already is.**
-  With follow-up questions on screen the blue button is *"Jatketaan jutellen"* —
-  carrying on about the memory she has just told is worth more than starting a
-  second one, and it is the loop this app was built around (§10), which a
-  spoken telling has already been through by the time this screen is drawn
-  (26 Sep 2026): the button starts it for a written one and takes it up again
-  after *"Riittää tältä erää"*. With no
-  questions, there is nothing above to defer to and telling another is all that
-  is left. `View.elderPrimary(_:)` in `Elder.swift` is where that condition
-  lives, so the next person to add a button finds the choice already made rather
-  than making it again.
+  With follow-up questions on screen the prominent button is *"Jatketaan
+  jutellen"* — carrying on about the memory she has just told is worth more than
+  starting a second one, and it is the loop this app was built around (§10),
+  which a spoken telling has already been through by the time this screen is
+  drawn (26 Sep 2026): the button starts it for a written one and takes it up
+  again after *"Riittää tältä erää"*. With no questions, there is nothing above
+  to defer to and telling another is all that is left. `View.elderPrimary(_:)`
+  in `Elder.swift` is where that condition lives, so the next person to add a
+  button finds the choice already made rather than making it again.
 
 **The framed exception is the offer card** — the paid archive, or since
 17 Aug 2026 the invitation while the family is one person (docs/UX.md §3.2);

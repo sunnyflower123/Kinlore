@@ -11,7 +11,7 @@ import SwiftUI
 ///
 /// Unstyled on purpose: the family view shows it as an ordinary row and the
 /// offer card makes it prominent, and `buttonStyle` reaches it from either
-/// call site. §22's one-blue-button rule is decided where the button is
+/// call site. §22's one-prominent-button rule is decided where the button is
 /// placed, not here.
 struct InviteShareButton: View {
     @Environment(Session.self) private var session
@@ -111,6 +111,7 @@ struct InviteShareButton: View {
                     Spacer()
 
                     Button("Valmis") { isSharing = false }
+                        .foregroundStyle(Color.primary)
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
                 } else {
@@ -122,7 +123,7 @@ struct InviteShareButton: View {
                         .textInputAutocapitalization(.words)
                         .font(.body)
                         .padding(12)
-                        .elderCard(radius: 16)
+                        .elderCard()
 
                     // Says what the name buys, because otherwise it reads as
                     // one more field to fill in — and the whole reason it is
@@ -181,6 +182,7 @@ struct InviteShareButton: View {
                     // text barely grows with Dynamic Type, which would put the
                     // way out of this screen in the smallest text on it.
                     Button("Peruuta") { isSharing = false }
+                        .foregroundStyle(Color.primary)
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
                 }
@@ -188,13 +190,17 @@ struct InviteShareButton: View {
             .padding(Elder.screenPadding)
             .navigationTitle("Kutsu")
             .navigationBarTitleDisplayMode(.inline)
-            // The ground only. Everything else this sheet is owed — the serif
-            // on "Kutsu on valmis", the code at a size somebody can read
-            // across a kitchen table — is phase E and is not this commit's.
+            // The ground only. Everything else this sheet is owed — the code
+            // at a size somebody can read across a kitchen table — is phase E
+            // and is not this commit's.
             // The paper is, because a white sheet in a parchment app is a
             // screen that looks broken rather than unfinished, and this one is
             // in a take.
             .elderSurface()
+            // Wax for the one prominent button whoever opens the sheet, set
+            // here rather than trusted to them: the family screen's row inks
+            // its tint.
+            .tint(Elder.wax)
         }
     }
 

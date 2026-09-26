@@ -119,13 +119,15 @@ final class PushNotifications {
 }
 
 /// The callbacks push needs that SwiftUI has no modifier for: the token, and a
-/// tap on one of ours.
+/// tap on one of ours. Being the app's one delegate, it is also where the
+/// navigation bar's font is set, once there is an application to set it on.
 final class PushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        Elder.roundNavigationTitles()
         return true
     }
 

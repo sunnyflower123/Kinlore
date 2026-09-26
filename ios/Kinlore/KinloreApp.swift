@@ -27,7 +27,7 @@ struct KinloreApp: App {
     /// A parsed link used to be dropped in silence here — the code was stored
     /// and nothing outside onboarding ever read it — and the likeliest wrong
     /// time is the most human one: the app was opened and looked at first, an
-    /// archive got created with the big blue button, and *then* the
+    /// archive got created with the big button, and *then* the
     /// grandchild's link was tapped. See docs/UX.md §4.1.
     @State private var linkNotice: LinkNotice?
 
@@ -79,12 +79,17 @@ struct KinloreApp: App {
                 // were measured against white and its own comments carry the
                 // ratios; measured against dark backgrounds on 23 Aug 2026,
                 // destructive lands at ≈2.6:1 and the accent itself at
-                // ≈2.7:1 — under the minimum on exactly the labels rule 1
+                // ≈2.7:1 (≈2.9:1 since the accent became wax, on the same
+                // ground) — under the minimum on exactly the labels rule 1
                 // exists for, on every phone a grandchild has set to dark.
                 // Dark variants for the whole system are a designed piece of
                 // work (ARCHITECTURE §15), not a toggle; until somebody does
                 // it, one committed appearance beats an unmeasured second one.
                 .preferredColorScheme(.light)
+                // SF Rounded for every word the app draws, since 26 Sep 2026,
+                // from here and not screen by screen, for the floor's reason
+                // above. `Elder.display` sets a heading apart by weight.
+                .fontDesign(.rounded)
                 .environment(store)
                 .environment(session)
                 .environment(player)

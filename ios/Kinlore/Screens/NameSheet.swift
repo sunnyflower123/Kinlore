@@ -91,13 +91,20 @@ struct NameSheet: View {
                     .elderTapTarget()
                     .disabled(isUnchanged || isSaving)
 
+                    // Ink, and *Tallenna* above it wax: the one thing this
+                    // sheet is for keeps the accent (`Elder.wax`).
                     Button("Peruuta") { dismiss() }
+                        .foregroundStyle(Color.primary)
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
                 }
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            // Wax for *Tallenna* whoever opens the sheet, set here rather than
+            // trusted to them: two of the lists that open it ink their own
+            // tint (`RelationPicker`, `TellerSheet`).
+            .tint(Elder.wax)
             .elderSurface()
         }
     }

@@ -124,6 +124,9 @@ struct FamilyScreen: View {
                             } label: {
                                 Label("Avaa koko arkisto", systemImage: "sparkles")
                                     .font(.body.weight(.semibold))
+                                    // Ink and not the accent, which is the red
+                                    // of *Poista perheestä* below (`Elder.wax`).
+                                    .foregroundStyle(Color.primary)
                                     .elderTapTarget()
                             }
                         }
@@ -154,8 +157,11 @@ struct FamilyScreen: View {
                 Section {
                     // Shared with the finished-memory screen's offer card, so
                     // the two doors hand out the same invitation. See
-                    // `InviteShareButton`.
+                    // `InviteShareButton`. A row here and a prominent button
+                    // there, so the ink is said here: the accent is the red
+                    // of removal since 26 Sep 2026 (`Elder.wax`).
                     InviteShareButton()
+                        .tint(Color.primary)
 
                     ForEach(family.invites) { invite in
                         InviteRow(invite: invite) {

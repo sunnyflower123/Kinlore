@@ -2676,13 +2676,13 @@ final class AccessibilitySweepTests: XCTestCase {
         })
     }
 
-    /// The question over a colouring: the picture, a heading in the serif, and
-    /// three answers. `-seed blind` is the fixture whose photograph has both a
-    /// picture and a telling, which is what the colour button waits for, and
-    /// the stub answers with a tint that keeps every edge — so the sheet
-    /// reaches its question rather than its refusal, and no credit is spent.
-    /// Audited once the stub's answer is on screen: the progress view before
-    /// it never stops drawing.
+    /// The question over a colouring: the picture, a heading in the display
+    /// face, and three answers. `-seed blind` is the fixture whose photograph
+    /// has both a picture and a telling, which is what the colour button waits
+    /// for, and the stub answers with a tint that keeps every edge — so the
+    /// sheet reaches its question rather than its refusal, and no credit is
+    /// spent. Audited once the stub's answer is on screen: the progress view
+    /// before it never stops drawing.
     func testColourSheet() throws {
         try sweep("Värit kerronnan mukaan", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()

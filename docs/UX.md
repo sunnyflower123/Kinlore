@@ -10,7 +10,7 @@ brings them back the day after.
 The finding it starts from: **the screens are good and the arc is missing.**
 Screen-level guidance exists and is tested — empty states are invitations,
 starter questions fill the blank button, the vocabulary is a system (§21), one
-blue button per screen (§22), the consent sentence sits on both onboarding
+prominent button per screen (§22), the consent sentence sits on both onboarding
 paths. But the app cannot tell its arrivals apart. The founder, the invited
 relative and the grandmother handed a phone all land on the same tab with the
 same words, and three of the moments that define this product — *the

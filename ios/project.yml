@@ -165,11 +165,13 @@ targets:
         # the assets is the app icon. Without this the icon slot stays empty.
         # The PNGs are generated from the SVGs in docs/logo/, see its README.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        # The app's blue. iOS's own #007AFF measures 4.0:1 against white, under
-        # the 4.5:1 minimum, and the accessibility audit found it failing on
-        # every tinted button and every tinted line of text in the app at once.
-        # #0B57D0 measures 5.54:1 on the app's paper (6.4:1 on white) and is one
-        # place to change rather than thirty.
+        # The app's accent. iOS's own #007AFF measures 4.0:1 against white,
+        # under the 4.5:1 minimum, and the accessibility audit found it failing
+        # on every tinted button and every tinted line of text in the app at
+        # once. It was #0B57D0 (5.54:1 on the app's paper) until 26 Sep 2026;
+        # it is Elder.wax's #B4392B since, 5.12:1 on the paper, and
+        # palette-contrast-check.mjs keeps the two assets one colour. One place
+        # to change rather than thirty, which is how it changed.
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 
   # Accessibility is not a checklist item in this app, it is the product (rule 1

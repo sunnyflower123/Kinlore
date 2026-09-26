@@ -91,6 +91,7 @@ const paper = asset('Paper').rgb
 const card = asset('Card').rgb
 const cream = asset('Cream').rgb
 const wax = asset('Wax').rgb
+const honey = asset('Honey').rgb
 const proposal = asset('Proposal').rgb
 const affirmative = asset('Affirmative').rgb
 const destructive = swiftLiteral('destructive').rgb
@@ -123,7 +124,11 @@ const CLAIMS = [
 	{ what: 'card under primary text', fg: ink, bg: card, claimed: 16.81, floor: 4.5 },
 	{ what: 'cream on ink', fg: cream, bg: ink, claimed: 16.56, floor: 4.5 },
 	{ what: 'cream on wax', fg: cream, bg: wax, claimed: 5.59, floor: 4.5 },
-	{ what: 'wax against paper', fg: wax, bg: paper, claimed: 5.12, floor: 3 },
+	// Words since 26 Sep 2026, when wax became the accent: the selected tab
+	// and whatever is drawn in the tint are read, so the floor is the one for
+	// text and no longer the one for a shape.
+	{ what: 'wax against paper', fg: wax, bg: paper, claimed: 5.12, floor: 4.5 },
+	{ what: 'wax on card', fg: wax, bg: card, claimed: 5.67, floor: 4.5 },
 	{ what: 'proposal on paper', fg: proposal, bg: paper, claimed: 5.14, floor: 4.5 },
 	{ what: 'proposal on card', fg: proposal, bg: card, claimed: 5.7, floor: 4.5 },
 	{ what: 'affirmative on paper', fg: affirmative, bg: paper, claimed: 5.26, floor: 4.5 },
@@ -135,6 +140,21 @@ const CLAIMS = [
 	// the colour; what was wrong was the evidence for it.
 	{ what: 'destructive on paper', fg: destructive, bg: paper, claimed: 5.67, floor: 4.5 },
 	{ what: 'destructive on card', fg: destructive, bg: card, claimed: 6.28, floor: 4.5 },
+	// Honey, the secondary button and the warm card. Ink on it is text; wax
+	// and proposal on it are over the text minimum by a hair, so Elder.swift
+	// allows them there only as a glyph or a shape, which is the 3:1 floor.
+	{ what: 'honey under primary text', fg: ink, bg: honey, claimed: 13.74, floor: 4.5 },
+	{ what: 'wax on honey', fg: wax, bg: honey, claimed: 4.63, floor: 3 },
+	{ what: 'proposal on honey', fg: proposal, bg: honey, claimed: 4.65, floor: 3 },
+	// Under a bound, like the hairline below: honey is no edge against the
+	// paper it lies on, which is why a honey surface carries `rule` and a
+	// shadow.
+	{ what: 'honey against paper is no edge', fg: honey, bg: paper, claimed: 1.1, ceiling: 3 },
+	// And the pair nothing can tell apart. Wax is the accent and destructive
+	// is removal; one red to the eye, so removal is said in words and icons.
+	// The check is that this stays true of the file — if the two ever part
+	// enough to be told apart, the sentence arguing from it should go.
+	{ what: 'wax and destructive are one red', fg: wax, bg: destructive, claimed: 1.11, ceiling: 3 },
 	// Never text and never the only edge of a control. The check is that it
 	// stays UNDER the bound a boundary would have to clear.
 	//
@@ -180,6 +200,20 @@ for (const { what, fg, bg, claimed, floor, ceiling } of CLAIMS) {
 	if (ceiling !== undefined) {
 		check(`  and stays under ${ceiling}:1`, got < ceiling, `computed ${got.toFixed(2)}:1`)
 	}
+}
+
+console.log('— the accent is wax —')
+// Since 26 Sep 2026 the accent is not a colour of its own. Elder.swift argues
+// every tinted word from `wax`'s ratios, and the tint is drawn from the
+// AccentColor asset — so the two assets have to stay one colour, or every
+// sentence about the accent is about something the app no longer draws.
+{
+	const accent = asset('AccentColor')
+	check(
+		'AccentColor is the same colour as Wax',
+		accent.rgb.join() === wax.join() && accent.alpha === asset('Wax').alpha,
+		`AccentColor ${accent.rgb.join(',')} against Wax ${wax.join(',')}`,
+	)
 }
 
 console.log('— and the file still says so —')

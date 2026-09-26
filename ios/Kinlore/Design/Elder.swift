@@ -75,8 +75,8 @@ enum Elder {
     // **They carry no dark variant, and that is a decision rather than an
     // omission.** The app pins `.preferredColorScheme(.light)` for all of v1
     // (KinloreApp.swift) because `destructive` lands at ≈2.6:1 and the accent
-    // at ≈2.7:1 on a dark ground — under the minimum on exactly the labels
-    // rule 1 exists for. Half a dark system, surfaces done and controls not,
+    // at ≈2.7:1 on a dark ground — ≈2.9:1 since the accent became `wax` —
+    // under the minimum on exactly the labels rule 1 exists for. Half a dark system, surfaces done and controls not,
     // is the unmeasured second appearance that comment rejects. The pair to
     // start from when somebody does the whole piece of work, measured the same
     // day: paper `#17120F`, card `#221B16`, text `cream` (16.1:1 on that
@@ -104,10 +104,53 @@ enum Elder {
     ///
     /// The glyph still says it: a mic is a mic and a stop is a stop whatever
     /// the colour does.
+    ///
+    /// **And the accent, since 26 Sep 2026.** `AccentColor` carries the same
+    /// value — `palette-contrast-check.mjs` fails if the two part — so the
+    /// selected tab, the one prominent button and whatever starts a telling
+    /// are this red. As words it measures **5.67:1 on `card`** and the 5.12:1
+    /// above on paper, so a word in wax reads on both grounds the app has.
+    /// What it cannot do is differ from `destructive`: the two are 1.11:1
+    /// apart, one red to the eye. A removal says so in its word, its icon and
+    /// its place on the screen, never in its colour alone — and a secondary
+    /// action is ink on `honey` (`elderSecondary`), not wax.
+    ///
+    /// **So a text button is ink as well**, and says so where it stands:
+    /// `.foregroundStyle(Color.primary)` on one, `.tint(Color.primary)` on a
+    /// sheet or a form made of them. Left to the accent, every *Peruuta*,
+    /// *Valmis* and *Sulje* in the app turned the red of the *Poista* beside
+    /// it on the day wax became the accent. One kind keeps the accent: a
+    /// form's own action row — *Luo arkisto*, *Tallenna* under a name, *Hae*
+    /// — which stands where a prominent button would, on a form with nothing
+    /// to remove. Where a removal shares the form, as on a person's facts,
+    /// the removal is the only colour on it. The alerts are the system's, and
+    /// are left to it.
     static let wax = Color("Wax")
 
     /// What goes on top of `wax` or ink. 16.56:1 on ink, 5.59:1 on wax.
     static let cream = Color("Cream")
+
+    /// The warm surface: the secondary button (`elderSecondary`), and a card
+    /// that holds what somebody said.
+    ///
+    /// **13.74:1 under primary text**, so anything written in ink may sit on
+    /// it. Coloured words may not, and that is the line to keep: `wax` on it
+    /// measures **4.63:1** and `proposal` **4.65:1**, over the minimum by a
+    /// hair that the next change of ground would spend. On honey either is a
+    /// glyph or a shape — judged at 3:1 — and never a sentence.
+    ///
+    /// Against `paper` it measures **1.10:1**: no edge at all. So a honey
+    /// surface carries `rule` round it and a shadow under it, and the fill is
+    /// warmth rather than the boundary — the same argument as `elderCard`'s
+    /// hairline, one step warmer.
+    static let honey = Color("Honey")
+
+    /// Every card's corner, and the secondary button's: 22 points on a
+    /// continuous curve, the squircle iOS draws its own icons with, rather
+    /// than a circular arc. One number since 26 Sep 2026; until then cards
+    /// were drawn at four radii from 14 to 20, each chosen where it was
+    /// written.
+    static let cardRadius: CGFloat = 22
 
     /// The slab a card sits on: the same cream, two steps darker, offset down
     /// and to the right with no blur at all.
@@ -197,34 +240,113 @@ enum Elder {
     // What it was right about is kept: red is the colour every recorder ever
     // made has taught this user, and `wax` is still unmistakably red.
 
-    /// Headings, questions and names — the serif, and never body text.
+    /// Headings, questions and names — the one line a screen is about.
     ///
-    /// The film reads a serif from two metres; she reads the app at arm's
-    /// length, and an 80-year-old's body text stays in SF where Apple has
-    /// spent decades on the legibility. So this is for the one line a screen
-    /// is about, and the rest of the screen does not change.
-    ///
-    /// New York, which ships with the system: a real serif, drawn to sit
-    /// beside SF, and already Dynamic Type's. The film's own Instrument Serif
-    /// would need a font file in the bundle and `UIAppFonts` in
-    /// `project.yml` — neither expensive, but the file is not in this
-    /// repository and fetching one is not this commit's to do.
+    /// SF Rounded, bold. The whole app is rounded since 26 Sep 2026
+    /// (`.fontDesign(.rounded)` at the root, KinloreApp.swift), so what sets
+    /// this line apart is its weight rather than a second typeface. New York
+    /// stood here until then: a serif for the heading and SF for everything
+    /// else, which read as a printed page. Rounded reads as a voice, and this
+    /// app is a place people talk.
     ///
     /// **A text style and not a point size, which is the whole safety of
-    /// it.** Both ways of writing a serif here fail rule 1 silently in the
-    /// same way — `.custom(_:size:)` without `relativeTo:` stops answering
-    /// the text-size setting, and so does a bare point size. Naming the style
-    /// cannot be wrong that way. It is also the idiom already in this
-    /// codebase: `.system(.title2, design: .monospaced)` is how the recording
-    /// counter is drawn.
+    /// it.** `.custom(_:size:)` without `relativeTo:` stops answering the
+    /// text-size setting, and so does a bare point size; both fail rule 1
+    /// silently. Naming the style cannot be wrong that way. It is also the
+    /// idiom already in this codebase: `.system(.title2, design: .monospaced)`
+    /// is how the recording counter is drawn.
     static func display(_ style: Font.TextStyle) -> Font {
-        .system(style, design: .serif)
+        .system(style, design: .rounded, weight: .bold)
+    }
+
+    /// SF Rounded for the navigation bar's titles as well, which the root's
+    /// `.fontDesign(.rounded)` cannot reach: the bar is UIKit's, and until
+    /// this ran *Albumi* and a person's name stood in SF Pro over a rounded
+    /// screen. Sized the way the bar sizes its own, measured from its
+    /// screenshots on 26 Sep 2026: the large title follows the large-title
+    /// style all the way up (34 pt, 60 pt at the largest size), and the
+    /// inline one the headline style, stopping where the bar's own stops
+    /// (17 pt, 21 pt). Both are scaled by `UIFontMetrics`, and both still
+    /// answer the floor: 36 pt with it on, as the system's title did.
+    ///
+    /// **Called from the app delegate's launch and never earlier.** From
+    /// `KinloreApp.init`, which runs before UIKit has an application, it
+    /// turned every accent in the app back to the system blue.
+    static func roundNavigationTitles() {
+        func rounded(_ style: UIFont.TextStyle, _ weight: UIFont.Weight,
+                     upTo cap: UIContentSizeCategory? = nil) -> UIFont {
+            let size = { UIFont.preferredFont(forTextStyle: style,
+                compatibleWith: UITraitCollection(preferredContentSizeCategory: $0)).pointSize }
+            let plain = UIFont.systemFont(ofSize: size(.large), weight: weight)
+            let font = plain.fontDescriptor.withDesign(.rounded)
+                .map { UIFont(descriptor: $0, size: size(.large)) } ?? plain
+            let metrics = UIFontMetrics(forTextStyle: style)
+            return cap.map { metrics.scaledFont(for: font, maximumPointSize: size($0)) }
+                ?? metrics.scaledFont(for: font)
+        }
+        let bar = UINavigationBar.appearance()
+        bar.largeTitleTextAttributes = [.font: rounded(.largeTitle, .bold)]
+        bar.titleTextAttributes = [.font: rounded(.headline, .semibold, upTo: .extraExtraLarge)]
     }
 }
 
+/// The quieter button: ink on `honey`, for every action on a screen that is
+/// not the one `elderPrimary(true)` claims.
+///
+/// **Not `.bordered`, which draws its label in the tint.** With the accent now
+/// `wax`, every bordered button on every screen would have read in the same
+/// red as the one that starts a telling — and 1.11:1 from `destructive`, so
+/// "Siirrä toiselle kortille" and "Poista" would have been one colour apart
+/// from nothing. A secondary action is ink, and red is kept for starting to
+/// tell, the selected tab, and removal.
+///
+/// Opaque on purpose. iOS 26 draws `.bordered` as glass, and glass under text
+/// is what made the audit's contrast check time out at the largest text size
+/// (`AccessibilitySweepTests.swift`, the header). Honey is one colour, and the
+/// text on it is one number: **13.74:1**.
+///
+/// The edge is the `rule` hairline and a shadow, because honey is 1.10:1
+/// against `paper` and the fill alone is no boundary. The shadow is hung on
+/// the shape and not on the label, so the text itself carries none.
+///
+/// Never below `Elder.minTapTarget`, which is the rule for secondary actions
+/// as much as for the primary one, and the corner is `cardRadius` rather
+/// than a capsule: a label that wraps at XXXL is three lines tall, and a
+/// capsule that tall cuts into the first and last words.
+struct ElderSecondaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+        return configuration.label
+            .fontWeight(.semibold)
+            // Disabled is `supporting` rather than a faded button, so the
+            // words stay readable while it waits; fading the whole control
+            // would fade the text under the minimum with it.
+            .foregroundStyle(isEnabled ? Color.primary : Elder.supporting)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .frame(minHeight: Elder.minTapTarget)
+            .background {
+                shape
+                    .fill(Elder.honey)
+                    .shadow(color: Elder.rule, radius: 3, y: 2)
+            }
+            .overlay(shape.strokeBorder(Elder.rule, lineWidth: 1))
+            .contentShape(shape)
+            .opacity(configuration.isPressed ? 0.7 : 1)
+    }
+}
+
+extension ButtonStyle where Self == ElderSecondaryButtonStyle {
+    static var elderSecondary: ElderSecondaryButtonStyle { .init() }
+}
+
 extension View {
-    /// The screen's one blue button — or the quieter version of the same
-    /// control, when something else on the screen has already claimed it.
+    /// The screen's one wax button — or the quieter honey one
+    /// (`ElderSecondaryButtonStyle`), when something else on the screen has
+    /// already claimed it.
     ///
     /// Exists so that "which of these is the primary action" is written as a
     /// condition in one place instead of being decided a second time by
@@ -236,7 +358,7 @@ extension View {
         if isPrimary {
             buttonStyle(.borderedProminent)
         } else {
-            buttonStyle(.bordered)
+            buttonStyle(.elderSecondary)
         }
     }
 
@@ -286,12 +408,13 @@ extension View {
     /// `card`/`paper` step itself; the hairline only makes the corner legible.
     /// A card whose only edge is a shadow has no edge at all for somebody
     /// looking at it through cataracts.
-    func elderCard(radius: CGFloat = 14) -> some View {
-        background(Elder.card, in: RoundedRectangle(cornerRadius: radius))
-            .overlay(
-                RoundedRectangle(cornerRadius: radius)
-                    .strokeBorder(Elder.rule, lineWidth: 1)
-            )
+    ///
+    /// The corner is `Elder.cardRadius` and no call site chooses its own. It
+    /// took a `radius:` until 26 Sep 2026, and four radii were in use.
+    func elderCard() -> some View {
+        let shape = RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+        return background(Elder.card, in: shape)
+            .overlay(shape.strokeBorder(Elder.rule, lineWidth: 1))
     }
 
     /// A card with a thickness: the same card, on a hard slab.
@@ -310,10 +433,10 @@ extension View {
     /// Give it room. The slab reaches 7 points past the card, so a container
     /// with less padding than that clips it — `Elder.screenPadding` is 24 and
     /// every screen this is used on has it.
-    func elderBlock(radius: CGFloat = 14) -> some View {
-        elderCard(radius: radius)
+    func elderBlock() -> some View {
+        elderCard()
             .background {
-                RoundedRectangle(cornerRadius: radius)
+                RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
                     .fill(Elder.block)
                     .offset(x: 5, y: 7)
             }

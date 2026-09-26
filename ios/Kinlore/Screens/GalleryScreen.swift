@@ -592,6 +592,8 @@ struct GalleryScreen: View {
             } label: {
                 Text("Valitse kuvista")
                     .font(.body.weight(.medium))
+                    // Ink, not the accent: wax is the one button above it.
+                    .foregroundStyle(Color.primary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity)
@@ -945,7 +947,7 @@ private struct RefusedNote: View {
                 // it: on the label it fights the button style over the box the
                 // text goes in, and the audit reported the label as clipped on
                 // the empty archive — `InviteShare` records the same lesson.
-                .buttonStyle(.bordered)
+                .buttonStyle(.elderSecondary)
                 .elderTapTarget()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1046,6 +1048,7 @@ private struct PhotoQuotaNote: View {
                     Button("Avaa koko arkisto") { isShowingPaywall = true }
                         .buttonStyle(.borderless)
                         .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.primary)
                         .elderTapTarget()
                 }
             }
@@ -1131,6 +1134,7 @@ private struct MinutesQuotaNote: View {
                     Button("Avaa koko arkisto") { isShowingPaywall = true }
                         .buttonStyle(.borderless)
                         .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.primary)
                         .elderTapTarget()
                 }
             }

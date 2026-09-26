@@ -86,6 +86,9 @@ struct MoveMemorySheet: View {
                     .padding(Elder.screenPadding)
                     .background(.bar)
             }
+            // Cards to choose from and a way out, in ink and not the accent,
+            // which is the red of removal since 26 Sep 2026 (`Elder.wax`).
+            .tint(Color.primary)
             .elderSurface()
         }
     }

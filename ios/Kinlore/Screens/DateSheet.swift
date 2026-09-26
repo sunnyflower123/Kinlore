@@ -197,6 +197,9 @@ struct DateSheet: View {
             ScrollViewReader { proxy in
                 form(proxy)
             }
+            // The answers and *Peruuta* in ink and not the accent, which is
+            // the red of removal since 26 Sep 2026 (`Elder.wax`).
+            .tint(Color.primary)
             .elderSurface()
         }
     }

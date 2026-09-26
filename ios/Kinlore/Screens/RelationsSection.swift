@@ -39,6 +39,10 @@ struct RelationsSection: View {
                     // than the button: the audit reports the label.
                     .accessibilityIdentifier("relative.add")
                     .font(.body.weight(.medium))
+                    // The grey of the card's other rows that add something
+                    // (a date, a place, a fact), and not the accent, which is
+                    // the red of removal since 26 Sep 2026 (`Elder.wax`).
+                    .foregroundStyle(Elder.supporting)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -211,6 +215,7 @@ private struct RelativeRow: View {
                 Button("Vahvista") { store.confirmRelation(id: relation.id) }
                     .font(.subheadline.weight(.semibold))
                     .buttonStyle(.borderless)
+                    .foregroundStyle(Color.primary)
                     .elderTapTarget()
             }
         }
@@ -276,6 +281,9 @@ private struct RelativeKindSheet: View {
                     .padding(.top, 12)
                 }
                 .padding(Elder.screenPadding)
+                // A sheet of text buttons, so ink and not the accent
+                // (`Elder.wax`, which is the red of removal).
+                .tint(Color.primary)
             }
             .navigationTitle("Lisää sukulainen")
             .navigationBarTitleDisplayMode(.inline)
@@ -370,6 +378,9 @@ struct RelationPicker: View {
                     }
                 }
             }
+            // Names to choose from, in ink: in the accent they were the red of
+            // removal (`Elder.wax`).
+            .tint(Color.primary)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

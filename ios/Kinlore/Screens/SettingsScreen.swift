@@ -195,6 +195,10 @@ struct SettingsScreen: View {
                     } else {
                         Label("Vie arkisto", systemImage: "square.and.arrow.up")
                             .font(.body.weight(.semibold))
+                            // Ink and not the accent, which is the red of
+                            // *Tyhjennä tämä laite* below since 26 Sep 2026
+                            // (`Elder.wax`). The rows here are ink for it.
+                            .foregroundStyle(Color.primary)
                             .elderTapTarget()
                     }
                 }
@@ -264,6 +268,7 @@ struct SettingsScreen: View {
             Section {
                 NavigationLink(value: HelpRoute()) {
                     Label("Näin tämä toimii", systemImage: "questionmark.circle")
+                        .foregroundStyle(Color.primary)
                         .elderTapTarget()
                 }
             }
@@ -278,6 +283,7 @@ struct SettingsScreen: View {
                 Section {
                     NavigationLink(value: FamilyRoute()) {
                         Label("Perheen jäsenet ja kutsut", systemImage: "person.2")
+                            .foregroundStyle(Color.primary)
                             .elderTapTarget()
                     }
                 } header: {
@@ -287,9 +293,10 @@ struct SettingsScreen: View {
             }
 
             Section {
-                // The symbol is tinted with the text: a destructive row whose
-                // icon stays the ordinary blue reads as a mistake rather than a
-                // warning, and this is the one row that cannot be undone.
+                // The symbol is tinted with the text: while the accent was
+                // blue, a destructive row whose icon kept it read as a mistake
+                // rather than a warning, and this is the one row that cannot
+                // be undone.
                 if canLeave {
                     Button(role: .destructive) {
                         isConfirmingLeave = true
@@ -423,6 +430,7 @@ struct SettingsScreen: View {
                 ShareLink(item: exportURL) {
                     Label("Tallenna tai lähetä arkisto", systemImage: "square.and.arrow.up")
                         .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.primary)
                         .elderTapTarget()
                 }
                 .presentationDetents([.medium])

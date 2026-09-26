@@ -77,7 +77,7 @@ struct HeardNameRow: View {
 
             HStack(spacing: 16) {
                 Button("Vahvista", action: onConfirm)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.elderSecondary)
                     .elderTapTarget()
                     .accessibilityLabel("Vahvista \(subject.title)")
                 Button("Poista") { isConfirmingReject = true }

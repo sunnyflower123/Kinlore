@@ -319,7 +319,7 @@ final class SilentFailureTests: XCTestCase {
     /// An invite link that arrives on a device that cannot use it.
     ///
     /// The likeliest wrong time is the most human one: the app was opened and
-    /// looked at first, an archive got created with the big blue button, and
+    /// looked at first, an archive got created with the big button, and
     /// *then* the grandchild's link was tapped. The code was stored and nothing
     /// outside onboarding ever read it — silence, on a deliberate act.
     /// `-invite` feeds the same handler a real URL open reaches.

@@ -1281,7 +1281,7 @@ struct SubjectDetailScreen: View {
                             .frame(maxWidth: .infinity)
                             .elderTapTarget()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.elderSecondary)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 } footer: {
@@ -1379,7 +1379,7 @@ struct SubjectDetailScreen: View {
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.elderSecondary)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             } footer: {
@@ -1568,6 +1568,7 @@ struct SubjectDetailScreen: View {
                     Button("Yritä uudelleen") { photoTries += 1 }
                         .buttonStyle(.borderless)
                         .font(.body.weight(.semibold))
+                        .foregroundStyle(Color.primary)
                         .elderTapTarget()
                 }
             }
@@ -1600,7 +1601,7 @@ struct SubjectDetailScreen: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
         }
-        .elderCard(radius: 16)
+        .elderCard()
     }
 
     /// A sign and the sentence beside it, or above it once the sentence needs
@@ -1775,6 +1776,9 @@ private struct MemoryRow: View {
                     Button("Muokkaa tekstiä") { isEditingText = true }
                         .buttonStyle(.borderless)
                         .font(.body.weight(.medium))
+                        // Ink, and the removal below red: the accent is that
+                        // red since 26 Sep 2026 (`Elder.wax`).
+                        .foregroundStyle(Color.primary)
                         .elderTapTarget()
                 }
 
@@ -1784,6 +1788,7 @@ private struct MemoryRow: View {
                 Button("Siirrä toiselle kortille") { isMoving = true }
                     .buttonStyle(.borderless)
                     .font(.body.weight(.medium))
+                    .foregroundStyle(Color.primary)
                     .elderTapTarget()
 
                 Button("Poista tämä muisto") { isConfirmingRemoval = true }
@@ -1855,7 +1860,7 @@ private struct MemoryTextSheet: View {
                     .font(.body)
                     .lineSpacing(Elder.lineSpacing)
                     .padding(12)
-                    .elderCard(radius: 16)
+                    .elderCard()
                     .focused($isFocused)
                     .accessibilityLabel("Muiston teksti")
 
@@ -1883,6 +1888,7 @@ private struct MemoryTextSheet: View {
                 .disabled(trimmed.isEmpty || trimmed == memory.body)
 
                 Button("Peruuta") { dismiss() }
+                    .foregroundStyle(Color.primary)
                     .frame(maxWidth: .infinity)
                     .elderTapTarget()
             }
