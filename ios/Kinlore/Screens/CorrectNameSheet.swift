@@ -6,9 +6,10 @@ import SwiftUI
 /// The Tell screen already offers this in the seconds after a memory is told,
 /// and that is the best moment: the teller still remembers what they said. But
 /// it was the *only* moment. Recognition is wrong about one proper noun in three
-/// (68 % on proper nouns, `backend/wrangler.jsonc`), the correction screen goes
-/// past quickly, and during an interview the proposals pile up unhandled — so a
-/// name missed there was a wrong person in the family tree for good.
+/// (65 % on Finnish proper nouns, `backend/wrangler.jsonc`), the correction
+/// screen goes past quickly, and during an interview the proposals pile up
+/// unhandled — so a name missed there was a wrong person in the family tree for
+/// good.
 ///
 /// That is the failure rule 4 exists to prevent, and the archive had no way out
 /// of it. Sync has had a conflict rule for "a subject renamed on two devices"

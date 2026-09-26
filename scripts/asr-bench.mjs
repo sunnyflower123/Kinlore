@@ -401,9 +401,10 @@ for (const lang of languagesSeen) {
 // says so in its own docstring, because text-to-speech produces no dialect, no
 // stammering, no trailing off, and the figures are therefore optimistic.
 //
-// The optimistic run already missed both bars: 68 % on names against 80, and
-// 37.8 % WER against 30. So this section exists to stop that being mistaken for
-// the answer in either direction — it refuses rather than guesses.
+// The optimistic runs already missed both bars in Finnish: 68 % on names against
+// 80 and 37.8 % WER against 30 on 31 Jul 2026, 65 % and 37.3 % on 30 Aug (the
+// run backend/wrangler.jsonc records). So this section exists to stop that being
+// mistaken for the answer in either direction — it refuses rather than guesses.
 const NAME_TRIPWIRE = 0.8
 const WER_LIMIT = 0.3
 

@@ -38,9 +38,10 @@ several of them sharing one tree. Read it after the code, not before.
 ## The one thing it does
 
 > Grandmother presses a big button and rambles for 90 seconds about an old
-> photo. The app returns: a structured memory attached to the photo, person
-> cards for the relatives mentioned, year and place information — and three
-> follow-up questions back.
+> photo. The app returns: the memory in her own voice and in readable words,
+> attached to the photo; the names and places it heard, each with the
+> sentence it was heard in, waiting for a person's yes; the time as she said
+> it — and two questions back.
 
 <p align="center">
   <img src="docs/media/demo.gif" alt="The app at work — Putting the memory in order, finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s, and the question Who told this memory? with the answers Me, Someone else and I would rather not be named." width="320">
@@ -172,14 +173,19 @@ commands, with the arguments this machine forces, are in
 ## Measured, not claimed
 
 **The ASR engine was chosen by measurement**, not from memory:
-`scripts/asr-bench.mjs` over 3 Finnish texts × 4 degradation steps × 5 models.
-The numbers sit in [`backend/wrangler.jsonc`](backend/wrangler.jsonc) beside the
-setting they justify.
+`scripts/asr-bench.mjs` over 3 Finnish texts × 4 degradation steps × 5 models,
+on 31 Jul 2026 — and run again on 30 Aug with an English set of the same shape
+beside it. The second run's numbers sit in
+[`backend/wrangler.jsonc`](backend/wrangler.jsonc) beside the setting they
+justify.
 
 **Two of them are bad, and they are printed here on purpose.** The chosen model,
-`gemini-3.6-flash`, scores 68 % on proper nouns against the bench's own tripwire
-of 80 %, and a word error rate of 37.8 % against its own *"above 30 % is not
-usable"* — on synthesised speech, which is kinder than a real 80-year-old voice.
+`gemini-3.6-flash`, scores 65 % on Finnish proper nouns against the bench's own
+tripwire of 80 %, and a word error rate of 37.3 % against its own *"above 30 %
+is not usable"* — on synthesised speech, which is kinder than a real 80-year-old
+voice. The run that chose it read 68 % and 37.8 %, so both runs missed both
+bars. English, in the second run, reads 60 % on names and a word error rate of
+29.9 %: below the name bar too, and a tenth of a point inside the other.
 
 The concept was not dropped anyway, and
 [PLAN.md §8](docs/PLAN.md#risk-2-honestly) argues why in full: the original audio
@@ -237,9 +243,9 @@ exist as scripts and not as intentions.
 **I set a tripwire and then walked past it.** The plan called Finnish ASR risk
 #1 and told me to settle it *before any app code*. I measured five engines
 properly — and then never ran the actual go/no-go on real elderly speech, which
-is the half that decides anything. What I do have says 68 % on proper nouns
-against my own 80 % bar. The concept survives because of how the app is built,
-not because the number is good; the argument is in
+is the half that decides anything. What I do have says 65 % on Finnish proper
+nouns against my own 80 % bar. The concept survives because of how the app is
+built, not because the number is good; the argument is in
 [PLAN.md §8](docs/PLAN.md#risk-2-honestly) and it is the part I would most like
 a judge to read.
 

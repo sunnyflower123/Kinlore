@@ -61,9 +61,9 @@ An honest inventory, not a wish list:
 | Media to R2 (`/media`) | **Done and checked**, see §5 — the round trip and the isolation, against wrangler's local bucket |
 | Quotas (`/usage`, limits on the server) | **Done and checked**, see §7 — the counting and rule 2; not the transcription path itself |
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
-| RevenueCat, shared family entitlement | **Done and driven end to end in production, 12 Sep 2026** — the binding rule, the webhook's revocation rules and the REST verification run against the shipping schema with RevenueCat replaced (§6); and on a Test Store key a real purchase reached `family.entitlement`, and a signed `INITIAL_PURCHASE` reached the deployed Worker. The row below is what is left |
+| RevenueCat, shared family entitlement | **Done and driven end to end in production, 12 Sep 2026** — the binding rule, the webhook's revocation rules and the REST verification run against the shipping schema with RevenueCat replaced (§6); and on a Test Store key a real purchase reached `family.entitlement`, and a signed `INITIAL_PURCHASE` reached the deployed Worker. The paywall, two rows below, is the rest of it |
 | Audio playback, open questions, relationships | **Done and tested** |
-| Paywall | **Built, reached and drawn** — the key configures the SDK, the sheet opens and the purchase completes, and since 12 Sep 2026 the design in RevenueCat's dashboard is the app's own words and palette (§6). What it showed when this row was written, the same evening, is the pre-decision pair — `monthly` and `yearly` at 9,99 and 79,99 US$ — and PLAN §10 has since decided on a year at 50 and the archive for ever at 80, with no monthly plan. Redrawing it is dashboard work, not code, and VIDEO.md's fifth scene films whichever is there |
+| Paywall | **Built, reached and drawn** — the key configures the SDK, the sheet opens and the purchase completes, and since 12 Sep 2026 the design in RevenueCat's dashboard is the app's own words and palette (§6). The code names no product, package or price: `PaywallSheet` shows RevenueCatUI's `PaywallView` for the dashboard's current offering, and any active entitlement, verified by the Worker, opens the family's archive. What the sheet offers is dashboard state and is recorded only with its date: PLAN §10 has the products made on 12 Sep 2026, and `FilmDriver.testFilmThePaywall` what the first keyed run read on 13 Sep. VIDEO.md's fifth scene films whichever is there |
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
 | Places, reachable rather than only stored | **Done and tested**, see §8 |
@@ -86,7 +86,7 @@ An honest inventory, not a wish list:
 | Colouring a photograph by what was told about it | **Done and tested, deployed 13 Sep 2026**, see §24 — kept only after somebody answers yes, and the model was chosen on one photograph |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §14 |
-| Demo video | Remaining |
+| Demo video | **In progress**, see docs/VIDEO.md — the shot list, the dry run of 28 Aug 2026 and the takes for the v16 and v21 cuts, which `FilmDriver` taps through. On 25 Sep 2026 three finished takes were found carrying Finnish prices and dates and had to be shot again; no finished cut is recorded in this repository |
 
 The critical path is open: family and sync work, so everything else stands on
 them. What is left is either cuttable or somebody's to record — see PLAN.md §8
@@ -3713,9 +3713,10 @@ nobody can schedule.
 
 ## 17. The name that was heard wrong
 
-The measurement this app was built on says the recognition gets **68 % of proper
-nouns right** (`backend/wrangler.jsonc`, chosen by `scripts/asr-bench.mjs`). One
-name in three arrives wrong, and the family tree is built out of names.
+The measurement this app was built on says the recognition gets **68 % of Finnish
+proper nouns right** (`scripts/asr-bench.mjs`, 31 Jul 2026), and the run of
+30 Aug that `backend/wrangler.jsonc` records says 65 %. One name in three
+arrives wrong, and the family tree is built out of names.
 
 That was known and answered: the Tell screen asks the teller to check the names
 while they still remember what they said, and a correction there re-runs

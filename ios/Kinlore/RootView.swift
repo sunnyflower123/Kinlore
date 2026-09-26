@@ -737,9 +737,9 @@ struct SubjectDetailScreen: View {
     ///
     /// A photo's or an event's title is written by the app out of a place and a
     /// year; a person's and a place's is a proper noun the recognition heard,
-    /// and it is wrong about one time in three (`wrangler.jsonc`: 68 % on proper
-    /// nouns, which is the measurement the whole name-correction step exists
-    /// for). Those are the two that need a second chance.
+    /// and it is wrong about one time in three (`wrangler.jsonc`: 65 % on Finnish
+    /// proper nouns, which is the measurement the whole name-correction step
+    /// exists for). Those are the two that need a second chance.
     private var nameCameFromSpeech: Bool {
         current.kind == .person || current.kind == .place
     }

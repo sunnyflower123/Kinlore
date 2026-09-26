@@ -288,10 +288,11 @@ halves are easy to mistake for each other.
 
 **What was measured.** `scripts/asr-bench.mjs` was run over
 `scripts/make-synthetic-samples.py` output: three Finnish texts at four
-degradation steps, five engines. That chose `gemini-3.6-flash`, and the numbers
-are in `backend/wrangler.jsonc` beside the setting they justify. As an engine
-comparison this is sound — relative ranking is exactly what the generator says
-it is good for.
+degradation steps, five engines. That chose `gemini-3.6-flash` on 31 Jul 2026.
+The same three texts were run again on 30 Aug beside an English set of the same
+shape (§10), and that second run's numbers are in `backend/wrangler.jsonc`
+beside the setting they justify. As an engine comparison this is sound —
+relative ranking is exactly what the generator says it is good for.
 
 **What was not.** The samples are text-to-speech. The generator says so in its
 own header: *"TTS does not produce dialect, stammering, self-correction,
@@ -301,9 +302,10 @@ on proper nouns, rethink the concept* — is about absolute quality on real
 speech, and no real speech has been through it. `samples/LUEMINUT.txt` has said
 what is needed from the beginning: three recordings of an actual elderly voice.
 
-**And the optimistic number already missed both bars.** 68 % on proper nouns
-against a tripwire of 80 %, and a word error rate of 37.8 % against the bench's
-own *"above 30 % is not usable"*. On audio that is kinder than the real thing.
+**And the optimistic numbers already missed both bars.** 68 % on Finnish proper
+nouns against a tripwire of 80 %, and a word error rate of 37.8 % against the
+bench's own *"above 30 % is not usable"*, in the run of 31 Jul; 65 % and 37.3 %
+in the run of 30 Aug. On audio that is kinder than the real thing.
 
 **Why the concept was not dropped anyway**, which is a decision and should read
 like one: the app is built for exactly this. The original audio is kept forever
