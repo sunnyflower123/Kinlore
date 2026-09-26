@@ -273,6 +273,38 @@ final class AccessibilitySweepTests: XCTestCase {
         reach(photoTile(in: app), in: app, "the photo tile")
     }
 
+    /// Brings an element's top edge to `y` and leaves it there, for a sweep
+    /// whose audit depends on where one row sits. A swipe coasts on past its
+    /// finger and `auditPageByPage`'s half-screen steps end wherever a page
+    /// ends, so this drags slowly, with no momentum, measures the frame again
+    /// and drags the difference, at most 330 pt at a time — the room between
+    /// the two bars on either side of where each drag starts. It stops when
+    /// the list stops moving the element, which is where the list ends.
+    ///
+    /// **Each drag is 10 pt longer than the distance**, because the list does
+    /// not move for the first 10 pt of a finger: a 165.67 pt drag moved the
+    /// photo card's heading 155.67 pt, twice (26 Sep 2026), and a correction
+    /// of the 10 pt left over then moved nothing, which read as the list's end.
+    ///
+    /// It asserts nothing about where the element came to rest. The caller
+    /// does, because only the caller knows which edge of it matters.
+    private func drag(_ element: XCUIElement, toMinY y: CGFloat, in app: XCUIApplication) {
+        let origin = app.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
+        var last = CGFloat.nan
+        for _ in 1 ... 12 {
+            settle(element)
+            let top = element.frame.minY
+            if abs(top - y) < 3 || abs(top - last) < 0.5 { return }
+            last = top
+            let move = max(-330, min(330, top - y + (top > y ? 10 : -10)))
+            let start = origin.withOffset(CGVector(dx: 200, dy: move > 0 ? 600 : 260))
+            start.press(
+                forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -move)),
+                withVelocity: .slow, thenHoldForDuration: 0.5
+            )
+        }
+    }
+
     /// The last thing on the Settings screen of a phone that can leave its
     /// family: the footer under the wipe row, which tells leaving from
     /// emptying. The other two states have one row and nothing to tell it
@@ -1936,6 +1968,39 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep("Photo detail with the picture", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             require(app.images["Valokuva"], "the photograph, by its label")
+            XCTAssertTrue(hasStoppedDrawing(app), "the photo card was still being drawn when the audit ran")
+        }
+    }
+
+    /// The colouring's footer under its button: the one sentence on the card
+    /// that says where the photograph and its memories go when somebody asks
+    /// for colours. No sweep reached it until 26 Sep 2026 — the demo
+    /// archive's photograph has no file, so its card has neither the button
+    /// nor the footer, and `-seed blind`'s has both.
+    ///
+    /// At the largest size the footer is 666.67 pt of text in the 675 pt
+    /// between the two bars, so no page of `auditPageByPage` holds it whole.
+    /// So it is dragged slowly, at both sizes, until its top is 4 pt under the
+    /// navigation bar or the list ends. Measured 26 Sep 2026: at the largest
+    /// size that is y 120, the last line ending at 786.67 above a bar at 791;
+    /// at the default size the list ends first, with the footer at y 576.33.
+    /// That page is left to the sweep's own audit, and the two assertions
+    /// before it say the whole footer is on it.
+    func testPhotoDetailColourFooter() throws {
+        try sweep("Photo detail, colour footer", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Väritä kerronnan mukaan"], in: app, "the colour button", swipes: 12)
+            let footer = require(
+                app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kuva ja siitä kerrotut")).firstMatch,
+                "the colour footer"
+            )
+            let top = app.navigationBars.firstMatch.frame.maxY
+            drag(footer, toMinY: top + 4, in: app)
+            XCTAssertGreaterThanOrEqual(footer.frame.minY, top - 1, "the footer's top is under the navigation bar: \(footer.frame)")
+            XCTAssertLessThanOrEqual(
+                footer.frame.maxY, app.tabBars.firstMatch.frame.minY + 1,
+                "the footer's last line is under the tab bar: \(footer.frame)"
+            )
             XCTAssertTrue(hasStoppedDrawing(app), "the photo card was still being drawn when the audit ran")
         }
     }
