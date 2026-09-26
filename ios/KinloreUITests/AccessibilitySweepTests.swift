@@ -1648,6 +1648,21 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The picker with no photograph on this phone to offer: the sentence
+    /// that says so, the way in from the phone's own photographs with its
+    /// caption, and the way out (26 Sep 2026). `-seed archive` has the
+    /// fixture's photograph as a row without a file, which is what a
+    /// picture another phone added looks like before the full copy.
+    func testPersonCardFacePickerWithoutPhotographs() throws {
+        try sweep(
+            "Person card, choose a face, no photographs on this phone",
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
+        ) { app, _ in
+            reach(app.buttons["Valitse kasvot"], in: app, "the row that chooses a face").tap()
+            require(app.buttons["Valitse puhelimen kuvista"], "the way in from the phone's own photographs")
+        }
+    }
+
     /// The spot: the photograph with the ring on it, the card's disc beside
     /// its sentence, and Tallenna.
     func testPersonCardFaceSpot() throws {

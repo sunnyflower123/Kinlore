@@ -855,7 +855,12 @@
 "Kuvat, joissa hänestä kerrotaan" = "Photographs they are told about in";
 "Muut kuvat" = "Other photographs";
 "Arkiston kuvat" = "The archive's photographs";
-"Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta." = "There are no photographs in the archive yet. A face is chosen from one of the archive's photographs.";
+"Tässä puhelimessa ei ole vielä arkiston kuvia." = "There are no photographs of the archive on this phone yet.";
+"Valitse puhelimen kuvista" = "Choose from the phone's photos";
+"Kuva tulee arkistoon ja näkyy Albumissa." = "The photograph goes into the archive and shows in the Album.";
+"Tuodaan kuvaa" = "Importing the photo";
+"Kuvaa ei saatu tuotua" = "The photo could not be imported";
+"Voit yrittää uudelleen tai valita toisen kuvan." = "You can try again or choose another photo.";
 "Napauta kasvoja kuvassa." = "Tap the face in the photograph.";
 "Näin kasvot näkyvät kortilla." = "This is how the face will look on the card.";
 "Kuva ei muutu. Kortille tulee vain tämä ympyrä." = "The photograph does not change. Only this circle goes on the card.";

@@ -825,21 +825,21 @@ struct GalleryScreen: View {
 
         var arrived: [Subject] = []
         for item in items {
+            // The bytes into the archive by the one path a photograph takes,
+            // `MemoryStore.addPhotograph`, which the face picker's way in
+            // from the phone's own photographs shares (§25). The title is
+            // left empty on purpose: nobody will name thirty scanned
+            // photographs. The name arrives when someone talks about the
+            // photo, and it is not needed before that.
+            //
+            // The *date* is a different matter, and it is the one thing thirty
+            // photographs usually share. It is asked once below.
             guard let data = try? await item.loadTransferable(type: Data.self),
-                  let filename = MediaStore.save(imageData: data)
+                  let subject = store.addPhotograph(imageData: data)
             else {
                 skipped += 1
                 continue
             }
-
-            // The title is left empty on purpose: nobody will name thirty
-            // scanned photographs. The name arrives when someone talks about
-            // the photo, and it is not needed before that.
-            //
-            // The *date* is a different matter, and it is the one thing thirty
-            // photographs usually share. It is asked once below.
-            let subject = Subject(kind: .photo, title: "", imageFilename: filename)
-            store.add(subject)
             arrived.append(subject)
         }
 

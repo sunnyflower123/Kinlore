@@ -429,6 +429,29 @@ final class MemoryStore {
         save()
     }
 
+    /// A photograph into the archive, from wherever its bytes came. The
+    /// album's picker (`GalleryScreen.importPhotos`) and the face picker's
+    /// way in from the phone's own photographs (§25) both come through here,
+    /// so that "the same path" is one function and not a claim about two
+    /// copies: `MediaStore` downscales and writes the file, the row is a
+    /// `subject` with an empty title, dirty, so the next round pushes it and
+    /// uploads the bytes sealed — and past the family's ceiling the Worker
+    /// refuses the upload, the row stays on this phone, and `PhotoQuotaNote`
+    /// says so. Nil when the bytes are not a picture or the disk refused
+    /// them; the caller says so, because what to say depends on how many
+    /// were asked for.
+    ///
+    /// The title is left empty on purpose: nobody will name thirty scanned
+    /// photographs. The name arrives when someone talks about the photo, and
+    /// it is not needed before that.
+    @discardableResult
+    func addPhotograph(imageData: Data) -> Subject? {
+        guard let filename = MediaStore.save(imageData: imageData) else { return nil }
+        let subject = Subject(kind: .photo, title: "", imageFilename: filename)
+        add(subject)
+        return subject
+    }
+
     func add(_ memory: Memory) {
         memories.append(memory)
         dirtyMemories.insert(memory.id)
@@ -1480,6 +1503,14 @@ final class MemoryStore {
     /// `MediaStore` call a real one goes through — so what the card draws is a
     /// file on disk and not a special case.
     private static func demoPhotoFile() -> String? {
+        demoPhotoData().flatMap { MediaStore.save(imageData: $0) }
+    }
+
+    /// The same picture as JPEG bytes, for `-library stub`: what the face
+    /// picker's way in from the phone hands the real import in place of the
+    /// system picker's bytes (`FacePickerSheet`), so that a test run drives
+    /// everything from the bytes onward.
+    static func demoPhotoData() -> Data? {
         let size = CGSize(width: 900, height: 600)
         let image = UIGraphicsImageRenderer(size: size).image { context in
             UIColor(red: 0.78, green: 0.72, blue: 0.62, alpha: 1).setFill()
@@ -1487,8 +1518,7 @@ final class MemoryStore {
             UIColor(red: 0.36, green: 0.31, blue: 0.26, alpha: 1).setFill()
             context.fill(CGRect(x: 330, y: 140, width: 240, height: 330))
         }
-        guard let data = image.jpegData(compressionQuality: 0.8) else { return nil }
-        return MediaStore.save(imageData: data)
+        return image.jpegData(compressionQuality: 0.8)
     }
 
     /// The film's own photographs for the `film` seeds, if the shooting day put

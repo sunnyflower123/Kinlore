@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 100 sweep tests, each auditing one screen at the default text size and again at the largest, out of 287 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 101 sweep tests, each auditing one screen at the default text size and again at the largest, out of 289 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -5118,6 +5118,48 @@ näkyvät kortilla."*, and **"Tallenna"**. *"Poista kasvot"* is on the picker,
 and it is not red: nothing is deleted, the photograph stays, the card goes
 back to the initial.
 
+### From the phone's own photographs
+
+Since 26 Sep 2026 the sheet has a second way in, **"Valitse puhelimen
+kuvista"**, at the top in both states — found without scrolling past forty
+tiles at the largest size, and the one thing on the sheet when the archive
+has nothing to offer. The person whose face the family wants on a card is
+often the one the archive has no picture of yet, and the shoebox is not the
+only place a photograph lives. It is the album's own import: the same
+`PhotosPicker`, presented from a flag a plain button sets because the picker
+does not survive being a row (the album's menu says why), and the bytes
+through `MemoryStore.addPhotograph(imageData:)` — the one function the
+album's `importPhotos` calls too, so that "the same path" is one function
+rather than a claim about two copies. `MediaStore` downscales and writes the
+file, the row is a `subject` with an empty title, dirty, pushed and uploaded
+sealed on the next round, refused by the Worker past the family's ceiling
+and counted then in `PhotoQuotaNote`. Then the picture is pushed straight to
+`FaceFocusScreen`, and *"Tallenna"* closes the sheet as it does from a tile.
+
+**The decision recorded here: the imported picture is an ordinary photograph
+of the archive, and it shows in the album.** The sentence under the button
+says so before the tap — *"Kuva tulee arkistoon ja näkyy Albumissa."* —
+because the picture is the family's after it, not the card's. Nothing about
+this section's model moves: the face is still `portraitSubjectID` and two
+fractions, no new column travels, and a picture kept only to be a face would
+be a second kind of photograph that nobody can list, tell about or export,
+for the sake of not showing it. The date sheet is not asked: the album asks
+that of a pile, and this is one picture somebody is about to look at, whose
+own card carries the row. A picture that cannot be read is said so in an
+alert, *"Kuvaa ei saatu tuotua"*, not skipped in silence — the album's
+import names what went missing for the same reason.
+
+The empty state says what is true. *"Tässä puhelimessa ei ole vielä
+arkiston kuvia."* holds of an empty archive and of a family whose pictures
+the full copy has not fetched yet; the sentence it replaced said the archive
+had no photographs and that a face is chosen from the archive's, and the
+button under it is why neither held.
+
+`-library stub` (DEBUG) answers the button with a generated picture — the
+same bytes `-seed deck` writes its photograph from — instead of the system
+picker, which a test run cannot drive. Everything from the bytes onward is
+the real path, and `FaceTests` walks it to the tile in the album.
+
 What is stored is `portraitSubjectID`, `portraitFocusX`, `portraitFocusY` and
 `portraitSetAt` on the person's row (`Subject`, all four Optional for rule
 10). Never a crop. `SubjectAvatar` looks the photograph up through
@@ -5242,8 +5284,8 @@ in the tree there: five of sixteen labels gone, the friend's name among them.
 |---|---|
 | The four fields go and come back, a row with no moment keeps the face, a removal under a moment takes it, and `applyRemote` lays the rule on | `sync-fields-check.swift` — 7 checks added |
 | Newest moment wins, a removal travels, an ignorant phone changes nothing, and what the Worker refuses: another family's photograph, a person, a rejected photograph, one the family does not have; photographs first in a request; a spot outside the picture; a moment in the future; only a person has a face; a photograph rejected after the choice stays on the row | `subject-rules-check.mjs` — 14 checks added, over the local Worker and D1 |
-| Chosen by tapping the face, and the row flips; taken off from the same row, and it flips back | `FaceTests` |
-| The list with a face, the card with a face, the picker and the spot, each at both text sizes | `AccessibilitySweepTests` — 4 sweeps |
+| Chosen by tapping the face, and the row flips; taken off from the same row, and it flips back; chosen from the phone's own photographs through `-library stub`, and the picture is one more tile in the album, untold about | `FaceTests` |
+| The list with a face, the card with a face, the picker with photographs and with none, and the spot, each at both text sizes | `AccessibilitySweepTests` — 5 sweeps |
 | No picture on the blind card's screen carries a name, and one is described as the photograph | `BlindConfirmationTests` |
 | The memory row's exemption reads two identifiers and one audit type, the row sets both, and the sweep passes it in on the first launch only | `audit-exemption-check.mjs`, in `verify.sh` |
 

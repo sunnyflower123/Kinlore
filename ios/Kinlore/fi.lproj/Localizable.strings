@@ -725,7 +725,12 @@
 "Kuvat, joissa hänestä kerrotaan" = "Kuvat, joissa hänestä kerrotaan";
 "Muut kuvat" = "Muut kuvat";
 "Arkiston kuvat" = "Arkiston kuvat";
-"Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta." = "Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta.";
+"Tässä puhelimessa ei ole vielä arkiston kuvia." = "Tässä puhelimessa ei ole vielä arkiston kuvia.";
+"Valitse puhelimen kuvista" = "Valitse puhelimen kuvista";
+"Kuva tulee arkistoon ja näkyy Albumissa." = "Kuva tulee arkistoon ja näkyy Albumissa.";
+"Tuodaan kuvaa" = "Tuodaan kuvaa";
+"Kuvaa ei saatu tuotua" = "Kuvaa ei saatu tuotua";
+"Voit yrittää uudelleen tai valita toisen kuvan." = "Voit yrittää uudelleen tai valita toisen kuvan.";
 "Napauta kasvoja kuvassa." = "Napauta kasvoja kuvassa.";
 "Näin kasvot näkyvät kortilla." = "Näin kasvot näkyvät kortilla.";
 "Kuva ei muutu. Kortille tulee vain tämä ympyrä." = "Kuva ei muutu. Kortille tulee vain tämä ympyrä.";

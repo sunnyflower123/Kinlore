@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 /// Choosing the face on a person's card (ARCHITECTURE §25).
@@ -14,6 +15,19 @@ import SwiftUI
 /// Only photographs on this phone are offered: a face cannot be tapped on a
 /// picture that is still only a key.
 ///
+/// **And the phone's own photographs, since 26 Sep 2026.** The person whose
+/// face the family wants on a card is often the one the archive has no
+/// picture of yet, and the shoebox is not the only place a photograph lives.
+/// *"Valitse puhelimen kuvista"* is the album's import: the same
+/// `PhotosPicker`, and the bytes through `MemoryStore.addPhotograph`, the
+/// one function the album's `importPhotos` calls too — so the same
+/// downscale, the same row, the same sealed upload and the same ceiling —
+/// and then the picture straight to `FaceFocusScreen`. What it becomes is an
+/// ordinary photograph of the archive, in the album with the rest. The face
+/// stays a reference to a photograph, as everywhere in §25, and a picture
+/// kept only to be a face would be a second kind of photograph nobody can
+/// list, tell about or export.
+///
 /// **What VoiceOver gets here is the screen and not the task**, as it did
 /// on the family's map until that map had a search (`PlacesMapScreen`). Each
 /// photograph is a button with its name, the spot is the middle unless
@@ -26,6 +40,16 @@ struct FacePickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let subject: Subject
+
+    /// Where the sheet is: the tiles, or the spot in one photograph. Held
+    /// here rather than left to the links because a picture from the phone
+    /// arrives through a picker and not a tap on a tile, and it is pushed
+    /// the moment it is in the archive.
+    @State private var path: [Subject] = []
+    @State private var isPickingFromLibrary = false
+    @State private var picked: PhotosPickerItem?
+    @State private var isImporting = false
+    @State private var importFailed = false
 
     /// Photographs on this phone, live and their own. A rejected or merged
     /// photograph is not offered, and one another phone added is a key with
@@ -52,14 +76,22 @@ struct FacePickerSheet: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if photographs.isEmpty {
-                        Text("Arkistossa ei ole vielä kuvia. Kasvot valitaan arkiston valokuvasta.")
+                        // True of an empty archive and of a family whose
+                        // pictures the full copy has not fetched yet. The
+                        // sentence it replaced said the archive had none
+                        // and that a face is chosen from the archive, and
+                        // the button under it is why neither held.
+                        Text("Tässä puhelimessa ei ole vielä arkiston kuvia.")
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
                     }
+
+                    fromPhone
+
                     if !told.isEmpty {
                         heading("Kuvat, joissa hänestä kerrotaan")
                         grid(told)
@@ -108,6 +140,99 @@ struct FacePickerSheet: View {
             }
             .elderSurface()
         }
+        .photosPicker(
+            isPresented: $isPickingFromLibrary,
+            selection: $picked,
+            matching: .images,
+            photoLibrary: .shared()
+        )
+        .onChange(of: picked) { _, item in
+            guard let item else { return }
+            Task { await importFromPhone(item) }
+        }
+        .overlay {
+            if isImporting {
+                ProgressView(String(localized: "Tuodaan kuvaa"))
+                    .padding(24)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+            }
+        }
+        // Said, not skipped: the album's import names what went missing for
+        // the same reason, and here one picture is the whole import.
+        .alert("Kuvaa ei saatu tuotua", isPresented: $importFailed) {
+            Button("Selvä") { importFailed = false }
+        } message: {
+            Text("Voit yrittää uudelleen tai valita toisen kuvan.")
+        }
+    }
+
+    /// The way in from the phone's own photographs, at the top in both
+    /// states: found without scrolling past forty tiles at the largest size,
+    /// and the one thing on the sheet when there is nothing else. A plain
+    /// button and the picker presented from the flag it sets — `PhotosPicker`
+    /// does not survive being a row (the album's menu says so), and a button
+    /// shaped like the sheet's others is what a finger here already knows.
+    /// The sentence under it says the one thing worth knowing before the
+    /// tap: the picture is the family's after it, not the card's.
+    ///
+    /// `-library stub` (DEBUG) answers the tap with a generated picture
+    /// instead of the system picker, which a test run cannot drive;
+    /// everything from the bytes onward is the real path.
+    private var fromPhone: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                #if DEBUG
+                if UserDefaults.standard.string(forKey: "library") == "stub" {
+                    if let data = MemoryStore.demoPhotoData() {
+                        importFromPhone(data)
+                    } else {
+                        importFailed = true
+                    }
+                    return
+                }
+                #endif
+                isPickingFromLibrary = true
+            } label: {
+                Label("Valitse puhelimen kuvista", systemImage: "photo.on.rectangle.angled")
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+            }
+            .elderPrimary(false)
+            .elderTapTarget()
+
+            Text("Kuva tulee arkistoon ja näkyy Albumissa.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+        }
+    }
+
+    /// One picture from the phone, by the album's path. Bytes that cannot be
+    /// read — a picture iCloud has not downloaded, a format the phone cannot
+    /// open — are said so, not skipped.
+    private func importFromPhone(_ item: PhotosPickerItem) async {
+        isImporting = true
+        defer {
+            isImporting = false
+            picked = nil
+        }
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
+            importFailed = true
+            return
+        }
+        importFromPhone(data)
+    }
+
+    /// The bytes into the archive — `MemoryStore.addPhotograph`, the album's
+    /// own path — and straight to the spot in the picture. No date sheet:
+    /// the album asks that of a pile, and this is one picture somebody is
+    /// about to look at, whose own card carries the row.
+    private func importFromPhone(_ data: Data) {
+        guard let photo = store.addPhotograph(imageData: data) else {
+            importFailed = true
+            return
+        }
+        path.append(photo)
     }
 
     private func heading(_ key: LocalizedStringKey) -> some View {
