@@ -259,4 +259,129 @@ final class DeckTests: XCTestCase {
             "the result screen is still up"
         )
     }
+
+    /// Every way on from this screen is above the tab bar before anybody
+    /// scrolls — under the plain button, a photograph's card and a family
+    /// member's question and on a first launch, on a reader's phone and on a
+    /// grandparent's — and at the largest text size, the record button. The
+    /// first launch runs in English as well, because its title takes two
+    /// lines there and the screen is taller for it.
+    ///
+    /// The accessibility audit cannot see this, for the reason
+    /// `BlindConfirmationTests` records: the tree keeps a button's whole frame
+    /// when the floating tab bar is drawn over it. And a way on under the bar
+    /// is not one swipe away for the person this screen is for, because she
+    /// does not scroll a screen with one big button on it. Measured in Finnish
+    /// on 26 and 27 Sep 2026 on an iPhone SE, whose bar begins at 584, before
+    /// the screen measured its room: under a photograph's card "En muista
+    /// tätä" ended at 704 on a reader's phone and 711 on a grandparent's,
+    /// under a family member's question "Kirjoita sen sijaan" at 677 and 727,
+    /// and on a first launch at 663 and 680 — in English at 704 and 723. On a
+    /// 13 mini the same rows reached 5, 12 and 28 points into the bar.
+    ///
+    /// At accessibility sizes the page is taller than the phone on purpose,
+    /// and the quiet rows are below the fold by design; the record button is
+    /// not, and on the SE at the largest size it ended at 641 on the plain
+    /// screen, 662 under a card and 711 on a first launch in English.
+    ///
+    /// Before the screen measured its room this failed 18 times on the SE,
+    /// once for every way on under the bar. Since, it passes there, on the
+    /// 13 mini and on the 17 Pro, each on a simulator of its own.
+    ///
+    /// The frames are read at rest, because the screen gives way in steps
+    /// after it has measured itself and a frame read in between is one she
+    /// never sees. On the 17 Pro this suite usually runs on there was room
+    /// before any of it, so this passes there either way — run it on a small
+    /// phone as well.
+    func testEveryWayOnClearsTheTabBarAtRest() {
+        struct State {
+            let name: String
+            let seed: [String]
+            var skip = false
+            var question = false
+            var english = false
+        }
+        let states = [
+            State(name: "the plain button", seed: ["-seed", "archive"]),
+            State(name: "a photograph's card", seed: ["-seed", "deck"], skip: true),
+            State(name: "a family member's question", seed: ["-seed", "unseen"], question: true),
+            State(name: "the first launch", seed: ["-seed", "empty"]),
+            // Later than `launch`'s own Finnish, so it is the one that counts.
+            State(
+                name: "the first launch in English",
+                seed: ["-seed", "empty", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"],
+                english: true
+            ),
+        ]
+        let phones: [(name: String, arguments: [String])] = [
+            ("a reader's phone", []),
+            ("a grandparent's phone", ["-elder.largerText", "YES"]),
+        ]
+        for state in states {
+            for phone in phones {
+                let place = "\(state.name) on \(phone.name)"
+                let app = launch(state.seed + phone.arguments + ["-tab", "tell"])
+                let record = app.buttons[state.english ? "Start telling" : "Aloita kertominen"]
+                XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: \(place)")
+
+                let write = app.buttons[state.english ? "Write instead" : "Kirjoita sen sijaan"]
+                atRest(write)
+
+                var ways: [(String, XCUIElement)] = [("the record button", record), ("\"\(write.label)\"", write)]
+                if state.skip {
+                    let skip = app.buttons["En muista tätä"]
+                    XCTAssertTrue(skip.exists, "no way past the card: \(place)")
+                    ways.append(("\"En muista tätä\"", skip))
+                }
+                if state.question {
+                    let question = app.buttons.matching(
+                        NSPredicate(format: "label BEGINSWITH %@", "Mummo kysyy")
+                    ).firstMatch
+                    XCTAssertTrue(question.exists, "the family's question is not offered: \(place)")
+                    ways.append(("Mummo's question", question))
+                }
+
+                let bar = app.tabBars.firstMatch.frame
+                for (name, way) in ways {
+                    XCTAssertLessThanOrEqual(
+                        way.frame.maxY, bar.minY,
+                        "on \(place), \(name) ends at \(way.frame.maxY), under the tab bar that begins at \(bar.minY)"
+                    )
+                }
+                app.terminate()
+            }
+        }
+
+        for state in states {
+            let place = "\(state.name) at the largest text size"
+            let app = launch(
+                state.seed + ["-tab", "tell"],
+                textSize: "UICTContentSizeCategoryAccessibilityXXXL"
+            )
+            let record = app.buttons[state.english ? "Start telling" : "Aloita kertominen"]
+            XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: \(place)")
+
+            let bottom = atRest(record).maxY
+            let bar = app.tabBars.firstMatch.frame
+            XCTAssertLessThanOrEqual(
+                bottom, bar.minY,
+                "on \(place), the record button ends at \(bottom), under the tab bar that begins at \(bar.minY)"
+            )
+            app.terminate()
+        }
+    }
+
+    /// An element's frame once the screen has stopped moving it: the same
+    /// twice, a second apart.
+    @discardableResult
+    private func atRest(_ element: XCUIElement) -> CGRect {
+        var settled = CGRect.null
+        for _ in 0 ..< 10 {
+            sleep(1)
+            let now = element.frame
+            if now == settled { break }
+            settled = now
+        }
+        return settled
+    }
 }

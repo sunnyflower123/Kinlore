@@ -449,6 +449,19 @@ private struct IdleView: View {
     /// What to say once she has answered, and the only state this card keeps.
     /// Nil while the question is still on screen.
 
+    /// The steps this screen has taken to fit above the tab bar at each text
+    /// size, and what it measured to decide them. See `Squeeze`, which is
+    /// where all of it lives.
+    @State private var steps: [DynamicTypeSize: Set<Squeeze>] = [:]
+    @State private var ceilings: [DynamicTypeSize: CGFloat] = [:]
+    @State private var room: CGFloat?
+    @State private var lastWayOn: Edge?
+    @State private var recordButton: Edge?
+    @State private var photoDrawn: CGFloat?
+
+    private var squeeze: Set<Squeeze> { steps[typeSize] ?? [] }
+    private var photoCeiling: CGFloat? { ceilings[typeSize] }
+
     /// The reassurance is what makes an elderly person willing to start talking,
     /// so it is not dropped at large text sizes — it is shortened. In full it ran
     /// to five lines at the largest size and pushed the record button, the one
@@ -459,7 +472,8 @@ private struct IdleView: View {
     /// the other end: two starters below the button are three lines the screen
     /// does not have, and they pushed "Kirjoita sen sijaan" under the tab bar at
     /// the ordinary text size. A starter says what to do more concretely than
-    /// the reassurance does — "Kuka tässä kuvassa on?" is the permission.
+    /// the reassurance does — "Kuka tässä kuvassa on?" is the permission. And
+    /// on a phone too small for the long one, which is `Squeeze.shortReassurance`.
     ///
     /// Once per install it says something else entirely. The first press does
     /// not start a recording, it raises iOS's permission prompt — a dialog
@@ -482,7 +496,7 @@ private struct IdleView: View {
     // microphone hint, the starters' heading, the processing phases and the
     // blind card's answer were Finnish on an English phone — photographed
     // 5 Sep 2026, after the review's own list (#38, #93) had missed them.
-    private func intro(withStarters: Bool) -> LocalizedStringKey {
+    private func intro(short: Bool) -> LocalizedStringKey {
         if AudioRecorder.isPermissionUnasked {
             // Shortened by the same rule as the reassurance below, and it was
             // measured the hard way: the two-line version at the *ordinary* text
@@ -492,11 +506,11 @@ private struct IdleView: View {
             // starters are always there, so the short one is what ships; the
             // long one is for somebody who joined a family that has already been
             // told about.
-            return typeSize.isAccessibilitySize || withStarters
+            return typeSize.isAccessibilitySize || short
                 ? "Puhelin kysyy ensin luvan mikrofoniin."
                 : "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua."
         }
-        return typeSize.isAccessibilitySize || withStarters
+        return typeSize.isAccessibilitySize || short
             ? "Puhu ihan rauhassa ja vapaasti."
             : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
@@ -631,11 +645,23 @@ private struct IdleView: View {
         // truncated to an ellipsis, and the open question disappeared under the
         // tab bar. The minimum height keeps everything centred at normal sizes,
         // which is where this screen spends most of its life.
+        //
+        // Scrolling is also how a small phone hid the ways on under the tab
+        // bar without anything saying so, which is what `Squeeze` answers.
+        // The room it measures is the page's, from here.
         GeometryReader { proxy in
             ScrollView {
                 content
-                    .padding(Elder.screenPadding)
+                    .padding(.horizontal, Elder.screenPadding)
+                    .padding(.bottom, Elder.screenPadding)
+                    .padding(.top, squeeze.contains(.air) ? 12 : Elder.screenPadding)
                     .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                    .coordinateSpace(.named(Self.page))
+                    .onGeometryChange(for: CGRect?.self) { $0.bounds(of: .scrollView) } action: { visible in
+                        guard room == nil, let visible, visible.height > 0 else { return }
+                        room = visible.maxY
+                        giveWayIfNeeded()
+                    }
             }
             .scrollBounceBehavior(.basedOnSize)
         }
@@ -690,12 +716,21 @@ private struct IdleView: View {
         // the bar with a line of text to spare. A screen with room loses nothing
         // by the squeeze — the three Spacers below take back exactly what the
         // gaps give up, which is why the Finnish screen still reads as open.
-        VStack(spacing: 14) {
+        //
+        // On a phone smaller than that, 8 and two Spacers fewer: `Squeeze.air`.
+        VStack(spacing: gap) {
             // Resolved once: what is offered at the bottom decides how long the
             // reassurance at the top can afford to be.
             let offered = offer
+            // The steps each edge below is measured under, and the text size,
+            // so that a measurement taken before a step, or at another size,
+            // is never read as one taken now.
+            let squeezed = squeeze
+            let size = typeSize
 
-            Spacer(minLength: 0)
+            if !squeezed.contains(.air) {
+                Spacer(minLength: 0)
+            }
 
             // The card. A photograph asks its question without needing a word
             // in it, which is the whole reason this screen stopped being a
@@ -717,13 +752,17 @@ private struct IdleView: View {
                     // centred between two spacers, so a smaller picture only
                     // fed the spacers. It only buys height once the screen has
                     // more on it than fits, which is exactly the case the card
-                    // created.
-                    .frame(maxHeight: typeSize.isAccessibilitySize ? 150 : 200)
+                    // created. On a small phone it gives way further, to what
+                    // the rows below leave it: `Squeeze.card`.
+                    .frame(maxHeight: photoCeiling ?? (typeSize.isAccessibilitySize ? 150 : 200))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     // A scanned photograph has no description and the app must
                     // not invent one — guessing at the content is precisely
                     // what rule 4 forbids. What is said is what is known.
                     .accessibilityLabel("Valokuva, josta ei ole vielä kerrottu")
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                        photoDrawn = height
+                    }
             }
 
             // A question's text is the family's own words and is shown as it
@@ -753,14 +792,13 @@ private struct IdleView: View {
             // on a screen that has just grown a picture: with it, the starter
             // question was below the fold, and the starter is what makes the
             // card answerable at all.
-            if deckPhoto == nil {
-                Text(intro(withStarters: offered.isStarter))
-                    .elderBody()
-                    .foregroundStyle(Elder.supporting)
-                    .multilineTextAlignment(.center)
+            if deckPhoto == nil, !squeezed.contains(.reassuranceBelow) {
+                reassurance(offered)
             }
 
-            Spacer(minLength: 0)
+            if !squeezed.contains(.air) {
+                Spacer(minLength: 0)
+            }
 
             RecordButton(isRecording: false) {
                 Task {
@@ -771,6 +809,20 @@ private struct IdleView: View {
                     }
                 }
             }
+            .onGeometryChange(for: Edge.self) { proxy in
+                Edge(maxY: proxy.frame(in: .named(Self.page)).maxY, squeeze: squeezed, size: size)
+            } action: { edge in
+                recordButton = edge
+                giveWayIfNeeded()
+            }
+            // The same 28 above the disc as below it, for the same glow. The
+            // spacer over the button kept it without being asked — two gaps of
+            // 14 even at no height — and `Squeeze.air` took it to 8, which put
+            // "Puhu ihan rauhassa ja vapaasti." inside the glow on the SE: the
+            // text measures 9.54:1 from the pixels, and the audit still failed
+            // it on a first launch and under a family member's question at the
+            // default size, alone on a quiet machine (27 Sep 2026).
+            .padding(.top, squeezed.contains(.air) ? 28 - gap : 0)
 
             // fixedSize on every label below: under vertical pressure SwiftUI
             // truncates a Text before it shrinks anything else, and a truncated
@@ -780,14 +832,23 @@ private struct IdleView: View {
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                // The one gap the squeeze above is not allowed to take, and the
-                // audit is what said so: the button's glow is a red shadow at
-                // radius 14, it reaches some 28 pt past the disc, and this line
-                // is measured against whatever is behind it. At the stack's new
+                // One of the two gaps the squeeze above is not allowed to take
+                // (the other is over the disc), and the audit is what said so:
+                // the button's glow is a red shadow at radius 14, it reaches
+                // some 28 pt past the disc, and this line is measured against
+                // whatever is behind it. At the stack's new
                 // 14 pt all five Kerro sweeps went red at the default text size
                 // with "Contrast failed — Paina ja ala puhua" (19 Sep 2026).
-                // 14 here puts the caption back where 28 had it.
-                .padding(.top, 14)
+                // 14 here puts the caption back where 28 had it — and so does
+                // 20 when a small phone takes the stack to 8.
+                .padding(.top, 28 - gap)
+
+            // Where the reassurance goes when an accessibility size leaves the
+            // record button no room under it: read after the instruction, as
+            // its second half, rather than dropped (`Squeeze.reassuranceBelow`).
+            if deckPhoto == nil, squeezed.contains(.reassuranceBelow) {
+                reassurance(offered)
+            }
 
             // An open question is a reason to come back to the app. It is also
             // an easier start than a blank button: telling "something" is hard
@@ -797,22 +858,32 @@ private struct IdleView: View {
             // that can least afford the height.
             if !offered.questions.isEmpty, cardQuestion == nil {
                 VStack(spacing: 10) {
-                    Group {
-                        if offered.isStarter {
-                            Text("Jos et tiedä mistä aloittaa")
-                        } else {
-                            Text("Tai vastaa aiempaan kysymykseen")
+                    // The one line here a small phone gives up, with the cards'
+                    // padding. It is an instruction about the cards rather
+                    // than one of them: *"Mummo kysyy"* already says whose
+                    // question a family's card is, and a starter reads as a
+                    // question to answer without being introduced as one.
+                    if !squeezed.contains(.card) {
+                        Group {
+                            if offered.isStarter {
+                                Text("Jos et tiedä mistä aloittaa")
+                            } else {
+                                Text("Tai vastaa aiempaan kysymykseen")
+                            }
                         }
-                    }
                         .font(.subheadline)
                         .foregroundStyle(Elder.supporting)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     // One with a card, two without. The card is one question
                     // at a time by design; a second below a photograph is a
                     // choice to make before answering, and choosing is work.
-                    ForEach(deckPhoto == nil ? offered.questions : Array(offered.questions.prefix(1))) { question in
+                    // One starter, too, on a phone too small for two
+                    // (`Squeeze.oneStarter`) — never one of the family's.
+                    let one = deckPhoto != nil || (offered.isStarter && squeezed.contains(.oneStarter))
+                    ForEach(one ? Array(offered.questions.prefix(1)) : offered.questions) { question in
                         Button {
                             // A question about some other subject opens that
                             // subject's own screen. When this screen is already
@@ -857,35 +928,214 @@ private struct IdleView: View {
                                 }
                                 Spacer(minLength: 0)
                             }
-                            .padding(14)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, squeezed.contains(.card) ? 8 : 14)
+                            // A one-line starter is 48 points at 14 and would
+                            // be 36 at 8, so the squeeze stops at 44: the
+                            // floor it keeps for anything tapped.
+                            .frame(minHeight: squeezed.contains(.card) ? 44 : nil)
                             .elderCard()
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.top, 4)
+                .padding(.top, squeezed.contains(.air) ? 0 : 4)
             }
 
-            // Side by side with the way past a card, and only there. A card
-            // makes this screen taller than any state it has had, and stacked
-            // these two put the second one under the tab bar — a way past a
-            // photograph she cannot place, reachable only by scrolling, which
-            // for this user is not reachable. At accessibility sizes they
-            // stack again: two labels cannot share a line there, and the
-            // screen is taller than the phone on purpose by then.
-            if let onSkip, model.target != nil, !typeSize.isAccessibilitySize {
-                HStack(spacing: 10) {
-                    writingButton
-                    skipButton(onSkip)
+            waysOn
+                .onGeometryChange(for: Edge.self) { proxy in
+                    Edge(maxY: proxy.frame(in: .named(Self.page)).maxY, squeeze: squeezed, size: size)
+                } action: { edge in
+                    lastWayOn = edge
+                    giveWayIfNeeded()
                 }
-            } else {
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// The reassurance, in whichever of its two places the screen has room for.
+    private func reassurance(_ offered: (questions: [FollowUpQuestion], isStarter: Bool)) -> some View {
+        Text(intro(short: offered.isStarter || squeeze.contains(.shortReassurance)))
+            .elderBody()
+            .foregroundStyle(Elder.supporting)
+            .multilineTextAlignment(.center)
+    }
+
+    /// The two quiet rows, as one block so that the last of them can be
+    /// measured.
+    ///
+    /// Side by side with the way past a card, and only there. A card makes
+    /// this screen taller than any state it has had, and stacked these two put
+    /// the second one under the tab bar — a way past a photograph she cannot
+    /// place, reachable only by scrolling, which for this user is not
+    /// reachable. At accessibility sizes they stack again: two labels cannot
+    /// share a line there, and the screen is taller than the phone on purpose
+    /// by then.
+    @ViewBuilder
+    private var waysOn: some View {
+        if let onSkip, model.target != nil, !typeSize.isAccessibilitySize {
+            HStack(spacing: 10) {
+                writingButton
+                skipButton(onSkip)
+            }
+        } else {
+            VStack(spacing: gap) {
                 writingButton
                 if let onSkip, model.target != nil {
                     skipButton(onSkip)
                 }
             }
+        }
+    }
 
-            Spacer(minLength: 0)
+    // MARK: - Giving way on a small phone
+
+    /// The steps this screen takes to fit above the tab bar, and the order it
+    /// takes them in — the part of this screen worth keeping through any
+    /// redesign of it.
+    ///
+    /// The screen scrolls when its content is taller than the phone, and at
+    /// rest nothing on it says so. Measured in Finnish on 26 and 27 Sep 2026
+    /// on an iPhone SE, whose tab bar begins at 584: under a photograph's
+    /// card the two quiet rows ended at 704 on a reader's phone and 711 on a
+    /// grandparent's, where the disc itself reached 586; with a family
+    /// member's question, "Kirjoita sen sijaan" ended at 677 and 727 and the
+    /// question card at 603 and 653; and on a first launch it ended at 663
+    /// and 680, and in English at 704 and 723. On a 13 mini the rows reached
+    /// 5, 12 and 28 points into its bar. The accessibility audit saw none of
+    /// it, because the tree keeps an element's whole frame when the bar is
+    /// drawn over it — and none of it is one swipe away for the person this
+    /// screen is built for: she does not scroll a screen with one big button
+    /// on it, so a way on under the bar is a way on she does not have.
+    /// `DeckTests.testEveryWayOnClearsTheTabBarAtRest` is what holds this.
+    ///
+    /// So the screen measures, at rest, where its last way on ends against
+    /// where the bar begins, and when it ends under the bar it takes the next
+    /// step below, and the next, until 8 points of daylight are left: one step
+    /// per layout, each measured before the next is taken, and never back, so
+    /// that nothing rearranges under her thumb once she can see it. At
+    /// accessibility sizes the page is taller than any phone on purpose and
+    /// scrolls, as it always has; there the record button is what has to
+    /// clear the bar, and the rest is below. A phone with room never takes the
+    /// first step, and looks as it did.
+    ///
+    /// The order is the decision. Air first, because nobody reads it. Then the
+    /// reassurance's detail, whose short form keeps the permission it gives.
+    /// Then the card, which is what this layout was built to let give way.
+    /// Then, on a first launch, the second of the two starters: one is still
+    /// the rung the ladder needs, and of every screen measured on the SE, the
+    /// 13 mini and the 17 Pro, only the SE's first launch in English — where
+    /// the title takes two lines — gets this far. Never the record button, the
+    /// family's question or either quiet row: they are the ways on, and the
+    /// whole point is that they stay. Text keeps its Dynamic Type size
+    /// throughout, the quiet rows their 60 points, and a question card never
+    /// goes under 44.
+    ///
+    /// Measured, and not proposed, for the reason `BlindCardView.photoMax`
+    /// records: a height handed to `ViewThatFits` turned the audit red in
+    /// places where no height was being proposed at all.
+    ///
+    /// The screen keeps the steps it took as a set rather than a level. A step
+    /// that would change nothing here is passed over, and as a level it would
+    /// have come back with the next one taken: at the largest text size the
+    /// question cards' heading, which is under the record button and was never
+    /// the problem, went with the reassurance's move.
+    ///
+    /// And one set per text size, because the size can change under a running
+    /// screen: the accessibility audit's Dynamic Type check scales the text up
+    /// and back while it audits. One set for every size kept what an
+    /// accessibility size had taken, and the SE's default-size screen came
+    /// back from the audit with its reassurance under "Paina ja ala puhua"; a
+    /// set emptied at every change stepped again from nothing while the audit
+    /// was still reading the screen. Both turned the Kerro sweeps on the SE red
+    /// with contrast findings `main` does not have (27 Sep 2026). A size
+    /// already measured comes back as it was, in the same frame as the size.
+    private enum Squeeze: Int, CaseIterable, Comparable {
+        /// The two empty spacers, the stack's gaps 14 → 8 with the disc kept
+        /// 28 from what is above it and from its caption, the questions' extra
+        /// 4, and the top margin 24 → 12.
+        case air
+        /// The reassurance's short form, which accessibility sizes and starter
+        /// questions already get.
+        case shortReassurance
+        /// The photograph down to what the rows leave it, never under 100 —
+        /// the floor `BlindCardView` chose, below which a face stops being
+        /// something to recognise — or the question cards' padding 14 → 8,
+        /// never under 44, without the heading above them.
+        case card
+        /// One starter question instead of two. Starters only: a family
+        /// member's question is a way on, and stays.
+        case oneStarter
+        /// Accessibility sizes only: the reassurance moves under "Paina ja ala
+        /// puhua", which it reads as the second half of, rather than leaving
+        /// the screen.
+        case reassuranceBelow
+
+        static func < (a: Squeeze, b: Squeeze) -> Bool { a.rawValue < b.rawValue }
+    }
+
+    /// Where a measured row ends, in the page's coordinates, and the steps and
+    /// the text size it was laid out under.
+    private struct Edge: Equatable {
+        var maxY: CGFloat
+        var squeeze: Set<Squeeze>
+        var size: DynamicTypeSize
+    }
+
+    private static let page = "IdleView.page"
+
+    private var gap: CGFloat { squeeze.contains(.air) ? 8 : 14 }
+
+    /// The next step, when the row that has to clear the bar does not — and
+    /// only when it was measured as the screen is now: under the steps taken,
+    /// at this text size.
+    ///
+    /// What starts it is a way on under the bar; what it gives way to, once
+    /// started, is 8 points of daylight above it. A screen that fits is left
+    /// as it is drawn even with less: on the 17 Pro, in English, under a
+    /// family member's question on a grandparent's phone, "Write instead" ends
+    /// 7 points above the bar, and with the daylight as the trigger that
+    /// screen took a step and moved the row 68 points up, for a row nobody
+    /// had lost.
+    private func giveWayIfNeeded() {
+        guard blind == nil, let room,
+              let edge = typeSize.isAccessibilitySize ? recordButton : lastWayOn,
+              edge.size == typeSize, edge.squeeze == squeeze
+        else { return }
+        let under = edge.maxY - room
+        let deficit = under + 8
+        guard squeeze.isEmpty ? under > 0 : deficit > 0,
+              let next = Squeeze.allCases.first(where: { step in
+                  squeeze.allSatisfy { $0 < step } && takes(step)
+              })
+        else { return }
+        if next == .card, let photoDrawn {
+            ceilings[typeSize] = max(100, photoDrawn - deficit)
+        }
+        steps[typeSize, default: []].insert(next)
+    }
+
+    /// Whether a step changes anything on this screen as it stands. One that
+    /// does not is passed over, because a layout it does not change is never
+    /// measured again and the screen would wait on it for ever.
+    private func takes(_ step: Squeeze) -> Bool {
+        let accessibility = typeSize.isAccessibilitySize
+        let reassured = deckPhoto == nil
+        switch step {
+        case .air: return true
+        case .shortReassurance: return reassured && !accessibility && !offer.isStarter
+        case .card:
+            if deckPhoto != nil { return (photoDrawn ?? 0) > 100 }
+            // The cards are under the button, which is all an accessibility
+            // size asks to clear. And they are drawn only where the stack
+            // draws them, which is the condition repeated here.
+            return !offer.questions.isEmpty && cardQuestion == nil && !accessibility
+        case .oneStarter:
+            let offered = offer
+            return reassured && offered.isStarter && offered.questions.count > 1
+                && cardQuestion == nil && !accessibility
+        case .reassuranceBelow: return reassured && accessibility
         }
     }
 }

@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 314 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 315 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -4955,6 +4955,51 @@ run of easy questions.
 Skips are device-local, like the ladder's comfort and `NewFromFamily`'s seen
 list: *"she does not recognise this one"* describes the person holding the
 phone. Her sister should still be asked.
+
+**And every way on stays above the tab bar on a small phone — 26 Sep 2026.**
+The card made this screen taller than any state it had had, and it was not the
+only one: on a phone smaller than the 17 Pro the screen scrolled with nothing
+on it saying so. On an iPhone SE, whose bar begins at 584, the two quiet rows
+under a photograph's card ended at 704 on a reader's phone and 711 on a
+grandparent's; *"Kirjoita sen sijaan"* ended at 677 and 727 under a family
+member's question and at 663 and 680 on a first launch — 704 and 723 in
+English, where the title takes two lines; and at the largest text size the
+record button itself ended at 641. On a 13 mini the rows reached 5, 12 and 28
+points into its bar. No audit sees it — the tree holds a row whether or not
+the bar is drawn over it — and none of it is one swipe away for somebody who
+does not scroll a screen with one big button on it. So `IdleView` measures at
+rest where its last way on ends — at accessibility sizes, where the page
+scrolls by design, the record button — against where the scroll view's bounds
+end, and when it ends below them gives way a step at a time until 8 points of
+daylight are left: the air, then the reassurance's short form, then the card,
+which is the photograph down to what the rows leave it and never under 100, or
+the question cards' padding and their heading, a card never under 44; then,
+on a first launch, the second of the two starters; at accessibility sizes the
+reassurance moves under *"Paina ja ala puhua"* instead. The record button, the
+family's question and both quiet rows never give way, text keeps its size and
+the quiet rows their 60 points, and `Squeeze` keeps the order and its reasons
+in one place for whatever redesigns this screen next. A row under the bar is
+what starts it, and the daylight only where to stop: with the 8 points as the
+trigger, the 17 Pro's English screen under a family member's question on a
+grandparent's phone, *"Write instead"* 7 points clear, took a step and moved
+the row 68 points for nothing. And the steps are kept per text size, because
+the size can change under a running screen — the audit's own Dynamic Type
+check scales it and back — and both simpler answers, one set for every size
+and a set emptied at every change, turned the Kerro sweeps on the SE red with
+contrast findings `main` does not have. After, on the SE: the card's rows end
+at 576, the question's at 557 and 573, the first launch's at 551 and 562 with
+both starters in Finnish and at 538 and 551 with one in English, and the
+record button at the largest size at 576 at the lowest, under a card whose
+photograph gives way from 150 to 116. On the 17 Pro the
+screen takes no step: in 24 screenshots — four states, a reader's phone, a
+grandparent's and the largest size, in both languages — every pixel between
+the status bar and the tab bar is `main`'s, and in the accessibility tree only
+two text frames under a card at the largest size move, by under a point.
+`DeckTests.testEveryWayOnClearsTheTabBarAtRest` compares frames: 18 failures on
+the SE before the change, green after on the SE, the 13 mini and the 17 Pro.
+Six of the seven Kerro sweeps pass on the SE, among them
+`testTellPermissionUnasked`, which `main` fails there on this very row; the
+seventh fails on the album before it reaches Kerro, on `main` as well.
 
 ### The blind confirmation, built 30 Aug 2026
 
