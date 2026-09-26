@@ -167,10 +167,12 @@ struct OnboardingScreen: View {
     /// itself, and has a button — without one, a page with nothing to press
     /// reads as a phone that has stopped.
     ///
-    /// At accessibility sizes the sentence keeps only the half that says what
-    /// the page does by itself. In full it ran to eight lines at the largest
-    /// size and left the button below the fold, the fork's own failure
-    /// (`intro`); the title already says what it waits for.
+    /// At accessibility sizes the sentence loses its last clause. In full it
+    /// ran to eight lines at the largest size and left the button below the
+    /// fold, the fork's own failure (`intro`); with only the half that says
+    /// the app tries again by itself, the page no longer said what had not
+    /// answered (the English read-through of 26 Sep 2026, 802). Both halves
+    /// fit with the button on screen; "kun yhteys palaa" is the title's word.
     private var unanswered: some View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
@@ -181,7 +183,7 @@ struct OnboardingScreen: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Group {
                     if typeSize.isAccessibilitySize {
-                        Text("Sovellus yrittää itse uudelleen.")
+                        Text("Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen.")
                     } else {
                         Text("Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa.")
                     }
@@ -216,28 +218,40 @@ struct OnboardingScreen: View {
     /// phone on the same Apple ID it is the first thing that reads wrong,
     /// before a single telling has been saved under that name.
     ///
-    /// At accessibility sizes the sentence is dropped, as the fork drops its
-    /// `intro`: it pushed the one button below the fold, and the family's name
-    /// over the button already says whose archive it opens.
+    /// At accessibility sizes the sentence is shortened rather than dropped.
+    /// Dropped, the page read as a title and a button (the English
+    /// read-through of 26 Sep 2026, 801); in full it pushed the one button
+    /// below the fold, the fork's own failure (`intro`). The half kept is the
+    /// half the family's name over the button does not already say.
     private func returning(to family: Session.Family) -> some View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
             VStack(spacing: 14) {
-                Text("Tervetuloa takaisin, \(family.you.displayName)")
-                    .font(.largeTitle.weight(.bold))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
+                Group {
+                    if let name = Self.name(of: family.you) {
+                        Text("Tervetuloa takaisin, \(name)")
+                    } else {
+                        Text("Tervetuloa takaisin")
+                    }
+                }
+                .font(.largeTitle.weight(.bold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
                 // As its founder typed it, so not looked up.
                 Text(verbatim: family.name)
                     .font(.title2.weight(.semibold))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                if !typeSize.isAccessibilitySize {
-                    Text("Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen.")
-                        .elderBody()
-                        .foregroundStyle(Elder.supporting)
-                        .multilineTextAlignment(.center)
+                Group {
+                    if typeSize.isAccessibilitySize {
+                        Text("Muistot haetaan tähän puhelimeen.")
+                    } else {
+                        Text("Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen.")
+                    }
                 }
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
             }
             Spacer(minLength: 0)
             Button {
@@ -254,6 +268,21 @@ struct OnboardingScreen: View {
             .controlSize(.large)
             Spacer(minLength: 0)
         }
+    }
+
+    /// The member's name for the greeting, or nil when it is the word "Minä".
+    ///
+    /// The shared fixture's member is that word, deliberately
+    /// (`Session.seedDemoFamily`), and the page greeted it as a name:
+    /// *"Tervetuloa takaisin, Minä"*, and in English *"Welcome back, Me"*,
+    /// which is what the film and the judging see (the English read-through
+    /// of 26 Sep 2026). Compared in the phone's language and in the app's,
+    /// because a member named on a Finnish phone comes back on an English one
+    /// carrying the Finnish word.
+    private static func name(of you: Session.Family.You) -> String? {
+        let name = you.displayName.trimmingCharacters(in: .whitespaces)
+        if name.isEmpty || name == "Minä" || name == String(localized: "Minä") { return nil }
+        return name
     }
 
     private var fork: some View {
@@ -849,6 +878,18 @@ private struct JoinFamilyForm: View {
             }
         }
         .navigationTitle("Liity perheeseen")
+        // Inline, because the automatic mode drew this title twice on the
+        // rejoin sheet: the bar showed it inline while the large title was
+        // drawn over the note that says why the form is there — at both text
+        // sizes, in both languages, and still six seconds after the sheet had
+        // settled (the English read-through of 26 Sep 2026, measured again the
+        // same evening on a simulator of its own). The form is the first
+        // screen of that sheet, pushed the moment the sheet appears, and
+        // whether it was pushed from `onAppear` or was the stack's initial
+        // state made no difference: the bar reserved 78 to 184 pt either way,
+        // over a note starting at 132. Reached from the fork by a tap the
+        // title was already inline by inheritance, so that road is unchanged.
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // The name this phone already had in the family, so that joining
             // again does not rename anybody. The joiner's own typing still

@@ -33,8 +33,10 @@
 "Katsotaan, oletko jo perheen jäsen." = "Katsotaan, oletko jo perheen jäsen.";
 "Odotetaan yhteyttä" = "Odotetaan yhteyttä";
 "Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa." = "Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa.";
-"Sovellus yrittää itse uudelleen." = "Sovellus yrittää itse uudelleen.";
+"Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen." = "Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen.";
+"Tervetuloa takaisin" = "Tervetuloa takaisin";
 "Tervetuloa takaisin, %@" = "Tervetuloa takaisin, %@";
+"Muistot haetaan tähän puhelimeen." = "Muistot haetaan tähän puhelimeen.";
 "Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen." = "Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen.";
 "Avaa perheen arkisto" = "Avaa perheen arkisto";
 "Tällä puhelimella olet Kinloressa %@" = "Tällä puhelimella olet Kinloressa %@";

@@ -319,9 +319,15 @@ Now the phone asks the server first, and one of three pages answers:
   page, and nothing on it can tell the two apart. The name is how that phone
   finds out: on Eino's new phone, which shares Aino's Apple ID, the page
   greets Aino, before anything has been told under her name. Until 26 Sep
-  2026 it said only *"Tervetuloa takaisin"*.
+  2026 it said only *"Tervetuloa takaisin"* — and it still does when the
+  member's name is the word *"Minä"*, which is the shared fixture's and not
+  a name: greeted, it read *"Welcome back, Me"* on the English phone the
+  film and the judging see. At accessibility sizes the sentence is
+  *"Muistot haetaan tähän puhelimeen."*, the half the family's name does
+  not already say; dropped, the page was a title and a button.
 - **The server did not answer**: *"Odotetaan yhteyttä"*, *"Perheen palvelu
-  ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa."* and
+  ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa."* (at
+  accessibility sizes without its last clause, which the title says) and
   **"Yritä uudelleen"**. The fork stays hidden, because silence is not a no:
   a member who took "Aloita" here would meet the refusal above, or with the
   network gone, set up an archive apart from the family. The page asks again

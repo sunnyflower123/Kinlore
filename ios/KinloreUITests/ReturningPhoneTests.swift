@@ -17,16 +17,22 @@ import XCTest
 /// question asked launches once first, so that it does not depend on running
 /// after something else.
 final class ReturningPhoneTests: XCTestCase {
-    /// The server knows the identity: the page names the member the phone
-    /// comes back as and the family, offers no fork, and its one button opens
-    /// the archive on Albumi, a join's landing. The member's name is the
-    /// fixture's "Minä"; on a second phone on the same Apple ID it is the
-    /// first phone's owner, which is the point of saying it.
+    /// The server knows the identity: the page names the family, offers no
+    /// fork, and its one button opens the archive on Albumi, a join's landing.
+    /// The fixture's member is the placeholder word "Minä", which is not a
+    /// name and is not said — the page read *"Tervetuloa takaisin, Minä"*
+    /// until 26 Sep 2026, and in English *"Welcome back, Me"*, which is what
+    /// the film and the judging see. A member with a name is greeted by it
+    /// (`testAMemberWithANameIsGreetedByIt`).
     func testAKnownPhoneIsOfferedItsFamily() {
         let app = launch(["-seed", "returning"], api: "http://127.0.0.1:9")
         XCTAssertTrue(
-            app.staticTexts["Tervetuloa takaisin, Minä"].waitForExistence(timeout: 10),
-            "never arrived: the page that offers the family back, by the member's name"
+            app.staticTexts["Tervetuloa takaisin"].waitForExistence(timeout: 10),
+            "never arrived: the page that offers the family back"
+        )
+        XCTAssertFalse(
+            app.staticTexts["Tervetuloa takaisin, Minä"].exists,
+            "the greeting says the placeholder as if it were a name"
         )
         XCTAssertTrue(app.staticTexts["Virtaset"].exists, "the page does not name the family")
         assertNoFork(app, "a member was offered the fork")
@@ -35,6 +41,19 @@ final class ReturningPhoneTests: XCTestCase {
         let album = app.tabBars.buttons["Albumi"]
         XCTAssertTrue(album.waitForExistence(timeout: 10), "the family's archive never opened")
         XCTAssertTrue(album.isSelected, "the archive did not open on Albumi")
+    }
+
+    /// The name, when there is one. On Eino's new phone on Aino's Apple ID the
+    /// page greets Aino, before anything has been told under her name, and
+    /// that is how the phone finds out (docs/UX.md §4.5). `-joinedAs` is the
+    /// name the server holds for this phone, here as in `-seed joined`.
+    func testAMemberWithANameIsGreetedByIt() {
+        let app = launch(["-seed", "returning", "-joinedAs", "Aino"], api: "http://127.0.0.1:9")
+        XCTAssertTrue(
+            app.staticTexts["Tervetuloa takaisin, Aino"].waitForExistence(timeout: 10),
+            "the page does not greet the member by name"
+        )
+        XCTAssertTrue(app.staticTexts["Virtaset"].exists, "the page does not name the family")
     }
 
     /// Nothing answered, which is not a no, so not the fork either: the page

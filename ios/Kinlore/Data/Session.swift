@@ -231,6 +231,12 @@ final class Session {
             // (`returnToFamily`), so the next launch comes back to the same
             // page. The store empties itself for this seed — see `MemoryStore`.
             seedDemoFamily()
+            // `-joinedAs <name>` names the member the server holds for this
+            // phone, as it does below; the fixture's own is the placeholder
+            // word, which the page does not say (`OnboardingScreen.name(of:)`).
+            if let name = UserDefaults.standard.string(forKey: "joinedAs"), let seeded = family {
+                family = Self.renaming(seeded, to: name)
+            }
             if let family { homecoming = .found(family) }
             family = nil
             usage = nil
@@ -259,14 +265,7 @@ final class Session {
             let owed = UserDefaults.standard.string(forKey: Self.sharedIdentityKey)
             seedDemoFamily()
             if let name = UserDefaults.standard.string(forKey: "joinedAs"), let seeded = family {
-                family = Family(
-                    id: seeded.id, name: seeded.name, entitlement: seeded.entitlement,
-                    you: Family.You(
-                        id: seeded.you.id, role: seeded.you.role, displayName: name,
-                        personSubjectID: seeded.you.personSubjectID
-                    ),
-                    members: seeded.members, invites: seeded.invites
-                )
+                family = Self.renaming(seeded, to: name)
             }
             let typed = UserDefaults.standard.string(forKey: "joinTyped")
             let code = UserDefaults.standard.string(forKey: "joinCode")
@@ -956,6 +955,19 @@ final class Session {
     /// list of the shared fixture in a test: the count is read at render time
     /// from this object. `photosUsed` is the family's count against its free
     /// twenty, which `-seed unarrived` puts at the ceiling.
+    /// The same family with its member under another name, for the two
+    /// fixtures that take `-joinedAs`.
+    private static func renaming(_ seeded: Family, to name: String) -> Family {
+        Family(
+            id: seeded.id, name: seeded.name, entitlement: seeded.entitlement,
+            you: Family.You(
+                id: seeded.you.id, role: seeded.you.role, displayName: name,
+                personSubjectID: seeded.you.personSubjectID
+            ),
+            members: seeded.members, invites: seeded.invites
+        )
+    }
+
     private func seedDemoFamily(alone: Bool = false, photosUsed: Int = 12) {
         let now = Date.now.timeIntervalSince1970
         let day: Double = 24 * 60 * 60

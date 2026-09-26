@@ -159,6 +159,21 @@ struct CameraScreen: View {
     // MARK: - When the camera cannot be used
 
     private func wayOut(title: String, detail: String, offersSettings: Bool) -> some View {
+        // Scrolling, as the onboarding fork does. A centred stack taller than
+        // the screen overflows both ends, and at the largest text size the
+        // heading ran up over the bar's title while the way out sat below the
+        // bottom edge (the English read-through of 26 Sep 2026, 071).
+        GeometryReader { proxy in
+            ScrollView {
+                wayOutStack(title: title, detail: detail, offersSettings: offersSettings)
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private func wayOutStack(title: String, detail: String, offersSettings: Bool) -> some View {
         VStack(spacing: 22) {
             Spacer(minLength: 0)
 
@@ -213,8 +228,6 @@ struct CameraScreen: View {
 
             Spacer(minLength: 0)
         }
-        .padding(Elder.screenPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     /// The way off this screen, and a row rather than a toolbar button.

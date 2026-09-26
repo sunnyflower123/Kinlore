@@ -35,8 +35,10 @@
 "Katsotaan, oletko jo perheen jäsen." = "Checking whether you are already a member of a family.";
 "Odotetaan yhteyttä" = "Waiting for a connection";
 "Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa." = "The family service did not answer. The app will try again on its own when the connection returns.";
-"Sovellus yrittää itse uudelleen." = "The app will try again on its own.";
+"Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen." = "The family service did not answer. The app will try again on its own.";
+"Tervetuloa takaisin" = "Welcome back";
 "Tervetuloa takaisin, %@" = "Welcome back, %@";
+"Muistot haetaan tähän puhelimeen." = "Its memories will be fetched to this phone.";
 "Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen." = "You are a member of this family, and its memories will be fetched to this phone.";
 "Avaa perheen arkisto" = "Open the family archive";
 "Tällä puhelimella olet Kinloressa %@" = "On this phone, you are %@ in Kinlore";

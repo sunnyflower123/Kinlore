@@ -405,6 +405,39 @@ final class SilentFailureTests: XCTestCase {
         XCTAssertEqual(field.value as? String, "demo-code", "the code did not travel into the form")
     }
 
+    /// The rejoin sheet's title, drawn once. The form is the first screen of
+    /// that sheet, pushed the moment the sheet appears, and its large title
+    /// was drawn over the note that says why the form is there while the bar
+    /// already showed the same title inline — on both phones, in both
+    /// languages, at both sizes (the English read-through of 26 Sep 2026,
+    /// pictures 084 and 086), and still six seconds after the sheet had
+    /// settled. Starting the stack on the form instead of pushing it made no
+    /// difference to any of those numbers; the title is inline now.
+    func testTheRejoinFormDoesNotDrawItsTitleOverItsNote() {
+        for size in [nil, "UICTContentSizeCategoryAccessibilityXXXL"] {
+            let app = launch(
+                ["-seed", "family", "-tab", "memories", "-sync", "keyless", "-invite", "demo-code"],
+                textSize: size
+            )
+            let note = app.staticTexts.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Tästä puhelimesta puuttuu perheen avain.")
+            ).firstMatch
+            XCTAssertTrue(note.waitForExistence(timeout: 10), "the join form's note never arrived")
+            // The drawn large title is not in the accessibility tree at all —
+            // the tree holds the inline one — so what is measured is the bar's
+            // frame, which reserves the large title's height and ran down over
+            // the note: 78 to 184 pt against a note starting at 132, at the
+            // default size, measured 26 Sep 2026.
+            let bar = app.navigationBars["Liity perheeseen"]
+            XCTAssertTrue(bar.exists, "the join form has no bar")
+            XCTAssertGreaterThanOrEqual(
+                note.frame.minY, bar.frame.maxY,
+                "the bar is drawn over the note: \(bar.frame) against \(note.frame) at \(size ?? "the default size")"
+            )
+            app.terminate()
+        }
+    }
+
     /// The joiner whose first pull failed. The state after a failed round is
     /// `waitingForNetwork`, not `syncing`, so Muistot fell through to the empty
     /// archive's invitation and asked her to photograph an album — a second

@@ -620,8 +620,21 @@ final class AccessibilitySweepTests: XCTestCase {
     /// (`ReturningPhoneTests`, docs/UX.md §4.5). The family's name is the
     /// founder's, at a size of its own.
     func testReturningPhone() throws {
-        try sweep("Paluu perheeseen", arguments: ["-seed", "returning"], api: "http://127.0.0.1:9") { app, _ in
+        try sweep("Paluu perheeseen", arguments: ["-seed", "returning"], api: "http://127.0.0.1:9") { app, isLargest in
             require(app.buttons["Avaa perheen arkisto"], "the page that offers the family back")
+            // What the page says, with its button still on screen. At the
+            // largest size the sentence used to be dropped for the button's
+            // sake, and the page read as a title and a button (the English
+            // read-through of 26 Sep 2026, 801); a shorter one fits.
+            let sentence = isLargest
+                ? app.staticTexts["Muistot haetaan tähän puhelimeen."]
+                : app.staticTexts["Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen."]
+            XCTAssertTrue(sentence.exists, "the page does not say what it does")
+            let button = app.buttons["Avaa perheen arkisto"]
+            XCTAssertTrue(
+                app.windows.firstMatch.frame.contains(button.frame),
+                "the button is not on screen beside the sentence: \(button.frame)"
+            )
         }
     }
 
@@ -653,8 +666,21 @@ final class AccessibilitySweepTests: XCTestCase {
     func testReturningPhoneUnanswered() throws {
         // The question is asked only of an identity that was already here.
         launch([], api: "http://127.0.0.1:9").terminate()
-        try sweep("Odotetaan yhteyttä", arguments: ["-homecoming", "ask"], api: "http://127.0.0.1:9") { app, _ in
+        try sweep("Odotetaan yhteyttä", arguments: ["-homecoming", "ask"], api: "http://127.0.0.1:9") { app, isLargest in
             require(app.buttons["Yritä uudelleen"], "the page that waits for the server")
+            // Why the page waits, at both sizes. At the largest size it kept
+            // only the half that says the app tries again by itself (the
+            // English read-through of 26 Sep 2026, 802); there is room for
+            // the half that says what did not answer.
+            let sentence = isLargest
+                ? app.staticTexts["Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen."]
+                : app.staticTexts["Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa."]
+            XCTAssertTrue(sentence.exists, "the page does not say what it waits for")
+            let button = app.buttons["Yritä uudelleen"]
+            XCTAssertTrue(
+                app.windows.firstMatch.frame.contains(button.frame),
+                "the button is not on screen beside the sentence: \(button.frame)"
+            )
         }
     }
 
@@ -1934,6 +1960,18 @@ final class AccessibilitySweepTests: XCTestCase {
             arguments: ["-seed", "empty", "-tab", "memories", "-screen", "camera", "-camera", "denied"]
         ) { app, _ in
             require(app.buttons["Avaa asetukset"], "the way into settings")
+            // The heading under the bar, at both sizes. The page was a centred
+            // stack that could grow taller than the screen, and at the largest
+            // text size it overflowed both ends: its heading ran up over the
+            // bar's title (the English read-through of 26 Sep 2026, 071).
+            let heading = app.staticTexts["Kamera ei ole käytössä"]
+            let bar = app.navigationBars.firstMatch
+            XCTAssertTrue(heading.exists, "the refused camera has no heading")
+            XCTAssertTrue(bar.exists, "the refused camera has no bar")
+            XCTAssertGreaterThanOrEqual(
+                heading.frame.minY, bar.frame.maxY,
+                "the heading runs up over the bar: \(heading.frame) against \(bar.frame)"
+            )
         }
     }
 
