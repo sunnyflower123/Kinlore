@@ -743,3 +743,6 @@
 
 // The card's open question, pressed: the Tell screen answering it (26 Sep 2026).
 "Vastaa kertomalla" = "Vastaa kertomalla";
+
+// The question screen's speaker while the question is being read aloud (26 Sep 2026).
+"Luen kysymyksen ääneen" = "Luen kysymyksen ääneen";

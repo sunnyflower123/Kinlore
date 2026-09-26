@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 101 sweep tests, each auditing one screen at the default text size and again at the largest, out of 291 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 102 sweep tests, each auditing one screen at the default text size and again at the largest, out of 295 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -2305,8 +2305,9 @@ demo.
 ## 10. The interview loop
 
 Added after the inventory above: the follow-up questions the extraction
-already produces are now asked aloud. One button on the result screen starts
-the loop — the app reads out the question the ladder selected, in the voice of
+already produces are now asked aloud. A spoken telling goes straight on to the
+loop, and a written one starts it from one button on the result screen,
+*"Jatketaan jutellen"* — the app reads out the question the ladder selected, in the voice of
 whichever language is being spoken (`InterviewVoice` follows `SpokenLanguage`,
 so an English phone gets its own English voice), starts recording when the
 sentence ends, and the answer
@@ -2316,9 +2317,27 @@ guided conversation, and no hand touches the screen until "Riittää tältä er�
 
 Decisions, in the order they were argued about:
 
-- **Opt-in, not automatic.** A result screen that starts talking by itself
-  would startle exactly the user this app is for, and the name-correction
-  moment needs a calm screen more than the loop needs one saved tap.
+- **Automatic after a spoken telling, since 26 Sep 2026; a tap before
+  that.** Until then this bullet read *"Opt-in, not automatic"*: a result
+  screen that starts talking by itself would startle exactly the user this
+  app is for, and the name-correction moment needs a calm screen more than
+  the loop needs one saved tap. Then the founder tried it on their own phone,
+  told about a photograph, and was asked nothing at all. *"Jatketaan
+  jutellen"* stood under the names and the questions, below the fold, and
+  the loop this app was built around was never met.
+
+  The startle argument was about the wrong moment. The question does not
+  come from the result screen, which is now drawn only when the conversation
+  is over; it is the app's turn after the teller has ended hers, in the
+  exchange she began by pressing record and ended by pressing stop. What
+  that argument protected is kept: the names wait unconfirmed through every
+  round and meet the result card together, which is where *"Riittää tältä
+  erää"* lands, and the offer slot is decided when the telling lands,
+  exactly as it was when the loop was a tap away (`InterviewLoopTests`,
+  `testResultAfterTheQuestion`). A written telling still waits for the
+  button, because the keyboard was her choice of how to talk to the app — and
+  so does a telling whose recording could not be kept, whose one sentence on
+  the result is what she has to read next.
 - **Same pipeline, not a second one.** Each answer is an ordinary memory on
   the subject the first memory landed on, and the spoken question is marked
   answered by the same rule as any answered question. The loop wraps the magic
@@ -2332,7 +2351,10 @@ Decisions, in the order they were argued about:
 - **Ending is cheap, and never eats a question.** Silence (a sub-second
   recording) ends the loop like the button does, and the question that was
   being asked stays open. Quota running out mid-loop ends the loop with the
-  answer's audio safe, exactly as in a single dictation.
+  answer's audio safe, exactly as in a single dictation. That screen does not
+  list the names the rounds collected — since the loop starts by itself, the
+  opening telling's among them. They are kept unconfirmed (rule 4), not lost,
+  but they are not asked about there.
 
   The same invariant held only inside the loop until 23 Aug 2026: outside it,
   an answer abandoned on the way back to the idle screen — a discard, a
@@ -2567,8 +2589,9 @@ And since 12 Sep 2026 a person's question is the *only* kind the Kerro tab's
 idle screen offers. The extraction's follow-ups stood there too, under *"Tai
 vastaa aiempaan kysymykseen"*, and after one telling that was three questions
 the app had thought of by itself on the screen somebody opens cold. They are
-still asked — the interview loop asks them the moment the telling ends, and
-the Tell screen opened from their subject lists them — but the front screen
+still asked — the interview loop asks them the moment a spoken telling ends
+(since 26 Sep 2026; a written one lists them on its result, one tap from the
+same loop), and the Tell screen opened from their subject lists them — but the front screen
 carries what a person asked, or nothing.
 `testTheFrontScreenCarriesNoneOfTheModelsQuestions` pins it.
 
@@ -4705,7 +4728,10 @@ Two of them are now quieter:
 - **"Kerro toinen muisto" is prominent only when nothing above it already is.**
   With follow-up questions on screen the blue button is *"Jatketaan jutellen"* —
   carrying on about the memory she has just told is worth more than starting a
-  second one, and it is the loop this app was built around (§10). With no
+  second one, and it is the loop this app was built around (§10), which a
+  spoken telling has already been through by the time this screen is drawn
+  (26 Sep 2026): the button starts it for a written one and takes it up again
+  after *"Riittää tältä erää"*. With no
   questions, there is nothing above to defer to and telling another is all that
   is left. `View.elderPrimary(_:)` in `Elder.swift` is where that condition
   lives, so the next person to add a button finds the choice already made rather
@@ -4842,7 +4868,8 @@ under it is a screen this app has. Found by the test written for the dead
 *Valmis* (§21), which expected the next card and met the questions. Now
 `openQuestions(onlyAuthored:)` is what the deck and both blind cards ask. The
 follow-ups lose this one screen and nothing else: the interview loop asks them
-the moment the telling ends, the Tell screen opened from that photograph
+the moment a spoken telling ends (since 26 Sep 2026; a written one lists them
+on its result, one tap from the same loop), the Tell screen opened from that photograph
 offers them again, and the idle screen returns to them once the deck has
 nothing left. `testTheDeckGoesOnPastTheTellingsOwnQuestions` pins it.
 

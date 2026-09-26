@@ -90,6 +90,17 @@ final class InterviewVoice: NSObject {
     /// the wrong thing to do is read it with this one's mouth.
     func speak(_ text: String, language: String = InterviewVoice.questionLanguage) async -> Bool {
         stop()
+        #if DEBUG
+        // `-voice stub`: reads for as long as nobody stops it, and makes no
+        // sound. A UI test cannot hear, and a real voice finishing on its own
+        // arms the microphone at a moment the test does not choose — so what
+        // `InterviewLoopTests` checks is that this was called and is still
+        // running, which the question screen shows on its speaker.
+        if UserDefaults.standard.string(forKey: "voice") == "stub" {
+            isSpeaking = true
+            return await withCheckedContinuation { pending = $0 }
+        }
+        #endif
         synthesizer.delegate = self
 
         do {

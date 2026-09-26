@@ -337,9 +337,11 @@ struct TellScreen: View {
     /// pack meant to go from photograph to photograph stopped at one. Nothing
     /// failed: the blank button with questions under it is a screen this app
     /// has. The follow-ups lose this one screen and nothing else — the
-    /// interview loop asks them the moment the telling ends, the Tell screen
-    /// opened from that photograph offers them again, and the idle screen
-    /// returns to them once the deck has nothing left to offer.
+    /// interview loop asks them the moment a spoken telling ends (since
+    /// 26 Sep 2026; a written one lists them on its result, one tap from the
+    /// same loop), the Tell screen opened from that photograph offers them
+    /// again, and the idle screen returns to them once the deck has nothing
+    /// left to offer.
     private var deckCard: Subject? {
         guard usesDeck,
               store.openQuestions(
@@ -520,9 +522,11 @@ private struct IdleView: View {
     /// follow-ups stood here too, under *"Tai vastaa aiempaan kysymykseen"*,
     /// and after one telling that was three questions the app had thought of
     /// by itself on the screen somebody opens cold. They keep every other
-    /// place they are offered — the interview loop asks them the moment the
-    /// telling ends, and the Tell screen opened from their subject lists them
-    /// below — and this screen carries a family member's question alone.
+    /// place they are offered — the interview loop asks them the moment a
+    /// spoken telling ends (since 26 Sep 2026; a written one lists them on its
+    /// result, one tap from the same loop), and the Tell screen opened from
+    /// their subject lists them below — and this screen carries a family
+    /// member's question alone.
     private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
         guard let target = model.target else {
             let open = store.openQuestions(
@@ -1241,11 +1245,16 @@ private struct AskingView: View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
 
+            // Said only while it is true. The voice never speaks under
+            // VoiceOver (`ask`), so a screen-reader user does not meet this;
+            // a UI test does, and it is how the spoken question is checked
+            // without anybody listening (`InterviewLoopTests`, `-voice stub`).
             Image(systemName: "speaker.wave.2.fill")
                 .font(.system(size: 44))
                 .foregroundStyle(.tint)
                 .symbolEffect(.variableColor.iterative, isActive: model.voice.isSpeaking)
-                .accessibilityHidden(true)
+                .accessibilityLabel("Luen kysymyksen ääneen")
+                .accessibilityHidden(!model.voice.isSpeaking)
 
             Text(model.askedQuestion?.text ?? "")
                 .font(.title2.weight(.semibold))
@@ -1980,7 +1989,10 @@ private struct ResultView: View {
 
             // One tap turns the questions into a spoken conversation: the app
             // asks aloud, listens, and asks again. See the interview loop in
-            // TellViewModel.
+            // TellViewModel. A spoken telling has already been through it by
+            // the time this screen is drawn (26 Sep 2026), so the button is
+            // where a written telling starts it, and where a conversation
+            // ended with "Riittää tältä erää" can be taken up again.
             Button {
                 Task { await model.beginInterview() }
             } label: {

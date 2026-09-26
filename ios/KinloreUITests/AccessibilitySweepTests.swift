@@ -206,6 +206,26 @@ final class AccessibilitySweepTests: XCTestCase {
         return require(element, what)
     }
 
+    /// A spoken telling through the stub pipeline, up to the question the app
+    /// asks back: the button, two seconds, the stop — under a second is thrown
+    /// away as an accident. Since 26 Sep 2026 a spoken telling goes straight
+    /// on to its first question, and `-voice stub` keeps that question on the
+    /// screen, "read" until something stops it, so nothing arms the
+    /// microphone while a test is looking.
+    private func tellAloud(_ app: XCUIApplication) {
+        require(app.buttons["Aloita kertominen"], "the record button").tap()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        require(app.staticTexts["Kuuntelen"], "the recording screen")
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "never arrived: the question a spoken telling goes on to"
+        )
+    }
+
     /// Waits until an element has stopped moving.
     ///
     /// `reach` leaves a list mid-scroll, and an audit that samples a moving view
@@ -1189,6 +1209,21 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same card as a spoken telling reaches it since 26 Sep 2026: through
+    /// its first question and "Riittää tältä erää", with the names, the decade
+    /// and "Kysyisin vielä" all waiting on it. `-screen result` above types
+    /// its telling, which is no longer the way an 80-year-old arrives here.
+    func testResultAfterTheQuestion() throws {
+        try sweep(
+            "Tulos, kysymyksen jälkeen",
+            arguments: ["-seed", "empty", "-voice", "stub"]
+        ) { app, _ in
+            tellAloud(app)
+            app.buttons["Riittää tältä erää"].tap()
+            require(app.staticTexts["Kuulin nämä"], "the names heard")
+        }
+    }
+
     /// Where a telling lands when the text could not be made: the audio is
     /// safe, and three buttons lead on. Nothing had ever measured this screen —
     /// its real trigger is a spent quota or a dead connection, neither of which
@@ -1252,6 +1287,25 @@ final class AccessibilitySweepTests: XCTestCase {
             reach(app.buttons["Riittää tältä erää"], in: app, "the way out that keeps the answer")
             let at = size == nil ? "default text size" : "largest text size"
             try audit(app, "Kuuntelen, haastattelu, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
+    /// The question the app asks back after a spoken telling — where every
+    /// spoken telling goes first since 26 Sep 2026, and a screen no audit had
+    /// stopped on: `-screen interview` only passes through it on the way to
+    /// the listening screen above. Outside `sweep(...)` for the same reason
+    /// as that one: the speaker animates while the question is being read,
+    /// so exactly element detection is forgiven and nothing else.
+    func testInterviewQuestionIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty", "-voice", "stub"], textSize: size)
+            tellAloud(app)
+            require(app.images["Luen kysymyksen ääneen"], "the question being read aloud")
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Kysymys, haastattelu, \(at)", alsoAllowing: { issue in
                 issue.auditType == .elementDetection
             })
             app.terminate()

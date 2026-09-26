@@ -70,9 +70,15 @@ final class FilmDriver: XCTestCase {
     // MARK: - The scenes (docs/UX.md §10, docs/VIDEO.md)
 
     /// 1 · The telling: the photograph's card and its question, the big
-    /// button, her telling, and what the app made of it — ending on one name
-    /// confirmed by a person and the other left open, which is rule 4
-    /// happening on camera.
+    /// button, her telling, the app's first question back to her, and what
+    /// the app made of it — ending on one name confirmed by a person and the
+    /// other left open, which is rule 4 happening on camera.
+    ///
+    /// The question arrives by itself since 26 Sep 2026: a spoken telling goes
+    /// straight on to it (`InterviewLoopTests`). `-voice stub` keeps it on the
+    /// screen and silent for as long as the take holds it — the film lays the
+    /// question's voice over the picture, as it does hers — and "That is
+    /// enough for now" is what then lands on the names.
     ///
     /// `-seed film-untold` is the film's archive a minute before she speaks,
     /// so the Kerro tab offers the photograph; `-sample film` makes the stub
@@ -82,7 +88,7 @@ final class FilmDriver: XCTestCase {
     /// over the take, and the take must not stop first. The 10 Sep cut's
     /// version of this scene ran on `-seed empty` and the rotating samples.
     func testFilmTheTelling() throws {
-        let app = try roll(["-seed", "film-untold", "-sample", "film", "-tab", "tell"])
+        let app = try roll(["-seed", "film-untold", "-sample", "film", "-tab", "tell", "-voice", "stub"])
         beat(2.2) // the picture and its question are read before anybody presses anything
         try tap(app.buttons, ["Aloita kertominen", "Start telling"])
         // The first press on a fresh simulator raises iOS's microphone prompt
@@ -97,7 +103,10 @@ final class FilmDriver: XCTestCase {
         beat(7.0) // she talks, and the line fills with her voice: 8.5 s with the check above
         try tap(app.buttons, ["Lopeta kertominen", "Stop telling"])
         // The stub waits on purpose: ~1.4 s transcribing, 2.2 s extracting.
-        _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 40)
+        let enough = try find(app.buttons, ["That is enough for now", "Riittää tältä erää"], timeout: 40)
+        beat(3.2) // the app asks back, by itself: long enough to be read and heard
+        enough.tap()
+        _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 15)
         beat(3.4) // the transcript in her own words, and two names in amber
         let confirm = try reveal(app, app.buttons, ["Confirm Toivo", "Vahvista Toivo"])
         confirm.tap()

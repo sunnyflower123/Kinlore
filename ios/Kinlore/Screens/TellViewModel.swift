@@ -429,15 +429,21 @@ final class TellViewModel {
 
     // MARK: - Interview loop
 
-    /// Starts the hands-free loop from the result screen: the top follow-up
-    /// question is read aloud, the answer is recorded, and the answer's own
-    /// extraction yields the next question. One tap opts in; after that the
-    /// hands stay in the lap until "Riittää tältä erää".
+    /// Starts the hands-free loop: the top follow-up question is read aloud,
+    /// the answer is recorded, and the answer's own extraction yields the next
+    /// question. After that the hands stay in the lap until "Riittää tältä
+    /// erää", which lands on the result with everything the rounds collected.
     ///
-    /// Opt-in rather than automatic on purpose. A result screen that starts
-    /// talking by itself would startle exactly the user this app is for, and
-    /// the name-correction moment needs a calm screen more than the loop needs
-    /// one saved tap.
+    /// A spoken telling starts it by itself (`process`, since 26 Sep 2026); a
+    /// written one waits for "Jatketaan jutellen" on the result screen, which
+    /// also starts it again after a conversation has ended. It used to be the
+    /// button in both cases, on the argument that a result screen talking by
+    /// itself would startle the user this app is for — and when the founder
+    /// tried it on their own phone, telling about a photograph, nothing was
+    /// asked at all, because the button sat under the names, below the fold.
+    /// The question is not the result screen speaking up: it is the app's
+    /// turn after the teller has ended hers, in the same voice exchange she
+    /// began by pressing record.
     func beginInterview() async {
         guard phase == .done, let next = nextQuestion else { return }
         isInterviewing = true
@@ -631,9 +637,22 @@ final class TellViewModel {
             // unconfirmed and are handled when the loop ends.
             await ask(next)
         } else {
+            let wasRound = isInterviewing
             leaveInterview()
             showsUpsell = UpsellRhythm.shouldShow(hasProposals: !proposals.isEmpty)
             phase = .done
+            // A spoken telling goes straight on to its first question
+            // (`beginInterview`, 26 Sep 2026). Not a written one — the keyboard
+            // was her choice of how to talk to the app — and not after a lost
+            // recording, whose one sentence on the result is what she has to
+            // read next. The offer slot above is decided first, so the rhythm
+            // counts this telling exactly as it did when the loop was a tap
+            // away; the names wait unconfirmed and meet the result card when
+            // the conversation ends. No `.done` frame is drawn in between:
+            // nothing here suspends before `ask` sets the phase again.
+            if !wasRound, audioURL != nil, !audioLost {
+                await beginInterview()
+            }
         }
     }
 

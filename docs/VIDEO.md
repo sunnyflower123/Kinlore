@@ -116,7 +116,8 @@ Between takes, four rules the dry run paid for:
 
 ### 1 · The founder's minute
 
-Fork → name → whose phone → the big button → the telling → the result.
+Fork → name → whose phone → the big button → the telling → the app's first
+question → the result.
 
 - **Fork and forms** (verified: renders): fresh app state, launch with
   `-api http://127.0.0.1:9`. The address — any address — is what makes
@@ -125,10 +126,15 @@ Fork → name → whose phone → the big button → the telling → the result.
   against it: **cut before the button lands** and resume in stub mode.
 - **The telling** (verified): `-seed empty`, no `-api`. Tap the big button,
   speak `samples[0]` (the Puumala text) for the scene's length, stop.
+- **The question** (since 26 Sep 2026): arrives ~3.6 s after stop — the stub
+  waits on purpose — with nothing tapped in between. A spoken telling goes
+  straight on to its first question, which the app reads aloud and then
+  listens for; `-voice stub` holds it on screen, silent, for as long as the
+  take wants it. *"Riittää tältä erää"* ends the conversation on the result.
 - **The result** (verified: screenshot with title *"Sijoitin sen kohteeseen
-  Puumalassa, 1950-luku"* and three proposal rows): arrives ~3.6 s after
-  stop — the stub waits on purpose. For a still to frame against,
-  `-seed empty -screen result` (ready ~3 s after launch).
+  Puumalassa, 1950-luku"* and three proposal rows): after the question, not
+  instead of it. For a still to frame against, `-seed empty -screen result`
+  (ready ~3 s after launch).
 - Live path: one unbroken take against production — the form creates a real
   family and the result shows the words that were really said.
 
@@ -260,11 +266,14 @@ cp <the film's photograph> \
 ```
 
 - **The telling** — `testFilmTheTelling`, `-seed film-untold -sample film
-  -tab tell`. The stub writes down the film's own sentence
+  -tab tell -voice stub`. The stub writes down the film's own sentence
   (`StubTranscriptionService.film`) and returns the extraction the pipeline
   gave it (`StubExtractionService.filmResult`) — the heuristics cannot read
   that sentence, and a take has to show what the app really made of the
   words on its soundtrack. The listening runs 8.5 s, longer than her clip.
+  Since 26 Sep 2026 the app's first question follows by itself and is held
+  3.2 s — the film lays its voice over the take, as it does hers — before
+  *"That is enough for now"* lands on the names.
 - **The blind card** — `testFilmTheBlindCard`, `-seed film -tab tell`. Taps
   the name the app proposed — given by somebody who knows the photograph,
   without being shown it — and the take ends on the app's own sentence,

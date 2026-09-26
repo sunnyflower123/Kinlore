@@ -66,7 +66,7 @@ final class TargetedQuestionTests: XCTestCase {
     /// big button answers it through the stub pipeline, and the question
     /// leaves the card's open list while the other one stays.
     func testARowOnTheCardOpensTellingWithItsQuestion() {
-        let app = launch(["-seed", "aimed", "-tab", "memories"])
+        let app = launch(["-seed", "aimed", "-tab", "memories", "-voice", "stub"])
         openPhoto(in: app)
 
         let asked = "Mitä mökillä syötiin juhannuksena?"
@@ -97,8 +97,14 @@ final class TargetedQuestionTests: XCTestCase {
         // Anything under a second is discarded as an accident.
         Thread.sleep(forTimeInterval: 2)
         app.buttons["Lopeta kertominen"].tap()
+        // A spoken answer goes straight on to its own first follow-up since
+        // 26 Sep 2026 (`InterviewLoopTests`); ending the conversation there
+        // is what lands on the result.
+        let enough = app.buttons["Riittää tältä erää"]
+        XCTAssertTrue(enough.waitForExistence(timeout: 30), "the answer did not go on to its follow-up")
+        enough.tap()
         XCTAssertTrue(
-            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 15),
             "the answer was not saved"
         )
 
