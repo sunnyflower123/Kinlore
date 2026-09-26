@@ -2150,6 +2150,20 @@ final class MemoryStore {
         // and a second run of the same test would otherwise start with the
         // card already spent.
         UserDefaults.standard.removeObject(forKey: BlindConfirmation.answeredKey)
+        // And which tellings this phone has seen, the same way: every seed
+        // that does not write its own baseline starts from all of its
+        // archive seen — the answer a device that has never opened Albumi
+        // gives too. Until 26 Sep 2026 these seeds inherited whatever the
+        // previous launch left, and any launch that had shown Albumi another
+        // archive (`-seed empty` leaves an empty list) made every telling of
+        // this fixture's Mummo news: "Uutta perheeltä" rose above the grid,
+        // its first row took a grid tile's "Valokuva" for itself, and a
+        // launch without `-tab` opened on Albumi rather than Kerro. Red in
+        // company and green alone, which is what state inherited rather than
+        // set looks like (`testAPhotographPastTheCeilingSaysWhatItWaitsFor`).
+        if !["unseen", "film-week", "film-family"].contains(seed) {
+            UserDefaults.standard.set(memories.map(\.id), forKey: NewFromFamily.seenKey)
+        }
         if seed == "dated", let index = subjects.firstIndex(where: { $0.id == photo.id }) {
             subjects[index].dateHint = DateHint(
                 start: Calendar.current.date(from: DateComponents(year: 1955, month: 1, day: 1)),
