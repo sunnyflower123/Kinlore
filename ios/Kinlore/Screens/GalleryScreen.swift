@@ -1246,9 +1246,15 @@ private struct PhotoTile: View {
 
     private var tileLabel: LocalizedStringKey {
         let count = store.memories(for: subject.id).count
-        return count == 0
-            ? "\(subject.displayTitle), ei vielä muistoja"
-            : "\(subject.displayTitle), \(count) muistoa"
+        // Three keys rather than a plural rule: there is no stringsdict in
+        // this project, so the count does not inflect by itself, and every
+        // tile with one memory was read out as "1 muistoa" — "Photograph,
+        // 1 memories" on an English phone — until 26 Sep 2026.
+        switch count {
+        case 0: return "\(subject.displayTitle), ei vielä muistoja"
+        case 1: return "\(subject.displayTitle), 1 muisto"
+        default: return "\(subject.displayTitle), \(count) muistoa"
+        }
     }
 }
 

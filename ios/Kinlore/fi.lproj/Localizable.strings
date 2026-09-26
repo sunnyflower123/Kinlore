@@ -532,6 +532,7 @@
 // Muistot: the photo tile, read aloud (6 Sep 2026).
 "%@, ei vielä muistoja" = "%@, ei vielä muistoja";
 "%@, %lld muistoa" = "%@, %lld muistoa";
+"%@, 1 muisto" = "%@, 1 muisto";
 
 // A name typed by hand: the photograph, the moment, oneself (6 Sep 2026).
 "Anna kuvalle nimi" = "Anna kuvalle nimi";
