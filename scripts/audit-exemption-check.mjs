@@ -136,6 +136,8 @@ const ARTEFACT_IDS = [
 	'relative.caption',
 	'subject.rename',
 	'relative.add',
+	'archive.onlyHere',
+	'archive.exportNote',
 ]
 const CLIPPED_IDS = ['card.emptyState', 'card.removal']
 

@@ -423,6 +423,11 @@ enum AccessibilityPolicy {
     /// entry with it: an exemption for words no screen shows forgives nothing
     /// today and whatever reuses them tomorrow.
     ///
+    /// Its leaving moved the finding rather than ending it — up to the two
+    /// sentences of the archive footer above, on a phone kept to itself. Those
+    /// are answered by `isDefaultSizeSimulationArtefact` and not here, because
+    /// that gate forgives on the default-size launch only and this one on both.
+    ///
     /// So: measure at XXXL before adding anything here. A footer that is
     /// genuinely truncated on screen is a defect, and no list makes it not one.
     private static let listHeaderAndFooterText: Set<String> = [
@@ -811,10 +816,10 @@ enum AccessibilityPolicy {
         // which is also why this exemption and the ones at `"Lisää sukulainen"`
         // and `"Nimi"` are for a framework cap rather than for a truncation. So
         // no run proves that clipping still goes red, and the footing is the
-        // same as `"Kutsu perheenjäsen"` below: three sentences, each measured
+        // same as `"Kutsu perheenjäsen"` below: two sentences, each measured
         // when it was added, and everything else still reported.
         //
-        // `scripts/audit-exemption-check.mjs` pins those three sentences and
+        // `scripts/audit-exemption-check.mjs` pins those two sentences and
         // this gate's two types, and runs in `verify.sh` at any load. This set
         // is the one exemption here that widens by a line in a literal rather
         // than by a new clause — and `.contrast` must never join the two types
@@ -1010,6 +1015,20 @@ enum AccessibilityPolicy {
     ///     region or timeout. The same card on the same seed with the row
     ///     absent — no family, so nothing offered — audited clean at both
     ///     sizes in the same run, the button's own code untouched.
+    ///   * Settings' archive footer on a phone kept to itself (the same day,
+    ///     when the footer under the wipe row, *"Kertomasi muistot ovat vain
+    ///     tässä laitteessa."*, left the screen because it was untrue).
+    ///     `testSettingsLocalArchive` then reported both of the archive
+    ///     footer's sentences partially unsupported at the default size — the
+    ///     line on whose copy it is at y 551, the export paragraph at
+    ///     y 588.67 — and nothing else. Run alone, alternating with the commit
+    ///     that still drew the footer below them: green 2/2 there, red 3/3
+    ///     without it, the frames identical to the decimal, the two sentences'
+    ///     own code untouched. Where the section above them is absent — no
+    ///     backend, or a family — the same sentences audit clean
+    ///     (`testSettings`, `testSettingsInFamily`), and the real
+    ///     AccessibilityXXXL launch, judged page by page down to the wipe row
+    ///     with nothing forgiven, was clean on every run.
     ///
     /// Clipping is forgiven for the two texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
@@ -1048,6 +1067,9 @@ enum AccessibilityPolicy {
         // minä" row (26 Sep 2026). On the button's label: the audit reports
         // the label, and an identifier on the button matched nothing.
         "relative.add",
+        // Settings' archive footer on a phone kept to itself, both sentences
+        // (26 Sep 2026): whose copy it is, and what the export holds.
+        "archive.onlyHere", "archive.exportNote",
     ]
 
     /// The two that also reported `.textClipped` at the default size, and

@@ -229,14 +229,22 @@ struct SettingsScreen: View {
                     // the sentence naming both measured three and nine, which
                     // is the wall the comment at the end of this footer
                     // records.
+                    //
+                    // The identifiers on this line and on the paragraph below
+                    // are for `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else: on a phone kept to itself the audit's
+                    // default-size simulation reports both sentences since the
+                    // footer under the wipe row left the screen (26 Sep 2026).
                     if case .local = session.mode {
                         Text("Arkisto on vain tällä puhelimella, ellei iCloud-varmuuskopio ole päällä.")
+                            .accessibilityIdentifier("archive.onlyHere")
                     } else if case .inFamily = session.mode, (session.family?.members.count ?? 0) <= 1 {
                         Text("Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta.")
                     }
                     // Say what comes out, in the words of somebody who will
                     // open it on a computer years from now.
                     Text("Saat yhden tiedoston, jossa ovat muistot luettavana sivuna, alkuperäiset äänitteet ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.")
+                        .accessibilityIdentifier("archive.exportNote")
                     // Not here: "Viety viimeksi 5.9.2026." One more line in
                     // this footer pushed the leave section's footer to y 729
                     // and the wipe row below the fold at the default size —

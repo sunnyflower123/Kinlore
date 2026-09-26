@@ -357,7 +357,7 @@ run "the palette still measures what it claims" node scripts/palette-contrast-ch
 # repository where rule 1 is switched off by name. Twenty-one clauses forgive
 # a finding the audit would otherwise report, and twenty of them are a clause
 # somebody has to write and review. One is not: it forgives by matching a
-# sentence in a literal, so it widens by a line. This pins the three sentences
+# sentence in a literal, so it widens by a line. This pins the sentences
 # in that set and the two audit types the gate answers for, and fails if
 # `.contrast` ever joins them — forgiven by label, contrast would be rule 1
 # switched off by name and nothing would say so. Falsified three ways before it

@@ -3231,7 +3231,13 @@ those same categories, which is how the contrast problem survived this long.
   List's, not our typography's. The footer itself left the app on 26 Sep 2026,
   because "only on this device" was untrue wherever an iCloud backup runs and
   in a family of one, whose archive is sealed on the server too; its entry left
-  the set with it.
+  the set with it. Its leaving moved the finding up rather than ending it: on a
+  phone kept to itself, the two sentences of the archive footer above it were
+  reported at the default size from then on, red 3/3 alone against 2/2 green
+  on the commit before, the frames identical and the real XXXL launch clean.
+  Those two are forgiven by `isDefaultSizeSimulationArtefact`, keyed on
+  `archive.onlyHere` and `archive.exportNote`, on the first launch only — the
+  narrower of the two gates — and not added to this set.
 - `ContentUnavailableView`'s own Dynamic Type behaviour, which is the system
   view's and not ours — listed string by string rather than by category, so that
   our own Dynamic Type failures still fail.
