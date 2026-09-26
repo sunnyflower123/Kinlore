@@ -1293,10 +1293,27 @@ struct BlindCardView: View {
     /// the instrument depends on, and the way past a face she cannot place
     /// was not on the screen at all. Accessibility sizes cap it at 150 either
     /// way.
+    ///
+    /// A ceiling and, on a small phone, not the height: since 26 Sep 2026 the
+    /// photograph takes what the answers leave of the room above the tab bar,
+    /// because 150 was itself too tall on an iPhone 13 mini, and on an SE the
+    /// column fits under neither ceiling — see `photoMax` and
+    /// `answers(inPairs:)`.
     var photoHeight: CGFloat = 200
     var onDone: () -> Void = {}
 
     @State private var afterward: LocalizedStringKey?
+    /// From the top of this card to the top of the tab bar, measured once at
+    /// rest. Nil until then, and for a card outside any scroll view.
+    @State private var room: CGFloat?
+    /// Everything under the photograph — the question, the answers and the
+    /// way past them — as last laid out. None of it depends on the
+    /// photograph, which is what lets the photograph be sized from it.
+    @State private var below: CGFloat?
+    /// Two rows of two instead of the column, decided once: the first time
+    /// the room and the column have both been measured. Nil until then, which
+    /// is the column.
+    @State private var inPairs: Bool?
 
     var body: some View {
         // 18 and not the 28 the telling screen uses. Four answers is three more
@@ -1311,7 +1328,7 @@ struct BlindCardView: View {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxHeight: min(photoHeight, typeSize.isAccessibilitySize ? 150 : 200))
+                    .frame(maxHeight: photoMax)
                     .clipShape(RoundedRectangle(cornerRadius: 14))
                     // What is known and nothing more. A name in here would hand
                     // the answer to whoever is listening rather than looking —
@@ -1321,110 +1338,195 @@ struct BlindCardView: View {
                     .accessibilityLabel("Valokuva, jossa on joku")
             }
 
-            Text(afterward ?? "Kuka tässä on?")
-                .font(.largeTitle.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 18) {
+                Text(afterward ?? "Kuka tässä on?")
+                    .font(.largeTitle.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if afterward == nil {
-                // The answers, as one block: with the outer stack's spacing
-                // between them they took the height the last row needed.
-                VStack(spacing: 10) {
-                    // **Untinted**, which the first build of this card got
-                    // wrong. `.bordered` paints its label in the accent, so
-                    // four names arrived in the system blue — the colour rule 1
-                    // names outright — sitting in the tab bar's fade, where the
-                    // audit has already measured that accent at 3.52:1 against
-                    // a 4.5:1 minimum. The border says it is a control and the
-                    // weight invites; the colour was doing neither job.
-                    // **Filled, and the fill is the point.** These were
-                    // `.bordered` over the old white ground, and the parchment
-                    // took their edge away: a bordered capsule measures
-                    // **1.53:1** against `Elder.paper`, where WCAG 1.4.11 asks
-                    // 3:1 of anything that has to read as a control. The words
-                    // inside were never the problem — black on that capsule is
-                    // 11.9:1 — which is why it looked fine and why only a
-                    // measurement found it. Ink against the paper is 15.17:1
-                    // and cream on ink 16.56:1, so the button now has an edge
-                    // for somebody who cannot pick a pale grey capsule out of
-                    // a pale ground.
-                    //
-                    // Four filled buttons rather than one, which is the shape
-                    // ARCHITECTURE §22 usually forbids. It holds here because
-                    // they are not four actions competing to be the primary
-                    // one: they are one question's four answers, and none of
-                    // them may look more likely than the others — rule 4's
-                    // whole point is that the proposal sits unmarked among
-                    // them.
-                    ForEach(card.names) { name in
-                        Button {
-                            answer(card, chose: name)
-                        } label: {
-                            Text(name.displayTitle)
-                                .font(.body.weight(.semibold))
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .foregroundStyle(Elder.cream)
-                        }
-                        // `.plain` with a capsule of our own, and not
-                        // `.borderedProminent` with a tint. The prominent
-                        // style picks its own label colour out of the tint
-                        // after the label is built — the same overwrite that
-                        // once turned these names blue under `.bordered` — so
-                        // the one thing that must be certain here, cream on
-                        // ink, would have been the system's decision rather
-                        // than ours.
-                        .buttonStyle(.plain)
-                        .background(Color.primary, in: Capsule())
-                        .elderTapTarget()
+                if afterward == nil {
+                    answers(inPairs: (inPairs ?? false) && !typeSize.isAccessibilitySize)
+
+                    // An answer, not a refusal. It confirms nothing and un-confirms
+                    // nothing, and it is what stops the card coming back for ever —
+                    // which for this user matters more than the data does: a
+                    // question that returns every time she cannot answer it is the
+                    // app telling her so. §13 had to learn this the same way.
+                    Button {
+                        answer(card, chose: nil)
+                    } label: {
+                        Label("En muista", systemImage: "arrow.forward")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Elder.supporting)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .elderTapTarget()
                     }
+                } else {
+                    // The way on, and a button rather than a timer. The camera's
+                    // hint clears itself after two seconds because nothing depends
+                    // on its being read; this sentence is the whole answer to what
+                    // she just did, and a screen that moves on by itself while an
+                    // 80-year-old is still reading it has taken the answer away.
+                    // Filled like the four names above it, and for the same
+                    // measurement: a `.bordered` capsule has a 1.53:1 edge against
+                    // the parchment where 3:1 is asked of a control. It was the
+                    // only other button in the app wearing that shape.
+                    Button {
+                        onDone()
+                    } label: {
+                        Text("Jatka")
+                            .font(.body.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .foregroundStyle(Elder.cream)
+                    }
+                    .buttonStyle(.plain)
+                    .background(Color.primary, in: Capsule())
+                    .elderTapTarget()
                 }
-
-                // An answer, not a refusal. It confirms nothing and un-confirms
-                // nothing, and it is what stops the card coming back for ever —
-                // which for this user matters more than the data does: a
-                // question that returns every time she cannot answer it is the
-                // app telling her so. §13 had to learn this the same way.
-                Button {
-                    answer(card, chose: nil)
-                } label: {
-                    Label("En muista", systemImage: "arrow.forward")
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(Elder.supporting)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .elderTapTarget()
-                }
-            } else {
-                // The way on, and a button rather than a timer. The camera's
-                // hint clears itself after two seconds because nothing depends
-                // on its being read; this sentence is the whole answer to what
-                // she just did, and a screen that moves on by itself while an
-                // 80-year-old is still reading it has taken the answer away.
-                // Filled like the four names above it, and for the same
-                // measurement: a `.bordered` capsule has a 1.53:1 edge against
-                // the parchment where 3:1 is asked of a control. It was the
-                // only other button in the app wearing that shape.
-                Button {
-                    onDone()
-                } label: {
-                    Text("Jatka")
-                        .font(.body.weight(.semibold))
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .foregroundStyle(Elder.cream)
-                }
-                .buttonStyle(.plain)
-                .background(Color.primary, in: Capsule())
-                .elderTapTarget()
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                below = height
+                decide()
             }
 
             Spacer(minLength: 0)
         }
+        // The room, once and at rest. In this card's own coordinates the
+        // enclosing scroll view's bounds are the part of it that no bar
+        // covers, so their maxY is the distance from the top of the card to
+        // the top of the tab bar — on a 13 mini, 541 on her album at the text
+        // floor and 655 on a reader's Kerro tab, which is 729 − 188 and
+        // 729 − 74 against the tab bar's own frame (26 Sep 2026). Once,
+        // because the number moves as the page scrolls, and a card measured
+        // again under her thumb would grow its photograph while she read it.
+        // The first pass reports a scroll view not laid out yet, zero high; a
+        // card outside any scroll view gets nil and keeps the column.
+        .onGeometryChange(for: CGRect?.self) { $0.bounds(of: .scrollView) } action: { visible in
+            guard room == nil, let visible, visible.height > 0 else { return }
+            room = visible.maxY
+            decide()
+        }
+    }
+
+    /// What is left for the photograph: the room less 18 points above it, 18
+    /// under it, 8 of daylight between "En muista" and the bar, and everything
+    /// under it. Never taller than the ceiling, and never under 100 points — a
+    /// floor chosen rather than measured: below it a face in a family
+    /// photograph stops being something to recognise, and the page had better
+    /// scroll than ask. Accessibility sizes keep the ceiling, as they always
+    /// have: nothing fits a phone at those sizes, and the page scrolls.
+    ///
+    /// Arithmetic and not a proposed height, and that is measured too. The
+    /// first version of this handed the card a height to fit and let
+    /// `ViewThatFits` choose; the accessibility audit then reported the
+    /// question and "En muista" partially unsupported on a reader's Kerro
+    /// tab, and "Sanni", "Aino" and the question clipped on her album at the
+    /// largest size — where no height was being proposed at all. `main`
+    /// audited clean on the same simulator minutes apart (26 Sep 2026). A
+    /// photograph given a smaller ceiling changes nothing else in the card.
+    private var photoMax: CGFloat {
+        let ceiling = min(photoHeight, typeSize.isAccessibilitySize ? 150 : 200)
+        guard let room, let below, !typeSize.isAccessibilitySize else { return ceiling }
+        return min(ceiling, max(100, room - 18 - 18 - 8 - below))
+    }
+
+    /// The column where it fits with the photograph at its ceiling — and on a
+    /// phone where it does, nothing about this card has changed. Decided once,
+    /// with the column on the screen, so that the card does not rearrange
+    /// itself under her thumb.
+    private func decide() {
+        guard inPairs == nil, let room, let below, !typeSize.isAccessibilitySize else { return }
+        inPairs = below > room - 18 - 18 - 8 - min(photoHeight, 200)
+    }
+
+    /// The answers, as one block: with the outer stack's spacing between them
+    /// they took the height the last row needed.
+    ///
+    /// **Two rows of two where the column does not fit.** Every name keeps its
+    /// full 60 points of height and gives up width instead, which a first name
+    /// has to spare and a face does not. Measured 26 Sep 2026 in English with
+    /// `-seed blind`: on a 13 mini at the text floor the column put
+    /// "En muista" 54 points under her album's tab bar, and a column made to
+    /// fit would have left the photograph 88 points tall. On an SE it fits
+    /// nowhere: her album has 426 points from the top of the card to the bar,
+    /// and the column needs 445 of them before the photograph has any height.
+    private func answers(inPairs: Bool) -> some View {
+        VStack(spacing: 10) {
+            if inPairs {
+                ForEach(0..<(card.names.count + 1) / 2, id: \.self) { row in
+                    HStack(spacing: 10) {
+                        ForEach(card.names[(row * 2)..<min(row * 2 + 2, card.names.count)]) { name in
+                            nameButton(name)
+                        }
+                        // A card of three keeps its last name as wide as the
+                        // others: alone at full width it would be the one name
+                        // that looked different, and none of them may.
+                        if row * 2 + 1 == card.names.count {
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+            } else {
+                ForEach(card.names) { name in
+                    nameButton(name)
+                }
+            }
+        }
+    }
+
+    private func nameButton(_ name: Subject) -> some View {
+        // **Untinted**, which the first build of this card got
+        // wrong. `.bordered` paints its label in the accent, so
+        // four names arrived in the system blue — the colour rule 1
+        // names outright — sitting in the tab bar's fade, where the
+        // audit has already measured that accent at 3.52:1 against
+        // a 4.5:1 minimum. The border says it is a control and the
+        // weight invites; the colour was doing neither job.
+        // **Filled, and the fill is the point.** These were
+        // `.bordered` over the old white ground, and the parchment
+        // took their edge away: a bordered capsule measures
+        // **1.53:1** against `Elder.paper`, where WCAG 1.4.11 asks
+        // 3:1 of anything that has to read as a control. The words
+        // inside were never the problem — black on that capsule is
+        // 11.9:1 — which is why it looked fine and why only a
+        // measurement found it. Ink against the paper is 15.17:1
+        // and cream on ink 16.56:1, so the button now has an edge
+        // for somebody who cannot pick a pale grey capsule out of
+        // a pale ground.
+        //
+        // Four filled buttons rather than one, which is the shape
+        // ARCHITECTURE §22 usually forbids. It holds here because
+        // they are not four actions competing to be the primary
+        // one: they are one question's four answers, and none of
+        // them may look more likely than the others — rule 4's
+        // whole point is that the proposal sits unmarked among
+        // them.
+        Button {
+            answer(card, chose: name)
+        } label: {
+            Text(name.displayTitle)
+                .font(.body.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .foregroundStyle(Elder.cream)
+        }
+        // `.plain` with a capsule of our own, and not
+        // `.borderedProminent` with a tint. The prominent
+        // style picks its own label colour out of the tint
+        // after the label is built — the same overwrite that
+        // once turned these names blue under `.bordered` — so
+        // the one thing that must be certain here, cream on
+        // ink, would have been the system's decision rather
+        // than ours.
+        .buttonStyle(.plain)
+        .background(Color.primary, in: Capsule())
+        .elderTapTarget()
     }
 
     /// Says the one true thing and stops.

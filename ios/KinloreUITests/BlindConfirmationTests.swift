@@ -203,6 +203,48 @@ final class BlindConfirmationTests: XCTestCase {
         )
     }
 
+    /// Every answer above the tab bar at rest, in both of the card's places,
+    /// each at the size it is read in there.
+    ///
+    /// The accessibility audit cannot see this: the tree keeps a button's
+    /// whole frame when the floating tab bar is drawn over it, so a name under
+    /// the bar audits as a perfectly good button. Measured 26 Sep 2026 on an
+    /// iPhone 13 mini, before `BlindCardView` measured its room: on her album
+    /// at the text floor "En muista" ended at 783 and the bar began at 729.
+    /// On a phone with room to spare this passes either way, which is why the
+    /// numbers are written here — it goes red where the card is short of
+    /// room, so run it on a small phone as well as the usual one.
+    func testEveryAnswerClearsTheTabBarAtRest() {
+        let places: [(String, [String])] = [
+            ("her album at the text floor", ["-seed", "blind", "-elder.largerText", "YES", "-tab", "memories"]),
+            ("a reader's Kerro tab", ["-seed", "blind"]),
+        ]
+        for (place, arguments) in places {
+            let app = launch(arguments)
+            card(app)
+
+            // At rest: the last answer's frame the same twice, a second apart.
+            let last = app.buttons["En muista"]
+            var settled = CGRect.null
+            for _ in 0..<10 {
+                sleep(1)
+                let now = last.frame
+                if now == settled { break }
+                settled = now
+            }
+
+            let bar = app.tabBars.firstMatch.frame
+            for answer in ["Aino", "Eeva", "Kalle", "Sanni", "En muista"] {
+                let bottom = app.buttons[answer].frame.maxY
+                XCTAssertLessThanOrEqual(
+                    bottom, bar.minY,
+                    "on \(place), \"\(answer)\" ends at \(bottom), under the tab bar that begins at \(bar.minY)"
+                )
+            }
+            app.terminate()
+        }
+    }
+
     /// And the archive every other test launches into is untouched.
     ///
     /// `demo-photo` carries no file under `-seed archive`, so no card can be

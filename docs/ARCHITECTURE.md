@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 99 sweep tests, each auditing one screen at the default text size and again at the largest, out of 278 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 99 sweep tests, each auditing one screen at the default text size and again at the largest, out of 279 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -4907,6 +4907,25 @@ search field at the floor and passes `photoHeight: 150` — the Kerro tab keeps
 question, four names and *"En muista"* all sit above the bar, from a screenshot
 and not from a tree. At accessibility sizes the card was already capped at 150
 and scrolls, as it always did.
+
+**And a third time, on smaller phones.** Measured 26 Sep 2026 in English with
+`-seed blind`, each answer's bottom against the tab bar's top: on an iPhone
+13 mini her album at the floor still ended *"En muista"* at 783 under a bar
+at 729, and on an iPhone SE both places lost it — the reader's Kerro tab drew
+Kalle to 609 and *"En muista"* to 687 under a bar at 584, and her album lost
+Eeva as well, at 605. So the card now measures its room once, at rest — the
+enclosing scroll view's bounds, in the card's own coordinates, end where the
+bar begins — and does arithmetic with it: the column where the column fits
+with the photograph at its ceiling, and otherwise two rows of two, every name
+keeping its 60 points and giving up width, with the photograph taking what is
+left down to a floor of 100. The 13 mini's album now ends *"En muista"* at 643
+and its Kerro tab is unchanged at 716.67; the SE ends it at 576 and 547. A
+first version proposed a height and let `ViewThatFits` choose, and the audit
+then reported the question and three answers partially unsupported or clipped,
+at the largest size as well; `main` audited clean on the same simulator minutes
+apart, and the arithmetic audits clean on both phones.
+`testEveryAnswerClearsTheTabBarAtRest` compares frames, because the tree
+cannot: red on the 13 mini before the change, green after, and green on the SE.
 
 **The card is held in state, not recomputed.** It was a computed property first,
 and that was wrong in a way only the *correct* answer showed: confirming writes
