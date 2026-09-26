@@ -1,4 +1,5 @@
 import Foundation
+import Network
 
 /// Family membership and its state.
 ///
@@ -33,7 +34,7 @@ final class Session {
         let displayName: String?
     }
 
-    struct Family: Decodable {
+    struct Family: Decodable, Equatable {
         let id: String
         let name: String
         let entitlement: String
@@ -60,7 +61,24 @@ final class Session {
         case inFamily(id: String)
     }
 
+    /// What a phone with no family id finds out about the identity it holds
+    /// (`lookForFamily`). Since 26 Sep 2026.
+    enum Homecoming: Equatable {
+        /// Nothing to find out: the identity was made by this launch, or the
+        /// server has said it knows it as a member of nothing.
+        case none
+        /// The question is out.
+        case asking
+        /// Asked, and nothing answered. Not taken as a no: offline, a timeout
+        /// and a server in trouble all look like this, and a no would send a
+        /// member to the fork.
+        case unanswered
+        /// The server knows this identity as a member of this family.
+        case found(Family)
+    }
+
     private(set) var mode: Mode = .local
+    private(set) var homecoming: Homecoming = .none
     private(set) var family: Family?
     /// The family's usage. The paywall needs this to say what is left BEFORE the
     /// limit is reached — told afterwards, it is only an obstacle.
@@ -71,7 +89,18 @@ final class Session {
     /// Not a `let`: "Tyhjennä tämä laite" replaces it, and the clients read it
     /// on every call so the new token is in use immediately rather than after a
     /// restart.
-    private(set) var identity = Identity.loadOrCreate()
+    private(set) var identity: Identity
+
+    /// One question at a time: the foreground, the network coming back and
+    /// the button can all ask at once.
+    private var isLookingForFamily = false
+    /// The network coming back is an answer worth asking again for, the way
+    /// `SyncEngine` watches for it under a round. Started only once a
+    /// question has gone unanswered, which on most phones is never.
+    private let networkReturn = NWPathMonitor()
+    private var isWatchingNetwork = false
+    /// The monitor's first report is the current path, not a change.
+    private var hasSeenNetworkPath = false
 
     private let familyKey = "family_id"
 
@@ -168,10 +197,26 @@ final class Session {
     }
 
     init() {
+        // Read before anything is made: whether the identity was already here
+        // is the one question below that the Keychain can answer.
+        let held = Identity.load()
+        identity = held ?? Identity.loadOrCreate()
         #if DEBUG
         switch UserDefaults.standard.string(forKey: "seed") {
         case "family":
             seedDemoFamily()
+            return
+        case "returning":
+            // A phone the server knows and whose family id is gone, held at
+            // the moment the answer has arrived. The family is the shared
+            // fixture's, and taking it stores no family id
+            // (`returnToFamily`), so the next launch comes back to the same
+            // page. The store empties itself for this seed — see `MemoryStore`.
+            seedDemoFamily()
+            if let family { homecoming = .found(family) }
+            family = nil
+            usage = nil
+            mode = .needsFamily
             return
         case "arrival":
             // The joiner's landing, held still. The flag below is the same
@@ -231,6 +276,23 @@ final class Session {
             mode = .inFamily(id: familyID)
         } else {
             mode = .needsFamily
+            // An identity that was here before this launch may be a member
+            // already. The Keychain keeps it when the app is deleted and hands
+            // it to the next phone on the same Apple account; the family id
+            // above goes in both cases. Until 26 Sep 2026 such a phone got the
+            // fork, where creating a family ends in "Tämä laite kuuluu jo
+            // toiseen perheeseen" and joining needs an invitation somebody has
+            // to send. So the server is asked first. An identity this launch
+            // made is a member of nothing and is not asked about.
+            var asks = held != nil
+            #if DEBUG
+            // `-homecoming off`: the simulator's Keychain keeps an identity
+            // from one test to the next, which a phone out of the box does
+            // not. The suite says this unless a test names `-homecoming`
+            // itself (`AccessibilityAudit.launch`).
+            if UserDefaults.standard.string(forKey: "homecoming") == "off" { asks = false }
+            #endif
+            if asks { homecoming = .asking }
         }
     }
 
@@ -351,6 +413,90 @@ final class Session {
         guard let hash = trimmed.firstIndex(of: "#") else { return (trimmed, nil) }
         let key = String(trimmed[trimmed.index(after: hash)...])
         return (String(trimmed[..<hash]), key.isEmpty ? nil : key)
+    }
+
+    /// Asks the server whether the identity this phone holds is a member
+    /// already, and of which family (`init` decides who asks).
+    ///
+    /// Only the server's own `unauthorized` is a no. Everything else that is
+    /// not an answer — no network, a timeout, a 5xx, even a family it cannot
+    /// find — leaves the question open and says so, because a no sends the
+    /// phone to the fork, and for a member the fork is the dead end this
+    /// question exists to avoid. It is asked again when the app comes to the
+    /// foreground, when the network comes back, and from the button.
+    func lookForFamily() async {
+        guard mode == .needsFamily, !isLookingForFamily else { return }
+        guard let client else {
+            homecoming = .none
+            return
+        }
+        isLookingForFamily = true
+        defer { isLookingForFamily = false }
+        homecoming = .asking
+        do {
+            #if DEBUG
+            // `-homecoming unauthorized`: the server's no, read the way the
+            // real one is (`FamilyError.forStatus`), for a test that has no
+            // server to say it.
+            if UserDefaults.standard.string(forKey: "homecoming") == "unauthorized" {
+                throw FamilyError.forStatus(401, data: Data(#"{"error":"unauthorized"}"#.utf8))
+            }
+            #endif
+            homecoming = .found(try await client.family())
+        } catch FamilyError.unauthorized {
+            homecoming = .none
+        } catch {
+            homecoming = .unanswered
+            watchForNetwork()
+        }
+    }
+
+    private func watchForNetwork() {
+        guard !isWatchingNetwork else { return }
+        isWatchingNetwork = true
+        networkReturn.pathUpdateHandler = { [weak self] path in
+            let isBack = path.status == .satisfied
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                guard self.hasSeenNetworkPath else {
+                    self.hasSeenNetworkPath = true
+                    return
+                }
+                guard isBack, self.homecoming == .unanswered else { return }
+                await self.lookForFamily()
+            }
+        }
+        networkReturn.start(queue: DispatchQueue(label: "kinlore.homecoming"))
+    }
+
+    /// Takes the answer: this phone is back in the family the server named.
+    ///
+    /// The family id is all it writes. The key is wherever the Keychain has
+    /// it — beside the identity that brought the phone here — and a phone
+    /// whose key did not come along pushes nothing in the clear: `SyncEngine`
+    /// holds it at `.keyMissing` until an invitation brings the key
+    /// (`rejoin`), as it holds any member without one. Nor is a card left
+    /// waiting for its link, since the server has this member's link already
+    /// and says it in `you` on every refresh.
+    func returnToFamily() async {
+        guard case .found(let found) = homecoming else { return }
+        homecoming = .none
+        family = found
+        // A join's landing: what the family already has, on Albumi, while the
+        // first pull fills it in.
+        UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
+        #if DEBUG
+        // `-seed returning` keeps no family id, so that the next launch comes
+        // back to the same page rather than into a family with no server.
+        if UserDefaults.standard.string(forKey: "seed") == "returning" {
+            mode = .inFamily(id: found.id)
+            return
+        }
+        #endif
+        store(familyID: found.id)
+        // The family came with the answer; the meters did not, and `perform`
+        // fetches them after a join for the same reason.
+        usage = try? await entitlements?.usage()
     }
 
     /// Keeps the archive to this phone. PLAN.md §10 lever 2.

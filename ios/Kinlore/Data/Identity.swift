@@ -18,10 +18,7 @@ struct Identity {
     /// account, because the Keychain entry syncs via iCloud to the user's other
     /// devices.
     static func loadOrCreate() -> Identity {
-        if let memberID = Keychain.read(Keychain.memberIDKey),
-           let secret = Keychain.read(Keychain.secretKey) {
-            return Identity(memberID: memberID, secret: secret)
-        }
+        if let held = load() { return held }
 
         // An old partial state is cleaned away: half an identity is worse than
         // none, because the server would reject it silently.
@@ -32,6 +29,19 @@ struct Identity {
         Keychain.write(identity.memberID, for: Keychain.memberIDKey)
         Keychain.write(identity.secret, for: Keychain.secretKey)
         return identity
+    }
+
+    /// The identity the Keychain already holds, or nil — never a new one.
+    ///
+    /// The difference is the question `Session` asks at launch. An identity
+    /// this phone made a moment ago cannot be a member of anything, but one
+    /// that was already there may be: the entry outlives deleting the app and
+    /// follows the Apple account to the next phone, while the family id beside
+    /// it in UserDefaults does neither (docs/ARCHITECTURE.md §4).
+    static func load() -> Identity? {
+        guard let memberID = Keychain.read(Keychain.memberIDKey),
+              let secret = Keychain.read(Keychain.secretKey) else { return nil }
+        return Identity(memberID: memberID, secret: secret)
     }
 
     /// Throws the identity away. The next `loadOrCreate` makes a new one, which

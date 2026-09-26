@@ -6,7 +6,7 @@
 // two families — rests on `authenticate` in backend/src/auth.ts, and §1 has
 // listed its rules as verified while nothing ran them.
 //
-// The four that matter:
+// The five that matter:
 //
 // 1. A wrong secret is refused, and an unknown member is refused the same way.
 // 2. One family cannot see another's rows. This is the boundary the whole
@@ -15,6 +15,13 @@
 //    memories keep resolving, which makes "still in the database" and "still in
 //    the family" two different things — and the difference is one column.
 // 4. The secret is stored hashed. A database leak must not be a set of keys.
+// 5. **A phone that comes back is told who it is** (26 Sep 2026). The identity
+//    outlives deleting the app and follows the Apple account; the family id
+//    does neither. So a phone without one asks GET /family, and the app reads
+//    exactly one answer as "no family": the server's own `unauthorized`, which
+//    a stranger and somebody who has left get alike. A member is told their
+//    family instead — and creating a family is refused them as
+//    `member_exists`, the dead end the question exists to avoid.
 //
 // Silent when broken, every one. A left member who can still read looks exactly
 // like a working app to everybody except the family who asked them to leave.
@@ -81,7 +88,7 @@ async function send(path, options = {}) {
 }
 
 async function createFamily(who) {
-	const { status } = await send('/family', {
+	const { status, body } = await send('/family', {
 		method: 'POST',
 		headers: json,
 		body: JSON.stringify({
@@ -92,6 +99,7 @@ async function createFamily(who) {
 		}),
 	})
 	if (status !== 200) throw new Error(`could not create a family: ${status}`)
+	return body.familyID
 }
 
 async function push(who, subject) {
@@ -127,8 +135,8 @@ const now = Math.floor(Date.now() / 1000)
 try {
 	const mummo = person('Mummo')
 	const naapuri = person('Naapuri')
-	await createFamily(mummo)
-	await createFamily(naapuri)
+	const mummosFamily = await createFamily(mummo)
+	const naapurisFamily = await createFamily(naapuri)
 
 	// Something of Mummo's to try to reach.
 	const secretSubject = randomUUID()
@@ -208,6 +216,63 @@ try {
 		// the database and being in the family are two different things, and the
 		// difference is one column.
 		check('and the moment he leaves, he reads nothing', after.status === 401, String(after.status))
+		// And the question his phone would ask after being reinstalled gets
+		// the no that sends it to the fork, where a new invitation is needed.
+		const asked = await send('/family', { headers: ville.auth })
+		check(
+			'nor is he told a family when his phone asks',
+			asked.status === 401 && asked.body.error === 'unauthorized',
+			JSON.stringify({ status: asked.status, error: asked.body.error }),
+		)
+	}
+
+	console.log('— and a phone that comes back is told who it is —')
+	{
+		const { status, body } = await send('/family', { headers: mummo.auth })
+		check(
+			'a member who asks is told her own family and herself in it',
+			status === 200 && body.id === mummosFamily && body.you?.id === mummo.memberID
+				&& body.you?.displayName === 'Mummo',
+			JSON.stringify({ status, id: body.id === mummosFamily, you: body.you?.id === mummo.memberID }),
+		)
+	}
+	{
+		const { body } = await send('/family', { headers: naapuri.auth })
+		check(
+			'and the neighbour his',
+			body.id === naapurisFamily && body.id !== mummosFamily,
+			JSON.stringify({ own: body.id === naapurisFamily }),
+		)
+	}
+	{
+		// The one answer the app reads as "no family" (`FamilyError.unauthorized`).
+		// Anything else — a timeout, a 5xx — is not an answer at all, so the
+		// shape of this one is the whole contract.
+		const { status, body } = await send('/family', { headers: person('Uusi').auth })
+		check(
+			'an identity the server never saw is told no, in the one word the app reads as no',
+			status === 401 && body.error === 'unauthorized',
+			JSON.stringify({ status, error: body.error }),
+		)
+	}
+	{
+		// Why the question is asked first. Without it, a reinstalled phone's
+		// "Aloita perheen arkisto" is this request.
+		const { status, body } = await send('/family', {
+			method: 'POST',
+			headers: json,
+			body: JSON.stringify({
+				memberID: mummo.memberID,
+				secret: mummo.secret,
+				displayName: 'Mummo',
+				familyName: 'Toinen perhe',
+			}),
+		})
+		check(
+			'while a member who starts a family instead is refused as one already',
+			status === 409 && body.error === 'member_exists',
+			JSON.stringify({ status, error: body.error }),
+		)
 	}
 
 	console.log('— and the secret is not lying in the database —')

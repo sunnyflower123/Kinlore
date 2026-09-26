@@ -1524,7 +1524,9 @@ final class MemoryStore {
         // itself out of the way: a fixture left over from an earlier run would
         // put content on a screen whose whole point is that none has arrived,
         // or a history under a result screen that is meant to be a first one.
-        if ["empty", "arrival", "alone"]
+        // `-seed returning` too: a phone that comes back to its family has
+        // nothing of the family's on it yet.
+        if ["empty", "arrival", "alone", "returning"]
             .contains(UserDefaults.standard.string(forKey: "seed") ?? "") {
             subjects = []
             memories = []

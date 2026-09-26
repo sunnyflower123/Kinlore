@@ -38,8 +38,10 @@
 // The rules are only as good as their callers, and `SyncEngine` and `Session`
 // need the whole app to compile. So the last section reads their source, the
 // way `device-wipe-check.mjs` reads Session.swift: every push, upload and pull
-// in the engine goes through the seal, the key is looked up nowhere else, and
-// the rejoin adopts only after the server's answer.
+// in the engine goes through the seal, the key is looked up nowhere else, the
+// rejoin adopts only after the server's answer, and Session writes the key on
+// no road but the founder's, the join's and the rejoin's — not on the way back
+// of a phone the server already knows.
 //
 //   swiftc -parse-as-library -o /tmp/keyless-sync-check \
 //     scripts/keyless-sync-check.swift ios/Kinlore/Data/Identity.swift \
@@ -298,6 +300,17 @@ enum KeylessSyncCheck {
         check(
             "and takes the key only after the server has placed the code in this family",
             answered != nil && adopted != nil && answered! < adopted!
+        )
+        // A phone the server already knows comes back through
+        // `returnToFamily` (26 Sep 2026), which has no invitation to take a
+        // key from and must not grow a way of its own to write one: what it
+        // holds is what the seal above decides by, as for any other member.
+        check(
+            "and the key is written on no other road: made by a founder, taken before a join and after a rejoin's answer",
+            occurrences(of: "FamilyKey.create()", in: session) == 1
+                && occurrences(of: "FamilyKey.adopt(", in: session) == 2
+                && occurrences(of: "FamilyKey.store(", in: session) == 0
+                && occurrences(of: "Keychain.write(", in: session) == 0
         )
 
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")

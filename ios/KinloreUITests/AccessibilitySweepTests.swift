@@ -562,6 +562,26 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// What a phone the server knows as a member meets instead of the fork,
+    /// after the app was deleted or on a new phone on the same Apple account
+    /// (`ReturningPhoneTests`, docs/UX.md §4.5). The family's name is the
+    /// founder's, at a size of its own.
+    func testReturningPhone() throws {
+        try sweep("Paluu perheeseen", arguments: ["-seed", "returning"], api: "http://127.0.0.1:9") { app, _ in
+            require(app.buttons["Avaa perheen arkisto"], "the page that offers the family back")
+        }
+    }
+
+    /// The same phone when nothing answered — the page it can be left on,
+    /// with the button that asks again.
+    func testReturningPhoneUnanswered() throws {
+        // The question is asked only of an identity that was already here.
+        launch([], api: "http://127.0.0.1:9").terminate()
+        try sweep("Odotetaan yhteyttä", arguments: ["-homecoming", "ask"], api: "http://127.0.0.1:9") { app, _ in
+            require(app.buttons["Yritä uudelleen"], "the page that waits for the server")
+        }
+    }
+
     /// The two forms behind the onboarding buttons. Nothing had ever measured
     /// either of them — `testOnboarding` stops at the two buttons in front — and
     /// the blank form audited at six issues the first time it was looked at.

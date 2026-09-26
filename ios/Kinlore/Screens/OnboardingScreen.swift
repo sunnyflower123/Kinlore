@@ -9,6 +9,7 @@ struct OnboardingScreen: View {
     @Environment(Session.self) private var session
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
 
     /// The code from an invite link, or nil.
     ///
@@ -100,6 +101,20 @@ struct OnboardingScreen: View {
         // The link arriving while this screen is already open is the ordinary
         // case, not the exception.
         .onChange(of: prefilledCode) { _, _ in useInvite() }
+        // A phone whose identity was here before this launch asks the server
+        // before it offers the fork (`Session.lookForFamily`).
+        .task {
+            if session.homecoming == .asking { await session.lookForFamily() }
+        }
+        // Unanswered is not an answer, so it is asked again whenever the phone
+        // is picked up — the network watcher in `Session` covers the rest.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, session.homecoming == .unanswered else { return }
+            Task { await session.lookForFamily() }
+        }
+        .onChange(of: session.homecoming) { _, now in
+            if now == .none { useInvite() }
+        }
     }
 
     /// Takes the code out of the link and puts the join form in front of her.
@@ -107,14 +122,138 @@ struct OnboardingScreen: View {
     /// A link is a deliberate act and the most recent one, so it wins over
     /// whatever is in the field — somebody who taps a fresh invitation while a
     /// stale code is half-typed meant the fresh one.
+    ///
+    /// Not while the server is being asked whether this phone is a member
+    /// already. A member holding an invitation to their own family is let back
+    /// in by the answer, and anybody else gets the join form, code filled in,
+    /// the moment the answer is no.
     private func useInvite() {
-        guard let invite = prefilledCode, !invite.isEmpty else { return }
+        guard session.homecoming == .none, let invite = prefilledCode, !invite.isEmpty else { return }
         code = invite
         route = .join
         prefilledCode = nil
     }
 
+    @ViewBuilder
     private var content: some View {
+        switch session.homecoming {
+        case .none: fork
+        case .asking: asking
+        case .unanswered: unanswered
+        case .found(let family): returning(to: family)
+        }
+    }
+
+    /// A round trip, usually a short one, so a wheel and one sentence.
+    private var asking: some View {
+        VStack(spacing: 20) {
+            Spacer(minLength: 0)
+            ProgressView()
+                .controlSize(.large)
+            Text("Katsotaan, oletko jo perheen jäsen.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// The server did not answer, which is not the same as saying no.
+    ///
+    /// The fork stays hidden here, and on purpose: for a member, the road that
+    /// needs no invitation ends at the server's refusal, and the one that
+    /// works offline sets up an archive apart from the family this phone
+    /// belongs to. So the page says what it is waiting for, keeps asking by
+    /// itself, and has a button — without one, a page with nothing to press
+    /// reads as a phone that has stopped.
+    ///
+    /// At accessibility sizes the sentence keeps only the half that says what
+    /// the page does by itself. In full it ran to eight lines at the largest
+    /// size and left the button below the fold, the fork's own failure
+    /// (`intro`); the title already says what it waits for.
+    private var unanswered: some View {
+        VStack(spacing: 28) {
+            Spacer(minLength: 0)
+            VStack(spacing: 14) {
+                Text("Odotetaan yhteyttä")
+                    .font(.largeTitle.weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                Group {
+                    if typeSize.isAccessibilitySize {
+                        Text("Sovellus yrittää itse uudelleen.")
+                    } else {
+                        Text("Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa.")
+                    }
+                }
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+            }
+            Spacer(minLength: 0)
+            Button {
+                Task { await session.lookForFamily() }
+            } label: {
+                Text("Yritä uudelleen")
+                    .font(.body.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// The server knows this phone's identity as a member of this family.
+    ///
+    /// It says nothing about how the phone got here. The Keychain brings the
+    /// identity back after the app is deleted, and to a new phone on the same
+    /// Apple account just the same, and this page cannot tell the two apart.
+    ///
+    /// At accessibility sizes the sentence is dropped, as the fork drops its
+    /// `intro`: it pushed the one button below the fold, and the family's name
+    /// over the button already says whose archive it opens.
+    private func returning(to family: Session.Family) -> some View {
+        VStack(spacing: 28) {
+            Spacer(minLength: 0)
+            VStack(spacing: 14) {
+                Text("Tervetuloa takaisin")
+                    .font(.largeTitle.weight(.bold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                // As its founder typed it, so not looked up.
+                Text(verbatim: family.name)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !typeSize.isAccessibilitySize {
+                    Text("Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen.")
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            Spacer(minLength: 0)
+            Button {
+                Task { await session.returnToFamily() }
+            } label: {
+                Text("Avaa perheen arkisto")
+                    .font(.body.weight(.semibold))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var fork: some View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
 

@@ -266,9 +266,18 @@ struct FamilyClient {
 /// 2026, finding #94).
 enum FamilyError: LocalizedError {
     case message(String)
+    /// The server's own `{"error":"unauthorized"}`: it does not know this
+    /// identity as a member of anything. A case of its own because one caller
+    /// acts on it — the question a returning phone asks (`Session.lookForFamily`)
+    /// reads this answer, and only this one, as "no family". The words are the
+    /// same as they always were.
+    case unauthorized
 
     var errorDescription: String? {
-        switch self { case .message(let text): text }
+        switch self {
+        case .message(let text): text
+        case .unauthorized: String(localized: "Tunnistautuminen epäonnistui.")
+        }
     }
 
     /// The error text is written for the user, not the developer: an elderly
@@ -284,7 +293,7 @@ enum FamilyError: LocalizedError {
         case "member_exists":
             return .message(String(localized: "Tämä laite kuuluu jo toiseen perheeseen."))
         case "unauthorized":
-            return .message(String(localized: "Tunnistautuminen epäonnistui."))
+            return .unauthorized
         // Creating a family and joining one are metered per address
         // (docs/ARCHITECTURE.md §4), so this is the one refusal the app can now
         // meet that the generic wording actively misleads about: "yritä

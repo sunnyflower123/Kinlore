@@ -317,6 +317,13 @@ extension XCTestCase {
         if !arguments.contains("-people") {
             app.launchArguments += ["-people", "list"]
         }
+        // A phone with no family id asks the server whether the identity it
+        // holds is a member already, since 26 Sep 2026 — and this simulator's
+        // Keychain holds one from the previous test, which a phone out of the
+        // box does not. So the question is off unless a test is about it.
+        if !arguments.contains("-homecoming") {
+            app.launchArguments += ["-homecoming", "off"]
+        }
         if let textSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", textSize]
         }

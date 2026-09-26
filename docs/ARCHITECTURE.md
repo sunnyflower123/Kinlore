@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 95 sweep tests, each auditing one screen at the default text size and again at the largest, out of 271 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 97 sweep tests, each auditing one screen at the default text size and again at the largest, out of 276 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -821,6 +821,55 @@ id across three launches, including after deletion and reinstallation.
 That is the correct behaviour for this audience. Accidentally deleting the app
 must not mean losing the family.
 
+**Until 26 Sep 2026 it did mean exactly that, one level up.** The identity came
+back and the family id did not: it lives in UserDefaults, which a deletion
+empties and an Apple account does not carry. So the phone that came back landed
+on the fork as a stranger, and a member cannot use the fork.
+*"Aloita perheen arkisto"* is `POST /family` with an identity the server
+already has, refused as `member_exists`; *"Liity kutsulinkillä"* needs somebody
+in the family to notice and send an invitation. The server would have let the
+member back through any invitation to their own family (the reinstall case
+under "It admits one person" above), but nothing on the phone knew to ask.
+
+Now it asks. An identity that was already in the Keychain when the app launched
+— never one made by that launch, which cannot be a member of anything — puts
+`Session.homecoming` at `.asking`, and the onboarding screen asks `GET /family`
+before it offers the fork (`Session.lookForFamily`). Exactly one answer is read
+as "no family": the server's own `{"error":"unauthorized"}`, which
+`FamilyError.forStatus` maps to `.unauthorized` and which a stranger and a
+member who has left get alike. That opens the fork as before. A family in the
+reply is `.found`: a page that names it and opens it with one button. **Every
+other outcome — no network, a timeout, a 5xx — is `.unanswered`, not a no.** It
+keeps the fork hidden, because for a member the fork's two roads are the
+refusal above and an archive set up apart from the family, and it asks again
+when the app comes to the front, when `NWPathMonitor` reports a path back, and
+on its *"Yritä uudelleen"* button. An invitation tapped meanwhile waits for the
+answer and is used the moment the answer is no. The pages are docs/UX.md §4.5.
+
+`Session.returnToFamily` writes the family id and the arrival flag, and nothing
+else. **It writes no key.** Where the Keychain has the family key, it is already
+there; a phone that has lost it is held at `.keyMissing` by `SyncEngine` —
+nothing pushed, uploaded or taken in, one pull asked for and thrown away —
+until an invitation brings the key back through `Session.rejoin`, as it does
+for any phone in a family that has lost its key.
+`scripts/keyless-sync-check.swift` counts the roads in `Session.swift`:
+`FamilyKey.create()` once, `FamilyKey.adopt(` twice, `FamilyKey.store(` and
+`Keychain.write(` never. A copy of `returnToFamily` that stored the key again
+was compiled against the count, and it went red. Nothing is written for the
+person card either: `GET /family` returns `you.personSubjectID`, so a returned
+phone learns its card from the server, not from `pendingPersonLink`.
+
+The page cannot tell a reinstall from a new phone on the same Apple account,
+and its words do not try. Two limits, both priced. An identity that never
+joined anything asks too — one made by an earlier launch that stopped at the
+fork is held by the next — so that launch, offline, waits on the page rather
+than opening the fork: strict, for a case that is rare and harmless. And the
+text floor (*"Kenen puhelin tämä on"*) is device state, so a phone that came
+back starts without it. `ReturningPhoneTests` drives all three answers
+(`-seed returning`, `-homecoming ask`, `-homecoming unauthorized`), and every
+other UI test launches with `-homecoming off`, because the simulator's Keychain
+keeps an identity from one test to the next.
+
 ### The boundary, pressed on
 
 Reading the join path is not the same as trying it, and this is the one place
@@ -880,6 +929,13 @@ except the family who asked them to go.
 **Shown to be load-bearing.** `if (row.left_at) return null` was deleted in a
 throwaway worktree, Worker and database of its own. The departed member's read
 came back `200` and that one case went red; the other eight stayed green.
+
+Since 26 Sep 2026 the same script also holds the contract the returning phone
+reads (§4, "The identity survives deleting the app"): a member who asks
+`GET /family` is told her own family and herself in it, an identity the server
+never saw and a member who has left both get `401` with `unauthorized` — the
+one word the app reads as no — and a member who starts a family instead is
+refused as `member_exists`.
 
 ## 5. Media
 

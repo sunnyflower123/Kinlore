@@ -212,7 +212,9 @@ beneficiary has to have a family before the model means anything.
 The `onOpenURL` handler stops being conditional on the onboarding screen
 being mounted. Three cases:
 
-- **`.needsFamily`** — as today: the join form, code pre-filled.
+- **`.needsFamily`** — as today: the join form, code pre-filled. While the
+  phone is still asking whether it is a member already (§4.5), the code waits
+  for the answer, and is used the moment the answer is no.
 - **`.inFamily`** — an alert that says what is true:
   *"Tämä laite kuuluu jo perheeseen."* / *"Laite voi kuulua yhteen perheeseen
   kerrallaan. Voit poistua perheestä Asetuksista, ja liittyä sitten
@@ -290,6 +292,43 @@ The custom-scheme dialog ("Open in Kinlore?", English) remains the known
 shortcoming; the paste path remains the mitigation; a universal link waits
 for a domain. No change — this section exists so the next reader knows the
 sharing model was decided, not forgotten.
+
+### 4.5 The phone that comes back
+
+A member's identity outlives deleting the app and follows the Apple account
+to a new phone; the family id does neither (ARCHITECTURE §4, "The identity
+survives deleting the app"). Until 26 Sep 2026 such a phone was put in front
+of the fork as a stranger, and both of its roads were closed to a member:
+*"Aloita perheen arkisto"* ends in the server's `member_exists`, which the
+app words as *"Tämä laite kuuluu jo toiseen perheeseen."*, and
+*"Liity kutsulinkillä"* needs somebody to notice and send an invitation. For
+the grandparent who deleted the app by accident, that was the family gone.
+
+Now the phone asks the server first, and one of three pages answers:
+
+- **While it asks**: a wheel and *"Katsotaan, oletko jo perheen jäsen."*
+- **The server knows the phone**: *"Tervetuloa takaisin"*, the family's name
+  as its founder typed it, *"Olet tämän perheen jäsen, ja sen muistot
+  haetaan tähän puhelimeen."* and one button, **"Avaa perheen arkisto"**,
+  which lands on Albumi as a join does (§4.3). The words do not say the app
+  was reinstalled: a new phone on the same Apple account arrives on the same
+  page, and nothing on it can tell the two apart.
+- **The server did not answer**: *"Odotetaan yhteyttä"*, *"Perheen palvelu
+  ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa."* and
+  **"Yritä uudelleen"**. The fork stays hidden, because silence is not a no:
+  a member who took "Aloita" here would meet the refusal above, or with the
+  network gone, set up an archive apart from the family. The page asks again
+  by itself when the app comes back to the front and when the connection
+  returns, and the button is there because a page with nothing to press reads
+  as a phone that has stopped.
+
+Only the server's own no — an identity it does not know, or a member who has
+left — opens the fork, exactly as before. At accessibility sizes the
+returning page drops its sentence and the waiting page keeps only
+*"Sovellus yrittää itse uudelleen."*, for the fork's reason (§3.1): measured
+at XXXL, the full sentences left the one button below the fold on both.
+`ReturningPhoneTests` drives the three answers, and `testReturningPhone` and
+`testReturningPhoneUnanswered` audit the two pages at both sizes.
 
 ## 5. Arrival 3 — the handover
 
