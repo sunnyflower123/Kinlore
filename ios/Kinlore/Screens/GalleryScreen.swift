@@ -1063,7 +1063,7 @@ private func tellingsAwaitingText(_ store: MemoryStore) -> Int {
     }
     #endif
     return store.told.filter {
-        $0.isAwaitingTranscription && !TranscriptionAttempts.hasGivenUp(on: $0.id)
+        $0.isAwaitingTranscription && !TranscriptionAttempts.hasFailedRepeatedly(on: $0.id)
     }.count
 }
 

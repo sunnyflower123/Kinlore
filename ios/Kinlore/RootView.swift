@@ -1418,8 +1418,9 @@ private struct MemoryRow: View {
     ///
     /// The chosen local mode first: there the text is not late and not given
     /// up on — it is simply never coming, and "valmistuu myöhemmin" would be
-    /// a promise nothing keeps (finding B4). Then the recordings the catch-up
-    /// has stopped asking about. Then the month's minutes, which used to fall
+    /// a promise nothing keeps (finding B4). Then the recordings refused three
+    /// times, which the catch-up asks about only now and then
+    /// (`TranscriptionAttempts.isDue`). Then the month's minutes, which used to fall
     /// through to "myöhemmin" — a word that read as a delay while the truth
     /// was "not until next month, unless somebody pays", on every phone in
     /// the family (findings #103, #107). A `LocalizedStringKey` property
@@ -1428,7 +1429,7 @@ private struct MemoryRow: View {
     /// nowhere `localisation-check.mjs` looks, so nothing said so.
     private var awaitingText: LocalizedStringKey {
         if session.isLocalByChoice { return "Ääni tallessa — voit kirjoittaa tekstin itse" }
-        if TranscriptionAttempts.hasGivenUp(on: memory.id) {
+        if TranscriptionAttempts.hasFailedRepeatedly(on: memory.id) {
             return "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
         }
         if session.isOutOfMinutes { return "Ääni tallessa — kuukauden kertominen täynnä" }

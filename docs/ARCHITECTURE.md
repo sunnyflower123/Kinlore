@@ -3429,21 +3429,40 @@ So a failure is classified once and the answer decides both questions:
 | the moment | no network, 401, quota, 429 | stops — everything else meets the same wall | untouched; none of it was its fault |
 | the recording | no words in the answer, audio refused, 5xx | goes on to the next one | counted |
 
-**Three counted failures and the app stops asking.** The count is device-local
-in `UserDefaults`, for the same reason `comfort` is (§12): it describes this
+**Three counted failures, and the app asks again a day later — then two days
+after that, four, eight, sixteen, and every thirty days for as long as the
+memory exists.** Until 26 Sep 2026 the third failure was the last, and that was
+right for the two failures the rule was written for and wrong for the one it
+cannot tell from them. A Worker whose provider has run out of credit answers
+the same 502 as the hallucination guard (`failure()` in `worker.ts`, rule 9),
+on every attempt, for as long as the outage lasts; three rounds of the catch-up
+inside one — a launch, a return to the foreground — retired every memory told
+during it, on phones that keep the audio for exactly this case. That outage
+happened, on an account that had run down to a few cents. So the tally sets a
+wait now rather than an end: `TranscriptionAttempts.wait(afterFailure:)` is
+nothing before the third failure, a day after it, doubling, never more than
+thirty days, timed from the last failure, and `isDue` is what the catch-up asks
+before it uploads. A recording that will never transcribe costs three attempts
+on the day it is told, four more in its first month and one a month after
+that, instead of three and nothing; and a tally the old rule left behind
+carries no timestamp and reads as due at once, so the outage's memories are the
+first thing the next round picks up. The count is device-local in
+`UserDefaults`, for the same reason `comfort` is (§12): it describes this
 phone's attempts, not a fact about the family's archive, and a count that synced
-would let one phone's bad afternoon stop another phone from ever trying.
+would let one phone's bad afternoon slow every other phone down.
 
-Giving up on the text is not giving up on the recording. The audio is kept,
-uploaded and exported exactly as before — and the memory card stops saying
-*"teksti valmistuu myöhemmin"*, because after the app has stopped trying that
-sentence is the same false promise this whole section exists to remove.
+Slowing down on the text is not giving up on the recording. The audio is kept,
+uploaded and exported exactly as before — and from the third failure the memory
+card stops saying *"teksti valmistuu myöhemmin"*, because a promise the app may
+take a month to keep is the same false promise this whole section exists to
+remove. *"Tekstiä ei saatu tästä nauhoituksesta"* is true until the day it is
+not, and on that day the row changes by itself.
 
-Counting a 5xx as the recording's fault is the debatable line, and it is drawn
-there on purpose: a Worker that is genuinely broken spends three attempts before
-the app gives up on a transcript it might later have got, whereas the one 5xx
-this app raises deliberately is permanent for that audio. An uncounted permanent
-failure is the loop being closed here.
+Counting a 5xx as the recording's fault stays, and it is drawn there on
+purpose: the one 5xx this app raises deliberately is permanent for that audio,
+and an uncounted permanent failure would be paid for on every launch. What
+changed is the price of counting wrong. A Worker that is genuinely broken used
+to cost a transcript; it now costs a day.
 
 ### What degrades, and what does not
 

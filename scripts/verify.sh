@@ -176,7 +176,10 @@ extraction_context() {
 # How often the app asks again for text it never got, and what it blames on
 # the moment rather than on the recording. Both are silent in both directions:
 # too forgiving and unusable audio costs paid minutes on every launch for ever,
-# too strict and a week without signal abandons a good recording. The tally is
+# too strict and a week without signal abandons a good recording. Since 26 Sep
+# 2026 the tally slows the asking down instead of ending it — a day after the
+# third refusal, doubling, thirty days at most, and a tally the old rule left
+# behind due at once — and every one of those numbers is held here. The tally is
 # executed — `TranscriptionAttempts` sits in a file of its own so that it can
 # be, since DeferredMemory.swift reaches three files that import UIKit — and
 # the classifier beside it is read rather than run, which the check says of
@@ -294,7 +297,7 @@ run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
 run "a question aims at what the archive lacks" extraction_context
 run "no date is sharper than what was said" date_hint
-run "the app stops asking, and not for the weather" transcription_catchup
+run "the app asks again later, and not for the weather" transcription_catchup
 run "a child is drawn below her parents" family_tree_layout
 run "every word in the tree is exact" kinship
 run "the family's bytes end up on every phone" full_copy

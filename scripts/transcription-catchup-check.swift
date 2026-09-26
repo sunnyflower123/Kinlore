@@ -11,8 +11,19 @@
 // the family paid minutes on every launch for as long as the memory exists.
 // Too strict and a perfectly good recording is abandoned because a provider had
 // a bad hour. Neither shows: the row reads "Ääni tallessa" either way, and
-// `hasGivenUp` quietly decides what `RootView`, `GalleryScreen` and the
-// catch-up itself do with it.
+// `hasFailedRepeatedly` and `isDue` quietly decide what `RootView`,
+// `GalleryScreen` and the catch-up itself do with it.
+//
+// Until 26 Sep 2026 the third failure was the last. A provider that has run out
+// of credit answers the same 502 as the guard, on every attempt, for as long as
+// the outage lasts, and three rounds of the catch-up inside one retired every
+// memory told during it. So the tally now sets a wait instead of an end:
+// nothing before the third failure, a day after it, doubling, never more than
+// thirty days, timed from the last failure — and a tally the old rule left
+// behind has no timestamp and is due at once. Every one of those numbers is
+// silent when wrong. A wait that never ends is the old rule back, a wait that
+// never grows is the money the rule exists to save, and a ceiling that
+// overflows is either.
 //
 // `isAboutTheMoment` is the classifier that feeds it, and its own comment names
 // the two failures: getting it wrong in one direction starves every memory
@@ -30,8 +41,9 @@
 // machine cannot compile them, and standing in for them would have meant
 // measuring the stand-ins. The classifier and its wiring are READ: they stay in
 // `DeferredMemory.swift`, so nothing here runs them, and what is pinned is the
-// arms they answer for and which arm counts a failure. Both halves are honest
-// about which they are, and a reader should not take the second for the first.
+// arms they answer for, which arm counts a failure, and that the catch-up asks
+// `isDue` and nothing that gives up for good. Both halves are honest about
+// which they are, and a reader should not take the second for the first.
 //
 //   swiftc -parse-as-library -o /tmp/transcription-catchup-check \
 //     scripts/transcription-catchup-check.swift \
@@ -65,46 +77,150 @@ enum TranscriptionCatchUpCheck {
 
     @MainActor
     static func main() {
+        typealias Attempts = TranscriptionAttempts
         let one = "memory-one"
         let two = "memory-two"
+        let day: TimeInterval = 24 * 60 * 60
+        // A fixed moment, so that nothing below depends on the clock it runs on.
+        let told = Date(timeIntervalSince1970: 1_790_000_000)
 
         print("— how often the app asks again —")
-        TranscriptionAttempts.reset()
-        check("a recording nobody has failed on has no tally", TranscriptionAttempts.failures(for: one) == 0)
-        check("and is still worth asking about", !TranscriptionAttempts.hasGivenUp(on: one))
+        Attempts.reset()
+        check("a recording nobody has failed on has no tally", Attempts.failures(for: one) == 0)
+        check("and has not been refused repeatedly", !Attempts.hasFailedRepeatedly(on: one))
+        check("and is due at once", Attempts.isDue(one, now: told))
 
-        TranscriptionAttempts.recordFailure(one)
-        check("one refusal counts once", TranscriptionAttempts.failures(for: one) == 1)
-        check("and the app asks again", !TranscriptionAttempts.hasGivenUp(on: one))
+        Attempts.recordFailure(one, at: told)
+        check("one refusal counts once", Attempts.failures(for: one) == 1)
+        check("and the app asks again at once", Attempts.isDue(one, now: told) && !Attempts.hasFailedRepeatedly(on: one))
 
-        TranscriptionAttempts.recordFailure(one)
-        check("two refusals count twice", TranscriptionAttempts.failures(for: one) == 2)
-        check("and the app still asks again", !TranscriptionAttempts.hasGivenUp(on: one))
+        Attempts.recordFailure(one, at: told)
+        check("two refusals count twice", Attempts.failures(for: one) == 2)
+        check("and the app still asks again at once", Attempts.isDue(one, now: told) && !Attempts.hasFailedRepeatedly(on: one))
 
-        TranscriptionAttempts.recordFailure(one)
-        check("three refusals count three times", TranscriptionAttempts.failures(for: one) == 3)
-        check("and then the app stops asking", TranscriptionAttempts.hasGivenUp(on: one))
+        Attempts.recordFailure(one, at: told)
+        check("three refusals count three times", Attempts.failures(for: one) == 3)
+        check("and the row may stop promising the text", Attempts.hasFailedRepeatedly(on: one))
+        check(
+            "and the app does not ask again on the spot",
+            !Attempts.isDue(one, now: told),
+            "the same silence would be paid for on every launch"
+        )
+        check("nor an hour short of a day later", !Attempts.isDue(one, now: told + day - 3600))
+        check(
+            "but a day later it does",
+            Attempts.isDue(one, now: told + day),
+            "a wait that never ends is the old rule back"
+        )
+        check("and the tally still reads three refusals", Attempts.hasFailedRepeatedly(on: one))
 
-        TranscriptionAttempts.recordFailure(two)
+        let fourth = told + day
+        Attempts.recordFailure(one, at: fourth)
+        check("a fourth refusal doubles the wait: not due after a day", !Attempts.isDue(one, now: fourth + day))
+        check(
+            "but due after two",
+            Attempts.isDue(one, now: fourth + 2 * day),
+            "a wait that never grows is the money the tally exists to save"
+        )
+
+        // Each further refusal made the moment it is due, so that the schedule
+        // is the one a phone would actually keep: four days, eight, sixteen,
+        // and then the ceiling.
+        var moment = fourth
+        for (count, days) in [(5, 4.0), (6, 8.0), (7, 16.0), (8, 30.0), (9, 30.0), (12, 30.0)] {
+            while Attempts.failures(for: one) < count {
+                moment += Attempts.wait(afterFailure: Attempts.failures(for: one))
+                Attempts.recordFailure(one, at: moment)
+            }
+            check(
+                "after \(count) refusals the wait is \(Int(days)) days",
+                !Attempts.isDue(one, now: moment + days * day - 60) && Attempts.isDue(one, now: moment + days * day),
+                count == 8 ? "thirty days is the ceiling, not thirty-two" : ""
+            )
+        }
+
+        print("\n— the wait itself —")
+        check(
+            "nothing before the third refusal",
+            Attempts.wait(afterFailure: 0) == 0 && Attempts.wait(afterFailure: 1) == 0 && Attempts.wait(afterFailure: 2) == 0
+        )
+        check("a day after the third", Attempts.wait(afterFailure: 3) == day)
+        check(
+            "doubling with each one",
+            Attempts.wait(afterFailure: 4) == 2 * day && Attempts.wait(afterFailure: 5) == 4 * day
+                && Attempts.wait(afterFailure: 6) == 8 * day && Attempts.wait(afterFailure: 7) == 16 * day
+        )
+        check(
+            "thirty days at most",
+            Attempts.wait(afterFailure: 8) == 30 * day && Attempts.wait(afterFailure: 9) == 30 * day
+                && Attempts.wait(afterFailure: 40) == 30 * day
+        )
+        check(
+            "and a tally beyond counting cannot overflow its way back to zero",
+            Attempts.wait(afterFailure: Int.max) == 30 * day
+        )
+
+        print("\n— what an older build left behind —")
+        let old = "memory-retired-under-the-old-rule"
+        var counts = UserDefaults.standard.dictionary(forKey: "transcription-failures") ?? [:]
+        counts[old] = 3
+        UserDefaults.standard.set(counts, forKey: "transcription-failures")
+        check(
+            "a tally of three with no timestamp reads as three refusals",
+            Attempts.failures(for: old) == 3 && Attempts.hasFailedRepeatedly(on: old) && Attempts.lastFailure(for: old) == nil
+        )
+        check(
+            "and is due at once",
+            Attempts.isDue(old, now: told),
+            "the memories told during the outage would stay retired"
+        )
+        Attempts.recordFailure(old, at: told)
+        check(
+            "and from its next refusal it waits like any other",
+            !Attempts.isDue(old, now: told + day) && Attempts.isDue(old, now: told + 2 * day)
+        )
+
+        print("\n— a clock set back —")
+        let ahead = "memory-last-failed-on-tomorrow"
+        for _ in 0..<3 { Attempts.recordFailure(ahead, at: told + 10 * day) }
+        check(
+            "a last failure in the future is due now",
+            Attempts.isDue(ahead, now: told),
+            "a phone whose clock went back would wait the difference out"
+        )
+
+        print("\n— one recording's tally is its own —")
+        Attempts.recordFailure(two, at: told)
         check(
             "another recording carries its own tally",
-            TranscriptionAttempts.failures(for: two) == 1 && TranscriptionAttempts.hasGivenUp(on: one)
+            Attempts.failures(for: two) == 1 && Attempts.failures(for: one) == 12
         )
-        check("and has not been given up on", !TranscriptionAttempts.hasGivenUp(on: two))
+        check("and has not been refused repeatedly", !Attempts.hasFailedRepeatedly(on: two))
 
-        TranscriptionAttempts.clear(one)
-        check("finishing a recording forgets its tally", TranscriptionAttempts.failures(for: one) == 0)
-        check("and asks about it again", !TranscriptionAttempts.hasGivenUp(on: one))
-        check("while the other's is untouched", TranscriptionAttempts.failures(for: two) == 1)
+        Attempts.clear(one)
+        check("finishing a recording forgets its tally", Attempts.failures(for: one) == 0)
+        check("and when it last failed", Attempts.lastFailure(for: one) == nil)
+        check("and asks about it again at once", Attempts.isDue(one, now: told))
+        check(
+            "while the other's is untouched",
+            Attempts.failures(for: two) == 1 && Attempts.lastFailure(for: two) == told
+        )
 
-        TranscriptionAttempts.clear("a recording this device has never failed on")
-        check("clearing an unknown recording changes nothing", TranscriptionAttempts.failures(for: two) == 1)
+        Attempts.clear("a recording this device has never failed on")
+        check("clearing an unknown recording changes nothing", Attempts.failures(for: two) == 1)
 
-        TranscriptionAttempts.reset()
-        check("emptying the device forgets every tally", TranscriptionAttempts.failures(for: two) == 0)
+        Attempts.reset()
+        check(
+            "emptying the device forgets every tally",
+            Attempts.failures(for: two) == 0 && Attempts.failures(for: old) == 0 && Attempts.failures(for: ahead) == 0
+        )
+        check(
+            "and every timestamp with it",
+            UserDefaults.standard.dictionary(forKey: "transcription-last-failure") == nil
+        )
 
-        // The two above are each right on their own and would both stay right
-        // with the arms swapped — and swapped is exactly the defect the
+        // The tally above is right on its own and would stay right with the
+        // classifier's arms swapped — and swapped is exactly the defect the
         // classifier's own comment describes. Nothing executable can see that
         // from outside `run()`, so the wiring is read.
         let path = URL(fileURLWithPath: #filePath)
@@ -147,9 +263,14 @@ enum TranscriptionCatchUpCheck {
 
         print("\n— and which arm counts —")
         check(
-            "a recording already given up on is skipped before it is uploaded",
-            source.contains("guard !TranscriptionAttempts.hasGivenUp(on: memory.id) else { continue }"),
+            "a recording refused three times is skipped until its wait is over, before it is uploaded",
+            source.contains("guard TranscriptionAttempts.isDue(memory.id) else { continue }"),
             "the tally is kept and not consulted"
+        )
+        check(
+            "and nothing in the catch-up gives up on a recording for good",
+            !source.contains("hasGivenUp"),
+            "an outage of three rounds would retire every memory told during it"
         )
 
         let guarded = "catch where Self.isAboutTheMoment(error) {"
@@ -180,7 +301,7 @@ enum TranscriptionCatchUpCheck {
             "one hopeless recording would starve every memory behind it"
         )
 
-        TranscriptionAttempts.reset()
+        Attempts.reset()
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
     }

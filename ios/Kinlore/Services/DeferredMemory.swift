@@ -192,8 +192,10 @@ final class TranscriptionCatchUp {
 
         for memory in store.memoriesAwaitingTranscription(author: session.identity.memberID) {
             // Asked three times and refused three times. The audio is kept and
-            // exported exactly as before; what stops is the asking.
-            guard !TranscriptionAttempts.hasGivenUp(on: memory.id) else { continue }
+            // exported exactly as before; what slows down is the asking — a
+            // day after the third refusal, then doubling, never more than a
+            // month apart and never for good (`TranscriptionAttempts.wait`).
+            guard TranscriptionAttempts.isDue(memory.id) else { continue }
 
             // A phone that joined last week holds the key and not the file, so
             // this may fetch from R2. Audio that is on neither is skipped rather
@@ -228,13 +230,15 @@ final class TranscriptionCatchUp {
                 // goes on without it — and this one is counted, because asking
                 // again costs the family the same minutes for the same silence.
                 //
-                // A 5xx is counted here too, which is the debatable part: a
-                // Worker that is genuinely broken spends three attempts before
-                // the app gives up on a transcript it might later have got. It
-                // sits on this side because the one 5xx this app produces on
-                // purpose — the hallucination guard — is permanent for that
-                // audio, and an uncounted permanent failure is the loop this
-                // whole change exists to close.
+                // A 5xx is counted here too, and it is the one failure the
+                // tally cannot tell from a refused recording: the hallucination
+                // guard's 502 is permanent for that audio, and a Worker whose
+                // provider has run out of credit answers the very same 502
+                // (`failure()` in worker.ts, rule 9) for as long as the outage
+                // lasts. Until 26 Sep 2026 counting meant giving up, and three
+                // rounds inside such an outage retired every memory told
+                // during it; now counting slows the asking down instead, so
+                // that counting wrong costs a day rather than a transcript.
                 TranscriptionAttempts.recordFailure(memory.id)
                 continue
             }
