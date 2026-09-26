@@ -804,6 +804,14 @@ finished.**
      palveluumme"* — because fixing the barrier with a promise that is not kept
      would be worse than the barrier.
 
+     **That sentence stopped being true on 24 Aug 2026** (`0c68d76`,
+     `192bbe9`). Once a build carried the production address, a kept-here
+     archive had no member the server knew, so its transcription could only
+     ever answer 401. The attempt is now skipped
+     (`TellViewModel.stopAndProcess`) and the notice says what happens
+     instead: nothing is sent, nothing is written down, and the memory can be
+     written by hand.
+
      **Two things it does not do**, both deliberate and both worth knowing
      before this is called finished:
 
@@ -812,7 +820,9 @@ finished.**
        tämä laite"*, which clears the answer along with everything else and
        offers the export first. That is defensible for v1 and it is not
        obviously right — a Settings row that hands the archive to a new family
-       is the honest version, and it is not built.
+       is the honest version, and it is not built. **Built 29 Aug 2026**
+       (`04efe50`): that row now leads to `EnableSharingScreen`, one-way, and
+       the rows already on the phone travel with it (UX.md §11.1).
      - **It does not encrypt anything.** What stays on the phone stays because
        nothing sends it, not because anything is unreadable. That is lever 3.
   3. ~~**Encryption at rest under a family key.**~~ **Built 16 Aug 2026**
@@ -826,7 +836,7 @@ finished.**
      change; what that leaks is exactly what the comparison already needed.
 
      **It is not end-to-end, and it must not be called that where a user can
-     read it.** Four things stay outside it, each for a named reason:
+     read it.** Five things stay outside it, each for a named reason:
 
      - **Transcription still sends the recording in clear.** Rule 7 puts the
        model key in the Worker and a model cannot write down speech it cannot
@@ -836,6 +846,12 @@ finished.**
        it, for the same reason: a model cannot colour a picture it cannot see.
        Only when somebody asks, and the colouring that is kept is sealed like
        any photograph (ARCHITECTURE §24).
+     - **Extraction sends the transcript in clear**, with the title, date and
+       place of the subject it is filed under, the names already linked to it,
+       the questions still open on it and, since 19 Sep 2026, the photograph
+       of a photo subject (`ExtractionContext`, ARCHITECTURE §12). A model
+       cannot structure words it cannot read, and `/extract` stores none of
+       it.
      - **The invitation carries the key**, so whatever app delivered that
        message has it. The server does not, which is the design; that is a
        smaller claim than end-to-end and `InviteShare` states it where the

@@ -3998,6 +3998,14 @@ read either name — and `subject.r2_key`, which is the family id and a UUID.
 None of them is a surprise given the design; the point of this paragraph is
 that the list is complete, and it was not.
 
+**Three more since 25 Sep 2026** (§11): `prompt_question.target_member`, who a
+question is asked of, and `answered_memory_id`, the telling that answered it —
+both in the schema from the first day and empty until then — and the
+`push_token` table, one APNs device token per phone that has let the app notify
+it, beside the member it belongs to. The notifications themselves carry no
+question and no telling; the asker's display name, already on the list, is the
+most one says.
+
 ## 19. The telling that was not meant
 
 Two ways out were missing, and they are the same one seen from either side of the

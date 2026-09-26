@@ -352,6 +352,14 @@ keep accumulating (ARCH §18), and the §5 row 7 slot the map would have taken
 stays empty. An archive that is read is worth more than an archive that is
 drawn, and this is the cheaper of the two by an order of magnitude.
 
+**Built after all, 21 Sep 2026 — and this payment is owed again.** The founder
+asked for a map to browse the archive by, and `PlacesMapScreen` was built the
+same day (ARCH §18); since 25 Sep a map icon in the album's bar opens it in
+every album, the empty one included. Nothing was removed beside it, so the
+section above is no longer paid for by the map. PLAN §10's map row records the
+debt as open — since 25 Sep by the founder's decision that nothing is removed
+now — and this paragraph does not settle it.
+
 Push notifications are the honest full answer to reading and are explicitly
 **v1.1**: they cost APNs infrastructure, a server that knows when to speak,
 and a permission prompt on an elder's phone — three expensive things, one of
@@ -446,7 +454,7 @@ P1 in early phase D beside the paywall craft it neighbours.
 | P0-4 | Joiner lands on Muistot + "Haetaan perheen muistoja…" | 4.3 | 1 | state derivation, no new surface | **Built 17 Aug 2026** — and found the first pull waited for a relaunch; fixed with it |
 | P0-5 | *"Kenen puhelin tämä on"* on the join form | 5 | ½ | §16 precedent: rule 1 completion | **Built 17 Aug 2026** |
 | P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature | **Built 24 Aug** — Release default, DEBUG stays on stubs (§7); R2 had been enabled since 17 Aug |
-| P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** | **Built 17 Aug 2026** — the payment is recorded in PLAN §10's map row; mechanism corrected to a seen-id list, see §6 |
+| P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** (built anyway 21 Sep 2026, the debt open — §6) | **Built 17 Aug 2026** — the payment is recorded in PLAN §10's map row; mechanism corrected to a seen-id list, see §6 |
 | P2 | Own-name row; restore-purchases row outside the paywall | 8 | 1 | only if phases D–E leave room (the 10 Sep rule went with §2.1's closure, 24 Aug) | Not built |
 
 What the built rows shipped with, in the house pattern: two new sweep audits

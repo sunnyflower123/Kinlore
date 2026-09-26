@@ -26,6 +26,15 @@ story nobody could get told.
 Side project for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon. Target category: **Next Gen Award** (student category).
 
+**Reading it as a judge:** this README, then
+[`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — §1 for what is built and what is
+not, §6 for the money — then the code both of them name. The RevenueCat half is
+mapped file by file under **Who pays**, and the app builds and runs on a
+simulator with no keys and no Apple team (**Setting it up**, step 1).
+[`CLAUDE.md`](CLAUDE.md) is not product documentation: it is the working
+agreement of the AI coding sessions that did most of the typing, mostly about
+several of them sharing one tree. Read it after the code, not before.
+
 ## The one thing it does
 
 > Grandmother presses a big button and rambles for 90 seconds about an old
@@ -75,6 +84,10 @@ How the questions are chosen, and why they get more personal only as the
 answers earn it, is the question ladder in
 [`ARCHITECTURE.md` §12](docs/ARCHITECTURE.md#12-the-question-ladder).
 
+The voice asking is the phone's own speech synthesiser, reading the question on
+the device (`InterviewVoice.swift`). It is the only voice the app makes: the
+teller's is kept as it was recorded (rule 3) and never synthesised.
+
 ## Six rules that do not bend
 
 1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver,
@@ -82,8 +95,8 @@ answers earn it, is the question ladder in
    is not done. Colours come from `Elder.swift`, never from `.secondary` or the
    system blue — every one of those measures below the contrast minimum, and
    contrast is the one rule eyes cannot check.
-2. **Telling is never paywalled.** The paywall limits photos and AI minutes, not
-   the act of writing or dictating a memory.
+2. **Telling is never paywalled.** The paywall limits photos, AI minutes and
+   colourisations, not the act of writing or dictating a memory.
 3. **The original audio and the raw transcript are always kept.** The speaker
    may no longer be around to ask. `memory.audio_r2_key` and
    `memory.raw_transcript` are not intermediate steps; they are the product.
@@ -135,9 +148,11 @@ the meter said no. Every push still gets the backend type check, on Linux.
 | Extraction gets Finnish names, dates and relations out of a transcript | `node scripts/extract-tests.mjs` |
 | The whole pipeline runs end to end | `scripts/smoke-pipeline.sh` |
 
-The last three need a Worker running (`cd backend && npm run dev`); the first
-three need only Xcode and node. The full commands, with the arguments this machine forces, are
-in [`CLAUDE.md`](CLAUDE.md#commands).
+The last three need a Worker running (`cd backend && npm run dev`), and the last
+two an OpenRouter key in it as well — they spend model credit, which is why
+`verify.sh` leaves them out. The first three need only Xcode and node. The full
+commands, with the arguments this machine forces, are in
+[`CLAUDE.md`](CLAUDE.md#commands).
 
 ## Measured, not claimed
 
@@ -159,8 +174,14 @@ corrected from the person's card years later. *One proper noun in three being
 wrong is the premise the name-correction step was written for, not a surprise.*
 
 **Accessibility:** 0 failures across 17 audits, measured 15 Aug 2026 on a
-private simulator. (On a simulator shared with another session the same commit
-reports 15 failures that are not real — see `CLAUDE.md`.)
+private simulator — every sweep there was that day, and the last whole-suite
+run on record with no red in it. The suite has grown to the count in the table
+above, and the last full run written down, at `a4fdf0f` on a quiet machine on
+19 Sep, left four sweeps red with one finding each. The header of
+`AccessibilitySweepTests.swift` keeps the tests that go red in company and green
+alone, rather than explaining them away. (On a simulator shared with another
+session, the 15 Aug commit reported 15 failures that were not real — see
+`CLAUDE.md`.)
 
 But the number is not the argument. This is one screen at the default text size
 and at the largest one iOS offers, which is the size rule 1 is actually about:
@@ -173,6 +194,14 @@ Nothing is clipped and nothing is truncated — the screen gets longer instead.
 That is rule 1 in one pair. It is also why the sweep opens each screen and audits
 it at both sizes rather than trusting a screenshot at one: a screenshot shows the
 top of a screen, and clipping happens further down.
+
+An audit shares that limit on a screen taller than the phone: it judges only
+what the accessibility tree holds, and a list builds only the rows near the
+screen. So the two setup forms, Perhe and all three states of Settings are
+audited page by page at the largest size, and Help (*Näin tämä toimii*) and the
+album by decade are still judged there only as far as the first screen reaches.
+The comparison that found it sits behind `KINLORE_XXXL_LOSS` in
+`AccessibilitySweepTests.swift`.
 
 ## What I got wrong
 
@@ -231,14 +260,56 @@ model that works. Details: [`ARCHITECTURE.md` §6](docs/ARCHITECTURE.md#6-money)
 Purchases run on the **RevenueCat Test Store** — there is no App Store release,
 by decision ([PLAN.md §2](docs/PLAN.md)).
 
+**What the free tier limits** is three meters, counted on the server because a
+counter on the phone can be edited (`backend/src/quota.ts`): ten minutes of
+transcription a month, twenty photographs in all and five colourisations a month
+(`backend/wrangler.jsonc`). Writing a memory is none of them (rule 2), and a
+recording over the limit is kept with its transcription deferred, not refused
+(rule 3).
+
+**How a purchase becomes the family's** is four pieces, all in
+[`backend/src/entitlement.ts`](backend/src/entitlement.ts) and routed in
+`backend/src/worker.ts`, each with a check that needs no key, no Worker and no
+network:
+
+| Piece | What it does | Check |
+|---|---|---|
+| `POST /entitlement/sync` | The phone says *this customer bought something* and sends only the customer id. The Worker asks RevenueCat's REST API what that customer actually owns and writes the family's right from the answer, so editing the app unlocks nothing. | `scripts/entitlement-sync-check.mjs` |
+| `POST /webhook/revenuecat` | RevenueCat's subscription events, authenticated by a shared secret. Only an expiry, a transfer and a refund take the tier away: turning auto-renew off keeps the month somebody paid for. | `scripts/webhook-revocation-check.mjs` |
+| Reconcile | A stored paid tier whose date has passed is the one state that cannot be true, so RevenueCat is asked again. If it cannot be reached, the family keeps what it had. | `scripts/entitlement-reconcile-check.mjs` |
+| One purchase, one family | A unique index on `member.rc_app_user_id` in `backend/schema.sql`: the same customer cannot unlock a second family, and a restore inside the family moves the binding. | `scripts/entitlement-binding-check.mjs` |
+
+Each check loads the real `schema.sql` into an in-memory SQLite, the first three
+drive the real functions with RevenueCat's side stood in for, and
+`./scripts/verify.sh` runs all four.
+
+On the phone the SDK is configured in
+[`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift),
+the paywall is RevenueCatUI's own view (`PaywallSheet.swift`) — its design and
+products are configured remotely in RevenueCat's dashboard, not in this code —
+and a purchase reaches the Worker through `EntitlementClient` in
+`PurchaseService.swift`. When the paywall is offered is `UpsellRhythm.swift`,
+checked by its row in the table further up.
+
+**A clone has no paywall to open.** It appears only with a RevenueCat key, and
+none is in the repository: a Test Store key in a public clone would hand the
+paid tier on the production Worker to anybody, and its model bill with it. The
+paywall and a Test Store purchase are in the demo video. To see them yourself,
+run the `Kinlore` scheme with a Test Store key of your own (**Setting it up**,
+step 3) against a Worker that has `RC_SECRET_KEY` — without it
+`/entitlement/sync` answers `503`, because it will not take the phone's word. A
+DEBUG build with `-seed` and no backend address skips the server and opens the
+archive by itself (`Session.syncPurchase`), which is how the film's take is
+made.
+
 ## The cloud question, unanswered in public
 
 Who hands a dead parent's voice to somebody's server? What is true today, rather
 than what is comfortable.
 
-**What the server cannot read.** Since 24 Aug 2026 the memory bodies, the raw
-transcripts, the subject titles, the question text and the bytes in R2 — the
-photographs and the voices — are sealed on the phone before they sync. The key
+**What the server keeps and cannot read.** Since 24 Aug 2026 the memory bodies,
+the raw transcripts, the subject titles, the question text and the bytes in R2 —
+the photographs and the voices — are sealed on the phone before they sync. The key
 never reaches the Worker; between people it crosses only inside the invite text.
 `scripts/lever3-roundtrip-check.swift` puts two identities through a real
 deployment and checks both halves: that what lands in D1 and R2 is sealed, and
@@ -249,21 +320,42 @@ that the second phone opens it byte for byte.
 lists it exhaustively rather than in outline: the family's own name and its
 members' display names, timestamps, the dates with their precision, audio
 lengths, relationships, the graph of which memory names which subject, and the
-coordinates of places. That last one is a decided leak and not an oversight —
-for a family's most-told places a coordinate is the name in different clothes —
-and the argument for keeping it in v1 is written down beside it.
+coordinates of places, with who placed a point by hand and when. That last one
+is a decided leak and not an oversight — for a family's most-told places a
+coordinate is the name in different clothes — and the argument for keeping it
+in v1 is written down beside it.
 
-**The audio still leaves the phone**, even with R2 disabled, because
-transcription happens in the Worker. End-to-end in the strict sense — a server
-that never holds the plaintext at all — is incompatible with server-side
-transcription, and sealing at rest does not close that hole. A photograph leaves
-the same way when somebody asks for its colours, with the memories told about
-it; the button says so before anything is sent. A local-only mode
-already exists in the code (`Session.mode`), but onboarding does not yet offer
-it, and the only place the user is told the audio travels is the microphone
-prompt — which comes *after* the archive is created. That barrier is the order
-rather than the architecture; the three levers, priced, are the last item in
-[PLAN.md §10](docs/PLAN.md).
+**What passes through it in the clear is another list.** The recording goes to
+the Worker unsealed, and the Worker hands it to a model provider through
+OpenRouter to be written down — a model cannot transcribe speech it cannot
+hear. The transcript then goes the same way to be structured, with the title,
+date and place of the subject it is filed under, the names already linked to
+it, the questions still open on it and, for a telling about a photograph, the
+photograph (`ExtractionContext.swift`). A photograph leaves once more when
+somebody asks for its colours, with the memories told about it, and that button
+says so before anything is sent. Every one of those requests carries
+`provider: { data_collection: "deny" }`, the flag that keeps the words out of a
+training set (rule 8, checked without sending anything by
+`scripts/data-collection-check.mjs`), and the Worker writes none of it down:
+transcription and colouring keep only their meters, extraction keeps nothing,
+and R2 receives only what `/media` is handed, which is sealed. So "cannot read"
+is a claim about what is *kept*.
+End-to-end in the strict sense — a server that never holds the plaintext at
+all — is incompatible with server-side transcription, and sealing at rest does
+not close that hole.
+
+**What the user is told, and when.** Since 16 Aug 2026 the create and join forms
+say before their button that the recording is sent to be written down and that
+the original is kept (`WhereMemoriesGo`; `ConsentOrderTests` checks at both
+text sizes that it is on screen whenever the button is), and the create form
+offers *"Vain minulle, tälle puhelimelle"*: an archive kept to one phone, which
+sends no recording and transcribes nothing (the guard in
+`TellViewModel.stopAndProcess`). `LocalModeTests` pins what that mode says and
+not the guard itself, and its header says why. The notice names the recording
+and not the photograph that has travelled with a telling about one since
+19 Sep 2026 ([`ARCHITECTURE.md` §12](docs/ARCHITECTURE.md#12-the-question-ladder)).
+The notice, the mode and the sealing are three of the four levers priced in the
+last item of [PLAN.md §10](docs/PLAN.md).
 
 **And there is a second credential: an Apple account.** `family_key` carries
 `kSecAttrSynchronizable`, so it reaches every device signed into the same Apple
@@ -293,7 +385,8 @@ the family can neither export nor clear.
 
 **Prerequisites:** Xcode 26.6 (iOS 26.5 simulator SDK), XcodeGen
 (`brew install xcodegen`), Node 22.18+. **Nothing from Apple beyond Xcode** — no
-paid developer account, no certificates, no Sign in with Apple. What else is not
+paid developer account, no certificates, no Sign in with Apple. The two push
+notifications are the one exception, and nothing waits on them. What else is not
 needed, and why, is in [`SETUP.md`](docs/SETUP.md#what-is-not-needed).
 
 ### 1. The app on its own — no keys, no backend, about two minutes
@@ -303,11 +396,16 @@ git clone https://github.com/sunnyflower123/Kinlore.git
 cd Kinlore/ios && xcodegen generate && open Kinlore.xcodeproj
 ```
 
-Press Run. **The app is fully usable on stubs**: record or type a memory, watch
-it come back structured, browse the people it proposed, open the paywall. That
-is deliberate rather than a demo mode — development must not stop when the
-Worker is broken or there is no network — and it means anyone can try this
-without an account of any kind.
+Pick an iPhone simulator and press Run. The `Kinlore` scheme builds Debug, and
+a simulator build needs no signing team — `ios/Signing.xcconfig` names none. A
+phone does need one of your own, and
+[`SETUP.md`](docs/SETUP.md#ios-app--signing-for-a-real-device) has the one file
+it goes in. **The app is fully usable on stubs**: record or type a memory,
+watch it come back structured, browse the people it proposed. That is
+deliberate rather than a demo mode — development must not stop when the Worker
+is broken or there is no network — and it means anyone can try this without an
+account of any kind. The paywall is the one thing missing, because it needs a
+RevenueCat key; **Who pays** says why none is included.
 
 Run `xcodegen generate` again after changing `project.yml` **and after adding or
 removing a source file** — XcodeGen globs the sources, so a new `.swift` file is
@@ -343,11 +441,23 @@ In Xcode: Product → Scheme → Edit Scheme → Run → Arguments.
 | Argument | Effect |
 |---|---|
 | `-api http://localhost:8787` | Real transcription and extraction instead of stubs |
-| `-rcKey <RevenueCat Test Store key>` | Purchases. Without it the app works normally, minus the paywall |
+| `-rcKey <RevenueCat Test Store key>` | Purchases, **in a Debug build only**. Without it the app works normally, minus the paywall |
 
-Both are optional, and there are about twenty more. The debug ones exist because
-some states cannot be reached by hand at all — a refused microphone, a family
-with no server behind it, an extraction that fails while transcription succeeds.
+**A Test Store key stops a Release build, by RevenueCat's design.** The app
+compiles no key in: it reads `rcKey` from `UserDefaults` at launch, the same way
+in every configuration (`RevenueCatPurchases.swift`), and with none it never
+configures RevenueCat — no paywall, no crash. With a `test_` key, the SDK in a
+build without the `DEBUG` flag shows an alert and then calls `fatalError`
+(`checkForSimulatedStoreAPIKeyInRelease` in purchases-ios's
+`Configuration.swift`; [RevenueCat's note](https://rev.cat/sdk-test-store)).
+The `Kinlore` scheme runs Debug, so the argument is safe there. `Kinlore
+Production` and an archive build Release: give them neither the argument nor a
+`defaults write com.kinlore.app rcKey …` left on a simulator.
+
+Both arguments are optional, and there are about twenty more. The debug ones
+exist because some states cannot be reached by hand at all — a refused
+microphone, a family with no server behind it, an extraction that fails while
+transcription succeeds.
 They are what the UI tests and the demo video are filmed with, and they are
 listed in [`SETUP.md`](docs/SETUP.md#launch-arguments).
 
@@ -359,12 +469,17 @@ npx wrangler d1 create memorize && npx wrangler r2 bucket create memorize-media
 ```
 
 Put the returned `database_id` in [`backend/wrangler.jsonc`](backend/wrangler.jsonc),
-push the schema to the remote database with `npm run db:remote`, then add the
-three secrets ([what each is for](docs/SETUP.md#backend--as-worker-secrets)):
+and your own RevenueCat project's id in `RC_PROJECT_ID` beside it, push the
+schema to the remote database with `npm run db:remote`, then add the three
+secrets ([what each is for](docs/SETUP.md#backend--as-worker-secrets)):
 
 ```bash
 npx wrangler secret put OPENROUTER_API_KEY   # and RC_SECRET_KEY, RC_WEBHOOK_SECRET
 ```
+
+In RevenueCat, point a webhook at `/webhook/revenuecat` on your Worker with an
+Authorization header of exactly the value you gave `RC_WEBHOOK_SECRET` — the
+Worker compares the two and answers `401` to anything else.
 
 The Cloudflare resources keep the old project name `memorize` on purpose: an R2
 bucket cannot be renamed, only recreated empty, and rule 3 lives in that bucket.

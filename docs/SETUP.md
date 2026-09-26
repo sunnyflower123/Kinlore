@@ -85,9 +85,12 @@ the onboarding fork exists only where there is a backend. The phone tested with
 this scheme held all three stub samples on 13 Sep, and its People tab listed the
 people named in them as family. A Release build has nothing to forget.
 
-`-rcKey <Test Store key>` among the scheme's arguments puts the paywall and the
-purchase there too, and it is still an argument: it applies to Xcode's
-launches and not to the home screen's.
+`-rcKey` does **not** belong among this scheme's arguments. A Test Store key is
+the only kind this project has, and RevenueCat's SDK refuses one in a build
+without `DEBUG`: it shows an alert and then stops the app with `fatalError`
+(`checkForSimulatedStoreAPIKeyInRelease` in purchases-ios's
+`Configuration.swift`). The paywall and the purchase belong to the `Kinlore`
+scheme, which is Debug — `-rcKey` there, and `-api` beside it for a backend.
 
 ### Health check
 
@@ -105,7 +108,7 @@ user just told.
 
 | Key | Note |
 |-----|------|
-| RevenueCat **Test Store API key** | Designed for the client side, safe to embed. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling. Without a key, purchases are unavailable but the app works normally. |
+| RevenueCat **Test Store API key** | Designed for the client side, and still not in the repository: in a public clone it would hand the paid tier on the production Worker to anybody. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling — **in a Debug build only**, because a Release build stops on a Test Store key by RevenueCat's design (the `Kinlore Production` paragraph above). Without a key, purchases are unavailable but the app works normally. |
 
 ### iOS app — signing for a real device
 
@@ -184,7 +187,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 |---|---|---|
 | `-api <url>` | any | Points the app at a backend; `-api ""` means none at all. Without the argument a DEBUG build runs on stubs — deliberately, so development does not stop when the Worker is broken — and a Release build uses production. |
 | `-local_only YES` | any | The same UserDefaults key the onboarding form's *"Vain minulle, tälle puhelimelle"* writes: the chosen local mode, without filling the form. `LocalModeTests` launches with it beside a dead `-api` address to check the mode promises nothing it cannot deliver. |
-| `-rcKey <key>` | any | The RevenueCat Test Store key. Without it purchases and the paywall do not exist, and the app works normally. |
+| `-rcKey <key>` | DEBUG | The RevenueCat Test Store key. Without it purchases and the paywall do not exist, and the app works normally. The app reads it in any build, but in Release a Test Store key stops the app at launch — RevenueCat's own guard, not this app's (the `Kinlore Production` paragraph under *Backend — as Worker secrets*). |
 | `-tab memories` / `-tab people` | DEBUG | Opens on that tab instead of Tell. |
 | `-screen write` | DEBUG | Opens the typing view directly. |
 | `-screen interview` | DEBUG | Runs a canned memory through the stub pipeline and enters the interview loop, finishing the first spoken round by itself — the whole loop, hands-free. |
