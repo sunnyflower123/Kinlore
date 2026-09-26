@@ -1561,7 +1561,9 @@ seconds of speech.
 When the limit is reached, **transcription** of a dictation is blocked but
 typing is not — otherwise the paywall would block telling, which violates rule 2.
 `/extract` is deliberately unmetered: it is text, it costs a fraction of a cent,
-and limiting it would prevent a typed memory from being saved at all.
+and limiting it would prevent a typed memory from being saved at all. No
+family's meter counts it — the free tier's day below bounds its bill, and a
+refusal there costs a telling its structure, never the telling.
 
 **A quota never rejects a recording.** If the minutes are gone, the audio is
 saved anyway and transcription waits — `Memory.isAwaitingTranscription`. The
@@ -1572,6 +1574,37 @@ does the doing, and what it cost that nothing did for a while, is **§16**.
 The check uses the amount already consumed rather than consumed + incoming: a
 recording that has started is not cut off because it happened to be long. The
 limit is exceeded slightly, and that is cheaper than a rejected memory.
+
+### The free tier's day
+
+**Every limit above belongs to a family, and a family costs nothing**: `POST
+/family` asks for no invitation and admits five a minute per address, 7 200 a
+day. Read from the code on 26 Sep 2026, with the repository — and in it the
+Worker's URL — due to go public two days later, nothing but the credit limit on
+the OpenRouter account bounded a day's bill. A family's first transcription
+passed at any length up to 25 MiB; calls made together all passed the month's
+check before any of them wrote, so the overshoot above is slight only for a
+family that is not trying; `/extract` had neither meter nor length cap; and
+five colourings a family came to about $1 220 a day from one address.
+
+So each AI route also draws on **one pool per UTC day for the whole free tier**
+(`free_tier_day`, `reserveFreeTierDay` in `quota.ts`). It is reserved before
+the model is asked, in the statement that decides; charged the most the call
+can cost — a recording by its bytes and never under five minutes, a telling by
+its output budget plus every byte it sends, a colouring by the round; and not
+given back when a call fails, because a failed call has usually been paid for.
+The shipped pools, 36 000 seconds, 300 000 tokens and 20 rounds, cap a day at
+about $11 at those worst cases. A paid family never meets them.
+
+**The refusal is the rate limiter's 429, never the meter's 402**, and that is
+how rule 2 survives it. The app has read a 429 as a fact about the moment since
+August (`DeferredMemory.isAboutTheMoment`), so the audio is kept and
+transcribed on a later round; a refused structuring lands the telling in its
+teller's own words, the road an outage already takes; a refused colouring
+leaves the photograph as it was. Nothing is offered for sale, which a 402 would
+do by telling the family its month was spent. `/sync` and `/media` never touch
+the pool. The price, stated: one stranger can spend the day for every free
+family until midnight UTC. `free-tier-ceiling-check.mjs` pins both halves.
 
 ### Moderation
 
@@ -1606,7 +1639,9 @@ transcription and prove the same thing.
 **Not checked:** the transcription path itself. `checkAISeconds` is called by
 `/transcribe`, which calls OpenRouter and costs money on every run, so nothing
 here exercises the refusal in place — what is exercised is the counter it reads
-and the promise it must not break.
+and the promise it must not break. The free tier's day is exercised in place,
+by `free-tier-ceiling-check.mjs` driving the real handler with `fetch`
+replaced; the month's own 402 still is not.
 
 **And an edge worth naming rather than fixing quietly.** A family whose
 subscription lapses mid-month keeps the minutes it spent while paying, so it can

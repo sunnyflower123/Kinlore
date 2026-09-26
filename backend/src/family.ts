@@ -3,7 +3,7 @@
 /// The family is the isolation boundary: every query is scoped to the caller's
 /// own family, not just at join time. See docs/ARCHITECTURE.md §4.
 
-import { hashSecret, randomCode, type Session } from './auth'
+import { hashSecret, randomCode, type Session } from './auth.ts'
 import type { Env } from './worker'
 
 /// How long an invite link stays valid. A week is enough for a grandchild to

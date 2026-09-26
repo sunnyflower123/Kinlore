@@ -23,9 +23,9 @@
 // imports at all. The extension is the cheaper answer: `tsconfig.json` sets
 // `allowImportingTsExtensions` (legal under `noEmit`), esbuild bundles it
 // unchanged, and `extract-shaping-check.mjs` can now import the two
-// functions below. The same one word would unlock `transcribe.ts`,
-// `family.ts` and `worker.ts`, which are the only other modules Node still
-// refuses.
+// functions below. The same one word unlocked `transcribe.ts`, `family.ts`
+// and `worker.ts` on 26 Sep 2026, the last modules Node refused, and
+// `free-tier-ceiling-check.mjs` drives the whole Worker through it.
 import { extractionBudget } from './budget.ts'
 import { complete, UpstreamError, type Message } from './openrouter.ts'
 import type { Env } from './worker'

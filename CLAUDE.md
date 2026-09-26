@@ -994,6 +994,22 @@ node scripts/entitlement-sync-check.mjs
 # After touching entitlement.ts or quota.ts.
 node scripts/entitlement-reconcile-check.mjs
 
+# What a stranger can spend in a day. Every free-tier limit above belongs to a
+# family, and a family costs nothing — POST /family asks for no invitation —
+# so until 26 Sep 2026 nothing bounded a day's upstream bill but the credit
+# limit on the OpenRouter account: 7 200 families a day from one address, a
+# first transcription of any length, any number of them at once, and
+# `/extract` with no meter at all. One pool per route per UTC day now covers
+# the whole free tier, reserved in the statement that decides. Drives the real
+# Worker over schema.sql in an in-memory SQLite with `fetch` replaced — no
+# wrangler, no key, no network — and pins that ten calls at once get what one
+# gets, that the refusal is 429 and never a 402, that a paid family is never
+# counted, that a spent day still saves every memory (rule 2), and that the
+# shipped values admit the largest recording and the longest telling on a day
+# nobody has touched. After touching quota.ts, budget.ts, the three AI routes
+# in worker.ts, or the FREE_TIER_* values in wrangler.jsonc.
+node scripts/free-tier-ceiling-check.mjs
+
 # A question asked of one member by name, and the two notifications it can
 # send. Runs the real push, pull and notify over schema.sql in an in-memory
 # SQLite with `fetch` replaced — no Worker, no key, no network — and pins who
@@ -1026,8 +1042,8 @@ node scripts/transcribe-budget-check.mjs
 # which is the whole reason `budget.ts` was carved out as a file with no
 # runtime imports. Writing `./openrouter.ts` and setting
 # `allowImportingTsExtensions` is the cheaper answer — esbuild bundles it
-# unchanged — and the same one word would unlock `transcribe.ts`, `family.ts`
-# and `worker.ts`, the only other modules Node still refuses.
+# unchanged — and on 26 Sep 2026 the same one word unlocked `transcribe.ts`,
+# `family.ts` and `worker.ts`, the last modules Node refused.
 #
 # Costs nothing: no Worker, no key, no network, no model. After touching
 # extract.ts.

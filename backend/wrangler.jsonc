@@ -54,6 +54,20 @@
 		"FREE_PHOTO_LIMIT": "20",
 		"FREE_AI_SECONDS_PER_MONTH": "600",
 		"FREE_COLOURISATIONS_PER_MONTH": "5",
+		// And what the whole free tier may spend upstream in one UTC day, per
+		// route — every free family together, because a family costs nothing
+		// to make and a limit per family is a limit on nothing (quota.ts).
+		// Priced on 26 Sep 2026 at the most a call can cost: at worst $4.56,
+		// $5.54 and $0.80 a day, about $11 together. A refused call never costs
+		// a memory: the audio waits for its text, a telling is kept in its own
+		// words, a photograph stays as it was. The seconds may not fall below
+		// 26 215, the charge for the largest recording the Worker accepts, nor
+		// the tokens below 283 979, the charge for the longest telling the app
+		// can make, or that input is refused every day, even one nobody else
+		// has touched (free-tier-ceiling-check.mjs).
+		"FREE_TIER_AI_SECONDS_PER_DAY": "36000",
+		"FREE_TIER_EXTRACTION_TOKENS_PER_DAY": "300000",
+		"FREE_TIER_COLOURISATIONS_PER_DAY": "20",
 		"RC_ENTITLEMENT_ID": "archive",
 		// The project identifier from the RevenueCat dashboard. Not a secret,
 		// unlike RC_SECRET_KEY and RC_WEBHOOK_SECRET.

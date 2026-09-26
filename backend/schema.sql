@@ -451,6 +451,22 @@ CREATE TABLE usage_counter (
   PRIMARY KEY (family_id, period)
 );
 
+-- What the whole free tier has spent upstream today, per route: every free
+-- family together, because a family costs nothing to make and a meter per
+-- family is a meter on nothing (quota.ts, `reserveFreeTierDay`). Reserved in
+-- one statement before each call, never given back. Three rows a day, so about
+-- a thousand a year, and nothing reads a day that has passed.
+--
+-- A new table, and the Worker writes it on every free-tier AI call — so for an
+-- existing database this statement goes in BEFORE the Worker that uses it is
+-- deployed, or every such call answers 502 until it does.
+CREATE TABLE free_tier_day (
+  day           TEXT NOT NULL,        -- 'YYYY-MM-DD' UTC
+  route         TEXT NOT NULL,        -- 'transcribe'|'extract'|'colourise'
+  used          INTEGER NOT NULL DEFAULT 0,  -- seconds, tokens or rounds
+  PRIMARY KEY (day, route)
+);
+
 -- ---------------------------------------------------------------- moderation
 
 -- Apple rule 1.2 requires reporting and blocking from an app that contains user

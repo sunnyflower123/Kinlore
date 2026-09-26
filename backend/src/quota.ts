@@ -13,6 +13,8 @@
 
 import type { Session } from './auth'
 import type { Env } from './worker'
+import type { Lang } from './extract'
+import { extractionBudget, mostSeconds } from './budget.ts'
 import { reconcileStaleEntitlement } from './entitlement.ts'
 
 export type QuotaDenial = {
@@ -27,6 +29,11 @@ export type QuotaDenial = {
 function period(): string {
 	const now = new Date()
 	return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+/// The day in UTC, for the free tier's day below.
+function day(): string {
+	return new Date().toISOString().slice(0, 10)
 }
 
 /// Whether the family has the paid archive.
@@ -163,6 +170,136 @@ export async function recordColourisation(env: Env, session: Session): Promise<v
 	)
 		.bind(session.familyID, period())
 		.run()
+}
+
+// ---------------------------------------------------------------- the free tier's day
+
+/// What the whole free tier may spend upstream in one UTC day, per route —
+/// every free family together, and nobody's in particular.
+///
+/// Every limit above belongs to a family, and a family costs nothing: POST
+/// /family asks for no invitation, and its rate limit is five a minute per
+/// address. Read from the code on 26 Sep 2026, two days before the repository
+/// — and with it this Worker's URL — was due to go public, one address could
+/// found 7 200 families a day. The first transcription of each passed whatever
+/// its length, up to 25 MiB and about $0.88 upstream; any number from one
+/// family passed together, because the month is checked before the model and
+/// written after it; up to 20 kB of audio that claims no duration rounds to
+/// nothing and is never written at all; `/extract` had no meter and no length
+/// cap; and five colourings a family came to 36 000 rounds, about $1 220, a day
+/// from one address. Nothing bounded a day but the credit limit on the
+/// OpenRouter account.
+///
+/// So the ceiling is the tier's and not an identity's, because identities are
+/// the thing that is free. It is **reserved before the call, in the statement
+/// that decides**: a check and then a write would let every concurrent request
+/// through the check together, which is the month's own hole. And it is **not
+/// given back when a call fails**, because a failed call has usually been paid
+/// for — a reply cut off at its budget, or a transcript the hallucination guard
+/// threw away, cost what a kept one does.
+///
+/// Each route is charged the most its call can cost, in the unit that grows
+/// with it, and the pools are priced in wrangler.jsonc. A paid family never
+/// meets any of it. Nor does a memory: `/sync` and `/media` never come here,
+/// and the refusal is the rate limiter's 429, which the app reads as a fact
+/// about the moment (`DeferredMemory.isAboutTheMoment`) — the audio is kept
+/// and transcribed on a later day, a telling lands in its teller's own words
+/// instead of structured, and a photograph stays as it was. Never the meter's
+/// 402, which would tell the family its month was spent and offer to sell it
+/// one.
+///
+/// What it costs, stated: one stranger can spend the free tier's day for every
+/// free family until midnight UTC. A bounded bill for a day of deferral is the
+/// trade, and `free-tier-ceiling-check.mjs` pins both halves of it.
+async function reserveFreeTierDay(
+	env: Env,
+	session: Session,
+	route: 'transcribe' | 'extract' | 'colourise',
+	charge: number,
+	limit: number,
+): Promise<boolean> {
+	if (await isPaid(env, session.familyID)) return true
+
+	// One statement, so D1 decides and counts in the same breath. The SELECT
+	// refuses a first charge that is over the limit on its own, the WHERE on
+	// the update one that would carry the day past it, and either way no row
+	// comes back.
+	const row = await env.DB.prepare(
+		`INSERT INTO free_tier_day (day, route, used)
+		 SELECT ?1, ?2, ?3 WHERE ?3 <= ?4
+		 ON CONFLICT(day, route) DO UPDATE SET used = used + excluded.used
+		 WHERE used + excluded.used <= ?4
+		 RETURNING used`,
+	)
+		.bind(day(), route, Math.ceil(charge), limit)
+		.first<{ used: number }>()
+	if (row) return true
+
+	// The pool and its limit, never who asked (rule 9).
+	console.warn(`[quota] the free tier's ${route} pool for today is spent (limit ${limit}) — refused`)
+	return false
+}
+
+/// A transcription is charged the longest recording its bytes can hold
+/// (`mostSeconds`), because the model is paid by the second it hears — 32
+/// tokens a second at $0.75 a million, 24 µ$ — and never less than five
+/// minutes, because a call costs its thinking whatever its length: up to 5 120
+/// tokens of reasoning and answer on the shortest clip, 1.9 c at $3.75 a
+/// million. Priced from OpenRouter's /models on 26 Sep 2026, the dearest
+/// charged second is then a 300-second clip whose reply fills its whole budget,
+/// 127 µ$ — so 36 000 s a day is at most $4.56, $2.22 for clips the model
+/// answers normally, and under a dollar spent by the app's own recordings,
+/// which are 4.5 kB/s and so charged four and a half times what they last.
+/// That margin is the price of charging the one thing a caller cannot lie
+/// about.
+const TRANSCRIPTION_FLOOR_SECONDS = 300
+
+export function reserveTranscription(env: Env, session: Session, base64Length: number): Promise<boolean> {
+	const charge = Math.max(mostSeconds(base64Length), TRANSCRIPTION_FLOOR_SECONDS)
+	const limit = Number(env.FREE_TIER_AI_SECONDS_PER_DAY) || 36_000
+	return reserveFreeTierDay(env, session, 'transcribe', charge, limit)
+}
+
+/// A structuring is charged every token it may write — its own `max_tokens`,
+/// which grows with the telling — plus every token it may read of what the
+/// client sent: the transcript and the corrections, in UTF-8 bytes, which no
+/// tokeniser exceeds. The corrections count because they reach the prompt
+/// unshortened (`correctionInstruction`), and leaving them out would let a
+/// call's size ride in beside a two-word telling for free.
+///
+/// The rest of the prompt rides uncharged: the archive context is capped by
+/// `normaliseContext` and a photograph costs the same 1 140 tokens at any size,
+/// so they are a constant, and the price carries it. Measured, the fullest
+/// request is 18 184 bytes before its picture, and the dearest charged token a
+/// floor-sized call that carries all of that and fails twice before the
+/// fallback answers, 18 µ$ — so 300 000 a day is at most $5.54, in 97 calls,
+/// while 62 tellings of the 126 words measured at $0.0045 a round come to
+/// $0.28. The day also has to hold the longest telling the app can make, which
+/// is what keeps it this high: the 35 233 English words that 25 MiB of the
+/// app's audio can hold are charged 283 979.
+export function reserveExtraction(
+	env: Env,
+	session: Session,
+	transcript: string,
+	corrections: { from: string; to: string }[],
+	lang: Lang,
+): Promise<boolean> {
+	const utf8 = new TextEncoder()
+	const read = [transcript, ...corrections.flatMap((c) => [c.from, c.to])].reduce(
+		(sum, text) => sum + utf8.encode(text).length,
+		0,
+	)
+	const charge = extractionBudget(transcript, lang, env.MODEL_EXTRACT) + read
+	const limit = Number(env.FREE_TIER_EXTRACTION_TOKENS_PER_DAY) || 300_000
+	return reserveFreeTierDay(env, session, 'extract', charge, limit)
+}
+
+/// A colouring is one round, as it is for the month: each costs the same image
+/// upstream, 3.39 c measured, and the longest told text adds 0.6 c of input.
+/// Twenty a day is at most $0.80.
+export function reserveColourisation(env: Env, session: Session): Promise<boolean> {
+	const limit = Number(env.FREE_TIER_COLOURISATIONS_PER_DAY) || 20
+	return reserveFreeTierDay(env, session, 'colourise', 1, limit)
 }
 
 // ---------------------------------------------------------------- status

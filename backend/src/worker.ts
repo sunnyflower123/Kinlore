@@ -4,9 +4,9 @@
 /// trivial, and a leaked key is a real bill on a student budget. That is why
 /// audio and text always travel through here.
 
-import { authenticate } from './auth'
-import { boundedSeconds } from './budget'
-import { aspectRatio, colourise, toldText } from './colourise'
+import { authenticate } from './auth.ts'
+import { boundedSeconds } from './budget.ts'
+import { aspectRatio, colourise, toldText } from './colourise.ts'
 import {
 	createFamily,
 	createInvite,
@@ -17,21 +17,24 @@ import {
 	removeMember,
 	renameMember,
 	revokeInvite,
-} from './family'
-import { download, upload } from './media'
-import { extract, normaliseContext, type Lang } from './extract'
-import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement'
+} from './family.ts'
+import { download, upload } from './media.ts'
+import { extract, normaliseContext, type Lang } from './extract.ts'
+import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement.ts'
 import {
 	checkAISeconds,
 	checkColourisations,
 	checkPhotoCount,
 	recordAISeconds,
 	recordColourisation,
+	reserveColourisation,
+	reserveExtraction,
+	reserveTranscription,
 	usage,
-} from './quota'
-import { notify, registerToken, unregisterToken } from './apns'
-import { pull, push } from './sync'
-import { transcribe } from './transcribe'
+} from './quota.ts'
+import { notify, registerToken, unregisterToken } from './apns.ts'
+import { pull, push } from './sync.ts'
+import { transcribe } from './transcribe.ts'
 
 export interface Env {
 	DB: D1Database
@@ -47,6 +50,11 @@ export interface Env {
 	FREE_PHOTO_LIMIT: string
 	FREE_AI_SECONDS_PER_MONTH: string
 	FREE_COLOURISATIONS_PER_MONTH: string
+	/// What the whole free tier may spend upstream in a UTC day, per route —
+	/// not per family, because a family costs nothing to make (`quota.ts`).
+	FREE_TIER_AI_SECONDS_PER_DAY: string
+	FREE_TIER_EXTRACTION_TOKENS_PER_DAY: string
+	FREE_TIER_COLOURISATIONS_PER_DAY: string
 	RC_ENTITLEMENT_ID: string
 	/// The two unauthenticated writes, metered. Optional on purpose — see
 	/// `withinRateLimit`.
@@ -518,6 +526,15 @@ export default {
 					const denial = await checkAISeconds(env, session, seconds)
 					if (denial) return json(denial, 402)
 
+					// The free tier's day, after the family's own month and
+					// before the model: a family whose month is spent is told
+					// so by its meter and spends none of anybody's day. A
+					// refusal keeps the audio like any moment's failure does,
+					// and the text follows on a later day (`reserveTranscription`).
+					if (!(await reserveTranscription(env, session, payload.audio.length))) {
+						return json({ error: 'too_many_requests' }, 429)
+					}
+
 					const text = await transcribe(
 						env,
 						payload.audio,
@@ -572,10 +589,13 @@ export default {
 				if (!transcript) return json({ error: 'missing_transcript' }, 400)
 
 				// The one route that had no identity check at all — which, on a
-				// public URL, is an open model call billed to rule 7's key. It
-				// is unmetered on purpose (a typed memory must always save,
-				// quota or not); unmetered and unauthenticated are different
-				// promises, and only the first was meant.
+				// public URL, is an open model call billed to rule 7's key. No
+				// family's meter counts it, on purpose (a typed memory must
+				// always save, quota or not); unmetered and unauthenticated are
+				// different promises, and only the first was meant. The free
+				// tier's day below bounds the bill without touching that
+				// promise: the memory is saved through `/sync` whatever this
+				// route answers.
 				if (!session) return json({ error: 'unauthorized' }, 401)
 
 				// Empty and no-op corrections are stripped so that no noise
@@ -614,6 +634,13 @@ export default {
 				}
 
 				try {
+					// The free tier's day, charged by what this call may read
+					// and write (`reserveExtraction`). Refused, the telling
+					// lands in its teller's own words — the road an outage
+					// already takes on the phone.
+					if (!(await reserveExtraction(env, session, transcript, corrections, spokenLanguage(payload.lang)))) {
+						return json({ error: 'too_many_requests' }, 429)
+					}
 					return json(
 						await extract(env, transcript, corrections, level, spokenLanguage(payload.lang), context),
 					)
@@ -650,6 +677,12 @@ export default {
 				try {
 					const denial = await checkColourisations(env, session)
 					if (denial) return json(denial, 402)
+
+					// The free tier's day, after the month for the reason
+					// `/transcribe` gives (`reserveColourisation`).
+					if (!(await reserveColourisation(env, session))) {
+						return json({ error: 'too_many_requests' }, 429)
+					}
 
 					const image = await colourise(env, payload.image, told, aspectRatio(payload.aspect))
 

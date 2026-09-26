@@ -326,6 +326,15 @@ run "the purchase is verified rather than believed" node scripts/entitlement-syn
 # do, and one that downgrades on a timeout looks like a subscription that
 # ended. Seven deliberate breakages, seven caught, before this line was added.
 run "a stale tier is re-asked, not guessed" node scripts/entitlement-reconcile-check.mjs
+# What a stranger can spend in a day. Every free-tier limit belongs to a family
+# and a family costs nothing, so until 26 Sep 2026 only the credit limit on the
+# OpenRouter account bounded a day's bill. The real Worker over the shipping
+# schema with fetch replaced, each D1 statement a turn of the event loop so that
+# calls made together interleave as they do in production — without the turn, a
+# meter that checks and then writes passed here. Red on 24 of its 44 against the
+# code before the ceiling, and thirteen deliberate breakages of the ceiling,
+# thirteen caught, before this line was added.
+run "a stranger's day is bounded, a telling is not" node scripts/free-tier-ceiling-check.mjs
 # A question asked of one member by name, and the two notifications it can
 # cause. The real push, pull and notify over the shipping schema with fetch
 # replaced: an aim that does not resolve is stored as nothing instead of

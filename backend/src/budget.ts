@@ -1,8 +1,9 @@
 // What the audio can hold: the word ceiling the hallucination guard uses,
 // and the token budget the transcription sends along with the audio. In a
 // file of its own with no runtime imports, so `transcribe-budget-check.mjs`
-// can load it on Node's own type stripping — the Worker's other modules
-// import each other without extensions, which Node will not resolve.
+// can load it on Node's own type stripping — carved out when the Worker's
+// other modules still imported each other without extensions, which Node
+// will not resolve. Since 26 Sep 2026 none of them does.
 
 import type { Lang } from './extract'
 
@@ -77,6 +78,16 @@ export function boundedSeconds(claimed: number | undefined, base64Length: number
 	const atLeast = bytes / MAX_BYTES_PER_SECOND
 	const atMost = bytes / MIN_BYTES_PER_SECOND
 	return Math.min(Math.max(asked, atLeast), atMost)
+}
+
+/// The longest recording the bytes can hold: the top of the clamp above,
+/// whatever the claim. The month charges the claim, clamped, because it is the
+/// family's own time; what the model is PAID for is the audio it hears, and
+/// for that the claim is no bound at all — a client that says zero seconds is
+/// charged the bytes' shortest reading and still sends their longest. The
+/// free tier's day (`quota.ts`) is charged this.
+export function mostSeconds(base64Length: number): number {
+	return base64Length / BASE64_INFLATION / MIN_BYTES_PER_SECOND
 }
 
 /// How many tokens the transcript of `seconds` of speech can need, at most.

@@ -11,8 +11,8 @@
 /// LANGUAGE: the system prompt below is deliberately in Finnish — it is input to
 /// the model describing Finnish speech, not documentation. See CLAUDE.md.
 
-import { complete, type Message } from './openrouter'
-import { MAX_WORDS_PER_SECOND, REASONING_BUDGET, WORD_ALLOWANCE, transcriptionMaxTokens } from './budget'
+import { complete, type Message } from './openrouter.ts'
+import { MAX_WORDS_PER_SECOND, REASONING_BUDGET, WORD_ALLOWANCE, transcriptionMaxTokens } from './budget.ts'
 import type { Lang } from './extract'
 import type { Env } from './worker'
 
