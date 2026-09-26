@@ -147,6 +147,16 @@ final class Session {
         return usage.aiSeconds.used >= limit
     }
 
+    /// The family is at its free photographs, as the server last counted them.
+    /// That count is the one its refusal reads (`checkPhotoCount`), cards
+    /// without a file included, so a photograph that has not reached the
+    /// server by now is one it will not take until there is room. False
+    /// whenever there is nothing to know, as above.
+    var isOutOfPhotos: Bool {
+        guard let usage, !usage.isPaid, let limit = usage.photos.limit else { return false }
+        return usage.photos.used >= limit
+    }
+
     /// When the free minutes come back. The server's window is the UTC
     /// calendar month (quota.ts `period`), so this is the first moment of the
     /// next one — the date a row can promise instead of "myöhemmin".
@@ -183,6 +193,13 @@ final class Session {
             // offer slot carries the invitation instead of the paid archive.
             // See docs/UX.md §3.2.
             seedDemoFamily(alone: true)
+            return
+        case "unarrived":
+            // A family at its twenty photographs, the ceiling past which the
+            // server refuses a file and keeps its card. The store seeds the
+            // photographs that are on the grid and not on this phone
+            // (`MemoryStore`); this is what their card reads to say why.
+            seedDemoFamily(photosUsed: 20)
             return
         default:
             // `-you <card id>` with any store seed: a family whose "you" is
@@ -649,8 +666,9 @@ final class Session {
     /// has accepted an invitation. That is the state the offer slot answers
     /// with the invitation, and it cannot be reached by trimming the member
     /// list of the shared fixture in a test: the count is read at render time
-    /// from this object.
-    private func seedDemoFamily(alone: Bool = false) {
+    /// from this object. `photosUsed` is the family's count against its free
+    /// twenty, which `-seed unarrived` puts at the ceiling.
+    private func seedDemoFamily(alone: Bool = false, photosUsed: Int = 12) {
         let now = Date.now.timeIntervalSince1970
         let day: Double = 24 * 60 * 60
         mode = .inFamily(id: "demo-family")
@@ -691,7 +709,7 @@ final class Session {
         usage = EntitlementClient.Usage(
             entitlement: "free",
             aiSeconds: .init(used: 7 * 60, limit: 10 * 60),
-            photos: .init(used: 12, limit: 20)
+            photos: .init(used: photosUsed, limit: 20)
         )
     }
     #endif

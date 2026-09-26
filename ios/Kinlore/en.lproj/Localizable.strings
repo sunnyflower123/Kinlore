@@ -428,6 +428,12 @@
 "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on." = "One photograph did not fit the free archive. It is safe on this phone and travels to the family when there is room.";
 "%lld kuvaa ei mahtunut ilmaiseen arkistoon. Ne ovat tallessa tässä puhelimessa ja lähtevät perheelle kun tilaa on." = "%lld photographs did not fit the free archive. They are safe on this phone and travel to the family when there is room.";
 
+// The same ceiling from every other phone, where the card arrives and the file does not; until 26 Sep 2026 that photograph's screen spun for as long as anybody looked.
+"Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun perheen ilmaisessa arkistossa on tilaa." = "This photograph is still on the phone it was added on. It arrives when the family's free archive has room.";
+"Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä." = "This photograph is still on the phone it was added on. It arrives once it is sent from there.";
+"Kuva ei ole vielä tullut perille" = "The photograph has not arrived yet";
+"Kuvaa ei saatu haettua." = "The photograph could not be fetched.";
+
 // The interview loop: how an answer ends, said before the microphone arms (4 Sep 2026).
 "Paina nauhoitusnappia ja vastaa." = "Press the record button and answer.";
 "Vastaa puhumalla. Paina isoa nappia, kun olet valmis." = "Answer by talking. Press the big button when you are done.";

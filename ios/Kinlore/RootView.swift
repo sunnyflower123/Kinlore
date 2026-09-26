@@ -678,8 +678,14 @@ struct SubjectDetailScreen: View {
     let subject: Subject
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var image: UIImage?
+    /// The last load of the photograph ended with nothing to draw — no
+    /// network, a server that did not answer, a file that would not open.
+    @State private var photoFailed = false
+    /// Every "Yritä uudelleen" is one more, which is what runs the load again.
+    @State private var photoTries = 0
     /// The family's confirmed colouring, drawn beside the photograph and never
     /// in its place.
     @State private var colourImage: UIImage?
@@ -930,9 +936,15 @@ struct SubjectDetailScreen: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: "pencil")
+                            // The identifier is for
+                            // `AccessibilityPolicy.isRenameRowSimulationArtefact`
+                            // and nothing else: the default-size simulation
+                            // reports this text whenever words stand in the
+                            // picture's place above it, and it has three wordings.
                             Text(nameRowText)
                                 .font(.body)
                                 .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("subject.rename")
                         }
                         .foregroundStyle(Elder.supporting)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1226,14 +1238,29 @@ struct SubjectDetailScreen: View {
         .task {
             await places?.resolve(current, in: store)
         }
-        .task {
-            guard image == nil else { return }
+        // Keyed like the colours below, and for the same reason: a photograph
+        // another member added arrives as a card, then as a key, then as a
+        // file, and this screen may be open through all three. It used to run
+        // once, on the card as it was when the screen opened, so a key that
+        // came later was never fetched and a fetch that failed was never
+        // tried again — and the placeholder spun for as long as anybody looked.
+        .task(id: [current.r2Key, current.imageFilename, String(photoTries)]) {
+            guard subject.kind == .photo, image == nil, !MediaLoader.hasNotArrived(current) else { return }
+            photoFailed = false
             guard let filename = await MediaLoader.imageFilename(
-                for: subject, store: store, session: session
-            ) else { return }
-            image = await Task.detached(priority: .userInitiated) {
+                for: current, store: store, session: session
+            ) else {
+                if !Task.isCancelled { photoFailed = true }
+                return
+            }
+            let loaded = await Task.detached(priority: .userInitiated) {
                 MediaStore.loadImage(named: filename)
             }.value
+            if let loaded {
+                image = loaded
+            } else if !Task.isCancelled {
+                photoFailed = true
+            }
         }
         .sheet(isPresented: $isTelling) {
             NavigationStack {
@@ -1292,6 +1319,14 @@ struct SubjectDetailScreen: View {
         .elderSurface()
     }
 
+    /// The photograph, or where it is in words — and a spinner only while a
+    /// fetch is actually running.
+    ///
+    /// Past the free ceiling the server keeps a photograph's card and refuses
+    /// its file, so every phone but the one that added it holds a card with
+    /// nothing to fetch. Until 26 Sep 2026 each of them spun here for ever,
+    /// while only that one phone said anything (`PhotoQuotaNote`). What the
+    /// card now says is the same promise that note makes, from this side.
     @ViewBuilder
     private var photoView: some View {
         if let image {
@@ -1299,12 +1334,74 @@ struct SubjectDetailScreen: View {
                 .resizable()
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 16))
+        } else if MediaLoader.hasNotArrived(current) {
+            photoSlot {
+                photoAbsence {
+                    if session.isOutOfPhotos {
+                        Text("Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun perheen ilmaisessa arkistossa on tilaa.")
+                    } else {
+                        Text("Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä.")
+                    }
+                }
+            }
+        } else if photoFailed {
+            photoSlot {
+                VStack(alignment: .leading, spacing: 12) {
+                    photoAbsence {
+                        Text("Kuvaa ei saatu haettua.")
+                    }
+                    Button("Yritä uudelleen") { photoTries += 1 }
+                        .buttonStyle(.borderless)
+                        .font(.body.weight(.semibold))
+                        .elderTapTarget()
+                }
+            }
         } else {
             RoundedRectangle(cornerRadius: 16)
                 .fill(.quaternary)
                 .aspectRatio(4.0 / 3.0, contentMode: .fit)
                 .overlay { ProgressView() }
         }
+    }
+
+    /// The picture's place, holding words instead: at least the shape the
+    /// spinner had, so everything under it sits where it sat and nothing moves
+    /// when the picture does come, and taller whenever the words need it — at
+    /// the largest sizes they do, and a sentence cut to fit a frame would be
+    /// the one thing worse than a spinner.
+    ///
+    /// Measured at the default size on 26 Sep 2026. As a card no taller than
+    /// its words, it lifted the memories' heading off the tab bar, and the
+    /// audit reported that heading there — a `List` header, whose growth the
+    /// framework caps. At this shape the heading sits where it sat. The rename
+    /// row under the words is reported at either shape and not under the
+    /// spinner: the simulation grows the words until the row cannot be
+    /// measured whole (`AccessibilityPolicy.isRenameRowSimulationArtefact`).
+    private func photoSlot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        ZStack {
+            Color.clear
+                .aspectRatio(4.0 / 3.0, contentMode: .fit)
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+        }
+        .elderCard(radius: 16)
+    }
+
+    /// A sign and the sentence beside it, or above it once the sentence needs
+    /// the whole width. Not a `Label`: one in the place search was the audit's
+    /// "Text clipped" at both sizes (`PlaceSearchSheet.failure`).
+    private func photoAbsence<Words: View>(@ViewBuilder _ words: () -> Words) -> some View {
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 12))
+        return layout {
+            Image(systemName: "photo.on.rectangle.angled")
+                .accessibilityHidden(true)
+            words()
+                .elderBody()
+        }
+        .foregroundStyle(Elder.supporting)
     }
 }
 

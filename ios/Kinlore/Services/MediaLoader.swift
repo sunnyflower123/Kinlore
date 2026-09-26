@@ -9,6 +9,19 @@ import UIKit
 /// `fetch`, after a sync, on Wi-Fi, in the background.
 @MainActor
 enum MediaLoader {
+    /// A photograph whose file has not left the phone that added it: no copy
+    /// here and no key to fetch one by.
+    ///
+    /// On every other phone that is the card the server keeps when it refuses
+    /// the file past the free ceiling — `pendingPayload` sends the card
+    /// whether or not its file went up — or one whose upload has simply not
+    /// happened yet.
+    /// Either way nothing is being fetched, so nothing on screen may say that
+    /// something is.
+    static func hasNotArrived(_ subject: Subject) -> Bool {
+        subject.kind == .photo && subject.imageFilename == nil && subject.r2Key == nil
+    }
+
     /// Ensures the subject's photo is present locally and returns its filename.
     static func imageFilename(
         for subject: Subject,

@@ -1562,7 +1562,7 @@ final class MemoryStore {
         }
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "faces",
-            "unplaced",
+            "unplaced", "unarrived",
             "film", "film-untold", "film-week", "film-family", "film-tree",
             "aimed",
         ].contains(seed) else { return }
@@ -2171,6 +2171,19 @@ final class MemoryStore {
         // point.
         if seed == "unplaced" {
             subjects.append(Subject(id: "demo-koivula", kind: .place, title: "Koivula"))
+        }
+        // `-seed unarrived`: the two ways a photograph is on the grid and not
+        // on this phone. `demo-photo` already has neither a file nor a key,
+        // which on a real phone is a photograph another member added whose
+        // file has not left theirs — what the server's refusal past the free
+        // ceiling leaves on every other phone, and `Session` puts the family
+        // at that ceiling for this seed. This one has the key and no file: it
+        // reached the server, and a seeded launch has no server to fetch it
+        // from.
+        if seed == "unarrived" {
+            subjects.append(Subject(
+                id: "demo-unfetched", kind: .photo, title: "Rantasauna", r2Key: "demo-unfetched"
+            ))
         }
         questions = mummoAsks + aimedAsks
         // `-seed related`: the archive with one confirmed relationship, Eeva

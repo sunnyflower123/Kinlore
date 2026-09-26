@@ -973,4 +973,36 @@ enum AccessibilityPolicy {
             && issue.element?.elementType == .textField
             && issue.element?.identifier == "invite-code"
     }
+
+    /// The rename row under a photograph that is not on this phone, reported
+    /// by the audit's *default-size* simulation and by nothing else: the
+    /// `listHeaderAndFooterText` signature once more, and keyed on an
+    /// identifier because the row has three wordings.
+    ///
+    /// Measured 26 Sep 2026 on a private simulator, per the protocol above:
+    ///
+    ///   * Words took the spinner's place on every photograph without a file
+    ///     that day (ARCHITECTURE §5). `testPhotoDetail`,
+    ///     `testPhotoDetailPastTheCeiling` and `testPhotoDetailWithoutAStory`
+    ///     then reported *"Anna kuvalle nimi"* at the default size, at y 605.5
+    ///     and 132 × 20.33 pt in all three, three screens with different things
+    ///     below the row.
+    ///   * The words' card shortened to its text moved the finding to y 428.83
+    ///     and changed nothing else about it. The spinner put back in the same
+    ///     4:3 place, the row's code untouched: green, on the same simulator
+    ///     minutes apart, at a load under fifteen. The finding moved in with
+    ///     the words above the row and out with them.
+    ///   * Scrolled into view at a real AccessibilityXXXL, the same row audits
+    ///     clean (`testPhotoDetail`, twice) — the half that would say its
+    ///     words were being lost.
+    ///
+    /// So the sweep passes this in beside the memory row's, on its FIRST launch
+    /// only; the second launch measures the real layout with nothing forgiven.
+    /// Keyed on `subject.rename`, set in `RootView.swift` for this alone, and
+    /// on the one audit type; `scripts/audit-exemption-check.mjs` pins both,
+    /// and `.contrast` must never join it.
+    static func isRenameRowSimulationArtefact(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .dynamicType, let element = issue.element else { return false }
+        return element.identifier == "subject.rename"
+    }
 }

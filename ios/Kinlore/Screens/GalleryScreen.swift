@@ -1160,6 +1160,14 @@ private struct PhotoTile: View {
                         Image(uiImage: thumbnail)
                             .resizable()
                             .scaledToFill()
+                    } else if MediaLoader.hasNotArrived(subject) {
+                        // Nothing is on its way to this tile, and grey alone
+                        // reads as something still loading. The words are the
+                        // tile's accessibility value and the card's sentence.
+                        Image(systemName: "hourglass")
+                            .font(.title2)
+                            .foregroundStyle(Elder.supporting)
+                            .accessibilityHidden(true)
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -1191,7 +1199,10 @@ private struct PhotoTile: View {
             .background(Elder.card, in: Capsule())
             .padding(8)
         }
-        .task {
+        // Keyed, because a photograph another member added can arrive as a
+        // card before it has a key to fetch by; run once, the tile stayed grey
+        // after the key came.
+        .task(id: [subject.r2Key, subject.imageFilename]) {
             guard thumbnail == nil else { return }
             // A photo added by another family member is at first only a key: it
             // is fetched when the screen actually needs it.
@@ -1210,6 +1221,9 @@ private struct PhotoTile: View {
         // "Valokuva" to VoiceOver (founder's-eye review, finding #12). An
         // untitled one still is.
         .accessibilityLabel(tileLabel)
+        .accessibilityValue(
+            MediaLoader.hasNotArrived(subject) ? Text("Kuva ei ole vielä tullut perille") : Text(verbatim: "")
+        )
     }
 
     private var tileLabel: LocalizedStringKey {

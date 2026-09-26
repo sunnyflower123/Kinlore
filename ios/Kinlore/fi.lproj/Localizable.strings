@@ -363,6 +363,12 @@
 "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on." = "Yksi kuva ei mahtunut ilmaiseen arkistoon. Se on tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on.";
 "%lld kuvaa ei mahtunut ilmaiseen arkistoon. Ne ovat tallessa tässä puhelimessa ja lähtevät perheelle kun tilaa on." = "%lld kuvaa ei mahtunut ilmaiseen arkistoon. Ne ovat tallessa tässä puhelimessa ja lähtevät perheelle kun tilaa on.";
 
+// The same ceiling from every other phone, where the card arrives and the file does not; until 26 Sep 2026 that photograph's screen spun for as long as anybody looked.
+"Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun perheen ilmaisessa arkistossa on tilaa." = "Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun perheen ilmaisessa arkistossa on tilaa.";
+"Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä." = "Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä.";
+"Kuva ei ole vielä tullut perille" = "Kuva ei ole vielä tullut perille";
+"Kuvaa ei saatu haettua." = "Kuvaa ei saatu haettua.";
+
 // The interview loop: how an answer ends, said before the microphone arms (4 Sep 2026).
 "Paina nauhoitusnappia ja vastaa." = "Paina nauhoitusnappia ja vastaa.";
 "Vastaa puhumalla. Paina isoa nappia, kun olet valmis." = "Vastaa puhumalla. Paina isoa nappia, kun olet valmis.";

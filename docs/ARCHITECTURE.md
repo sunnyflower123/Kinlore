@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 91 sweep tests, each auditing one screen at the default text size and again at the largest, out of 261 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 93 sweep tests, each auditing one screen at the default text size and again at the largest, out of 265 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -967,6 +967,31 @@ no modal, no badge. Going paid re-syncs at once, which is what clears it.
 The note's state is held still for the audit by `-photos-refused`; the
 decode itself mirrors a proven path rather than having a Worker-driven check
 of its own, and that is stated here rather than implied otherwise.
+
+**And every other phone was left spinning.** A refused photograph's card
+still syncs — `pendingPayload` sends a changed subject whether or not its
+file went up — so the rest of the family holds a photograph with no file and
+no key to fetch one by. Until 26 Sep 2026 its tile stayed grey and its card
+drew a `ProgressView` for as long as anybody looked, while only the phone
+that added it said anything. `MediaLoader.hasNotArrived` names that state
+now. The tile draws an hourglass and gives *"Kuva ei ole vielä tullut
+perille"* as its accessibility value; the card says where the photograph is
+and what it waits for — *"…kun perheen ilmaisessa arkistossa on tilaa"* when
+`Session.isOutOfPhotos` reads the family at the count the refusal reads,
+*"…kun se lähetetään sieltä"* otherwise. A fetch that fails says so and
+offers *"Yritä uudelleen"*, the spinner is left to a fetch that is actually
+running, and both loads are keyed to the key and the file, so a key that
+arrives while the screen is open is fetched rather than missed. `-seed
+unarrived` holds both states still for `SyncVisibilityTests` and two sweeps.
+The demo archive's photograph has no file either, nor does one from
+`-import`, so every sweep of their cards now measures the second sentence
+where it used to measure a spinner. That cost the default-size audit one
+finding: its simulation grows the words until the rename row under them
+cannot be measured whole — *"Anna kuvalle nimi"* at the same point on three
+screens, and gone with the spinner put back — which is the §15 signature
+once more. `AccessibilityPolicy.isRenameRowSimulationArtefact` forgives
+`.dynamicType` on that row's identifier on the first launch only, and
+`scripts/audit-exemption-check.mjs` pins it as it pins the memory row's.
 
 **The original audio is always uploaded**, including on the free tier. It is the
 core of the product, not an extra.
