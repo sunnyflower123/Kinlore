@@ -77,7 +77,7 @@ An honest inventory, not a wish list:
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
 | Accessibility sweep over every screen | **Done** — 102 sweep tests, each auditing one screen at the default text size and again at the largest, out of 295 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
-| A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
+| A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
 | A single-device archive opened to a family, without losing it | **Done and tested**, see §14 and docs/UX.md §11.1 — one-way, and the rows already on the phone travel with it |
@@ -2495,6 +2495,12 @@ paid Developer Program and not a personal team (SETUP). Until then the
 registration fails, is logged as a domain and a code, and nothing else
 changes.
 
+**In production since 26 Sep 2026, and silent there.** The `push_token`
+table went in with the deploy §25 records, and straight after it the
+deployed Worker answered `POST /push/token` without a session with 401. The
+three APNs secrets were not set with it, so that Worker notifies nobody, and
+the wire above is still unchecked.
+
 ## 12. The question ladder
 
 Some people cannot start with "tell me about this photo". The first thing this
@@ -4213,6 +4219,9 @@ looked-up circle does not displace a point the family placed by hand"* fails.
 And against one from the commit before the placed word (25 Sep 2026), the
 first eight pass and fourteen of the fifteen new ones fail; the one that
 passes is a later word moving the point, which exact over exact did already.
+Pointed at production on 26 Sep 2026, straight after the two
+`geo_confirmed` columns went in and the Worker that reads them was deployed
+(§25), it passed 23 of 23.
 
 ### What the columns tell the server — a decided leak
 
@@ -5328,11 +5337,18 @@ in the tree there: five of sixteen labels gone, the friend's name among them.
 | No picture on the blind card's screen carries a name, and one is described as the photograph | `BlindConfirmationTests` |
 | The memory row's exemption reads two identifiers and one audit type, the row sets both, and the sweep passes it in on the first launch only | `audit-exemption-check.mjs`, in `verify.sh` |
 
+**In production since 26 Sep 2026.** After a dump of the production
+database, the four `ALTER TABLE` statements ran there as `schema.sql` has
+them, together with the two `geo_confirmed` columns of §18 and the
+`push_token` table of §11 with its index, and the Worker was deployed from a
+clean detached worktree at commit `45b5ce7`, as version `16c46860`. Straight
+after, `/health` answered and `subject-rules-check.mjs` passed 32 of 32
+against production — from a copy that sends its synthetic `CF-Connecting-IP`
+only to a local Worker, as the script itself has done since `8f605e6` the
+same day, because the edge answers 403 to any request that carries one.
+
 ### Not yet
 
-- **Production.** The four `ALTER TABLE` statements and the Worker deploy
-  are a decision taken at the keyboard, not in a commit; this section
-  records the date when it has happened.
 - **No zoom, and the square was measured on one photograph.** The first
   real family photographs are the measurement that matters; a face in a
   crowd of twelve may need a tighter square than half the shorter side.
