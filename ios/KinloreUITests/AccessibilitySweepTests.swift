@@ -1074,7 +1074,7 @@ final class AccessibilitySweepTests: XCTestCase {
             require(app.staticTexts["1950-luku"], "the decade heading")
             require(app.staticTexts["Ilman ajankohtaa"], "the heading over the undated")
             // The titled tile reads its name aloud, not "Valokuva".
-            require(app.buttons["Mökin ranta, 1 muistoa"], "the tile read by its own name")
+            require(app.buttons["Mökin ranta, 1 muisto"], "the tile read by its own name")
         }
     }
 

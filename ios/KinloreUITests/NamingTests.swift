@@ -40,7 +40,7 @@ final class NamingTests: XCTestCase {
         )
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(
-            app.buttons["Mökin ranta, 1 muistoa"].waitForExistence(timeout: 10),
+            app.buttons["Mökin ranta, 1 muisto"].waitForExistence(timeout: 10),
             "the tile does not carry the name"
         )
     }
