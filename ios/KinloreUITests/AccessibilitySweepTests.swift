@@ -467,7 +467,7 @@ final class AccessibilitySweepTests: XCTestCase {
                 seen[size != nil] = labelsInTree(app).union(judgedAbove)
             }
             // The first launch is where the audit simulates the scaling, and
-            // the memory row's artefact lives there only, as do the join
+            // the simulation's artefact lives there only, as do the join
             // form's filled code field's and the rename row's; the second
             // launch is the real layout, with nothing forgiven. The policy
             // says why.
@@ -480,7 +480,7 @@ final class AccessibilitySweepTests: XCTestCase {
             // word's frame, and a sweep that has not asked forgives nothing.
             let underTheBar = forgivingTheBarEdge && wordCrossesTheBarEdge(app)
             try audit(app, "\(name), \(at)", alsoAllowing: { issue in
-                size == nil && AccessibilityPolicy.isMemoryRowSimulationArtefact(issue)
+                size == nil && AccessibilityPolicy.isDefaultSizeSimulationArtefact(issue)
                     || size == nil && AccessibilityPolicy.isInviteCodeSimulationArtefact(issue)
                     || size == nil && AccessibilityPolicy.isRenameRowSimulationArtefact(issue)
                     || underTheBar && issue.auditType == .contrast && issue.element == nil
@@ -1468,7 +1468,19 @@ final class AccessibilitySweepTests: XCTestCase {
             arguments: ["-seed", "clan", "-tab", "people", "-screen", "person", "-person", "clan-jonne"]
         ) { app, _ in
             require(app.buttons["Kerro tästä muisto"], "the person card")
-            settle(reach(app.staticTexts["Ystävät"], in: app, "the friend's own heading"))
+            // The row and not its heading since 26 Sep 2026. Reached by the
+            // heading, the largest size arrived with *"Ystävät"* under the
+            // tab bar and the row unbuilt below it, so the audit there judged
+            // the card's top and called the section clean — the loss probe
+            // (`KINLORE_XXXL_LOSS`) counted five of sixteen labels gone, the
+            // friend's name among them. One element per relative (see
+            // `RelativeRow`), so the row is found by its whole label.
+            settle(reach(
+                app.descendants(matching: .any)
+                    .matching(NSPredicate(format: "label == %@", "Elina, Ystävä"))
+                    .firstMatch,
+                in: app, "the friend's row"
+            ))
         }
     }
 
@@ -2122,10 +2134,11 @@ final class AccessibilitySweepTests: XCTestCase {
     /// above them — *"Kuulin nämä"*, *"Henkilö"* and the playback button, all
     /// text styles — as Dynamic Type partly unsupported, in two runs out of
     /// two, the second at a lower load (25 Sep 2026). That is the simulation
-    /// artefact `AccessibilityPolicy.isMemoryRowSimulationArtefact`
-    /// describes, on three texts it does not list, and widening it is not
-    /// this sweep's business. The largest size is the real layout with
-    /// nothing forgiven, the half that would show those words being lost.
+    /// artefact `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+    /// describes — and has listed those three texts since 26 Sep 2026,
+    /// measured on the person card rather than here. The largest size is the
+    /// real layout with nothing forgiven, the half that would show those
+    /// words being lost.
     ///
     /// Not `auditPageByPage`, for a reason that ended on 26 Sep 2026: this
     /// photograph has no file in the seed, and its place held a

@@ -5005,6 +5005,25 @@ scaling; the second launch measures the real layout with nothing forgiven.
 `scripts/audit-exemption-check.mjs` pins the two identifiers, the one type
 and the one launch.
 
+Widened on 26 Sep 2026 and renamed `isDefaultSizeSimulationArtefact`, after
+the two person-card sweeps that were red on `main` alone —
+`testPersonCardWithoutAStory`, seven findings, and `testPersonCardWithAFriend`,
+one — were measured the same way on a private simulator: each alone twice with
+frames identical to the decimal, at the default size only, the real
+AccessibilityXXXL launch clean, and no contrast, hit-region or timeout finding
+on either. The same row's other three texts (*"Kuulin nämä"*, the heard name's
+kind, the listen button's words), the card's last section (the empty state's
+sentence and *"Poista henkilö"*, which also reported clipping) and the relative
+row's caption (*"Ystävä"*): each hidden-above arm audited clean with the
+element's own code untouched, and the loss probe held all five of the
+story-less card's elements in the tree at the largest size, where they audited
+clean. The gate reads two identifier sets now — `.dynamicType` on eight
+identifiers, `.textClipped` on the two that reported it — on the first launch
+only, and the check pins both sets, both types, that every identifier is set on
+a view, and the launch. The friend sweep reaches the row rather than its
+heading at the largest size, because reached by the heading the row was never
+in the tree there: five of sixteen labels gone, the friend's name among them.
+
 ### Checked
 
 | Claim | Check |

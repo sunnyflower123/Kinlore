@@ -183,6 +183,10 @@ private struct RelativeRow: View {
                     Text(relative.displayTitle)
                         .font(.body.weight(.medium))
                     Text(groupTitle)
+                        // The identifier is for
+                        // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                        // and nothing else (26 Sep 2026).
+                        .accessibilityIdentifier("relative.caption")
                         .font(.caption)
                         .foregroundStyle(Elder.supporting)
                 }

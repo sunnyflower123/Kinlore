@@ -54,6 +54,10 @@ struct HeardNameRow: View {
                             .font(.body.weight(.medium))
                             .fixedSize(horizontal: false, vertical: true)
                         Text(LocalizedStringKey(subject.kind.label))
+                            // The identifier is for
+                            // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                            // and nothing else (26 Sep 2026).
+                            .accessibilityIdentifier("heardName.kind")
                             .font(.caption)
                             .foregroundStyle(Elder.supporting)
                         if let sentence {

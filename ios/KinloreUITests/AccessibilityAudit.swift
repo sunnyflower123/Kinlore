@@ -198,7 +198,7 @@ extension XCTestCase {
             // its own says nothing about which element.
             let element = issue.element
             let label = element?.label ?? "no element"
-            let where_ = element.map { "\($0.elementType.rawValue)@\(NSCoder.string(for: $0.frame))" } ?? "-"
+            let where_ = element.map { "\($0.elementType.rawValue)@\(NSCoder.string(for: $0.frame))\($0.identifier.isEmpty ? "" : " id=\($0.identifier)")" } ?? "-"
             let line = "\(issue.compactDescription) — \"\(label)\" [\(where_)]"
 
             // The fade above the tab bar is decided by counting pixels, once the
@@ -945,10 +945,75 @@ enum AccessibilityPolicy {
     /// and `memory.byline`, set in `RootView.swift` for this purpose alone —
     /// and on the one audit type; `scripts/audit-exemption-check.mjs` pins
     /// both, and `.contrast` must never join it.
-    static func isMemoryRowSimulationArtefact(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard issue.auditType == .dynamicType, let element = issue.element else { return false }
-        return element.identifier == "memory.body" || element.identifier == "memory.byline"
+    ///
+    /// **Widened on 26 Sep 2026 and renamed, measured the same way**, on the
+    /// two person-card sweeps that were red on `main` alone —
+    /// `testPersonCardWithoutAStory`, seven findings, and
+    /// `testPersonCardWithAFriend`, one — on a private simulator in Finnish,
+    /// each test alone twice with frames identical to the decimal, at the
+    /// default size only, the real AccessibilityXXXL launch clean on every run,
+    /// and no contrast, hit-region or timeout finding on either. (The four
+    /// other sweeps red in the same suite runs were green alone twice: load.)
+    ///
+    ///   * The story-less card, scrolled to *"Poista henkilö"* by its sweep:
+    ///     the same row's other texts — *"Kuulin nämä"* at y 217, the heard
+    ///     name's kind at y 275.33, the listen button's words at y 382.67 —
+    ///     reported partially unsupported, and the card's last section —
+    ///     *"Tästä ei ole vielä omaa muistoa…"* at y 502.67 and *"Poista
+    ///     henkilö"* at y 561.33 — reported unsupported AND clipped.
+    ///   * Moved up, by hiding the mentions section above that last section,
+    ///     its own code untouched: clean, 0 findings.
+    ///   * The loss probe (`KINLORE_XXXL_LOSS`): all five are still in the tree
+    ///     at the real largest size, where the audit judged them clean; what
+    ///     that card loses there is four rows further down. Screenshotted at
+    ///     AccessibilityXXXL: the sentence wraps to six lines and ends in
+    ///     "puhua.", the button is drawn whole under it.
+    ///   * The friend card: *"Ystävä"*, the relative row's caption, at
+    ///     y 627.67 — with the name in the same `VStack` not reported. Moved
+    ///     up by hiding the face row above it (§25), its own code untouched:
+    ///     clean, 0 findings. At the largest size the row had never been in
+    ///     the tree at all: the sweep reached the heading, the heading sat
+    ///     under the tab bar with the row unbuilt below it, and the probe
+    ///     counted five of sixteen labels gone, the friend's name among them.
+    ///     So that sweep reaches the row now, and the second launch judges it.
+    ///
+    /// Clipping is forgiven for the two texts that reported it and for no
+    /// other, and only on this launch: the second still measures the real
+    /// layout with nothing forgiven, so a sentence that really lost its last
+    /// line at the largest size is caught there. `.contrast` must never join
+    /// either set.
+    static func isDefaultSizeSimulationArtefact(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard let element = issue.element else { return false }
+        switch issue.auditType {
+        case .dynamicType:
+            return simulationArtefactIdentifiers.contains(element.identifier)
+        case .textClipped:
+            return simulationArtefactClippedIdentifiers.contains(element.identifier)
+        default:
+            return false
+        }
     }
+
+    /// What the gate above reads. Every identifier here was measured before
+    /// it was listed, and `scripts/audit-exemption-check.mjs` pins the list.
+    private static let simulationArtefactIdentifiers: Set<String> = [
+        // The memory row (21 Sep 2026): the story and its byline.
+        "memory.body", "memory.byline",
+        // The same row's other texts (26 Sep 2026): the "Kuulin nämä" heading,
+        // the heard name's kind, and the listen button's words.
+        "memory.heard", "heardName.kind", "memory.playback",
+        // The card's last section (26 Sep 2026): the empty state's sentence
+        // and the removal button beside it.
+        "card.emptyState", "card.removal",
+        // The relative row's caption — "Ystävä", "Vanhemmat" (26 Sep 2026).
+        "relative.caption",
+    ]
+
+    /// The two that also reported `.textClipped` at the default size, and
+    /// only those two; both are drawn whole at a real AccessibilityXXXL.
+    private static let simulationArtefactClippedIdentifiers: Set<String> = [
+        "card.emptyState", "card.removal",
+    ]
 
     /// The join form's code field with a code in it, reported clipped by the
     /// audit's *default-size* simulation and by nothing else — *"Text of this

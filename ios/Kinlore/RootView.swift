@@ -1059,6 +1059,10 @@ struct SubjectDetailScreen: View {
                                 .foregroundStyle(Elder.supporting)
                         } else {
                             Text("Tästä ei ole vielä omaa muistoa. Paina yllä olevaa nappia ja ala puhua.")
+                                // The identifier is for
+                                // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                                // and nothing else (26 Sep 2026).
+                                .accessibilityIdentifier("card.emptyState")
                                 .elderBody()
                                 .foregroundStyle(Elder.supporting)
                         }
@@ -1090,6 +1094,10 @@ struct SubjectDetailScreen: View {
                         // exactly the case it was added for.
                         if removable {
                             Button(removalButton) { isConfirmingRemoval = true }
+                                // The identifier is for
+                                // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                                // and nothing else (26 Sep 2026).
+                                .accessibilityIdentifier("card.removal")
                                 .buttonStyle(.borderless)
                                 .font(.body.weight(.medium))
                                 .foregroundStyle(Elder.destructive)
@@ -1462,7 +1470,7 @@ private struct MemoryRow: View {
                 .foregroundStyle(Elder.supporting)
             } else {
                 // The identifiers on this text and on the byline below are
-                // for `AccessibilityPolicy.isMemoryRowSimulationArtefact`
+                // for `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
                 // and nothing else: the audit's default-size simulation
                 // reports these two the moment a row is added above the
                 // memories, and a story's words cannot be listed by label.
@@ -1474,6 +1482,10 @@ private struct MemoryRow: View {
             if !heardHere.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Kuulin nämä")
+                        // The identifier is for
+                        // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                        // like the story's above (26 Sep 2026).
+                        .accessibilityIdentifier("memory.heard")
                         .font(.subheadline.weight(.semibold))
                     // No sentence here: the whole telling stands right above,
                     // and quoting a line of it back doubled the row — the

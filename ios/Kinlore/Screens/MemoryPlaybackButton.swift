@@ -41,6 +41,10 @@ struct MemoryPlaybackButton: View {
                 }
 
                 Text(label)
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (26 Sep 2026).
+                    .accessibilityIdentifier("memory.playback")
                     .font(.subheadline.weight(.medium))
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)

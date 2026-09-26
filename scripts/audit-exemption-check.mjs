@@ -29,7 +29,7 @@
 // Costs nothing — no simulator, no build. Run it after touching
 // AccessibilityPolicy's exemptions.
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
@@ -118,38 +118,92 @@ if (uses.length === 1) {
 	check('the gate does not forgive contrast', !named.includes('.contrast'))
 }
 
-// The memory row's gate (21 Sep 2026): the one exemption keyed on identifiers
-// rather than words, because a story's words cannot be listed. Pinned the same
-// way — the two identifiers it reads, the one type it names, that the row
-// really sets both, and that the sweep passes it in on the default-size launch
+// The identifier gate, `AccessibilityPolicy.isDefaultSizeSimulationArtefact`,
+// which since 26 Sep 2026 reads two sets rather than two identifiers. What
+// is pinned: every identifier in each set was measured (the lists below are
+// the record, in full, for the same reason as MEASURED above), the gate
+// forgives `.dynamicType` on the first set and `.textClipped` on the second
+// and nothing on any other type, every identifier is actually set on a view
+// in the app, and the sweep passes the gate in on the default-size launch
 // only, where the audit simulates the scaling.
-const ROW_IDS = ['memory.body', 'memory.byline']
-const gate = source.findIndex((l) => l.includes('static func isMemoryRowSimulationArtefact'))
-check('the memory row gate is declared', gate >= 0, 'no isMemoryRowSimulationArtefact in the file')
+const ARTEFACT_IDS = [
+	'memory.body',
+	'memory.byline',
+	'memory.heard',
+	'heardName.kind',
+	'memory.playback',
+	'card.emptyState',
+	'card.removal',
+	'relative.caption',
+]
+const CLIPPED_IDS = ['card.emptyState', 'card.removal']
+
+function quotedStrings(declaration) {
+	const start = source.findIndex((l) => l.includes(declaration))
+	if (start < 0) return null
+	let end = start
+	while (end < source.length && !source[end].trim().startsWith(']')) end += 1
+	// The comment beside each entry quotes the words on screen, and those are
+	// not identifiers: the comments are dropped before the quotes are read.
+	const code = source.slice(start, end + 1).map((l) => l.replace(/\/\/.*$/, '')).join(' ')
+	return [...code.matchAll(/"([^"]+)"/g)].map((m) => m[1])
+}
+
+const artefactIDs = quotedStrings('let simulationArtefactIdentifiers')
+const clippedIDs = quotedStrings('let simulationArtefactClippedIdentifiers')
+check('the artefact identifier set is declared', artefactIDs !== null)
+check('the clipped identifier set is declared', clippedIDs !== null)
+if (artefactIDs && clippedIDs) {
+	check(
+		`the artefact set reads exactly the ${ARTEFACT_IDS.length} measured identifiers`,
+		artefactIDs.length === ARTEFACT_IDS.length && ARTEFACT_IDS.every((id) => artefactIDs.includes(id)),
+		`reads ${artefactIDs.join(', ') || 'nothing'}`,
+	)
+	check(
+		`the clipped set reads exactly the ${CLIPPED_IDS.length} measured identifiers`,
+		clippedIDs.length === CLIPPED_IDS.length && CLIPPED_IDS.every((id) => clippedIDs.includes(id)),
+		`reads ${clippedIDs.join(', ') || 'nothing'}`,
+	)
+	check(
+		'every clipped identifier is also in the artefact set',
+		clippedIDs.every((id) => artefactIDs.includes(id)),
+	)
+}
+const gate = source.findIndex((l) => l.includes('static func isDefaultSizeSimulationArtefact'))
+check('the gate is declared', gate >= 0, 'no isDefaultSizeSimulationArtefact in the file')
 if (gate >= 0) {
 	let end = gate
 	while (end < source.length && !/^\s{4}\}\s*$/.test(source[end])) end += 1
 	const body = source.slice(gate, end + 1).join(' ')
-	const ids = [...body.matchAll(/identifier == "([^"]+)"/g)].map((m) => m[1])
+	const types = [...body.matchAll(/case\s+(\.\w+):/g)].map((m) => m[1])
 	check(
-		'the gate reads exactly the two row identifiers',
-		ids.length === ROW_IDS.length && ROW_IDS.every((id) => ids.includes(id)),
-		`reads ${ids.join(', ') || 'nothing'}`,
-	)
-	const types = [...body.matchAll(/auditType\s*==\s*(\.\w+)/g)].map((m) => m[1])
-	check(
-		'the gate names .dynamicType and nothing else',
-		types.length === 1 && types[0] === '.dynamicType',
+		'the gate names .dynamicType and .textClipped and nothing else',
+		types.length === 2 && types.includes('.dynamicType') && types.includes('.textClipped'),
 		`names ${types.join(', ') || 'nothing'}`,
 	)
-	const row = readFileSync(join(root, 'ios', 'Kinlore', 'RootView.swift'), 'utf8')
-	for (const id of ROW_IDS) {
-		check(`  the row sets "${id}"`, row.includes(`.accessibilityIdentifier("${id}")`))
+	check(
+		'the dynamic-type case reads the artefact set',
+		/case \.dynamicType:\s+return simulationArtefactIdentifiers\.contains/.test(body),
+	)
+	check(
+		'the clipped case reads the clipped set',
+		/case \.textClipped:\s+return simulationArtefactClippedIdentifiers\.contains/.test(body),
+	)
+	check('the gate does not forgive contrast', !body.includes('.contrast'))
+	// Every identifier is set somewhere in the app — a gate that names an
+	// identifier nothing sets forgives nothing and looks exactly like one
+	// that works.
+	const app = readdirSync(join(root, 'ios', 'Kinlore'), { recursive: true })
+		.filter((f) => String(f).endsWith('.swift'))
+		.map((f) => readFileSync(join(root, 'ios', 'Kinlore', String(f)), 'utf8'))
+		.join('\n')
+	for (const id of ARTEFACT_IDS) {
+		check(`  a view sets "${id}"`, app.includes(`.accessibilityIdentifier("${id}")`))
 	}
 	const sweeps = readFileSync(join(root, 'ios', 'KinloreUITests', 'AccessibilitySweepTests.swift'), 'utf8')
 	check(
 		'the sweep passes it in on the default-size launch only',
-		/size == nil && AccessibilityPolicy\.isMemoryRowSimulationArtefact\(issue\)/.test(sweeps),
+		/size == nil && AccessibilityPolicy\.isDefaultSizeSimulationArtefact\(issue\)/.test(sweeps),
 	)
 }
 // The code field's gate (26 Sep 2026): the join form's field with a code in
