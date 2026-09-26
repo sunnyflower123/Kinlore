@@ -103,6 +103,21 @@ teller's is kept as it was recorded (rule 3) and never synthesised.
 4. **AI proposes, a human confirms.** A person or relationship inferred by the
    model is created with `confirmed = 0` and never appears in the family tree as
    fact. A wrong relationship is worse than a missing one.
+
+   The strongest confirmation is a blind one. When a name was heard in a
+   telling about a photograph, the app later shows that photograph and asks
+   *Who is this?* over three or four of the family's names, the proposal
+   unmarked among them — so choosing it is recognising the person, not agreeing
+   with a name already on the screen. Any other answer (another name, or *I do
+   not remember*) confirms nothing and is never called wrong: the app does not
+   know who is in the picture either. Nothing on that screen names the
+   proposal, not even the photograph's VoiceOver label, and
+   `BlindConfirmationTests` checks every text, button and image on it
+   ([`ARCHITECTURE.md` §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
+
+   <p align="center"><img src="docs/media/03-who-is-this.png" alt="The blind card: a drawn stand-in photograph, the question Who is this?, four names in identical black buttons — Sanni, Aino, Eeva and Kalle — and I do not remember below them." width="300"></p>
+   <p align="center"><sub>Simulator, <code>-seed blind</code> — the photograph is the fixture's drawn stand-in.<br>One of the four names is the proposal, and nothing on the screen says which.</sub></p>
+
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
    `date_start`/`date_end` with precision `decade`. No date is forced.
 6. **No login screen.** Identity is a UUID in the Keychain; you join a family

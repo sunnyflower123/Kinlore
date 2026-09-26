@@ -161,6 +161,10 @@ echo "— docs/media —"
 # picture 4 as Kalle on 26 Sep 2026, in a run that had looked identical.
 still "$MEDIA/01-tell.png"        -seed archive -tab tell
 still "$MEDIA/02-result.png"      -seed empty -screen result
+# The blind card under rule 4. `-seed blind` is the plain archive with the
+# fixture's drawn photograph on `demo-photo`, which is what lets the card be
+# built at all; the film's prints are for Devpost and never reach docs/media.
+still "$MEDIA/03-who-is-this.png" -seed blind -tab tell
 # `-you` names the phone owner's own card. Since 26 Sep 2026 a person card
 # offers "This is me" on every confirmed card while the phone is linked to
 # no card, and the demo owner is linked to none; naming another card keeps
