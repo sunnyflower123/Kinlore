@@ -1816,26 +1816,45 @@ final class AccessibilitySweepTests: XCTestCase {
             // The demo photograph has no file, and since 26 Sep 2026 its place
             // holds a sentence instead of a spinner. At the largest size that
             // sentence is the whole first screen, so it is what arriving means
-            // there, and the sweep stops at it. Until then it stopped at the
-            // button under the picture, which is now a screen further down;
-            // scrolled that far, the memories' heading comes into view, and the
-            // audit reports it at this size: "Dynamic Type font sizes are
-            // partially unsupported" on "1 muisto".
+            // there, and the rest of the card is judged page by page down to
+            // the footer under the way to ask the family.
             //
-            // That finding is older than the sentence. Measured the same day
-            // at 1a300ff, on main's own screen with its spinner, the heading
-            // dragged to where this sweep had met it: the same type on the same
-            // text, at {{16, 661.67}, {370, 83.33}}, against 599.33, 651.67 and
-            // 671.67 here. So this sweep covers less at the largest size than
-            // it did, and the one that still scrolls a photograph's screen to
-            // its end at that size is `testPhotoDetailWithoutAStory`, whose
-            // photograph has no memories and so no heading.
+            // **The memories' heading on the way down.** The audit reports
+            // "1 muisto" at this size as "Dynamic Type font sizes are partially
+            // unsupported" wherever a page leaves it above the tab bar with its
+            // frame reaching below `tabBar.minY - AccessibilityPolicy.fadeReach`
+            // — the band where `audit(_:_:)` holds `.contrast` back and counts
+            // the pixels instead. `.dynamicType` has no such handling, so where
+            // the page stops decides. Measured 26 Sep 2026 on a private
+            // simulator, the heading dragged to a chosen height and audited
+            // there, with the bar at y 791: red at 610 and 651, clean at 310,
+            // 450 and 530. Screenshotted at 651, it is drawn whole and at full
+            // size. The button above it, "Kerro tästä muisto", was never
+            // reported at the same heights, and four versions of the view — the
+            // count as a row instead of a header, an explicit
+            // `.title3.weight(.semibold)`, `.headerProminence(.increased)`, a
+            // hard bottom scroll edge — were each red at 610 and 651 and clean
+            // at 530. The finding follows where the words sit and nothing about
+            // them, the signature `photoCardEmptyStateText` records.
+            //
+            // Nothing is forgiven for it. The pages land the heading at
+            // y 870.67 under the bar, then 443.67 and 16.67, 427 points apart.
+            // **If this goes red on the heading**, read the frame in the
+            // finding before touching the view: a bottom edge below
+            // `tabBar.minY - fadeReach` means something above it has moved a
+            // page into the band, and it is this finding again rather than a
+            // regression.
             if isLargest {
                 require(
                     app.staticTexts[
                         "Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä."
                     ],
                     "the photo's own screen"
+                )
+                try auditPageByPage(
+                    app, "Photo detail, largest text size",
+                    to: app.staticTexts["Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän."],
+                    "the footer under the way to ask the family"
                 )
             } else {
                 require(app.buttons["Kerro tästä muisto"], "the photo's own screen")
