@@ -656,6 +656,19 @@
 "Vanhempasi puoliso" = "Vanhempasi puoliso";
 "Ystäväsi" = "Ystäväsi";
 
+/* Which card is this phone's member, said on the person card (26 Sep 2026)
+   — see en.lproj. */
+"Tämä olen minä" = "Tämä olen minä";
+"Tämä olet sinä" = "Tämä olet sinä";
+"Merkitäänkö tämä sinuksi?" = "Merkitäänkö tämä sinuksi?";
+"Sukupuu kertoo sukulaisuudet sinun kannaltasi. Voit poistaa merkinnän myöhemmin tältä kortilta." = "Sukupuu kertoo sukulaisuudet sinun kannaltasi. Voit poistaa merkinnän myöhemmin tältä kortilta.";
+"Merkitse" = "Merkitse";
+"Poistetaanko merkintä?" = "Poistetaanko merkintä?";
+"Kortti jää perheen arkistoon. Vain merkintä siitä, että tämä olet sinä, poistuu." = "Kortti jää perheen arkistoon. Vain merkintä siitä, että tämä olet sinä, poistuu.";
+"Poista merkintä" = "Poista merkintä";
+"Merkintä lähtee itsestään, kun yhteys palaa." = "Merkintä lähtee itsestään, kun yhteys palaa.";
+"Merkintää ei voitu poistaa. Yritä uudelleen, kun yhteys on." = "Merkintää ei voitu poistaa. Yritä uudelleen, kun yhteys on.";
+
 /* The relationships the rows cannot hold — see en.lproj. */
 "Nämä eivät mahdu kuvaan" = "Nämä eivät mahdu kuvaan";
 "Kuvassa jokainen on yhdessä polvessa, eivätkä nämä siteet mahdu siihen. Ne ovat tallessa kummankin omalla kortilla." = "Kuvassa jokainen on yhdessä polvessa, eivätkä nämä siteet mahdu siihen. Ne ovat tallessa kummankin omalla kortilla.";

@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 93 sweep tests, each auditing one screen at the default text size and again at the largest, out of 265 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 95 sweep tests, each auditing one screen at the default text size and again at the largest, out of 270 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -701,6 +701,37 @@ no invitation.
   `family.ts` that wrote the id directly, eight went red — a join answering
   502, and a member linked to another family's card, which the key alone
   never refused
+- **A member linked to no card can say which card is theirs**, since 26 Sep
+  2026, on the person card: *Tämä olen minä*, a second row in the face's
+  section. Offered only while this phone's member is linked to no card and
+  waiting for none, only on a confirmed person (rule 4: a name heard and
+  never checked is nobody's to be yet), never on a card another member
+  already is, and never on a phone kept to itself, which has no server to
+  tell. It asks first; one's own card answers *Tämä olet sinä* — linked, or
+  waiting for the round that links it — and takes the mark back behind a
+  second question, because nothing else changes the link: `family.ts` keeps
+  a member's card through leaving and joining again, so a link made by a
+  slip stayed for good. The same `PATCH /family/me`, null included, which
+  the app had never sent: a server that cannot be reached, or does not hold
+  the card yet, leaves the card waiting for `SyncEngine.linkOwnCard` exactly
+  as the founder's own does, and the footer says so; taking a mark back
+  without the server changes nothing and says that. Until then the founder
+  and the first minute's invitee were the only members with a card, and a
+  joiner from an invitation made for nobody in particular had no word in the
+  tree and no way to get one (founder's-eye review, gap 8). `OwnCardTests`
+  walks the road and its refusals; `-you none` is the seeded family linked
+  to no card and `-theirs <card id>` puts another member on one. The row
+  sits above the relatives, and the audit's default-size simulation
+  reported *"Lisää sukulainen"* the moment it did — y 630 on the card
+  offered, y 642 on the card waiting, the button's code untouched, the same
+  card without the row clean, the real AccessibilityXXXL launch clean on
+  every run: the §15 signature, sixth appearance.
+  `AccessibilityPolicy.isDefaultSizeSimulationArtefact` forgives
+  `.dynamicType` on `relative.add`, on the first launch only, and
+  `scripts/audit-exemption-check.mjs` pins it with the rest of that set. The
+  identifier sits on the button's label, not the button: the audit reports
+  the label as a static text, and an identifier on the button matched
+  nothing — measured, the finding unchanged, before it was moved
 - The family view shows who has joined **and when**. The date was decoded from
   the server and never drawn until it was looked for: a stranger in the list is
   a question, and a stranger who arrived last Tuesday is an answer about which

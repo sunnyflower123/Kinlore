@@ -1471,6 +1471,36 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The card that offers *Tämä olen minä* (26 Sep 2026): the seeded
+    /// family's phone linked to no card, on Eeva's. The row is a second one
+    /// in the face's section and is there in this state only.
+    func testPersonCardOfferedAsYou() throws {
+        try sweep(
+            "Person card, this is me",
+            arguments: ["-seed", "related", "-tab", "people", "-screen", "person", "-person", "demo-eeva", "-you", "none"]
+        ) { app, _ in
+            require(app.buttons["Tämä olen minä"], "the row that says which card is this phone's")
+        }
+    }
+
+    /// The same card once the row has been answered on a phone that cannot
+    /// reach the server — the seeded family has none — so the row reads
+    /// *Tämä olet sinä* over the sentence that says the mark is waiting.
+    func testPersonCardWaitingToBeYou() throws {
+        try sweep(
+            "Person card, waiting to be you",
+            arguments: ["-seed", "related", "-tab", "people", "-screen", "person", "-person", "demo-eeva", "-you", "none"]
+        ) { app, _ in
+            let offer = app.buttons["Tämä olen minä"]
+            require(offer, "the row that says which card is this phone's")
+            offer.tap()
+            let question = app.alerts["Merkitäänkö tämä sinuksi?"]
+            require(question, "the question the row asks first")
+            question.buttons["Merkitse"].tap()
+            require(app.staticTexts["Merkintä lähtee itsestään, kun yhteys palaa."], "the waiting sentence")
+        }
+    }
+
     /// A card with a friend on it (21 Sep 2026): the friend under a heading of
     /// his own, which is a second section the card did not have. `-seed clan`'s
     /// Jonne is Elina's friend and nobody's kin, so his card is that section

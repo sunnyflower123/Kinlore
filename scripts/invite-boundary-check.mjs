@@ -534,10 +534,17 @@ try {
 			`${arrived.status} ${JSON.stringify(arrived.body)}`,
 		)
 
+		// The app's own road since 26 Sep 2026 — "Tämä olet sinä" taken back
+		// on the person card; until then nothing had called it. The reply
+		// carries the null as a key, the way the request does, and the family
+		// view reads it back as null.
 		const unlinked = await linkMe(ville, null)
 		check(
-			'null unlinks',
-			unlinked.status === 200 && (await familyOf(ville)).you?.personSubjectID === null,
+			'null unlinks, the reply says so, and the family view reads it back',
+			unlinked.status === 200
+				&& 'personSubjectID' in unlinked.body
+				&& unlinked.body.personSubjectID === null
+				&& (await familyOf(ville)).you?.personSubjectID === null,
 			`${unlinked.status} ${JSON.stringify(unlinked.body)}`,
 		)
 	}

@@ -990,6 +990,17 @@ enum AccessibilityPolicy {
     ///     green, on the same simulator minutes apart, at a load under
     ///     fifteen. Scrolled into view at a real AccessibilityXXXL, the same
     ///     row audits clean (`testPhotoDetail`, twice).
+    ///   * The relatives' *"Lisää sukulainen"* button (the same day, from the
+    ///     "Tämä olen minä" row: a second row in the face's section, above
+    ///     it). `testPersonCardOfferedAsYou` and `testPersonCardWaitingToBeYou`
+    ///     reported the button partially unsupported at the default size, at
+    ///     y 630 on the card offered and y 642 on the card waiting — the
+    ///     footer's sentence between them — 338 × 60 pt both, alone twice
+    ///     each with the frames identical, the real AccessibilityXXXL launch
+    ///     clean on every run, and one finding per run, no contrast, hit
+    ///     region or timeout. The same card on the same seed with the row
+    ///     absent — no family, so nothing offered — audited clean at both
+    ///     sizes in the same run, the button's own code untouched.
     ///
     /// Clipping is forgiven for the two texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
@@ -1024,6 +1035,10 @@ enum AccessibilityPolicy {
         // The rename row under a photograph with no file on this phone,
         // "Anna kuvalle nimi" and its two other wordings (26 Sep 2026).
         "subject.rename",
+        // The relatives' "Lisää sukulainen" button, below the "Tämä olen
+        // minä" row (26 Sep 2026). On the button's label: the audit reports
+        // the label, and an identifier on the button matched nothing.
+        "relative.add",
     ]
 
     /// The two that also reported `.textClipped` at the default size, and

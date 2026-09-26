@@ -204,7 +204,11 @@ final class Session {
         default:
             // `-you <card id>` with any store seed: a family whose "you" is
             // linked to that card, as `PATCH /family/me` links it for real,
-            // for the tree's "Sinä" with no server behind it.
+            // for the tree's "Sinä" with no server behind it. `-you none` is
+            // the same family with "you" linked to no card — the member an
+            // invitation made for nobody in particular let in — and
+            // `-theirs <card id>` makes another member that card (26 Sep
+            // 2026, the person card's "Tämä olen minä").
             if UserDefaults.standard.string(forKey: "you") != nil {
                 seedDemoFamily()
                 return
@@ -547,6 +551,34 @@ final class Session {
         return true
     }
 
+    /// "Tämä olen minä" on a person card (26 Sep 2026): the link, or the card
+    /// left waiting for the round that can make it. The server refuses a card
+    /// it does not hold yet, and a phone with no network reaches no server;
+    /// both are answered by `SyncEngine.linkOwnCard` after the next round
+    /// that gets through, exactly as the founder's own card is. Returns
+    /// whether the link was made now rather than left waiting.
+    @discardableResult
+    func linkMeOrLater(personSubjectID: String) async -> Bool {
+        if await linkMe(personSubjectID: personSubjectID) { return true }
+        UserDefaults.standard.set(personSubjectID, forKey: Self.pendingPersonLinkKey)
+        return false
+    }
+
+    /// "Tämä olet sinä" taken back (26 Sep 2026). A card the server holds as
+    /// this member's is unlinked there, with null — the other half of
+    /// `PATCH /family/me`, which the app had never called; a card only
+    /// waiting for the round that would link it is simply no longer waiting,
+    /// and no request is needed. Neither leaves a card waiting, or the next
+    /// round would put the link back. Returns whether the mark is gone: a
+    /// server that could not be reached changes nothing.
+    func unlinkMe() async -> Bool {
+        if family?.you.personSubjectID == nil {
+            UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
+            return true
+        }
+        return await linkMe(personSubjectID: nil)
+    }
+
     // MARK: - Leaving
 
     /// Ends this device's membership. The memories stay with the family — see
@@ -672,7 +704,16 @@ final class Session {
         let now = Date.now.timeIntervalSince1970
         let day: Double = 24 * 60 * 60
         mode = .inFamily(id: "demo-family")
-        let yourCard = UserDefaults.standard.string(forKey: "you")
+        // `none` is a family whose "you" is linked to no card — see `init`.
+        let yourCard = UserDefaults.standard.string(forKey: "you").flatMap { $0 == "none" ? nil : $0 }
+        // `-theirs <card id>`: a card another member already is, which the
+        // person card then does not offer as "Tämä olen minä".
+        let theirCard = UserDefaults.standard.string(forKey: "theirs")
+        // The card a previous launch left waiting for its link is device
+        // state (`pendingPersonLinkKey`), and a seeded launch starts from
+        // none — or the row that offered a card in one test would find it
+        // already waiting in the next.
+        UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
         // A word rather than a name, so it is looked up like the author's is.
         // A member's `displayName` reaches the list through `Text(member
         // .displayName)` and `Text("\(member.displayName) (sinä)")`, neither
@@ -693,7 +734,8 @@ final class Session {
                     id: "demo-aino", displayName: "Aino", role: "member", joinedAt: now - 12 * day, personSubjectID: nil
                 ),
                 Member(
-                    id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day, personSubjectID: nil
+                    id: "demo-ville", displayName: "Ville", role: "member", joinedAt: now - 3 * day,
+                    personSubjectID: theirCard
                 ),
             ],
             // Two open invitations, as the server lists them since a code

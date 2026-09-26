@@ -765,6 +765,21 @@
 "Vanhempasi puoliso" = "Your parent's spouse";
 "Ystäväsi" = "Your friend";
 
+/* Which card is this phone's member, said on the person card (26 Sep 2026):
+   "Tämä olen minä" on a phone linked to no card, "Tämä olet sinä" on one's
+   own — linked, or waiting for the round that links it — each behind a
+   question, because nothing else changes the link. */
+"Tämä olen minä" = "This is me";
+"Tämä olet sinä" = "This is you";
+"Merkitäänkö tämä sinuksi?" = "Mark this person as you?";
+"Sukupuu kertoo sukulaisuudet sinun kannaltasi. Voit poistaa merkinnän myöhemmin tältä kortilta." = "The family tree names relatives from your point of view. You can remove the mark later from this card.";
+"Merkitse" = "Mark";
+"Poistetaanko merkintä?" = "Remove the mark?";
+"Kortti jää perheen arkistoon. Vain merkintä siitä, että tämä olet sinä, poistuu." = "The card stays in the family's archive. Only the mark that this is you is removed.";
+"Poista merkintä" = "Remove the mark";
+"Merkintä lähtee itsestään, kun yhteys palaa." = "The mark will be made by itself when the connection is back.";
+"Merkintää ei voitu poistaa. Yritä uudelleen, kun yhteys on." = "The mark could not be removed. Try again when there is a connection.";
+
 /* What the archive holds and the drawing cannot say, 19 Sep 2026. A person is
    of one generation in a picture, so a marriage across two of them, or a pair
    each entered as the other's parent, loses its line — and until now lost it

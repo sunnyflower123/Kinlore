@@ -33,6 +33,11 @@ struct RelationsSection: View {
                 isChoosingKind = true
             } label: {
                 Label("Lisää sukulainen", systemImage: "person.badge.plus")
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (26 Sep 2026). On the label rather
+                    // than the button: the audit reports the label.
+                    .accessibilityIdentifier("relative.add")
                     .font(.body.weight(.medium))
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)

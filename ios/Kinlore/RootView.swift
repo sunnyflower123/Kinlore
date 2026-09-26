@@ -702,6 +702,13 @@ struct SubjectDetailScreen: View {
     /// The picker for the face on a person's card (§25).
     @State private var isChoosingFace = false
     @State private var isConfirmingRemoval = false
+    /// "Tämä olen minä" and its undoing (26 Sep 2026): the two questions, the
+    /// request in flight, and the sentence under the row when the server
+    /// could not be reached.
+    @State private var isConfirmingMe = false
+    @State private var isConfirmingNotMe = false
+    @State private var isLinkingMe = false
+    @State private var linkNote: LocalizedStringKey?
 
     /// The subject as the store has it now, rather than as it was when this
     /// screen was pushed. A name corrected here has to be visible here, and the
@@ -766,6 +773,69 @@ struct SubjectDetailScreen: View {
             && store.memories(for: subject.id).contains {
                 !$0.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             }
+    }
+
+    /// Whether this card is the one this phone's member is in the tree, as
+    /// the family's server has it (`Session.Family.You.personSubjectID`).
+    private var isMeOnServer: Bool {
+        session.family?.you.personSubjectID == subject.id
+    }
+
+    /// Whether this card is waiting for the round that links it: the
+    /// founder's own before the first sync, the card an invitation named
+    /// before the inviter's phone had synced it, or the one "Tämä olen minä"
+    /// chose while the server could not be reached (`SyncEngine.linkOwnCard`).
+    /// A waiting card counts as one's own: offering the others meanwhile
+    /// would let a tap overtake the link that is on its way. Only inside a
+    /// family, like the offer: leaving one clears the key, and a phone kept
+    /// to itself has no round on its way.
+    private var isMeWaiting: Bool {
+        guard let family = session.family, family.you.personSubjectID == nil else { return false }
+        return session.pendingPersonLink == subject.id
+    }
+
+    private var isMe: Bool { isMeOnServer || isMeWaiting }
+
+    /// Whether "Tämä olen minä" is offered here, since 26 Sep 2026: a family
+    /// with a server behind it — a phone kept to itself has nobody to tell,
+    /// and `Session.linkMe` there is always false — this member linked to no
+    /// card and waiting for none, a confirmed person (rule 4: a name the
+    /// recognition heard and nobody checked is nobody's to be yet), and a
+    /// card no other member already is. The founder's card is made and
+    /// linked as the family is created and a joiner's by the invitation made
+    /// for her; an invitation made for nobody in particular left its joiner
+    /// with no word in the tree and no way to get one.
+    private var canBeMe: Bool {
+        guard let family = session.family, family.you.personSubjectID == nil,
+              session.pendingPersonLink == nil,
+              current.kind == .person, current.confirmed
+        else { return false }
+        return !family.members.contains { $0.id != family.you.id && $0.personSubjectID == subject.id }
+    }
+
+    /// "Merkitse" on the question: the link, made now or left waiting for
+    /// the round that can make it — the row and its footer say which.
+    private func markMe() {
+        isLinkingMe = true
+        linkNote = nil
+        Task {
+            await session.linkMeOrLater(personSubjectID: subject.id)
+            isLinkingMe = false
+        }
+    }
+
+    /// "Poista merkintä" on the question: the link undone on the server, or
+    /// the waiting card no longer waiting. Nothing changes on a phone that
+    /// could not reach the server, and the footer says so.
+    private func unmarkMe() {
+        isLinkingMe = true
+        linkNote = nil
+        Task {
+            if !(await session.unlinkMe()) {
+                linkNote = "Merkintää ei voitu poistaa. Yritä uudelleen, kun yhteys on."
+            }
+            isLinkingMe = false
+        }
     }
 
     /// The words of the deletion, by what is being deleted. Three literal
@@ -973,6 +1043,50 @@ struct SubjectDetailScreen: View {
                         .foregroundStyle(Elder.supporting)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .elderTapTarget()
+                    }
+
+                    // Which card this phone's member is (26 Sep 2026): "Tämä
+                    // olen minä" on a phone that is nobody yet, "Tämä olet
+                    // sinä" on one's own card — linked, or waiting for the
+                    // round that links it — and nothing on anybody else's.
+                    // Both ask first, because nothing else changes the link:
+                    // `family.ts` keeps a member's card through leaving and
+                    // joining again, so a link made by a slip stayed for
+                    // good. `canBeMe` says where the offer is made.
+                    if isMe || canBeMe {
+                        Button {
+                            if isMe { isConfirmingNotMe = true } else { isConfirmingMe = true }
+                        } label: {
+                            HStack(spacing: 14) {
+                                Image(systemName: isMe ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
+                                    .font(.title2)
+                                    .accessibilityHidden(true)
+                                if isMe {
+                                    Text("Tämä olet sinä")
+                                        .font(.body)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                } else {
+                                    Text("Tämä olen minä")
+                                        .font(.body)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                            .foregroundStyle(Elder.supporting)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .elderTapTarget()
+                        }
+                        .disabled(isLinkingMe)
+                    }
+                } footer: {
+                    // The mark that could not be unmade now, in words — and
+                    // while a card waits for the round that links it, that it
+                    // is waiting rather than done.
+                    if let linkNote {
+                        Text(linkNote)
+                            .foregroundStyle(Elder.supporting)
+                    } else if isMeWaiting {
+                        Text("Merkintä lähtee itsestään, kun yhteys palaa.")
+                            .foregroundStyle(Elder.supporting)
                     }
                 }
             }
@@ -1224,6 +1338,18 @@ struct SubjectDetailScreen: View {
             Button("Peruuta", role: .cancel) {}
         } message: {
             Text(removalMessage)
+        }
+        .alert("Merkitäänkö tämä sinuksi?", isPresented: $isConfirmingMe) {
+            Button("Merkitse") { markMe() }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Sukupuu kertoo sukulaisuudet sinun kannaltasi. Voit poistaa merkinnän myöhemmin tältä kortilta.")
+        }
+        .alert("Poistetaanko merkintä?", isPresented: $isConfirmingNotMe) {
+            Button("Poista merkintä", role: .destructive) { unmarkMe() }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Kortti jää perheen arkistoon. Vain merkintä siitä, että tämä olet sinä, poistuu.")
         }
         .toolbar {
             if nameCameFromSpeech {
