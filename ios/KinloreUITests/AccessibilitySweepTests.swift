@@ -122,7 +122,12 @@ import XCTest
 /// seconds, so not the glass timeout above), `testMemoriesNewFromFamily`
 /// (27 s, 22 s) and `testMemoriesWithContent` (26 s, 21 s) — green both
 /// times with three to five other sessions' devices booted throughout, and
-/// nothing was changed for them. The other two, `testPersonCardWithoutAStory`
+/// nothing was changed for them. `testSettingsInFamily` took the same shape
+/// in the full run after the fix: red at `scrollToTop`'s tenth flick ("never
+/// reached the top of the list", 95 s, load 25 to 110), then alone green
+/// three times out of four (214 s, 209 s, 158 s), the one red at load 60
+/// while another session's device was booting. Nothing was changed for it
+/// either. The other two, `testPersonCardWithoutAStory`
 /// and `testPersonCardWithAFriend`, reproduced alone with frames identical
 /// to the decimal, and were the audit's default-size simulation rather than
 /// the screen: the measurement is beside
