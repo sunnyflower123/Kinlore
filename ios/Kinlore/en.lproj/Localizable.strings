@@ -512,6 +512,7 @@
 "%lld / %lld" = "%lld / %lld";
 "lähetetään…" = "sending…";
 "lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta" = "sending failed — the server did not recognise this device";
+"lähetys ei onnistu — tästä laitteesta puuttuu perheen avain" = "sending failed — this device is missing the family's key";
 "1 odottaa verkkoa" = "1 waiting for a connection";
 "%lld odottaa verkkoa" = "%lld waiting for a connection";
 "kaikki lähetetty" = "everything sent";
@@ -547,8 +548,10 @@
 "%lld / %lld, jatkuu kun yhteys palaa" = "%lld / %lld, continues when the connection returns";
 "Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa." = "The photographs and voices are fetched to every phone in the family over Wi-Fi, so the archive survives even if the server one day goes dark. The family screen's row ”Copy on this phone” says whether everything is on this phone already.";
 "Perheen palvelin ei enää tunnista tätä puhelinta. Uudet muistot eivät saavu, eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa." = "The family's server no longer recognises this phone. New memories do not arrive, and your own do not leave. Ask the family for a new invitation and join with it again: nothing on this phone is lost.";
+"Tästä puhelimesta puuttuu perheen avain, joten uudet muistot eivät saavu eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa." = "This phone is missing the family's key, so new memories do not arrive and your own do not leave. Ask the family for a new invitation and join with it again: nothing on this phone is lost.";
 "Liity uudella kutsulla" = "Join with a new invitation";
 "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua." = "The server no longer recognises this phone. When you join with a new invitation, the memories on the phone stay and the family's new ones start arriving again.";
+"Tästä puhelimesta puuttuu perheen avain. Kun liityt uudella kutsulla, avain tulee kutsun mukana, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua." = "This phone is missing the family's key. When you join with a new invitation, the key comes with it, the memories on the phone stay and the family's new ones start arriving again.";
 "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä." = "This invitation is to another family. The memories on this phone belong to their own family.";
 "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla." = "The server no longer recognises this phone, so the family cannot be left: the memories are removed from this device only. The family's memories stay with the others.";
 "Nauhoitusta ei saatu talteen" = "The recording could not be kept";

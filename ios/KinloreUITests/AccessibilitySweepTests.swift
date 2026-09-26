@@ -766,6 +766,25 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same note for a phone that has lost the family's key, which syncs
+    /// nothing until an invitation brings it back. Held still by
+    /// `-sync keyless`. Its own words, so its own sweep: the sentence is not
+    /// the refused one, and neither is its symbol.
+    func testMemoriesKeyMissing() throws {
+        try sweep(
+            "Muistot, perheen avain puuttuu",
+            arguments: ["-seed", "archive", "-tab", "memories", "-sync", "keyless"]
+        ) { app, _ in
+            require(
+                app.staticTexts.matching(
+                    NSPredicate(format: "label BEGINSWITH %@", "Tästä puhelimesta puuttuu perheen avain")
+                ).firstMatch,
+                "the note that says the key is missing"
+            )
+            require(app.buttons["Liity uudella kutsulla"], "the way back for a phone without the key")
+        }
+    }
+
     /// The joiner's first pull, failed: the state between arriving and empty.
     /// Real failure, not a held one — see `SilentFailureTests`.
     func testMemoriesNotArrived() throws {

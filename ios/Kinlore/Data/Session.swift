@@ -256,6 +256,8 @@ final class Session {
     ///
     /// A code with no key still joins. That is a family from before lever 3,
     /// and refusing it would be refusing the archives this was built to protect.
+    /// Since 26 Sep 2026 such a phone syncs nothing until an invitation brings
+    /// the key (`SyncEngine.State.keyMissing`, `rejoin`).
     func join(code: String, displayName: String) async {
         let parts = Self.split(shared: code)
         await perform { client in
@@ -287,11 +289,17 @@ final class Session {
     /// request; an invitation with no key (a family from before lever 3) is
     /// checked against the family id the server answers with, and a join that
     /// turns out to be elsewhere is left again at once.
+    ///
+    /// And the way back for a phone that has lost the key
+    /// (`SyncEngine.State.keyMissing`): the invitation's key is taken, but only
+    /// after that same answer has placed the code in this family. With no key
+    /// of its own to compare, nothing earlier can tell (`FamilyKey.onRejoin`).
     func rejoin(code: String, displayName: String) async -> Bool {
         guard case .inFamily(let currentID) = mode else { return false }
         let parts = Self.split(shared: code)
         let elsewhere = String(localized: "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä.")
-        if let key = parts.key, let current = FamilyKey.shareable(), key != current {
+        let onKey = FamilyKey.onRejoin(invited: parts.key, held: FamilyKey.shareable())
+        if onKey == .elsewhere {
             lastError = elsewhere
             return false
         }
@@ -302,6 +310,7 @@ final class Session {
                 try? await client.leave()
                 throw FamilyError.message(elsewhere)
             }
+            if case .adopt(let shared) = onKey { FamilyKey.adopt(shared) }
             // The card the invitation named, as in `join`.
             if let card = result.personSubjectID {
                 UserDefaults.standard.set(card, forKey: Self.pendingPersonLinkKey)

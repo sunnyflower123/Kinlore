@@ -490,7 +490,8 @@ private struct JoinFamilyForm: View {
     @Environment(SyncEngine.self) private var sync: SyncEngine?
     @Binding var name: String
     @Binding var code: String
-    /// Joining the same family again from a device the server has forgotten.
+    /// Joining the same family again from a device the server has forgotten,
+    /// or one that has lost the family's key.
     var rejoining = false
 
     @AppStorage(Elder.largerTextKey) private var largerText = false
@@ -545,7 +546,9 @@ private struct JoinFamilyForm: View {
                 // Why this form is here at all, in the words of the note that
                 // opened it — and what it does not cost.
                 Section {
-                    Text("Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua.")
+                    Text(sync?.rejoinReason == .keyMissing
+                        ? "Tästä puhelimesta puuttuu perheen avain. Kun liityt uudella kutsulla, avain tulee kutsun mukana, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua."
+                        : "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua.")
                         .elderBody()
                         .foregroundStyle(Elder.supporting)
                 }

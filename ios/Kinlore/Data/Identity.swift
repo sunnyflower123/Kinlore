@@ -140,6 +140,34 @@ enum FamilyKey {
     static func forget() {
         Keychain.delete(Keychain.familyKeyKey)
     }
+
+    /// What `Session.rejoin` does with the key an invitation carries, given the
+    /// one this phone holds (`shareable()`, or nil).
+    enum OnRejoin: Equatable {
+        /// Another family's key. Refused before any request: this phone's rows
+        /// would otherwise be pushed into that family.
+        case elsewhere
+        /// This phone has lost its family's key, and the invitation carries
+        /// one. Taken, but only after the server has placed the invitation's
+        /// code in this phone's own family. With no key to compare against,
+        /// that answer is the only thing that tells another family's key from
+        /// this one's.
+        case adopt(String)
+        /// Nothing to change.
+        case keep
+    }
+
+    /// Until 26 Sep 2026 a rejoin compared keys and never took one, so a phone
+    /// that had lost its key stayed without it. The likely way to lose it is
+    /// emptying another phone on the same Apple ID, which deletes the shared
+    /// Keychain entry on both (`Session.renewIdentity`). Such a phone pushed in
+    /// the clear from then on (`SyncSeal`). A new invitation is how the key
+    /// travels to everybody else, so it is how it comes back.
+    static func onRejoin(invited: String?, held: String?) -> OnRejoin {
+        guard let invited else { return .keep }
+        guard let held else { return .adopt(invited) }
+        return invited == held ? .keep : .elsewhere
+    }
 }
 
 /// A thin Keychain wrapper. The entries are synchronizable so that the identity

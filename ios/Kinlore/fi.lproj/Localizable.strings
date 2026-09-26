@@ -439,6 +439,7 @@
 "%lld / %lld" = "%lld / %lld";
 "lähetetään…" = "lähetetään…";
 "lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta" = "lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta";
+"lähetys ei onnistu — tästä laitteesta puuttuu perheen avain" = "lähetys ei onnistu — tästä laitteesta puuttuu perheen avain";
 "1 odottaa verkkoa" = "1 odottaa verkkoa";
 "%lld odottaa verkkoa" = "%lld odottaa verkkoa";
 "kaikki lähetetty" = "kaikki lähetetty";
@@ -474,8 +475,10 @@
 "%lld / %lld, jatkuu kun yhteys palaa" = "%lld / %lld, jatkuu kun yhteys palaa";
 "Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa." = "Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa.";
 "Perheen palvelin ei enää tunnista tätä puhelinta. Uudet muistot eivät saavu, eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa." = "Perheen palvelin ei enää tunnista tätä puhelinta. Uudet muistot eivät saavu, eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa.";
+"Tästä puhelimesta puuttuu perheen avain, joten uudet muistot eivät saavu eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa." = "Tästä puhelimesta puuttuu perheen avain, joten uudet muistot eivät saavu eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa.";
 "Liity uudella kutsulla" = "Liity uudella kutsulla";
 "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua." = "Palvelin ei enää tunnista tätä puhelinta. Kun liityt uudella kutsulla, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua.";
+"Tästä puhelimesta puuttuu perheen avain. Kun liityt uudella kutsulla, avain tulee kutsun mukana, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua." = "Tästä puhelimesta puuttuu perheen avain. Kun liityt uudella kutsulla, avain tulee kutsun mukana, puhelimen muistot pysyvät ja perheen uudet muistot alkavat taas saapua.";
 "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä." = "Tämä kutsu on toiseen perheeseen. Tämän puhelimen muistot kuuluvat omaan perheeseensä.";
 "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla." = "Palvelin ei enää tunnista tätä puhelinta, joten perheestä ei voi poistua: muistot poistetaan vain tästä laitteesta. Perheen muistot säilyvät muilla.";
 "Nauhoitusta ei saatu talteen" = "Nauhoitusta ei saatu talteen";

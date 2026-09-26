@@ -311,6 +311,37 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The same way back for a phone that has lost the family's key, which
+    /// syncs nothing until an invitation brings the key (`SyncSeal`). The form
+    /// must say that, and not the refused sentence: the reason is kept from
+    /// the tap (`SyncEngine.rejoinReason`), because a round passing through
+    /// `.syncing` would otherwise swap it. `-sync keyless` holds the state.
+    func testAPhoneWithoutTheKeyIsOfferedAWayBack() {
+        let app = launch(["-seed", "family", "-tab", "memories", "-sync", "keyless"])
+        let back = app.buttons["Liity uudella kutsulla"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10), "a phone without the key was met with silence on Muistot")
+        back.tap()
+        let why = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "Tästä puhelimesta puuttuu perheen avain. Kun liityt")
+        ).firstMatch
+        XCTAssertTrue(why.waitForExistence(timeout: 10), "the join form did not say that the key is missing")
+        XCTAssertFalse(
+            app.staticTexts.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Palvelin ei enää tunnista tätä puhelinta.")
+            ).firstMatch.exists,
+            "a phone without the key was told the server had forgotten it"
+        )
+        app.terminate()
+
+        let linked = launch(["-seed", "family", "-tab", "memories", "-sync", "keyless", "-invite", "demo-code"])
+        let field = linked.textFields["Kutsukoodi"]
+        XCTAssertTrue(
+            field.waitForExistence(timeout: 10),
+            "a link on a phone without the key was answered with the wrong-time alert"
+        )
+        XCTAssertEqual(field.value as? String, "demo-code", "the code did not travel into the form")
+    }
+
     /// The joiner whose first pull failed. The state after a failed round is
     /// `waitingForNetwork`, not `syncing`, so Muistot fell through to the empty
     /// archive's invitation and asked her to photograph an album — a second

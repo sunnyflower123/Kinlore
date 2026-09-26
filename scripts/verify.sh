@@ -242,6 +242,18 @@ family_crypto() {
 		&& "$OUT/family-crypto-check"
 }
 
+# And that the seal is applied. A phone that had lost the family key pushed
+# and uploaded in the clear until 26 Sep 2026, and emptying another phone on
+# the same Apple ID is one way to lose it. That looks exactly like a round
+# that worked, and the words are then on the server for good.
+keyless_sync() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/keyless-sync-check" scripts/keyless-sync-check.swift \
+		ios/Kinlore/Data/Identity.swift ios/Kinlore/Services/FamilyCrypto.swift \
+		ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/keyless-sync-check"
+}
+
 # Rule 5 turned into a picture. A pin asserts a point, and a municipality is
 # not one — so what may be drawn is arithmetic over `GeoPrecision`, and it is
 # wrong in the one way a screenshot cannot show: a pin on the wrong doorstep
@@ -291,6 +303,7 @@ run "a confirmed colouring survives an older phone" colour_sync
 run "a pull from zero changes nothing here" sync_fields
 run "a merged card's tellings reach its survivor" merge_chain
 run "a wrong key opens nothing, a title seals stably" family_crypto
+run "a phone with no key sends the family nothing" keyless_sync
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over
 # the shipping schema in in-memory SQLite. The rule is RevenueCat's and it was

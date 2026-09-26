@@ -223,6 +223,56 @@ extension SyncPullReply {
     }
 }
 
+/// The key one sync round works under, and without it no round at all.
+///
+/// `SyncEngine` gets everything it sends and everything it takes in through
+/// this, and the only way to make one is to hold the family's key. So a phone
+/// without the key has nothing to push with, nothing to upload with and nothing
+/// to open a pull with. The engine holds the round and says why
+/// (`SyncEngine.State.keyMissing`).
+///
+/// **Until 26 Sep 2026 a missing key meant no sealing rather than no syncing**
+/// (0efbc6a). That kept a family from before lever 3 working, and no such
+/// family ever reached the server the app talks to: lever 3 landed eight days
+/// before the Worker first deployed. The fallback protected nobody, and it had
+/// a road to it. With one Apple ID on two phones the key is one synchronizable
+/// Keychain entry, and emptying either phone deletes it on both. The other
+/// phone then pushed its rows and uploaded its recordings as they were, into
+/// D1 and R2 for good. `scripts/keyless-sync-check.swift` drives that road.
+///
+/// **Holding loses nothing.** The outbox is cleared only by a push that
+/// happened, and the cursor moves only through a pull that was applied, so
+/// everything waiting goes up sealed once a new invitation brings the key
+/// back (`Session.rejoin`). A pull is not taken in unopened either: its rows
+/// would be stored as sealed strings and stay that way after the key
+/// returned, because the cursor would already have moved past them.
+struct SyncSeal {
+    let key: SymmetricKey
+
+    init?(key: SymmetricKey?) {
+        guard let key else { return nil }
+        self.key = key
+    }
+
+    /// What crosses to the Worker.
+    func push(_ payload: SyncPayload) -> SyncPayload {
+        payload.sealed(with: key)
+    }
+
+    /// A photograph, a colouring or a voice, sealed before it is uploaded. A
+    /// seal that fails still sends the bytes as they are, for the reason
+    /// `sealed(with:)` gives about a row. Under a key of the right length
+    /// AES-GCM does not fail, and `FamilyKey.current()` hands out no other kind.
+    func upload(_ bytes: Data) -> Data {
+        FamilyCrypto.seal(bytes, with: key) ?? bytes
+    }
+
+    /// What comes back, opened.
+    func pull(_ reply: SyncPullReply) -> SyncPullReply {
+        reply.opened(with: key)
+    }
+}
+
 // MARK: - Conversions
 
 extension Subject {

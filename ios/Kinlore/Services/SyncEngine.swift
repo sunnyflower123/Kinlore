@@ -1,4 +1,3 @@
-import CryptoKit
 import Foundation
 import Network
 
@@ -23,6 +22,14 @@ final class SyncEngine {
         /// the network case because the network's promise — it fixes itself —
         /// is exactly the sentence that must not be said here.
         case refused
+        /// This phone has no family key. The likely cause is the same
+        /// Keychain: emptying another phone on the same Apple ID deletes the key
+        /// on both (`Session.renewIdentity`). No round runs without it, because
+        /// a push without the key would put the family's words on the server in
+        /// the clear (`SyncSeal`). Nothing is lost. The way back is the one
+        /// `.refused` has, a new invitation, and `Session.rejoin` takes the key
+        /// out of it.
+        case keyMissing
     }
 
     private(set) var state: State = .idle
@@ -37,9 +44,15 @@ final class SyncEngine {
     /// finding #57).
     var isRejoining = false
     var rejoinCode: String?
+    /// Which state asked, kept from the moment it asked: `.keyMissing` has the
+    /// same way back since 26 Sep 2026. The form says why it is open, and a
+    /// round started meanwhile passes through `.syncing`, which would change
+    /// that sentence mid-read.
+    private(set) var rejoinReason: State = .refused
 
     func askToRejoin(code: String? = nil) {
         rejoinCode = code
+        rejoinReason = state
         isRejoining = true
     }
 
@@ -108,6 +121,11 @@ final class SyncEngine {
         }
         if UserDefaults.standard.string(forKey: "sync") == "refused" {
             state = .refused
+            isHeld = true
+        }
+        // `-sync keyless` does the same for a phone without the family key.
+        if UserDefaults.standard.string(forKey: "sync") == "keyless" {
+            state = .keyMissing
             isHeld = true
         }
         #endif
@@ -193,11 +211,23 @@ final class SyncEngine {
         let client = SyncClient(baseURL: base, token: session.identity.token)
 
         do {
+            // No key, no round: nothing is pushed, uploaded or taken in without
+            // it (`SyncSeal`). One pull is still asked for and thrown away. It
+            // carries no words out, and it is how a phone the server has
+            // forgotten learns that, which is what "Tyhjennä tämä laite" needs
+            // to know before it tries to leave (`SettingsScreen.wipe`). Both
+            // states show the same way back.
+            guard let seal = SyncSeal(key: FamilyKey.current()) else {
+                _ = try await client.pull(since: store.syncSeq)
+                state = .keyMissing
+                return
+            }
+
             // 0. Upload media BEFORE pushing, so the rows travel with their
             //    keys. Otherwise the other device would see the memory but not
             //    the photo it belongs to, and the fix would only arrive on the
             //    next round.
-            await uploadPendingMedia(base: base)
+            await uploadPendingMedia(base: base, seal: seal)
 
             // 1. Push our own work, sealed. PLAN.md §10 lever 3.
             //
@@ -227,7 +257,7 @@ final class SyncEngine {
             while pushes < 40 {
                 let payload = store.pendingPayload()
                 if payload.isEmpty { break }
-                _ = try await client.push(sealing(payload))
+                _ = try await client.push(seal.push(payload))
                 store.clearPending(payload)
                 pushes += 1
                 // The cursor does not move here. The push reply's number is
@@ -246,7 +276,7 @@ final class SyncEngine {
             var rounds = 0
             while rounds < 20 {
                 let reply = try await client.pull(since: store.syncSeq)
-                store.applyRemote(opening(reply))
+                store.applyRemote(seal.pull(reply))
                 rounds += 1
                 if !reply.more { break }
             }
@@ -295,24 +325,17 @@ final class SyncEngine {
 
     // MARK: - Encryption at rest
 
-    /// PLAN.md §10 lever 3. Without a key nothing is sealed and the payload
-    /// travels as it always did.
-    ///
-    /// That fallback is the honest one rather than the safe-looking one. The
-    /// alternative — refusing to sync without a key — turns a missing Keychain
-    /// entry into an archive that silently stops leaving the phone, which is
-    /// the failure this app is least able to notice. A family created before
-    /// lever 3 has no key and keeps working; one created after always has one,
-    /// because `createFamily` makes it before the first row can exist.
-    private func sealing(_ payload: SyncPayload) -> SyncPayload {
-        guard let key = FamilyKey.current() else { return payload }
-        return payload.sealed(with: key)
-    }
-
-    private func opening(_ reply: SyncPullReply) -> SyncPullReply {
-        guard let key = FamilyKey.current() else { return reply }
-        return reply.opened(with: key)
-    }
+    // PLAN.md §10 lever 3 is applied through `SyncSeal`, which the round gets
+    // before it does anything and which only a key can make.
+    //
+    // Until 26 Sep 2026 a missing key meant no sealing rather than no syncing.
+    // The argument was that refusing to sync would turn a missing Keychain
+    // entry into an archive that silently stops leaving the phone. The answer
+    // is to say so rather than to push in the clear: the round is held as
+    // `.keyMissing`, which Albumi and the Perhe screen both say, and the way
+    // back is a new invitation. The families the fallback kept working, from
+    // before lever 3, never reached the server. The phone it did reach was the
+    // other one on an Apple ID whose first phone had just been emptied.
 
     /// Uploads pending photos and audio. One failed file does not block the
     /// others: a photo may be broken, but the memory still has to get through.
@@ -322,9 +345,8 @@ final class SyncEngine {
     /// a breach hands out and the thing the family came for are the same file.
     /// Sealing is not re-encoding: what is uploaded is the recorded bytes
     /// inside an envelope, and `MediaLoader` takes them back out.
-    private func uploadPendingMedia(base: URL) async {
+    private func uploadPendingMedia(base: URL, seal: SyncSeal) async {
         let media = MediaClient(baseURL: base, token: session.identity.token)
-        let familyKey = FamilyKey.current()
 
         var refused = 0
         for subject in store.subjectsAwaitingUpload() {
@@ -332,7 +354,7 @@ final class SyncEngine {
                   let data = try? Data(contentsOf: MediaStore.url(for: filename))
             else { continue }
             do {
-                let key = try await media.upload(data: seal(data, familyKey), kind: .photo)
+                let key = try await media.upload(data: seal.upload(data), kind: .photo)
                 store.setR2Key(subjectID: subject.id, key: key)
             } catch RemoteError.quotaExceeded {
                 // The ceiling, not the network. Counted so the gallery can say
@@ -352,7 +374,7 @@ final class SyncEngine {
             guard let filename = subject.colourImageFilename,
                   let data = try? Data(contentsOf: MediaStore.url(for: filename))
             else { continue }
-            if let key = try? await media.upload(data: seal(data, familyKey), kind: .colour) {
+            if let key = try? await media.upload(data: seal.upload(data), kind: .colour) {
                 store.setColourR2Key(subjectID: subject.id, key: key)
             }
         }
@@ -361,19 +383,10 @@ final class SyncEngine {
             guard let filename = memory.audioFilename,
                   let data = try? Data(contentsOf: MediaStore.url(for: filename))
             else { continue }
-            if let key = try? await media.upload(data: seal(data, familyKey), kind: .audio) {
+            if let key = try? await media.upload(data: seal.upload(data), kind: .audio) {
                 store.setAudioR2Key(memoryID: memory.id, key: key)
             }
         }
-    }
-
-    /// Sealing that cannot lose the file. If the seal fails there is nothing
-    /// useful to do with a photograph except send it as it is — the row is
-    /// already queued, and dropping it would leave a memory pointing at a
-    /// recording that never arrives.
-    private func seal(_ data: Data, _ key: SymmetricKey?) -> Data {
-        guard let key else { return data }
-        return FamilyCrypto.seal(data, with: key) ?? data
     }
 }
 

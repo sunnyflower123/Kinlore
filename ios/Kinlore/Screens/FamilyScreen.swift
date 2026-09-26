@@ -308,6 +308,10 @@ struct FamilyScreen: View {
         if sync?.state == .refused {
             return Text("lähetys ei onnistu — palvelin ei tunnistanut tätä laitetta")
         }
+        // The other: no round runs without the family's key (`SyncSeal`).
+        if sync?.state == .keyMissing {
+            return Text("lähetys ei onnistu — tästä laitteesta puuttuu perheen avain")
+        }
         if waiting > 0 {
             return waiting == 1 ? Text("1 odottaa verkkoa") : Text("\(waiting) odottaa verkkoa")
         }

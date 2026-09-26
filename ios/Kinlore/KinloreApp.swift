@@ -282,8 +282,9 @@ struct KinloreApp: App {
         case .inFamily:
             // A device the server has stopped knowing is the one case where a
             // link into "its own" family is the right thing: the grandchild
-            // sent a fresh invitation, and this is it.
-            if sync?.state == .refused {
+            // sent a fresh invitation, and this is it. So is a device that has
+            // lost the family's key, which the invitation carries.
+            if sync?.state == .refused || sync?.state == .keyMissing {
                 sync?.askToRejoin(code: inviteCode)
             } else {
                 linkNotice = .deviceInFamily

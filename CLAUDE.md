@@ -297,7 +297,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 88 accessibility sweeps that already run here, each
+contrast rows, against the 89 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false
@@ -872,6 +872,20 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/family-crypto-check.swift ios/Kinlore/Services/FamilyCrypto.swift \
   ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Model/Models.swift \
   && /tmp/family-crypto-check
+
+# And that the seal is applied. Until 26 Sep 2026 a phone that had lost the
+# family key pushed and uploaded in the clear, and emptying another phone on
+# the same Apple ID deletes the shared Keychain entry on both. Drives that road
+# through `SyncSeal` and `FamilyKey.onRejoin`, then reads SyncEngine.swift and
+# Session.swift for any other road. Costs nothing. Run it after touching
+# SyncEngine.swift, `Session.rejoin`, FamilyKey or the sealing in
+# MemoryStore+Sync.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/keyless-sync-check \
+  scripts/keyless-sync-check.swift ios/Kinlore/Data/Identity.swift \
+  ios/Kinlore/Services/FamilyCrypto.swift ios/Kinlore/Data/MemoryStore+Sync.swift \
+  ios/Kinlore/Model/Models.swift \
+  && /tmp/keyless-sync-check
 
 # The same sealing, end to end: two identities through a real Worker, the key
 # crossing only in the invite text, D1 rows and R2 bytes checked sealed and

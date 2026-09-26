@@ -886,8 +886,9 @@ private struct SyncNote: View {
         // A refused identity does not get the network's promise: "lähtee
         // itsestään kun verkko palaa" was said for a 401 too, indefinitely,
         // while no push could ever succeed. The full account is on the Perhe
-        // screen; this line stays true and points there.
-        if state == .refused {
+        // screen; this line stays true and points there. A phone without the
+        // family's key sends nothing either, and is told the same.
+        if state == .refused || state == .keyMissing {
             return waiting == 1
                 ? String(localized: "Yksi muisto on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.")
                 : String(localized: "\(waiting) muistoa on vielä vain tässä puhelimessa. Lähetys ei nyt onnistu — katso Perhe-näkymä.")
@@ -912,15 +913,21 @@ private struct SyncNote: View {
 /// phone (`Session.rejoin`). Until 5 Sep 2026 the only mention was a row on
 /// the Perhe screen with no action, four taps away, and the documented way
 /// back ran through "Poistu perheestä", which the same server refuses.
+///
+/// A phone that has lost the family's key gets the same note in its own words
+/// (`SyncEngine.State.keyMissing`): the same cost, and the same way back,
+/// because the invitation carries the key.
 private struct RefusedNote: View {
     @Environment(SyncEngine.self) private var sync: SyncEngine?
 
     var body: some View {
-        if let sync, sync.state == .refused {
+        if let sync, sync.state == .refused || sync.state == .keyMissing {
             VStack(alignment: .leading, spacing: 12) {
                 Label(
-                    "Perheen palvelin ei enää tunnista tätä puhelinta. Uudet muistot eivät saavu, eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa.",
-                    systemImage: "iphone.slash"
+                    sync.state == .keyMissing
+                        ? "Tästä puhelimesta puuttuu perheen avain, joten uudet muistot eivät saavu eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa."
+                        : "Perheen palvelin ei enää tunnista tätä puhelinta. Uudet muistot eivät saavu, eivätkä omat lähde. Pyydä perheeltä uusi kutsu ja liity sillä uudelleen: mikään tässä puhelimessa ei katoa.",
+                    systemImage: sync.state == .keyMissing ? "key.slash" : "iphone.slash"
                 )
                 .elderBody()
                 .foregroundStyle(Elder.supporting)

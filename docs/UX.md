@@ -221,7 +221,9 @@ being mounted. Three cases:
   (`SyncEngine.State.refused`, since 5 Sep 2026) — the join form as a sheet over
   the archive, code pre-filled, joining the same family again without touching
   anything on the phone (`Session.rejoin`, ARCHITECTURE §20). The alert above
-  would send her to *"Poistu perheestä"*, which the same server refuses.
+  would send her to *"Poistu perheestä"*, which the same server refuses. A
+  phone that has lost the family's key (`.keyMissing`, since 26 Sep 2026) gets
+  the same form, and the invitation brings the key back.
 - **`.local`** — the same shape: *"Tällä laitteella on jo oma arkisto."* /
   *"Sait kutsun perheeseen. Tämän puhelimen arkisto on erillinen — voit
   tyhjentää laitteen Asetuksista ja liittyä sitten kutsulla."* / **"Selvä"**.

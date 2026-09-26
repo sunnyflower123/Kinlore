@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 88 sweep tests, each auditing one screen at the default text size and again at the largest, out of 255 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 89 sweep tests, each auditing one screen at the default text size and again at the largest, out of 257 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -4173,6 +4173,28 @@ the wipe skips the leave there is nothing to make. What it does not fix is the
 cause: two phones on one Apple ID share one identity by design (§4), so
 emptying either one renews the other's — that stays a design question, written
 down here rather than patched.
+
+**And the key did not come back with it** — found 26 Sep 2026. The wipe also
+forgets the family key, which sits in the same synchronizable Keychain, so the
+other phone lost it too. `SyncEngine` read a missing key as *seal nothing*
+rather than *send nothing*: a fallback from 16 Aug 2026 (`0efbc6a`) for
+families from before lever 3, which production has never held. And
+`Session.rejoin` compared keys but never took one, so the way back above
+returned a phone that pushed the family's words, and uploaded its recordings,
+in the clear. A family with nobody else was worse: nothing left the server,
+nothing refused the phone, and the next round sent everything as told. Now a
+round gets its key only through `SyncSeal`, which a missing key cannot make.
+The round is held as `.keyMissing`; the Perhe screen's sync row and Albumi's
+note say so in their own words, the note with the same *"Liity uudella
+kutsulla"*; and the rejoin takes the invitation's key once the server has
+placed the code in this family. One pull
+is still asked for and thrown away, because that is how a forgotten phone
+learns it is refused before a wipe tries to leave. A phone whose family had
+nobody else has nobody to send the key back, so it stays held with its archive
+intact on the phone, which is the honest side of that trade.
+`scripts/keyless-sync-check.swift` drives the road in verify.sh; on 26 Sep 2026
+it failed 22 of its 42 checks against the code before the fix and passed all
+42 after it.
 
 **And where the AI filed a telling could not be corrected.** The placement line
 is the most important piece of the result — the organising the teller would
