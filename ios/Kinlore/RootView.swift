@@ -1236,6 +1236,10 @@ struct SubjectDetailScreen: View {
                         }
                     }
                     .foregroundStyle(Elder.supporting)
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (26 Sep 2026).
+                    .accessibilityIdentifier("card.memoriesHeading")
                 }
             }
 
@@ -1474,6 +1478,16 @@ struct SubjectDetailScreen: View {
                 .resizable()
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 16))
+                // The card's main content had no description until 26 Sep
+                // 2026: the audit said "Element has no description", and
+                // VoiceOver passed over the photograph as if it were not
+                // there. Its name is the card's title, or the "Valokuva" an
+                // untitled one is shown under — a `String` already looked up
+                // by `displayTitle`, so it is read as it stands rather than
+                // looked up a second time as a key. The blind card draws its
+                // photograph in `BlindCardView`, where no label may name the
+                // proposal; this is not that picture.
+                .accessibilityLabel(current.displayTitle)
         } else if MediaLoader.hasNotArrived(current) {
             photoSlot {
                 photoAbsence {

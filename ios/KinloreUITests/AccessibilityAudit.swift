@@ -1004,6 +1004,19 @@ enum AccessibilityPolicy {
     ///     green, on the same simulator minutes apart, at a load under
     ///     fifteen. Scrolled into view at a real AccessibilityXXXL, the same
     ///     row audits clean (`testPhotoDetail`, twice).
+    ///   * The card's memories heading, *"1 muisto"* (the same day, from
+    ///     `testPhotoDetailWithThePicture`, the first sweep of a photograph
+    ///     whose file is on the phone). Reported partially unsupported at the
+    ///     default size, 370 × 40.33 pt at y 756.33, the frame identical to the
+    ///     decimal on every run, and red at every height it was dragged to
+    ///     between there and y 400. The photograph's section taken away above
+    ///     it, the heading's code untouched: at y 474.67, clean, in the same
+    ///     run. The photograph's new label taken away instead: the same finding
+    ///     in the same frame, so the label did not bring it and the sweep only
+    ///     reached it. The same heading on the same seed's person card audits
+    ///     clean, and at a real AccessibilityXXXL, dragged to y 330 with
+    ///     nothing forgiven, so does this one. Keyed on an identifier because
+    ///     the words change with the count.
     ///   * The relatives' *"Lisää sukulainen"* button (the same day, from the
     ///     "Tämä olen minä" row: a second row in the face's section, above
     ///     it). `testPersonCardOfferedAsYou` and `testPersonCardWaitingToBeYou`
@@ -1058,6 +1071,9 @@ enum AccessibilityPolicy {
         // The card's last section (26 Sep 2026): the empty state's sentence
         // and the removal button beside it.
         "card.emptyState", "card.removal",
+        // The card's memories heading — "1 muisto", "N muistoa" — under a
+        // photograph whose file is on this phone (26 Sep 2026).
+        "card.memoriesHeading",
         // The relative row's caption — "Ystävä", "Vanhemmat" (26 Sep 2026).
         "relative.caption",
         // The rename row under a photograph with no file on this phone,

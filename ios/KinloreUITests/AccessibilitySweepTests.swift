@@ -1913,6 +1913,33 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same card with the picture on it, which the sweep above cannot
+    /// reach: the demo archive's photograph has no file, and `-seed blind`'s
+    /// has one. No sweep judged the photograph itself until 26 Sep 2026, and
+    /// the first audit that did — a throwaway one measuring the colour
+    /// footer further down — reported it as "Element has no description":
+    /// VoiceOver said nothing about the card's main content.
+    ///
+    /// The photograph is required by its label before the audit, so losing
+    /// the label fails here by name rather than only as the audit's finding.
+    /// The seed's photograph is untitled, so the label is the word an
+    /// untitled one is shown under, `displayTitle`'s *"Valokuva"*.
+    ///
+    /// At the default size the picture holds the memories' heading at
+    /// y 756.33, where the audit's simulation reports it. That finding is
+    /// older than the label — it is there with the label taken away — and the
+    /// gate forgives it by identifier, `card.memoriesHeading`, on the
+    /// default-size launch only; the measurement is on
+    /// `AccessibilityPolicy.isDefaultSizeSimulationArtefact`. Contrast is
+    /// forgiven on neither launch.
+    func testPhotoDetailWithThePicture() throws {
+        try sweep("Photo detail with the picture", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            require(app.images["Valokuva"], "the photograph, by its label")
+            XCTAssertTrue(hasStoppedDrawing(app), "the photo card was still being drawn when the audit ran")
+        }
+    }
+
     /// The same screen for a photograph whose file is not on this phone and
     /// cannot be: another member added it past the free ceiling, and the
     /// server kept its card and refused its file. A spinner stood where the

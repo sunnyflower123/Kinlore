@@ -133,6 +133,7 @@ const ARTEFACT_IDS = [
 	'memory.playback',
 	'card.emptyState',
 	'card.removal',
+	'card.memoriesHeading',
 	'relative.caption',
 	'subject.rename',
 	'relative.add',
