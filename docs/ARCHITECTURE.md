@@ -5203,7 +5203,7 @@ sentence and *"Poista henkilö"*, which also reported clipping) and the relative
 row's caption (*"Ystävä"*): each hidden-above arm audited clean with the
 element's own code untouched, and the loss probe held all five of the
 story-less card's elements in the tree at the largest size, where they audited
-clean. The gate reads two identifier sets now — `.dynamicType` on eight
+clean. The gate reads two identifier sets now — `.dynamicType` on thirteen
 identifiers, `.textClipped` on the two that reported it — on the first launch
 only, and the check pins both sets, both types, that every identifier is set on
 a view, and the launch. The friend sweep reaches the row rather than its
