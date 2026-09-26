@@ -230,10 +230,36 @@ final class TellViewModel {
         do {
             try recorder.start()
             phase = .recording
+            #if DEBUG
+            sweepForTests(at: "recording")
+            #endif
         } catch {
             phase = .failed(String(localized: "Nauhoitus ei käynnistynyt."))
         }
     }
+
+    #if DEBUG
+    /// `-recovery-sweep recording` / `-recovery-sweep stopped`: runs the
+    /// launch sweep a second into a live recording, or between the stop and
+    /// the save — the two moments it used to be able to land on.
+    ///
+    /// The launch task sweeps only once the calls ahead of it have waited on
+    /// the network, so where the sweep fell was the network's to say, and
+    /// with a RevenueCat key the entitlement check alone can be a round trip.
+    /// A test cannot schedule a slow network; it can schedule the sweep.
+    /// `SilentFailureTests.testTheLaunchSweepLeavesThisLaunchsRecordingAlone`.
+    private func sweepForTests(at moment: String) {
+        guard UserDefaults.standard.string(forKey: "recovery-sweep") == moment else { return }
+        if moment == "recording" {
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                RecordingRecovery.sweep(into: store)
+            }
+        } else {
+            RecordingRecovery.sweep(into: store)
+        }
+    }
+    #endif
 
     /// Whether the last audio-only save was the month's minutes rather than
     /// the network. The screen after it used to say the same "valmistuu
@@ -267,6 +293,9 @@ final class TellViewModel {
             }
             return
         }
+        #if DEBUG
+        sweepForTests(at: "stopped")
+        #endif
         let duration = recorder.elapsed
         guard canTranscribe else {
             // Not an error and not a deferral: in this mode the text is never

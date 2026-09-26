@@ -58,6 +58,14 @@ struct KinloreApp: App {
     /// `Elder.largerTextKey`.
     @AppStorage(Elder.largerTextKey) private var largerText = false
 
+    /// The one moment in a launch when nothing can be recording yet: `body`
+    /// has not built the Tell screen. The launch task's sweep runs only once
+    /// the calls ahead of it there have waited on the network, and takes its
+    /// list from here so that this launch's own telling can never be on it.
+    init() {
+        RecordingRecovery.listOrphans()
+    }
+
     var body: some Scene {
         WindowGroup {
             content
@@ -114,6 +122,8 @@ struct KinloreApp: App {
                     await syncEntitlementIfPurchased()
                     // A telling the app was killed under, adopted before the
                     // catch-up runs so its text is written in the same round.
+                    // Only what `init` listed: by now the Tell screen may be
+                    // recording into the same directory.
                     RecordingRecovery.sweep(into: store)
                     await catchUp?.run()
                     // Last, and after sync: a place another device has already

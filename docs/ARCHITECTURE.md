@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 89 sweep tests, each auditing one screen at the default text size and again at the largest, out of 257 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 89 sweep tests, each auditing one screen at the default text size and again at the largest, out of 259 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -4225,6 +4225,21 @@ not saved at all and the screen says *"Nauhoitusta ei saatu talteen"* with
 whose words arrived is saved as text and the result says the recording did
 not. `-audio-lost` drives both in `SilentFailureTests`, and the sweep measures
 the screen.
+
+**And the launch sweep lost the telling it ran beside.** `RecordingRecovery`
+listed tmp for itself late in the launch task — once the calls ahead of it
+there had waited on the network, as late as the network made it — and the
+recorder writes into the same directory under the same prefix. A
+telling started in the meantime was deleted mid-recording, while the file is
+still a 28-byte header nothing can open, or adopted between its stop and its
+save, after which `persistAudio` cleared the adopted copy out of its own way.
+Both ended at *"Nauhoitusta ei saatu talteen"*, and `export-check.mjs`, which
+records at launch, came back with no audio in the export (26 Sep 2026). The
+list is taken in `KinloreApp.init` now, before `body` has built the screen
+that records, so nothing a launch writes can be on it however late the sweep
+runs. `-recovery-sweep` runs the sweep at both moments in `SilentFailureTests`,
+and `-recovery orphan` checks that what an earlier launch left behind is still
+taken in.
 
 **And a swipe deleted a relationship on the spot.** A swipe is easy to make by
 accident, `swipeActions` is invisible until it happens, and what it removed was

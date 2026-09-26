@@ -403,6 +403,47 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The launch sweep never touches a recording this launch made.
+    ///
+    /// `RecordingRecovery.sweep` ran once the launch task's network calls had
+    /// answered, and took whatever `memory-` file tmp held at that moment
+    /// for one the app had been killed under. A telling started
+    /// before it — `-defer once` starts one at launch, and so can anybody who
+    /// opens the app and presses the button — was deleted mid-recording as
+    /// unreadable, or adopted between its stop and its save, which
+    /// `persistAudio` then cleared out of its own way. Either way the screen
+    /// said *"Nauhoitusta ei saatu talteen"*, and `export-check.mjs` found no
+    /// audio in the export (26 Sep 2026). `-recovery-sweep` runs the sweep at
+    /// each of the two moments.
+    func testTheLaunchSweepLeavesThisLaunchsRecordingAlone() {
+        for moment in ["recording", "stopped"] {
+            let app = launch(["-seed", "empty", "-defer", "once", "-recovery-sweep", moment])
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+
+            XCTAssertTrue(
+                app.staticTexts["Äänesi on tallessa"].waitForExistence(timeout: 30),
+                "a sweep while \(moment) lost the recording"
+            )
+            XCTAssertFalse(
+                app.staticTexts["Nauhoitusta ei saatu talteen"].exists,
+                "a sweep while \(moment) lost the recording"
+            )
+            app.terminate()
+        }
+    }
+
+    /// And the recording it exists for is still taken in. `-recovery orphan`
+    /// leaves a finished two-second one in tmp before the app looks, as a
+    /// launch killed between the stop and the save would have: it arrives on
+    /// Albumi as the same audio-only row a quota outage leaves.
+    func testARecordingAnEarlierLaunchLeftBehindIsTakenIn() {
+        let app = launch(["-seed", "empty", "-tab", "memories", "-recovery", "orphan"])
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "a recording left in tmp was not taken in")
+    }
+
     /// The family key rides the invite link as its `#`-fragment (lever 3), and
     /// the parser used to read query items only — which a fragment never
     /// reaches. The one thing a *tapped* link delivered was membership in a

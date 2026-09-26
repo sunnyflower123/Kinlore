@@ -252,12 +252,49 @@ final class AudioRecorder {
 /// rule 3's spirit applied to the file that never got as far as the rules.
 @MainActor
 enum RecordingRecovery {
+    /// The recordings tmp held before this launch could make one of its own —
+    /// the only files the sweep may touch.
+    ///
+    /// The sweep used to list tmp for itself, from the launch task, once the
+    /// calls ahead of it there had waited on the network: as late as the
+    /// network made it. The recorder writes into the same directory under the
+    /// same prefix, so a telling started in the meantime looked exactly like
+    /// one the app had been killed under. Mid-recording the file is a header
+    /// nothing can open — 28 bytes a second into a telling — and the sweep
+    /// deleted it as not audio; between the stop and the save it is a
+    /// finished recording, and the sweep adopted it, after which
+    /// `persistAudio`, clearing that name in Documents out of its own way,
+    /// deleted the adopted copy. Either way the telling was gone. Found
+    /// 26 Sep 2026, when `export-check.mjs`, whose `-defer once` records at
+    /// launch, came back with no audio in the export.
+    ///
+    /// Leaving out the file the recorder has open would answer the first case
+    /// and not the second, since by then nothing has it open. A list taken in
+    /// `KinloreApp.init`, before `body` has built the screen that records,
+    /// answers both by construction: nothing this launch writes can be on it,
+    /// however late the sweep runs. What this launch leaves behind is the next
+    /// launch's to find, which is when a killed telling was always found.
+    ///
+    /// Nil until then, and a sweep without a list touches nothing.
+    private static var orphans: [String]?
+
+    /// Called once, from `KinloreApp.init`.
+    static func listOrphans() {
+        guard orphans == nil else { return }
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "recovery") == "orphan" { leaveOrphanForTests() }
+        #endif
+        let tmp = FileManager.default.temporaryDirectory
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: tmp.path)) ?? []
+        orphans = names.filter { $0.hasPrefix(AudioRecorder.orphanPrefix) && $0.hasSuffix(".m4a") }
+    }
+
     static func sweep(into store: MemoryStore) {
         let tmp = FileManager.default.temporaryDirectory
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: tmp.path) else {
-            return
-        }
-        for name in names where name.hasPrefix(AudioRecorder.orphanPrefix) && name.hasSuffix(".m4a") {
+        // Taken rather than read, so a second sweep has nothing to look at.
+        let names = orphans ?? []
+        orphans = []
+        for name in names {
             let source = tmp.appendingPathComponent(name)
             // The same floor as a live recording: under a second is an
             // accident, not a memory — and an unreadable file is not audio.
@@ -287,4 +324,30 @@ enum RecordingRecovery {
             ))
         }
     }
+
+    #if DEBUG
+    /// `-recovery orphan`: a finished two-second recording in tmp before the
+    /// list is taken, as a launch killed between the stop and the save leaves
+    /// one. It keeps the other half of the fix above true — that the sweep
+    /// still takes in what an earlier launch left, and not merely nothing.
+    /// `SilentFailureTests.testARecordingAnEarlierLaunchLeftBehindIsTakenIn`.
+    private static func leaveOrphanForTests() {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("\(AudioRecorder.orphanPrefix)\(UUID().uuidString).m4a")
+        let settings: [String: Any] = [
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 22_050,
+            AVNumberOfChannelsKey: 1,
+        ]
+        guard let file = try? AVAudioFile(forWriting: url, settings: settings),
+              let silence = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: 44_100),
+              let samples = silence.floatChannelData?[0]
+        else { return }
+        samples.update(repeating: 0, count: 44_100)
+        silence.frameLength = 44_100
+        // Written in full when `file` is released at the end of this scope,
+        // which is what makes it a finished recording rather than a live one.
+        try? file.write(from: silence)
+    }
+    #endif
 }
