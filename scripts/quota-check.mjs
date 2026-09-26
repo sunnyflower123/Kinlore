@@ -44,12 +44,16 @@ const auth = { Authorization: `Bearer ${memberID}.${secret}` }
 // they were starving each other: whichever ran last failed with "could not
 // create a family: 429", which reads like a broken Worker and is not one.
 //
-// So each run knocks from an address of its own. Cloudflare sets
-// `CF-Connecting-IP` from the connection itself and ignores what the client
-// sends, so this changes nothing in production — it only stops the checks from
-// spending each other's allowance locally.
+// So each run knocks from an address of its own — against a local Worker
+// only, as in place-sync-check.mjs: the real edge does not ignore a client-set
+// `CF-Connecting-IP`, it answers 403 to the whole request.
 const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
-const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
+const json = {
+	'content-type': 'application/json',
+	...(new URL(API).hostname === 'localhost' || new URL(API).hostname === '127.0.0.1'
+		? { 'CF-Connecting-IP': household }
+		: {}),
+}
 
 let failures = 0
 let familyID = ''

@@ -37,9 +37,16 @@
 import { randomUUID, randomBytes } from 'node:crypto'
 
 const API = process.argv[2] ?? 'http://localhost:8787'
-// An address of its own — see the note in memory-rules-check.mjs.
+// An address of its own — see the note in memory-rules-check.mjs. Local
+// Workers only, as in place-sync-check.mjs: the real edge answers 403 to any
+// request that brings its own `CF-Connecting-IP`.
 const household = `10.${(Math.random() * 254) | 0}.${(Math.random() * 254) | 0}.1`
-const json = { 'content-type': 'application/json', 'CF-Connecting-IP': household }
+const json = {
+	'content-type': 'application/json',
+	...(new URL(API).hostname === 'localhost' || new URL(API).hostname === '127.0.0.1'
+		? { 'CF-Connecting-IP': household }
+		: {}),
+}
 
 let failures = 0
 
