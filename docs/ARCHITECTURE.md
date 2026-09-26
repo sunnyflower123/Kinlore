@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 305 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 306 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -2176,8 +2176,14 @@ Cut from v1, and then built after all:
 
    **Where the picture begins.** At its natural size and never smaller:
    centred, when the whole family fits the window; on your own card when it
-   does not; and at its own top left corner, like any picture, on a phone
-   linked to no card. The first draft of this opening fitted a family that
+   does not; and on the first card of the oldest row, at the same place, on
+   a phone linked to no card. That third case opened at the drawing's own
+   top left corner until 27 Sep 2026, like any picture — and the oldest row's
+   first card is not there: the rows below it are wider, so the oldest
+   generation stands over the middle of its descendants, and at the largest
+   text size `-seed clan` opened on a window of nothing but paper
+   (`testAPhoneLinkedToNoCardOpensOnTheOldestGeneration`, at that size). The
+   first draft of this opening fitted a family that
    fit at a scale that still had names, and the audit is what refused it —
    the same way it refused the rail's shrinking names on 19 Sep. Its
    default-size run steps the text through twelve sizes, the drawing was

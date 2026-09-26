@@ -11,8 +11,9 @@ import XCTest
 /// list and every other door are behind the one menu button, that a person
 /// in the tree opens their card or takes a new relative on the spot, that
 /// every word is inside the drawing, that the picture zooms under two
-/// fingers and keeps its people as tap targets at the smallest size, and
-/// that a grandparent's phone keeps the list.
+/// fingers and keeps its people as tap targets at the smallest size, that
+/// a phone linked to no card opens on the oldest generation and not on
+/// paper, and that a grandparent's phone keeps the list.
 ///
 /// The suite's launch helper passes `-people list`, so the tests written about
 /// the list keep testing the list. These pass `-people tree`, or `default` to
@@ -288,5 +289,39 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "the tree")
         XCTAssertTrue(app.staticTexts["Ei vielä sukupuussa"].exists, "the caption over the people related to nobody")
         XCTAssertFalse(app.staticTexts["Ystävät"].exists, "a caption over no friends")
+    }
+
+    /// A phone linked to no card opens on somebody, not on paper. Until
+    /// 27 Sep 2026 the drawing opened at its own top left corner on such a
+    /// phone, and the oldest row's first card is not there: the rows below
+    /// are wider, so the oldest generation stands over the middle of its
+    /// descendants, and at the largest text size `-seed clan` filled the
+    /// window with nothing at all. It opens on the first card of the oldest
+    /// row now, at the place your own card takes. That row is one spouse
+    /// chain here — Aapo, married twice, between his wives, and Hilma to
+    /// his left because she comes first in `people` order — and the layout
+    /// owns that order, so the test takes whichever of the three it drew
+    /// leftmost rather than naming her. Measured on the fix's first run:
+    /// the test named Aapo, and his card began one card to the right of
+    /// the window's edge. At rest: nothing is dragged, pinched or pressed
+    /// before the frames are read.
+    func testAPhoneLinkedToNoCardOpensOnTheOldestGeneration() {
+        let app = launch(
+            ["-seed", "clan", "-tab", "people", "-people", "tree"],
+            textSize: "UICTContentSizeCategoryAccessibilityXXXL"
+        )
+        XCTAssertTrue(app.buttons["Valikko"].waitForExistence(timeout: 20), "the tree did not open")
+        XCTAssertFalse(app.buttons["Sinä"].exists, "a way to your own card on a phone linked to no card")
+        let oldest = ["Aapo", "Hilma", "Lyyli"].map { app.buttons[$0] }
+        for card in oldest {
+            XCTAssertTrue(card.waitForExistence(timeout: 10), "the oldest generation is not in the tree")
+        }
+        guard let first = oldest.min(by: { $0.frame.minX < $1.frame.minX }) else { return }
+        let window = app.windows.firstMatch.frame
+        XCTAssertTrue(
+            window.contains(first.frame),
+            "the oldest row's first card is not in the window where the tree opens: \(first.label) at \(first.frame) against \(window)"
+        )
+        XCTAssertTrue(first.isHittable, "the oldest row's first card cannot be tapped where the tree opens")
     }
 }

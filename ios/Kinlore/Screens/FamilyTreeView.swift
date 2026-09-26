@@ -169,6 +169,17 @@ struct FamilyTreeView: View {
         )
         let key = DrawingKey(result: result, people: people, you: you, words: words, wrap: windowWidth)
         let yours = you.flatMap { result.places[$0] }.map { geometry.disc(of: $0) }
+        // Where the drawing opens when the family does not fit the window:
+        // your own disc — or, on a phone linked to no card, the first card
+        // of the oldest row, at the same place. The drawing's own top left
+        // corner is not that card: the rows below it are wider, so the
+        // oldest generation stands over the middle of its descendants, and
+        // at the largest text size `-seed clan` opened on nothing but paper
+        // until 27 Sep 2026. Rows before x, so that a family of people
+        // related to nobody opens on its own first card as well.
+        let opening = yours ?? result.places.values
+            .min { ($0.row, $0.x) < ($1.row, $1.x) }
+            .map { geometry.disc(of: $0) }
 
         ZStack(alignment: .bottomTrailing) {
             // Inside both bars. Not under the top bar, because the status
@@ -185,7 +196,7 @@ struct FamilyTreeView: View {
                 size: geometry.size,
                 range: Self.zoomRange,
                 controls: controlsHeight,
-                opening: yours,
+                opening: opening,
                 key: key,
                 command: command,
                 gate: gate
@@ -806,8 +817,10 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
     /// themselves. The bars' own insets are read off the scroll view, which
     /// UIKit keeps current for a view under a tab bar.
     let controls: CGFloat
-    /// Your own disc, when this phone's card is in the tree: where the
-    /// drawing opens when the whole family does not fit at a readable size.
+    /// Where the drawing opens when the whole family does not fit at a
+    /// readable size: your own disc when this phone's card is in the tree,
+    /// and the first card of the oldest row when it is not. Nil only when
+    /// there is nobody to open on.
     let opening: CGPoint?
     let key: DrawingKey
     let command: TreeCommand?
@@ -1020,8 +1033,10 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
 
         /// Where the picture begins: at its natural size, centred when the
         /// whole family fits the window; on your own card when it does not;
-        /// and at its own top left corner like any picture on a phone linked
-        /// to no card.
+        /// and on the first card of the oldest row, at the same place, on a
+        /// phone linked to no card — at its own top left corner, like any
+        /// picture, until 27 Sep 2026, and the oldest row's first card is
+        /// not there (`opening`, in the view above).
         ///
         /// Never smaller than natural, not even for a family that would fit
         /// whole at 0.9×. The reader may shrink this drawing and the app may
