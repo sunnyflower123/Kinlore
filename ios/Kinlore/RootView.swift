@@ -711,6 +711,8 @@ struct SubjectDetailScreen: View {
     @State private var tellsAfterColouring = false
     @AppStorage(Elder.largerTextKey) private var largerText = false
     @State private var isTelling = false
+    /// The open question pressed on this card: the Tell screen answering it.
+    @State private var answering: FollowUpQuestion?
     @State private var isAsking = false
     @State private var isCorrectingName = false
     @State private var isDating = false
@@ -1291,38 +1293,66 @@ struct SubjectDetailScreen: View {
             if !open.isEmpty {
                 Section {
                     ForEach(open) { question in
-                        VStack(alignment: .leading, spacing: 4) {
-                            // A person's name on a question turns a prompt into
-                            // a request. AI questions stay unattributed — and
-                            // so is your own here: with the default display
-                            // name the line read "Minä kysyy", wrong in both
-                            // conjugation and direction.
-                            if let asker = question.authorName,
-                               question.authorID != session.identity.memberID {
-                                Group {
-                                    if question.targetMemberID == session.identity.memberID {
-                                        Text("\(asker) kysyy sinulta")
-                                    } else {
-                                        Text("\(asker) kysyy")
+                        // The row is the way to answer it (26 Sep 2026): the
+                        // Tell screen on this card, with the question as its
+                        // title. Every row, the ones asked of somebody else by
+                        // name included — the aim narrows whose Kerro tab
+                        // offers a question, never who may answer it, and on
+                        // every other phone this card is where it is read.
+                        // Until then the rows were text, and answering one
+                        // meant finding it again under "Kerro tästä muisto".
+                        Button {
+                            answering = question
+                        } label: {
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    // A person's name on a question turns a
+                                    // prompt into a request. AI questions stay
+                                    // unattributed — and so is your own here:
+                                    // with the default display name the line
+                                    // read "Minä kysyy", wrong in both
+                                    // conjugation and direction.
+                                    if let asker = question.authorName,
+                                       question.authorID != session.identity.memberID {
+                                        Group {
+                                            if question.targetMemberID == session.identity.memberID {
+                                                Text("\(asker) kysyy sinulta")
+                                            } else {
+                                                Text("\(asker) kysyy")
+                                            }
+                                        }
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(.tint)
+                                    }
+                                    Label(question.text, systemImage: "questionmark.circle")
+                                        .elderBody()
+                                    // Asked of somebody else by name. Everyone
+                                    // sees it here and anyone who knows may
+                                    // answer — only the Kerro tab and the
+                                    // notification are theirs alone — so the
+                                    // family is told whose question it is.
+                                    if let target = question.targetName, !target.isEmpty,
+                                       question.targetMemberID != session.identity.memberID {
+                                        Text("Kenelle: \(target)")
+                                            .font(.subheadline)
+                                            .foregroundStyle(Elder.supporting)
                                     }
                                 }
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.tint)
+                                Spacer(minLength: 0)
+                                // What pressing does, for the eye; the hint
+                                // says it to VoiceOver.
+                                Image(systemName: "mic.fill")
+                                    .foregroundStyle(.tint)
+                                    .accessibilityHidden(true)
                             }
-                            Label(question.text, systemImage: "questionmark.circle")
-                                .elderBody()
-                            // Asked of somebody else by name. Everyone sees it
-                            // here and anyone who knows may answer — only the
-                            // Kerro tab and the notification are theirs alone —
-                            // so the family is told whose question it is.
-                            if let target = question.targetName, !target.isEmpty,
-                               question.targetMemberID != session.identity.memberID {
-                                Text("Kenelle: \(target)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Elder.supporting)
-                            }
+                            .padding(.vertical, 2)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .elderTapTarget()
                         }
-                        .padding(.vertical, 2)
+                        // Plain, so the row keeps its own colours: a List tints
+                        // every word of a default-styled button.
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Vastaa kertomalla")
                     }
                 } header: {
                     Text("Avoimia kysymyksiä")
@@ -1425,6 +1455,11 @@ struct SubjectDetailScreen: View {
         .sheet(isPresented: $isTelling) {
             NavigationStack {
                 TellScreen(target: subject, onClose: { isTelling = false })
+            }
+        }
+        .sheet(item: $answering) { question in
+            NavigationStack {
+                TellScreen(target: subject, question: question, onClose: { answering = nil })
             }
         }
         .sheet(isPresented: $isAsking) {

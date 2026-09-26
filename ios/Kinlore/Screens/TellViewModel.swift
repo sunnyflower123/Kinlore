@@ -187,6 +187,17 @@ final class TellViewModel {
     private(set) var initialTarget: Subject?
     private let initialQuestion: FollowUpQuestion?
 
+    /// The question the screen was opened with, while it is still open. The
+    /// idle screen makes it the title and the big button answers it; once a
+    /// telling has answered it, the next one on this screen is about anything
+    /// at all, and nothing is recorded against it again.
+    var openedQuestion: FollowUpQuestion? {
+        guard let initialQuestion,
+              store.questions.contains(where: { $0.id == initialQuestion.id && !$0.answered })
+        else { return nil }
+        return initialQuestion
+    }
+
     init(
         store: MemoryStore,
         transcription: TranscriptionService,
@@ -372,8 +383,14 @@ final class TellViewModel {
     /// never addressed it, and the ladder taught at its level. The interview
     /// exits do not come through here; they land on `.done`, whose own exits
     /// reset everything.
+    ///
+    /// The opened question only while it is open, since 26 Sep 2026: the
+    /// same defect arriving from the other side. "Kerro toinen muisto" after
+    /// the answer came back to it, and the next telling was filed as that
+    /// question's answer again — moving `answeredMemoryID` off the telling
+    /// that answered it, under a title that no longer asked it.
     private func returnToIdle() {
-        question = initialQuestion
+        question = openedQuestion
         phase = .idle
     }
 

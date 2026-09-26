@@ -2396,6 +2396,51 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same card on a grandparent's phone, and its row pressed: the Tell
+    /// screen with the question as its title, at the largest text size.
+    ///
+    /// Her phone draws the card as a reader's does — nothing on it follows
+    /// the text floor, and this is what says so rather than that sentence.
+    /// A question asked by name is most often asked of the one who knows,
+    /// and on her phone the reading loop is on Albumi, so the row has to
+    /// work at her size as well as at a reader's.
+    ///
+    /// By hand rather than through `sweep`, for the reason
+    /// `testMemoriesWithTheBlindCard` gives: with the floor on, the audit's
+    /// Dynamic Type simulation cannot move the text, so that one check is
+    /// allowed. Contrast, clipping, tap targets and labels are measured.
+    func testTellFromACardQuestionOnAGrandparentsPhone() throws {
+        let app = launch(
+            ["-seed", "aimed", "-elder.largerText", "YES", "-tab", "memories"], textSize: Self.largest
+        )
+        reachPhotoTile(in: app).tap()
+        let asked = "Mitä mökillä syötiin juhannuksena?"
+        let row = reach(
+            app.buttons.matching(NSPredicate(format: "label CONTAINS %@", asked)).firstMatch,
+            in: app, "the question asked of Aino, on the card", swipes: 10
+        )
+        // At this size the row is some 610 pt tall and the list builds it
+        // with its middle under the tab bar or off the screen. XCUITest calls
+        // it hittable all the same and taps its top-left corner — at (17, 749)
+        // on 26 Sep 2026 — which opens nothing. Its top edge is brought under
+        // the navigation bar first, so that the tap lands in its middle.
+        drag(row, toMinY: app.navigationBars.firstMatch.frame.maxY + 12, in: app)
+        XCTAssertLessThan(
+            row.frame.midY, app.tabBars.firstMatch.frame.minY,
+            "the row's middle is still under the tab bar: \(row.frame)"
+        )
+        row.tap()
+        // By identifier: the question's words are on the card under the
+        // sheet too, so a query by label finds two.
+        let title = require(app.staticTexts["tell.title"], "the Tell screen's title")
+        settle(title)
+        XCTAssertEqual(title.label, asked, "the Tell screen's title is not the question")
+        require(app.buttons["Aloita kertominen"], "the button that answers it")
+        try audit(app, "Tell from a card question on a grandparent's phone, largest text size", alsoAllowing: { issue in
+            issue.auditType == .dynamicType
+        })
+    }
+
     /// The question over a colouring: the picture, a heading in the serif, and
     /// three answers. `-seed blind` is the fixture whose photograph has both a
     /// picture and a telling, which is what the colour button waits for, and

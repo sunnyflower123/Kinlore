@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 101 sweep tests, each auditing one screen at the default text size and again at the largest, out of 289 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 101 sweep tests, each auditing one screen at the default text size and again at the largest, out of 291 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -2388,6 +2388,17 @@ kept small on purpose:
   with *"Kenelle: Aino"* under one asked of somebody else, and anyone who knows
   may answer it there. A question hidden from the rest of the family would be a
   private message, and this app has none.
+
+  *There* meant less than it said until 26 Sep 2026: the rows were text, and
+  answering one meant opening *"Kerro tästä muisto"* and finding the same
+  words again under a title that asked for any telling at all. Each row is a
+  button now, *"Vastaa kertomalla"* to VoiceOver. It opens the Tell screen on
+  the card with the question as its title, and the big button answers it
+  through `answer(_:)`. The Kerro tab's offer about another subject opens that
+  same screen, so it changed with it. And once a telling has answered it,
+  *"Kerro toinen muisto"* comes back to the subject's ordinary screen, with
+  nothing filed against the question again
+  (`TellViewModel.openedQuestion`).
 - **Only the Kerro tab narrows.** `MemoryStore.openQuestions(…, viewer:)` puts
   a question asked of this phone's member first, oldest first, headed *"Mummo
   kysyy sinulta"*, and leaves out the ones asked of somebody else. The

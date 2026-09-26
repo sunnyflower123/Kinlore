@@ -10,8 +10,8 @@ struct TellScreen: View {
     /// to it. Nil = free dictation, in which case the subject is inferred from
     /// the speech.
     var target: Subject?
-    /// When the screen is opened from an open question, the question is marked
-    /// answered on save.
+    /// When the screen is opened from an open question, the question is the
+    /// screen's title and is marked answered on save.
     var question: FollowUpQuestion?
     /// Set when the screen is presented as a sheet. The "Sulje" in the corner
     /// is this screen's to draw rather than the presenter's, because only the
@@ -586,6 +586,12 @@ private struct IdleView: View {
     /// what keeps the ladder learning: `answer(_:)` sets the question and then
     /// records, the same call the question cards make.
     private var cardQuestion: FollowUpQuestion? {
+        // Opened from a question — its row on a subject's card, or an offer
+        // on the Kerro tab about another subject — the screen is that
+        // question's, card or not: its title, and what the big button answers
+        // (26 Sep 2026). Until then the title asked for any telling at all,
+        // and the question stood in the list below the button, beside others.
+        if let opened = model.openedQuestion { return opened }
         guard deckPhoto != nil else { return nil }
         return offer.questions.first
     }
@@ -732,6 +738,9 @@ private struct IdleView: View {
             .font(Elder.display(.largeTitle))
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
+            // For the tests that ask what the title says: a question's words
+            // are also on the card this screen is a sheet over.
+            .accessibilityIdentifier("tell.title")
 
             // Dropped when there is a card. The reassurance exists to make a
             // blank button approachable — *"Puhu ihan rauhassa ja vapaasti"* is

@@ -53,6 +53,76 @@ final class TargetedQuestionTests: XCTestCase {
         )
     }
 
+    /// A row on the card is the way to answer it. Until 26 Sep 2026 the rows
+    /// were text: the question sat on the photograph's card with nothing to
+    /// press, and answering it meant opening "Kerro tästä muisto" and finding
+    /// the same words again below the button, under a title that asked for
+    /// any telling at all.
+    ///
+    /// Aino's question, on somebody else's phone, is the case that matters:
+    /// the aim narrows whose Kerro tab offers it, never who may answer, so on
+    /// every other phone the card is the only place it is read. The tap opens
+    /// the Tell screen on this photograph with the question as its title, the
+    /// big button answers it through the stub pipeline, and the question
+    /// leaves the card's open list while the other one stays.
+    func testARowOnTheCardOpensTellingWithItsQuestion() {
+        let app = launch(["-seed", "aimed", "-tab", "memories"])
+        openPhoto(in: app)
+
+        let asked = "Mitä mökillä syötiin juhannuksena?"
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", asked)).firstMatch
+        reach(row, in: app)
+        // A list builds a row just above the tab bar. XCUITest calls it
+        // hittable there all the same and taps a corner of it, which opens
+        // nothing, so its middle is brought above the bar first.
+        let bar = app.tabBars.firstMatch
+        for _ in 0 ..< 3 where row.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        row.tap()
+
+        XCTAssertTrue(app.buttons["Sulje"].waitForExistence(timeout: 10), "the row did not open the Tell screen")
+        // By identifier: the question's words are on the card under the
+        // sheet too, so a query by label finds them whatever the title says.
+        let title = app.staticTexts["tell.title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "never arrived: the Tell screen's title")
+        XCTAssertEqual(title.label, asked, "the Tell screen's title is not the question it is answering")
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 5), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        // Anything under a second is discarded as an accident.
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "the answer was not saved"
+        )
+
+        let done = app.buttons["Valmis"]
+        for _ in 0 ..< 6 where !done.isHittable { app.swipeUp() }
+        done.tap()
+
+        // Back on the card: answered is off the open list, and the question
+        // nobody answered is still on it. Asked with the ask button below
+        // the list on screen as well, because a list builds only the rows on
+        // screen: with the rows on both sides of it built, a row missing
+        // between them is gone rather than unbuilt.
+        let other = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "Kuka souti veneen saareen sinä aamuna?")
+        ).firstMatch
+        reach(other, in: app)
+        reach(app.buttons["Kysy perheeltä"], in: app)
+        XCTAssertTrue(other.exists, "the question nobody answered is not on screen with the ask button")
+        XCTAssertFalse(
+            app.buttons.matching(NSPredicate(format: "label CONTAINS %@", asked)).firstMatch.exists,
+            "the answered question is still open on the card"
+        )
+    }
+
     /// Asked by name from the card: the sheet offers the family's other
     /// members, and what it sends carries the aim — the card says so at once,
     /// before any sync, because the name is written locally too.
@@ -168,6 +238,18 @@ final class TargetedQuestionTests: XCTestCase {
         }
         XCTAssertTrue(element.waitForExistence(timeout: 10), "never arrived: \(element)", file: file, line: line)
         return element
+    }
+
+    /// Answers the microphone prompt if it is showing, by position rather than
+    /// label — permission alerts put the allowing answer last, whatever the
+    /// simulator's language. Same helper as LocalModeTests.
+    private func allowTheMicrophone() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let alert = springboard.alerts.firstMatch
+        guard alert.waitForExistence(timeout: 5) else { return }
+        let buttons = alert.buttons
+        guard buttons.count > 0 else { return }
+        buttons.element(boundBy: buttons.count - 1).tap()
     }
 
     /// Opens the "Kenelle?" menu and picks a member. A menu picker is one

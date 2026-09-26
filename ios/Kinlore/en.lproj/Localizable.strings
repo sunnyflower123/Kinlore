@@ -869,3 +869,6 @@
 
 // The export page (26 Sep 2026): the words as they were said, folded under the tidied text.
 "Alkuperäinen litterointi" = "Original transcription";
+
+// The card's open question, pressed: the Tell screen answering it (26 Sep 2026).
+"Vastaa kertomalla" = "Answer by telling";

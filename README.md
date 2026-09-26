@@ -156,7 +156,7 @@ the meter said no. Every push still gets the backend type check, on Linux.
 
 | Claim | Command |
 |---|---|
-| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 289 UI tests, 101 of them an accessibility sweep at both text sizes |
+| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 291 UI tests, 101 of them an accessibility sweep at both text sizes |
 | One purchase unlocks one family, and never a second | `node scripts/entitlement-binding-check.mjs` |
 | The paid archive is offered after a telling on a rhythm, never beside a name a human is being asked to confirm, never on a grandparent's phone and never where there is nothing to buy — while the purchase beside a ceiling the family has hit stands on every phone with a store | `swiftc … scripts/upsell-rhythm-check.swift` |
 | A place's looked-up coordinates follow its title through sync, a point somebody placed stays where they put it, and rubbish is refused | `node scripts/place-sync-check.mjs` |
