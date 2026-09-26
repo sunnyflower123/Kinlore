@@ -135,6 +135,7 @@ const ARTEFACT_IDS = [
 	'card.emptyState',
 	'card.removal',
 	'relative.caption',
+	'subject.rename',
 ]
 const CLIPPED_IDS = ['card.emptyState', 'card.removal']
 
@@ -235,38 +236,5 @@ if (codeGate >= 0) {
 	)
 }
 
-// The rename row's gate (26 Sep 2026), the same shape on one identifier: the
-// row has three wordings, and the simulation reports it whenever words stand
-// in a photograph's place above it. Every use in the sweeps is checked for
-// the default-size guard, not only the first one found.
-const RENAME_ID = 'subject.rename'
-const renameGate = source.findIndex((l) => l.includes('static func isRenameRowSimulationArtefact'))
-check('the rename row gate is declared', renameGate >= 0, 'no isRenameRowSimulationArtefact in the file')
-if (renameGate >= 0) {
-	let end = renameGate
-	while (end < source.length && !/^\s{4}\}\s*$/.test(source[end])) end += 1
-	const body = source.slice(renameGate, end + 1).join(' ')
-	const ids = [...body.matchAll(/identifier == "([^"]+)"/g)].map((m) => m[1])
-	check(
-		'the gate reads exactly the rename row identifier',
-		ids.length === 1 && ids[0] === RENAME_ID,
-		`reads ${ids.join(', ') || 'nothing'}`,
-	)
-	const types = [...body.matchAll(/auditType\s*==\s*(\.\w+)/g)].map((m) => m[1])
-	check(
-		'the gate names .dynamicType and nothing else',
-		types.length === 1 && types[0] === '.dynamicType',
-		`names ${types.join(', ') || 'nothing'}`,
-	)
-	const row = readFileSync(join(root, 'ios', 'Kinlore', 'RootView.swift'), 'utf8')
-	check(`  the row sets "${RENAME_ID}"`, row.includes(`.accessibilityIdentifier("${RENAME_ID}")`))
-	const sweeps = readFileSync(join(root, 'ios', 'KinloreUITests', 'AccessibilitySweepTests.swift'), 'utf8')
-	const uses = [...sweeps.matchAll(/(.{0,20})AccessibilityPolicy\.isRenameRowSimulationArtefact\(issue\)/g)]
-	check(
-		'the sweep passes it in on the default-size launch only',
-		uses.length > 0 && uses.every((m) => m[1].endsWith('size == nil && ')),
-		`${uses.length} uses, ${uses.filter((m) => !m[1].endsWith('size == nil && ')).length} unguarded`,
-	)
-}
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

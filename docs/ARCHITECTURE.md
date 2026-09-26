@@ -989,9 +989,10 @@ where it used to measure a spinner. That cost the default-size audit one
 finding: its simulation grows the words until the rename row under them
 cannot be measured whole — *"Anna kuvalle nimi"* at the same point on three
 screens, and gone with the spinner put back — which is the §15 signature
-once more. `AccessibilityPolicy.isRenameRowSimulationArtefact` forgives
-`.dynamicType` on that row's identifier on the first launch only, and
-`scripts/audit-exemption-check.mjs` pins it as it pins the memory row's.
+once more. `AccessibilityPolicy.isDefaultSizeSimulationArtefact` forgives
+`.dynamicType` on that row's identifier, `subject.rename`, on the first launch
+only — it sits in the same set as the memory row's — and
+`scripts/audit-exemption-check.mjs` pins it with the rest of that set.
 
 **The original audio is always uploaded**, including on the free tier. It is the
 core of the product, not an extra.

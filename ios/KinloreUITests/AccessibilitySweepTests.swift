@@ -480,10 +480,9 @@ final class AccessibilitySweepTests: XCTestCase {
                 seen[size != nil] = labelsInTree(app).union(judgedAbove)
             }
             // The first launch is where the audit simulates the scaling, and
-            // the simulation's artefact lives there only, as do the join
-            // form's filled code field's and the rename row's; the second
-            // launch is the real layout, with nothing forgiven. The policy
-            // says why.
+            // the simulation's artefact lives there only, as does the join
+            // form's filled code field's; the second launch is the real
+            // layout, with nothing forgiven. The policy says why.
             // And the page loop's one allowance, for the screen a closure ends
             // on, where the sweep has asked for it: a word across the bar's
             // lower edge. The join form's error note is at the bottom of a
@@ -495,7 +494,6 @@ final class AccessibilitySweepTests: XCTestCase {
             try audit(app, "\(name), \(at)", alsoAllowing: { issue in
                 size == nil && AccessibilityPolicy.isDefaultSizeSimulationArtefact(issue)
                     || size == nil && AccessibilityPolicy.isInviteCodeSimulationArtefact(issue)
-                    || size == nil && AccessibilityPolicy.isRenameRowSimulationArtefact(issue)
                     || underTheBar && issue.auditType == .contrast && issue.element == nil
             })
             app.terminate()

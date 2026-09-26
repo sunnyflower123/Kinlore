@@ -976,6 +976,20 @@ enum AccessibilityPolicy {
     ///     under the tab bar with the row unbuilt below it, and the probe
     ///     counted five of sixteen labels gone, the friend's name among them.
     ///     So that sweep reaches the row now, and the second launch judges it.
+    ///   * The rename row under a photograph that is not on this phone
+    ///     (folded in the same day, from a gate of its own; keyed on an
+    ///     identifier because the row has three wordings). Words took the
+    ///     spinner's place on every photograph without a file that day
+    ///     (ARCHITECTURE §5), and `testPhotoDetail`,
+    ///     `testPhotoDetailPastTheCeiling` and `testPhotoDetailWithoutAStory`
+    ///     then reported *"Anna kuvalle nimi"* at the default size, at y 605.5
+    ///     and 132 × 20.33 pt in all three, three screens with different
+    ///     things below the row. The words' card shortened to its text moved
+    ///     the finding to y 428.83 and changed nothing else about it; the
+    ///     spinner put back in the same 4:3 place, the row's code untouched:
+    ///     green, on the same simulator minutes apart, at a load under
+    ///     fifteen. Scrolled into view at a real AccessibilityXXXL, the same
+    ///     row audits clean (`testPhotoDetail`, twice).
     ///
     /// Clipping is forgiven for the two texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
@@ -1007,6 +1021,9 @@ enum AccessibilityPolicy {
         "card.emptyState", "card.removal",
         // The relative row's caption — "Ystävä", "Vanhemmat" (26 Sep 2026).
         "relative.caption",
+        // The rename row under a photograph with no file on this phone,
+        // "Anna kuvalle nimi" and its two other wordings (26 Sep 2026).
+        "subject.rename",
     ]
 
     /// The two that also reported `.textClipped` at the default size, and
@@ -1037,37 +1054,5 @@ enum AccessibilityPolicy {
         issue.auditType == .textClipped
             && issue.element?.elementType == .textField
             && issue.element?.identifier == "invite-code"
-    }
-
-    /// The rename row under a photograph that is not on this phone, reported
-    /// by the audit's *default-size* simulation and by nothing else: the
-    /// `listHeaderAndFooterText` signature once more, and keyed on an
-    /// identifier because the row has three wordings.
-    ///
-    /// Measured 26 Sep 2026 on a private simulator, per the protocol above:
-    ///
-    ///   * Words took the spinner's place on every photograph without a file
-    ///     that day (ARCHITECTURE §5). `testPhotoDetail`,
-    ///     `testPhotoDetailPastTheCeiling` and `testPhotoDetailWithoutAStory`
-    ///     then reported *"Anna kuvalle nimi"* at the default size, at y 605.5
-    ///     and 132 × 20.33 pt in all three, three screens with different things
-    ///     below the row.
-    ///   * The words' card shortened to its text moved the finding to y 428.83
-    ///     and changed nothing else about it. The spinner put back in the same
-    ///     4:3 place, the row's code untouched: green, on the same simulator
-    ///     minutes apart, at a load under fifteen. The finding moved in with
-    ///     the words above the row and out with them.
-    ///   * Scrolled into view at a real AccessibilityXXXL, the same row audits
-    ///     clean (`testPhotoDetail`, twice) — the half that would say its
-    ///     words were being lost.
-    ///
-    /// So the sweep passes this in beside the memory row's, on its FIRST launch
-    /// only; the second launch measures the real layout with nothing forgiven.
-    /// Keyed on `subject.rename`, set in `RootView.swift` for this alone, and
-    /// on the one audit type; `scripts/audit-exemption-check.mjs` pins both,
-    /// and `.contrast` must never join it.
-    static func isRenameRowSimulationArtefact(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard issue.auditType == .dynamicType, let element = issue.element else { return false }
-        return element.identifier == "subject.rename"
     }
 }

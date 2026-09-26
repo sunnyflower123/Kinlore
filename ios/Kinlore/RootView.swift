@@ -937,7 +937,7 @@ struct SubjectDetailScreen: View {
                         HStack(spacing: 10) {
                             Image(systemName: "pencil")
                             // The identifier is for
-                            // `AccessibilityPolicy.isRenameRowSimulationArtefact`
+                            // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
                             // and nothing else: the default-size simulation
                             // reports this text whenever words stand in the
                             // picture's place above it, and it has three wordings.
@@ -1384,7 +1384,7 @@ struct SubjectDetailScreen: View {
     /// framework caps. At this shape the heading sits where it sat. The rename
     /// row under the words is reported at either shape and not under the
     /// spinner: the simulation grows the words until the row cannot be
-    /// measured whole (`AccessibilityPolicy.isRenameRowSimulationArtefact`).
+    /// measured whole (`AccessibilityPolicy.isDefaultSizeSimulationArtefact`).
     private func photoSlot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         ZStack {
             Color.clear
