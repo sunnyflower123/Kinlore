@@ -299,6 +299,37 @@ final class AccessibilitySweepTests: XCTestCase {
         XCTFail("never reached the top of the list", file: file, line: line)
     }
 
+    /// Whether a line of text sits across the navigation bar's lower edge,
+    /// where iOS 26 blurs and fades it. The audit reports that line as a
+    /// contrast failure with no element, so there is no frame to measure; it
+    /// is forgiven on exactly this condition, and a finding with an element
+    /// is judged as before. Measured 21 Sep 2026 on the setup form's second
+    /// page, three runs out of three, the last at load 10: the audit's own
+    /// picture shows *"Vain minulle,"* blurred under *"Uusi arkisto"* and
+    /// nothing else on the page below the minimum.
+    ///
+    /// A button counts as a word: the line on that page is a row of the inline
+    /// picker, which the tree holds as one. So does a text field with words in
+    /// it, since 26 Sep 2026: the join form's code field, across the edge at
+    /// 111–133 pt under a bar ending at 116, was the finding on eleven pages
+    /// out of eleven and on none where it was clear of the edge.
+    ///
+    /// A screen with no bar has no edge to cross, and `frame` on a bar that is
+    /// not there throws rather than answering. Both callers run this on a
+    /// form today — the page loop, and `sweep`'s own audit where a sweep asks
+    /// for the allowance — and the guard stays because for one build it ran
+    /// under every sweep and the welcome screen failed at once (26 Sep 2026,
+    /// `testOnboarding`, 7 s).
+    private func wordCrossesTheBarEdge(_ app: XCUIApplication) -> Bool {
+        let bar = app.navigationBars.firstMatch
+        guard bar.exists else { return false }
+        let barEdge = bar.frame.maxY
+        let words = app.staticTexts.allElementsBoundByIndex
+            + app.buttons.allElementsBoundByIndex
+            + app.textFields.allElementsBoundByIndex
+        return words.contains { $0.frame.minY < barEdge && $0.frame.maxY > barEdge }
+    }
+
     /// Audits a screen that is taller than the phone one page at a time, down
     /// to `bottom`, and leaves the last page to `sweep`'s own audit.
     ///
@@ -356,21 +387,10 @@ final class AccessibilitySweepTests: XCTestCase {
             // dragging rarely starts on a row's edge, so a line of text sits
             // across the bar's lower edge, where iOS 26 blurs and fades it —
             // the tab bar's fade, at the other end of the screen, which a
-            // sweep audited from the top had never met. The audit reports it
-            // as contrast with no element, so there is no frame to measure.
-            // Measured 21 Sep 2026 on the setup form's second page, three runs
-            // out of three, the last at load 10: the audit's own picture shows
-            // *"Vain minulle,"* blurred under *"Uusi arkisto"* and nothing else
-            // on the page below the minimum.
-            //
-            // Accepted on exactly that condition: contrast, no element, and a
-            // text in the tree that crosses the bar's edge. A page with no
-            // such line gets nothing, and every finding with an element is
-            // judged as before. A button counts as a word: the line on that
-            // page is a row of the inline picker, which the tree holds as one.
-            let barEdge = app.navigationBars.firstMatch.frame.maxY
-            let words = app.staticTexts.allElementsBoundByIndex + app.buttons.allElementsBoundByIndex
-            let underTheBar = words.contains { $0.frame.minY < barEdge && $0.frame.maxY > barEdge }
+            // sweep audited from the top had never met. What is forgiven for
+            // it, on exactly that condition, and the measurement behind it
+            // are on `wordCrossesTheBarEdge`.
+            let underTheBar = wordCrossesTheBarEdge(app)
             // Every page is reported, for the reason `sweep` gives about both
             // sizes: a finding on one page says nothing about the next.
             do {
@@ -389,10 +409,22 @@ final class AccessibilitySweepTests: XCTestCase {
 
     /// Audits a screen at both sizes in one test, so a failure names the screen
     /// rather than an index into a list.
+    ///
+    /// `forgivingTheBarEdge` extends the page loop's one allowance — a word
+    /// across the navigation bar's lower edge, `wordCrossesTheBarEdge` — to
+    /// the screen the closure ends on. Asked for by the sweeps that measured
+    /// it and by no other: the two error-note sweeps of the welcome forms,
+    /// where the join form's code field sits across that edge on the last
+    /// page (26 Sep 2026). For one build it ran under every sweep, which was
+    /// wrong twice over — an allowance measured on two forms would have
+    /// covered eighty-nine screens it was never measured on, and reading
+    /// every word's frame before each audit is hundreds of queries on the
+    /// album or the tree. Every other sweep judges its last screen as before.
     private func sweep(
         _ name: String,
         arguments: [String],
         api: String = "",
+        forgivingTheBarEdge: Bool = false,
         settle: (XCUIApplication, Bool) throws -> Void = { _, _ in }
     ) throws {
         // What each size put in the accessibility tree, collected only when
@@ -435,10 +467,21 @@ final class AccessibilitySweepTests: XCTestCase {
                 seen[size != nil] = labelsInTree(app).union(judgedAbove)
             }
             // The first launch is where the audit simulates the scaling, and
-            // the memory row's artefact lives there only; the second launch
-            // is the real layout, with nothing forgiven. The policy says why.
+            // the memory row's artefact lives there only, as does the join
+            // form's filled code field's; the second launch is the real
+            // layout, with nothing forgiven. The policy says why.
+            // And the page loop's one allowance, for the screen a closure ends
+            // on, where the sweep has asked for it: a word across the bar's
+            // lower edge. The join form's error note is at the bottom of a
+            // form whose code field then sits across that edge — reported on
+            // eleven pages out of eleven on 26 Sep 2026 and on none where the
+            // field was clear of it. Not computed otherwise: it reads every
+            // word's frame, and a sweep that has not asked forgives nothing.
+            let underTheBar = forgivingTheBarEdge && wordCrossesTheBarEdge(app)
             try audit(app, "\(name), \(at)", alsoAllowing: { issue in
                 size == nil && AccessibilityPolicy.isMemoryRowSimulationArtefact(issue)
+                    || size == nil && AccessibilityPolicy.isInviteCodeSimulationArtefact(issue)
+                    || underTheBar && issue.auditType == .contrast && issue.element == nil
             })
             app.terminate()
         }
@@ -541,6 +584,90 @@ final class AccessibilitySweepTests: XCTestCase {
                 )
             }
         }
+    }
+
+    /// The same two forms once the server has said no, which is the one state
+    /// of them no sweep had reached: the two above audit the forms blank, and
+    /// the note under the button — `ErrorNote`, a `Label` in `.elderBody()` —
+    /// is drawn only after a request has failed. That was the shape the map's
+    /// search sheet drew until 25 Sep 2026, when its audit called the sentence
+    /// clipped at both sizes; and these are the first screens a relative or a
+    /// grandparent meets, where rule 1 weighs most.
+    ///
+    /// No stub. The dead loopback address every sweep here launches with is
+    /// refused by the kernel at once, so the form meets the real failure and
+    /// the real sentence — the system's own words for a connection that could
+    /// not be made, in the app's language — rather than one written for a
+    /// test.
+    ///
+    /// Not page by page. The rows above the note are the blank form, which the
+    /// two sweeps above already page through at the largest size; what is new
+    /// is the last row, so `showErrorNote` brings it on and the sweep's own
+    /// audit judges the screen it ends on, at both sizes.
+    ///
+    /// The newline typed after the name is the return key, which puts the
+    /// keyboard away: the button is under it otherwise.
+    func testCreateFamilyFormError() throws {
+        try sweep("Uusi arkisto, virhe", arguments: [], api: "http://127.0.0.1:9", forgivingTheBarEdge: true) { app, _ in
+            require(app.buttons["Aloita perheen arkisto"], "the way into setup").tap()
+            require(app.staticTexts["Keiden kesken"], "the setup form")
+            let name = reach(app.textFields["Nimesi"], in: app, "the name field")
+            name.tap()
+            name.typeText("Testaaja\n")
+            reach(app.buttons["Luo arkisto"], in: app, "the setup form's button", swipes: 8).tap()
+            showErrorNote(in: app)
+        }
+    }
+
+    /// The join form's half of the same measurement. The code is what nothing
+    /// but the invitation can supply, so one of the right shape is typed —
+    /// twenty-two characters of base64url, as `randomCode` in the Worker's
+    /// `auth.ts` makes them, with the descenders a real one can carry. The
+    /// name is left empty, which the form allows since 19 Sep 2026.
+    func testJoinFamilyFormError() throws {
+        try sweep("Liity perheeseen, virhe", arguments: [], api: "http://127.0.0.1:9", forgivingTheBarEdge: true) { app, _ in
+            require(app.buttons["Liity kutsulinkillä"], "the way into joining").tap()
+            require(app.staticTexts["Kutsu"], "the join form")
+            let code = reach(app.textFields["Kutsukoodi"], in: app, "the code field")
+            code.tap()
+            code.typeText("gjpqyAbCdEf12345678901\n")
+            reach(app.buttons["Liity perheeseen"], in: app, "the join form's button", swipes: 8).tap()
+            showErrorNote(in: app)
+        }
+    }
+
+    /// The note under a welcome form's button, on the screen and at rest, for
+    /// the audit that follows.
+    ///
+    /// Reached rather than waited for: a `Form` does not build a row nobody
+    /// can see, and this row is the one below a button whose frame the comment
+    /// above it in `OnboardingScreen` measured running past the screen's edge
+    /// at the default size already. Measured 26 Sep 2026: waited for, the note
+    /// never arrived in ten seconds at either size, while the tree held the
+    /// whole form above it.
+    ///
+    /// The static text, and not whatever carries the identifier first. A
+    /// `Label` hands its identifier to each of its elements and the sign comes
+    /// before the words, so `auditPageByPage` with the first match as its
+    /// bottom paged twelve times over a note that was on the screen from the
+    /// second page — its recording shows it — and called it never scrolled on
+    /// (26 Sep 2026, both forms, 391 and 509 seconds).
+    private func showErrorNote(in app: XCUIApplication) {
+        let note = app.staticTexts.matching(identifier: "onboarding-error").firstMatch
+        let window = app.windows.firstMatch.frame
+        reach(note, in: app, "the note under the button", swipes: 3)
+        // Built is not shown: a list makes its next row a little before that
+        // row scrolls in. One more flick, which at the list's end is the end.
+        if note.frame.maxY > window.maxY {
+            app.swipeUp()
+        }
+        settle(note)
+        // Asserted rather than assumed, because an audit of a screen the note
+        // has left is green for the wrong reason: neither under the bar nor
+        // past the bottom edge.
+        let barEdge = app.navigationBars.firstMatch.frame.maxY
+        XCTAssertGreaterThanOrEqual(note.frame.minY, barEdge, "the note under the button sits under the bar")
+        XCTAssertLessThanOrEqual(note.frame.maxY, window.maxY + 1, "the note under the button runs past the screen")
     }
 
     /// Members, usage and the invite rows.

@@ -1729,6 +1729,15 @@ final class MemoryStore {
                 body: "Aino tuli mökille joka kesä, ja Ainon kanssa soudettiin saareen "
                     + "kalaan aamuvarhaisella. Kahvipannu oli aina mukana, ja rannassa "
                     + "istuttiin pitkään puhumassa siitä, millaista sodan jälkeen oli ollut.",
+                // As it was said, before the tidying. A voice memory always
+                // has one (rule 3), and until 26 Sep 2026 this fixture had
+                // none — the same small lie as the missing audio below, and
+                // the one that left the export's folded transcript with
+                // nothing to show in the archive every check opens.
+                rawTranscript: "no Aino tuli mökille joka kesä ja tota Ainon kanssa soudettiin "
+                    + "sinne saareen kalaan aamuvarhaisella ja se kahvipannu oli aina mukana "
+                    + "ja rannassa istuttiin sitten pitkään ja puhuttiin siitä että millaista "
+                    + "se sodan jälkeen oli ollut",
                 // A key with nothing behind it, on purpose. A voice memory with
                 // no audio at all was a fixture telling a small lie — and the
                 // playback button, which is only drawn when there is audio to

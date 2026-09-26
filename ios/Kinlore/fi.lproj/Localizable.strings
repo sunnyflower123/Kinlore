@@ -700,3 +700,6 @@
 "Kuva ei muutu. Kortille tulee vain tämä ympyrä." = "Kuva ei muutu. Kortille tulee vain tämä ympyrä.";
 "Valokuva. Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta." = "Valokuva. Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta.";
 "Kortin kasvot" = "Kortin kasvot";
+
+// The export page (26 Sep 2026): the words as they were said, folded under the tidied text.
+"Alkuperäinen litterointi" = "Alkuperäinen litterointi";

@@ -828,3 +828,6 @@
 "Kuva ei muutu. Kortille tulee vain tämä ympyrä." = "The photograph does not change. Only this circle goes on the card.";
 "Valokuva. Kasvot otetaan kuvan keskeltä, ellei muuta kohtaa napauteta." = "Photograph. The face is taken from the middle unless another spot is tapped.";
 "Kortin kasvot" = "The card's face";
+
+// The export page (26 Sep 2026): the words as they were said, folded under the tidied text.
+"Alkuperäinen litterointi" = "Original transcription";

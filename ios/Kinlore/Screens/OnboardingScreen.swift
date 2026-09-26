@@ -579,6 +579,11 @@ private struct JoinFamilyForm: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .font(.system(.body, design: .monospaced))
+                    // For the audit's policy alone: with a code in it the
+                    // field has no label to be known by, and the default-size
+                    // simulation reports it clipped while the real largest
+                    // size draws it whole (`isInviteCodeSimulationArtefact`).
+                    .accessibilityIdentifier("invite-code")
 
                 // The one gesture in this app that this audience does not have.
                 //
@@ -718,6 +723,10 @@ private struct ErrorNote: View {
         Label(text, systemImage: "exclamationmark.triangle.fill")
             .foregroundStyle(Elder.proposal)
             .elderBody()
+            // By identifier rather than by its words: the sentence is the
+            // system's own for a request that failed, in the app's language,
+            // and a test that waited for it would be quoting Foundation.
+            .accessibilityIdentifier("onboarding-error")
     }
 }
 

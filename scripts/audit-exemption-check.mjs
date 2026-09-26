@@ -152,5 +152,33 @@ if (gate >= 0) {
 		/size == nil && AccessibilityPolicy\.isMemoryRowSimulationArtefact\(issue\)/.test(sweeps),
 	)
 }
+// The code field's gate (26 Sep 2026): the join form's field with a code in
+// it, which has no label to be known by. Pinned as the row's is — the one
+// identifier, the one type, that the field really sets it, and the
+// default-size launch only.
+const CODE_ID = 'invite-code'
+const codeGate = source.findIndex((l) => l.includes('static func isInviteCodeSimulationArtefact'))
+check('the code field gate is declared', codeGate >= 0, 'no isInviteCodeSimulationArtefact in the file')
+if (codeGate >= 0) {
+	let end = codeGate
+	while (end < source.length && !/^\s{4}\}\s*$/.test(source[end])) end += 1
+	const body = source.slice(codeGate, end + 1).join(' ')
+	const ids = [...body.matchAll(/identifier == "([^"]+)"/g)].map((m) => m[1])
+	check('the gate reads exactly the code field\'s identifier', ids.length === 1 && ids[0] === CODE_ID, `reads ${ids.join(', ') || 'nothing'}`)
+	const types = [...body.matchAll(/auditType\s*==\s*(\.\w+)/g)].map((m) => m[1])
+	check(
+		'the gate names .textClipped and nothing else',
+		types.length === 1 && types[0] === '.textClipped',
+		`names ${types.join(', ') || 'nothing'}`,
+	)
+	check('the gate holds it to a text field', /elementType == \.textField/.test(body))
+	const form = readFileSync(join(root, 'ios', 'Kinlore', 'Screens', 'OnboardingScreen.swift'), 'utf8')
+	check(`  the field sets "${CODE_ID}"`, form.includes(`.accessibilityIdentifier("${CODE_ID}")`))
+	const sweeps = readFileSync(join(root, 'ios', 'KinloreUITests', 'AccessibilitySweepTests.swift'), 'utf8')
+	check(
+		'the sweep passes it in on the default-size launch only',
+		/size == nil && AccessibilityPolicy\.isInviteCodeSimulationArtefact\(issue\)/.test(sweeps),
+	)
+}
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} failed`)
 process.exit(failures === 0 ? 0 : 1)

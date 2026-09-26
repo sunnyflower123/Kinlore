@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 89 sweep tests, each auditing one screen at the default text size and again at the largest, out of 259 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 91 sweep tests, each auditing one screen at the default text size and again at the largest, out of 261 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -2710,7 +2710,7 @@ One zip through the share sheet:
 
 | In the zip | Why |
 |---|---|
-| `memories.html` | Every memory under its subject, dates as they were told, photos inline, audio playable |
+| `memories.html` | Every memory under its subject, dates as they were told, photos inline, audio playable — and the words as they were said, folded under the tidied text wherever the two differ |
 | `photos/`, `audio/` | The originals, byte for byte — audio is never re-encoded, here least of all |
 | `archive.json` | The archive as a model — subjects, memories, questions, relations; the outbox and the sync cursor left out |
 
@@ -2761,6 +2761,16 @@ Four decisions:
   structure.
 - **The raw JSON travels beside it.** If the readable version ever lags behind
   the model, nothing has been lost.
+- **The words as they were said are on the page too, since 26 Sep 2026.**
+  Rule 3's second half had travelled in the JSON alone: the page carried the
+  tidied text and nothing else, so a family reading the copy that outlives the
+  app never saw what the tidying had changed. Now each memory whose transcript
+  differs from its text folds the transcript under it — *"Alkuperäinen
+  litterointi"*, a `<details>` the browser opens by itself, with no script for
+  a machine in twenty years to refuse. Only where the two differ: a telling the
+  tidying left alone has nothing to fold, and a typed memory has no transcript.
+  `export-check.mjs` opens the demo archive and counts one fold, on the one
+  demo telling that carries the words it was said in.
 - **`NSFileCoordinator(.forUploading)` does the zipping**, so no dependency is
   added for one archive format.
 

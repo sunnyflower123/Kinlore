@@ -949,4 +949,28 @@ enum AccessibilityPolicy {
         guard issue.auditType == .dynamicType, let element = issue.element else { return false }
         return element.identifier == "memory.body" || element.identifier == "memory.byline"
     }
+
+    /// The join form's code field with a code in it, reported clipped by the
+    /// audit's *default-size* simulation and by nothing else — *"Text of this
+    /// UITextField may be clipped at larger Dynamic Type sizes"*, in the
+    /// finding's own words. The result screen's *"Nimi"* field above is the
+    /// same finding on the same element type; this field has no label to key
+    /// on once it holds a code, so it is keyed on the identifier it sets for
+    /// this purpose alone.
+    ///
+    /// Measured 26 Sep 2026 on a private simulator, per the protocol above:
+    /// `testJoinFamilyFormError` reported the field, 338 × 22 pt with
+    /// twenty-two characters of base64url in it, at y 309 on the unscrolled
+    /// form and at y 111 with the form scrolled to its end — the finding
+    /// travels with the field — and the same form with the same code audited
+    /// clean at the real largest size in the same run, where the field is
+    /// measured live and the descenders in *gjpqy* are drawn whole. Blank,
+    /// the field audits clean at both sizes on every `testJoinFamilyForm`
+    /// run. Passed in on the first launch only, as the memory row's is, and
+    /// pinned the same way by `scripts/audit-exemption-check.mjs`.
+    static func isInviteCodeSimulationArtefact(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        issue.auditType == .textClipped
+            && issue.element?.elementType == .textField
+            && issue.element?.identifier == "invite-code"
+    }
 }

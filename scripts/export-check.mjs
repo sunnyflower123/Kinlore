@@ -237,6 +237,17 @@ waitFor(14)
 	const names = (emptyList[0] ?? '').replace(/^[^:]*:\s*/, '').replace(/\.$/, '').split(', ')
 	check('and names nobody the family has not confirmed', !names.includes('Aino'), names.join(', '))
 
+	// Rule 3's second half on the page. The demo telling carries the words as
+	// they were said beside the tidied text, and the page folds them under it
+	// in a `<details>` the browser opens by itself — no script, so it still
+	// opens on a machine that has never heard of this app. One fold and not
+	// four: the three typed memories have no transcript, and a fold with
+	// nothing new in it would be a heading over the same words twice.
+	const folds = [...demoPage.matchAll(/<details class="raw"><summary>([^<]*)<\/summary>\n((?:<p[^>]*>[^<]+<\/p>\n)+)<\/details>/g)]
+	check('the demo export folds the words as they were said under the tidied text', folds.length === 1, `${folds.length} folds`)
+	check('under a heading a family can read', folds.length === 1 && folds[0][1].trim() !== '', folds[0]?.[1] ?? '')
+	check('and the page runs no script to open it', !/<script/i.test(demoPage))
+
 	// The demo archive was told in Finnish whatever the phone reads, so every
 	// memory and question in it has to reach a screen reader as Finnish:
 	// marked `lang="fi"` on a page that is not, inheriting it on one that is.

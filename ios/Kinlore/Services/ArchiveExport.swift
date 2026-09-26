@@ -271,6 +271,9 @@ enum ArchiveExport {
         article { background: #fff; border-radius: .75rem; padding: 1rem 1.25rem; margin: 1rem 0; }
         .byline { color: #6f665c; font-size: .9rem; }
         .pending { color: #6f665c; font-style: italic; }
+        .raw { margin-top: .75rem; }
+        .raw summary { color: #6f665c; font-size: .9rem; cursor: pointer; }
+        .raw p { margin: .5rem 0 0; }
         .open { color: #6f665c; }
         audio { width: 100%; margin-top: .5rem; }
         </style>
@@ -362,6 +365,24 @@ enum ArchiveExport {
                     let told = languageAttribute(for: memory.body, on: pageLanguage)
                     for paragraph in memory.body.components(separatedBy: "\n") where !paragraph.isEmpty {
                         out += "<p\(told)>\(escaped(paragraph))</p>\n"
+                    }
+                    // Rule 3's second half on the page and not only in the
+                    // JSON: the words as they were said, folded under the
+                    // tidied text. A `<details>` opens with the browser alone
+                    // and no script, which is what "avautuu millä tahansa
+                    // koneella" has to mean in twenty years. Only where the
+                    // two differ — a telling the tidying left as it was has
+                    // nothing to fold away, and a typed memory has no
+                    // transcript at all.
+                    let tidied = memory.body.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let raw = memory.rawTranscript?.trimmingCharacters(in: .whitespacesAndNewlines),
+                       !raw.isEmpty, raw != tidied {
+                        let said = languageAttribute(for: raw, on: pageLanguage)
+                        out += "<details class=\"raw\"><summary>\(String(localized: "Alkuperäinen litterointi"))</summary>\n"
+                        for paragraph in raw.components(separatedBy: "\n") where !paragraph.isEmpty {
+                            out += "<p\(said)>\(escaped(paragraph))</p>\n"
+                        }
+                        out += "</details>\n"
                     }
                 }
                 if let filename = audioNames[memory.id] {
