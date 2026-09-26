@@ -413,21 +413,20 @@ enum AccessibilityPolicy {
     /// **Measured before being listed, both times.** The finding appears at the
     /// *default* size, where the audit simulates scaling; at a real
     /// AccessibilityXXXL the same screens audit clean and the sentences are
-    /// drawn in full — the settings footer below moved from y 659 to y 587 when
-    /// a section above it was shortened, which is how a framework cap gives
-    /// itself away: a defect in a sentence does not depend on where the sentence
-    /// sits.
+    /// drawn in full. A settings footer this set held until 26 Sep 2026 is
+    /// where it showed: the finding began the moment a row was added *above*
+    /// it, followed it from y 659 to y 587 when a section above it was
+    /// shortened, and did not move for an explicit Dynamic Type font. That is
+    /// how a framework cap gives itself away — a defect in a sentence does not
+    /// depend on where the sentence sits, and the metrics are the List's, not
+    /// our typography's. The footer left the app with its sentence, and its
+    /// entry with it: an exemption for words no screen shows forgives nothing
+    /// today and whatever reuses them tomorrow.
     ///
     /// So: measure at XXXL before adding anything here. A footer that is
     /// genuinely truncated on screen is a defect, and no list makes it not one.
     private static let listHeaderAndFooterText: Set<String> = [
         "Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.",
-        // Reached from the other direction as well, and worth keeping: this one
-        // began failing the moment a row was added *above* it, and giving it an
-        // explicit Dynamic Type font changed the finding not at all. Both facts
-        // say the same thing as the y-coordinate above — the metrics are the
-        // List's, not our typography's.
-        "Kertomasi muistot ovat vain tässä laitteessa.",
         // A header rather than a footer, which is why this set was renamed. The
         // cap is the same one: `Uusi arkisto` gained a section above this header
         // for PLAN.md §10 lever 2, and the header began failing at the *default*

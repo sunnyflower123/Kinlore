@@ -351,9 +351,14 @@ text sizes that it is on screen whenever the button is), and the create form
 offers *"Vain minulle, tälle puhelimelle"*: an archive kept to one phone, which
 sends no recording and transcribes nothing (the guard in
 `TellViewModel.stopAndProcess`). `LocalModeTests` pins what that mode says and
-not the guard itself, and its header says why. The notice names the recording
-and not the photograph that has travelled with a telling about one since
-19 Sep 2026 ([`ARCHITECTURE.md` §12](docs/ARCHITECTURE.md#12-the-question-ladder)).
+not the guard itself, and its header says why. Since 26 Sep 2026 the notice,
+the Help screen and the microphone prompt say that the recording goes through
+OpenRouter to a model, and the notice and Help add the photograph that has
+travelled with a telling about one since 19 Sep 2026
+([`ARCHITECTURE.md` §12](docs/ARCHITECTURE.md#12-the-question-ladder)). They
+promise one thing about it, the one the flag enforces: none of it trains a
+model. What a provider keeps is that provider's policy, and the app does not
+state it on anybody's behalf.
 The notice, the mode and the sealing are three of the four levers priced in the
 last item of [PLAN.md §10](docs/PLAN.md).
 

@@ -1253,10 +1253,16 @@ struct SubjectDetailScreen: View {
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                 } footer: {
-                    // Said at the button, before anything leaves: this is the
-                    // one place in the app a photograph leaves the phone without
-                    // being sealed first, and the words told about it go with it.
-                    Text("Kuva ja siitä kerrotut muistot lähetetään palveluumme väritettäväksi. Mitään ei tallenneta ennen kuin vastaat.")
+                    // Said at the button, before anything leaves: the
+                    // photograph goes to the model unsealed, and the words told
+                    // about it go with it. Until 26 Sep 2026 this called
+                    // colouring the one place a photograph left unsealed, which
+                    // stopped being true on 19 Sep, when a telling about a
+                    // photograph began sending it too — `WhereMemoriesGo` says
+                    // that one. The last sentence is about the archive and says
+                    // so, because right after a named service it would read as
+                    // a promise made on that service's behalf.
+                    Text("Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Arkistoon ei tallenneta mitään ennen kuin vastaat.")
                         .foregroundStyle(Elder.supporting)
                 }
             }

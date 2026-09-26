@@ -311,11 +311,17 @@ struct SettingsScreen: View {
                 }
             } footer: {
                 // The distinction between the two is the whole design of this
-                // screen, so it is spelled out rather than implied by the names.
-                Text(canLeave
-                    ? String(localized: "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään.")
-                    : String(localized: "Kertomasi muistot ovat vain tässä laitteessa."))
-                    .foregroundStyle(Elder.supporting)
+                // screen, so it is spelled out rather than implied by the names
+                // — and there is one only while there are two rows. With one,
+                // the archive section above has already said where the archive
+                // is. Until 26 Sep 2026 this footer then added "Kertomasi
+                // muistot ovat vain tässä laitteessa", which was untrue beside
+                // it both ways: an iCloud backup takes the archive in, and a
+                // family of one keeps it sealed on the server.
+                if canLeave {
+                    Text("Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään.")
+                        .foregroundStyle(Elder.supporting)
+                }
             }
         }
         .navigationTitle("Asetukset")

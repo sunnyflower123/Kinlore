@@ -3217,15 +3217,21 @@ those same categories, which is how the contrast problem survived this long.
   naming `MKAttributionLabel` when it is not. Measured on one screen and one
   link on 21 Sep 2026: twelve launches attached the element, the next seven
   did not.
-- Settings' own footer, *"Kertomasi muistot ovat vain tässä laitteessa."* — and
-  this one is worth the sentence it costs. It passed for as long as it did, and
-  the moment a row was added above it the audit called the same unchanged
-  sentence "partially unsupported", at the ordinary text size only. A finding
-  that appears when the list grows is exactly what real clipping looks like, so
-  it was screenshotted at both sizes with the new row in place: one line at the
-  ordinary size, and the footers around it wrap and grow properly at XXXL.
-  Giving it an explicit Dynamic Type font changed nothing, which is the other
-  half of the evidence — the metrics are the List's, not our typography's.
+- A `List`'s own headers and footers, `listHeaderAndFooterText`: two sentences
+  we wrote, each measured at XXXL before it was listed. The signature was
+  learned on Settings' footer *"Kertomasi muistot ovat vain tässä
+  laitteessa."*, and that one was worth the sentence it cost. It passed for as
+  long as it did, and the moment a row was added above it the audit called the
+  same unchanged sentence "partially unsupported", at the ordinary text size
+  only. A finding that appears when the list grows is exactly what real
+  clipping looks like, so it was screenshotted at both sizes with the new row
+  in place: one line at the ordinary size, and the footers around it wrap and
+  grow properly at XXXL. Giving it an explicit Dynamic Type font changed
+  nothing, which is the other half of the evidence — the metrics are the
+  List's, not our typography's. The footer itself left the app on 26 Sep 2026,
+  because "only on this device" was untrue wherever an iCloud backup runs and
+  in a family of one, whose archive is sealed on the server too; its entry left
+  the set with it.
 - `ContentUnavailableView`'s own Dynamic Type behaviour, which is the system
   view's and not ours — listed string by string rather than by category, so that
   our own Dynamic Type failures still fail.

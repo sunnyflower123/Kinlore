@@ -8,7 +8,7 @@
 
    The Finnish originals live in ios/project.yml, which generates Info.plist. */
 
-"NSMicrophoneUsageDescription" = "Kinlore records the memories you tell in your own voice, so that your family can listen to them later. In a family archive the recording passes through our service, where the speech is written out as text — it is not kept there, it is not handed over as training data, and nobody is identified from the voice. In the archive the recording is stored encrypted.";
+"NSMicrophoneUsageDescription" = "Kinlore records the memories you tell in your own voice, so that your family can listen to them later. In a family archive the voice is sent through the OpenRouter service to an AI that writes the speech down as text. It is not used to train AI. In the archive the recording is stored encrypted.";
 
 "NSPhotoLibraryUsageDescription" = "Choose old photographs for your family to tell memories about.";
 

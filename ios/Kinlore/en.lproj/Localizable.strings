@@ -385,9 +385,9 @@
 "Paina isoa nappia ja puhu ihan vapaasti. Sinun ei tarvitse muistaa järjestystä eikä vuosilukuja — sovellus järjestää ne puolestasi." = "Press the big button and just talk. You do not need to remember the order or the years — the app puts them in place for you.";
 "Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena." = "If talking does not suit you right now, you can write the memory instead. It goes into the archive just the same.";
 "Mitä äänellesi tapahtuu" = "What happens to your voice";
-"Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse." = "In a family archive the recording passes through our service, where the speech is written down as text. The service does not keep the voice, it is not handed over as training data, and nobody is identified from the voice — you choose the teller's name yourself.";
+"Perheen arkistossa kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä." = "In a family archive your voice is sent through the OpenRouter service to an AI that writes the speech down as text. When you talk about a photograph, the photograph goes too. Neither is used to train AI.";
 "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen." = "In the archive the voice is stored encrypted, and only your family's own phones can open it.";
-"Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "If the archive is only on this phone, the voice is not sent to our service and no text is written — you can write the memories yourself.";
+"Jos arkisto on vain tällä puhelimella, ääni ei lähde perheen palvelimelle eikä tekoälylle. Tekstiä ei silloin kirjoiteta — muistot voi kirjoittaa itse." = "If the archive is only on this phone, the voice goes neither to the family's server nor to an AI. No text is written then — you can write the memories yourself.";
 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä." = "The original recording is always kept. The text does not replace it — the family can listen to what you told in your own voice years from now.";
 "Kuka näkee muistot" = "Who sees the memories";
 "Vain ne, joille joku perheestä on lähettänyt kutsulinkin." = "Only those somebody in the family has sent an invitation link to.";
@@ -467,7 +467,7 @@
 // The strings that reached the screen as Strings and were never looked up: the first screen, the consent notice, the join errors and the starter questions (5 Sep 2026).
 "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme." = "Gather together what the grandparents remember. Tell it in your own voice — we put it in order.";
 "Kirjoita ensin nimesi." = "Write your name first.";
-"Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen." = "The memories are seen by the family's members. The recording passes through our service, where the speech is written down as text — it is not kept there, it is not handed over as training data, and nobody is identified from the voice. The original voice is kept in the archive encrypted, and only the family's own phones can open it.";
+"Muistot näkyvät perheen jäsenille. Kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen." = "The memories are seen by the family's members. Your voice is sent through the OpenRouter service to an AI that writes the speech down as text. When you talk about a photograph, the photograph goes too. Neither is used to train AI. The original voice is kept in the archive encrypted, and only the family's own phones can open it.";
 "Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse." = "The memories and the original voice stay on this phone — and in its iCloud backup, if that is on. They are not sent to the family's server, and no text is written from speech: you can write the memories yourself.";
 "Palvelin ei vastannut." = "The server did not answer.";
 "Jotain meni pieleen. Yritä uudelleen." = "Something went wrong. Try again.";
@@ -680,7 +680,6 @@
 "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa." = "An uncertain answer is the right answer. The app keeps it as it is and does not guess at anything more exact.";
 "Ilmaisessa arkistossa on tilaa %lld kuvalle." = "The free archive has room for %lld photographs.";
 "Kamera ei ole käytössä" = "The camera is not available";
-"Kertomasi muistot ovat vain tässä laitteessa." = "The memories you have told are on this device only.";
 "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "The invitation is still valid. Try again when the connection is working.";
 "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista." = "Photographing needs permission to use the camera. You can give it in the phone's settings — or pick pictures from the phone's own photos.";
 "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla." = "A device can belong to one family at a time. You can leave the family in Settings and then join with an invitation.";
@@ -726,7 +725,7 @@
 "Tallentaa muiston" = "Saves the memory";
 "Nauhoittaa puheesi ja tallentaa sen muistoksi" = "Records your voice and keeps it as a memory";
 "Väritä kerronnan mukaan" = "Colour it by the telling";
-"Kuva ja siitä kerrotut muistot lähetetään palveluumme väritettäväksi. Mitään ei tallenneta ennen kuin vastaat." = "The photo and the memories told about it are sent to our service to be coloured. Nothing is kept until you answer.";
+"Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Arkistoon ei tallenneta mitään ennen kuin vastaat." = "The photo and the memories told about it are sent through the OpenRouter service to an AI to be coloured. Neither is used to train AI. Nothing is saved to the archive until you answer.";
 "Värit kerronnan mukaan" = "Colours by the telling";
 "Väritetään kerronnan mukaan…" = "Colouring by the telling…";
 "Väritetty ehdotus. Värit ovat tekoälyn arvaus siitä, mitä kuvasta on kerrottu." = "A coloured proposal. The colours are the AI's guess from what was told about the photo.";

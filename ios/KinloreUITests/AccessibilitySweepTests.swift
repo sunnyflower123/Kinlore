@@ -273,13 +273,14 @@ final class AccessibilitySweepTests: XCTestCase {
         reach(photoTile(in: app), in: app, "the photo tile")
     }
 
-    /// The last thing on the Settings screen in all three of its states: the
-    /// footer under the wipe row, which says one of two sentences depending
-    /// on whether this phone can leave a family.
+    /// The last thing on the Settings screen of a phone that can leave its
+    /// family: the footer under the wipe row, which tells leaving from
+    /// emptying. The other two states have one row and nothing to tell it
+    /// from, so since 26 Sep 2026 they have no footer there, and their sweeps
+    /// end at the wipe row itself.
     private func settingsFooter(in app: XCUIApplication) -> XCUIElement {
         app.staticTexts.matching(NSPredicate(
-            format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
-            "Perheestä poistuminen", "Kertomasi muistot ovat vain"
+            format: "label BEGINSWITH %@", "Perheestä poistuminen"
         )).firstMatch
     }
 
@@ -1616,7 +1617,7 @@ final class AccessibilitySweepTests: XCTestCase {
             if isLargest {
                 try auditPageByPage(
                     app, "Asetukset, largest text size",
-                    to: settingsFooter(in: app), "the footer under the wipe row"
+                    to: app.buttons["Tyhjennä ja aloita alusta"], "the wipe row, last on the screen"
                 )
             }
         }
@@ -1698,7 +1699,7 @@ final class AccessibilitySweepTests: XCTestCase {
             if isLargest {
                 try auditPageByPage(
                     app, "Asetukset, vain tämä puhelin, largest text size",
-                    to: settingsFooter(in: app), "the footer under the wipe row"
+                    to: app.buttons["Tyhjennä ja aloita alusta"], "the wipe row, last on the screen"
                 )
             }
         }

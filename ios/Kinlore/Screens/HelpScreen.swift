@@ -43,9 +43,9 @@ struct HelpScreen: View {
             // VoiceOver somewhere to stop.
             section(
                 "Mitä äänellesi tapahtuu",
-                "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse.",
+                "Perheen arkistossa kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä.",
                 "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen.",
-                "Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.",
+                "Jos arkisto on vain tällä puhelimella, ääni ei lähde perheen palvelimelle eikä tekoälylle. Tekstiä ei silloin kirjoiteta — muistot voi kirjoittaa itse.",
                 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä."
             )
 

@@ -13,7 +13,7 @@
 // than one, on a rule CLAUDE.md calls the product rather than a checklist.
 //
 // The failure this guards against is the file's own history rather than a
-// hypothetical: the comments inside the set record four separate occasions on
+// hypothetical: the comments on the set record four separate occasions on
 // which a sentence was added after being measured, and the measurement is what
 // justifies each one. An entry added without one would look exactly the same.
 //
@@ -42,7 +42,6 @@ const source = readFileSync(AUDIT, 'utf8').split('\n')
 // another one, which is the same silence with different words.
 const MEASURED = [
 	'Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.',
-	'Kertomasi muistot ovat vain tässä laitteessa.',
 	'Kenen puhelin tämä on',
 ]
 

@@ -371,11 +371,18 @@ private struct WhereMemoriesGo: View {
     /// false promise the day the attempt was removed. A consent notice that is
     /// wrong in either clause is worse than none.
     ///
-    /// Since 19 Sep 2026 the shared branch also says what can be read off the
-    /// voice — nothing is kept at the service, nothing is handed over as
-    /// training data, nobody is identified from the voice, and the archived
-    /// audio is sealed with the family key — matching the microphone
-    /// permission text in `ios/project.yml` and the Help screen. The
+    /// Since 26 Sep 2026 the shared branch names who hears the voice and what
+    /// travels with it: OpenRouter and the model behind it, where
+    /// *"palvelussamme"* read as writing done in house, and the photograph of
+    /// a telling about one (`ExtractionContext.swift`), which had gone along
+    /// unmentioned since 19 Sep. Of the three things the 19 Sep wording said
+    /// did not happen, it keeps the one `openrouter.ts` sets on every request
+    /// — no training, `data_collection: 'deny'` — and drops the two nothing
+    /// here can make good on: what a provider keeps for its own running is the
+    /// provider's to say, and "nobody is identified from the voice" was a claim
+    /// about our prompts rather than about anybody's model. The archived audio
+    /// is still sealed with the family key. The microphone permission text in
+    /// `ios/project.yml` and the Help screen say the same. The
     /// kept-here branch deliberately gained no such clause: nothing reaches
     /// the service, so there is nothing to describe, and `MemoryStore.save()`
     /// writes plain JSON, so a sentence about encryption would be the one kind
@@ -411,7 +418,7 @@ private struct WhereMemoriesGo: View {
             // reads the label.
             Group {
                 if isShared {
-                    Text("Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
+                    Text("Muistot näkyvät perheen jäsenille. Kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
                         .accessibilityIdentifier("whereMemoriesGo")
                 } else {
                     Text("Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse.")

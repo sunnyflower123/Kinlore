@@ -320,9 +320,9 @@
 "Paina isoa nappia ja puhu ihan vapaasti. Sinun ei tarvitse muistaa järjestystä eikä vuosilukuja — sovellus järjestää ne puolestasi." = "Paina isoa nappia ja puhu ihan vapaasti. Sinun ei tarvitse muistaa järjestystä eikä vuosilukuja — sovellus järjestää ne puolestasi.";
 "Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena." = "Jos puhuminen ei sovi juuri nyt, voit kirjoittaa muiston sen sijaan. Se päätyy arkistoon samanlaisena.";
 "Mitä äänellesi tapahtuu" = "Mitä äänellesi tapahtuu";
-"Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse." = "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse.";
+"Perheen arkistossa kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä." = "Perheen arkistossa kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä.";
 "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen." = "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen.";
-"Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.";
+"Jos arkisto on vain tällä puhelimella, ääni ei lähde perheen palvelimelle eikä tekoälylle. Tekstiä ei silloin kirjoiteta — muistot voi kirjoittaa itse." = "Jos arkisto on vain tällä puhelimella, ääni ei lähde perheen palvelimelle eikä tekoälylle. Tekstiä ei silloin kirjoiteta — muistot voi kirjoittaa itse.";
 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä." = "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä.";
 "Kuka näkee muistot" = "Kuka näkee muistot";
 "Vain ne, joille joku perheestä on lähettänyt kutsulinkin." = "Vain ne, joille joku perheestä on lähettänyt kutsulinkin.";
@@ -402,7 +402,7 @@
 // The strings that reached the screen as Strings and were never looked up: the first screen, the consent notice, the join errors and the starter questions (5 Sep 2026).
 "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme." = "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme.";
 "Kirjoita ensin nimesi." = "Kirjoita ensin nimesi.";
-"Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen." = "Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.";
+"Muistot näkyvät perheen jäsenille. Kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen." = "Muistot näkyvät perheen jäsenille. Kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.";
 "Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse." = "Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse.";
 "Palvelin ei vastannut." = "Palvelin ei vastannut.";
 "Jotain meni pieleen. Yritä uudelleen." = "Jotain meni pieleen. Yritä uudelleen.";
@@ -580,7 +580,6 @@
 "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa." = "Epävarma vastaus on oikea vastaus. Sovellus tallentaa sen sellaisenaan eikä arvaa tarkempaa.";
 "Ilmaisessa arkistossa on tilaa %lld kuvalle." = "Ilmaisessa arkistossa on tilaa %lld kuvalle.";
 "Kamera ei ole käytössä" = "Kamera ei ole käytössä";
-"Kertomasi muistot ovat vain tässä laitteessa." = "Kertomasi muistot ovat vain tässä laitteessa.";
 "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.";
 "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista." = "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista.";
 "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla." = "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla.";
@@ -622,7 +621,7 @@
 "Tallentaa muiston" = "Tallentaa muiston";
 "Nauhoittaa puheesi ja tallentaa sen muistoksi" = "Nauhoittaa puheesi ja tallentaa sen muistoksi";
 "Väritä kerronnan mukaan" = "Väritä kerronnan mukaan";
-"Kuva ja siitä kerrotut muistot lähetetään palveluumme väritettäväksi. Mitään ei tallenneta ennen kuin vastaat." = "Kuva ja siitä kerrotut muistot lähetetään palveluumme väritettäväksi. Mitään ei tallenneta ennen kuin vastaat.";
+"Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Arkistoon ei tallenneta mitään ennen kuin vastaat." = "Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Arkistoon ei tallenneta mitään ennen kuin vastaat.";
 "Värit kerronnan mukaan" = "Värit kerronnan mukaan";
 "Väritetään kerronnan mukaan…" = "Väritetään kerronnan mukaan…";
 "Väritetty ehdotus. Värit ovat tekoälyn arvaus siitä, mitä kuvasta on kerrottu." = "Väritetty ehdotus. Värit ovat tekoälyn arvaus siitä, mitä kuvasta on kerrottu.";
