@@ -406,7 +406,7 @@
 "Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle." = "The paid archive has more of both. One payer opens it for the whole family.";
 "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista." = "If the phone is a grandparent's, turn on larger text in Settings.";
 "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy." = "It applies only to this app, and the phone's own text size takes precedence: if you have already made the text larger there, that size stays.";
-"Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota." = "The app also becomes simpler: the family tree is shown as lists, the album has no search, and photo colouring and the paid archive are not offered.";
+"Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tarjota. Maksullista arkistoa tarjotaan vain, kun ilmaisen arkiston raja tulee vastaan." = "The app also becomes simpler: the family tree is shown as lists, the album has no search, and photo colouring is not offered. The paid archive is offered only when the free archive reaches one of its limits.";
 "Omat muistot itsellesi" = "Your memories for yourself";
 "Voit viedä koko arkiston yhtenä tiedostona Asetuksista." = "You can export the whole archive as one file from Settings.";
 "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "It holds the memories as a readable page, the original recordings and the photos. It opens on any computer without this app.";

@@ -131,7 +131,10 @@ places, all derived.
   middle of checking names sees neither — the no-card-beside-proposals rule
   already guarantees it. And the paid archive is never the card on a
   grandparent's phone, where somebody else pays, nor on a phone with no store
-  to buy from (`UpsellRhythm.offersPurchase`, 26 Sep 2026).
+  to buy from (`UpsellRhythm.card`, 26 Sep 2026). A ceiling the family has
+  hit is not the slot: its *"Avaa koko arkisto"* stands on every phone with a
+  store, a grandparent's included, because the wall is the family's and so is
+  the way past it (`UpsellRhythm.offersPurchaseAtCeiling`).
 
 Everything else is one app. The difference is composed, never configured.
 

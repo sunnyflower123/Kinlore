@@ -120,11 +120,13 @@ struct SettingsScreen: View {
                 // the setup forms' "Kenen puhelin tämä on", and that answer
                 // has always been more than a text size: the tree is not
                 // drawn (`PeopleTab.offersTree`), the album has no search
-                // field (GalleryScreen), and neither colouring (`colourable`)
-                // nor the paid archive (`UpsellRhythm.offersPurchase`) is
-                // offered. Until 26 Sep 2026 the only line under a switch
-                // called "Isompi teksti" was about text, so turning it on for
-                // bigger letters took the tree away without a word.
+                // field (GalleryScreen), colouring is not offered
+                // (`colourable`), and the paid archive is offered only beside
+                // a ceiling the family has hit, never after a telling
+                // (`UpsellRhythm.card`). Until 26 Sep 2026 the only line
+                // under a switch called "Isompi teksti" was about text, so
+                // turning it on for bigger letters took the tree away
+                // without a word.
                 //
                 // One line, because this List is at its height limit (docs/
                 // ARCHITECTURE.md, "Emptying"). A caption naming all four was

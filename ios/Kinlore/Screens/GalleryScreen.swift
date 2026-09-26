@@ -976,7 +976,7 @@ private struct PhotoQuotaNote: View {
     @Environment(SyncEngine.self) private var sync: SyncEngine?
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
-    /// Whose phone this is (`UpsellRhythm.offersPurchase`).
+    /// Whose phone this is (`UpsellRhythm.offersPurchaseAtCeiling`).
     @AppStorage(Elder.largerTextKey) private var largerText = false
 
     @State private var isShowingPaywall = false
@@ -1005,11 +1005,11 @@ private struct PhotoQuotaNote: View {
     /// text sooner, while a photograph can also be made room for by deleting
     /// another. This note carries the button in the case that had none.
     ///
-    /// Neither note carries it on a grandparent's phone: the one who would pay
-    /// is not the one holding it (`UpsellRhythm.offersPurchase`).
+    /// A grandparent's phone carries it as well: the ceiling is the family's,
+    /// and so is the way past it (`UpsellRhythm.offersPurchaseAtCeiling`).
     private var carriesTheOffer: Bool {
         guard !session.isPaid,
-              UpsellRhythm.offersPurchase(
+              UpsellRhythm.offersPurchaseAtCeiling(
                   onGrandparentsPhone: largerText,
                   canPurchase: RevenueCatPurchases.configuredKey != nil
               )
@@ -1092,7 +1092,7 @@ private func tellingsAwaitingText(_ store: MemoryStore) -> Int {
 private struct MinutesQuotaNote: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
-    /// Whose phone this is (`UpsellRhythm.offersPurchase`).
+    /// Whose phone this is (`UpsellRhythm.offersPurchaseAtCeiling`).
     @AppStorage(Elder.largerTextKey) private var largerText = false
 
     @State private var isShowingPaywall = false
@@ -1121,10 +1121,10 @@ private struct MinutesQuotaNote: View {
 
                 // Only when there is something to open: without a RevenueCat
                 // key the sheet would be a dead button, and a paid family is
-                // not out of minutes. And not on a grandparent's phone, whose
-                // holder is not the one who pays.
+                // not out of minutes. On a grandparent's phone as on any
+                // other (`UpsellRhythm.offersPurchaseAtCeiling`).
                 if !session.isPaid,
-                   UpsellRhythm.offersPurchase(
+                   UpsellRhythm.offersPurchaseAtCeiling(
                        onGrandparentsPhone: largerText,
                        canPurchase: RevenueCatPurchases.configuredKey != nil
                    ) {

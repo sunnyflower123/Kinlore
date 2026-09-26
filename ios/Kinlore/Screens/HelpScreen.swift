@@ -109,7 +109,7 @@ struct HelpScreen: View {
                 "Isompi teksti",
                 "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista.",
                 "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy.",
-                "Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota."
+                "Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tarjota. Maksullista arkistoa tarjotaan vain, kun ilmaisen arkiston raja tulee vastaan."
             )
 
             section(

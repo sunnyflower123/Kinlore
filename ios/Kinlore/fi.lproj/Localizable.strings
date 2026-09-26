@@ -341,7 +341,7 @@
 "Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle." = "Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle.";
 "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista." = "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista.";
 "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy." = "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy.";
-"Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota." = "Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota.";
+"Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tarjota. Maksullista arkistoa tarjotaan vain, kun ilmaisen arkiston raja tulee vastaan." = "Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tarjota. Maksullista arkistoa tarjotaan vain, kun ilmaisen arkiston raja tulee vastaan.";
 "Omat muistot itsellesi" = "Omat muistot itsellesi";
 "Voit viedä koko arkiston yhtenä tiedostona Asetuksista." = "Voit viedä koko arkiston yhtenä tiedostona Asetuksista.";
 "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.";

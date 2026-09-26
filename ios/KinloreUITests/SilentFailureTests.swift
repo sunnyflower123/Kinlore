@@ -178,6 +178,56 @@ final class SilentFailureTests: XCTestCase {
         )
     }
 
+    /// The same walls on a grandparent's phone, each with the way past it.
+    /// The ceilings are the family's, and so is the purchase that lifts them
+    /// (`UpsellRhythm.offersPurchaseAtCeiling`): the screen that says her
+    /// voice is safe, the minutes note and the photographs note on Albumi all
+    /// carry "Avaa koko arkisto" wherever there is a store. For part of
+    /// 26 Sep 2026 all three were hidden there on the result card's reasoning
+    /// — the card still never asks her after a telling
+    /// (`ResultScreenTests.testTheArchiveIsOfferedOnlyOnAReadersPhoneWithAStore`)
+    /// — and a wall with nothing beside it said only that there was no way up.
+    ///
+    /// The key is that test's placeholder, in a key's shape and never the
+    /// Test Store's. The photographs get a launch of their own because the
+    /// minutes note takes the offer whenever it shows, so the photo note is
+    /// never asked beside it.
+    func testTheCeilingsOfferTheArchiveOnAGrandparentsPhone() {
+        let grandparentWithAStore = ["-rcKey", "test_placeholder", "-elder.largerText", "YES"]
+
+        let app = launch(["-seed", "empty", "-defer", "once", "-minutes-out", "1"] + grandparentWithAStore)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+
+        XCTAssertTrue(app.staticTexts["Äänesi on tallessa"].waitForExistence(timeout: 30), "never arrived: the audio-saved screen")
+        let saved = app.buttons["Avaa koko arkisto"]
+        for _ in 0 ..< 4 where !saved.exists { app.swipeUp() }
+        XCTAssertTrue(saved.waitForExistence(timeout: 10), "the audio-saved screen met the wall with no way past it")
+
+        let done = app.buttons["Selvä"]
+        for _ in 0 ..< 4 where !done.exists { app.swipeUp() }
+        XCTAssertTrue(done.waitForExistence(timeout: 10), "never arrived: the way on")
+        done.tap()
+
+        app.tabBars.buttons["Albumi"].tap()
+        let minutes = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Yksi kertomus odottaa tekstiä")).firstMatch
+        XCTAssertTrue(minutes.waitForExistence(timeout: 10), "never arrived: the note about the month's minutes")
+        let beside = app.buttons["Avaa koko arkisto"]
+        for _ in 0 ..< 4 where !beside.exists { app.swipeUp() }
+        XCTAssertTrue(beside.waitForExistence(timeout: 10), "the minutes note met the wall with no way past it")
+        app.terminate()
+
+        let photos = launch(["-seed", "archive", "-tab", "memories", "-photos-refused", "2"] + grandparentWithAStore)
+        let refused = photos.staticTexts
+            .containing(NSPredicate(format: "label CONTAINS %@", "ei mahtunut ilmaiseen arkistoon"))
+            .firstMatch
+        XCTAssertTrue(refused.waitForExistence(timeout: 15), "never arrived: the photographs note")
+        let lift = photos.buttons["Avaa koko arkisto"]
+        for _ in 0 ..< 4 where !lift.exists { photos.swipeUp() }
+        XCTAssertTrue(lift.waitForExistence(timeout: 10), "the photographs note met the wall with no way past it")
+    }
+
     /// The conversation can be ended while answering, keeping the answer. The
     /// loop's exit used to stand only while a question was being spoken; once
     /// the microphone had armed itself, the big button asked the next question

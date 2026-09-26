@@ -1552,7 +1552,7 @@ struct BlindCardView: View {
 private struct ResultView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
-    /// Whose phone this is, for the offer slot (`UpsellRhythm.offersPurchase`).
+    /// Whose phone this is, for the offer slot (`UpsellRhythm.card`).
     @AppStorage(Elder.largerTextKey) private var largerText = false
     let model: TellViewModel
     /// The presenter's way out, when there is a presenter: the same closure
@@ -2031,7 +2031,7 @@ private struct UpsellCard: View {
                 .foregroundStyle(Elder.supporting)
 
             // Always a button. The card rises only where there is a store to
-            // buy from (`UpsellRhythm.offersPurchase`); until 26 Sep 2026 it
+            // buy from (`UpsellRhythm.card`); until 26 Sep 2026 it
             // rose without one too and drew no button, which on any phone
             // opened from its home screen was every third telling.
             Button {
@@ -2230,7 +2230,8 @@ private struct ProposalRow: View {
 /// user did nothing wrong and lost nothing.
 private struct AudioSavedView: View {
     @Environment(Session.self) private var session
-    /// Whose phone this is, for the handle below (`UpsellRhythm.offersPurchase`).
+    /// Whose phone this is, for the handle below
+    /// (`UpsellRhythm.offersPurchaseAtCeiling`).
     @AppStorage(Elder.largerTextKey) private var largerText = false
     let model: TellViewModel
     /// As on the result screen: the presenter's closure, nil on the tab. It
@@ -2350,10 +2351,10 @@ private struct AudioSavedView: View {
                 // purchase the family screen and the finished-memory card
                 // offer, here beside the one moment it is the answer to.
                 // Quiet, below the prominent one — §22 allows one of those.
-                // Not on a grandparent's phone, where the sentence above
-                // already says who can lift the wall: the family.
+                // On a grandparent's phone too: the sentence above says the
+                // family can lift the wall, and this is how.
                 if model.savedBecauseOfQuota, !session.isPaid,
-                   UpsellRhythm.offersPurchase(
+                   UpsellRhythm.offersPurchaseAtCeiling(
                        onGrandparentsPhone: largerText,
                        canPurchase: RevenueCatPurchases.configuredKey != nil
                    ) {

@@ -6,6 +6,10 @@
 // wrong about proposals and the offer lands next to the names she has to check,
 // which is rule 4's mechanism and the one place a wrong person becomes a fact.
 //
+// It also holds the one offer that does not wait for a telling: the purchase
+// beside a ceiling the family has hit, which stands on every phone with a
+// store, a grandparent's included.
+//
 // None of that shows up in a screenshot, and none of it fails a build. Run it
 // after touching UpsellRhythm.swift — the command is in CLAUDE.md.
 //
@@ -112,8 +116,12 @@ enum UpsellRhythmCheck {
 
         // Whose phone it is. The one holding a grandparent's phone is the one
         // the archive is for, and somebody else pays for it (docs/PLAN.md §9):
-        // she is never the one asked. The invitation is not a purchase, and a
-        // grandparent alone needs it more than anybody to bring the family in.
+        // the card never asks her after a telling. The invitation is not a
+        // purchase, and a grandparent alone needs it more than anybody to
+        // bring the family in. A ceiling is another rule. It is the family's,
+        // the same wall on every phone, and since 26 Sep 2026 so is the way
+        // past it: on the phone of the one who does most of the telling, a
+        // wall with nothing beside it says only that there is no way up.
         print("— on a grandparent's phone —")
         checkCard(
             "a free family is not offered the archive there",
@@ -128,12 +136,12 @@ enum UpsellRhythmCheck {
             UpsellRhythm.card(membersInFamily: 1, isPaid: false, onGrandparentsPhone: true, canPurchase: true), .invite
         )
         check(
-            "nor is the purchase beside a ceiling she has hit",
-            UpsellRhythm.offersPurchase(onGrandparentsPhone: true, canPurchase: true), false
+            "but the purchase beside a ceiling she has hit is",
+            UpsellRhythm.offersPurchaseAtCeiling(onGrandparentsPhone: true, canPurchase: true), true
         )
         check(
-            "while a reader's phone is",
-            UpsellRhythm.offersPurchase(onGrandparentsPhone: false, canPurchase: true), true
+            "as it is on a reader's phone",
+            UpsellRhythm.offersPurchaseAtCeiling(onGrandparentsPhone: false, canPurchase: true), true
         )
 
         // And whether there is anything to buy. `canPurchase` is whether a
@@ -152,11 +160,11 @@ enum UpsellRhythmCheck {
         )
         check(
             "nor is the purchase beside a ceiling",
-            UpsellRhythm.offersPurchase(onGrandparentsPhone: false, canPurchase: false), false
+            UpsellRhythm.offersPurchaseAtCeiling(onGrandparentsPhone: false, canPurchase: false), false
         )
         check(
-            "and a grandparent's phone stays without it either way",
-            UpsellRhythm.offersPurchase(onGrandparentsPhone: true, canPurchase: false), false
+            "on a grandparent's phone either",
+            UpsellRhythm.offersPurchaseAtCeiling(onGrandparentsPhone: true, canPurchase: false), false
         )
 
         print("— whether the slot shows —")
