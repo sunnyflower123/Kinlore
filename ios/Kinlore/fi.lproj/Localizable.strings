@@ -193,6 +193,10 @@
 "Kutsukoodi" = "Kutsukoodi";
 "Kenelle kutsu menee?" = "Kenelle kutsu menee?";
 "Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään." = "Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään.";
+"Liity perheen muistoarkistoon:" = "Liity perheen muistoarkistoon:";
+"Tarvitset iPhonen ja Kinloren." = "Tarvitset iPhonen ja Kinloren.";
+"Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa \"Open\"." = "Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa \"Open\".";
+"Tai avaa sovellus ja liitä tämä koodi:" = "Tai avaa sovellus ja liitä tämä koodi:";
 "Kutsua ei voitu luoda" = "Kutsua ei voitu luoda";
 "Kutsua ei voitu perua" = "Kutsua ei voitu perua";
 "Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän." = "Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän.";
@@ -206,7 +210,7 @@
 "Isovanhemman" = "Isovanhemman";
 "Isompi teksti" = "Isompi teksti";
 "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.";
-"Puhelimen oma tekstikoko on tätä vahvempi." = "Puhelimen oma tekstikoko on tätä vahvempi.";
+"Sukupuu näkyy silloin listoina, ilman väritystä." = "Sukupuu näkyy silloin listoina, ilman väritystä.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi.";
 "%@ · %@" = "%@ · %@";
 "Keiden kesken" = "Keiden kesken";
@@ -219,8 +223,8 @@
 "Takaisin vain tähän puhelimeen ei pääse." = "Takaisin vain tähän puhelimeen ei pääse.";
 "Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen." = "Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen.";
 "Ilmainen arkisto" = "Ilmainen arkisto";
-"Kertomista tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "Kertomista tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld.";
-"Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle." = "Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle.";
+"Litterointiaikaa tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "Litterointiaikaa tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld.";
+"Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle." = "Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle.";
 "Kiitos — maksu meni läpi" = "Kiitos — maksu meni läpi";
 "Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa." = "Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa.";
 "Käyttö" = "Käyttö";
@@ -312,7 +316,7 @@
 "Mitä äänellesi tapahtuu" = "Mitä äänellesi tapahtuu";
 "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse." = "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse.";
 "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen." = "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen.";
-"Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.";
+"Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.";
 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä." = "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä.";
 "Kuka näkee muistot" = "Kuka näkee muistot";
 "Vain ne, joille joku perheestä on lähettänyt kutsulinkin." = "Vain ne, joille joku perheestä on lähettänyt kutsulinkin.";
@@ -325,17 +329,19 @@
 "Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta." = "Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta.";
 "Mikä maksaa" = "Mikä maksaa";
 "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan." = "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan.";
-"Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle." = "Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle.";
+"Ilmaisessa arkistossa kuvia mahtuu rajattu määrä, ja puheesta kirjoitetaan tekstiä rajattu aika kuukaudessa: se on litterointiaika. Jos aika loppuu, ääni tallentuu silti, ja teksti kirjoitetaan, kun aikaa on taas." = "Ilmaisessa arkistossa kuvia mahtuu rajattu määrä, ja puheesta kirjoitetaan tekstiä rajattu aika kuukaudessa: se on litterointiaika. Jos aika loppuu, ääni tallentuu silti, ja teksti kirjoitetaan, kun aikaa on taas.";
+"Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle." = "Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle.";
 "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista." = "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista.";
 "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy." = "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy.";
+"Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota." = "Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota.";
 "Omat muistot itsellesi" = "Omat muistot itsellesi";
 "Voit viedä koko arkiston yhtenä tiedostona Asetuksista." = "Voit viedä koko arkiston yhtenä tiedostona Asetuksista.";
 "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta.";
 "Jos puhelin katoaa" = "Jos puhelin katoaa";
 "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki." = "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki.";
 "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää." = "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää.";
-"Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.";
-"Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.";
+"Jos arkisto on vain tällä puhelimella, sen saa takaisin vain viedystä tiedostosta tai puhelimen iCloud-varmuuskopiosta, jos se on päällä." = "Jos arkisto on vain tällä puhelimella, sen saa takaisin vain viedystä tiedostosta tai puhelimen iCloud-varmuuskopiosta, jos se on päällä.";
+"Arkisto on vain tällä puhelimella, ellei iCloud-varmuuskopio ole päällä." = "Arkisto on vain tällä puhelimella, ellei iCloud-varmuuskopio ole päällä.";
 "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta." = "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta.";
 
 // Rule 10: an archive this version cannot read is kept, and said so (4 Sep 2026).
@@ -345,12 +351,12 @@
 // The month's minutes, said as a date and a count instead of "myöhemmin" — and the row and screen that had never been looked up (4 Sep 2026).
 "Ääni tallessa — voit kirjoittaa tekstin itse" = "Ääni tallessa — voit kirjoittaa tekstin itse";
 "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta" = "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta";
-"Ääni tallessa — kuukauden kertominen täynnä" = "Ääni tallessa — kuukauden kertominen täynnä";
+"Ääni tallessa — kuukauden litterointiaika käytetty" = "Ääni tallessa — kuukauden litterointiaika käytetty";
 "Ääni tallessa — teksti valmistuu myöhemmin" = "Ääni tallessa — teksti valmistuu myöhemmin";
-"Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@.";
-"%lld kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "%lld kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@.";
+"Yksi kertomus odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa %@." = "Yksi kertomus odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa %@.";
+"%lld kertomusta odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa %@." = "%lld kertomusta odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa %@.";
 "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse." = "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.";
-"Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.";
+"Kuukauden ilmainen litterointiaika on käytetty, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun aikaa on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "Kuukauden ilmainen litterointiaika on käytetty, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun aikaa on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.";
 "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse." = "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.";
 
 // The gallery's section headings, unlooked-up for the same reason a day later: each passed through a String on its way to Text. "Paikat" was already translated below and still read Finnish.
@@ -391,7 +397,7 @@
 "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme." = "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme.";
 "Kirjoita ensin nimesi." = "Kirjoita ensin nimesi.";
 "Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen." = "Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.";
-"Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa." = "Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa.";
+"Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse." = "Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse.";
 "Palvelin ei vastannut." = "Palvelin ei vastannut.";
 "Jotain meni pieleen. Yritä uudelleen." = "Jotain meni pieleen. Yritä uudelleen.";
 "Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki." = "Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki.";
@@ -472,7 +478,7 @@
 "Kopio tällä puhelimella" = "Kopio tällä puhelimella";
 "Tila" = "Tila";
 "Lähetys" = "Lähetys";
-"Kertominen tässä kuussa" = "Kertominen tässä kuussa";
+"Litterointiaika tässä kuussa" = "Litterointiaika tässä kuussa";
 "ei vielä kuvia eikä ääniä" = "ei vielä kuvia eikä ääniä";
 "haetaan, %lld / %lld" = "haetaan, %lld / %lld";
 "kaikki tallessa" = "kaikki tallessa";
@@ -589,7 +595,7 @@
 "Tallennettu. Kuvaa seuraava." = "Tallennettu. Kuvaa seuraava.";
 "Tällä laitteella on jo oma arkisto" = "Tällä laitteella on jo oma arkisto";
 "Tämä laite kuuluu jo perheeseen" = "Tämä laite kuuluu jo perheeseen";
-"Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa." = "Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa.";
+"Tämän kuukauden litterointiaika on käytetty. Äänesi on silti tallessa." = "Tämän kuukauden litterointiaika on käytetty. Äänesi on silti tallessa.";
 "Tässä laitteessa ei ole kameraa" = "Tässä laitteessa ei ole kameraa";
 "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista." = "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista.";
 "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen." = "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen.";

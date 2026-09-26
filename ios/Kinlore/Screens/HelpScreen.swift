@@ -45,7 +45,7 @@ struct HelpScreen: View {
                 "Mitä äänellesi tapahtuu",
                 "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse.",
                 "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen.",
-                "Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.",
+                "Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse.",
                 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä."
             )
 
@@ -72,17 +72,26 @@ struct HelpScreen: View {
                 "Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta."
             )
 
-            // "Kertomisaika", not "AI-minuutit". The same quota is called
-            // "kertominen tässä kuussa" on the family screen and "kertomista
-            // tässä kuussa jäljellä" on the card after a telling, and this
-            // page was the last place still using the jargon name for it.
-            // See docs/ARCHITECTURE.md §21. (Above the call rather than inside
-            // it: the localisation check reads every literal inside a
-            // `section(` call as a key, comments included.)
+            // Two words for two things, and this is the page that says so.
+            // "Kertominen" is the act, and rule 2 says it is never limited;
+            // the monthly meter is "litterointiaika", the time speech is
+            // turned into text. Until 26 Sep 2026 the meter was called
+            // "kertomisaika" here and "kertominen" elsewhere, so this section
+            // said telling is never limited one line above a limit on telling
+            // time — and in English, "the month's free telling is used up"
+            // sat beside "Telling is always free". The middle line names the
+            // meter once, because every other screen uses the name without
+            // explaining it. "More" rather than "no limits": the paid tier's
+            // fair-use ceiling is written down and not enforced (docs/PLAN.md
+            // §9), and "more" stays true either way. See docs/ARCHITECTURE.md
+            // §21. (Above the call rather than inside it: the localisation
+            // check reads every literal inside a `section(` call as a key,
+            // comments included.)
             section(
                 "Mikä maksaa",
                 "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan.",
-                "Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle."
+                "Ilmaisessa arkistossa kuvia mahtuu rajattu määrä, ja puheesta kirjoitetaan tekstiä rajattu aika kuukaudessa: se on litterointiaika. Jos aika loppuu, ääni tallentuu silti, ja teksti kirjoitetaan, kun aikaa on taas.",
+                "Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle."
             )
 
             // The one thing on this page that is addressed to the person
@@ -92,10 +101,15 @@ struct HelpScreen: View {
             // asked once during setup, where it is easy to answer "minun" out of
             // habit and never think about it again. This is where they find it
             // afterwards.
+            //
+            // The last line is what else the switch does. Settings has room
+            // for one line under it and names the tree and the colouring
+            // there; this is where all four are said (26 Sep 2026).
             section(
                 "Isompi teksti",
                 "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista.",
-                "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy."
+                "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy.",
+                "Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota."
             )
 
             section(
@@ -116,7 +130,7 @@ struct HelpScreen: View {
                 "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki.",
                 "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää.",
                 "Kuvat ja äänet haetaan perheen jokaiseen puhelimeen wifi-yhteydellä, joten arkisto säilyy myös silloin, jos palvelin joskus sammuu. Perhe-näytön rivi ”Kopio tällä puhelimella” kertoo, onko kaikki jo tässä puhelimessa.",
-                "Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio."
+                "Jos arkisto on vain tällä puhelimella, sen saa takaisin vain viedystä tiedostosta tai puhelimen iCloud-varmuuskopiosta, jos se on päällä."
             )
         }
         .navigationTitle("Näin tämä toimii")

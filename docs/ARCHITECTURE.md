@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 95 sweep tests, each auditing one screen at the default text size and again at the largest, out of 270 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 95 sweep tests, each auditing one screen at the default text size and again at the largest, out of 271 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -4462,6 +4462,21 @@ that renamed itself under a typing finger is the worse of the two faults.
 `FamilyTreeTests` pins both phones, and the grandparent's test now asserts the
 tab bar as well as the screen.
 
+**Litterointiaika, not kertominen, for the monthly meter, since 26 Sep 2026.**
+Rule 2 says telling is never limited, and the words said it was: the free
+tier's monthly allowance was *kertomisaika* on Help and *kertominen* on the
+family screen and in every sentence about running out, so an English phone
+read *"the month's free telling is used up"* one screen away from *"Telling is
+always free"*. What runs out is the time in which speech is turned into text,
+and that is now its only name — *litterointiaika*, *transcription time* — on
+the family screen's row, the result screen, the waiting row and note on
+Albumi, and the notice after a telling. It is a new word, which this section
+asks a reason for, and the reason is that it names a thing the old word
+misnamed. Help's *Mikä maksaa* explains it once; nothing else does. The same
+pass took *rajoja ei ole* off the offer card and Help: the paid tier's
+fair-use ceiling is written down and not enforced (PLAN §9), and *enemmän*
+stays true either way.
+
 What the survey changed, in full: *"Mitätöi"* on an invite became *"Poista"* —
 the register of an authority annulling a document, in an app whose every other
 removal is *poista* — and the People empty state stopped calling its own list
@@ -4801,7 +4816,7 @@ the one place in the app a photograph leaves without being sealed first (lever
 3), and the words go with it the way a transcript does.
 
 So it is not offered at all on a phone whose archive was kept to itself. That
-phone's onboarding promised *"Muistot jäävät tähän puhelimeen"*, and the Worker
+phone's onboarding promised *"Perheen palvelimelle ne eivät lähde"*, and the Worker
 refusing a phone with no family would come after the photograph had already
 left. The first build offered it there anyway, and nothing but reading the
 promise beside the gate found it; `ColourTests` holds it now, through the same

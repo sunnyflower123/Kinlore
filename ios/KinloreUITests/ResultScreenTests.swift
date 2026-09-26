@@ -123,4 +123,52 @@ final class ResultScreenTests: XCTestCase {
             "the answer was stored as the decade it started from"
         )
     }
+
+    /// The paid archive is offered on a reader's phone and never on a
+    /// grandparent's, where the one who pays is somebody else (docs/PLAN.md
+    /// §9) — and never on a phone with no store to buy from, where an offer is
+    /// a sentence about money with nothing to tap. `upsell-rhythm-check.swift`
+    /// pins both rules; this pins that the screen asks them with the phone's
+    /// own answers, which the check cannot see.
+    ///
+    /// All three launches are the same telling, the same family and the rhythm
+    /// due (`-tellings-since-upsell 2`, as in the film's paywall take). The
+    /// first is a reader's phone with a store, and it is what makes the other
+    /// two absences mean anything — a card that never came would be missing
+    /// from all three. The second differs from it only in the text floor, the
+    /// third only in having no key.
+    ///
+    /// The key is a placeholder in a key's shape and never the Test Store's:
+    /// it is all `RevenueCatPurchases.configuredKey` asks for, and whatever the
+    /// SDK then asks RevenueCat with it is refused where no screen shows it.
+    func testTheArchiveIsOfferedOnlyOnAReadersPhoneWithAStore() {
+        let offer = "Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle."
+        let arguments = ["-seed", "family", "-defer", "structure", "-screen", "interview", "-tellings-since-upsell", "2"]
+        let store = ["-rcKey", "test_placeholder"]
+
+        let reader = launch(arguments + store)
+        XCTAssertTrue(reader.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 60), "never arrived: the result")
+        let offered = reader.staticTexts[offer]
+        for _ in 0 ..< 6 where !offered.exists { reader.swipeUp() }
+        XCTAssertTrue(offered.waitForExistence(timeout: 10), "a reader's phone was not offered the archive")
+        XCTAssertTrue(reader.buttons["Avaa koko arkisto"].exists, "the offer came without its button")
+        reader.terminate()
+
+        let grandparent = launch(arguments + store + ["-elder.largerText", "YES"])
+        XCTAssertTrue(grandparent.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 60), "never arrived: the result")
+        for _ in 0 ..< 6 {
+            XCTAssertFalse(grandparent.staticTexts[offer].exists, "a grandparent's phone was offered the archive")
+            grandparent.swipeUp()
+        }
+        XCTAssertFalse(grandparent.staticTexts[offer].exists, "a grandparent's phone was offered the archive")
+        grandparent.terminate()
+
+        let keyless = launch(arguments)
+        XCTAssertTrue(keyless.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 60), "never arrived: the result")
+        for _ in 0 ..< 6 {
+            XCTAssertFalse(keyless.staticTexts[offer].exists, "a phone with no store was offered the archive")
+            keyless.swipeUp()
+        }
+        XCTAssertFalse(keyless.staticTexts[offer].exists, "a phone with no store was offered the archive")
+    }
 }

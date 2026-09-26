@@ -764,8 +764,8 @@ struct SubjectDetailScreen: View {
     /// button that can only ever be refused is a broken button. Not on her phone
     /// (the text-floor signal), because there the question has to come before
     /// the colours, and the card that asks it first is not built. And not on a
-    /// phone kept to itself, whose onboarding promised "Muistot jäävät tähän
-    /// puhelimeen": colouring sends the photograph and those memories to the
+    /// phone kept to itself, whose onboarding promised "Perheen palvelimelle ne
+    /// eivät lähde": colouring sends the photograph and those memories to the
     /// Worker, and even a refusal there arrives after the bytes have left. It
     /// is the gate that keeps transcription off that phone (`TellScreen`).
     private var colourable: Bool {
@@ -1566,7 +1566,7 @@ private struct MemoryRow: View {
         if TranscriptionAttempts.hasFailedRepeatedly(on: memory.id) {
             return "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta"
         }
-        if session.isOutOfMinutes { return "Ääni tallessa — kuukauden kertominen täynnä" }
+        if session.isOutOfMinutes { return "Ääni tallessa — kuukauden litterointiaika käytetty" }
         return "Ääni tallessa — teksti valmistuu myöhemmin"
     }
 

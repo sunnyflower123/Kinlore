@@ -130,13 +130,13 @@ final class Session {
 
     var isPaid: Bool { usage?.isPaid ?? false }
 
-    /// The month's free telling is used up: the meter the server keeps, read
-    /// on every phone. Not a device-local flag on purpose — the grandchild's
-    /// phone never transcribes grandmother's recordings and would never learn
-    /// it any other way, and it is her rows that read "valmistuu myöhemmin"
-    /// on his screen. False whenever there is nothing to know: no family, no
-    /// usage fetched yet, or a paid archive (founder's-eye review, 3 Sep 2026,
-    /// findings #103–#105).
+    /// The month's free transcription time is used up: the meter the server
+    /// keeps, read on every phone. Not a device-local flag on purpose — the
+    /// grandchild's phone never transcribes grandmother's recordings and would
+    /// never learn it any other way, and it is her rows that read "valmistuu
+    /// myöhemmin" on his screen. False whenever there is nothing to know: no
+    /// family, no usage fetched yet, or a paid archive (founder's-eye review,
+    /// 3 Sep 2026, findings #103–#105).
     var isOutOfMinutes: Bool {
         #if DEBUG
         // `-minutes-out <n>`: holds the state still for the audit and the

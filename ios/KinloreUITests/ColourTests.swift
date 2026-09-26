@@ -78,12 +78,12 @@ final class ColourTests: XCTestCase {
     }
 
     /// A phone told to keep its archive to itself is not offered colours at all.
-    /// Its onboarding promised "Muistot jäävät tähän puhelimeen", and colouring
-    /// sends the photograph and those memories to the Worker — a refusal there
-    /// would come after they had left. `-local_only YES` is the key the
-    /// onboarding answer writes, and the dead loopback address makes this a
-    /// phone that has a backend and chose not to use it (`isLocalByChoice`), as
-    /// in `LocalModeTests`.
+    /// Its onboarding promised "Perheen palvelimelle ne eivät lähde", and
+    /// colouring sends the photograph and those memories to the Worker — a
+    /// refusal there would come after they had left. `-local_only YES` is the
+    /// key the onboarding answer writes, and the dead loopback address makes
+    /// this a phone that has a backend and chose not to use it
+    /// (`isLocalByChoice`), as in `LocalModeTests`.
     ///
     /// Everything else the button needs is proven present first — the telling
     /// under the photograph, and the photograph itself, because a card still

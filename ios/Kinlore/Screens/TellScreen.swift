@@ -1450,6 +1450,8 @@ struct BlindCardView: View {
 private struct ResultView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    /// Whose phone this is, for the offer slot (`UpsellRhythm.offersPurchase`).
+    @AppStorage(Elder.largerTextKey) private var largerText = false
     let model: TellViewModel
     /// The presenter's way out, when there is a presenter: the same closure
     /// "Sulje" calls, and nil on the tab. Whether this screen offers *Valmis*
@@ -1518,10 +1520,15 @@ private struct ResultView: View {
                 // the slot holds depends on who is there to hear it: while the
                 // family is one person the offer is the family itself, and the
                 // paid archive follows once there is somebody to share it
-                // with. See docs/UX.md §3.2.
+                // with. See docs/UX.md §3.2. On a grandparent's phone it never
+                // follows: she is not the one who pays. Nor where there is no
+                // store to buy from, since an offer nobody can take is only a
+                // sentence about money.
                 let card = UpsellRhythm.card(
                     membersInFamily: session.family?.members.count,
-                    isPaid: session.isPaid
+                    isPaid: session.isPaid,
+                    onGrandparentsPhone: largerText,
+                    canPurchase: RevenueCatPurchases.configuredKey != nil
                 )
                 if UpsellRhythm.slotShows(
                     card: card, rhythm: model.showsUpsell,
@@ -1896,10 +1903,6 @@ private struct UpsellCard: View {
         usage.aiSeconds.remaining.map { $0 / 60 }
     }
 
-    /// Without a RevenueCat key there is nothing to buy, so the card stays
-    /// informational rather than growing a button that does nothing.
-    private var canPurchase: Bool { RevenueCatPurchases.configuredKey != nil }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Ilmainen arkisto", systemImage: "sparkles")
@@ -1907,29 +1910,39 @@ private struct UpsellCard: View {
                 // card is about.
                 .font(Elder.display(.title3))
 
+            // The meter by its own name. "Kertomista jäljellä" said on this
+            // card that telling runs out, a sentence away from rule 2's
+            // "Kertominen on aina ilmaista" on the help page — and in English
+            // the two read as "telling left" and "telling is never limited".
             if let minutes = minutesLeft, let photos = usage.photos.remaining {
-                Text("Kertomista tässä kuussa jäljellä noin \(minutes) minuuttia, ja kuville tilaa \(photos).")
+                Text("Litterointiaikaa tässä kuussa jäljellä noin \(minutes) minuuttia, ja kuville tilaa \(photos).")
                     .elderBody()
                     .foregroundStyle(Elder.supporting)
             }
 
-            Text("Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle.")
+            // "More", not "no limits". The paid archive's fair-use ceiling is
+            // written down and not enforced (docs/PLAN.md §9), so a promise of
+            // none would be a promise nobody has decided to keep, and "more"
+            // stays true whichever way that goes.
+            Text("Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle.")
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
 
-            if canPurchase {
-                Button {
-                    isShowingPaywall = true
-                } label: {
-                    Text("Avaa koko arkisto")
-                        .font(.body.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .elderTapTarget()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .padding(.top, 4)
+            // Always a button. The card rises only where there is a store to
+            // buy from (`UpsellRhythm.offersPurchase`); until 26 Sep 2026 it
+            // rose without one too and drew no button, which on any phone
+            // opened from its home screen was every third telling.
+            Button {
+                isShowingPaywall = true
+            } label: {
+                Text("Avaa koko arkisto")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
@@ -2115,6 +2128,8 @@ private struct ProposalRow: View {
 /// user did nothing wrong and lost nothing.
 private struct AudioSavedView: View {
     @Environment(Session.self) private var session
+    /// Whose phone this is, for the handle below (`UpsellRhythm.offersPurchase`).
+    @AppStorage(Elder.largerTextKey) private var largerText = false
     let model: TellViewModel
     /// As on the result screen: the presenter's closure, nil on the tab. It
     /// decides which of two words the last button carries (ARCHITECTURE §21).
@@ -2197,7 +2212,7 @@ private struct AudioSavedView: View {
                     Text("Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse.")
                 } else if model.savedBecauseOfQuota {
                     let date = Session.nextFreeMinutes().formatted(.dateTime.day().month(.wide))
-                    Text("Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas \(date) — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.")
+                    Text("Kuukauden ilmainen litterointiaika on käytetty, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun aikaa on taas \(date) — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse.")
                 } else {
                     Text("Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse.")
                 }
@@ -2233,8 +2248,13 @@ private struct AudioSavedView: View {
                 // purchase the family screen and the finished-memory card
                 // offer, here beside the one moment it is the answer to.
                 // Quiet, below the prominent one — §22 allows one of those.
+                // Not on a grandparent's phone, where the sentence above
+                // already says who can lift the wall: the family.
                 if model.savedBecauseOfQuota, !session.isPaid,
-                   RevenueCatPurchases.configuredKey != nil {
+                   UpsellRhythm.offersPurchase(
+                       onGrandparentsPhone: largerText,
+                       canPurchase: RevenueCatPurchases.configuredKey != nil
+                   ) {
                     Button {
                         isShowingPaywall = true
                     } label: {

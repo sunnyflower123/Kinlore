@@ -314,13 +314,13 @@ final class FilmDriver: XCTestCase {
 
     /// 7 · The paywall: the offer on a result that proposed no names, the real
     /// RevenueCat paywall with its price, the Test Store purchase, and the
-    /// app's thank-you. The card grows its button only with a key, and the
-    /// runner cannot pass one (VIDEO.md §5), so put the public Test Store key
-    /// in the app's own defaults before rolling:
+    /// app's thank-you. The card rises only with a key, and the runner cannot
+    /// pass one (VIDEO.md §5), so put the public Test Store key in the app's
+    /// own defaults before rolling:
     ///
     ///     xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>
     ///
-    /// Without it the card has no button and this fails on the first `find`,
+    /// Without it there is no card at all and this fails on the first `find`,
     /// which is the right outcome for a take that would have shown nothing.
     ///
     /// The purchase button belongs to RevenueCat's template, so its label is

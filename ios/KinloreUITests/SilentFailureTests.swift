@@ -157,7 +157,7 @@ final class SilentFailureTests: XCTestCase {
         if allow.waitForExistence(timeout: 5) { allow.tap() }
 
         XCTAssertTrue(app.staticTexts["Äänesi on tallessa"].waitForExistence(timeout: 30), "never arrived: the audio-saved screen")
-        let quota = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kuukauden ilmainen kertominen on täynnä")).firstMatch
+        let quota = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kuukauden ilmainen litterointiaika on käytetty")).firstMatch
         XCTAssertTrue(quota.waitForExistence(timeout: 10), "the screen did not say it was the month's minutes")
 
         let done = app.buttons["Selvä"]
@@ -173,7 +173,7 @@ final class SilentFailureTests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
         XCTAssertTrue(
-            app.staticTexts["Ääni tallessa — kuukauden kertominen täynnä"].waitForExistence(timeout: 10),
+            app.staticTexts["Ääni tallessa — kuukauden litterointiaika käytetty"].waitForExistence(timeout: 10),
             "the row still promised the text for later"
         )
     }

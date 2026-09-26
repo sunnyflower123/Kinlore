@@ -888,7 +888,10 @@ enum AccessibilityPolicy {
         // simulation grows everything above, and the row lands where it
         // cannot be measured whole. The same row is measured live at the
         // real largest size on every testFamily run, where it audits clean.
-        if issue.auditType == .dynamicType, label == "Kertominen tässä kuussa" {
+        // Renamed from "Kertominen tässä kuussa" on 26 Sep 2026 with the rest
+        // of the meter's wording — telling is never what runs out — and the
+        // row did not move.
+        if issue.auditType == .dynamicType, label == "Litterointiaika tässä kuussa" {
             return true
         }
 

@@ -237,10 +237,20 @@ private struct WhereMemoriesGo: View {
     /// training data, nobody is identified from the voice, and the archived
     /// audio is sealed with the family key — matching the microphone
     /// permission text in `ios/project.yml` and the Help screen. The
-    /// kept-here branch deliberately gained no such clause: nothing is sent,
-    /// so there is nothing to describe, and `MemoryStore.save()` writes plain
-    /// JSON, so a sentence about encryption would be the one kind of untruth
-    /// a consent notice cannot afford.
+    /// kept-here branch deliberately gained no such clause: nothing reaches
+    /// the service, so there is nothing to describe, and `MemoryStore.save()`
+    /// writes plain JSON, so a sentence about encryption would be the one kind
+    /// of untruth a consent notice cannot afford.
+    ///
+    /// Since 26 Sep 2026 the kept-here branch names the phone's own backup.
+    /// It used to say *"jäävät tähän puhelimeen"* and *"ei lähetetä
+    /// mihinkään"*, and both were false for anybody whose phone backs up to
+    /// iCloud: the archive is in Documents, and iOS takes Documents into the
+    /// backup. That is not excluded, and on purpose — it is the one second
+    /// copy this archive gets without anybody doing anything, and rule 3 is
+    /// about the voice outliving the phone. So the sentence was made true
+    /// rather than the backup made smaller: what does not happen is the
+    /// family server and the writing into text.
     var isShared = true
 
     var body: some View {
@@ -265,7 +275,7 @@ private struct WhereMemoriesGo: View {
                     Text("Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
                         .accessibilityIdentifier("whereMemoriesGo")
                 } else {
-                    Text("Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa.")
+                    Text("Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse.")
                         .accessibilityIdentifier("whereMemoriesGo")
                 }
             }

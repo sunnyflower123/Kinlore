@@ -129,7 +129,9 @@ places, all derived.
 - **The offer slot.** The result screen's one card is the invitation while
   the family is one person, and the paid archive after that. The elder in the
   middle of checking names sees neither — the no-card-beside-proposals rule
-  already guarantees it.
+  already guarantees it. And the paid archive is never the card on a
+  grandparent's phone, where somebody else pays, nor on a phone with no store
+  to buy from (`UpsellRhythm.offersPurchase`, 26 Sep 2026).
 
 Everything else is one app. The difference is composed, never configured.
 
@@ -619,6 +621,16 @@ message is our own text, and it can say what the phone is about to ask.
 *"Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa \"Open\"."* It
 says *voi kysyä* rather than naming the exact words, because the exact words
 are Apple's and have not been measured here.
+
+**Since 26 Sep 2026 the message is in the sender's language, and says what
+joining takes.** It was one `"""` literal, which is a `String` and never a
+key, so an English phone sent its invitation in Finnish. Each sentence is now
+looked up on its own, and the link and the code stay outside every lookup, so
+no translation can move the line the paste field reads the code from. A
+sentence ahead of this one says *"Tarvitset iPhonen ja Kinloren."*: somebody
+on another phone used to learn it from a link that did nothing. The English
+drops *englanniksi*, because to somebody reading English the dialog is not in
+another language.
 
 ### 11.5 What the audit cost, and what it found
 

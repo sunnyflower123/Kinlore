@@ -194,7 +194,7 @@ The first device opens onto *"Uutta perheeltä"* and answers a question aloud.
 ### 5 · The paywall, last
 
 - **The offer card** (verified: the *"Ilmainen arkisto"* label over the
-  sentence about ~3 minutes of telling left and room for 8 photos —
+  sentence about ~3 minutes of transcription time left and room for 8 photos —
   `-seed family`'s part-spent quota is where the numbers come from):
 
   ```
@@ -202,11 +202,12 @@ The first device opens onto *"Uutta perheeltä"* and answers a question aloud.
   ```
 
   Same mechanics as scene 2.
-- **The paywall and the purchase need `-rcKey <Test Store key>`** — and
-  without the key there is no tap to frame: the card stays informational and
-  draws **no button at all**. With the key it grows the blue *"Avaa koko
-  arkisto"*, so the paywall take's card is not the same still the dry run
-  screenshotted. The key is the *public* Test Store API key (RevenueCat
+- **The card, the paywall and the purchase all need `-rcKey <Test Store
+  key>`** — without the key there is **no card at all**, since 26 Sep 2026:
+  an offer nobody can take is only a sentence about money. Until then the
+  card rose without a key and drew no button, which is the still the dry run
+  screenshotted; with the key it carries the blue *"Avaa koko arkisto"*. The
+  key is the *public* Test Store API key (RevenueCat
   dashboard → the project's API keys; safe to embed, SETUP.md). This is the
   **one item to fetch before filming night**, and the purchase then completes
   against the Test Store.

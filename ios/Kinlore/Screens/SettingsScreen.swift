@@ -116,7 +116,28 @@ struct SettingsScreen: View {
                 }
                 .elderTapTarget()
             } footer: {
-                Text("Puhelimen oma tekstikoko on tätä vahvempi.")
+                // What else the switch does, said where it is switched. It is
+                // the setup forms' "Kenen puhelin tämä on", and that answer
+                // has always been more than a text size: the tree is not
+                // drawn (`PeopleTab.offersTree`), the album has no search
+                // field (GalleryScreen), and neither colouring (`colourable`)
+                // nor the paid archive (`UpsellRhythm.offersPurchase`) is
+                // offered. Until 26 Sep 2026 the only line under a switch
+                // called "Isompi teksti" was about text, so turning it on for
+                // bigger letters took the tree away without a word.
+                //
+                // One line, because this List is at its height limit (docs/
+                // ARCHITECTURE.md, "Emptying"). A caption naming all four was
+                // measured the same day: four lines here, twelve at the
+                // largest size, and all three Settings sweeps went red on
+                // rows it had pushed — "Arkisto", the leave footer — which
+                // is the `listHeaderAndFooterText` signature.
+                // So this line names the two a reader would miss, in the room
+                // the old one took: one line at the default size and three at
+                // the largest, as before. Help's "Isompi teksti" says all
+                // four, beside the sentence this line replaced — that the
+                // phone's own text size overrides this one.
+                Text("Sukupuu näkyy silloin listoina, ilman väritystä.")
                     .foregroundStyle(Elder.supporting)
             }
 
@@ -198,9 +219,18 @@ struct SettingsScreen: View {
                     // phone the export is the only copy that opens anywhere
                     // else — and the app cannot tell whether iCloud Keychain
                     // would carry the key on. Said here, beside the one act
-                    // that changes it.
+                    // that changes it. A phone kept to itself has one more
+                    // copy it may not know about, the phone's own iCloud
+                    // backup, which takes the archive in with Documents;
+                    // until 26 Sep 2026 this line called the export its only
+                    // other copy. The export is the paragraph below, so the
+                    // line names only the backup, and it keeps the old line's
+                    // two lines at the default size and five at the largest:
+                    // the sentence naming both measured three and nine, which
+                    // is the wall the comment at the end of this footer
+                    // records.
                     if case .local = session.mode {
-                        Text("Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio.")
+                        Text("Arkisto on vain tällä puhelimella, ellei iCloud-varmuuskopio ole päällä.")
                     } else if case .inFamily = session.mode, (session.family?.members.count ?? 0) <= 1 {
                         Text("Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta.")
                     }

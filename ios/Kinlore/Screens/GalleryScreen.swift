@@ -976,6 +976,8 @@ private struct PhotoQuotaNote: View {
     @Environment(SyncEngine.self) private var sync: SyncEngine?
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    /// Whose phone this is (`UpsellRhythm.offersPurchase`).
+    @AppStorage(Elder.largerTextKey) private var largerText = false
 
     @State private var isShowingPaywall = false
 
@@ -1002,8 +1004,16 @@ private struct PhotoQuotaNote: View {
     /// is the stronger one: paying is the *only* act that brings the month's
     /// text sooner, while a photograph can also be made room for by deleting
     /// another. This note carries the button in the case that had none.
+    ///
+    /// Neither note carries it on a grandparent's phone: the one who would pay
+    /// is not the one holding it (`UpsellRhythm.offersPurchase`).
     private var carriesTheOffer: Bool {
-        guard !session.isPaid, RevenueCatPurchases.configuredKey != nil else { return false }
+        guard !session.isPaid,
+              UpsellRhythm.offersPurchase(
+                  onGrandparentsPhone: largerText,
+                  canPurchase: RevenueCatPurchases.configuredKey != nil
+              )
+        else { return false }
         return !(session.isOutOfMinutes && tellingsAwaitingText(store) > 0)
     }
 
@@ -1067,7 +1077,8 @@ private func tellingsAwaitingText(_ store: MemoryStore) -> Int {
     }.count
 }
 
-/// "These are waiting on the month's telling, and this is when it comes back."
+/// "These are waiting on the month's transcription time, and this is when it
+/// comes back."
 ///
 /// The third quiet note, of `PhotoQuotaNote`'s kind: an answer about the
 /// family's ceiling, not a waiting state that fixes itself. It differs in
@@ -1081,6 +1092,8 @@ private func tellingsAwaitingText(_ store: MemoryStore) -> Int {
 private struct MinutesQuotaNote: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    /// Whose phone this is (`UpsellRhythm.offersPurchase`).
+    @AppStorage(Elder.largerTextKey) private var largerText = false
 
     @State private var isShowingPaywall = false
 
@@ -1093,12 +1106,12 @@ private struct MinutesQuotaNote: View {
                 Group {
                     if waiting == 1 {
                         Label(
-                            "Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista \(date).",
+                            "Yksi kertomus odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa \(date).",
                             systemImage: "waveform"
                         )
                     } else {
                         Label(
-                            "\(waiting) kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista \(date).",
+                            "\(waiting) kertomusta odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa \(date).",
                             systemImage: "waveform"
                         )
                     }
@@ -1108,8 +1121,13 @@ private struct MinutesQuotaNote: View {
 
                 // Only when there is something to open: without a RevenueCat
                 // key the sheet would be a dead button, and a paid family is
-                // not out of minutes.
-                if !session.isPaid, RevenueCatPurchases.configuredKey != nil {
+                // not out of minutes. And not on a grandparent's phone, whose
+                // holder is not the one who pays.
+                if !session.isPaid,
+                   UpsellRhythm.offersPurchase(
+                       onGrandparentsPhone: largerText,
+                       canPurchase: RevenueCatPurchases.configuredKey != nil
+                   ) {
                     Button("Avaa koko arkisto") { isShowingPaywall = true }
                         .buttonStyle(.borderless)
                         .font(.body.weight(.semibold))

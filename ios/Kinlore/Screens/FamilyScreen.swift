@@ -94,16 +94,18 @@ struct FamilyScreen: View {
 
                 if let usage = session.usage {
                     Section {
-                        // Not "AI-minuutit". The same quota is called "kertomista
-                        // tässä kuussa jäljellä" where somebody actually meets
-                        // it — on the card after a telling — and one of the two
-                        // names is jargon aimed at the person least able to
-                        // decode it. The app should have one word for one thing.
+                        // The meter by its own name, "litterointiaika", as on
+                        // the card after a telling. Not "AI-minuutit", which is
+                        // jargon aimed at the person least able to decode it,
+                        // and since 26 Sep 2026 not "kertominen tässä kuussa":
+                        // telling is the act rule 2 says is never limited, and
+                        // a row that counted it down said otherwise. The app
+                        // should have one word for one thing.
                         // One `Text` each, chosen in a helper, rather than a
                         // `Group` holding an if/else: two views for one value
                         // gave the audit's default-size simulation a label
                         // to stumble on — see `minutesText`.
-                        LabeledContent("Kertominen tässä kuussa") {
+                        LabeledContent("Litterointiaika tässä kuussa") {
                             minutesText(usage)
                                 .foregroundStyle(Elder.supporting)
                         }
@@ -325,7 +327,7 @@ struct FamilyScreen: View {
         return Text("kaikki lähetetty \(at.formatted(date: .numeric, time: .shortened))")
     }
 
-    /// The month's telling, as one `Text`.
+    /// The month's transcription time, as one `Text`.
     private func minutesText(_ usage: EntitlementClient.Usage) -> Text {
         guard let limit = usage.aiSeconds.limit else { return Text("rajaton") }
         return Text("\(usage.aiSeconds.used / 60) / \(limit / 60) min")

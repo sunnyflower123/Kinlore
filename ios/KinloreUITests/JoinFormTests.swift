@@ -24,7 +24,7 @@ final class JoinFormTests: XCTestCase {
         Liity perheen muistoarkistoon:
         kinlore://join?code=\(code)
 
-        Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa "Open".
+        Tarvitset iPhonen ja Kinloren. Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa "Open".
 
         Tai avaa sovellus ja liitä tämä koodi:
         \(code)

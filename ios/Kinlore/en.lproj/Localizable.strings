@@ -213,6 +213,10 @@
 "Kutsukoodi" = "Invitation code";
 "Kenelle kutsu menee?" = "Who is the invitation for?";
 "Nimi näkyy hänen muistojensa vieressä. Kun kirjoitat sen tähän, hänen ei tarvitse kirjoittaa mitään liittyessään." = "The name appears beside their memories. If you write it here, they do not have to type anything when they join.";
+"Liity perheen muistoarkistoon:" = "Join the family's memory archive:";
+"Tarvitset iPhonen ja Kinloren." = "You need an iPhone and Kinlore.";
+"Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa \"Open\"." = "Your phone may ask for permission to open Kinlore — answer \"Open\".";
+"Tai avaa sovellus ja liitä tämä koodi:" = "Or open the app and paste this code:";
 "Kutsua ei voitu luoda" = "The invitation could not be created";
 "Kutsua ei voitu perua" = "The invitation could not be revoked";
 "Sait linkin tai koodin perheenjäseneltä. Voit liittää sen tähän." = "You were given a link or a code by a family member. You can paste it here.";
@@ -228,7 +232,7 @@
 "Isovanhemman" = "A grandparent's";
 "Isompi teksti" = "Larger text";
 "Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "On a grandparent's phone the text is larger. You can change this later in Settings.";
-"Puhelimen oma tekstikoko on tätä vahvempi." = "The phone's own text size overrides this.";
+"Sukupuu näkyy silloin listoina, ilman väritystä." = "The family tree then shows as lists, without colouring.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "This appears beside your memories, so the family knows who told them.";
 "%@ · %@" = "%@ · %@";
 
@@ -245,8 +249,8 @@
 
 /* --- Paying, and what the free archive holds ----------------------------- */
 "Ilmainen arkisto" = "The free archive";
-"Kertomista tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "About %lld minutes of telling left this month, and room for %lld more photographs.";
-"Maksullisessa arkistossa rajoja ei ole, ja yksi maksaja avaa sen koko perheelle." = "The paid archive has no limits, and one payer opens it for the whole family.";
+"Litterointiaikaa tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "About %lld minutes of transcription time left this month, and room for %lld more photographs.";
+"Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle." = "The paid archive has more room for photographs and more transcription time, and one payer opens it for the whole family.";
 "Kiitos — maksu meni läpi" = "Thank you — the payment went through";
 "Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa." = "The family archive has not opened yet. The app will report this again by itself, and you do not have to pay a second time.";
 "Käyttö" = "Usage";
@@ -377,7 +381,7 @@
 "Mitä äänellesi tapahtuu" = "What happens to your voice";
 "Perheen arkistossa äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti. Palvelu ei jätä ääntä talteen, sitä ei anneta tekoälyn opetusaineistoksi eikä äänestä tunnisteta ketään — kertojan nimen valitset itse." = "In a family archive the recording passes through our service, where the speech is written down as text. The service does not keep the voice, it is not handed over as training data, and nobody is identified from the voice — you choose the teller's name yourself.";
 "Arkistoon ääni tallentuu salattuna, ja vain perheesi omat puhelimet voivat avata sen." = "In the archive the voice is stored encrypted, and only your family's own phones can open it.";
-"Jos arkisto on vain tällä puhelimella, mitään ei lähetetä eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "If the archive is only on this phone, nothing is sent and no text is written — you can write the memories yourself.";
+"Jos arkisto on vain tällä puhelimella, ääntä ei lähetetä palveluumme eikä tekstiä kirjoiteta — muistot voi kirjoittaa itse." = "If the archive is only on this phone, the voice is not sent to our service and no text is written — you can write the memories yourself.";
 "Alkuperäinen äänitys säilyy aina. Teksti ei korvaa sitä — perhe voi kuunnella kertomasi omalla äänelläsi myös vuosien päästä." = "The original recording is always kept. The text does not replace it — the family can listen to what you told in your own voice years from now.";
 "Kuka näkee muistot" = "Who sees the memories";
 "Vain ne, joille joku perheestä on lähettänyt kutsulinkin." = "Only those somebody in the family has sent an invitation link to.";
@@ -390,17 +394,19 @@
 "Poisto näkyy koko perheelle, eikä sitä voi perua. Väärin arvatun nimen voit poistaa heti kertomisen jälkeen tai myöhemmin henkilön kortilta." = "Deleting shows for the whole family and cannot be undone. A wrongly guessed name you can remove right after telling, or later from the person's card.";
 "Mikä maksaa" = "What costs";
 "Kertominen on aina ilmaista. Sitä ei rajoiteta koskaan." = "Telling is always free. It is never limited.";
-"Maksullinen arkisto poistaa kuvien määrän ja kuukausittaisen kertomisajan rajat. Yksi maksaja avaa sen koko perheelle." = "The paid archive removes the limits on the number of photos and on the monthly telling time. One payer opens it for the whole family.";
+"Ilmaisessa arkistossa kuvia mahtuu rajattu määrä, ja puheesta kirjoitetaan tekstiä rajattu aika kuukaudessa: se on litterointiaika. Jos aika loppuu, ääni tallentuu silti, ja teksti kirjoitetaan, kun aikaa on taas." = "The free archive holds a limited number of photographs, and text is written from speech for a limited time each month: that is the transcription time. If it runs out, the voice is still saved, and the text is written when the time renews.";
+"Maksullisessa arkistossa kumpaakin on enemmän. Yksi maksaja avaa sen koko perheelle." = "The paid archive has more of both. One payer opens it for the whole family.";
 "Jos puhelin on isovanhemman, laita isompi teksti päälle Asetuksista." = "If the phone is a grandparent's, turn on larger text in Settings.";
 "Se koskee vain tätä sovellusta, ja puhelimen oma tekstikoko on sitä vahvempi: jos olet jo suurentanut tekstiä sieltä, koko säilyy." = "It applies only to this app, and the phone's own text size takes precedence: if you have already made the text larger there, that size stays.";
+"Samalla sovellus yksinkertaistuu: sukupuu näkyy listoina, albumissa ei ole hakua, eikä kuvien väritystä tai maksullista arkistoa tarjota." = "The app also becomes simpler: the family tree is shown as lists, the album has no search, and photo colouring and the paid archive are not offered.";
 "Omat muistot itsellesi" = "Your memories for yourself";
 "Voit viedä koko arkiston yhtenä tiedostona Asetuksista." = "You can export the whole archive as one file from Settings.";
 "Siinä ovat muistot luettavana sivuna, alkuperäiset äänitykset ja kuvat. Sen voi avata millä tahansa koneella ilman tätä sovellusta." = "It holds the memories as a readable page, the original recordings and the photos. It opens on any computer without this app.";
 "Jos puhelin katoaa" = "If the phone is lost";
 "Perheen arkistossa muistot ovat myös perheen palvelimella, mutta salattuina avaimella, joka on vain perheen puhelimissa. Jos kaikki perheen puhelimet katoavat, avain katoaa niiden mukana, eikä palvelimen kopiota saa enää auki." = "In a family archive the memories are also on the family's server, but encrypted with a key that exists only on the family's phones. If every phone in the family is lost, the key is lost with them, and the copy on the server can no longer be opened.";
 "Siksi kutsu toinen perheenjäsen — silloin avain on kahdessa puhelimessa — ja vie arkisto silloin tällöin omalle koneellesi. Applen iCloud-avainnippu siirtää avaimen uuteen puhelimeen, jos se on käytössä, mutta sen varaan ei kannata jättää." = "So invite another family member — then the key is on two phones — and export the archive to your own computer now and then. Apple's iCloud Keychain carries the key to a new phone if it is turned on, but it is not something to rely on.";
-"Jos arkisto on vain tällä puhelimella, se on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "If the archive is only on this phone, it is only on this phone: the exported file is its only other copy.";
-"Arkisto on vain tällä puhelimella: viety tiedosto on sen ainoa muu kopio." = "The archive is only on this phone: the exported file is its only other copy.";
+"Jos arkisto on vain tällä puhelimella, sen saa takaisin vain viedystä tiedostosta tai puhelimen iCloud-varmuuskopiosta, jos se on päällä." = "If the archive is only on this phone, the only ways to get it back are the exported file, or the phone's iCloud backup if that is on.";
+"Arkisto on vain tällä puhelimella, ellei iCloud-varmuuskopio ole päällä." = "The archive is only on this phone, unless iCloud Backup is on.";
 "Arkisto on vielä sinun yksin. Kunnes kutsut jonkun, viety tiedosto on ainoa kopio, jonka saa auki ilman tätä puhelinta." = "The archive is still yours alone. Until you invite somebody, the exported file is the only copy that opens without this phone.";
 
 // Rule 10: an archive this version cannot read is kept, and said so (4 Sep 2026).
@@ -410,12 +416,12 @@
 // The month's minutes, said as a date and a count instead of "myöhemmin" — and the row and screen that had never been looked up (4 Sep 2026).
 "Ääni tallessa — voit kirjoittaa tekstin itse" = "Voice kept — you can write the text yourself";
 "Ääni tallessa — tekstiä ei saatu tästä nauhoituksesta" = "Voice kept — no text could be made of this recording";
-"Ääni tallessa — kuukauden kertominen täynnä" = "Voice kept — this month's telling is used up";
+"Ääni tallessa — kuukauden litterointiaika käytetty" = "Voice kept — this month's transcription time is used up";
 "Ääni tallessa — teksti valmistuu myöhemmin" = "Voice kept — the text will follow later";
-"Yksi kertomus odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "One telling is waiting for its text — the month's free telling is used up. More telling on %@.";
-"%lld kertomusta odottaa tekstiä — kuukauden ilmainen kertominen on täynnä. Lisää kertomista %@." = "%lld tellings are waiting for their text — the month's free telling is used up. More telling on %@.";
+"Yksi kertomus odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa %@." = "One telling is waiting for its text — the month's free transcription time is used up. More time on %@.";
+"%lld kertomusta odottaa tekstiä — kuukauden ilmainen litterointiaika on käytetty. Lisää aikaa %@." = "%lld tellings are waiting for their text — the month's free transcription time is used up. More time on %@.";
 "Kun arkisto on vain tällä puhelimella, puhetta ei muuteta tekstiksi. Äänesi säilyy — voit kirjoittaa muiston itse." = "When the archive is only on this phone, speech is not turned into text. Your voice is kept — you can write the memory yourself.";
-"Kuukauden ilmainen kertominen on täynnä, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun kertomista on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "The month's free telling is used up, so no text was written now. It will be written when telling comes back on %@ — or at once, if the family opens the whole archive. You can also write the memory yourself.";
+"Kuukauden ilmainen litterointiaika on käytetty, joten tekstiä ei kirjoitettu nyt. Se kirjoitetaan, kun aikaa on taas %@ — tai heti, jos perhe avaa koko arkiston. Voit myös kirjoittaa muiston itse." = "The month's free transcription time is used up, so no text was written now. It will be written when the time renews on %@ — or at once, if the family opens the whole archive. You can also write the memory yourself.";
 "Emme ehtineet kirjoittaa sitä tekstiksi juuri nyt, mutta kertomasi ei katoa. Teksti valmistuu myöhemmin — voit myös kirjoittaa muiston itse." = "We could not write it down as text just now, but what you told is not lost. The text will follow later — you can also write the memory yourself.";
 
 // The gallery's section headings, unlooked-up for the same reason a day later: each passed through a String on its way to Text. "Paikat" was already translated below and still read Finnish.
@@ -456,7 +462,7 @@
 "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme." = "Gather together what the grandparents remember. Tell it in your own voice — we put it in order.";
 "Kirjoita ensin nimesi." = "Write your name first.";
 "Muistot näkyvät perheen jäsenille. Äänitys käy palvelussamme, jossa puheesta kirjoitetaan teksti — talteen sitä ei siellä jätetä, opetusaineistoksi sitä ei anneta eikä äänestä tunnisteta ketään. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen." = "The memories are seen by the family's members. The recording passes through our service, where the speech is written down as text — it is not kept there, it is not handed over as training data, and nobody is identified from the voice. The original voice is kept in the archive encrypted, and only the family's own phones can open it.";
-"Muistot jäävät tähän puhelimeen. Äänityksiä ei lähetetä mihinkään eikä puheesta kirjoiteta tekstiä — voit kirjoittaa muistot itse, ja alkuperäinen ääni säilyy puhelimessa." = "The memories stay on this phone. Recordings are sent nowhere and no text is written from the speech — you can write the memories yourself, and the original voice stays on the phone.";
+"Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse." = "The memories and the original voice stay on this phone — and in its iCloud backup, if that is on. They are not sent to the family's server, and no text is written from speech: you can write the memories yourself.";
 "Palvelin ei vastannut." = "The server did not answer.";
 "Jotain meni pieleen. Yritä uudelleen." = "Something went wrong. Try again.";
 "Kutsu ei kelpaa. Se on voinut vanhentua — pyydä uusi linkki." = "The invitation is not valid. It may have expired — ask for a new link.";
@@ -545,7 +551,7 @@
 "Kopio tällä puhelimella" = "Copy on this phone";
 "Tila" = "Status";
 "Lähetys" = "Sending";
-"Kertominen tässä kuussa" = "Telling this month";
+"Litterointiaika tässä kuussa" = "Transcription time this month";
 "ei vielä kuvia eikä ääniä" = "no photographs or voices yet";
 "haetaan, %lld / %lld" = "fetching, %lld / %lld";
 "kaikki tallessa" = "everything is here";
@@ -689,7 +695,7 @@
 "Tallennettu. Kuvaa seuraava." = "Saved. Photograph the next one.";
 "Tällä laitteella on jo oma arkisto" = "This device already has an archive of its own";
 "Tämä laite kuuluu jo perheeseen" = "This device already belongs to a family";
-"Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa." = "This month's telling time is used up. Your voice is kept all the same.";
+"Tämän kuukauden litterointiaika on käytetty. Äänesi on silti tallessa." = "This month's transcription time is used up. Your voice is kept all the same.";
 "Tässä laitteessa ei ole kameraa" = "This device has no camera";
 "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista." = "You can still add old photographs from the phone's own pictures.";
 "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen." = "The family's service could not be reached. Try again in a moment.";

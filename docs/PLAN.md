@@ -540,7 +540,7 @@ finished.**
 - ~~**Prices.**~~ **Decided 12 Sep 2026: two purchases, each made once — a
   year at 50 € and the archive for ever at 80 €. The monthly plan goes.**
   Free stays as it is and as `wrangler.jsonc` has it: 20 photographs in
-  total and 10 minutes of telling a month, per family. On the Test Store the
+  total and 10 minutes of transcription a month, per family. On the Test Store the
   numbers are nominal and read in US dollars — it has no currencies
   (ARCHITECTURE §6) — and they are what the paywall shows in the video.
 
@@ -580,19 +580,22 @@ finished.**
   through OpenRouter: 0.75 $ per million audio tokens at 32 tokens a second,
   plus the text out) and everything else but colouring rounds to nothing — a
   thousand photographs are a cent a month. So the paid archive carries a fair-use
-  ceiling of **five hours of telling a month per family**, the same for both
+  ceiling of **five hours of transcription a month per family**, the same for both
   purchases so that there is one rule. Worst case 10.8 € a year against the
   54 € net, which the price covers for five years; a realistic twenty
   minutes a month is 0.72 € a year, which it covers for decades. **The
   ceiling is a sentence and not code.** Nothing enforces it: `quota.ts`
-  reads the paid tier as unlimited, so the offer card's *"Maksullisessa
-  arkistossa rajoja ei ole"* and the paywall's *"No limits"* are still true.
-  When it becomes one number in `quota.ts` (v1.1), both sentences change
-  with it and `quota-check.mjs` grows a case.
+  reads the paid tier as unlimited. Since 26 Sep 2026 the app's own words
+  are true either way — the offer card and Help say the paid archive has
+  *more* transcription time (*"enemmän litterointiaikaa"*), where the card
+  used to say *"rajoja ei ole"*. The paywall's *"No limits"* is RevenueCat
+  dashboard copy and not in this repository, and it is true only while the
+  ceiling stays a sentence. When it becomes one number in `quota.ts` (v1.1),
+  that sentence changes with it and `quota-check.mjs` grows a case.
 
   **Colouring is a second running cost, and on the paid archive it has no
   ceiling either.** Added 13 Sep 2026 (ARCHITECTURE §24): about 3.4 c a
-  round, the price of eleven minutes of telling. The free tier gets five a
+  round, the price of eleven minutes of transcription. The free tier gets five a
   month on a counter of their own, and `quota.ts` reads the paid tier as
   unlimited here as well. A hundred colourings are about 3 € of the archive's
   54 € net; nothing yet stops a thousand.

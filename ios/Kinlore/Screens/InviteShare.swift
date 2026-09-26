@@ -231,15 +231,28 @@ struct InviteShareButton: View {
     /// that app keeps it. It is still a large improvement on the archive
     /// itself being readable in a dump, and it is not the same claim as
     /// end-to-end.
+    ///
+    /// **Each sentence is looked up on its own, in the inviter's language.**
+    /// Until 26 Sep 2026 this was one `"""` literal, which is a `String` and
+    /// never a key, so an English phone shared its invitation in Finnish. The
+    /// link and the code are not words and stay outside every lookup, so no
+    /// translation can touch the line `code(inPasted:)` finds the code on.
+    /// And the message now says what joining takes before anybody tries: an
+    /// iPhone and the app. Somebody on another phone used to find out from a
+    /// link that did nothing.
     static func inviteText(code: String) -> String {
         let shared = FamilyKey.shareable().map { "\(code)#\($0)" } ?? code
+        let join = String(localized: "Liity perheen muistoarkistoon:")
+        let needs = String(localized: "Tarvitset iPhonen ja Kinloren.")
+        let open = String(localized: "Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa \"Open\".")
+        let orPaste = String(localized: "Tai avaa sovellus ja liitä tämä koodi:")
         return """
-        Liity perheen muistoarkistoon:
+        \(join)
         kinlore://join?code=\(shared)
 
-        Puhelin voi kysyä englanniksi luvan avata Kinlore — vastaa "Open".
+        \(needs) \(open)
 
-        Tai avaa sovellus ja liitä tämä koodi:
+        \(orPaste)
         \(shared)
         """
     }

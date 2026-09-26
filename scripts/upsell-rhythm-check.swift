@@ -91,23 +91,72 @@ enum UpsellRhythmCheck {
         print("— what the slot holds —")
         checkCard(
             "no family details, nothing offered",
-            UpsellRhythm.card(membersInFamily: nil, isPaid: false), nil
+            UpsellRhythm.card(membersInFamily: nil, isPaid: false, onGrandparentsPhone: false, canPurchase: true), nil
         )
         checkCard(
             "a family of one is offered the family, never the archive",
-            UpsellRhythm.card(membersInFamily: 1, isPaid: false), .invite
+            UpsellRhythm.card(membersInFamily: 1, isPaid: false, onGrandparentsPhone: false, canPurchase: true), .invite
         )
         checkCard(
             "a paid family of one is still offered the family",
-            UpsellRhythm.card(membersInFamily: 1, isPaid: true), .invite
+            UpsellRhythm.card(membersInFamily: 1, isPaid: true, onGrandparentsPhone: false, canPurchase: true), .invite
         )
         checkCard(
             "a free family of two is offered the archive",
-            UpsellRhythm.card(membersInFamily: 2, isPaid: false), .archive
+            UpsellRhythm.card(membersInFamily: 2, isPaid: false, onGrandparentsPhone: false, canPurchase: true), .archive
         )
         checkCard(
             "a paid family is offered nothing",
-            UpsellRhythm.card(membersInFamily: 3, isPaid: true), nil
+            UpsellRhythm.card(membersInFamily: 3, isPaid: true, onGrandparentsPhone: false, canPurchase: true), nil
+        )
+
+        // Whose phone it is. The one holding a grandparent's phone is the one
+        // the archive is for, and somebody else pays for it (docs/PLAN.md §9):
+        // she is never the one asked. The invitation is not a purchase, and a
+        // grandparent alone needs it more than anybody to bring the family in.
+        print("— on a grandparent's phone —")
+        checkCard(
+            "a free family is not offered the archive there",
+            UpsellRhythm.card(membersInFamily: 2, isPaid: false, onGrandparentsPhone: true, canPurchase: true), nil
+        )
+        checkCard(
+            "however large the family",
+            UpsellRhythm.card(membersInFamily: 7, isPaid: false, onGrandparentsPhone: true, canPurchase: true), nil
+        )
+        checkCard(
+            "a grandparent alone is still offered the family",
+            UpsellRhythm.card(membersInFamily: 1, isPaid: false, onGrandparentsPhone: true, canPurchase: true), .invite
+        )
+        check(
+            "nor is the purchase beside a ceiling she has hit",
+            UpsellRhythm.offersPurchase(onGrandparentsPhone: true, canPurchase: true), false
+        )
+        check(
+            "while a reader's phone is",
+            UpsellRhythm.offersPurchase(onGrandparentsPhone: false, canPurchase: true), true
+        )
+
+        // And whether there is anything to buy. `canPurchase` is whether a
+        // RevenueCat key is configured, and on a phone opened from its home
+        // screen there is none: `-rcKey` does not outlive the launch it came
+        // with. Until 26 Sep 2026 the card rose there anyway and drew no
+        // button — every third telling ended on an offer nobody could take.
+        print("— with nothing to buy —")
+        checkCard(
+            "a free family is offered nothing",
+            UpsellRhythm.card(membersInFamily: 2, isPaid: false, onGrandparentsPhone: false, canPurchase: false), nil
+        )
+        checkCard(
+            "a family of one is still offered the family",
+            UpsellRhythm.card(membersInFamily: 1, isPaid: false, onGrandparentsPhone: false, canPurchase: false), .invite
+        )
+        check(
+            "nor is the purchase beside a ceiling",
+            UpsellRhythm.offersPurchase(onGrandparentsPhone: false, canPurchase: false), false
+        )
+        check(
+            "and a grandparent's phone stays without it either way",
+            UpsellRhythm.offersPurchase(onGrandparentsPhone: true, canPurchase: false), false
         )
 
         print("— whether the slot shows —")

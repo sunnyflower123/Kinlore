@@ -148,17 +148,17 @@ enum RemoteError: LocalizedError {
                 ? String(localized: "Tämän kuukauden väritykset on käytetty.")
                 : kind == "photos"
                 ? String(localized: "Ilmaisessa arkistossa on tilaa \(limit) kuvalle.")
-                // Not "AI-minuutit", which is the one place that name survived
-                // after the family screen dropped it — and the worst place for
-                // it to survive, because this is the sentence somebody meets at
-                // the moment the limit stops them. The same quota is
-                // "kertominen tässä kuussa" everywhere else it is named
-                // (docs/ARCHITECTURE.md §21).
+                // "Litterointiaika", the meter's own name, as everywhere else
+                // it is named (docs/ARCHITECTURE.md §21). Not "AI-minuutit",
+                // which is jargon at the moment the limit stops somebody —
+                // and, since 26 Sep 2026, not "kertomisaika" either: telling
+                // is the act rule 2 says is never limited, and naming the
+                // meter after it made the app say both at once.
                 //
                 // What is *not* said here matters as much: the telling itself
                 // is safe. Rule 2 is that telling is never paywalled, and a
                 // quota stops the writing-down rather than the voice.
-                : String(localized: "Tämän kuukauden kertomisaika on käytetty. Äänesi on silti tallessa.")
+                : String(localized: "Tämän kuukauden litterointiaika on käytetty. Äänesi on silti tallessa.")
         }
     }
 

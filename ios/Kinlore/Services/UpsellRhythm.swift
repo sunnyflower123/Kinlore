@@ -18,7 +18,8 @@ import Foundation
 ///
 /// Both are the *paid card's* rules. The invitation a family of one is shown
 /// instead follows only the first, and by waiting rather than by hiding — see
-/// `slotShows`.
+/// `slotShows`. On a grandparent's phone, and on any phone with no store to
+/// buy from, only the invitation is ever held — see `offersPurchase`.
 ///
 /// The count is `UserDefaults` and never syncs, for the same reason the question
 /// ladder's comfort does not (§12): it describes the person holding the phone,
@@ -76,10 +77,44 @@ enum UpsellRhythm {
     /// single-device archive — and the slot stays empty. A family that has
     /// paid is offered nothing; it is never asked to invite either, wrongly,
     /// because a paid family of one still deserves the invitation.
-    static func card(membersInFamily members: Int?, isPaid: Bool) -> Card? {
+    ///
+    /// On a grandparent's phone the paid archive is not offered at all
+    /// (`offersPurchase`), and the invitation still is: she is exactly who a
+    /// family of one needs to bring the others in. The same goes for a phone
+    /// with nothing to buy from, which is the other half of that function.
+    static func card(
+        membersInFamily members: Int?, isPaid: Bool,
+        onGrandparentsPhone: Bool, canPurchase: Bool
+    ) -> Card? {
         guard let members else { return nil }
         if members <= 1 { return .invite }
+        guard offersPurchase(onGrandparentsPhone: onGrandparentsPhone, canPurchase: canPurchase) else {
+            return nil
+        }
         return isPaid ? nil : .archive
+    }
+
+    /// Whether this phone is offered the purchase anywhere in the flow: this
+    /// slot, and the "Avaa koko arkisto" beside a ceiling the family has hit.
+    ///
+    /// Only where there is something to buy. `canPurchase` is whether a
+    /// RevenueCat key is configured (`RevenueCatPurchases.configuredKey`),
+    /// handed in rather than read here so that this stays arithmetic the check
+    /// can run. Until 26 Sep 2026 the slot's card rose without one and simply
+    /// drew no button, and `-rcKey` is a launch argument that does not outlive
+    /// its launch (docs/VIDEO.md §5) — so on a phone opened from its home
+    /// screen, every third telling ended on an offer with nothing to tap. The
+    /// ceilings' buttons were already gated on the key; the card now is too.
+    ///
+    /// And not on a grandparent's phone, which is the text-floor signal
+    /// (`Elder.largerTextKey`) that the tree, the search and the blind card
+    /// already follow. The person holding that phone is the one the archive is
+    /// for, and the one who pays is somebody else (docs/PLAN.md §9). An offer
+    /// there asks the wrong person, at the end of the one act the phone is
+    /// for. The family screen keeps its button, because somebody goes there
+    /// on purpose and it is not an offer rising in the flow.
+    static func offersPurchase(onGrandparentsPhone: Bool, canPurchase: Bool) -> Bool {
+        canPurchase && !onGrandparentsPhone
     }
 
     /// Whether the slot shows, given what it would hold.
