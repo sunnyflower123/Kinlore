@@ -38,7 +38,8 @@
 //     the entry says the right thing. The entries are generated from the keys,
 //     so being wrong would mean the key itself is wrong.
 //
-// Exits non-zero listing every key with no English.
+// Exits non-zero listing every key with no English, and every key a table
+// carries twice.
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -97,10 +98,38 @@ for (const file of swiftFiles(swiftRoot)) {
   }
 }
 
-const keysOf = (lproj) => new Set(
-  [...readFileSync(join(root, `ios/Kinlore/${lproj}.lproj/Localizable.strings`), 'utf8')
-    .matchAll(/^"((?:[^"\\]|\\.)*)"\s*=/gm)].map((m) => m[1])
-);
+// Every row of a table, with the line it is on.
+const rowsOf = (lproj) => {
+  const src = readFileSync(join(root, `ios/Kinlore/${lproj}.lproj/Localizable.strings`), 'utf8');
+  return [...src.matchAll(/^"((?:[^"\\]|\\.)*)"\s*=/gm)]
+    .map((m) => ({ key: m[1], line: src.slice(0, m.index).split('\n').length }));
+};
+const keysOf = (lproj) => new Set(rowsOf(lproj).map((r) => r.key));
+
+// A key written twice is the one thing the counts below cannot see, because
+// they count a Set, and the build cannot see it either: Xcode compiles the
+// table without a word and keeps the LATER row, so the earlier translation is
+// dead text that reads exactly like a live one. "%@-luku" sat in both tables
+// twice from 12 to 26 Sep 2026 with the same value both times, which is the
+// harmless version. Three hours after it was taken out by hand, "Poista
+// merkintä" arrived twice with two different values — "Take it back" under the
+// photograph's teller card and "Remove the mark" under the person card — and
+// from that commit every English phone showed the second one in both places,
+// on a card nobody had touched.
+const written = ['fi', 'en'].flatMap((lproj) => {
+  const lines = new Map();
+  for (const { key, line } of rowsOf(lproj)) lines.set(key, [...(lines.get(key) ?? []), line]);
+  return [...lines].filter(([, at]) => at.length > 1).map(([key, at]) => ({ lproj, key, at }));
+});
+if (written.length) {
+  console.error('a key is written more than once — only the last row is ever shown\n');
+  for (const { lproj, key, at } of written) {
+    console.error(`  ${lproj}.lproj lines ${at.join(', ')}: "${key}"`);
+  }
+  console.error('\nKeep one row per key, with the value every call site can use.');
+  process.exit(1);
+}
+
 const translated = keysOf('en');
 
 // The two tables have to carry the same keys, and this is not tidiness.
@@ -150,5 +179,6 @@ if (missing.length) {
 
 console.log(
   `${keys.size} literal keys, all translated; ${interpolated.size} interpolated, `
-  + `${formatKeys} format keys; fi and en tables match at ${finnish.size} entries`
+  + `${formatKeys} format keys; fi and en tables match at ${finnish.size} entries, `
+  + `none of them written twice`
 );
