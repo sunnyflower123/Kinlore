@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 99 sweep tests, each auditing one screen at the default text size and again at the largest, out of 279 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 100 sweep tests, each auditing one screen at the default text size and again at the largest, out of 286 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture; the four columns reach production with the deploy §25 records |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -869,6 +869,32 @@ back starts without it. `ReturningPhoneTests` drives all three answers
 (`-seed returning`, `-homecoming ask`, `-homecoming unauthorized`), and every
 other UI test launches with `-homecoming off`, because the simulator's Keychain
 keeps an identity from one test to the next.
+
+**A second person on the same Apple ID is the case the page can only name.**
+Measured 26 Sep 2026 against a Worker of its own on a local D1: an owner
+"Aino" made an invitation for "Eino", and a join from Aino's identity typing
+"Eino" answered 200 with the success shape — the member row still "Aino",
+one member in the family, the code still open. Typing nothing did the same.
+The same code from an identity of its own then made a new member "Eino" and
+was used up. So Eino's phone becomes Aino, silently, and `NewFromFamily`
+filters each phone's tellings out of the other's "new" as the phone's own.
+Nothing here changes that — it is rule 6 working as designed — but two
+places now say it. The returning page's title names the member the phone
+comes back as (*"Tervetuloa takaisin, Aino"*), which is the ordinary road
+for such a phone. And a join through the form, the road a phone whose
+archive was kept to itself takes, compares afterwards
+(`Session.joinedAsSomebodyElse`): a typed name that is not the member's,
+letter case and outer spaces aside, or with nothing typed the name the
+invitation was made for, when that is somebody else's. The second works
+because `GET /family` lists open invitations to every member, owner or not,
+and an unclaimed code is still open after such a join while a claimed one is
+gone. When the phone is somebody else, `RootView` says so once in an alert
+that survives relaunches until *"Selvä"* (`shared_identity_notice`, device
+state beside `arrival_pending`, cleared by leaving and by the wipe). No
+backend change and no deploy: against the production Worker the join
+answers exactly as it did, and the comparison reads only what `GET /family`
+already returned. `SharedAppleIDTests` drives it with `-seed joined`, and
+docs/UX.md §4.5 has the words.
 
 ### The boundary, pressed on
 

@@ -80,6 +80,9 @@ final class Session {
     private(set) var mode: Mode = .local
     private(set) var homecoming: Homecoming = .none
     private(set) var family: Family?
+    /// Who this phone is in the family, while nobody has been told — see
+    /// `sharedIdentityKey`. Nil in every ordinary case.
+    private(set) var sharedIdentityName: String? = UserDefaults.standard.string(forKey: Session.sharedIdentityKey)
     /// The family's usage. The paywall needs this to say what is left BEFORE the
     /// limit is reached — told afterwards, it is only an obstacle.
     private(set) var usage: EntitlementClient.Usage?
@@ -136,6 +139,13 @@ final class Session {
     /// `SyncEngine` links it after a round, `linkMe` clears it, and it goes
     /// with the membership. Device state, never synced. Since 13 Sep 2026.
     private static let pendingPersonLinkKey = "pending_person_link"
+
+    /// The name of the member a join made this phone, when that member was
+    /// already in the family and is not who joined (`joinedAsSomebodyElse`).
+    /// Owed until `RootView`'s notice has been read, and then gone: said once,
+    /// not on every launch. Device state, never synced, the same shape as
+    /// `arrivalPendingKey`. Since 26 Sep 2026.
+    private static let sharedIdentityKey = "shared_identity_notice"
 
     var pendingPersonLink: String? {
         UserDefaults.standard.string(forKey: Self.pendingPersonLinkKey)
@@ -227,6 +237,40 @@ final class Session {
             // The store empties itself for this seed — see `MemoryStore`.
             seedDemoFamily()
             UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
+            return
+        case "joined":
+            // A join that has just returned, at the moment `join` decides
+            // whether a notice is owed, with no server: the family is the
+            // shared fixture's, whose invitations are one made for Kaarina
+            // (`demo-kaarina`) and one made for nobody (`demo-nimeton`).
+            // `-joinedAs <name>` is the name the server holds for this
+            // phone, `-joinTyped <name>` what the form held, `-joinCode
+            // <code>` the code. With none of the last two, the launch is a
+            // later one, and keeps whatever notice the one before left owed.
+            // The store empties itself for this seed — see `MemoryStore`.
+            let owed = UserDefaults.standard.string(forKey: Self.sharedIdentityKey)
+            seedDemoFamily()
+            if let name = UserDefaults.standard.string(forKey: "joinedAs"), let seeded = family {
+                family = Family(
+                    id: seeded.id, name: seeded.name, entitlement: seeded.entitlement,
+                    you: Family.You(
+                        id: seeded.you.id, role: seeded.you.role, displayName: name,
+                        personSubjectID: seeded.you.personSubjectID
+                    ),
+                    members: seeded.members, invites: seeded.invites
+                )
+            }
+            let typed = UserDefaults.standard.string(forKey: "joinTyped")
+            let code = UserDefaults.standard.string(forKey: "joinCode")
+            if typed != nil || code != nil {
+                if let family, let name = Self.joinedAsSomebodyElse(
+                    typed: typed ?? "", code: code ?? "", family: family
+                ) {
+                    owe(sharedIdentityNotice: name)
+                }
+            } else if let owed {
+                owe(sharedIdentityNotice: owed)
+            }
             return
         case "aimed":
             // The store seeds two questions asked by name (`MemoryStore`);
@@ -357,6 +401,60 @@ final class Session {
             UserDefaults.standard.set(true, forKey: Self.arrivalPendingKey)
             self.store(familyID: result.familyID)
         }
+        // After `perform`, whose refresh is what brings the name the server
+        // holds for this phone.
+        if let family, let name = Self.joinedAsSomebodyElse(typed: displayName, code: code, family: family) {
+            owe(sharedIdentityNotice: name)
+        }
+    }
+
+    /// The member a join made this phone, when that member is not the person
+    /// who joined; nil when it is, and whenever nothing can tell.
+    ///
+    /// The server lets an identity it already knows back into its family
+    /// without renaming it or claiming the code (`joinFamily`, "the same
+    /// device rejoining"). That is right for a reinstall, and it is also what
+    /// happens on a second phone on the same Apple ID, whose Keychain hands it
+    /// the first phone's identity (rule 6): whatever was typed, the phone
+    /// joins as the first phone's member, and each then reads the other's
+    /// tellings as its own (`NewFromFamily`). Measured 26 Sep 2026 against a
+    /// local Worker; the same join from an identity of its own took the
+    /// typed name, or the invitation's.
+    ///
+    /// Two ways to tell, and only these. A typed name that is not the name the
+    /// server holds, letter case and outer spaces aside, since the server
+    /// trims. And with nothing typed, the name the invitation was made for,
+    /// when it names somebody else. That invitation is still listed after
+    /// such a join because nothing claimed it, while a code that let a new
+    /// member in is gone from the list, so it is found only in the case this
+    /// looks for. Every member is sent the list, owner or not. An invitation
+    /// made for nobody, or for this member, says nothing either way.
+    static func joinedAsSomebodyElse(typed: String, code: String, family: Family) -> String? {
+        func same(_ a: String, _ b: String) -> Bool {
+            a.trimmingCharacters(in: .whitespacesAndNewlines)
+                .caseInsensitiveCompare(b.trimmingCharacters(in: .whitespacesAndNewlines)) == .orderedSame
+        }
+        let you = family.you.displayName
+        let typed = typed.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !typed.isEmpty {
+            return same(typed, you) ? nil : you
+        }
+        let code = split(shared: code).code
+        guard let invited = family.invites.first(where: { $0.code == code })?.displayName,
+              !invited.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return nil }
+        return same(invited, you) ? nil : you
+    }
+
+    private func owe(sharedIdentityNotice name: String) {
+        UserDefaults.standard.set(name, forKey: Self.sharedIdentityKey)
+        sharedIdentityName = name
+    }
+
+    /// The notice has been read (`RootView`), and is not owed again.
+    func acknowledgeSharedIdentity() {
+        UserDefaults.standard.removeObject(forKey: Self.sharedIdentityKey)
+        sharedIdentityName = nil
     }
 
     /// Joins the same family again, on a device the server has stopped
@@ -755,6 +853,8 @@ final class Session {
         UserDefaults.standard.removeObject(forKey: familyKey)
         // A card still waiting for its link is this family's, and goes with it.
         UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
+        // So does a notice about who this phone was in it.
+        acknowledgeSharedIdentity()
         // The key belongs to the family, not to this phone. Leaving keeps the
         // local copy — which is plaintext, so nothing on this device becomes
         // unreadable — but the means to read the family's rows goes with the
@@ -792,6 +892,8 @@ final class Session {
         UserDefaults.standard.removeObject(forKey: Self.arrivalPendingKey)
         UserDefaults.standard.removeObject(forKey: Self.firstMinutePendingKey)
         UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
+        UserDefaults.standard.removeObject(forKey: Self.sharedIdentityKey)
+        sharedIdentityName = nil
         family = nil
         usage = nil
         mode = AppServices.apiBaseURL == nil ? .local : .needsFamily
@@ -860,6 +962,8 @@ final class Session {
         // none — or the row that offered a card in one test would find it
         // already waiting in the next.
         UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
+        // Nor has a seeded launch just joined as anybody.
+        acknowledgeSharedIdentity()
         // A word rather than a name, so it is looked up like the author's is.
         // A member's `displayName` reaches the list through `Text(member
         // .displayName)` and `Text("\(member.displayName) (sinä)")`, neither

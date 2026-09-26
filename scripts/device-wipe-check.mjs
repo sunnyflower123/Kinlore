@@ -23,7 +23,7 @@
 //
 // SCOPE. This reads `ios/Kinlore/Services/`, the one device-local record that
 // lives outside it and is not called reset() — `Elder.forgetLargerText()` —
-// and `Session`, whose five keys are the other half of the same promise and
+// and `Session`, whose six keys are the other half of the same promise and
 // are cleared by `renewIdentity()` rather than by a reset(). Session was left
 // out when this check was written on 19 Sep 2026, on the argument that
 // `renewIdentity()` has reasons of its own; the argument was wrong in the way
@@ -125,7 +125,7 @@ function keysIn(source) {
 }
 
 /// Whether a body clears one key. Both spellings count: `renewIdentity()`
-/// writes `forKey: Self.arrivalPendingKey` for the three static ones and a
+/// writes `forKey: Self.arrivalPendingKey` for the four static ones and a
 /// bare name for the two instance ones, and a matcher that knew only the bare
 /// name reported three of Session's five keys as never cleared — a finding
 /// about the matcher, produced the first time this half was run.

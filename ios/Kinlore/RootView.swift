@@ -158,6 +158,22 @@ struct RootView: View {
         } message: {
             Text("Se on yhä tallessa tiedostona tällä puhelimella, mutta tämä sovellusversio ei saa sitä auki. Älä tyhjennä laitetta: päivitetty sovellus voi vielä lukea sen.")
         }
+        // A join that made this phone a member who is not the person who
+        // joined: another phone on the same Apple ID, whose identity the
+        // Keychain shares (`Session.joinedAsSomebodyElse`). Said once, until
+        // read, and as a fact rather than an error — the memories are saved
+        // either way. What it costs, and the one thing that changes it.
+        .alert(
+            Text("Tällä puhelimella olet Kinloressa \(session.sharedIdentityName ?? "")"),
+            isPresented: Binding(
+                get: { session.sharedIdentityName != nil },
+                set: { if !$0 { session.acknowledgeSharedIdentity() } }
+            )
+        ) {
+            Button("Selvä") { session.acknowledgeSharedIdentity() }
+        } message: {
+            Text("Tämä puhelin käyttää samaa Apple ID:tä kuin \(session.sharedIdentityName ?? ""), joten Kinlore pitää teitä samana ihmisenä. Muistot tallentuvat silti, mutta kaikki tällä puhelimella kerrottu näkyy hänen nimellään, eivätkä puhelimet näytä toistensa muistoja uusina. Jos haluatte kumpikin oman nimen, kummallakin puhelimella pitää olla oma Apple ID.")
+        }
         // The way back for a device the server has stopped knowing: the join
         // form over the archive, with nothing on this phone at stake. Asked
         // for by the note on Muistot or by a tapped link; see

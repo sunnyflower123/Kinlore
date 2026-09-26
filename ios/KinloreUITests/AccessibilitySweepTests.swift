@@ -605,6 +605,29 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The notice a join leaves when it made this phone another member — a
+    /// second phone on the same Apple ID (`SharedAppleIDTests`). The alert is
+    /// iOS's own and is read rather than audited, as the removal's is in
+    /// `testFamily`, where the reason is measured; what is audited is the
+    /// archive it leaves once "Selvä" has been pressed, at both sizes.
+    func testSharedAppleIDNotice() throws {
+        try sweep(
+            "Sama Apple ID",
+            arguments: ["-seed", "joined", "-joinedAs", "Aino", "-joinTyped", "Eino"]
+        ) { app, _ in
+            let notice = app.alerts["Tällä puhelimella olet Kinloressa Aino"]
+            require(notice, "the notice a join as somebody else leaves")
+            require(
+                notice.staticTexts.matching(NSPredicate(
+                    format: "label BEGINSWITH %@", "Tämä puhelin käyttää samaa Apple ID:tä kuin Aino"
+                )).firstMatch,
+                "the notice's message, with the name in it"
+            )
+            notice.buttons["Selvä"].tap()
+            XCTAssertTrue(notice.waitForNonExistence(timeout: 10), "the notice did not close on Selvä")
+        }
+    }
+
     /// The same phone when nothing answered — the page it can be left on,
     /// with the button that asks again.
     func testReturningPhoneUnanswered() throws {

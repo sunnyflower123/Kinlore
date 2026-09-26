@@ -307,12 +307,16 @@ the grandparent who deleted the app by accident, that was the family gone.
 Now the phone asks the server first, and one of three pages answers:
 
 - **While it asks**: a wheel and *"Katsotaan, oletko jo perheen jäsen."*
-- **The server knows the phone**: *"Tervetuloa takaisin"*, the family's name
-  as its founder typed it, *"Olet tämän perheen jäsen, ja sen muistot
-  haetaan tähän puhelimeen."* and one button, **"Avaa perheen arkisto"**,
-  which lands on Albumi as a join does (§4.3). The words do not say the app
-  was reinstalled: a new phone on the same Apple account arrives on the same
-  page, and nothing on it can tell the two apart.
+- **The server knows the phone**: *"Tervetuloa takaisin, Aino"* — the name
+  of the member the phone comes back as — the family's name as its founder
+  typed it, *"Olet tämän perheen jäsen, ja sen muistot haetaan tähän
+  puhelimeen."* and one button, **"Avaa perheen arkisto"**, which lands on
+  Albumi as a join does (§4.3). The words do not say the app was
+  reinstalled: a new phone on the same Apple account arrives on the same
+  page, and nothing on it can tell the two apart. The name is how that phone
+  finds out: on Eino's new phone, which shares Aino's Apple ID, the page
+  greets Aino, before anything has been told under her name. Until 26 Sep
+  2026 it said only *"Tervetuloa takaisin"*.
 - **The server did not answer**: *"Odotetaan yhteyttä"*, *"Perheen palvelu
   ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa."* and
   **"Yritä uudelleen"**. The fork stays hidden, because silence is not a no:
@@ -329,6 +333,32 @@ returning page drops its sentence and the waiting page keeps only
 at XXXL, the full sentences left the one button below the fold on both.
 `ReturningPhoneTests` drives the three answers, and `testReturningPhone` and
 `testReturningPhoneUnanswered` audit the two pages at both sizes.
+
+**The same Apple ID, joined through an invitation.** The page above is the
+usual road for such a phone, and not the only one: a phone whose archive was
+kept to itself (PLAN §10 lever 2) has no question to ask, and joins through the
+form. The server lets an identity it knows back into its family without a
+question — it does not rename the member or claim the code — so Eino's typed
+name was dropped, the phone became Aino, and each phone read the other's
+tellings as its own and never as new. Nothing said so. Since 26 Sep 2026 the
+join compares, and when the phone turns out to be another member it says so
+once, over the archive, as a fact and not as an error:
+
+- *"Tällä puhelimella olet Kinloressa Aino"*
+- *"Tämä puhelin käyttää samaa Apple ID:tä kuin Aino, joten Kinlore pitää
+  teitä samana ihmisenä. Muistot tallentuvat silti, mutta kaikki tällä
+  puhelimella kerrottu näkyy hänen nimellään, eivätkä puhelimet näytä
+  toistensa muistoja uusina. Jos haluatte kumpikin oman nimen, kummallakin
+  puhelimella pitää olla oma Apple ID."* — and **"Selvä"**.
+
+It is said when a typed name is not the member's (letter case and spaces
+aside), or, with nothing typed, when the invitation was made for somebody
+else by name. An invitation made for nobody, or for this member, says
+nothing. The notice waits until "Selvä" and is never shown again. The
+identity itself is not touched: sharing it across the Apple account is rule
+6, and the cure is the one the notice names. `SharedAppleIDTests` drives
+each case and the relaunch, and `testSharedAppleIDNotice` reads the notice
+and audits the archive under it at both sizes.
 
 ## 5. Arrival 3 — the handover
 

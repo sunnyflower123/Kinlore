@@ -36,9 +36,11 @@
 "Odotetaan yhteyttä" = "Waiting for a connection";
 "Perheen palvelu ei vastannut. Sovellus yrittää itse uudelleen, kun yhteys palaa." = "The family service did not answer. The app will try again on its own when the connection returns.";
 "Sovellus yrittää itse uudelleen." = "The app will try again on its own.";
-"Tervetuloa takaisin" = "Welcome back";
+"Tervetuloa takaisin, %@" = "Welcome back, %@";
 "Olet tämän perheen jäsen, ja sen muistot haetaan tähän puhelimeen." = "You are a member of this family, and its memories will be fetched to this phone.";
 "Avaa perheen arkisto" = "Open the family archive";
+"Tällä puhelimella olet Kinloressa %@" = "On this phone, you are %@ in Kinlore";
+"Tämä puhelin käyttää samaa Apple ID:tä kuin %@, joten Kinlore pitää teitä samana ihmisenä. Muistot tallentuvat silti, mutta kaikki tällä puhelimella kerrottu näkyy hänen nimellään, eivätkä puhelimet näytä toistensa muistoja uusina. Jos haluatte kumpikin oman nimen, kummallakin puhelimella pitää olla oma Apple ID." = "This phone uses the same Apple ID as %@, so Kinlore treats you as one person. Memories are still saved, but everything told on this phone appears under their name, and neither phone shows the other's memories as new. If you each want your own name, each phone needs its own Apple ID.";
 
 /* --- Telling, which is the whole point ---------------------------------- */
 "Kerro" = "Tell";

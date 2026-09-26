@@ -212,6 +212,9 @@ struct OnboardingScreen: View {
     /// It says nothing about how the phone got here. The Keychain brings the
     /// identity back after the app is deleted, and to a new phone on the same
     /// Apple account just the same, and this page cannot tell the two apart.
+    /// So the title says who the phone comes back as: on somebody else's
+    /// phone on the same Apple ID it is the first thing that reads wrong,
+    /// before a single telling has been saved under that name.
     ///
     /// At accessibility sizes the sentence is dropped, as the fork drops its
     /// `intro`: it pushed the one button below the fold, and the family's name
@@ -220,7 +223,7 @@ struct OnboardingScreen: View {
         VStack(spacing: 28) {
             Spacer(minLength: 0)
             VStack(spacing: 14) {
-                Text("Tervetuloa takaisin")
+                Text("Tervetuloa takaisin, \(family.you.displayName)")
                     .font(.largeTitle.weight(.bold))
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)

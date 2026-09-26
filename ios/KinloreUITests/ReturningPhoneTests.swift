@@ -17,13 +17,16 @@ import XCTest
 /// question asked launches once first, so that it does not depend on running
 /// after something else.
 final class ReturningPhoneTests: XCTestCase {
-    /// The server knows the identity: the page names the family, offers no
-    /// fork, and its one button opens the archive on Albumi, a join's landing.
+    /// The server knows the identity: the page names the member the phone
+    /// comes back as and the family, offers no fork, and its one button opens
+    /// the archive on Albumi, a join's landing. The member's name is the
+    /// fixture's "Minä"; on a second phone on the same Apple ID it is the
+    /// first phone's owner, which is the point of saying it.
     func testAKnownPhoneIsOfferedItsFamily() {
         let app = launch(["-seed", "returning"], api: "http://127.0.0.1:9")
         XCTAssertTrue(
-            app.staticTexts["Tervetuloa takaisin"].waitForExistence(timeout: 10),
-            "never arrived: the page that offers the family back"
+            app.staticTexts["Tervetuloa takaisin, Minä"].waitForExistence(timeout: 10),
+            "never arrived: the page that offers the family back, by the member's name"
         )
         XCTAssertTrue(app.staticTexts["Virtaset"].exists, "the page does not name the family")
         assertNoFork(app, "a member was offered the fork")
