@@ -114,6 +114,19 @@ import XCTest
 /// the audit reported, and this audit reported nothing — which the lines
 /// above already say to reproduce before believing, and which, reproduced,
 /// still took a sample of the daemon to explain.
+///
+/// **Six reds in one suite run on `main`, 26 Sep 2026, each run alone twice
+/// on a private simulator in Finnish before anything was touched.** Four
+/// were the company shape — `testCreateFamilyForm` (180 s, 166 s),
+/// `testFamily` (352 s, 329 s: some 2 500 activities and no gap above eight
+/// seconds, so not the glass timeout above), `testMemoriesNewFromFamily`
+/// (27 s, 22 s) and `testMemoriesWithContent` (26 s, 21 s) — green both
+/// times with three to five other sessions' devices booted throughout, and
+/// nothing was changed for them. The other two, `testPersonCardWithoutAStory`
+/// and `testPersonCardWithAFriend`, reproduced alone with frames identical
+/// to the decimal, and were the audit's default-size simulation rather than
+/// the screen: the measurement is beside
+/// `AccessibilityPolicy.isDefaultSizeSimulationArtefact`.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 
