@@ -29,6 +29,11 @@ import XCTest
 /// reports success with every scene skipped. The device's own name crosses
 /// that boundary because the runner is an app on the device. It is still
 /// honoured if the variable does arrive, for whoever wires a test plan later.
+/// Measured the other way on 27 Sep 2026: under `xcodebuild
+/// test-without-building`, `TEST_RUNNER_KINLORE_CUE_DIR` does arrive, and
+/// the live takes below depend on it: all four cues of that day's keyless
+/// dry run came back through it. `test` itself was not measured again, so
+/// the name stays the gate.
 ///
 ///     # A simulator of your own — never one you did not create (CLAUDE.md).
 ///     SIM=$(xcrun simctl create kinlore-filming \
@@ -450,6 +455,310 @@ final class FilmDriver: XCTestCase {
         beat(4.0)
     }
 
+    // MARK: - The live takes (the v22 cut)
+
+    // Everything above runs on the stub pipeline. The six takes below run the
+    // app against a real Worker, a local one with a database of its own,
+    // because three things the v22 cut shows exist only there: the words a
+    // telling really said, an invitation carried from one phone to another,
+    // and the month's ceiling as the server's own 402, answered by a purchase
+    // that the other phone hears about.
+    //
+    // `rollLive` passes no `-api`, so the app reads its address from its own
+    // defaults, and the Test Store key the purchase needs sits beside it
+    // there, because nothing in this repository may carry one:
+    //
+    //     xcrun simctl spawn "$SIM" defaults write com.kinlore.app api http://127.0.0.1:<port>
+    //     xcrun simctl spawn "$SIM" defaults write com.kinlore.app rcKey <key>   # by hand
+    //
+    // Two simulators, both named for filming: `kinlore-film-b` is hers, the
+    // grandparent's phone that founds the archive, and `kinlore-film-a` is
+    // the grandchild's, which joins it. The takes run in the order below, and
+    // each carries on from the state the one before it left.
+    //
+    // The test cannot act for the Mac. Where only the Mac can (her voice into
+    // the microphone, the link from one simulator's pasteboard to the other,
+    // the meter filled in the Worker's database), the take prints one line,
+    // `CUE <name> <epoch seconds>`, and waits for `<name>.done` in the
+    // directory `TEST_RUNNER_KINLORE_CUE_DIR` names. That directory has to be
+    // under /tmp, because the simulator cannot see a session's scratchpad
+    // (`AccessibilityAudit`). The video project's `tools/live-take.sh` starts
+    // the Worker, answers every cue and records the take:
+    //
+    //     testFilmTheTellingLive     B  clip-1         her telling, into the microphone
+    //     testFilmTheInvitationLive  B  invite-copied  the invitation is on B's pasteboard
+    //     testFilmTheJoinLive        A  join-link      B's link, opened on A
+    //     testFilmTheCeilingLive     B  meter-full     600 of the month's 600 s used, in D1
+    //                                   clip-4         her answer, into the microphone
+    //     testFilmThePurchaseLive    A  (none)         needs the Test Store key
+    //     testFilmTheOpeningLive     B  (none)         the catch-up, after the purchase
+    //
+    // Telling and Opening spend OpenRouter credit, and Purchase needs
+    // RevenueCat's secret in the Worker. Invitation, Join and the ceiling run
+    // on a Worker with no keys at all, because the quota is checked before
+    // anything goes upstream (`checkAISeconds`, then `/transcribe`).
+
+    /// B · Her telling on the real pipeline: the archive founded if this is
+    /// the evening's first take, the button, `clip-1` into the microphone,
+    /// the question the model really asked back, and what it made of her
+    /// words. `testFilmTheTelling` films the same screens on the canned
+    /// answer.
+    func testFilmTheTellingLive() throws {
+        let app = try rollLive(["-tab", "tell", "-voice", "stub"])
+        try foundTheArchiveIfAsked(app)
+        beat(2.2) // her button, before anybody presses it
+        try startTelling(app)
+        try cue("clip-1", orWait: 8)
+        beat(0.8) // the last word, through the speaker and the microphone
+        try tap(app.buttons, ["Stop telling", "Lopeta kertominen"])
+        // Real transcription and extraction: seconds, not the stub's 3.6. A
+        // model can also admit no question at all, and then the result comes
+        // straight away.
+        let enough = app.buttons
+            .matching(NSPredicate(format: "label IN %@", ["That is enough for now", "Riittää tältä erää"]))
+            .firstMatch
+        let saved = app.staticTexts
+            .matching(NSPredicate(format: "label IN %@", ["Memory saved", "Muisto tallennettu"]))
+            .firstMatch
+        try waitForAny([enough, saved], ["That is enough for now", "Memory saved"], timeout: 120)
+        if enough.exists {
+            beat(3.2) // the question, long enough to be read and heard
+            enough.tap()
+            _ = try find(app.staticTexts, ["Memory saved", "Muisto tallennettu"], timeout: 30)
+        } else {
+            print("FILM no question came back; the take goes straight to the result")
+        }
+        beat(3.4) // her words, and the names in amber
+        if let confirm = try? reveal(app, app.buttons, ["Confirm Toivo", "Vahvista Toivo"]) {
+            confirm.tap()
+        } else {
+            print("FILM no Toivo to confirm in what the model heard; the take holds the result as it is")
+        }
+        beat(8.0)
+    }
+
+    /// B · The invitation, made for real: "Sanni" on the family screen, the
+    /// Worker's code, the share sheet, and Copy. `invite-copied` lets the
+    /// Mac check the link is on this phone's pasteboard, where the join take
+    /// picks it up. The stub take stops at the name, because in stub nothing
+    /// can make the code.
+    func testFilmTheInvitationLive() throws {
+        let app = try rollLive(["-screen", "family"])
+        try foundTheArchiveIfAsked(app)
+        let invite = try reveal(app, app.buttons, ["Invite a family member", "Kutsu perheenjäsen"])
+        beat(1.6)
+        invite.tap()
+        let field = try find(app.textFields, ["Name", "Nimi"], timeout: 20)
+        beat(1.2)
+        field.tap()
+        beat(0.4)
+        field.typeText("Sanni")
+        beat(1.4)
+        try tap(app.buttons, ["Create an invitation", "Luo kutsu"])
+        _ = try find(app.staticTexts, ["The invitation is ready", "Kutsu on valmis"], timeout: 40)
+        beat(2.4) // the code, readable, before it goes anywhere
+        try tap(app.buttons, ["Share the invitation", "Jaa kutsu"])
+        beat(1.6) // the share sheet
+        // iOS's own sheet. Its rows reach the app's tree as buttons or as
+        // cells depending on the release, so any element with the label will do.
+        let copy = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Copy", "Kopioi"]))
+        let deadline = Date().addingTimeInterval(20)
+        while copy.allElementsBoundByIndex.first(where: \.isHittable) == nil {
+            guard Date() < deadline else { throw NeverArrived(labels: ["Copy, in the share sheet"]) }
+            Thread.sleep(forTimeInterval: 0.3)
+        }
+        copy.allElementsBoundByIndex.first(where: \.isHittable)?.tap()
+        try cue("invite-copied", orWait: 2)
+        beat(1.2)
+        try tap(app.buttons, ["Done", "Valmis"], timeout: 15)
+        beat(2.0)
+    }
+
+    /// A · The grandchild joins: the phone out of the box, the invitation
+    /// arriving the way a tapped link arrives (`join-link`: the Mac opens the
+    /// link from her phone's pasteboard on this one), "Join a family", and
+    /// the album with her telling in it, played in her own voice.
+    func testFilmTheJoinLive() throws {
+        let app = try rollLive([])
+        let fork = app.buttons
+            .matching(NSPredicate(format: "label IN %@", ["Join with an invitation link", "Liity kutsulinkillä"]))
+            .firstMatch
+        guard fork.waitForExistence(timeout: 40) else {
+            throw NeverArrived(labels: ["the onboarding fork — this phone already has an archive; erase it (docs/VIDEO.md)"])
+        }
+        beat(1.6) // the phone out of the box
+        try cue("join-link", orWait: 20)
+        // iOS may ask, in English, before a link opens an app — the invitation
+        // text itself warns about it — so whichever comes first is taken: the
+        // system's question, answered, or the form the link filled in.
+        let open = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Open"]
+        let form = app.buttons
+            .matching(NSPredicate(format: "label IN %@", ["Join a family", "Liity perheeseen"]))
+            .firstMatch
+        try waitForAny([open, form], ["Open, in the system's question", "Join a family"], timeout: 30)
+        if open.exists {
+            print("FILM iOS asked before opening the link; answering Open")
+            beat(0.8)
+            open.tap()
+        }
+        let join = try reveal(app, app.buttons, ["Join a family", "Liity perheeseen"])
+        beat(1.4) // the form, filled in by the link
+        join.tap()
+        guard app.tabBars.firstMatch.waitForExistence(timeout: 60) else {
+            throw NeverArrived(labels: ["the family's archive, after Join a family"])
+        }
+        // The launch after a join opens on the album (docs/UX.md §4.3), and
+        // the first pull brings her telling into it. Its "New from the
+        // family" row is worked out when the album appears, which is before
+        // that pull, so the take opens the moment itself.
+        try tap(app.tabBars.buttons, ["Album", "Albumi"])
+        let moment = try find(app.buttons, ["Told on", "Kerrottu"], timeout: 90)
+        beat(2.4)
+        moment.tap()
+        beat(2.0) // her words, on the grandchild's phone
+        try reveal(app, app.buttons, ["Listen in their own voice", "Kuuntele omalla äänellä"]).tap()
+        beat(9.0) // her voice, from the other phone
+    }
+
+    /// B · The ceiling, inside the conversation. With the month's meter full
+    /// (`meter-full`), she answers the question the model asked in the
+    /// telling take, from the first open row on that moment's card, and the
+    /// Worker's real 402 lands where the next question would have: "Your
+    /// voice is kept", with the day the time renews. Then the album, where the
+    /// telling waits for its text.
+    ///
+    /// On a Worker without keys there is no telling take before this one, so
+    /// no card with a question. The take then answers from the Tell tab, which
+    /// reaches the same 402: the meter is read before anything goes upstream.
+    func testFilmTheCeilingLive() throws {
+        let app = try rollLive(["-tab", "memories", "-voice", "stub"])
+        try foundTheArchiveIfAsked(app)
+        try cue("meter-full", orWait: 20)
+        beat(1.6) // the album, as it stands
+        var fromTheCard = false
+        if let moment = try? find(app.buttons, ["Told on", "Kerrottu"], timeout: 5) {
+            moment.tap()
+            beat(2.0) // the card, and what she told on it
+            if let row = try firstOpenQuestion(app) {
+                beat(1.2)
+                tapCentre(of: row, in: app)
+                fromTheCard = true
+            }
+        }
+        if !fromTheCard {
+            print("FILM no open question on a card; answering from the Tell tab")
+            try tap(app.tabBars.buttons, ["Tell", "Kerro"])
+        }
+        beat(1.6) // the question as the title, before she answers
+        try startTelling(app)
+        try cue("clip-4", orWait: 6)
+        beat(0.8)
+        try tap(app.buttons, ["Stop telling", "Lopeta kertominen"])
+        _ = try find(app.staticTexts, ["Your voice is kept", "Äänesi on tallessa"], timeout: 60)
+        // The same heading follows a transcription that failed for any other
+        // reason, a Worker that is down included. Only this sentence says it
+        // was the month's time, which is the whole take.
+        let ceiling = app.staticTexts.matching(NSPredicate(
+            format: "label CONTAINS %@ OR label CONTAINS %@",
+            "free transcription time is used up", "ilmainen litterointiaika on käytetty"
+        )).firstMatch
+        guard ceiling.waitForExistence(timeout: 10) else {
+            throw NeverArrived(labels: ["the ceiling's sentence — the voice was kept for another reason (meter not full? Worker down?)"])
+        }
+        beat(5.0) // the sentence and its date, read
+        try reveal(app, app.buttons, ["Done", "All right", "Valmis", "Selvä"]).tap()
+        beat(1.2)
+        try tap(app.tabBars.buttons, ["Album", "Albumi"])
+        let note = app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH %@ OR label BEGINSWITH %@",
+            "One telling is waiting", "Yksi kertomus odottaa"
+        )).firstMatch
+        if !note.waitForExistence(timeout: 3), app.navigationBars.buttons.firstMatch.exists {
+            app.navigationBars.buttons.element(boundBy: 0).tap() // from the card back to the album
+        }
+        if !note.waitForExistence(timeout: 20) {
+            print("FILM the album's note about the waiting telling never showed")
+        }
+        beat(5.0)
+    }
+
+    /// A · The purchase: the family screen at the ceiling (Free, 10 / 10
+    /// min), "Open the whole archive", RevenueCat's paywall, the lifetime
+    /// package where the dashboard offers one (`/entitlement/sync` grants it
+    /// without a webhook, and it never lapses), the Test Store's dialog, and
+    /// the same screen reading Paid. Needs the Test Store key in this phone's
+    /// defaults and RevenueCat's secret in the Worker.
+    func testFilmThePurchaseLive() throws {
+        let app = try rollLive(["-screen", "family"])
+        guard statusReads(app, ["Free", "Ilmainen"], timeout: 30) else {
+            throw NeverArrived(labels: ["Status: Free, on the family screen"])
+        }
+        beat(2.6) // Free, and the month's minutes used up
+        guard let open = try? reveal(app, app.buttons, ["Open the whole archive", "Avaa koko arkisto"]) else {
+            throw NeverArrived(labels: ["Open the whole archive — is the Test Store key in this phone's defaults?"])
+        }
+        open.tap()
+        beat(2.6) // the paywall, and its price, read before anything is bought
+        let lifetime = app.descendants(matching: .any).matching(NSPredicate(
+            format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@", "lifetime", "elinikäinen"
+        )).firstMatch
+        if lifetime.waitForExistence(timeout: 6), lifetime.isHittable {
+            lifetime.tap()
+            beat(1.0)
+        } else {
+            print("FILM no lifetime package on the paywall; buying the one it selected")
+        }
+        // The dashboard's button carries the offer card's words (13 Sep
+        // 2026), so the last hittable one is the paywall's, as in the
+        // stub take.
+        try tapLast(app, "Open the whole archive", timeout: 30)
+        beat(0.8)
+        try tap(app.buttons, ["Test valid purchase"], timeout: 30)
+        // The Test Store, then `/entitlement/sync`, then RevenueCat's REST
+        // answer, then the refresh: unmeasured, and shown whole either way.
+        guard statusReads(app, ["Paid", "Maksullinen"], timeout: 90) else {
+            throw NeverArrived(labels: ["Status: Paid — the purchase did not reach the family"])
+        }
+        beat(6.0)
+    }
+
+    /// B · The archive opens, on her phone: at launch the app learns the family
+    /// is paid and the catch-up writes the answer the ceiling kept as a voice,
+    /// on camera, on the moment's card. Then the question the model asks
+    /// next, if it asked one.
+    func testFilmTheOpeningLive() throws {
+        let app = try rollLive(["-tab", "memories"])
+        let moment = try find(app.buttons, ["Told on", "Kerrottu"], timeout: 30)
+        beat(1.2)
+        moment.tap()
+        beat(1.0)
+        // A list builds only the rows on screen, so the waiting row is brought
+        // into view before its disappearance can mean anything.
+        let waiting = app.staticTexts.matching(NSPredicate(
+            format: "label BEGINSWITH %@ OR label BEGINSWITH %@", "Voice kept", "Ääni tallessa"
+        )).firstMatch
+        for _ in 0 ..< 4 where !waiting.exists {
+            app.swipeUp(velocity: .slow)
+            beat(0.5)
+        }
+        if waiting.exists {
+            let deadline = Date().addingTimeInterval(90)
+            while waiting.exists, Date() < deadline {
+                Thread.sleep(forTimeInterval: 0.3)
+            }
+            XCTAssertFalse(waiting.exists, "the answer is still only a voice after 90 s: did the family's purchase land?")
+        } else {
+            print("FILM the answer was written before the card opened; the take shows the words, not the change")
+        }
+        beat(3.0) // her words, where the voice was
+        if try firstOpenQuestion(app) != nil {
+            beat(6.0) // the question the model asks next
+        } else {
+            print("FILM no open question on the card after the catch-up")
+            beat(3.0)
+        }
+    }
+
     // MARK: - The hand
 
     private struct NeverArrived: Error, CustomStringConvertible {
@@ -461,6 +770,19 @@ final class FilmDriver: XCTestCase {
     /// `-api ""` is what every suite here passes: no address, no network, the
     /// canned round.
     private func roll(_ arguments: [String]) throws -> XCUIApplication {
+        try launch(["-api", ""] + arguments)
+    }
+
+    /// Launch against the backend the device's own defaults name. `roll`
+    /// without `-api ""`, which would outrank them: an argument beats a
+    /// default, so the live takes pass no address at all (see the live
+    /// takes above for what goes into the defaults).
+    private func rollLive(_ arguments: [String]) throws -> XCUIApplication {
+        try launch(arguments)
+    }
+
+    /// The gate both share: a simulator named for filming, or `KINLORE_FILM=1`.
+    private func launch(_ arguments: [String]) throws -> XCUIApplication {
         let device = UIDevice.current.name
         try XCTSkipUnless(
             device.localizedCaseInsensitiveContains("film")
@@ -468,10 +790,148 @@ final class FilmDriver: XCTestCase {
             "FilmDriver is a camera; it runs on a simulator named for filming. This one is \(device)."
         )
         let app = XCUIApplication()
-        app.launchArguments += ["-api", ""] + arguments
+        app.launchArguments += arguments
         app.launch()
         beat(1.6) // the launch screen, and a moment before anything moves
         return app
+    }
+
+    /// Hands one moment to the Mac, and waits until it has been done.
+    ///
+    /// Prints `CUE <name> <epoch seconds>` — flushed, because a runner's
+    /// stdout is not a terminal and would otherwise sit in a buffer while the
+    /// take waits on it — and leaves `<name>.cue` in the cue directory for a
+    /// log that runs late. Then it waits for `<name>.done` there. Without a
+    /// cue directory it is a fixed pause, for whoever answers by hand.
+    private func cue(_ name: String, orWait fallback: TimeInterval, timeout: TimeInterval = 180) throws {
+        let now = Date().timeIntervalSince1970
+        print("CUE \(name) \(String(format: "%.3f", now))")
+        fflush(stdout)
+        guard let dir = ProcessInfo.processInfo.environment["KINLORE_CUE_DIR"], !dir.isEmpty else {
+            beat(fallback)
+            return
+        }
+        let folder = URL(fileURLWithPath: dir, isDirectory: true)
+        try? String(format: "%.3f\n", now)
+            .write(to: folder.appendingPathComponent("\(name).cue"), atomically: true, encoding: .utf8)
+        let done = folder.appendingPathComponent("\(name).done").path
+        let deadline = Date().addingTimeInterval(timeout)
+        while !FileManager.default.fileExists(atPath: done) {
+            guard Date() < deadline else { throw NeverArrived(labels: ["the Mac's answer to CUE \(name)"]) }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+    }
+
+    /// Her phone on its first launch against an empty Worker: the fork, "Start
+    /// a family archive", her name, and the phone marked as a grandparent's —
+    /// which is what she holds, and which also skips the first-minute sheet a
+    /// founder's own phone raises. A phone that already has its archive shows
+    /// the tab bar instead and goes straight on, so any of her takes can be the
+    /// evening's first.
+    private func foundTheArchiveIfAsked(_ app: XCUIApplication) throws {
+        let fork = app.buttons
+            .matching(NSPredicate(format: "label IN %@", ["Start a family archive", "Aloita perheen arkisto"]))
+            .firstMatch
+        let bar = app.tabBars.firstMatch
+        try waitForAny([fork, bar], ["Start a family archive", "the tab bar"], timeout: 40)
+        guard fork.exists else { return }
+        beat(1.4)
+        fork.tap()
+        let name = try find(app.textFields, ["Your name", "Nimesi"], timeout: 20)
+        beat(1.0)
+        name.tap()
+        // Return ends the editing (the field has no submit action), which
+        // takes the keyboard off the two answers below it.
+        name.typeText("Grandma\n")
+        beat(0.8)
+        try reveal(app, app.buttons, ["A grandparent's", "Isovanhemman"]).tap()
+        beat(1.0)
+        try reveal(app, app.buttons, ["Create the archive", "Luo arkisto"]).tap()
+        guard bar.waitForExistence(timeout: 40) else {
+            throw NeverArrived(labels: ["the archive, after Create the archive"])
+        }
+        beat(1.6)
+    }
+
+    /// The big button, and the recording it starts. On a simulator nobody
+    /// granted the microphone, the press raises iOS's prompt instead, and the
+    /// stop button then never arrives (`testFilmTheTelling` says what that
+    /// cost once).
+    private func startTelling(_ app: XCUIApplication) throws {
+        try tap(app.buttons, ["Start telling", "Aloita kertominen"])
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        if springboard.alerts.firstMatch.waitForExistence(timeout: 1.5) {
+            throw NeverArrived(labels: [
+                "the recording — the microphone prompt is up; grant it before rolling: "
+                    + "xcrun simctl privacy <sim> grant microphone com.kinlore.app",
+            ])
+        }
+        _ = try find(app.buttons, ["Stop telling", "Lopeta kertominen"], timeout: 15)
+    }
+
+    /// The first open question on the card on screen, whatever the model
+    /// asked: the button right under the "Open questions" header.
+    /// Nothing else identifies it — its label is the question — so this
+    /// reads one snapshot for the header and the rows under it, and scrolls
+    /// until the row is clear of the tab bar: a list row built under the bar
+    /// reports hittable and takes the tap on a corner that opens nothing
+    /// (`TargetedQuestionTests`). Nil when the card has no open question.
+    private func firstOpenQuestion(_ app: XCUIApplication, attempts: Int = 5) throws -> CGRect? {
+        let headers = ["open questions", "avoimia kysymyksiä"]
+        let notQuestions = ["Ask the family", "Kysy perheeltä"]
+        for _ in 0 ..< attempts {
+            var header: CGRect?
+            var bar: CGRect?
+            var buttons: [CGRect] = []
+            func walk(_ node: XCUIElementSnapshot) {
+                if headers.contains(node.label.lowercased()) { header = node.frame }
+                if node.elementType == .tabBar { bar = node.frame }
+                if node.elementType == .button, !notQuestions.contains(node.label) { buttons.append(node.frame) }
+                node.children.forEach(walk)
+            }
+            walk(try app.snapshot())
+            if let header {
+                let floor = (bar?.minY ?? app.frame.maxY) - 8
+                let row = buttons
+                    .filter { $0.minY >= header.maxY - 2 && $0.minY < floor }
+                    .min { $0.minY < $1.minY }
+                if let row, row.midY < floor { return row }
+            }
+            app.swipeUp(velocity: .slow)
+            beat(0.6)
+        }
+        return nil
+    }
+
+    private func tapCentre(of frame: CGRect, in app: XCUIApplication) {
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: frame.midX, dy: frame.midY))
+            .tap()
+    }
+
+    /// Whether the family screen's Status row reads one of these words: as
+    /// its row's value, or as a text of its own, whichever this iOS builds
+    /// out of a `LabeledContent`.
+    private func statusReads(_ app: XCUIApplication, _ words: [String], timeout: TimeInterval) -> Bool {
+        let rows = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Status", "Tila"]))
+        let deadline = Date().addingTimeInterval(timeout)
+        repeat {
+            for row in rows.allElementsBoundByIndex {
+                if let value = row.value as? String, words.contains(value) { return true }
+            }
+            if words.contains(where: { app.staticTexts[$0].exists }) { return true }
+            Thread.sleep(forTimeInterval: 0.3)
+        } while Date() < deadline
+        return false
+    }
+
+    /// Whichever of these turns up first; `labels` name them for the error.
+    private func waitForAny(_ elements: [XCUIElement], _ labels: [String], timeout: TimeInterval) throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !elements.contains(where: \.exists) {
+            guard Date() < deadline else { throw NeverArrived(labels: labels) }
+            Thread.sleep(forTimeInterval: 0.2)
+        }
     }
 
     /// The pause between two acts. Long enough to read what is on screen —

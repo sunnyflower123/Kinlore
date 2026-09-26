@@ -361,6 +361,43 @@ A shooting day that copies only the first still gets six cards; the other five
 are then the generated placeholder, which is correct everywhere except on
 camera.
 
+## The v22 live takes
+
+The v22 cut films the live path instead of the stubs: two simulators against
+a local Worker with a database of its own — `kinlore-film-b` is hers and
+founds the archive, `kinlore-film-a` is the grandchild's and joins it. Six
+scenes written on 26 Sep 2026 launch through `rollLive`, which is `roll`
+without `-api ""`, so the app reads `api` and, for the purchase, `rcKey` from
+the simulator's persistent defaults. They run in the order below, and each
+carries on from the state the one before it left.
+
+Where only the Mac can act, a scene prints `CUE <name>` and waits for the
+answer. The video project's `tools/live-take.sh` starts the Worker, sets up
+both simulators, records each take and answers every cue; run without it, a
+scene waits a fixed beat at each cue instead. `FilmDriver`'s comment above the
+six has the protocol.
+
+- **Her telling** — `testFilmTheTellingLive` on B, `-tab tell -voice stub`.
+  Founds the archive if it is the evening's first take; `clip-1` is played
+  into the Mac's microphone at the cue. Spends OpenRouter credit.
+- **The invitation** — `testFilmTheInvitationLive` on B, `-screen family`.
+  An invitation for Sanni, copied from the share sheet. The link is never
+  printed anywhere: its fragment is the family key.
+- **The join** — `testFilmTheJoinLive` on A, no arguments. The cue opens B's
+  link on A; the take joins and plays her telling in her own voice.
+- **The ceiling** — `testFilmTheCeilingLive` on B, `-tab memories -voice
+  stub`. The cue fills the month's meter to 600 of 600 seconds, so her answer
+  (`clip-4`) meets the server's own 402 and the voice is kept.
+- **The purchase** — `testFilmThePurchaseLive` on A, `-screen family`. Needs
+  the Test Store key in A's defaults and RevenueCat's secret in the Worker.
+- **The opening** — `testFilmTheOpeningLive` on B, `-tab memories`. The kept
+  answer is written once the family has paid. Spends OpenRouter credit.
+
+The invitation, the join and the ceiling need no key at all, because the
+quota is checked before anything goes upstream. A paid family never meets the
+ceiling again, so a second pass at the ceiling, the purchase and the opening
+needs a new family: erase both simulators and start again from her telling.
+
 ## Before filming night, in one list
 
 1. Copy the Test Store public key from the RevenueCat dashboard (scene 5).
