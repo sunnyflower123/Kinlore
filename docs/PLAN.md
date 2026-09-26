@@ -590,10 +590,12 @@ finished.**
   reads the paid tier as unlimited. Since 26 Sep 2026 the app's own words
   are true either way — the offer card and Help say the paid archive has
   *more* transcription time (*"enemmän litterointiaikaa"*), where the card
-  used to say *"rajoja ei ole"*. The paywall's *"No limits"* is RevenueCat
-  dashboard copy and not in this repository, and it is true only while the
-  ceiling stays a sentence. When it becomes one number in `quota.ts` (v1.1),
-  that sentence changes with it and `quota-check.mjs` grows a case.
+  used to say *"rajoja ei ole"*; and the Perhe screen's usage rows tell a
+  paid family what it has used, where both used to say *"rajaton"*. The
+  paywall's *"No limits"* is RevenueCat dashboard copy and not in this
+  repository, and it is true only while the ceiling stays a sentence. When
+  it becomes one number in `quota.ts` (v1.1), that sentence changes with it
+  and `quota-check.mjs` grows a case.
 
   **Colouring is a second running cost, and on the paid archive it has no
   ceiling either.** Added 13 Sep 2026 (ARCHITECTURE §24): about 3.4 c a

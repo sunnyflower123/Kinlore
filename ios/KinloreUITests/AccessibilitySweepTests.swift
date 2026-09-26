@@ -839,9 +839,10 @@ final class AccessibilitySweepTests: XCTestCase {
                 "the copy row, waiting for Wi-Fi"
             )
             // By label *or* value: `LabeledContent` folds the row into one
-            // element whose label is "Nimi" and whose value is the name, so
-            // `staticTexts["Virtaset"]` matches nothing — measured here, the
-            // first time this landmark was asked for.
+            // element, so `staticTexts["Virtaset"]` matches nothing — measured
+            // here, the first time this landmark was asked for. On iOS 26.5
+            // that element is a static text labelled "Nimi, Virtaset", with
+            // no value at all (26 Sep 2026, `testFamilyWithTheArchive`).
             require(
                 app.descendants(matching: .any)
                     .matching(NSPredicate(
@@ -943,6 +944,67 @@ final class AccessibilitySweepTests: XCTestCase {
                 hasStoppedDrawing(app),
                 "the Perhe screen was still being drawn when the audit ran"
             )
+        }
+    }
+
+    /// The Perhe screen as a paying family reads it, which nothing had drawn:
+    /// the paid state was reachable only through RevenueCat's sheet, and
+    /// `-entitlement archive` holds it at launch.
+    ///
+    /// Its usage rows said *"rajaton"* until 26 Sep 2026, a promise the plan
+    /// does not make — the paid archive's ceiling is a sentence and not yet a
+    /// number, and the app's other words say *more* time (PLAN.md §10,
+    /// *Prices*). They now say what has been used and nothing about a limit:
+    /// the fixture's seven minutes and twelve photographs.
+    ///
+    /// A store key is in place, so the only thing keeping *"Avaa koko
+    /// arkisto"* off this screen is the tier.
+    func testFamilyWithTheArchive() throws {
+        try sweep(
+            "Perhe, maksullinen",
+            arguments: [
+                "-seed", "family", "-entitlement", "archive", "-rcKey", "test_placeholder",
+                "-tab", "people", "-screen", "family",
+            ]
+        ) { app, isLargest in
+            require(app.navigationBars["Perhe"], "the family screen")
+            // By the row's whole label, "Tila, Maksullinen": the shape a
+            // `LabeledContent` row has on iOS 26.5 — see `testFamily`. The
+            // tier first, so a red row below is about the row and not about
+            // the seed.
+            require(app.staticTexts["Tila, Maksullinen"], "the paid tier")
+            let photos = reach(app.staticTexts["Kuvat, 12"], in: app, "the photographs used, and no limit")
+            require(app.staticTexts["Litterointiaika tässä kuussa, 7 min"], "the minutes used, and no limit")
+            // Asked of every element, label or value, because an absence
+            // asked too narrowly is green for the wrong reason.
+            XCTAssertFalse(
+                app.descendants(matching: .any)
+                    .matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "rajaton", "rajaton"))
+                    .firstMatch.exists,
+                "a row still promised no limit"
+            )
+            XCTAssertFalse(app.buttons["Avaa koko arkisto"].exists, "a paying family was offered the archive")
+            // **At the largest size the audit judges the top of the screen**,
+            // and the usage rows below the fold are asserted there rather
+            // than audited. Audited, they were red three runs out of three on
+            // 26 Sep 2026 — reached by `reach` and page by page alike — on
+            // "Käyttö", "Litterointiaika tässä kuussa" and "Kopio tällä
+            // puhelimella", which the settled screen draws at 9.54:1, 20.63:1
+            // and 20.63:1. The screen recording shows what the audit judged:
+            // its own text-size simulation had drawn the list at the default
+            // size, and the frames it reported held other words at that size
+            // — "Jäsenet" where "Käyttö" had been — and under one per cent
+            // ink: 1.17–1.23:1 and 2.24:1 by `ContrastMeter`'s arithmetic.
+            // Page by page, two of the findings sat at the very frames
+            // `testFamily` reported when it went red at b7b198e, before this
+            // test existed. The rows' words are audited at the default size,
+            // where they are on the first screen.
+            if isLargest {
+                scrollToTop(app)
+            } else {
+                settle(photos)
+            }
+            XCTAssertTrue(hasStoppedDrawing(app), "the paid Perhe screen was still being drawn when the audit ran")
         }
     }
 

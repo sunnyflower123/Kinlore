@@ -215,6 +215,14 @@ final class Session {
         switch UserDefaults.standard.string(forKey: "seed") {
         case "family":
             seedDemoFamily()
+            // `-entitlement archive`: the same family once somebody has
+            // bought, as the buy stub leaves it at the end of RevenueCat's
+            // sheet. That sheet was the only road to the paid Perhe screen,
+            // and no audit can take it — so the rows a paying family reads
+            // said "rajaton" until 26 Sep 2026 without any test drawing them.
+            if UserDefaults.standard.string(forKey: "entitlement") == "archive" {
+                openArchiveWithoutAServer()
+            }
             return
         case "returning":
             // A phone the server knows and whose family id is gone, held at
@@ -996,8 +1004,9 @@ final class Session {
             ]
         )
         // A free family with the month partly spent: the usage rows say a
-        // fraction rather than "rajaton", which is the version with numbers in
-        // it and the one that can overflow a row.
+        // fraction, which is the longer of their two forms and the one that
+        // can overflow a row. `-entitlement archive` turns the same numbers
+        // into the paid rows, which say only what has been used.
         usage = EntitlementClient.Usage(
             entitlement: "free",
             aiSeconds: .init(used: 7 * 60, limit: 10 * 60),

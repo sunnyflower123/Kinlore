@@ -454,7 +454,7 @@
 "Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon ja päästää sisään yhden ihmisen." = "Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon ja päästää sisään yhden ihmisen.";
 "Maksullinen" = "Maksullinen";
 "Ilmainen" = "Ilmainen";
-"rajaton" = "rajaton";
+"%lld min" = "%lld min";
 "%lld / %lld min" = "%lld / %lld min";
 "%lld / %lld" = "%lld / %lld";
 "lähetetään…" = "lähetetään…";

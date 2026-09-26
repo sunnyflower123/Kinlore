@@ -328,13 +328,22 @@ struct FamilyScreen: View {
     }
 
     /// The month's transcription time, as one `Text`.
+    ///
+    /// A paid family is told what it has used and nothing about a limit. The
+    /// paid archive's ceiling is a sentence and not yet a number (PLAN.md §10,
+    /// *Prices*), and the app's other words promise *more* time — so both
+    /// rows said "rajaton" until 26 Sep 2026, a promise the plan does not make.
     private func minutesText(_ usage: EntitlementClient.Usage) -> Text {
-        guard let limit = usage.aiSeconds.limit else { return Text("rajaton") }
+        guard let limit = usage.aiSeconds.limit else {
+            return Text("\(usage.aiSeconds.used / 60) min")
+        }
         return Text("\(usage.aiSeconds.used / 60) / \(limit / 60) min")
     }
 
+    /// A bare count when paid, as the free fraction has no unit either: the
+    /// row's name says what is counted, and a number needs no translation.
     private func photosText(_ usage: EntitlementClient.Usage) -> Text {
-        guard let limit = usage.photos.limit else { return Text("rajaton") }
+        guard let limit = usage.photos.limit else { return Text(verbatim: "\(usage.photos.used)") }
         return Text("\(usage.photos.used) / \(limit)")
     }
 

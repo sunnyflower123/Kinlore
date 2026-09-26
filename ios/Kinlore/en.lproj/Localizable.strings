@@ -527,7 +527,7 @@
 "Lähetä se viestillä sille, jolle kutsun teit. Linkki toimii viikon ja päästää sisään yhden ihmisen." = "Send it in a message to the person you made it for. The link works for a week and lets one person in.";
 "Maksullinen" = "Paid";
 "Ilmainen" = "Free";
-"rajaton" = "unlimited";
+"%lld min" = "%lld min";
 "%lld / %lld min" = "%lld / %lld min";
 "%lld / %lld" = "%lld / %lld";
 "lähetetään…" = "sending…";
