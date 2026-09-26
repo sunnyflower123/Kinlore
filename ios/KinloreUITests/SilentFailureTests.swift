@@ -188,12 +188,25 @@ final class SilentFailureTests: XCTestCase {
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
 
-        // The loop arms the microphone by itself; whichever round this is,
-        // the way out must be on the listening screen.
-        XCTAssertTrue(
-            app.staticTexts["Paina kun olet valmis"].waitForExistence(timeout: 60),
-            "never arrived: the listening screen"
+        // The loop arms the microphone by itself — and `-screen interview`
+        // ends its FIRST spoken round by itself too, three seconds after the
+        // microphone arms, so a way out found on that round can be gone by
+        // the time it is tapped. On a loaded machine it was (26 Sep 2026).
+        // The second round nothing ends but a tap. So let the first one go:
+        // when the listening screen leaves within the timer's reach, wait
+        // for it to come back; when it does not leave, the round in front of
+        // the test is already the second, and there is nothing to wait for.
+        let listening = app.staticTexts["Paina kun olet valmis"]
+        XCTAssertTrue(listening.waitForExistence(timeout: 60), "never arrived: the listening screen")
+        let firstRoundEnded = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: listening
         )
+        if XCTWaiter().wait(for: [firstRoundEnded], timeout: 15) == .completed {
+            XCTAssertTrue(
+                listening.waitForExistence(timeout: 60),
+                "the loop did not reach its second question"
+            )
+        }
         let enough = app.buttons["Riittää tältä erää"]
         XCTAssertTrue(enough.waitForExistence(timeout: 10), "the listening screen has no way out that keeps the answer")
         enough.tap()
