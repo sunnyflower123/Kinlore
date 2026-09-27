@@ -1743,19 +1743,24 @@ final class AccessibilitySweepTests: XCTestCase {
     /// A person's card while nothing has been told about them, which is when
     /// the card can be deleted: the fixture's Aino.
     func testPersonCardWithoutAStory() throws {
-        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, isLargest in
+        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
             // Through the door: a name nobody has checked is not on the list.
             require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
             require(app.staticTexts["Aino"], "the name heard").tap()
-            let removal = reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person")
+            // Six: at the largest size the way to the photograph above the
+            // telling that names her is 226 pt of the card on its own.
+            let removal = reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person", swipes: 6)
             // At the largest size the swipes stop with the button under the
             // tab bar and the row that mentions her under the navigation bar,
             // where its byline was reported partially unsupported once the
             // card above it grew (26 Sep 2026; the entry on `memory.byline`
-            // in `AccessibilityPolicy`). The button is dragged clear of the
-            // bar, as somebody about to press it would, and the card is
-            // judged there.
-            if isLargest { drag(removal, toMinY: 700, in: app) }
+            // in `AccessibilityPolicy`). At the default size, once that way
+            // stood above the row (27 Sep 2026), the one swipe could leave
+            // the button at the bar's edge: at y 718.67 its words were drawn
+            // at 770.67 and measured 1.08:1 there. So at both sizes the
+            // button is dragged clear of the bar, as somebody about to press
+            // it would, and the card is judged there.
+            drag(removal, toMinY: 700, in: app)
         }
     }
 

@@ -1409,6 +1409,15 @@ enum AccessibilityPolicy {
         // button, and what brings it was not split. On the words, as
         // `relative.add` is.
         "card.ask", "card.colourNote",
+        // The link above a telling filed under another card, by that card's
+        // name — "Valokuva" for an untitled photograph (27 Sep 2026). A new
+        // row, so none of its code was ever clean to compare with: at the
+        // default size only, 71.33 × 20.33 pt at y 165.5 and at y 190.5 on
+        // the story-less card, alone twice at a load under five, and at
+        // y 357.83 with the row dragged to 330; at the real largest size,
+        // dragged to the same place, clean with nothing forgiven. On the
+        // words, as `relative.add` is.
+        "namedElsewhere.title",
     ]
 
     /// The four that also reported `.textClipped` at the default size, and

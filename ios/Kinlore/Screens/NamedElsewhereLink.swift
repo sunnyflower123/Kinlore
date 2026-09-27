@@ -30,6 +30,10 @@ struct NamedElsewhereLink: View {
                 Text(home.displayTitle)
                     .font(.body.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
+                    // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (27 Sep 2026). On the words rather
+                    // than the link: the audit reports the label.
+                    .accessibilityIdentifier("namedElsewhere.title")
             }
             .frame(maxWidth: .infinity, minHeight: Elder.minTapTarget, alignment: .leading)
         }

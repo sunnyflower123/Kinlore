@@ -144,6 +144,7 @@ const ARTEFACT_IDS = [
 	'card.tell',
 	'card.ask',
 	'card.colourNote',
+	'namedElsewhere.title',
 ]
 const CLIPPED_IDS = ['card.emptyState', 'card.removal', 'card.ask', 'card.colourNote']
 
