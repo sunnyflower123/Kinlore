@@ -84,6 +84,21 @@ final class FriendTests: XCTestCase {
         let row = app.buttons["Lisää sukulainen"]
         for _ in 0 ..< 4 where !row.exists { app.swipeUp() }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the way to add a relative")
+        // Since the relatives became tiles (27 Sep 2026) the row stands
+        // under the tab bar on Eeva's card at the default size, and a tap
+        // at its centre lands on the bar: the sheet never came, in both
+        // tests. `isHittable` answers yes under the glass, so the frames are
+        // compared, and the card is dragged up the way the friend's row is
+        // before its swipe.
+        let bar = app.tabBars.firstMatch.frame
+        let middle = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        for _ in 0 ..< 4 where row.frame.maxY > bar.minY {
+            middle.press(
+                forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -200)),
+                withVelocity: .slow, thenHoldForDuration: 0.5
+            )
+        }
+        XCTAssertLessThanOrEqual(row.frame.maxY, bar.minY, "the row that adds a relative never came out from under the tab bar")
         row.tap()
         let friend = app.buttons["Lisää ystävä"]
         XCTAssertTrue(friend.waitForExistence(timeout: 10), "the sheet offers no friend")

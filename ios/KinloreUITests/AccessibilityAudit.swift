@@ -1086,7 +1086,7 @@ enum AccessibilityPolicy {
     ///     load of 5). The position signature at the top edge; the sweep
     ///     drags at the largest size and forgives nothing there.
     ///
-    /// Clipping is forgiven for the two texts that reported it and for no
+    /// Clipping is forgiven for the four texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
     /// layout with nothing forgiven, so a sentence that really lost its last
     /// line at the largest size is caught there. `.contrast` must never join
@@ -1132,12 +1132,37 @@ enum AccessibilityPolicy {
         // The card's "Lisää tieto" row, the last of the Tiedot section, and
         // the "Ystävät" heading that section now stands above (26 Sep 2026).
         "fact.add", "friends.heading",
+        // The card's "Kerro tästä muisto" button, once the face section
+        // above it grew (27 Sep 2026) and the button sat low enough on the
+        // card: reported at y 635 on the card offered as you, and clean at
+        // 563 on the person card and at 345 on a card with one telling,
+        // the button's code untouched; clean at the real largest size on
+        // every run. This type only — the clipping the same sweeps
+        // reported at both sizes was the label's undrawn icon, and went
+        // with it. On the button's words, as `relative.add` is.
+        "card.tell",
+        // The card's "Kysy perheeltä" button and the colouring's consent
+        // footer above it (27 Sep 2026), at the default size only: on a
+        // place with nothing told the button at y 585.67, red on seven
+        // runs of seven; under the photograph's bubble the button at 661.33
+        // and the footer at 566.33, red on four of five, the green run's
+        // settled screen the same as the red ones'. `main` at 152ea8d was
+        // clean on the same two sweeps twice, and the real largest size was
+        // clean on every run. The button's finding came with the Kerro
+        // button's new words and wax: `main` with that button and nothing
+        // else reported it at both frames, on the place with that button's
+        // identifier and without it. The footer's did not come with the
+        // button, and what brings it was not split. On the words, as
+        // `relative.add` is.
+        "card.ask", "card.colourNote",
     ]
 
-    /// The two that also reported `.textClipped` at the default size, and
-    /// only those two; both are drawn whole at a real AccessibilityXXXL.
+    /// The four that also reported `.textClipped` at the default size, and
+    /// only those four; each is drawn whole at a real AccessibilityXXXL.
     private static let simulationArtefactClippedIdentifiers: Set<String> = [
         "card.emptyState", "card.removal",
+        // Clipped beside unsupported on every red run (27 Sep 2026).
+        "card.ask", "card.colourNote",
     ]
 
     /// The join form's code field with a code in it, reported clipped by the

@@ -756,6 +756,12 @@ struct SubjectDetailScreen: View {
         return "Vaihda nimi"
     }
 
+    /// The photograph's corner: the card's, with the hairline every card has
+    /// (`elderCard`), since 27 Sep 2026; 16 points and no edge until then.
+    private static var picture: RoundedRectangle {
+        RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+    }
+
     /// Whether this card can be deleted: only while nothing has been told
     /// about it, nobody has asked about it and, for a person, nobody is
     /// related to them. A photograph is the wrong side of a print; a person
@@ -899,7 +905,8 @@ struct SubjectDetailScreen: View {
                     Image(uiImage: colourImage)
                         .resizable()
                         .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .clipShape(Self.picture)
+                        .overlay(Self.picture.strokeBorder(Elder.rule, lineWidth: 1))
                         .accessibilityLabel("Väritetty kuva. Värit ovat tekoälyn arvaus kerrotun mukaan.")
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
@@ -995,45 +1002,46 @@ struct SubjectDetailScreen: View {
             // learn one fact, which is why it is written here.
             if datable {
                 Section {
-                    Button {
-                        isDating = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "calendar")
-                            Text(current.dateHint?.displayText ?? String(localized: "Lisää ajankohta"))
-                                .font(.body)
-                                .fixedSize(horizontal: false, vertical: true)
+                    // Two honey chips on one row since 27 Sep 2026, where
+                    // there were two grey rows: the date and the name are
+                    // the two things a hand can put on a picture, and a chip
+                    // says it is for pressing where a grey row said only
+                    // what was missing (`ChipRow`).
+                    ChipRow {
+                        Button {
+                            isDating = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "calendar")
+                                Text(current.dateHint?.displayText ?? String(localized: "Lisää ajankohta"))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .font(.body.weight(.medium))
                         }
-                        .foregroundStyle(Elder.supporting)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .elderTapTarget()
-                    }
 
-                    // And the name, the same way. The card could date the
-                    // picture and not name it: the title was whatever the
-                    // first telling left, and the tile on Muistot reads the
-                    // title aloud, so thirty untitled photographs were thirty
-                    // "Valokuva" (finding #12). A row and not the toolbar
-                    // pencil the person card has, for the reason the date row
-                    // gives: a toolbar button's text barely grows.
-                    Button {
-                        isRenaming = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "pencil")
-                            // The identifier is for
-                            // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                            // and nothing else: the default-size simulation
-                            // reports this text whenever words stand in the
-                            // picture's place above it, and it has three wordings.
-                            Text(nameRowText)
-                                .font(.body)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .accessibilityIdentifier("subject.rename")
+                        // And the name, the same way. The card could date the
+                        // picture and not name it: the title was whatever the
+                        // first telling left, and the tile on Muistot reads the
+                        // title aloud, so thirty untitled photographs were thirty
+                        // "Valokuva" (finding #12). A chip and not the toolbar
+                        // pencil the person card has, for the reason the date
+                        // chip gives: a toolbar button's text barely grows.
+                        Button {
+                            isRenaming = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "pencil")
+                                // The identifier is for
+                                // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                                // and nothing else: the default-size simulation
+                                // reports this text whenever words stand in the
+                                // picture's place above it, and it has three wordings.
+                                Text(nameRowText)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("subject.rename")
+                            }
+                            .font(.body.weight(.medium))
                         }
-                        .foregroundStyle(Elder.supporting)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .elderTapTarget()
                     }
                 }
             }
@@ -1046,19 +1054,45 @@ struct SubjectDetailScreen: View {
             // every avatar, cannot.
             if subject.kind == .person {
                 Section {
+                    // The portrait the card opens with, since 27 Sep 2026:
+                    // the disc at 136 points, centred, and the words under
+                    // it on a line of their own. They stood beside a disc of
+                    // 56 until then, in one row, and at the largest text
+                    // size the disc was 175 points across and *Choose a
+                    // face* three lines of broken words down its side
+                    // (`LayoutAtSizeTests`). The disc grows with the large
+                    // title rather than the body, which would take it past
+                    // the phone's width.
+                    //
+                    // A row each, not one row with a stack in it. A row of a
+                    // `List` is the frame VoiceOver draws and a test
+                    // measures round the button in it, and with the disc in
+                    // the same row that frame was 330 points tall round
+                    // words that take 63 — the very shape the broken words
+                    // had, from a row that broke nothing.
+                    SubjectAvatar(subject: current, size: 136, letter: .largeTitle, scaledWith: .largeTitle)
+                        .frame(maxWidth: .infinity)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+
                     Button {
                         isChoosingFace = true
                     } label: {
-                        HStack(spacing: 14) {
-                            SubjectAvatar(subject: current, size: 56)
-                            Text(current.portraitSubjectID == nil ? "Valitse kasvot" : "Vaihda kasvot")
-                                .font(.body)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        .foregroundStyle(Elder.supporting)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .elderTapTarget()
+                        Text(current.portraitSubjectID == nil ? "Valitse kasvot" : "Vaihda kasvot")
+                            .font(.body.weight(.medium))
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
                     }
+                    .buttonStyle(.borderless)
+                    // Ink, like every text button since the accent
+                    // became the red of removal (`Elder.wax`).
+                    .foregroundStyle(Color.primary)
+                    .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
 
                     // Which card this phone's member is (26 Sep 2026): "Tämä
                     // olen minä" on a phone that is nobody yet, "Tämä olet
@@ -1072,25 +1106,25 @@ struct SubjectDetailScreen: View {
                         Button {
                             if isMe { isConfirmingNotMe = true } else { isConfirmingMe = true }
                         } label: {
-                            HStack(spacing: 14) {
+                            HStack(spacing: 10) {
                                 Image(systemName: isMe ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
-                                    .font(.title2)
                                     .accessibilityHidden(true)
                                 if isMe {
                                     Text("Tämä olet sinä")
-                                        .font(.body)
                                         .fixedSize(horizontal: false, vertical: true)
                                 } else {
                                     Text("Tämä olen minä")
-                                        .font(.body)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
-                            .foregroundStyle(Elder.supporting)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .elderTapTarget()
+                            .font(.body.weight(.medium))
                         }
+                        .buttonStyle(.elderSecondary)
                         .disabled(isLinkingMe)
+                        .frame(maxWidth: .infinity)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 8, trailing: 0))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
                 } footer: {
                     // The mark that could not be unmade now, in words — and
@@ -1120,12 +1154,37 @@ struct SubjectDetailScreen: View {
                 Button {
                     isTelling = true
                 } label: {
-                    Label("Kerro tästä muisto", systemImage: "mic.fill")
+                    // Words alone since 27 Sep 2026. The `mic.fill` icon
+                    // this label carried was drawn by the prominent style on
+                    // neither `main` nor this branch, at either text size
+                    // (screenshots of both), while its slot kept the first
+                    // line right of centre and its image element stood in
+                    // the accessibility tree inside the words' frame — and
+                    // the audit reported the words clipped on every card
+                    // sweep that reached this button, at the default size
+                    // and, once the button was on screen, at the largest:
+                    // 370 by 139.33 points on the own-telling card, alone
+                    // twice, frames identical to the decimal. With the icon
+                    // gone the same sweeps are clean at both sizes and the
+                    // words sit centred. Why the identical label audits
+                    // clean on `main` was not found.
+                    Text("Kerro tästä muisto")
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .elderTapTarget()
+                        // For the audit's default-size simulation, which
+                        // reports the button as partially unsupported once
+                        // it sits low enough on the card — y 635 on the card
+                        // offered as you, clean at 563 and 345 with the code
+                        // untouched (27 Sep 2026): `AccessibilityPolicy`
+                        // keys the artefact on this and on nothing else.
+                        .accessibilityIdentifier("card.tell")
                 }
-                .buttonStyle(.borderedProminent)
+                // The card's one wax button (§22). Everything else on it is
+                // ink since 27 Sep 2026 — on honey, on a tile, or on the
+                // paper — so that the one thing to do here is the one thing
+                // in the accent.
+                .elderPrimary(true)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             }
@@ -1157,22 +1216,12 @@ struct SubjectDetailScreen: View {
             if !mentions.isEmpty {
                 Section {
                     ForEach(mentions) { memory in
+                        // On the paper, in the honey bubble every telling is
+                        // read in since 27 Sep 2026 (`MemoryRow`). The row
+                        // itself drew `systemGray4` here until 19 Sep 2026
+                        // and `Elder.card` after; the bubble is the surface
+                        // now, and the row says so for itself.
                         MemoryRow(memory: memory)
-                            // The one row on this screen whose surface was the
-                            // system's rather than this repo's, and it did not
-                            // draw the white the sibling section below gets: it
-                            // came up `systemGray4`, rgb(209, 209, 214), a
-                            // colour named nowhere in this app. The accent on it
-                            // measures **4.20:1** against rule 1's 4.5 minimum,
-                            // which is how the audit found it — "Contrast nearly
-                            // passed" on the listen button, in 3 runs of 10.
-                            //
-                            // It reads as a tap highlight and is not one: it
-                            // survives a scroll up and back down and a change of
-                            // Dynamic Type size, measured 19 Sep 2026 from the
-                            // audit's own screenshot at both text sizes. On
-                            // `Elder.card` the same button measures 6.14:1.
-                            .listRowBackground(Elder.card)
                     }
                 } header: {
                     // Two whole sentences rather than one with a number in it:
@@ -1293,6 +1342,9 @@ struct SubjectDetailScreen: View {
                     // a promise made on that service's behalf.
                     Text("Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Arkistoon ei tallenneta mitään ennen kuin vastaat.")
                         .foregroundStyle(Elder.supporting)
+                        // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                        // and nothing else (27 Sep 2026).
+                        .accessibilityIdentifier("card.colourNote")
                 }
             }
 
@@ -1371,10 +1423,19 @@ struct SubjectDetailScreen: View {
                 Button {
                     isAsking = true
                 } label: {
-                    Label("Kysy perheeltä", systemImage: "questionmark.bubble")
-                        .font(.body.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .elderTapTarget()
+                    Label {
+                        Text("Kysy perheeltä")
+                            // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                            // and nothing else (27 Sep 2026). On the words
+                            // rather than the button: the audit reports the
+                            // label.
+                            .accessibilityIdentifier("card.ask")
+                    } icon: {
+                        Image(systemName: "questionmark.bubble")
+                    }
+                    .font(.body.weight(.medium))
+                    .frame(maxWidth: .infinity)
+                    .elderTapTarget()
                 }
                 .buttonStyle(.elderSecondary)
                 .listRowInsets(EdgeInsets())
@@ -1553,7 +1614,8 @@ struct SubjectDetailScreen: View {
                 // it there (`StepIn`).
                 .stepInApproach()
                 .scaledToFit()
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(Self.picture)
+                .overlay(Self.picture.strokeBorder(Elder.rule, lineWidth: 1))
                 // The card's main content had no description until 26 Sep
                 // 2026: the audit said "Element has no description", and
                 // VoiceOver passed over the photograph as if it were not
@@ -1588,7 +1650,7 @@ struct SubjectDetailScreen: View {
                 }
             }
         } else {
-            RoundedRectangle(cornerRadius: 16)
+            Self.picture
                 .fill(.quaternary)
                 .aspectRatio(4.0 / 3.0, contentMode: .fit)
                 .overlay { ProgressView() }
@@ -1640,6 +1702,7 @@ private struct MemoryRow: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var isConfirmingRemoval = false
     @State private var isEditingText = false
     @State private var isMoving = false
@@ -1681,27 +1744,131 @@ private struct MemoryRow: View {
             .filter { !$0.confirmed && $0.deletedAt == nil }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if memory.isAwaitingTranscription {
-                // Two different truths, and the app must not tell the first one
-                // after it has stopped trying. "Teksti valmistuu myöhemmin" was
-                // a promise nothing kept for a while (§16); it must not become
-                // one again on the recordings the catch-up has given up on.
-                Label(awaitingText, systemImage: "waveform")
-                .elderBody()
-                .foregroundStyle(Elder.supporting)
-            } else {
-                // The identifiers on this text and on the byline below are
-                // for `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                // and nothing else: the audit's default-size simulation
-                // reports these two the moment a row is added above the
-                // memories, and a story's words cannot be listed by label.
-                Text(memory.body)
-                    .elderBody()
-                    .accessibilityIdentifier("memory.body")
+    /// The teller's disc and the line under the telling. The disc is her
+    /// own — her face, when her card has one — or the initial of the name
+    /// the telling arrived under, and none for a teller who asked not to be
+    /// named; the line is `MemoryStore.byline(for:)`'s answer, which makes
+    /// the same three choices.
+    private var byline: some View {
+        HStack(spacing: 10) {
+            // Scaled with the large title and not the body: grown with the
+            // body, the disc is 100 points at the largest text size and left
+            // the date beside it a column narrower than itself — *9/27/202*
+            // and *6* on the next line (`LayoutAtSizeTests`). With the
+            // title's growth it is 56, and the widest word of the line has
+            // room.
+            if let id = memory.tellerSubjectID, let teller = store.subject(id: id), !teller.title.isEmpty {
+                SubjectAvatar(subject: teller, size: 32, scaledWith: .largeTitle)
+            } else if memory.tellerHidden != true {
+                SubjectAvatar(initial: memory.authorName, size: 32, scaledWith: .largeTitle)
             }
 
+            // Subheadline, matching the "X kertoi" line on the Uutta
+            // perheeltä row: who told this matters most exactly when
+            // several members write on one subject, and it was the
+            // smallest text in the whole reading loop.
+            // And when. The export has printed the day beside every
+            // telling since the first one, and the row a family actually
+            // reads never did (founder's-eye review, finding #9): a
+            // grandchild on a card in year three could not tell the story
+            // told last week from the one told first. The device's own
+            // short form, so an English phone is not handed a Finnish
+            // date; the family screen's member row still is.
+            // The teller and not the author since 19 Sep 2026, through
+            // the one place that answers it (`MemoryStore.byline(for:)`):
+            // one phone round a table files every voice under whoever owns
+            // the phone until somebody says otherwise, and a teller who
+            // asked not to be named leaves the day standing alone. The
+            // date is already the device's own short form, so it needs no
+            // key of its own when it is the whole line.
+            if let teller = store.byline(for: memory) {
+                Text("\(teller) · \(Self.told(memory.createdAt))")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("memory.byline")
+            } else {
+                Text(verbatim: Self.told(memory.createdAt))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("memory.byline")
+            }
+        }
+    }
+
+    /// The original audio is part of the product, not a step towards it.
+    @ViewBuilder
+    private var playback: some View {
+        if memory.audioFilename != nil || memory.audioR2Key != nil {
+            MemoryPlaybackButton(memory: memory)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // The honey bubble (27 Sep 2026): what somebody said, on the
+            // warm surface `Elder.honey` is for. The edge is the `rule`
+            // hairline and nothing else — honey on paper is 1.10:1, and a
+            // shadow would make a button of a surface that is not one. Ink
+            // on it measures 13.74:1 and `supporting` 6.73:1, so the words,
+            // the byline and the listen button sit inside; the names heard
+            // and the teller's own buttons stay out on the paper, where
+            // *Poista* keeps the red it was measured in.
+            VStack(alignment: .leading, spacing: 10) {
+                if memory.isAwaitingTranscription {
+                    // Two different truths, and the app must not tell the first one
+                    // after it has stopped trying. "Teksti valmistuu myöhemmin" was
+                    // a promise nothing kept for a while (§16); it must not become
+                    // one again on the recordings the catch-up has given up on.
+                    Label(awaitingText, systemImage: "waveform")
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
+                } else {
+                    // The identifiers on this text and on the byline below are
+                    // for `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else: the audit's default-size simulation
+                    // reports these two the moment a row is added above the
+                    // memories, and a story's words cannot be listed by label.
+                    Text(memory.body)
+                        .elderBody()
+                        .accessibilityIdentifier("memory.body")
+                }
+
+                // Who told it and when, and the recording. On one line while
+                // both fit on it whole, and the button under the byline
+                // otherwise — always under it at the accessibility sizes.
+                // They shared a line at every size until 27 Sep 2026, and
+                // at the largest the button was a column five characters
+                // wide and 465 points tall beside the name
+                // (`LayoutAtSizeTests`, H49 L6).
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 10) {
+                        byline
+                        playback
+                    }
+                } else {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 12) {
+                            byline
+                            Spacer(minLength: 0)
+                            playback
+                        }
+                        VStack(alignment: .leading, spacing: 10) {
+                            byline
+                            playback
+                        }
+                    }
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .elderBubble()
+
+            // Under the bubble and not in it, since the bubble came: the
+            // rows carry *Poista* in `destructive`, which is measured on the
+            // paper and not on honey, where a coloured word is never a
+            // sentence (`Elder.honey`).
             if !heardHere.isEmpty {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Kuulin nämä")
@@ -1724,46 +1891,7 @@ private struct MemoryRow: View {
                         )
                     }
                 }
-                .padding(.top, 4)
-            }
-
-            HStack(spacing: 12) {
-                // Subheadline, matching the "X kertoi" line on the Uutta
-                // perheeltä row: who told this matters most exactly when
-                // several members write on one subject, and it was the
-                // smallest text in the whole reading loop.
-                // And when. The export has printed the day beside every
-                // telling since the first one, and the row a family actually
-                // reads never did (founder's-eye review, finding #9): a
-                // grandchild on a card in year three could not tell the story
-                // told last week from the one told first. The device's own
-                // short form, so an English phone is not handed a Finnish
-                // date; the family screen's member row still is.
-                // The teller and not the author since 19 Sep 2026, through
-                // the one place that answers it (`MemoryStore.byline(for:)`):
-                // one phone round a table files every voice under whoever owns
-                // the phone until somebody says otherwise, and a teller who
-                // asked not to be named leaves the day standing alone. The
-                // date is already the device's own short form, so it needs no
-                // key of its own when it is the whole line.
-                if let teller = store.byline(for: memory) {
-                    Text("\(teller) · \(Self.told(memory.createdAt))")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Elder.supporting)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("memory.byline")
-                } else {
-                    Text(verbatim: Self.told(memory.createdAt))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Elder.supporting)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("memory.byline")
-                }
-
-                // The original audio is part of the product, not a step towards it.
-                if memory.audioFilename != nil || memory.audioR2Key != nil {
-                    MemoryPlaybackButton(memory: memory)
-                }
+                .padding(.horizontal, 4)
             }
 
             // The teller's own, the day after. The result screen offers this
@@ -1813,7 +1941,11 @@ private struct MemoryRow: View {
                     .elderTapTarget()
             }
         }
-        .padding(.vertical, 6)
+        // On the paper: the bubble is the surface, and the row's own white
+        // under it would have been a card under a card.
+        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
         .sheet(isPresented: $isMoving) {
             MoveMemorySheet(current: memory.subjectID) { subject in
                 // A moment that held only this telling goes with it, and the

@@ -1805,7 +1805,7 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep(
             "Person card, friend",
             arguments: ["-seed", "clan", "-tab", "people", "-screen", "person", "-person", "clan-jonne"]
-        ) { app, _ in
+        ) { app, isLargest in
             require(app.buttons["Kerro tästä muisto"], "the person card")
             // The row and not its heading since 26 Sep 2026. Reached by the
             // heading, the largest size arrived with *"Ystävät"* under the
@@ -1814,12 +1814,19 @@ final class AccessibilitySweepTests: XCTestCase {
             // (`KINLORE_XXXL_LOSS`) counted five of sixteen labels gone, the
             // friend's name among them. One element per relative (see
             // `RelativeRow`), so the row is found by its whole label.
-            settle(reach(
+            let row = reach(
                 app.descendants(matching: .any)
                     .matching(NSPredicate(format: "label == %@", "Elina, Ystävä"))
                     .firstMatch,
                 in: app, "the friend's row"
-            ))
+            )
+            settle(row)
+            // And at the largest size dragged to mid-screen, as the facts
+            // row is (27 Sep 2026): reached, the row's caption stood seven
+            // points above the tab bar and the card's Kerro button, grown
+            // to two lines, under the navigation bar at y 90, and the audit
+            // reported both — the page's position, not the row's words.
+            if isLargest { drag(row, toMinY: 330, in: app) }
         }
     }
 
@@ -1831,7 +1838,18 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card, add a relative",
             arguments: ["-seed", "related", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, _ in
-            reach(app.buttons["Lisää sukulainen"], in: app, "the row that adds a relative").tap()
+            // Dragged clear of the tab bar before the tap since 27 Sep 2026:
+            // with the relatives drawn as tiles the row stands under the bar
+            // on Eeva's card at the default text size, and a tap at its
+            // centre landed on the bar — the sheet never came, in the suite
+            // and alone, and the run's recording showed the chip behind the
+            // glass. Reached is not hittable, and `isHittable` does not know
+            // it: gated on that, the test dragged nothing and tapped the bar
+            // again, three runs the same day. The frames are compared.
+            let add = reach(app.buttons["Lisää sukulainen"], in: app, "the row that adds a relative")
+            let bar = app.tabBars.firstMatch
+            if bar.exists && add.frame.maxY > bar.frame.minY { drag(add, toMinY: 330, in: app) }
+            add.tap()
             require(app.buttons["Lisää ystävä"], "the sheet")
         }
     }

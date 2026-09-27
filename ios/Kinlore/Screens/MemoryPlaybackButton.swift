@@ -36,7 +36,7 @@ struct MemoryPlaybackButton: View {
                     // The shape says which of the three states this is, not the
                     // colour: play, stop, or something that did not work.
                     Image(systemName: symbol)
-                        .font(.title3)
+                        .font(.title2)
                         .contentTransition(.symbolEffect(.replace))
                 }
 
@@ -49,7 +49,11 @@ struct MemoryPlaybackButton: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(failure == nil ? AnyShapeStyle(.tint) : AnyShapeStyle(Elder.supporting))
+            // Ink since 27 Sep 2026, and not the tint: the accent is the red
+            // that starts a telling (`Elder.wax`), and playing one back is
+            // not that. On the honey bubble the row draws it in, ink is
+            // 13.74:1 and `supporting` 6.73:1.
+            .foregroundStyle(failure == nil ? Color.primary : Elder.supporting)
             .elderTapTarget()
         }
         .buttonStyle(.plain)

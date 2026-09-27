@@ -47,6 +47,7 @@ import UIKit
 struct FamilyTreeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Names heard and not yet checked. The door to them is in the menu, with
     /// a mark on the menu's button while any wait, so the tree hides nothing
@@ -64,12 +65,6 @@ struct FamilyTreeView: View {
     /// the canvas performs each once and only once.
     @State private var command: TreeCommand?
     @State private var serial = 0
-
-    /// How much of the window's bottom the two buttons take, measured from
-    /// the buttons themselves and handed to the canvas as part of its bottom
-    /// inset, so the last row can be scrolled clear of them and the drawing
-    /// opens with nothing under them.
-    @State private var controlsHeight: CGFloat = 0
 
     /// The window's width, measured from the canvas, so that a caption inside
     /// the drawing wraps at it rather than running off it at the largest
@@ -181,7 +176,7 @@ struct FamilyTreeView: View {
             .min { ($0.row, $0.x) < ($1.row, $1.x) }
             .map { geometry.disc(of: $0) }
 
-        ZStack(alignment: .bottomTrailing) {
+        VStack(spacing: 0) {
             // Inside both bars. Not under the top bar, because the status
             // bar fades whatever scrolls beneath it and the audit reads the
             // fade as the name's own colour; and since 25 Sep 2026 not under
@@ -195,7 +190,6 @@ struct FamilyTreeView: View {
             TreeCanvas(
                 size: geometry.size,
                 range: Self.zoomRange,
-                controls: controlsHeight,
                 opening: opening,
                 key: key,
                 command: command,
@@ -234,25 +228,21 @@ struct FamilyTreeView: View {
                 windowWidth = width
             }
 
-            // Inside the safe area, so they sit above the tabs and not under
-            // them, in the corner a map keeps its controls in — and 24 points
-            // up from the bar rather than 8, for the test's fingers.
-            // XCUITest's zoom-out pinch puts one finger seven points in and
-            // nine down from the top-left corner of the element's frame inset
-            // 50 from each side, and the other the same way inside the
-            // bottom-right corner. A button in that corner takes the second
-            // finger, the recognizer sees one touch, and the scroll view pans
-            // where it should have zoomed. Measured 25 Sep 2026, the day the
-            // drawing stopped running under the tab bar: until then that
-            // corner was under the bar, beside the tabs, and the finger
-            // landed on the drawing. Within nine points of the bottom a
-            // control fails `testTheTreeZoomsUnderTwoFingersAndKeepsItsPeople`.
-            controls(yours: yours)
-                .padding(.trailing, 16)
-                .padding(.bottom, 24)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
-                    controlsHeight = height + 24
-                }
+            // In a band of their own under the drawing since 27 Sep 2026,
+            // and not in its corner. They floated over the canvas until
+            // then, their height taken off the window the opening was
+            // fitted to, so that nothing was under them when the picture
+            // opened — and the next row down scrolled straight under them:
+            // at the largest text size *Whole family* covered the disc of
+            // the card below the one opened on (`LayoutAtSizeTests`). A row
+            // of its own can cover nothing. It also takes the buttons out of
+            // the canvas's frame altogether, which is where XCUITest's
+            // zoom-out pinch puts its fingers — seven points in and nine
+            // down from the corners of the frame inset 50 from each side —
+            // and a button under a finger made the scroll view pan where it
+            // should have zoomed (25 Sep 2026,
+            // `testTheTreeZoomsUnderTwoFingersAndKeepsItsPeople`).
+            band(yours: yours)
         }
         .toolbar {
             // The one control on the screen that is not the drawing. A menu's
@@ -363,21 +353,23 @@ struct FamilyTreeView: View {
     /// be named — and *Sinä* is the same word as under your card, and takes
     /// the reader to the same place.
     private func controls(yours: CGPoint?) -> some View {
-        HStack(spacing: 12) {
-            Button {
-                fire(.fit, animated: true)
-            } label: {
-                Text("Koko suku")
-                    .font(.body.weight(.medium))
-                    .elderTapTarget()
-            }
-            if let yours {
-                Button {
-                    fire(.home(yours), animated: true)
-                } label: {
-                    Text("Sinä")
-                        .font(.body.weight(.medium))
-                        .elderTapTarget()
+        // Side by side at the reading sizes, and one under the other at the
+        // band's full width at the accessibility sizes, the way `ChipRow`
+        // stacks its chips: at the largest text size two on one line were
+        // each a column of broken words. Chosen by the text size and not by
+        // `ViewThatFits`, which picked the same two layouts by measuring and
+        // was reported by the audit's default-size simulation on every run —
+        // *Koko suku* partially unsupported, 121 by 84 points, wherever the
+        // band stood — while main's plain row in the same band was not
+        // (27 Sep 2026, alone, minutes apart).
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(spacing: 12) {
+                    buttons(yours: yours, wide: true)
+                }
+            } else {
+                HStack(spacing: 12) {
+                    buttons(yours: yours, wide: false)
                 }
             }
         }
@@ -393,6 +385,44 @@ struct FamilyTreeView: View {
         // audit that gave up left its thread running: twenty of them had
         // testmanagerd at 800 % of a core by the end of the evening, twice.
         .buttonStyle(.elderSecondary)
+    }
+
+    @ViewBuilder
+    private func buttons(yours: CGPoint?, wide: Bool) -> some View {
+        Button {
+            fire(.fit, animated: true)
+        } label: {
+            Text("Koko suku")
+                .font(.body.weight(.medium))
+                .frame(maxWidth: wide ? .infinity : nil)
+                .elderTapTarget()
+        }
+        if let yours {
+            Button {
+                fire(.home(yours), animated: true)
+            } label: {
+                Text("Sinä")
+                    .font(.body.weight(.medium))
+                    .frame(maxWidth: wide ? .infinity : nil)
+                    .elderTapTarget()
+            }
+        }
+    }
+
+    /// The band the buttons stand in, under the drawing: the paper, a
+    /// hairline above, and the buttons centred in it.
+    private func band(yours: CGPoint?) -> some View {
+        controls(yours: yours)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Elder.paper)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Elder.rule)
+                    .frame(height: 1)
+                    .accessibilityHidden(true)
+            }
     }
 
     // MARK: - From the archive to the engines
@@ -798,10 +828,6 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
     /// The drawing's own size at scale 1.
     let size: CGSize
     let range: ClosedRange<CGFloat>
-    /// The band the buttons take at the window's bottom, from the buttons
-    /// themselves. The bars' own insets are read off the scroll view, which
-    /// UIKit keeps current for a view under a tab bar.
-    let controls: CGFloat
     /// Where the drawing opens when the whole family does not fit at a
     /// readable size: your own disc when this phone's card is in the tree,
     /// and the first card of the oldest row when it is not. Nil only when
@@ -853,10 +879,6 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         coordinator.opening = opening
 
         var changed = false
-        if coordinator.controls != controls {
-            coordinator.controls = controls
-            changed = true
-        }
         if coordinator.size != size || coordinator.key != key {
             coordinator.size = size
             coordinator.key = key
@@ -884,7 +906,6 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         var content: ((CGFloat) -> AnyView)?
         var range: ClosedRange<CGFloat> = 0.4 ... 2.5
         var opening: CGPoint?
-        var controls: CGFloat = 0
         var size: CGSize = .zero
         var key: DrawingKey?
         var served = 0
@@ -913,8 +934,8 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
 
         private var bars: UIEdgeInsets { scrollView?.safeAreaInsets ?? .zero }
 
-        /// The part of the scroll view's frame not under a bar or the
-        /// buttons, in its own frame's coordinates.
+        /// The part of the scroll view's frame not under a bar, in its own
+        /// frame's coordinates. The buttons are outside the frame (`band`).
         private var window: CGRect {
             guard let scrollView else { return .zero }
             let bounds = scrollView.bounds
@@ -922,7 +943,7 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
                 x: bars.left,
                 y: bars.top,
                 width: max(0, bounds.width - bars.left - bars.right),
-                height: max(0, bounds.height - bars.top - bars.bottom - controls)
+                height: max(0, bounds.height - bars.top - bars.bottom)
             )
         }
 
@@ -950,8 +971,8 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
             scrollView.pinchGestureRecognizer?.isEnabled = false
         }
 
-        /// The bars' insets, the buttons' band, and the air that centres a
-        /// drawing smaller than the window.
+        /// The bars' insets and the air that centres a drawing smaller than
+        /// the window.
         private func applyInsets() {
             guard let scrollView else { return }
             let window = window
@@ -961,7 +982,7 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
             let inset = UIEdgeInsets(
                 top: bars.top + spareY,
                 left: bars.left + spareX,
-                bottom: bars.bottom + controls + spareY,
+                bottom: bars.bottom + spareY,
                 right: bars.right + spareX
             )
             if scrollView.contentInset != inset {
@@ -1032,11 +1053,8 @@ private struct TreeCanvas<Content: View>: UIViewRepresentable {
         /// fit, and the audit reported every name on the screen clipped,
         /// twice alone on 25 Sep 2026. *Koko suku* is the same fit, and the
         /// reader's to press.
-        ///
-        /// Not before the buttons have been measured: an opening taken
-        /// against a window without their band is moved when it arrives.
         private func open() {
-            guard let scrollView, controls > 0 else { return }
+            guard let scrollView else { return }
             set(scale: 1)
             applyInsets()
             if let opening, fit < 1 {

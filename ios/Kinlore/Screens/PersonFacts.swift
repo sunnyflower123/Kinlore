@@ -1,25 +1,33 @@
 import SwiftUI
 
 /// The Tiedot section of a person's card (docs/ARCHITECTURE.md §26): what
-/// the family knows about her in words, one row per fact, and the row that
+/// the family knows about her in words, one chip per fact, and the chip that
 /// adds one. Its own file rather than `SubjectDetailScreen`'s, so that the
 /// card's other sections can move without moving this one; the screen says
 /// where the section goes and nothing more.
 ///
-/// Each row is the whole fact in one `Text`, so that VoiceOver says it as
+/// Each chip is the whole fact in one `Text`, so that VoiceOver says it as
 /// one sentence with its pauses (*"Syntynyt, 1930-luku, Puumala"*) rather
-/// than as three elements, and each row presents its own sheet: a sheet on
+/// than as three elements, and each chip presents its own sheet: a sheet on
 /// a `List` row is in the hierarchy exactly when the row is, which a sheet
 /// on the section's header would not be once the header had scrolled off.
+/// The chips share one row since 27 Sep 2026, so that is still true of it.
 struct PersonFactsSection: View {
     let subject: Subject
 
     var body: some View {
         Section {
-            ForEach(subject.liveFacts) { fact in
-                FactRowButton(subject: subject, fact: fact)
+            // Honey chips on one row, where each fact was a grey row of its
+            // own until 27 Sep 2026: a fact is a few words, and a row of
+            // them reads as what the card knows, where a column of rows read
+            // as a form. One chip under another at the accessibility sizes
+            // (`ChipRow`).
+            ChipRow {
+                ForEach(subject.liveFacts) { fact in
+                    FactRowButton(subject: subject, fact: fact)
+                }
+                AddFactRow(subject: subject)
             }
-            AddFactRow(subject: subject)
         } header: {
             Text("Tiedot")
                 .foregroundStyle(Elder.supporting)
@@ -27,7 +35,7 @@ struct PersonFactsSection: View {
     }
 }
 
-/// One fact on the card, and the sheet that changes or removes it.
+/// One fact on the card, as a chip, and the sheet that changes or removes it.
 private struct FactRowButton: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
@@ -38,16 +46,14 @@ private struct FactRowButton: View {
         Button {
             isChanging = true
         } label: {
-            // In the ink of the tellings below and not the accent: a fact is
-            // what the card says, and a sentence in the accent reads as
-            // somewhere to go. The row that adds one is the action, in the
-            // date row's grey.
+            // Ink on honey (`elderSecondary`, from the row's `ChipRow`) and
+            // not the accent: a fact is what the card says, and a sentence
+            // in the accent reads as somewhere to go. The style keeps the
+            // chip at the tap target's minimum height; nothing here adds to
+            // it, or every chip would stand 84 points tall.
             Text(FactRow.text(for: fact, in: store))
-                .font(.body)
-                .foregroundStyle(.primary)
+                .font(.body.weight(.medium))
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .elderTapTarget()
         }
         .accessibilityLabel(FactRow.spoken(for: fact, in: store))
         .sheet(isPresented: $isChanging) {
@@ -56,7 +62,7 @@ private struct FactRowButton: View {
     }
 }
 
-/// The section's last row, *"Lisää tieto"*, and the sheet behind it. The
+/// The section's last chip, *"Lisää tieto"*, and the sheet behind it. The
 /// identifier is on the words, for the audit's default-size simulation
 /// (`AccessibilityPolicy.simulationArtefactIdentifiers`, where the
 /// measurement is written down).
@@ -68,16 +74,13 @@ private struct AddFactRow: View {
         Button {
             isAdding = true
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Image(systemName: "plus.circle")
                 Text("Lisää tieto")
-                    .font(.body)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("fact.add")
             }
-            .foregroundStyle(Elder.supporting)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .elderTapTarget()
+            .font(.body.weight(.medium))
         }
         .sheet(isPresented: $isAdding) {
             FactSheet(subject: subject)

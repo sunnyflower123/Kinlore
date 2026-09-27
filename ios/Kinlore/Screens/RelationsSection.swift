@@ -29,46 +29,54 @@ struct RelationsSection: View {
             // time. And the menu opened only under its words, so a finger
             // in the middle of the row met nothing. The whole row takes the
             // tap now, and the sheet's rows grow with the text size.
-            Button {
-                isChoosingKind = true
-            } label: {
-                Label("Lisää sukulainen", systemImage: "person.badge.plus")
-                    // The identifier is for
-                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                    // and nothing else (26 Sep 2026). On the label rather
-                    // than the button: the audit reports the label.
-                    .accessibilityIdentifier("relative.add")
+            // A honey chip since 27 Sep 2026, the shape the card's other
+            // additions have (`ChipRow`: *Lisää tieto*, the date and the
+            // name on a photograph), and ink on it rather than the accent,
+            // which is the red of removal (`Elder.wax`).
+            ChipRow {
+                Button {
+                    isChoosingKind = true
+                } label: {
+                    // An `HStack` and not a `Label`, like the card's other
+                    // chips: measured under `ChipFlow`'s unspecified
+                    // proposal, a `Label` in a `List` answered 120 points
+                    // wide and several hundred tall, its words and icon at
+                    // the bottom of a honey column (27 Sep 2026).
+                    HStack(spacing: 8) {
+                        Image(systemName: "person.badge.plus")
+                        Text("Lisää sukulainen")
+                            .fixedSize(horizontal: false, vertical: true)
+                            // The identifier is for
+                            // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                            // and nothing else (26 Sep 2026). On the words
+                            // rather than the button: the audit reports the
+                            // label.
+                            .accessibilityIdentifier("relative.add")
+                    }
                     .font(.body.weight(.medium))
-                    // The grey of the card's other rows that add something
-                    // (a date, a place, a fact), and not the accent, which is
-                    // the red of removal since 26 Sep 2026 (`Elder.wax`).
-                    .foregroundStyle(Elder.supporting)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .elderTapTarget()
-            }
-            // Both sheets hang off this one row, not off the section. A
-            // modifier on a `Section` in a `List` reaches every row in it,
-            // so a section with relatives on it presented the sheet from
-            // each of them at once, and the presentations that lost put the
-            // binding back: the sheet came up and went away on its own,
-            // measured 21 Sep 2026 as a button that existed and could not
-            // be tapped. The kind is carried across the sheet's dismissal
-            // rather than acted on inside it: two sheets cannot change
-            // places on the same frame, which is the tree's
-            // `afterPersonSheet` and `RelationPicker`'s own rule about the
-            // name sheet.
-            .sheet(isPresented: $isChoosingKind, onDismiss: startAdding) {
-                RelativeKindSheet { kind, asChild in
-                    pending = (kind, asChild)
-                    isChoosingKind = false
                 }
-            }
-            .sheet(item: $adding) { kind in
-                RelationPicker(subject: subject, kind: kind, asChild: isAddingChild) {
-                    adding = nil
-                    isAddingChild = false
+                // Both sheets hang off this one row, not off the section. A
+                // modifier on a `Section` in a `List` reaches every row in it,
+                // so a section with relatives on it presented the sheet from
+                // each of them at once, and the presentations that lost put the
+                // binding back: the sheet came up and went away on its own,
+                // measured 21 Sep 2026 as a button that existed and could not
+                // be tapped. The kind is carried across the sheet's dismissal
+                // rather than acted on inside it: two sheets cannot change
+                // places on the same frame, which is the tree's
+                // `afterPersonSheet` and `RelationPicker`'s own rule about the
+                // name sheet.
+                .sheet(isPresented: $isChoosingKind, onDismiss: startAdding) {
+                    RelativeKindSheet { kind, asChild in
+                        pending = (kind, asChild)
+                        isChoosingKind = false
+                    }
+                }
+                .sheet(item: $adding) { kind in
+                    RelationPicker(subject: subject, kind: kind, asChild: isAddingChild) {
+                        adding = nil
+                        isAddingChild = false
+                    }
                 }
             }
         } header: {
@@ -186,11 +194,18 @@ private struct RelativeRow: View {
             // the largest, where both fonts reach 44. The element is the
             // whole left of the row, never under the tap target's minimum.
             HStack(spacing: 12) {
-                Image(systemName: relation?.confirmed == true
-                    ? "person.crop.circle"
-                    : "person.crop.circle.badge.questionmark")
-                    .font(.title3)
-                    .foregroundStyle(relation?.confirmed == true ? Elder.supporting : Elder.proposal)
+                // The relative's own disc since 27 Sep 2026 — her face, when
+                // her card has one — where every confirmed relative wore the
+                // same grey outline of a head. A proposal keeps the outline
+                // with the question mark: the shape that says nobody has
+                // checked it (rule 4), in the colour that says the same.
+                if relation?.confirmed == true {
+                    SubjectAvatar(subject: relative)
+                } else {
+                    Image(systemName: "person.crop.circle.badge.questionmark")
+                        .font(.title3)
+                        .foregroundStyle(Elder.proposal)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(relative.displayTitle)
@@ -219,7 +234,16 @@ private struct RelativeRow: View {
                     .elderTapTarget()
             }
         }
-        .padding(.vertical, 4)
+        // A tile of its own on the paper since 27 Sep 2026, in the card's
+        // shape (`elderCard`), one under another, rather than a line of the
+        // section's white block; the swipe slides the tile aside as it slid
+        // the line.
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .elderCard()
+        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
         .swipeActions {
             if relation != nil {
                 // No `role: .destructive` on the swipe button. With it, iOS

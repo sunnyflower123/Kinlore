@@ -27,7 +27,14 @@ import SwiftUI
 /// henkilö"* in words underneath. Three signals where there were three.
 struct SubjectAvatar: View {
     @Environment(MemoryStore.self) private var store
-    let subject: Subject
+    /// Whose disc this is — or nobody's, for a disc drawn from an initial
+    /// alone (`init(initial:size:)`): a teller the archive knows only by the
+    /// name her telling arrived under.
+    private let subject: Subject?
+    private let fixedInitial: String?
+    /// The text style the initial is set in: title3 in a row, and larger
+    /// for the portrait a card opens with.
+    private let letter: Font.TextStyle
 
     /// Grows with Dynamic Type, because the letter inside it does. A fixed
     /// disc with a scaling glyph in it is a clipped glyph at XXXL, which is
@@ -40,16 +47,38 @@ struct SubjectAvatar: View {
     /// must not stand in while the new one is on its way.
     @State private var cut: (key: String, image: UIImage)?
 
-    init(subject: Subject, size: CGFloat = 40) {
+    /// - Parameters:
+    ///   - size: the disc's width at the default text size.
+    ///   - letter: the text style of the initial.
+    ///   - scaledWith: the text style the disc grows with. The body by
+    ///     default, which is what the letter grows with; the card's disc of
+    ///     136 points grows with the large title instead, because the body's
+    ///     scale would take it to 425 at the largest size, wider than the
+    ///     phone (27 Sep 2026).
+    init(
+        subject: Subject, size: CGFloat = 40,
+        letter: Font.TextStyle = .title3, scaledWith: Font.TextStyle = .body
+    ) {
         self.subject = subject
-        _size = ScaledMetric(wrappedValue: size, relativeTo: .body)
+        fixedInitial = nil
+        self.letter = letter
+        _size = ScaledMetric(wrappedValue: size, relativeTo: scaledWith)
+    }
+
+    /// A disc for a name with no card behind it (27 Sep 2026): the initial
+    /// of the name, confirmed, and never a face. `scaledWith` as above.
+    init(initial: String, size: CGFloat = 32, scaledWith: Font.TextStyle = .body) {
+        subject = nil
+        fixedInitial = initial
+        letter = .title3
+        _size = ScaledMetric(wrappedValue: size, relativeTo: scaledWith)
     }
 
     /// The photograph the face is cut from, when it is on this phone.
-    private var photo: Subject? { store.portraitPhoto(for: subject) }
+    private var photo: Subject? { subject.flatMap { store.portraitPhoto(for: $0) } }
 
-    private var focusX: Double { subject.portraitFocusX ?? 0.5 }
-    private var focusY: Double { subject.portraitFocusY ?? 0.5 }
+    private var focusX: Double { subject?.portraitFocusX ?? 0.5 }
+    private var focusY: Double { subject?.portraitFocusY ?? 0.5 }
 
     private var faceKey: String? {
         photo?.imageFilename.map { PortraitCache.key(filename: $0, focusX: focusX, focusY: focusY) }
@@ -66,12 +95,12 @@ struct SubjectAvatar: View {
     }
 
     private var initial: String {
-        guard let first = subject.displayTitle
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .first
-        else { return "" }
+        let name = fixedInitial ?? subject?.displayTitle ?? ""
+        guard let first = name.trimmingCharacters(in: .whitespacesAndNewlines).first else { return "" }
         return String(first).uppercased()
     }
+
+    private var confirmed: Bool { subject?.confirmed ?? true }
 
     var body: some View {
         let face = face
@@ -118,7 +147,7 @@ struct SubjectAvatar: View {
                             .clipShape(Circle())
                     } else {
                         Text(initial)
-                            .font(Elder.display(.title3))
+                            .font(Elder.display(letter))
                             // Cream on ink, the same pair the record button and
                             // the blind card's answers use.
                             .foregroundStyle(Elder.cream)
@@ -130,13 +159,13 @@ struct SubjectAvatar: View {
                 }
                 .overlay(
                     Circle().strokeBorder(
-                        !subject.confirmed ? Elder.proposal : face == nil ? Color.clear : Elder.supporting,
-                        lineWidth: !subject.confirmed || face != nil ? 2 : 0
+                        !confirmed ? Elder.proposal : face == nil ? Color.clear : Elder.supporting,
+                        lineWidth: !confirmed || face != nil ? 2 : 0
                     )
                 )
                 .frame(width: size, height: size)
 
-            if !subject.confirmed {
+            if !confirmed {
                 Image(systemName: "questionmark.circle.fill")
                     .font(.system(size: size * 0.36))
                     .foregroundStyle(Elder.proposal)

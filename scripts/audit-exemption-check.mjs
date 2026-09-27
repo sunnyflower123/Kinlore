@@ -141,8 +141,11 @@ const ARTEFACT_IDS = [
 	'archive.exportNote',
 	'fact.add',
 	'friends.heading',
+	'card.tell',
+	'card.ask',
+	'card.colourNote',
 ]
-const CLIPPED_IDS = ['card.emptyState', 'card.removal']
+const CLIPPED_IDS = ['card.emptyState', 'card.removal', 'card.ask', 'card.colourNote']
 
 function quotedStrings(declaration) {
 	const start = source.findIndex((l) => l.includes(declaration))
