@@ -941,12 +941,22 @@ final class MemoryStore {
     /// What the taking-back tidied away stays tidied: the proposals it
     /// alone had put in the family list were never confirmed (rule 4), and
     /// a name can be given again on the card.
+    ///
+    /// The question it answered does not stay open. Taking the telling back
+    /// reopened it and left `answeredMemoryID` on it (`reopen`), so the link
+    /// is still there, and a question left open under an answer the card
+    /// shows again is asked of the family a second time. One answered since
+    /// by another telling points at that one and is not touched.
     func restore(memoryID: String) {
         guard let index = memories.firstIndex(where: { $0.id == memoryID }),
               memories[index].deletedAt != nil else { return }
         memories[index].deletedAt = nil
         memories[index].restoredAt = .now
         dirtyMemories.insert(memoryID)
+        for i in questions.indices where !questions[i].answered && questions[i].answeredMemoryID == memoryID {
+            questions[i].answered = true
+            dirtyQuestions.insert(questions[i].id)
+        }
         save()
     }
 

@@ -194,6 +194,77 @@ final class TargetedQuestionTests: XCTestCase {
         )
     }
 
+    /// And brought back, the answer closes its question again. Taking it back
+    /// reopened the question and left the telling's id on it (`reopen`);
+    /// "Palauta" on the card brings the telling back, and a question still
+    /// open under an answer the card shows again is asked of the family a
+    /// second time.
+    func testRestoringAnAnswerClosesItsQuestionAgain() {
+        let app = launch(["-seed", "aimed", "-tab", "memories", "-voice", "stub"])
+        openPhoto(in: app)
+
+        let asked = "Mitä mökillä syötiin juhannuksena?"
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", asked)).firstMatch
+        reach(row, in: app)
+        let bar = app.tabBars.firstMatch
+        for _ in 0 ..< 3 where row.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        row.tap()
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 10), "the row did not open the Tell screen")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        let enough = app.buttons["Riittää tältä erää"]
+        XCTAssertTrue(enough.waitForExistence(timeout: 30), "the answer did not go on to its follow-up")
+        enough.tap()
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 15),
+            "the answer was not saved"
+        )
+
+        // Taken back from the result, as in the test above, and open again.
+        let remove = app.scrollViews.buttons["Poista tämä muisto"]
+        for _ in 0 ..< 6 where !remove.exists { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "never arrived: the way to take the answer back")
+        remove.tap()
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForNonExistence(timeout: 10),
+            "the sheet stayed open over the card"
+        )
+        let again = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", asked)).firstMatch
+        for _ in 0 ..< 6 where !again.exists { app.swipeUp() }
+        XCTAssertTrue(again.waitForExistence(timeout: 10), "the question did not open again")
+
+        // The way back sits in the tellings, above the open questions.
+        let back = app.buttons.matching(identifier: "card.restoreMemory").firstMatch
+        for _ in 0 ..< 4 where !back.exists { app.swipeDown() }
+        XCTAssertTrue(back.waitForExistence(timeout: 10), "the card offers no way back")
+        back.tap()
+        XCTAssertTrue(back.waitForNonExistence(timeout: 10), "the telling did not come back")
+
+        // Nothing between the tellings and "Kysy perheeltä", the section under
+        // the open questions, asks it any more. Looked for on the way down,
+        // because a list builds only the rows in view.
+        let ask = app.buttons["Kysy perheeltä"]
+        var stillOpen = again.exists
+        for _ in 0 ..< 6 where !ask.exists {
+            app.swipeUp()
+            stillOpen = stillOpen || again.exists
+        }
+        XCTAssertTrue(ask.waitForExistence(timeout: 10), "never arrived: the end of the card")
+        XCTAssertFalse(stillOpen || again.exists, "the question stayed open under the answer that came back")
+    }
+
     /// Asked by name from the card: the sheet offers the family's other
     /// members, and what it sends carries the aim — the card says so at once,
     /// before any sync, because the name is written locally too.
