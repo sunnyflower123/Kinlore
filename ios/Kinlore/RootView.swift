@@ -144,6 +144,23 @@ struct RootView: View {
                 }
                 .tag(Tab.people)
         }
+        // Paper under the tab bar at the accessibility sizes, and on a
+        // grandparent's phone from its floor up, where iOS 26 would show the
+        // page through it. The bar is a glass capsule that
+        // lenses whatever scrolls beneath it, and the default soft edge only
+        // dims that: at the largest size "Paina ja ala puhua" stood behind
+        // the three tab names as a second line of text, and the person
+        // card's red "Kerro tästä muisto" turned the whole capsule red. The
+        // hard edge lays a nearly opaque band of the page's own paper from
+        // the bar's top down, and the capsule floats on it clean. Measured
+        // 27 Sep 2026 on a 17 Pro at the largest size, against the same
+        // screen with the hard edge: 28 per cent of the capsule's pixels on
+        // Kerro, and nearly all of them on the person card, were the page
+        // showing through. At a grandparent's floor it was one word, the
+        // person card's memory count bent into the capsule's end: smaller,
+        // and hers first. A `toolbarBackground` of the same paper changed
+        // not one pixel — the bar is glass whatever it is given.
+        .modifier(PaperUnderTheTabBar())
         // Rule 10, said out loud. Once per launch that moved a file aside,
         // and never silently: the archive on screen is empty, and the person
         // holding the phone must know that is not the same as gone.
@@ -216,6 +233,33 @@ struct RootView: View {
             if !largerText { isShowingFirstMinute = true }
         }
         .elderSurface()
+    }
+}
+
+/// `RootView`'s paper under the tab bar. A modifier because the style exists
+/// from iOS 26 and the app still runs on 17, where the bar is not glass; and
+/// one modifier whose style is `.hard` or `nil` rather than a modifier left
+/// off, because an `if` here would rebuild every tab, and their navigation
+/// with them, whenever the text size crossed into the accessibility sizes.
+/// `nil` sets no style, so below those sizes the bar is whatever iOS and the
+/// screen beneath it choose. The modifier is not quite invisible there, and
+/// that is the price of the sentence above: measured 27 Sep 2026, a
+/// telling's result at the default size draws 0.2 per cent of the capsule's
+/// strip differently, in the lensed reflection of the words beneath it — the
+/// same with `nil` as with `.automatic`, and nothing without the modifier.
+private struct PaperUnderTheTabBar: ViewModifier {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.scrollEdgeEffectStyle(
+                (dynamicTypeSize.isAccessibilitySize || largerText) ? .hard : nil,
+                for: .bottom
+            )
+        } else {
+            content
+        }
     }
 }
 

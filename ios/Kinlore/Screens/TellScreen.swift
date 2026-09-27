@@ -315,6 +315,7 @@ struct TellScreen: View {
         // that loses the unfinished memory, and an 80-year-old user gains
         // nothing from alternatives at exactly the moment she is concentrating.
         .toolbar(hidesTabBar(model.phase) ? .hidden : .visible, for: .tabBar)
+        .modifier(NoPaperWithoutTheTabBar(barHidden: hidesTabBar(model.phase)))
     }
 
     /// The deck's card, and the one thing that outranks it.
@@ -422,6 +423,26 @@ struct TellScreen: View {
         // to walk away from it.
         case .idle, .done, .savedWithoutTranscript, .needsMicrophone, .failed: false
         case .recording, .writing, .transcribing, .organizing, .asking: true
+        }
+    }
+}
+
+/// RootView's paper under the tab bar (`PaperUnderTheTabBar`) is there for
+/// the bar, and it does not leave with it: in the phases that hide the bar the
+/// hard edge still laid its band over the bottom of the page. Measured
+/// 27 Sep 2026 at the largest size: on an SE the last line of "Paina kun olet
+/// valmis" went under it while the recording ran, and on a 17 Pro it covered
+/// "Älä tallenna tätä" to 1.09:1, which failed the audit. Those phases get
+/// the edge iOS draws by itself, and every other phase keeps whatever the tab
+/// above chose, because `nil` sets nothing.
+private struct NoPaperWithoutTheTabBar: ViewModifier {
+    let barHidden: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.scrollEdgeEffectStyle(barHidden ? .automatic : nil, for: .bottom)
+        } else {
+            content
         }
     }
 }

@@ -3555,6 +3555,31 @@ those same categories, which is how the contrast problem survived this long.
   ink in a sparse target and still fails a frame with none, which is the
   property that matters and the one the audit records. The numbers are in
   `ContrastMeter`.
+
+  Since 27 Sep 2026 the accessibility sizes give it less to forgive, and so
+  does a grandparent's phone. The glass did more than dim what passed
+  beneath it: it lensed it into the tab names, so that at the largest size
+  *"Paina ja ala puhua"* stood behind *Albumi*, *Kerro* and *Ihmiset* as a
+  second line of text, and the person card's red *"Kerro tästä muisto"*
+  turned the whole capsule red. There, and on a phone with the text floor
+  from the floor up, the page now stops at the bar's top, and the capsule
+  stands on a nearly opaque band of the page's own paper: iOS 26's hard
+  scroll edge, set in `RootView` (`PaperUnderTheTabBar`). Measured on a
+  17 Pro against the same screens drawn with it, 28 per cent of the
+  capsule's pixels on Kerro, 14 on a telling's result, and nearly all of
+  them on the person card had been the page showing through at the largest
+  size. At the floor it was
+  one word, the person card's memory count bent into the capsule's end —
+  1.3 per cent at xLarge and 0.2 at xxLarge, with nothing under the bar on
+  Kerro or Albumi — smaller, and hers first. A `toolbarBackground` of the
+  same paper changed not one pixel, because the bar is glass whatever it is
+  given. The band does not leave with the bar, so the phases of a telling
+  that hide the bar hand the edge back to iOS (`NoPaperWithoutTheTabBar` in
+  `TellScreen`): with the band, an SE lost the last line of *"Paina kun olet
+  valmis"* under it while the recording ran. On any other phone below the
+  accessibility sizes no style is set; the modifier's presence alone
+  redraws 0.2 per cent of the capsule's strip on a telling's result, in
+  its lensed reflection of the words beneath.
 - **Text seen through the floating tab bar.** Element detection reads the
   picture and asks for an element under each word; under the translucent bar
   the bar is what answers, and the finding arrives with no element at all.
