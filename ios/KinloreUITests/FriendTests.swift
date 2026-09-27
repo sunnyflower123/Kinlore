@@ -49,6 +49,21 @@ final class FriendTests: XCTestCase {
         let ritva = app.staticTexts["Ritva, Ystävä"]
         for _ in 0 ..< 4 where !ritva.exists { app.swipeUp() }
         XCTAssertTrue(ritva.waitForExistence(timeout: 10), "the friend is not on the card")
+        // In the tree is not on screen. A row under the tab bar is in the tree
+        // as well, and a swipe on it lands on the bar, which slides the
+        // selection over to Albumi — read from the recording of a failed run
+        // on 27 Sep 2026, whose Poista was then looked for on the album. So
+        // the card is dragged up, slowly enough to stop where the finger
+        // lets go, until her row clears the bar.
+        let bar = app.tabBars.firstMatch.frame
+        let middle = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        for _ in 0 ..< 4 where ritva.frame.maxY > bar.minY {
+            middle.press(
+                forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -200)),
+                withVelocity: .slow, thenHoldForDuration: 0.5
+            )
+        }
+        XCTAssertLessThanOrEqual(ritva.frame.maxY, bar.minY, "the friend's row never came out from under the tab bar")
         ritva.swipeLeft()
         let remove = app.buttons["Poista"]
         XCTAssertTrue(remove.waitForExistence(timeout: 10), "no way to take the friendship back")
