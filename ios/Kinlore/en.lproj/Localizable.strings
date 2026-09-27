@@ -313,6 +313,9 @@
 "%lld muistoa" = "%lld memories";
 "Mainittu yhdessä muistossa" = "Named in one memory";
 "Mainittu %lld muistossa" = "Named in %lld memories";
+"Mainittu muualla yhdessä muistossa" = "Named elsewhere in one memory";
+"Mainittu muualla %lld muistossa" = "Named elsewhere in %lld memories";
+"Avaa kortin, jolla alla oleva muisto on." = "Opens the card that holds the memory below.";
 "Tästä ei ole vielä omaa muistoa. Paina yllä olevaa nappia ja ala puhua." = "Nothing has been told about this one yet. Press the button above and start talking.";
 "Ääntä ei saatu haettua — yritä uudelleen" = "The recording could not be fetched — try again";
 "Tätä äänitystä ei saatu soimaan" = "This recording would not play";

@@ -1208,36 +1208,15 @@ struct SubjectDetailScreen: View {
             // project's SCRIPT-v21.md §1.5, which is where it was written down
             // as the app's defect rather than the film's).
             //
-            // Only when nothing is filed under it: a subject with a telling of
-            // its own gets the section below, and listing the same memory twice
-            // under two headings would be the screen answering something nobody
-            // asked.
-            let mentions = memories.isEmpty ? store.memories(mentioning: subject.id) : []
-            if !mentions.isEmpty {
-                Section {
-                    ForEach(mentions) { memory in
-                        // On the paper, in the honey bubble every telling is
-                        // read in since 27 Sep 2026 (`MemoryRow`). The row
-                        // itself drew `systemGray4` here until 19 Sep 2026
-                        // and `Elder.card` after; the bubble is the surface
-                        // now, and the row says so for itself.
-                        MemoryRow(memory: memory)
-                    }
-                } header: {
-                    // Two whole sentences rather than one with a number in it:
-                    // the count's own header below says why, and Finnish would
-                    // want "yhdessä" here in any case.
-                    Group {
-                        if mentions.count == 1 {
-                            Text("Mainittu yhdessä muistossa")
-                        } else {
-                            Text("Mainittu \(mentions.count) muistossa")
-                        }
-                    }
-                    .foregroundStyle(Elder.supporting)
-                }
-            }
+            // All of them, beside whatever is the card's own: above it while
+            // there is none, below it once there is. Until 27 Sep 2026 they
+            // were listed only while nothing was filed under the card, so that
+            // no telling was listed twice — and one telling a grandmother had
+            // of her own hid every photograph's that named her. Leaving out
+            // the twice is `memories(mentioningElsewhere:)`'s job.
+            let mentions = store.memories(mentioningElsewhere: subject.id)
             if memories.isEmpty {
+                namedElsewhere(mentions)
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
                         // Nothing at all, or nothing of its own.
@@ -1315,6 +1294,7 @@ struct SubjectDetailScreen: View {
                     // and nothing else (26 Sep 2026).
                     .accessibilityIdentifier("card.memoriesHeading")
                 }
+                namedElsewhere(mentions)
             }
 
             if colourable {
@@ -1695,6 +1675,53 @@ struct SubjectDetailScreen: View {
                 .elderBody()
         }
         .foregroundStyle(Elder.supporting)
+    }
+
+    /// The tellings filed under something else that name this card, each
+    /// under the way to where it is filed.
+    @ViewBuilder
+    private func namedElsewhere(_ mentions: [Memory]) -> some View {
+        if !mentions.isEmpty {
+            Section {
+                ForEach(mentions) { memory in
+                    // A row of its own above the telling's, because a link
+                    // anywhere in a row takes the whole row over, and the
+                    // telling's row has buttons of its own.
+                    if let home = store.subject(id: memory.subjectID),
+                       home.id != subject.id, home.deletedAt == nil {
+                        NamedElsewhereLink(home: home)
+                            // On the paper like the telling under it: the
+                            // bubble below is the surface, and this row is
+                            // the way to where it is filed. No white of its
+                            // own, which above the honey would be a card
+                            // over a card.
+                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                    }
+                    // On the paper, in the honey bubble every telling is
+                    // read in since 27 Sep 2026 (`MemoryRow`). The row
+                    // itself drew `systemGray4` here until 19 Sep 2026
+                    // and `Elder.card` after; the bubble is the surface
+                    // now, and the row says so for itself.
+                    MemoryRow(memory: memory)
+                }
+            } header: {
+                // Two whole sentences rather than one with a number in it:
+                // the count's own header says why, and Finnish would want
+                // "yhdessä" here in any case. *Muualla*, because on a card
+                // with tellings of its own the heading is what tells the two
+                // lists apart.
+                Group {
+                    if mentions.count == 1 {
+                        Text("Mainittu muualla yhdessä muistossa")
+                    } else {
+                        Text("Mainittu muualla \(mentions.count) muistossa")
+                    }
+                }
+                .foregroundStyle(Elder.supporting)
+            }
+        }
     }
 }
 

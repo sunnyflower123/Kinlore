@@ -120,6 +120,18 @@ final class MemoryStore {
             .sorted { $0.createdAt > $1.createdAt }
     }
 
+    /// The tellings that name a subject and are filed under something else:
+    /// what its card lists as named elsewhere, beside what is its own.
+    ///
+    /// `memories(mentioning:)` without the subject's own tellings, which its
+    /// card already lists — a telling about Aino can name her too. That one
+    /// stays as it is: `HeardNamesScreen` looks for the sentence a name was
+    /// heard in, and a telling filed under the person can be where it was
+    /// said.
+    func memories(mentioningElsewhere subjectID: String) -> [Memory] {
+        memories(mentioning: subjectID).filter { $0.subjectID != subjectID }
+    }
+
     /// Follows the merge chain. A reference to a merged subject always resolves
     /// to the survivor, so nothing points at nothing.
     ///
@@ -1657,7 +1669,7 @@ final class MemoryStore {
         }
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "faces", "facts",
-            "unplaced", "unarrived",
+            "unplaced", "unarrived", "mentioned",
             "film", "film-untold", "film-week", "film-family", "film-tree",
             "aimed",
         ].contains(seed) else { return }
@@ -1717,7 +1729,13 @@ final class MemoryStore {
             ]
             : []
 
-        let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: false)
+        // `-seed mentioned` is the archive once Aino has been confirmed and
+        // told about on her own card: a person with a telling of her own who
+        // is also named in the photograph's. Her card lists both, the
+        // photograph's as named elsewhere, and the plain archive has no card
+        // like that — whoever has a telling of their own there is named in
+        // nobody else's.
+        let aino = Subject(id: "demo-aino", kind: .person, title: "Aino", confirmed: seed == "mentioned")
         var eeva = Subject(id: "demo-eeva", kind: .person, title: "Eeva")
         // `-seed facts` is the archive with four things written on Eeva's
         // card (§26): a birth in the thirties at Puumala, a death on a day —
@@ -1771,11 +1789,15 @@ final class MemoryStore {
         // archive is untouched by this feature — `demo-photo` has no file
         // there, so no card appears on the idle screen every other test
         // launches into.
+        //
+        // `-seed mentioned` has the picture too, for the way from Aino's card
+        // to the photograph, which shows it. It builds no card either: the one
+        // name heard in it is Aino's, and there she is confirmed.
         let photo = Subject(
             id: "demo-photo",
             kind: .photo,
             title: "",
-            imageFilename: seed == "blind" || seed == "faces"
+            imageFilename: seed == "blind" || seed == "faces" || seed == "mentioned"
                 ? Self.demoPhotoFile()
                 : seed?.hasPrefix("film") == true ? Self.filmPhotoFile() : nil
         )
@@ -2281,6 +2303,17 @@ final class MemoryStore {
             // Without this a second run of the same test starts where the
             // first one left off. Same shape as the seen baseline above.
             UserDefaults.standard.removeObject(forKey: Deck.skippedKey)
+        }
+        // `-seed mentioned`: Aino's own telling, on the card where the
+        // photograph's names her too (`aino` above). It names her as well, as
+        // a telling about somebody usually does, so that a card listing it a
+        // second time among the ones filed elsewhere has something to list.
+        if seed == "mentioned" {
+            memories.append(Memory(
+                id: "demo-memory-aino-own", subjectID: aino.id, authorID: "demo-mummo",
+                authorName: "Mummo", body: "Aino opetti minut uimaan.", source: .typed,
+                mentionedSubjectIDs: [aino.id]
+            ))
         }
         // Same reason as the skips above: which proposals this device has
         // already answered is device state that outlives a launch on purpose,

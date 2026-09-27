@@ -118,7 +118,7 @@ final class TellerTests: XCTestCase {
         XCTAssertTrue(mummo.waitForExistence(timeout: 10), "never arrived: Mummo in the family's people")
         mummo.tap()
         XCTAssertTrue(
-            app.staticTexts["Mainittu yhdessä muistossa"].waitForExistence(timeout: 10),
+            app.staticTexts["Mainittu muualla yhdessä muistossa"].waitForExistence(timeout: 10),
             "the teller's card does not know the photograph they are in"
         )
     }

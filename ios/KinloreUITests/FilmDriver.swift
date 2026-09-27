@@ -188,8 +188,8 @@ final class FilmDriver: XCTestCase {
     ///
     /// Under the map the card used to say that nobody had told anything yet,
     /// ten seconds after the film showed the telling that named Puumala. The
-    /// card reads *"Mainittu yhdessä muistossa"* since 19 Sep 2026 and lists
-    /// it: the telling is filed under the photograph
+    /// card lists it since 19 Sep 2026, under *"Mainittu muualla yhdessä
+    /// muistossa"* since 27 Sep: the telling is filed under the photograph
     /// (`TellViewModel.placeSubject`) and *mentions* the place, and the screen
     /// asked only the first of those two questions (`RootView`; the video
     /// project's SCRIPT-v21.md §1.5). Nothing about the seed changed — the
