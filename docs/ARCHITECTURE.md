@@ -4769,6 +4769,39 @@ phone's alone: the server takes `status` from the push and keeps
 answers a question from its card, takes the telling back from the result,
 brings it back from the card, and looks down the card for the question.
 
+**And the questions it raised go with it**, since 27 Sep 2026. The
+extraction asks its follow-ups out of the telling's own words — *"Millainen
+ihminen Aino oli?"* after a telling that named Aino — and taking the telling
+back used to leave them behind: on the card, asked of the whole family, and
+as the title of the Kerro tab's card for a photograph nobody had told about.
+Each question now names the telling that raised it
+(`FollowUpQuestion.askedFrom`), and `remove(memoryID:)`, which both doors
+come through, takes the open ones off the phone and queues a tombstone for
+each (`retiredQuestions`, written to disk with the rest of the outbox, so a
+phone killed before the push still sends it). The server needed nothing:
+`prompt_question.deleted_at` has been in the schema from the first day, and
+the upsert keeps it with `COALESCE`, so once a tombstone lands no later push
+of the question from any phone can bring it back. It travels with the
+status *dismissed*, the schema's third word, for the builds that read
+`status` and not the column. Four limits, each chosen:
+
+- **Restoring the telling does not bring them back**, for the reason the
+  proposals it tidied away stay tidied (above): the card offers the telling
+  again, and anybody can ask a question on it.
+- **The link is this phone's.** `askedFrom` never travels, so a telling taken
+  back on the teller's other phone takes no questions with it, and neither
+  does one whose questions were raised before the field existed. Sending it
+  would have been a column and a deploy, and nearly every taking-back happens
+  on the phone that told, minutes after the telling, on the result screen.
+- **A phone on an older build** reads anything but *open* as answered, so at
+  its next pull the question leaves its open list — the card, the Kerro tab
+  and the export's pages — and the row stays in its archive, answered, until
+  it updates.
+- **One answered in the meantime stays**, since the answer is another
+  telling. If that answer is taken back as well, `reopen` opens the question
+  again although the telling that raised it is gone: rare, and a guard there
+  would want a test of its own.
+
 **Against the Worker in production**, which has no column — Worker
 `b44468f2`, main `6948675`, measured 26 Sep 2026 on a port of its own
 against `45b5ce7`'s code, whose `sync.ts` and `schema.sql` are byte for
@@ -4821,6 +4854,17 @@ telling back from the photograph's card, finds it offered back, brings it
 back and finds the row gone; and a forty-day-old taking-back is not offered
 at all (`-seed restorable`). A sweep audits the row on the photograph's card
 at both text sizes.
+
+The questions a telling raised, 27 Sep 2026: `TakingBackTests` takes a
+telling back through each door and looks for the questions the stub's
+telling raises — on the card and on the Kerro tab — while the question the
+card's telling answered must come back open and the one asked of this phone
+must stay. `sync-fields-check.swift` holds the tombstone, which no UI test
+can see leave: its moment and *dismissed* on the wire are executed, and the
+queue is read — a push carries it, only a push clears it, `snapshot()` and
+`load()` keep it across a kill, and a file from before it still decodes.
+Three mutations turn it red: a payload without the queue, a `dto` without
+`deleted_at`, and a `load()` that forgets it.
 
 ## 20. Small promises the app was not keeping
 

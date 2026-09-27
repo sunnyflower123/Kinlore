@@ -925,7 +925,9 @@ final class TellViewModel {
         )
         let questions = extracted.questions
             .filter { admitted.contains($0.text) }
-            .map { FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level) }
+            .map {
+                FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level, askedFrom: memory.id)
+            }
         store.add(questions: questions)
         newQuestions = questions
         // Measured on the raw transcript rather than the cleaned body: what was

@@ -647,4 +647,15 @@ struct FollowUpQuestion: Identifiable, Codable, Hashable {
     /// The telling that answered it, when this phone knows. Recorded so the
     /// archive keeps which telling answered which question.
     var answeredMemoryID: String?
+    /// The telling whose extraction raised it, on the phone that told it and
+    /// nowhere else: never sent, kept through a pull by `applyRemote`. What
+    /// lets taking that telling back take its open questions with it
+    /// (`MemoryStore.remove(memoryID:)`), since 27 Sep 2026. Nil for a
+    /// question a person asked, for one raised on another phone, and for
+    /// every question raised before the field existed.
+    var askedFrom: String?
+    /// When it was withdrawn with the telling that raised it. Set only on the
+    /// copy waiting in `MemoryStore.retiredQuestions` to go to the server as
+    /// a tombstone; a question in `questions` never carries it.
+    var deletedAt: Date?
 }

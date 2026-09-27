@@ -634,9 +634,13 @@ extension FollowUpQuestion {
             subject_id: subjectID,
             text: text,
             level: storedLevel,
-            status: answered ? "answered" : "open",
+            // "dismissed" is the schema's third status, sent with the
+            // tombstone for a build that reads `status` and not
+            // `deleted_at`: one built before tombstones reads anything but
+            // "open" as answered, so the question leaves its open list.
+            status: deletedAt != nil ? "dismissed" : answered ? "answered" : "open",
             created_at: createdAt.timeIntervalSince1970,
-            deleted_at: nil,
+            deleted_at: deletedAt?.timeIntervalSince1970,
             seq: nil,
             author_id: authorID,
             // Never sent: the server derives the name from the member record,
@@ -660,7 +664,8 @@ extension FollowUpQuestion {
             authorName: dto.author_name,
             targetMemberID: dto.target_member,
             targetName: dto.target_name,
-            answeredMemoryID: dto.answered_memory_id
+            answeredMemoryID: dto.answered_memory_id,
+            deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
 }

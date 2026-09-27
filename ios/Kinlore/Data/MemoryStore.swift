@@ -48,6 +48,12 @@ final class MemoryStore {
     private(set) var dirtyMemories: Set<String> = []
     private(set) var dirtyQuestions: Set<String> = []
     private(set) var dirtyRelations: Set<String> = []
+    /// Questions withdrawn with the telling that raised them, each carrying
+    /// its `deletedAt`, until a push has carried the tombstone. Out of
+    /// `questions` rather than flagged inside it, so that no reader of the
+    /// open list has to know they exist; on disk, so that a phone killed
+    /// before the push still sends them. See `remove(memoryID:)`.
+    private(set) var retiredQuestions: [FollowUpQuestion] = []
 
     private let fileURL: URL
 
@@ -332,6 +338,7 @@ final class MemoryStore {
     /// user-facing count, because tellings are what anybody ever asks about.
     var outboxCount: Int {
         dirtySubjects.count + dirtyMemories.count + dirtyQuestions.count + dirtyRelations.count
+            + retiredQuestions.count
     }
 
     /// Whether anything in the archive still refers to this subject.
@@ -902,10 +909,31 @@ final class MemoryStore {
     /// upsert matches on `author_id`, so a tombstone for somebody else's memory
     /// is refused. The audio file stays on the device and in R2 exactly as a
     /// rejected person's row stays — nothing reads either.
+    ///
+    /// The questions its extraction raised go with it while they are still
+    /// open, since 27 Sep 2026: each one names the telling it came from, and
+    /// a question asked out of words the teller withdrew keeps those words
+    /// on the card for the whole family — *"Millainen ihminen Aino oli?"*
+    /// after the telling that named Aino is gone. Here, rather than beside
+    /// each caller, because the result screen and the card both come through
+    /// this line. One answered in the meantime stays: the answer is somebody
+    /// else's telling, and it points at the question. Restoring the telling
+    /// does not bring them back (ARCHITECTURE §19).
     func remove(memoryID: String) {
         guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
         memories[index].deletedAt = .now
         dirtyMemories.insert(memoryID)
+        let raised = questions.filter { $0.askedFrom == memoryID && !$0.answered }
+        if !raised.isEmpty {
+            let ids = Set(raised.map(\.id))
+            questions.removeAll { ids.contains($0.id) }
+            dirtyQuestions.subtract(ids)
+            retiredQuestions += raised.map { question in
+                var tombstone = question
+                tombstone.deletedAt = .now
+                return tombstone
+            }
+        }
         save()
     }
 
@@ -1226,7 +1254,8 @@ final class MemoryStore {
             subjects: pendingSubjects.map(\.dto),
             memories: memories.filter { dirtyMemories.contains($0.id) && $0.isPushable }
                 .prefix(cap).map(\.dto),
-            questions: questions.filter { dirtyQuestions.contains($0.id) }.prefix(cap).map(\.dto),
+            questions: (questions.filter { dirtyQuestions.contains($0.id) } + retiredQuestions)
+                .prefix(cap).map(\.dto),
             relations: relations.filter { dirtyRelations.contains($0.id) }.prefix(cap).map(\.dto)
         )
     }
@@ -1239,6 +1268,11 @@ final class MemoryStore {
         dirtyMemories.subtract(payload.memories.map(\.id))
         dirtyQuestions.subtract(payload.questions.map(\.id))
         dirtyRelations.subtract(payload.relations.map(\.id))
+        // A tombstone leaves the phone once the server has it, and not
+        // before: the server keeps `deleted_at` for good (`COALESCE` in
+        // `sync.ts`), and until then this copy is the only record of it.
+        let buried = Set(payload.questions.filter { $0.deleted_at != nil }.map(\.id))
+        retiredQuestions.removeAll { buried.contains($0.id) }
         save()
     }
 
@@ -1321,9 +1355,22 @@ final class MemoryStore {
         }
 
         for dto in reply.questions {
-            guard !dirtyQuestions.contains(dto.id) else { continue }
-            let incoming = FollowUpQuestion(dto: dto)
-            if let index = questions.firstIndex(where: { $0.id == dto.id }) {
+            // A tombstone waiting here is newer than anything the server
+            // can answer with: the server keeps `deleted_at` once it has it,
+            // and it does not have this one yet.
+            guard !dirtyQuestions.contains(dto.id),
+                  !retiredQuestions.contains(where: { $0.id == dto.id }) else { continue }
+            var incoming = FollowUpQuestion(dto: dto)
+            if incoming.deletedAt != nil {
+                // Withdrawn with its telling, on the teller's phone. Written
+                // only when there is a row to take: the array is observed.
+                if let index = questions.firstIndex(where: { $0.id == dto.id }) {
+                    questions.remove(at: index)
+                }
+            } else if let index = questions.firstIndex(where: { $0.id == dto.id }) {
+                // `askedFrom` never travels, so the echo of this phone's own
+                // push would otherwise erase it.
+                incoming.askedFrom = questions[index].askedFrom
                 questions[index] = incoming
             } else {
                 questions.append(incoming)
@@ -1617,6 +1664,7 @@ final class MemoryStore {
         dirtyMemories = []
         dirtyQuestions = []
         dirtyRelations = []
+        retiredQuestions = []
         syncSeq = 0
         try? FileManager.default.removeItem(at: fileURL)
     }
@@ -1714,6 +1762,7 @@ final class MemoryStore {
             dirtyMemories = []
             dirtyQuestions = []
             dirtyRelations = []
+            retiredQuestions = []
             // And the cursor, which `-store synced` leaves at 412 on disk:
             // an emptied archive that has pulled up to 412 is a state no
             // phone has (`wipe` forgets both), and a first-pull screen under
@@ -1736,6 +1785,7 @@ final class MemoryStore {
             dirtyMemories = []
             dirtyQuestions = []
             dirtyRelations = []
+            retiredQuestions = []
             syncSeq = 0
             save()
             return
@@ -2521,6 +2571,7 @@ final class MemoryStore {
         dirtyMemories = []
         dirtyQuestions = []
         dirtyRelations = []
+        retiredQuestions = []
         // A seeded archive has pulled nothing, whatever the file said before.
         syncSeq = 0
         save()
@@ -2548,6 +2599,8 @@ final class MemoryStore {
         var dirtyQuestions: Set<String> = []
         var relations: [Relation] = []
         var dirtyRelations: Set<String> = []
+        /// Tombstones not yet pushed. Absent in files from before 27 Sep 2026.
+        var retiredQuestions: [FollowUpQuestion] = []
         /// What wrote the file. Absent in files from before 4 Sep 2026.
         var schemaVersion: Int? = MemoryStore.schemaVersion
         /// How many relationship rows the file held that this version could
@@ -2560,6 +2613,7 @@ final class MemoryStore {
             case subjects, memories, questions, syncSeq
             case dirtySubjects, dirtyMemories, dirtyQuestions
             case relations, dirtyRelations, schemaVersion
+            case retiredQuestions
         }
     }
 
@@ -2600,6 +2654,7 @@ final class MemoryStore {
         dirtyQuestions = snapshot.dirtyQuestions
         relations = snapshot.relations
         dirtyRelations = snapshot.dirtyRelations
+        retiredQuestions = snapshot.retiredQuestions
         // A file saved before 21 Sep 2026 can hold another member's telling
         // under a card somebody merged away. See `MergeChain`.
         followMerges()
@@ -2641,7 +2696,7 @@ final class MemoryStore {
                   var object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
             else { return }
             for key in ["syncSeq", "dirtySubjects", "dirtyMemories", "dirtyQuestions",
-                        "relations", "dirtyRelations", "schemaVersion"] {
+                        "relations", "dirtyRelations", "schemaVersion", "retiredQuestions"] {
                 object.removeValue(forKey: key)
             }
             if let old = try? JSONSerialization.data(withJSONObject: object) {
@@ -2715,7 +2770,8 @@ final class MemoryStore {
             dirtyMemories: dirtyMemories,
             dirtyQuestions: dirtyQuestions,
             relations: relations,
-            dirtyRelations: dirtyRelations
+            dirtyRelations: dirtyRelations,
+            retiredQuestions: retiredQuestions
         )
     }
 
@@ -2782,6 +2838,7 @@ extension MemoryStore.Snapshot {
         relations = rows.compactMap(\.value)
         unreadRelations = rows.count - relations.count
         dirtyRelations = try c.decodeIfPresent(Set<String>.self, forKey: .dirtyRelations) ?? []
+        retiredQuestions = try c.decodeIfPresent([FollowUpQuestion].self, forKey: .retiredQuestions) ?? []
         schemaVersion = try c.decodeIfPresent(Int.self, forKey: .schemaVersion)
     }
 }

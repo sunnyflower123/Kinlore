@@ -303,7 +303,7 @@ struct SyncFieldsCheck {
             id: "question", subjectID: "subject", text: "a question", storedLevel: 4,
             answered: true, createdAt: then, authorID: "member", authorName: "a member's name",
             targetMemberID: "another member", targetName: "another member's name",
-            answeredMemoryID: "memory"
+            answeredMemoryID: "memory", askedFrom: "the telling that raised it", deletedAt: later
         )
         // The aim's name is the asker's twice over: never sent, and derived
         // by the server from the member it names.
@@ -311,7 +311,7 @@ struct SyncFieldsCheck {
             "id": .wire, "subjectID": .wire, "text": .wire, "storedLevel": .wire,
             "answered": .wire, "createdAt": .wire, "authorID": .wire,
             "authorName": .server, "targetMemberID": .wire, "targetName": .server,
-            "answeredMemoryID": .wire,
+            "answeredMemoryID": .wire, "askedFrom": .phone(.applyRemote), "deletedAt": .wire,
         ]
         _ = audit(
             "FollowUpQuestion",
@@ -370,7 +370,7 @@ struct SyncFieldsCheck {
             .deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("ios/Kinlore/Data/MemoryStore.swift")
         guard let source = try? String(contentsOf: path, encoding: .utf8),
-              let body = applyRemoteBody(in: source)
+              let body = Self.body(of: "func applyRemote(_ reply: SyncPullReply) {", in: source)
         else {
             print("  FAIL applyRemote could not be read at \(path.path), or is no longer shaped as this check reads it")
             exit(1)
@@ -379,6 +379,7 @@ struct SyncFieldsCheck {
         let kept: [(model: String, array: String, roads: [String: Road])] = [
             ("Subject", "subjects", subjectRoads),
             ("Memory", "memories", memoryRoads),
+            ("FollowUpQuestion", "questions", questionRoads),
         ]
         for (model, array, roads) in kept {
             for (name, road) in roads.sorted(by: { $0.key < $1.key }) {
@@ -417,6 +418,62 @@ struct SyncFieldsCheck {
             )
         }
 
+        // MARK: A question withdrawn with its telling
+
+        // The one row here that has to LEAVE the phone rather than stay on
+        // it. A question taken back with the telling that raised it waits in
+        // `retiredQuestions` until a push has carried its tombstone, and every
+        // way of losing it on the way is silent: this phone's card is right
+        // either way, and only the others go on asking the family a question
+        // made of words the teller withdrew. The row is executed; the queue
+        // is read, for the reason at the top of this file.
+        print("\n— a question withdrawn with its telling —")
+        let tombstone = question.dto
+        check(
+            "the tombstone carries its moment, and the schema's word for it",
+            tombstone.deleted_at == later.timeIntervalSince1970 && tombstone.status == "dismissed",
+            "sent \(tombstone.status) with deleted_at \(tombstone.deleted_at.map { "\($0)" } ?? "nothing")"
+        )
+        var live = question
+        live.deletedAt = nil
+        check(
+            "and a question still asked carries none, and is still answered",
+            live.dto.deleted_at == nil && live.dto.status == "answered"
+                && FollowUpQuestion(dto: live.dto).answered
+        )
+        let payload = Self.body(of: "func pendingPayload() -> SyncPayload {", in: source) ?? ""
+        let acknowledged = Self.body(of: "func clearPending(_ payload: SyncPayload) {", in: source) ?? ""
+        let written = Self.body(of: "private func snapshot() -> Snapshot {", in: source) ?? ""
+        let loaded = Self.body(of: "private func load() {", in: source) ?? ""
+        let decoded = Self.body(of: "extension MemoryStore.Snapshot {", in: source) ?? ""
+        check(
+            "a push carries every tombstone waiting",
+            sendsTombstones(payload),
+            "looked for `+ retiredQuestions` in pendingPayload"
+        )
+        check(
+            "and one leaves the queue only once a push has carried it",
+            acknowledged.contains("$0.deleted_at != nil")
+                && acknowledged.contains("retiredQuestions.removeAll { buried.contains($0.id) }")
+        )
+        check(
+            "the queue is written to disk and read back, so a phone killed before the push still sends it",
+            written.contains("retiredQuestions: retiredQuestions")
+                && loaded.contains("retiredQuestions = snapshot.retiredQuestions")
+        )
+        check(
+            "and a file from before the queue existed still loads (rule 10)",
+            decoded.contains("decodeIfPresent([FollowUpQuestion].self, forKey: .retiredQuestions)")
+        )
+        check(
+            "a pull leaves a question with a tombstone waiting alone",
+            body.contains("!retiredQuestions.contains(where: { $0.id == dto.id })")
+        )
+        check(
+            "and takes a question somebody withdrew off this phone",
+            body.contains("if incoming.deletedAt != nil")
+        )
+
         // MARK: The check against itself
 
         print("\n— the check against itself —")
@@ -432,6 +489,11 @@ struct SyncFieldsCheck {
             keeps("audioFilename", from: "memories", in: body)
                 && !keeps("audioFilename", from: "memories", in: forgetful)
         )
+        let unsent = payload.replacingOccurrences(of: "+ retiredQuestions", with: "")
+        check(
+            "and a push that leaves the tombstones behind",
+            sendsTombstones(payload) && !sendsTombstones(unsent)
+        )
 
         if failures > 0 {
             print("\n\(failures) failed")
@@ -440,17 +502,17 @@ struct SyncFieldsCheck {
         print("\nall checks passed")
     }
 
-    /// The body of `applyRemote`, by counting braces from its signature.
-    static func applyRemoteBody(in source: String) -> String? {
-        guard let signature = source.range(of: "func applyRemote(_ reply: SyncPullReply) {") else { return nil }
+    /// A function's body, by counting braces from its signature.
+    static func body(of signature: String, in source: String) -> String? {
+        guard let start = source.range(of: signature) else { return nil }
         var depth = 1
-        var index = signature.upperBound
+        var index = start.upperBound
         while index < source.endIndex {
             switch source[index] {
             case "{": depth += 1
             case "}":
                 depth -= 1
-                if depth == 0 { return String(source[signature.upperBound..<index]) }
+                if depth == 0 { return String(source[start.upperBound..<index]) }
             default: break
             }
             index = source.index(after: index)
@@ -460,5 +522,9 @@ struct SyncFieldsCheck {
 
     static func keeps(_ field: String, from array: String, in body: String) -> Bool {
         body.contains("incoming.\(field) = \(array)[index].\(field)")
+    }
+
+    static func sendsTombstones(_ payload: String) -> Bool {
+        payload.contains("+ retiredQuestions")
     }
 }

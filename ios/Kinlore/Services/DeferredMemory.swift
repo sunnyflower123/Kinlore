@@ -84,7 +84,9 @@ enum DeferredMemory {
         let admitted = ExtractionContext.admitted(extracted.questions.map(\.text), against: open)
         let questions = extracted.questions
             .filter { admitted.contains($0.text) }
-            .map { FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level) }
+            .map {
+                FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level, askedFrom: memory.id)
+            }
         store.add(questions: questions)
 
         // Whatever this recording cost in failed attempts, it is finished now
