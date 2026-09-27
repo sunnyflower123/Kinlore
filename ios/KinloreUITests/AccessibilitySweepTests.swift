@@ -301,22 +301,30 @@ final class AccessibilitySweepTests: XCTestCase {
     /// the two bars on either side of where each drag starts. It stops when
     /// the list stops moving the element, which is where the list ends.
     ///
-    /// **Each drag is 10 pt longer than the distance**, because the list does
-    /// not move for the first 10 pt of a finger: a 165.67 pt drag moved the
+    /// **Each drag is longer than the distance by what the list ignores of a
+    /// finger**, because the list does not move for the first part of one:
+    /// on a card pushed onto its list, 10 pt — a 165.67 pt drag moved the
     /// photo card's heading 155.67 pt, twice (26 Sep 2026), and a correction
     /// of the 10 pt left over then moved nothing, which read as the list's end.
+    /// On a card that zoomed out of its tile it is 25–28 pt (27 Sep 2026), so
+    /// the part ignored starts at 10 and is taken again from every drag that
+    /// moved the element.
     ///
     /// It asserts nothing about where the element came to rest. The caller
     /// does, because only the caller knows which edge of it matters.
     private func drag(_ element: XCUIElement, toMinY y: CGFloat, in app: XCUIApplication) {
         let origin = app.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
         var last = CGFloat.nan
+        var finger: CGFloat = 0
+        var ignored: CGFloat = 10
         for _ in 1 ... 12 {
             settle(element)
             let top = element.frame.minY
             if abs(top - y) < 3 || abs(top - last) < 0.5 { return }
+            if !last.isNaN { ignored = max(10, abs(finger) - abs(top - last)) }
             last = top
-            let move = max(-330, min(330, top - y + (top > y ? 10 : -10)))
+            let move = max(-330, min(330, top - y + (top > y ? ignored : -ignored)))
+            finger = move
             let start = origin.withOffset(CGVector(dx: 200, dy: move > 0 ? 600 : 260))
             start.press(
                 forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -move)),
@@ -353,13 +361,23 @@ final class AccessibilitySweepTests: XCTestCase {
     /// works on the setup forms and not under a tab bar — on Asetukset it
     /// left the list at its bottom, measured 21 Sep 2026, so every "page 1"
     /// there was the last page.
+    ///
+    /// **Or until `top` is back under the navigation bar**, on a screen that
+    /// closes under a pull. A photograph's card opened from its tile zooms out
+    /// of it, and a pull down at the top of a zoomed screen is the zoom's own
+    /// way back to the album — so the one more flick that proves the top is
+    /// the flick that closes the card, and every page after it would judge
+    /// the album (27 Sep 2026). The caller names the first thing on such a
+    /// screen, and that in view is the top without asking twice.
     private func scrollToTop(
         _ app: XCUIApplication,
+        top: XCUIElement? = nil,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
         var previous: [String: CGRect] = [:]
         for _ in 0 ..< 10 {
+            if let top, isUnderTheBar(top, in: app) { return }
             app.swipeDown(velocity: .fast)
             _ = hasStoppedDrawing(app)
             let words = app.staticTexts.allElementsBoundByIndex + app.buttons.allElementsBoundByIndex
@@ -368,6 +386,17 @@ final class AccessibilitySweepTests: XCTestCase {
             previous = now
         }
         XCTFail("never reached the top of the list", file: file, line: line)
+    }
+
+    /// Whether `element` sits in view right under the navigation bar, which
+    /// for the first thing on a screen is the screen at its top. Read from
+    /// frames and not `isHittable`, which fails outright on an element the
+    /// list still holds outside the window; and `frame` on a bar that is not
+    /// there throws, so a missing one answers no.
+    private func isUnderTheBar(_ element: XCUIElement, in app: XCUIApplication) -> Bool {
+        let bar = app.navigationBars.firstMatch
+        guard element.exists, bar.exists else { return false }
+        return element.frame.minY >= bar.frame.maxY - 1
     }
 
     /// Whether a line of text sits across the navigation bar's lower edge,
@@ -430,7 +459,8 @@ final class AccessibilitySweepTests: XCTestCase {
         _ app: XCUIApplication,
         _ context: String,
         to bottom: XCUIElement,
-        _ what: String
+        _ what: String,
+        top: XCUIElement? = nil
     ) throws {
         let window = app.windows.firstMatch
         // On screen means above the tab bar where there is one: the tree holds
@@ -445,7 +475,15 @@ final class AccessibilitySweepTests: XCTestCase {
         for page in 1 ... 12 {
             // From the top every time — the first page too, since a caller
             // may have scrolled on its way here.
-            scrollToTop(app)
+            scrollToTop(app, top: top)
+            // And a screen that closes under a pull is still open.
+            if let top {
+                XCTAssertTrue(
+                    isUnderTheBar(top, in: app),
+                    "\(context), page \(page): the card closed on its way to the top, "
+                        + "or never got there — a pull at the top of a zoomed card takes it back to the album"
+                )
+            }
             for _ in 1 ..< page {
                 window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
                     .press(forDuration: 0.1, thenDragTo:
@@ -2229,17 +2267,21 @@ final class AccessibilitySweepTests: XCTestCase {
             // `tabBar.minY - fadeReach` means something above it has moved a
             // page into the band, and it is this finding again rather than a
             // regression.
+            //
+            // **The sentence is also the card's top.** The card opened out of
+            // its tile, and a pull at its top closes it into the album, so the
+            // page loop stops flicking once the sentence is back under the bar
+            // and asserts the card is still open on every page (27 Sep 2026).
             if isLargest {
-                require(
-                    app.staticTexts[
-                        "Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä."
-                    ],
-                    "the photo's own screen"
-                )
+                let absence = app.staticTexts[
+                    "Kuva on vielä puhelimessa, jolla se lisättiin. Se tulee perille, kun se lähetetään sieltä."
+                ]
+                require(absence, "the photo's own screen")
                 try auditPageByPage(
                     app, "Photo detail, largest text size",
                     to: app.staticTexts["Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän."],
-                    "the footer under the way to ask the family"
+                    "the footer under the way to ask the family",
+                    top: absence
                 )
             } else {
                 require(app.buttons["Kerro tästä muisto"], "the photo's own screen")

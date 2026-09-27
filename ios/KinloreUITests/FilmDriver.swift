@@ -450,8 +450,19 @@ final class FilmDriver: XCTestCase {
         // button, so by the time the photograph has colours it is above the
         // fold — and the photograph with its colours beside it, never in its
         // place, is the shot this take exists for.
-        app.swipeDown(velocity: .slow)
-        app.swipeDown(velocity: .slow)
+        //
+        // As far as the photograph and no further. The card opened out of its
+        // tile, and one more pull at its top closes it back into the album
+        // (27 Sep 2026), which two fixed swipes can reach.
+        // Both the picture and the title are the untitled photograph's name.
+        let untitled = ["Photograph", "Valokuva"]
+        let photograph = app.images.matching(NSPredicate(format: "label IN %@", untitled)).firstMatch
+        let title = app.navigationBars
+            .matching(NSPredicate(format: "identifier IN %@ OR label IN %@", untitled, untitled)).firstMatch
+        for _ in 0 ..< 4 where !(photograph.exists && title.exists
+            && photograph.frame.minY >= title.frame.maxY - 1) {
+            app.swipeDown(velocity: .slow)
+        }
         beat(4.0)
     }
 

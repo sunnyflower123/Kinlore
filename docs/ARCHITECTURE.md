@@ -2315,6 +2315,12 @@ Cut from v1, and then built after all:
    from a bond nobody has entered yet, which is the reading that sends
    somebody off to enter it a second time.
 
+14. **Stepping into a photograph** (`StepIn`, 27 Sep 2026) — a photograph's
+    card opens out of its album tile with the system's zoom, and a pull down
+    at the top of the card is that zoom's own way back into the tile, for
+    which SwiftUI in SDK 27.0 has no switch: `interactiveDismissDisabled()`
+    is for sheets and changed nothing, measured on 27 Sep 2026.
+
 ## 9. Build order
 
 Pinned to the phases in PLAN.md §3.

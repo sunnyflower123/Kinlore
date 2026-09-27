@@ -884,16 +884,13 @@ struct SubjectDetailScreen: View {
         }
     }
 
-    var body: some View {
-        List {
-            if subject.kind == .photo {
-                Section {
-                    photoView
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                }
-            }
-
+    /// Everything on the card under its photograph, in one place so that it
+    /// can follow the photograph in when the card is stepped into from the
+    /// album (`StepIn`). A `Group` in a `List` is no container: each section
+    /// here is a section of the list as it was, and the modifier on the group
+    /// reaches every one. On a card with no photograph it is the whole card.
+    private var underThePhotograph: some View {
+        Group {
             // The colours the family said yes to, under the photograph and never
             // over it: the picture as it was taken stays the first thing on the
             // card, and this one carries its mark in its own pixels.
@@ -1391,6 +1388,20 @@ struct SubjectDetailScreen: View {
             }
 
         }
+    }
+
+    var body: some View {
+        List {
+            if subject.kind == .photo {
+                Section {
+                    photoView
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+            }
+            underThePhotograph
+                .stepInFollows()
+        }
         .navigationTitle(current.displayTitle)
         .navigationBarTitleDisplayMode(.large)
         .alert(
@@ -1537,6 +1548,10 @@ struct SubjectDetailScreen: View {
         if let image {
             Image(uiImage: image)
                 .resizable()
+                // Before the fit and the clip: the approach draws the picture
+                // larger inside the frame the fit gives it, and the clip keeps
+                // it there (`StepIn`).
+                .stepInApproach()
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 // The card's main content had no description until 26 Sep

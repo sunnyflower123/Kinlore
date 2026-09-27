@@ -166,6 +166,8 @@ struct GalleryScreen: View {
     /// seen, so the section supported exactly one read per visit and the
     /// rest left no trace anywhere.
     @State private var isReturningFromCard = false
+    /// Where each photograph's card is stepped into from: its tile (`StepIn`).
+    @Namespace private var tiles
 
     private var isSearching: Bool {
         !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -359,6 +361,10 @@ struct GalleryScreen: View {
         }
         .navigationDestination(for: Subject.self) { subject in
             SubjectDetailScreen(subject: subject)
+        }
+        .navigationDestination(for: TileOpening.self) { opening in
+            SubjectDetailScreen(subject: opening.photo)
+                .steppedInto(from: opening.photo.id, in: tiles)
         }
         // On the same stack as the cards, so a chip on the map pushes the
         // card above the map and the back chevron walks back through both.
@@ -735,10 +741,11 @@ struct GalleryScreen: View {
                                         ForEach(photoRows(group.photos), id: \.[0].id) { row in
                                             HStack(alignment: .top, spacing: 12) {
                                                 ForEach(row) { photo in
-                                                    NavigationLink(value: photo) {
+                                                    NavigationLink(value: TileOpening(photo: photo)) {
                                                         PhotoTile(subject: photo, isWide: row.count == 1)
                                                     }
                                                     .buttonStyle(.plain)
+                                                    .stepInSource(photo.id, in: tiles)
                                                 }
                                             }
                                             // Both cards of a row as tall as
@@ -922,6 +929,15 @@ struct GalleryScreen: View {
         // thirty times.
         justImported = arrived.count > 1 ? arrived : []
     }
+}
+
+/// A photograph opened from its tile, the one way into a card that steps into
+/// the picture (`StepIn`). The rows above the tiles — what is new, what a
+/// search found — open the same card as they always have: the picture would
+/// grow out of a tile somewhere else on the screen, or out of nothing, and
+/// not from under the finger that asked for it.
+private struct TileOpening: Hashable {
+    let photo: Subject
 }
 
 /// "Is this still only on my phone?"

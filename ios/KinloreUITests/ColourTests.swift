@@ -27,6 +27,24 @@ final class ColourTests: XCTestCase {
         photo.tap()
     }
 
+    /// Back up the card to its photograph, the first thing on it, and no
+    /// further. The card opened out of its tile, and a pull down at its top
+    /// closes it into the album (27 Sep 2026): six swipes can end there, and
+    /// "nothing kept" would then hold on an album with no card to keep
+    /// anything on. So the swipes stop once the photograph is under the
+    /// title — read from frames, since `isHittable` fails outright on a row
+    /// the list holds outside the window — and the card has to be open
+    /// before anything is read off it. The photograph is untitled, so
+    /// both it and the title are `displayTitle`'s *"Valokuva"*.
+    private func backToThePhotograph(_ app: XCUIApplication) {
+        let photograph = app.images["Valokuva"]
+        let title = app.navigationBars["Valokuva"]
+        let inView = { photograph.exists && title.exists && photograph.frame.minY >= title.frame.maxY - 1 }
+        for _ in 0 ..< 6 where !inView() { app.swipeDown() }
+        XCTAssertTrue(title.exists, "the card closed on the way back up to its photograph")
+        XCTAssertTrue(inView(), "never came back up to the photograph")
+    }
+
     private func askForColours(_ app: XCUIApplication) {
         openPhotograph(app)
         let colour = app.buttons["Väritä kerronnan mukaan"]
@@ -44,8 +62,8 @@ final class ColourTests: XCTestCase {
         askForColours(app)
         app.buttons["Kyllä, tallenna värit"].tap()
 
+        backToThePhotograph(app)
         let colours = app.images[kept]
-        for _ in 0 ..< 6 where !colours.exists { app.swipeDown() }
         XCTAssertTrue(colours.waitForExistence(timeout: 10), "the kept colouring is not on the card")
         XCTAssertTrue(
             app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Vahvisti")).firstMatch.exists,
@@ -62,7 +80,7 @@ final class ColourTests: XCTestCase {
             app.buttons["Väritä kerronnan mukaan"].waitForExistence(timeout: 10),
             "never came back to the card"
         )
-        for _ in 0 ..< 6 { app.swipeDown() }
+        backToThePhotograph(app)
         XCTAssertFalse(app.images[kept].exists, "an uncertain answer kept the colours")
     }
 
