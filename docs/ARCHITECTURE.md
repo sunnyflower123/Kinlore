@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 325 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 326 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -2624,8 +2624,12 @@ kept small on purpose:
   reference would otherwise fail every row of it, on every retry.
 - **The answer is the latest one.** `answered_memory_id`, unused until then as
   well, records the newest telling that answered the question rather than the
-  first: an answer taken back reopens the question (`MemoryStore.reopen`), and
-  the telling that answers it next is the one the asker should be pointed to.
+  first: an answer taken back on the result screen reopens the question it
+  answered (`MemoryStore.reopen`), and the telling that answers it next is the
+  one the asker should be pointed to. The question is found by its
+  `answeredMemoryID` rather than by the one on screen, since 27 Sep 2026: a
+  conversation ended on an unanswered follow-up had reopened the follow-up and
+  left the answered question closed over a telling that was gone.
 
 The name travels like the asker's: `target_name` is derived on read from
 `member.display_name`, and the asking phone writes it locally so the line shows

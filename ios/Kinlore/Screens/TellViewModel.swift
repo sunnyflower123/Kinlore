@@ -454,7 +454,16 @@ final class TellViewModel {
 
         // The question it answered is open again. Saving marked it answered, and
         // it was answered — by this telling, which no longer exists.
-        if let question { store.reopen(questionID: question.id) }
+        //
+        // Found by the telling rather than by `question`, since 27 Sep 2026. A
+        // conversation that ends on a question nobody answered — "Riittää
+        // tältä erää", an answer under a second, one with no words — leaves
+        // `question` on that one, while the telling on this card answered the
+        // round before it. The open question was reopened, and the answered
+        // one stayed answered by a telling that was gone.
+        for answered in store.questions where answered.answered && answered.answeredMemoryID == savedMemoryID {
+            store.reopen(questionID: answered.id)
+        }
 
         reset()
     }
