@@ -36,6 +36,37 @@ final class FirstMinuteTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Mummo"].waitForExistence(timeout: 10), "her card is not among the people")
     }
 
+    /// The second step at the largest text size, where the first is taller
+    /// than the screen and *Jatka* is reached by scrolling. Both steps are one
+    /// `ScrollView`, and until 27 Sep 2026 the second arrived scrolled to
+    /// wherever *Jatka* had been: its question 177 points above the screen,
+    /// still there five seconds later, and under it two buttons answering a
+    /// question nobody could see.
+    func testTheSecondStepOpensAtItsQuestionAtTheLargestSize() {
+        let app = launch(
+            ["-seed", "alone", "-first_minute_pending", "YES"],
+            textSize: "UICTContentSizeCategoryAccessibilityXXXL"
+        )
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the name field")
+        field.tap()
+        field.typeText("Mummo")
+        app.buttons["Jatka"].tap()
+
+        let question = app.staticTexts["Miten hän kertoo muistonsa?"]
+        XCTAssertTrue(question.waitForExistence(timeout: 10), "the second step")
+        let window = app.windows.firstMatch.frame
+        // The page is scrolled on the main actor's next turn, so its frame
+        // gets two seconds to arrive; the offset it replaces held for five.
+        for _ in 0 ..< 10 where !window.contains(question.frame) {
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        XCTAssertTrue(
+            window.contains(question.frame),
+            "the second step opened with its question off the screen: \(question.frame) against \(window)"
+        )
+    }
+
     /// Closing it at once creates nobody.
     func testClosingTheFirstMinuteLeavesNobodyBehind() {
         let app = launch(["-seed", "alone", "-first_minute_pending", "YES"])

@@ -29,23 +29,37 @@ struct FirstMinuteSheet: View {
     /// The card made in the first step, which is what the second is about.
     @State private var person: Subject?
 
+    /// The top of whichever step is showing, for `ScrollViewReader`.
+    private static let top = "top"
+
     private var trimmed: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if let person {
-                        howTheyTell(person)
-                    } else {
-                        naming
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if let person {
+                            howTheyTell(person)
+                        } else {
+                            naming
+                        }
                     }
+                    .padding(Elder.screenPadding)
+                    .id(Self.top)
                 }
-                .padding(Elder.screenPadding)
+                .elderSurface()
+                // The second step replaces the first inside this one scroll
+                // view, and until 27 Sep 2026 it arrived scrolled to wherever
+                // *Jatka* had been: at the largest text size, with its title
+                // and its question above the screen. A new step starts at its
+                // own top, as a new question does in `DateSheet`.
+                .onChange(of: person?.id) { _, _ in
+                    Task { proxy.scrollTo(Self.top, anchor: .top) }
+                }
             }
-            .elderSurface()
         }
     }
 
