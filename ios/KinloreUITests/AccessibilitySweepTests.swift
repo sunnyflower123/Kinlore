@@ -1797,10 +1797,30 @@ final class AccessibilitySweepTests: XCTestCase {
     /// A person's card while nothing has been told about them, which is when
     /// the card can be deleted: the fixture's Aino.
     func testPersonCardWithoutAStory() throws {
-        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+        try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, isLargest in
             // Through the door: a name nobody has checked is not on the list.
             require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
             require(app.staticTexts["Aino"], "the name heard").tap()
+            // The row to the photograph her name is heard in shares the last
+            // screen with the way to delete her at the default size only. At
+            // the largest it is 226 pt on its own and the swipes below carry
+            // it off the top, so it is judged on the way down, as a page of
+            // its own: dragged to y 330, where a throwaway probe found it
+            // clean with nothing forgiven on 27 Sep 2026.
+            if isLargest {
+                let link = reach(
+                    app.buttons.matching(identifier: "card.namedElsewhere").firstMatch,
+                    in: app, "the row to the photograph that names her"
+                )
+                drag(link, toMinY: 330, in: app)
+                XCTAssertTrue(hasStoppedDrawing(app), "the row to the photograph was still being drawn")
+                judgedAbove.formUnion(labelsInTree(app))
+                // Reported and gone on from, as every page is.
+                let abortAfterAudit = continueAfterFailure
+                continueAfterFailure = true
+                defer { continueAfterFailure = abortAfterAudit }
+                try audit(app, "Person card without a story, the row to the photograph, largest text size")
+            }
             // Six: at the largest size the way to the photograph above the
             // telling that names her is 226 pt of the card on its own.
             let removal = reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person", swipes: 6)
