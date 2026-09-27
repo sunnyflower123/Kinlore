@@ -32,6 +32,7 @@ import SwiftUI
 struct CameraScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Offered wherever the camera cannot be, so that a refusal is never a dead
     /// end — the same trade as the refused microphone (ARCHITECTURE §8.9): the
@@ -56,13 +57,17 @@ struct CameraScreen: View {
                 case .denied:
                     wayOut(
                         title: String(localized: "Kamera ei ole käytössä"),
-                        detail: String(localized: "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista."),
+                        detail: typeSize.isAccessibilitySize
+                            ? String(localized: "Kuvaaminen tarvitsee luvan kameraan.")
+                            : String(localized: "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista."),
                         offersSettings: true
                     )
                 case .unavailable:
                     wayOut(
                         title: String(localized: "Tässä laitteessa ei ole kameraa"),
-                        detail: String(localized: "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista."),
+                        detail: typeSize.isAccessibilitySize
+                            ? String(localized: "Voit silti lisätä valokuvia.")
+                            : String(localized: "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista."),
                         offersSettings: false
                     )
                 }
@@ -163,6 +168,13 @@ struct CameraScreen: View {
         // the screen overflows both ends, and at the largest text size the
         // heading ran up over the bar's title while the way out sat below the
         // bottom edge (the English read-through of 26 Sep 2026, 071).
+        //
+        // Scrolling made the way on reachable, not visible. At the largest
+        // size the page was still the heading and the sentence, with
+        // "Valitse kuvista" below the bottom edge and nothing on screen to say
+        // there was more (27 Sep 2026), and the way on is the page's only job.
+        // So at accessibility sizes the sentence is a short one, as on the
+        // returning phone's page, and the picture is left out.
         GeometryReader { proxy in
             ScrollView {
                 wayOutStack(title: title, detail: detail, offersSettings: offersSettings)
@@ -177,10 +189,15 @@ struct CameraScreen: View {
         VStack(spacing: 22) {
             Spacer(minLength: 0)
 
-            Image(systemName: "camera.badge.ellipsis")
-                .font(.system(size: 56))
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
+            // Decoration. At accessibility sizes it competes with the way on
+            // for the same screen, and the way on wins, as on the onboarding
+            // fork.
+            if !typeSize.isAccessibilitySize {
+                Image(systemName: "camera.badge.ellipsis")
+                    .font(.system(size: 56))
+                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
+            }
 
             Text(title)
                 .font(.title2.weight(.semibold))

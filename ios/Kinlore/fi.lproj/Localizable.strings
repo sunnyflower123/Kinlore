@@ -592,6 +592,7 @@
 "Ilmaisessa arkistossa on tilaa %lld kuvalle." = "Ilmaisessa arkistossa on tilaa %lld kuvalle.";
 "Kamera ei ole käytössä" = "Kamera ei ole käytössä";
 "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii." = "Kutsu on yhä voimassa. Yritä uudelleen, kun verkkoyhteys toimii.";
+"Kuvaaminen tarvitsee luvan kameraan." = "Kuvaaminen tarvitsee luvan kameraan.";
 "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista." = "Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista.";
 "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla." = "Laite voi kuulua yhteen perheeseen kerrallaan. Voit poistua perheestä Asetuksista ja liittyä sitten kutsulla.";
 "Liitä vielä saamasi kutsukoodi." = "Liitä vielä saamasi kutsukoodi.";
@@ -613,6 +614,7 @@
 "Tämä laite kuuluu jo perheeseen" = "Tämä laite kuuluu jo perheeseen";
 "Tämän kuukauden litterointiaika on käytetty. Äänesi on silti tallessa." = "Tämän kuukauden litterointiaika on käytetty. Äänesi on silti tallessa.";
 "Tässä laitteessa ei ole kameraa" = "Tässä laitteessa ei ole kameraa";
+"Voit silti lisätä valokuvia." = "Voit silti lisätä valokuvia.";
 "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista." = "Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista.";
 "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen." = "Yhteys perheen palveluun ei onnistunut. Yritä hetken kuluttua uudelleen.";
 "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen." = "Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen.";

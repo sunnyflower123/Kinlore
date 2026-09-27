@@ -2122,8 +2122,9 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep(
             "Kamera evätty",
             arguments: ["-seed", "empty", "-tab", "memories", "-screen", "camera", "-camera", "denied"]
-        ) { app, _ in
-            require(app.buttons["Avaa asetukset"], "the way into settings")
+        ) { app, isLargest in
+            let settings = app.buttons["Avaa asetukset"]
+            require(settings, "the way into settings")
             // The heading under the bar, at both sizes. The page was a centred
             // stack that could grow taller than the screen, and at the largest
             // text size it overflowed both ends: its heading ran up over the
@@ -2136,18 +2137,51 @@ final class AccessibilitySweepTests: XCTestCase {
                 heading.frame.minY, bar.frame.maxY,
                 "the heading runs up over the bar: \(heading.frame) against \(bar.frame)"
             )
+            // And the way on, on screen at both sizes, under a sentence that
+            // still says why: `testCameraUnavailable` has the reason.
+            XCTAssertTrue(
+                app.windows.firstMatch.frame.contains(settings.frame),
+                "the way into settings is not on screen: \(settings.frame)"
+            )
+            let sentence = isLargest
+                ? app.staticTexts["Kuvaaminen tarvitsee luvan kameraan."]
+                : app.staticTexts["Kuvaaminen tarvitsee luvan kameraan. Voit antaa sen puhelimen asetuksista — tai valita kuvia puhelimen omista kuvista."]
+            XCTAssertTrue(sentence.exists, "the page does not say why the camera cannot be used")
         }
     }
 
     /// And a device that has no camera at all, which on this project is not a
     /// hypothetical: it is every simulator, and it is what a screenshot run
     /// meets by default.
+    ///
+    /// The way on is this page's only job, so it is measured on screen at both
+    /// sizes. Scrolling had made it reachable, not visible: at the largest text
+    /// size the page was the heading and the sentence, with *"Valitse
+    /// kuvista"* and *"Valmis"* below the bottom edge and nothing on screen to
+    /// say there was more (a read-through of the largest size, 27 Sep 2026).
     func testCameraUnavailable() throws {
         try sweep(
             "Ei kameraa",
             arguments: ["-seed", "empty", "-tab", "memories", "-screen", "camera", "-camera", "unavailable"]
-        ) { app, _ in
-            require(app.buttons["Valitse kuvista"], "the way on")
+        ) { app, isLargest in
+            // Asked for on the camera's own page, by its heading. The album's
+            // empty state stays in the accessibility tree under the cover,
+            // with a *Valitse kuvista* of its own, so the unscoped query
+            // matched two buttons and `.frame` refused (27 Sep 2026). Not
+            // `.firstMatch`: that could be the album's button, which is always
+            // on screen, and the test would pass for the wrong reason.
+            let wayOn = app.scrollViews
+                .containing(.staticText, identifier: "Tässä laitteessa ei ole kameraa")
+                .buttons["Valitse kuvista"]
+            require(wayOn, "the way on")
+            XCTAssertTrue(
+                app.windows.firstMatch.frame.contains(wayOn.frame),
+                "the way on is not on screen: \(wayOn.frame)"
+            )
+            let sentence = isLargest
+                ? app.staticTexts["Voit silti lisätä valokuvia."]
+                : app.staticTexts["Voit silti lisätä vanhoja valokuvia puhelimen omista kuvista."]
+            XCTAssertTrue(sentence.exists, "the page does not say what is still possible")
         }
     }
 
