@@ -335,8 +335,25 @@ final class TellViewModel {
         }
         do {
             phase = .transcribing
+            #if DEBUG
+            // `-answer wordless`: an answer in the conversation comes back
+            // the way the Worker answers a silence, with no words in it. Only
+            // an answer — the telling before it is transcribed as usual, or
+            // there would be no conversation to answer in.
+            if isInterviewing, UserDefaults.standard.string(forKey: "answer") == "wordless" {
+                throw RemoteError.emptyResult
+            }
+            #endif
             let text = try await transcription.transcribe(audioURL: url)
             await process(transcript: text, audioURL: url, duration: duration)
+        } catch RemoteError.emptyResult where isInterviewing {
+            // An answer with no words in it: the silence `AnswerWatch` ends,
+            // or one stopped by hand. Until 27 Sep 2026 it fell through to
+            // the last catch as though the network had failed — onto "Äänesi
+            // on tallessa", with the names the rounds before it heard on no
+            // screen at all and the question it never answered marked
+            // answered.
+            keepWordlessAnswer(audioURL: url, duration: duration)
         } catch let error as RemoteError where error.isQuota {
             // A quota must not reject a recording. The audio is irreplaceable
             // and the transcription is replaceable: it is done when the minutes
@@ -712,6 +729,42 @@ final class TellViewModel {
         savedMemoryID = memory.id
         sessionMemoryIDs.append(memory.id)
         markQuestionAnswered()
+    }
+
+    /// Ends the conversation on an answer that came back with no words.
+    ///
+    /// It lands where "Riittää tältä erää" lands, on the result the rounds
+    /// before it made: their names wait there to be confirmed (rule 4), and
+    /// the card keeps the last answer that had words — `savedMemoryID`, the
+    /// transcript and the playback stay exactly as that round left them.
+    ///
+    /// The recording is kept all the same (rule 3). "No words" is the model's
+    /// reading of it, and a voice too quiet for the model is still a voice. It
+    /// waits for its text on the card the rounds are filed under, and it joins
+    /// the session's tellings, so the answer to who told them reaches it too:
+    /// a name taken off the rounds must not stay on this one.
+    ///
+    /// The question stays open, because nothing answered it, and the ladder
+    /// learns what it learns from an answer under a second (`recordSkip`).
+    private func keepWordlessAnswer(audioURL: URL, duration: TimeInterval) {
+        recordSkip()
+        leaveInterview()
+        // `ask` filed every round under the card the first one landed on. A
+        // recording that cannot be moved out of tmp leaves nothing to keep,
+        // and nothing to say on a card that shows another round's words.
+        if let home = target, let audioName = Self.persistAudio(from: audioURL) {
+            let memory = Memory(
+                subjectID: home.id,
+                authorName: store.authorName,
+                body: "",
+                audioFilename: audioName,
+                audioDuration: duration,
+                source: .voice
+            )
+            store.add(memory)
+            sessionMemoryIDs.append(memory.id)
+        }
+        phase = .done
     }
 
     /// The question is cleared only after saving. Audio saved without a

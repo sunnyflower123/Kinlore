@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 321 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 322 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -2527,17 +2527,31 @@ Decisions, in the order they were argued about:
   leaves the ending to a hand as before: on a loaded machine the watch could
   end that round with the audit still running, or beat the tap.
 
-  One edge is left as it was. An answer with no words in it at all reaches
-  the transcription as silence, and an empty reply from the Worker is
-  `RemoteError.emptyResult`: the answer lands where a network failure lands,
-  on *"Äänesi on tallessa"* with the audio kept (rule 3), not on the result
-  card, and the earlier rounds' names are saved unconfirmed without being
-  listed there — the same screen, and the same gap, as a quota running out
-  mid-loop above. It is saved as a telling waiting for its text, so the
-  catch-up asks about the same silence again: three times, and then at
-  `TranscriptionAttempts`' slowing pace, which never quite stops. A silent
-  answer stopped by hand has always taken this road. What the watch changes
-  is how often it is taken: an unanswered question used to record until
+  An answer with no words in it at all has a road of its own, since the
+  same day. The Worker answers a silence with an empty reply,
+  `RemoteError.emptyResult`, and inside the conversation that now ends it
+  the way the watch does: on the result the rounds before it made, their
+  names waiting to be confirmed, and the card still showing the last answer
+  that had words (`TellViewModel.keepWordlessAnswer`). The recording is kept
+  (rule 3) as a telling waiting for its text on the same card, and joins the
+  session's tellings, so the answer to who told them reaches it too. The
+  question stays open and the ladder records a skip, as for an answer under
+  a second. It used to fall through to the network's road — *"Äänesi on
+  tallessa"*, the rounds' names on no screen, the question marked answered
+  — and `InterviewLoopTests` holds the new one under `-answer wordless`,
+  which empties the answer and only the answer. A quota running out
+  mid-loop keeps that screen: its answer may well have words, and they are
+  what it is waiting for.
+
+  What is left is the price of keeping it. A telling waiting for its text is
+  one the catch-up asks about, so the same silence is uploaded again on
+  `TranscriptionAttempts`' schedule — three times on the day, four more in
+  the first month, then once a month — nineteen times in its first year
+  besides the answer's own upload, whether the app is opened every hour or
+  once a day. The Worker meters the seconds of a reply with no words like
+  any other, so a silence the watch ended spends 25 seconds of the family's
+  month each time, of the free tier's 600. What the watch changes is how
+  often this road is taken: an unanswered question used to record until
   somebody noticed, and now ends here after 25 seconds.
 
 One knowingly open edge: every round adds three questions and answers one, so

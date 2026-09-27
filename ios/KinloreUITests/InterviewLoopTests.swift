@@ -20,7 +20,8 @@ import XCTest
 /// quiet ends it the way "Riittää tältä erää" does, and a first telling is
 /// never cut (`AnswerWatch`). `-meter silent` is the silence. A simulator
 /// records from the Mac's own microphone, and a test cannot count on the room
-/// around it.
+/// around it. What the Worker makes of a silence, a reply with no words, is
+/// `-answer wordless`.
 final class InterviewLoopTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -146,6 +147,50 @@ final class InterviewLoopTests: XCTestCase {
         // so the answer the silence ended was kept; Aino and Toivo are the
         // telling's. All of them wait to be confirmed (rule 4).
         for name in ["Kaarina", "Aino", "Toivo"] {
+            reach(app.buttons["Vahvista \(name)"], in: app, "the name \(name), to confirm")
+        }
+    }
+
+    /// The same silence as the Worker answers it: a reply with no words in
+    /// it. Until 27 Sep 2026 that ended the conversation on "Äänesi on
+    /// tallessa", and the names the telling had heard were on no screen at
+    /// all. `-answer wordless` empties the answer and only the answer.
+    func testAWordlessAnswerLandsOnTheRoundsBeforeIt() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-answer", "wordless"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "the telling ended somewhere other than its first question"
+        )
+        app.buttons["Aloita kertominen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the answer never started recording"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        // The result the telling made, as "Riittää tältä erää" would have
+        // left it, and not the screen for a recording whose text is waiting.
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "a wordless answer did not land on the result the telling made"
+        )
+        XCTAssertFalse(app.staticTexts["Äänesi on tallessa"].exists, "a wordless answer stood for the conversation")
+        XCTAssertFalse(app.buttons["Riittää tältä erää"].exists, "the conversation went on to another question")
+        reach(app.buttons["1950-luku"], in: app, "the decade the telling named")
+        for name in ["Aino", "Toivo"] {
             reach(app.buttons["Vahvista \(name)"], in: app, "the name \(name), to confirm")
         }
     }
