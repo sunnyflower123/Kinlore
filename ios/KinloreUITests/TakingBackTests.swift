@@ -393,6 +393,152 @@ final class TakingBackTests: XCTestCase {
         XCTAssertEqual(rows.count, 0, "a row is still offered after the last bringing-back")
     }
 
+    /// The questions a telling raised go with it. They are its own words
+    /// turned round — *"Millainen ihminen Aino oli?"* — and left behind they
+    /// went on asking the whole family about something its teller took back.
+    /// On the result screen the Kerro tab's card is where that showed: the
+    /// photograph is back in the deck with nothing told about it, and it was
+    /// asked about in the taken-back telling's words instead of its own.
+    func testATellingTakenBackOnItsResultTakesItsQuestionsWithIt() {
+        // `-screen result` runs the first sample, written, on the deck's card
+        // and stops on its result.
+        let app = launch(["-seed", "deck", "-screen", "result"])
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "never arrived: the result screen"
+        )
+        let raised = app.descendants(matching: .any).matching(Self.raisedBySample)
+        for _ in 0 ..< 4 where !raised.firstMatch.exists { app.swipeUp() }
+        XCTAssertTrue(raised.firstMatch.exists, "the telling raised none of the questions this test knows")
+
+        let remove = app.buttons["Poista tämä muisto"]
+        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "never arrived: the way out")
+        remove.tap()
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+
+        // The same photograph, nobody's story again, asked about as one.
+        XCTAssertTrue(
+            app.staticTexts["Kuka tässä kuvassa on?"].waitForExistence(timeout: 10),
+            "the card is not asked about as a photograph nobody has told about"
+        )
+        XCTAssertFalse(
+            raised.firstMatch.exists,
+            "the Kerro tab still asks a question the taken-back telling raised"
+        )
+    }
+
+    /// And from its card, the day after, where the telling had answered a
+    /// question somebody asked. The two go opposite ways: the question it
+    /// answered is open again, the ones it raised go with it, and a question
+    /// the family asked of this phone stays where it was — on the card and
+    /// on the Kerro tab.
+    func testATellingTakenBackFromItsCardTakesItsQuestionsWithIt() {
+        let app = launch(["-seed", "aimed", "-tab", "memories", "-voice", "stub"])
+
+        let photo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 15), "never arrived: the photo tile")
+        photo.tap()
+
+        // Aino's question, answered aloud from its row with the first
+        // sample, which names Aino, Toivo and Puumala.
+        let asked = "Mitä mökillä syötiin juhannuksena?"
+        let answered = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", asked))
+        let row = answered.firstMatch
+        for _ in 0 ..< 6 where !row.exists { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "never arrived: Aino's question")
+        let bar = app.tabBars.firstMatch
+        for _ in 0 ..< 3 where row.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        row.tap()
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 10), "the row did not open the Tell screen")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        let enough = app.buttons["Riittää tältä erää"]
+        XCTAssertTrue(enough.waitForExistence(timeout: 30), "the answer did not go on to its follow-up")
+        enough.tap()
+        let done = app.buttons["Valmis"]
+        XCTAssertTrue(done.waitForExistence(timeout: 15), "the answer was not saved")
+        for _ in 0 ..< 6 where !done.isHittable { app.swipeUp() }
+        done.tap()
+
+        let raised = app.descendants(matching: .any).matching(Self.raisedBySample)
+        XCTAssertTrue(
+            seenOnTheCard([raised], in: app)[0],
+            "the answer raised none of the questions this test knows"
+        )
+
+        // Taken back from its row, above the questions.
+        let remove = app.buttons["Poista tämä muisto"]
+        for _ in 0 ..< 6 where !remove.exists { app.swipeDown() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take the answer back")
+        for _ in 0 ..< 3 where remove.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        remove.tap()
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+
+        let yours = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", "Kuka souti veneen saareen sinä aamuna?")
+        )
+        let seen = seenOnTheCard([raised, answered, yours], in: app)
+        XCTAssertFalse(seen[0], "a question the taken-back telling raised is still on the card")
+        XCTAssertTrue(seen[1], "the question the taken-back telling answered is not open again")
+        XCTAssertTrue(seen[2], "the question asked of this phone went with a telling that did not raise it")
+
+        app.tabBars.buttons["Kerro"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Mummo kysyy sinulta"].waitForExistence(timeout: 15),
+            "the Kerro tab no longer offers the question asked of this phone"
+        )
+        XCTAssertFalse(
+            raised.firstMatch.exists,
+            "the Kerro tab asks a question the taken-back telling raised"
+        )
+    }
+
+    /// Every question the stub's extraction can raise from the first sample
+    /// (`StubExtractionService.questions`), whichever three the ladder picks:
+    /// the four it always has, and the three the sample's names make.
+    private static let raisedBySample = NSCompoundPredicate(orPredicateWithSubpredicates: [
+        "Kuka muu oli paikalla?",
+        "Minä vuonna tämä suunnilleen oli?",
+        "Muistatko miltä siellä tuoksui tai kuulosti?",
+        "Mitä toivoisit lastenlastesi tietävän tästä?",
+        "Millainen ihminen Aino oli?",
+        "Miten Aino ja Toivo tunsivat toisensa?",
+        "Puumalassa — mitä muuta siellä tapahtui?",
+    ].map { NSPredicate(format: "label CONTAINS %@", $0) })
+
+    /// Whether each query matched anywhere on the card from "Kerro tästä
+    /// muisto" down to "Kysy perheeltä", the section under its open
+    /// questions. The card is a list, and a list builds only the rows in
+    /// view, so each is looked for on the way.
+    private func seenOnTheCard(_ queries: [XCUIElementQuery], in app: XCUIApplication) -> [Bool] {
+        let top = app.buttons["Kerro tästä muisto"]
+        for _ in 0 ..< 8 where !top.exists { app.swipeDown() }
+        XCTAssertTrue(top.waitForExistence(timeout: 10), "never arrived: the top of the card")
+        let end = app.buttons["Kysy perheeltä"]
+        var seen = queries.map { $0.firstMatch.exists }
+        for _ in 0 ..< 8 where !end.exists {
+            app.swipeUp()
+            seen = zip(seen, queries).map { $0 || $1.firstMatch.exists }
+        }
+        XCTAssertTrue(end.waitForExistence(timeout: 10), "never arrived: the end of the card")
+        return zip(seen, queries).map { $0 || $1.firstMatch.exists }
+    }
+
     /// Answers the microphone prompt if it is showing. The label depends on the
     /// simulator's own language, so the button is found by position in the
     /// alert rather than by what it says: permission alerts put the allowing
