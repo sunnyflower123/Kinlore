@@ -1241,22 +1241,74 @@ private struct WritingView: View {
 // MARK: - Recording
 
 private struct RecordingView: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
     let model: TellViewModel
 
     @State private var isConfirmingDiscard = false
+    /// The steps this screen has taken at each text size to keep "Paina kun
+    /// olet valmis" in sight, and what it measured to decide them. See
+    /// `Squeeze`.
+    @State private var steps: [DynamicTypeSize: Set<Squeeze>] = [:]
+    @State private var room: CGFloat?
+    @State private var caption: Edge?
+    /// Every step taken and the caption still below the room: a question at
+    /// the largest size, on any phone. The page then opens at the disc.
+    @State private var atTheDisc = false
+
+    private var squeeze: Set<Squeeze> { steps[typeSize] ?? [] }
 
     var body: some View {
         // The same scroll treatment as IdleView and AskingView: with a question
         // on screen this stack is taller than the phone at the largest text
         // size, and truncating the question somebody is answering right now
-        // would be absurd.
+        // would be absurd. The room `Squeeze` measures is the page's, from here.
         GeometryReader { proxy in
-            ScrollView {
-                content
-                    .padding(Elder.screenPadding)
-                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            ScrollViewReader { reader in
+                ScrollView {
+                    content
+                        .padding(.horizontal, Elder.screenPadding)
+                        .padding(.bottom, Elder.screenPadding)
+                        .padding(.top, squeeze.contains(.air) ? 12 : Elder.screenPadding)
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                        .coordinateSpace(.named(Self.page))
+                        .id(Self.page)
+                        .onGeometryChange(for: CGFloat.self) { $0.bounds(of: .scrollView)?.height ?? 0 } action: { height in
+                            guard height > 0, height != room else { return }
+                            // Measured again whenever it changes, unlike IdleView's:
+                            // this screen's first layout still has the tab bar's
+                            // room taken off, 83 points on an SE and 49 on a
+                            // 17 Pro, and a step taken against that is one the
+                            // screen never needed. A new room starts the steps over.
+                            if room != nil {
+                                steps = [:]
+                                atTheDisc = false
+                            }
+                            room = height
+                            giveWayIfNeeded()
+                        }
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                // When no step is left and the way to stop is still out of
+                // sight, the page opens at the disc, with "Kuuntelen" and the
+                // question above it a scroll away. She read the question on
+                // the screen before this one, and in the loop heard it spoken;
+                // while the phone listens, the disc is the thing she needs.
+                // Decided 27 Sep 2026: the other order is the one where a
+                // grandparent has to scroll to stop.
+                //
+                // And back to the top when a new room makes the page fit. The
+                // first layout's room is short by the tab bar, and on an SE
+                // at the largest size it asks for the disc on a page the real
+                // room then shows whole; this way the last decision is the
+                // one that holds, whatever became of the first scroll.
+                .onChange(of: atTheDisc) { _, out in
+                    if out {
+                        reader.scrollTo(Self.stop, anchor: .bottom)
+                    } else {
+                        reader.scrollTo(Self.page, anchor: .top)
+                    }
+                }
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
         // The recorder keeps running while this is on screen, so saying no to it
         // costs nothing: the telling carries on where it left off. Stopping
@@ -1274,8 +1326,15 @@ private struct RecordingView: View {
     }
 
     private var content: some View {
-        VStack(spacing: 28) {
-            Spacer(minLength: 0)
+        // Read once, here, so that the caption's edge says which layout it
+        // was measured under.
+        let squeezed = squeeze
+        let size = typeSize
+        let air = squeezed.contains(.air)
+        return VStack(spacing: air ? 14 : 28) {
+            if !air {
+                Spacer(minLength: 0)
+            }
 
             Text("Kuuntelen")
                 .font(.largeTitle.weight(.semibold))
@@ -1284,7 +1343,8 @@ private struct RecordingView: View {
             // the moment the button is pressed is how somebody loses the thread
             // halfway through the first sentence — and it is the one question
             // they have not had time to memorise, because they only just chose
-            // it.
+            // it. Where it and the disc cannot both fit, it is a scroll above
+            // the disc rather than gone (`atTheDisc`).
             if let question = model.question {
                 Text(question.text)
                     // The same display face it wore on the screen before this
@@ -1300,7 +1360,7 @@ private struct RecordingView: View {
             // Somebody speaking quietly has no other way to know whether the
             // microphone works.
             Waveform(levels: model.recorder.levels)
-                .frame(height: 96)
+                .frame(height: squeezed.contains(.waveform) ? 56 : 96)
                 .padding(.horizontal, 8)
 
             Text(Self.timeText(model.recorder.elapsed))
@@ -1317,11 +1377,17 @@ private struct RecordingView: View {
                 .fixedSize()
                 .accessibilityLabel("Nauhoitettu \(Int(model.recorder.elapsed)) sekuntia")
 
-            Spacer(minLength: 0)
+            if !air {
+                Spacer(minLength: 0)
+            }
 
             RecordButton(isRecording: true) {
                 Task { await model.stopAndProcess() }
             }
+            // 28 clear above and below the disc in both layouts: the rings
+            // reach 26 past it at the top of a breath, and the caption under
+            // it is measured against whatever is behind it.
+            .padding(.vertical, air ? 14 : 0)
 
             Text("Paina kun olet valmis")
                 .font(.headline)
@@ -1335,6 +1401,23 @@ private struct RecordingView: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: Edge.self) { proxy in
+                    Edge(maxY: proxy.frame(in: .named(Self.page)).maxY, squeeze: squeezed, size: size)
+                } action: { edge in
+                    caption = edge
+                    giveWayIfNeeded()
+                }
+                // Where the page stops when it opens at the disc: the
+                // squeeze's 8 points of daylight under the caption. On an SE
+                // that puts the ways out below it wholly out of sight; a
+                // 17 Pro still draws 34 points under its room, behind the
+                // home indicator, and the top of the next one shows there,
+                // as it does at rest without a question.
+                .background {
+                    Color.clear
+                        .id(Self.stop)
+                        .padding(.bottom, -8)
+                }
 
             // The loop's exit that keeps the answer. In the loop the big button
             // means "next question", and until 4 Sep 2026 the only other way
@@ -1368,6 +1451,69 @@ private struct RecordingView: View {
 
     private static func timeText(_ interval: TimeInterval) -> String {
         String(format: "%d:%02d", Int(interval) / 60, Int(interval) % 60)
+    }
+
+    /// What this screen gives, in this order, when "Paina kun olet valmis"
+    /// ends below what the phone shows of the page — which is
+    /// `IdleView.Squeeze`'s measure on a screen with less to give. The disc,
+    /// the caption, the question and every text size stay as they are.
+    ///
+    /// A small phone gets here, and a question. On an iPhone SE at the
+    /// largest size, with no question, the caption stood at 647–772.5 on a
+    /// screen 667 tall, so the one instruction for ending a telling had to be
+    /// found by scrolling while the phone listened, and the audit read the 20
+    /// points left in sight as a contrast failure (27 Sep 2026). With a
+    /// question the SE lost the caption at the default size as well. Without
+    /// one, a 17 Pro takes a step only in English at the largest size, where
+    /// the caption is three lines rather than two.
+    ///
+    /// A question at the largest size is taller than either phone with every
+    /// step taken, and so is the SE's English screen without one; there the
+    /// page opens at the disc instead (`atTheDisc`).
+    ///
+    /// Kept per text size and as a set for the reasons `IdleView.Squeeze`
+    /// records: the audit's Dynamic Type check changes the size under a
+    /// running screen, and a step is never given back — only a new room,
+    /// which `body` explains, starts them over.
+    private enum Squeeze: Int, CaseIterable, Comparable {
+        /// The empty spacers above the disc, the stack's gaps 28 → 14 with
+        /// the disc kept 28 clear of its neighbours, and the top margin
+        /// 24 → 12.
+        case air
+        /// The waveform 96 → 56: still a line that moves when she speaks,
+        /// which is all it has to say.
+        case waveform
+
+        static func < (a: Squeeze, b: Squeeze) -> Bool { a.rawValue < b.rawValue }
+    }
+
+    /// Where the caption ends, in the page's coordinates, and the steps and
+    /// the text size it was laid out under.
+    private struct Edge: Equatable {
+        var maxY: CGFloat
+        var squeeze: Set<Squeeze>
+        var size: DynamicTypeSize
+    }
+
+    private static let page = "RecordingView.page"
+    private static let stop = "RecordingView.stop"
+
+    /// The next step, when the caption ends below the page's room — and only
+    /// when it was measured as the screen is now. As in `IdleView`, what
+    /// starts it is the caption out of sight and what it stops at is 8
+    /// points of daylight under it.
+    private func giveWayIfNeeded() {
+        guard let room, let caption, caption.size == typeSize, caption.squeeze == squeeze else { return }
+        let under = caption.maxY - room
+        guard squeeze.isEmpty ? under > 0 : under + 8 > 0 else {
+            atTheDisc = false
+            return
+        }
+        guard let next = Squeeze.allCases.first(where: { step in squeeze.allSatisfy { $0 < step } }) else {
+            atTheDisc = true
+            return
+        }
+        steps[typeSize, default: []].insert(next)
     }
 }
 

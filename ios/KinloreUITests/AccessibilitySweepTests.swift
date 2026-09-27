@@ -1503,6 +1503,46 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same screen with the question on it, which is the tallest it gets.
+    /// At the largest size the question and the disc do not fit on one phone
+    /// screen together, and since 27 Sep 2026 the page opens at the disc. So
+    /// the frames are asked as well as the audit: a way to stop scrolled out
+    /// of sight is nothing the audit reports, and the question half cut at
+    /// the top edge is what it is here to read.
+    func testRecordingAQuestionIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty"], textSize: size)
+            // An opening starter has no subject, so it starts the microphone
+            // on this screen rather than opening another. Its middle is
+            // brought above the tab bar first, where a tap is a tap.
+            let starter = require(app.staticTexts["Kuka on vanhin ihminen, jonka muistat?"], "the opening starter")
+            let bar = app.tabBars.firstMatch
+            for _ in 0 ..< 3 where starter.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+            starter.tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["Kuuntelen"], "the recording screen")
+            let disc = require(app.buttons["Lopeta kertominen"], "the disc")
+            let caption = require(app.staticTexts["Paina kun olet valmis"], "its caption")
+            let window = app.windows.firstMatch.frame
+            let inSight = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in window.contains(disc.frame) && window.contains(caption.frame) },
+                object: nil
+            )
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [inSight], timeout: 10), .completed,
+                "the way to stop is out of sight: \(disc.frame) and \(caption.frame) in \(window)"
+            )
+            settle(caption)
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Kuuntelen, kysymys, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
     /// The screen behind a refused microphone. Two buttons and a paragraph, and
     /// nothing had ever looked at it — reaching it by hand means answering a
     /// system prompt with "Älä salli" and then digging the app out of iOS

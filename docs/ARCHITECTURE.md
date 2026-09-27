@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 109 sweep tests, each auditing one screen at the default text size and again at the largest, out of 332 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 109 sweep tests, each auditing one screen at the default text size and again at the largest, out of 333 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -3420,6 +3420,63 @@ first screen an 80-year-old tells into: *"Paina kun olet valmis"* under the
 contrast minimum within the pulsing disc's reach, and the timer clipped at
 the default size. Both fixed the same day, which is the argument for the
 audit in one sentence.
+
+**And on a small phone the way to stop left the screen — 27 Sep 2026.** On an
+iPhone SE at the largest text size, with no question, *"Paina kun olet
+valmis"* stood at 647–772.5 on a screen 667 tall: the one instruction for
+ending a telling had to be found by scrolling while the phone listened, and
+this sweep read the 20 points left in sight as a contrast failure, on `main`
+as well. With a question the SE lost the caption at the default size too. So
+`RecordingView` measures where the caption ends against what the scroll view
+shows, as `IdleView` has done since the day before (§23), and gives way in two
+steps: the empty spacers and half of each gap, the disc kept 28 points clear of
+its neighbours where its rings reach, and then the waveform from 96 points to
+56. Nothing else moves and no text shrinks. Unlike `IdleView`, it measures the
+room again whenever the room changes, because this screen's first layout still
+has the tab bar taken off — 564 on an SE against the 647 it then lives in, 729
+against 778 on a 17 Pro — and a step taken against that is one the screen
+never needed; a new room starts the steps over. Measured with a throwaway hook
+that starts a recording: on the SE with no question the caption ends at 576 of
+647 at the default size and takes no step, and at the largest size takes both,
+752.5 to 616.5; with a question it takes one at the default size, 658 to 548.
+The 17 Pro takes none at the default size, and without a question at the
+largest size only in English, 814 to 718, where the caption is three lines
+rather than two.
+
+**Where two steps are not enough, the page opens at the disc, and that is a
+decision rather than a measurement.** A question at the largest size does not
+fit beside the disc on either phone — with every step taken the caption ends at
+909.5 on the SE and 908.7 on the 17 Pro in Finnish, a line lower in English —
+and neither does the SE's English screen without one, at 678.5 of 647. One of
+the two had to be a scroll away, and it is the question: she read it on the
+screen before this one, and in the loop heard it spoken, while the way to stop
+is what she needs as long as the phone listens. The other order is the one
+where a grandparent scrolls to end her telling. So when no step is left, a
+`ScrollViewReader` scrolls once, to a marker that ends 8 points under the
+caption. On the SE the ways out below it are then wholly out of sight; the
+17 Pro draws 34 points under its room, behind the home indicator, and shows
+the top of *"Älä tallenna tätä"* there, as it already did at rest without a
+question. *"Kuuntelen"* and the question are a scroll above, the question's
+top line cut at the edge. The offsets measured: 270.5 and 332.5 on the SE with a question,
+Finnish and English, 39.5 without one in English, and 138.7 and 200.7 on the
+17 Pro. Nothing scrolls at the default size on either phone, in either
+language, including where a step is taken. The first layout's short room asks
+for the disc on the SE in Finnish without a question as well, on a page the
+real room then shows whole, so a new room that makes the page fit scrolls it
+back to the top: the last decision holds, whatever became of the first scroll.
+Decided on 27 Sep 2026, and turning it round is deleting the scroll.
+
+`testRecordingAQuestionIsAudited` audits the tallest form of the screen at both
+sizes. It starts the recording from an opening starter, which has no subject
+and so starts the microphone on this screen, and before the audit it asks for
+the disc and the caption to lie wholly inside the window, because a way to stop
+scrolled out of sight is nothing an audit reports. Not measured: whether
+VoiceOver scrolls the page back when its focus reaches *"Kuuntelen"* or the
+question. The simulator has no VoiceOver, and nothing headless here moves its
+focus. And on the SE in Finnish at the largest size without a question, where
+the page fits and rests at the top, *"Älä tallenna tätä"* has its first 16.5
+points in sight at the screen's bare bottom edge, with no home indicator in
+front of them.
 
 ### Three defaults, three fixes
 
