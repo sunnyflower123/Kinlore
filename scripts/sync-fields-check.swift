@@ -260,7 +260,7 @@ struct SyncFieldsCheck {
             "audioFilename": .phone(.applyRemote),
             "audioR2Key": .wire, "audioDuration": .wire, "source": .wire, "createdAt": .wire,
             "mentionedSubjectIDs": .wire, "tellerSubjectID": .wire, "tellerHidden": .wire,
-            "deletedAt": .wire,
+            "deletedAt": .wire, "restoredAt": .wire,
         ]
         _ = audit(
             "Memory",
@@ -271,7 +271,7 @@ struct SyncFieldsCheck {
                 audioFilename: "voice-on-this-phone.m4a", audioR2Key: "family/voice.m4a",
                 audioDuration: 42.5, source: .voice, createdAt: then,
                 mentionedSubjectIDs: ["one", "two"], tellerSubjectID: "teller", tellerHidden: true,
-                deletedAt: later
+                deletedAt: later, restoredAt: then
             ),
             roads: memoryRoads,
             send: \.dto,

@@ -20,8 +20,12 @@
 //    not be able to say that grandmother told something.
 // 5. **Only the author edits their own.** Being in the family is not permission
 //    to rewrite what somebody else said, even by accident.
-// 6. **A deletion is final.** A stale push cannot bring back what a person
-//    chose to take away.
+// 6. **A deletion is the teller's, both ways.** A stale push cannot bring
+//    back what a person chose to take away; only their own restoration,
+//    carrying a moment newer than the deletion, does (§19, 26 Sep 2026).
+//    The full arithmetic of the two moments is `memory-restore-check.mjs`,
+//    which needs no Worker; this keeps the two rows a running Worker
+//    answers.
 // 7. **Who told it is an answer, and an answer can be given again.** The teller
 //    is taken as sent rather than `COALESCE`d, so a name can come off a telling
 //    as well as go on — and *"en halua nimeäni näkyviin"* is a state of its own
@@ -576,6 +580,35 @@ try {
 			'and a phone that missed it cannot bring it back',
 			Boolean(after?.deleted_at),
 			JSON.stringify(after?.deleted_at),
+		)
+
+		// The teller's own hand, from the card: a restoration newer than the
+		// deletion, and the pull answers the state — the row is told again.
+		await push(mummo, {
+			memories: [
+				{ id: told, subject_id: subject, body: spoken, deleted_at: null, restored_at: now + 1, created_at: now },
+			],
+		})
+		const back = (await memories(mummo)).get(told)
+		check(
+			'but the teller can bring it back from the card',
+			back?.deleted_at == null && back?.restored_at === now + 1,
+			JSON.stringify({ deleted_at: back?.deleted_at, restored_at: back?.restored_at }),
+		)
+
+		// And the other phone, pushing the tombstone it still holds after
+		// that, does not bury it again: the tombstone is older than the
+		// restoration.
+		await push(mummo, {
+			memories: [
+				{ id: told, subject_id: subject, body: spoken, deleted_at: now, created_at: now },
+			],
+		})
+		const still = (await memories(mummo)).get(told)
+		check(
+			'and a stale tombstone cannot take it away again',
+			still?.deleted_at == null,
+			JSON.stringify(still?.deleted_at),
 		)
 	}
 } catch (error) {

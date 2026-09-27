@@ -331,6 +331,17 @@ CREATE TABLE memory (
   source        TEXT NOT NULL,        -- 'typed' | 'voice'
   created_at    INTEGER NOT NULL,
   deleted_at    INTEGER,
+  -- Brought back by its teller, and when (docs/ARCHITECTURE.md §19). Two
+  -- moments, and the later one is the state: a restoration newer than
+  -- the deletion is a live telling, a deletion newer than the restoration
+  -- is a tombstone again. Each moves only forward in the upsert
+  -- (sync.ts), so the author's other phone pushing the copy it still
+  -- holds can neither revive nor re-bury anything -- and a NULL is never
+  -- later than a moment, which is what keeps a stale push harmless. The
+  -- pull answers the state rather than this column, so a phone built
+  -- before it existed sees a restoration too. For existing databases:
+  --   ALTER TABLE memory ADD COLUMN restored_at REAL;
+  restored_at   REAL,
   seq           INTEGER NOT NULL DEFAULT 0
 );
 

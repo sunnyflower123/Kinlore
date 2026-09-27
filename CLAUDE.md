@@ -297,7 +297,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 108 accessibility sweeps that already run here, each
+contrast rows, against the 109 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false
@@ -1020,6 +1020,17 @@ node scripts/free-tier-ceiling-check.mjs
 # checked once, deployed (ARCHITECTURE §11). After touching sync.ts, apns.ts
 # or the question fields in MemoryStore+Sync.swift.
 node scripts/targeted-question-check.mjs
+
+# A telling taken back and brought back, by its teller and by nobody else
+# (ARCHITECTURE §19). The state is two moments on one row, `deleted_at` and
+# `restored_at`, and the later one wins; both ways of being wrong are silent —
+# a stale copy from the author's other phone reviving a tombstone, or burying
+# the telling she just brought back — and a card looks the same either way.
+# Runs the real push and pull over schema.sql in an in-memory SQLite: no
+# Worker, no key, no network. Nine of its twenty were red against the COALESCE
+# that preceded the column. After touching the memory upsert or the pull in
+# sync.ts, or `restore(memoryID:)` and the restorable seed in MemoryStore.swift.
+node scripts/memory-restore-check.mjs
 
 # The transcription's output budget. `complete()` sends no cap unless told
 # one, and the route's default is low: a long telling came back cut off, was

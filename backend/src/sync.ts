@@ -80,7 +80,15 @@ export type MemoryRow = {
 	teller_subject_id: string | null
 	teller_hidden: number
 	created_at: number
+	/// Outgoing from the pull: the STATE, not the column — NULL where the
+	/// restoration below is newer, so a phone built before `restored_at`
+	/// existed sees a telling come back. Incoming: the moment the teller
+	/// took it back, taken only when newer than the one on file.
 	deleted_at: number | null
+	/// The moment the teller brought it back (§19), taken only when newer
+	/// than the one on file. Absent from every phone before 26 Sep 2026
+	/// and from every push that has nothing to say about it.
+	restored_at: number | null
 	seq: number
 }
 
@@ -211,10 +219,18 @@ export async function pull(env: Env, session: Session, since: number) {
 		.bind(family, since, MAX_ROWS)
 		.all<SubjectRow>()
 
+	// `deleted_at` is answered as the state of the row, not the column: a
+	// restoration newer than the deletion is a live telling (§19). The
+	// phone keeps one rule for what is told — `deletedAt == nil` — and a
+	// phone built before the column existed sees the telling come back
+	// too. The restoration moment travels beside it, raw, for the phone to
+	// push back so that its copy of the row cannot re-bury the telling.
 	const memories = await env.DB.prepare(
 		`SELECT m.id, m.subject_id, m.author_id, m.body, m.raw_transcript,
 		        m.audio_r2_key, m.audio_seconds, m.source, m.created_at,
-		        m.deleted_at, m.seq, m.teller_subject_id, m.teller_hidden,
+		        CASE WHEN m.restored_at > COALESCE(m.deleted_at, 0) THEN NULL
+		             ELSE m.deleted_at END AS deleted_at,
+		        m.restored_at, m.seq, m.teller_subject_id, m.teller_hidden,
 		        mem.display_name AS author_name
 		 FROM memory m
 		 LEFT JOIN member mem ON mem.id = m.author_id
@@ -658,8 +674,8 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 			env.DB.prepare(
 				`INSERT INTO memory (id, family_id, subject_id, author_id, body, raw_transcript,
 				                     audio_r2_key, audio_seconds, source, teller_subject_id,
-				                     teller_hidden, created_at, deleted_at, seq)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				                     teller_hidden, created_at, deleted_at, restored_at, seq)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   -- The author may move a telling to another card: the AI's
 				   -- placement is the most important piece of the result, and
@@ -691,7 +707,20 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   -- is.
 				   teller_subject_id = excluded.teller_subject_id,
 				   teller_hidden = excluded.teller_hidden,
-				   deleted_at = COALESCE(excluded.deleted_at, memory.deleted_at),
+				   -- Two moments, and the later one is the state (§19): taken
+				   -- back, brought back, taken back again. Each moves only
+				   -- forward, and a NULL is never later than a moment, so the
+				   -- author's other phone pushing the copy it still holds —
+				   -- offline through the taking-back, or through the bringing
+				   -- back — can neither revive a tombstone nor bury a telling
+				   -- again. This was COALESCE until 26 Sep 2026, which kept a
+				   -- stale push harmless and would have let a stale tombstone
+				   -- move the mark backwards under a newer restoration and
+				   -- quietly revive what had been buried a second time.
+				   deleted_at = CASE WHEN excluded.deleted_at > COALESCE(memory.deleted_at, 0)
+				                     THEN excluded.deleted_at ELSE memory.deleted_at END,
+				   restored_at = CASE WHEN excluded.restored_at > COALESCE(memory.restored_at, 0)
+				                      THEN excluded.restored_at ELSE memory.restored_at END,
 				   seq = excluded.seq
 				 -- Only the author edits their own. Nobody gets to tidy up what
 				 -- grandmother said, not even accidentally through sync.
@@ -717,6 +746,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				memory.teller_hidden ? 1 : 0,
 				memory.created_at ?? timestamp,
 				memory.deleted_at ?? null,
+				memory.restored_at ?? null,
 				seq,
 				session.memberID,
 			),

@@ -2005,7 +2005,18 @@ private struct ResultView: View {
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
-            Text("Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.")
+            // The same two truths as the card's dialog (`MemoryRow`), from
+            // the result screen: the telling is offered back for thirty days
+            // on the card it was filed under (§19) — unless that card was
+            // made here for this telling alone and goes with it, which is
+            // what `discardSavedMemory` does when `initialTarget` is nil.
+            // Named as *the card it was filed under* rather than *this card*,
+            // because on the tab no card is in view.
+            if model.initialTarget == nil, let saved = model.savedMemoryID, store.cardGoesWith(memoryID: saved) {
+                Text("Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa.")
+            } else {
+                Text("Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu.")
+            }
         }
         .sheet(isPresented: $isMoving) {
             if let placed = model.placedSubject {

@@ -1709,6 +1709,20 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The card offering a taken-back telling back to its teller (§19): the
+    /// quiet row where the memories end, its date in a supporting colour and
+    /// a button that says what it does. `-seed restorable` puts one such row
+    /// under the photograph and keeps a forty-day-old taking-back off it.
+    /// At the largest size the row is two tellings' worth below the fold,
+    /// and the card's list builds it only when it comes into view, so it
+    /// is reached with more swipes than a card at the default size needs.
+    func testMemoryCardWithARestorableTelling() throws {
+        try sweep("Memory card with a restorable telling", arguments: ["-seed", "restorable", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["card.restoreMemory"].firstMatch, in: app, "the card's way back", swipes: 16)
+        }
+    }
+
     /// The photo's own screen while nothing has been told about it, which is
     /// when it can be deleted: the fixture's photograph carries stories, so
     /// this one is imported empty.

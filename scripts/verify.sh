@@ -371,6 +371,13 @@ run "a stranger's day is bounded, a telling is not" node scripts/free-tier-ceili
 # failing the whole batch, only the asker aims, a notice fires on a change and
 # never on a re-send, and the log carries neither a token nor a name.
 run "a question asked by name reaches the one it was asked of" node scripts/targeted-question-check.mjs
+# A telling taken back and brought back by its teller, and by nobody else.
+# The real push and pull over the shipping schema in an in-memory SQLite: a
+# stale copy can neither revive a tombstone nor bury a restoration, only the
+# author's hand does either, the later of the two moments is the state, and
+# the pull answers that state so a phone built before the column sees it
+# too. Red on nine of its twenty against the code before the column.
+run "a taken-back telling comes back by its teller's hand alone" node scripts/memory-restore-check.mjs
 # Rule 8, without making the request. `complete()` is imported straight out of
 # openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
 # something that keeps the body. Nothing leaves the machine and nothing is

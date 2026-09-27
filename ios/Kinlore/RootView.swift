@@ -1195,6 +1195,11 @@ struct SubjectDetailScreen: View {
             }
 
             let memories = store.memories(for: subject.id)
+            // This phone's own tellings taken back from this card within the
+            // window, offered back where the memories end (§19). Read beside
+            // `memories` because both branches below show it: a card whose
+            // only telling was taken back is empty and still has a way back.
+            let restorable = store.restorable(for: subject.id, author: session.identity.memberID)
             // The tellings that *named* this rather than being about it, and
             // the half of the same web this screen never read. A place is named
             // inside somebody's memory of a photograph, and a proposed person's
@@ -1271,11 +1276,23 @@ struct SubjectDetailScreen: View {
                                 .elderTapTarget()
                         }
                     }
+                    ForEach(restorable) { RestorableMemoryRow(memory: $0) }
                 }
             } else {
                 Section {
                     ForEach(memories) { memory in
                         MemoryRow(memory: memory)
+                    }
+                    // On the paper under the last bubble, as `MemoryRow`'s own
+                    // buttons are: a row of the list's own white here would be
+                    // the one card in a section of bubbles. On a card with no
+                    // telling left it stays on the white, in one section with
+                    // the sentence that says so.
+                    ForEach(restorable) {
+                        RestorableMemoryRow(memory: $0)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                     }
                 } header: {
                     // A List styles its own headers and footers below the
@@ -1991,7 +2008,18 @@ private struct MemoryRow: View {
             }
             Button("Peruuta", role: .cancel) {}
         } message: {
-            Text("Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.")
+            // Two sentences, both true. Until 26 Sep 2026 this said the
+            // recording went with the memory and nothing could bring it
+            // back; rule 3 keeps the recording, and the card now offers the
+            // telling back for thirty days (§19) — unless the card itself
+            // goes with it, a moment that held nothing else, and then there
+            // is no card to come back to. An if rather than a ternary, so
+            // that `localisation-check.mjs` sees both keys.
+            if store.cardGoesWith(memoryID: memory.id) {
+                Text("Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa.")
+            } else {
+                Text("Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan.")
+            }
         }
         .sheet(isPresented: $isEditingText) {
             MemoryTextSheet(memory: memory)

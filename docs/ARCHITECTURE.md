@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 327 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 109 sweep tests, each auditing one screen at the default text size and again at the largest, out of 330 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -203,6 +203,11 @@ Every synced table gets:
 seq         INTEGER NOT NULL   -- granted by the server, per family
 deleted_at  INTEGER            -- soft delete, so deletion propagates
 ```
+
+`memory` carries one more since 26 Sep 2026, `restored_at REAL`: brought
+back by its teller, and the later of the two moments is the row's state
+(§19). It is the memory's alone — a photograph or a person is rejected,
+not taken back, and a rejection stays one.
 
 **Except one, and it is the one that matters.** `mention` has neither column,
 and no `family_id` either — `schema.sql` declares exactly `memory_id`,
@@ -4603,6 +4608,76 @@ app's good manners: the memory upsert matches on `author_id`, so a tombstone for
 somebody else's memory is refused. Nobody gets to tidy away what grandmother
 said. She is the one person who may.
 
+### The way back — 26 Sep 2026
+
+The dialog that took a telling away used to end *"eikä sitä voi palauttaa"*,
+and rule 3 made that sentence a lie: the recording and the transcript were
+never gone, only the reading of them. What was missing was the way back, and
+the case for it is the case for the way out — an 80-year-old who taps
+*Poista* on the wrong row, or on the right row and regrets it the next
+morning, was being held to a tap the way she used to be held to a false
+start.
+
+The card now offers the teller's own taken-back tellings back for thirty
+days (`MemoryStore.restorationWindow`), as a quiet row where its memories end
+— *Poistettu 23.9.2026*, and under it *Palauta* — and not as a list of its
+own: a bin is a place to go and look, and nobody goes; the row sits among the
+telling's neighbours, where somebody who misses it would look. It is one
+view, `RestorableMemoryRow`, in both of the card's shapes — under the
+tellings, and alone on a card whose only telling was taken back, which is
+empty and still has a way back. One tap
+brings it back and asks nothing first: it is the reversible half of a pair,
+and the question belongs to the act that hides something from the family.
+Only the teller's own, for the reason the tombstone is only theirs (above).
+The thirty days are the card's and not the server's, which accepts a
+restoration at any age and deletes nothing from R2 — a decision not made
+rather than one made here.
+
+**On the server the state is two moments, and the later one wins.**
+`memory.restored_at` sits beside `deleted_at`; the upsert moves each forward
+only (`CASE WHEN excluded.x > COALESCE(memory.x, 0)`), and the pull answers
+`deleted_at` as the *state* — NULL wherever the restoration is newer — with
+the raw `restored_at` beside it. That shape was chosen over pushing a bare
+`deleted_at: null` because a nil is also what the author's other phone sends
+when it never saw the deletion, and the rule that a stale push cannot revive
+a tombstone (rule 6 of `memory-rules-check.mjs`) is worth more than the
+cheaper wire. Three things follow. A phone built before the column, pulling,
+sees the telling come back, because it is sent the state and not the column.
+The restoring phone's own copy of the row, pushed later, cannot bury the
+telling again, because the tombstone it carries is older than the
+restoration. And taking back a second time is an ordinary taking-back — a
+newer `deleted_at` — with nothing to unlearn. `deleted_at` was `COALESCE`d
+until now, which kept a stale nil harmless and would have let a stale
+tombstone move the mark backwards under a newer restoration; against the
+code before the column, nine of the twenty checks in
+`memory-restore-check.mjs` are red.
+
+**What restoring does not bring back.** The taking-back tidied away the
+unconfirmed proposals only that telling had put in the family list, and the
+moment free dictation had made to hold it when it held nothing else. Neither
+returns: the proposals were never confirmed (rule 4), and a name can be given
+again on the card; a moment that went with its only telling has no card left
+to offer a way back on. So the dialog says so, in a second sentence, rather
+than promising a card that will not exist — *"…ja tämä kortti sen mukana,
+eikä sitä voi palauttaa."* `cardGoesWith(memoryID:)` asks the question
+`takeBack` asks of the home, before the row is gone. The result screen holds
+the same two sentences, with the card named as *the one it was filed under*,
+because on the tab no card is in view.
+
+**Against the Worker in production**, which has no column — Worker
+`b44468f2`, main `6948675`, measured 26 Sep 2026 on a port of its own
+against `45b5ce7`'s code, whose `sync.ts` and `schema.sql` are byte for
+byte the same as `6948675`'s: a push carrying
+`restored_at` is accepted and the field dropped, the old `COALESCE` keeps the
+tombstone over the nil, and the reply has no `restored_at` at all. A sync
+round pushes and then pulls, and `applyRemote` takes the server's row for a
+memory no longer dirty, so the restoring phone's own next pull hides the
+telling again: the row comes back on the card, and the tap does nothing
+lasting. There is no client-side answer that is not a second implementation
+of the server rule, so the order is the Worker first and the phone build
+after — `ALTER TABLE memory ADD COLUMN restored_at REAL;` on production
+before the deploy — as it was for the map's confirmed points.
+
 ### What it costs
 
 This is an addition, and CLAUDE.md asks for a removal to pay for it. Nothing is
@@ -4628,6 +4703,19 @@ The interruption machinery is the one piece a UI test cannot drive — nothing
 can place a phone call into a simulator from XCUITest — so its account above
 is backed by the build and by reading, and the phase E visit is where a real
 interruption will happen whether anyone schedules it or not.
+
+The way back, 26 Sep 2026: `memory-restore-check.mjs` runs the real push and
+pull over the shipping schema in an in-memory SQLite, twenty checks and no
+Worker — a stale nil cannot revive, a stale tombstone cannot re-bury, a
+second taking-back buries again, the oldest tombstone neither buries nor
+moves the mark, another member's restoration is refused, and a first push
+carrying both moments lands in the state the moments say. It was run red
+before the column, nine of twenty. `memory-rules-check.mjs` keeps the two
+rows a running Worker answers. On the phone, `TakingBackTests` takes a
+telling back from the photograph's card, finds it offered back, brings it
+back and finds the row gone; and a forty-day-old taking-back is not offered
+at all (`-seed restorable`). A sweep audits the row on the photograph's card
+at both text sizes.
 
 ## 20. Small promises the app was not keeping
 

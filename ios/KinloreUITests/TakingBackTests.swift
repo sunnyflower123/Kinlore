@@ -316,6 +316,83 @@ final class TakingBackTests: XCTestCase {
         XCTAssertTrue(tell.waitForExistence(timeout: 10), "the sheet did not close after the discard")
     }
 
+    /// The way back (§19, 26 Sep 2026). A telling taken back from its card
+    /// is offered back to its teller on the same card for thirty days, as a
+    /// quiet row where the memories end and not as a list of its own; one
+    /// tap brings it back, with no question asked, because a telling brought
+    /// back by mistake can be taken back again. `-seed restorable` files
+    /// three tellings of this phone's own under the photograph: one live, one
+    /// taken back three days ago and one forty days ago.
+    func testATellingTakenBackFromItsCardCanBeBroughtBack() {
+        let app = launch(["-seed", "restorable", "-tab", "memories"])
+
+        let tiles = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva"))
+        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 10), "never arrived: the photo tile")
+        tiles.firstMatch.tap()
+
+        // The card lists its tellings newest first and builds a row only as
+        // it comes into view, and the live telling is the second row, under
+        // Mummo's — so the way back under both is reached first, which builds
+        // the telling's row on the way. One row: the three-day-old
+        // taking-back. The forty-day-old one is outside the window and is
+        // not offered.
+        let rows = app.buttons.matching(identifier: "card.restoreMemory")
+        for _ in 0 ..< 8 where rows.firstMatch.exists == false { app.swipeUp() }
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "the card offers no way back")
+        XCTAssertEqual(rows.count, 1, "the card offers back what is outside the window")
+
+        let own = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Laiturin päässä")).firstMatch
+        XCTAssertTrue(own.waitForExistence(timeout: 10), "the live telling is not on the card")
+
+        // Take the live telling back from the card, the ordinary way. Only
+        // the teller's own row offers it; Mummo's does not.
+        let remove = app.buttons["Poista tämä muisto"]
+        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take it back")
+        remove.tap()
+        let confirm = app.buttons["Poista"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
+        confirm.tap()
+
+        // Gone from the card, and offered back on it: the newest taking-back
+        // sits first, where the eye lands.
+        XCTAssertTrue(own.waitForNonExistence(timeout: 10), "the telling is still on the card")
+        for _ in 0 ..< 4 where rows.count < 2 { app.swipeUp() }
+        XCTAssertEqual(rows.count, 2, "the taking-back is not offered back")
+        rows.firstMatch.tap()
+
+        // Back on the card, and the row for it gone; the older one stays.
+        // The list keeps its place while the telling's row goes back in
+        // above the way back, so each is looked for where it now sits.
+        for _ in 0 ..< 4 where !own.exists { app.swipeDown() }
+        XCTAssertTrue(own.waitForExistence(timeout: 10), "the telling did not come back")
+        for _ in 0 ..< 4 where rows.count < 1 { app.swipeUp() }
+        XCTAssertEqual(rows.count, 1, "the row outlived the bringing-back")
+    }
+
+    /// The window is thirty days and it is the card's: a taking-back older
+    /// than that is not offered, and bringing the three-day-old one back does
+    /// not bring the forty-day-old one with it.
+    func testATellingTakenBackLongerAgoThanThirtyDaysIsNotOffered() {
+        let app = launch(["-seed", "restorable", "-tab", "memories"])
+
+        let tiles = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva"))
+        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 10), "never arrived: the photo tile")
+        tiles.firstMatch.tap()
+
+        let rows = app.buttons.matching(identifier: "card.restoreMemory")
+        for _ in 0 ..< 4 where rows.firstMatch.exists == false { app.swipeUp() }
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "the card offers no way back")
+        XCTAssertEqual(rows.count, 1, "a taking-back older than the window is offered back")
+        rows.firstMatch.tap()
+
+        let recent = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Rantaan tuli joka kesä")).firstMatch
+        XCTAssertTrue(recent.waitForExistence(timeout: 10), "the three-day-old telling did not come back")
+        let old = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Saunan takana")).firstMatch
+        XCTAssertFalse(old.exists, "the forty-day-old telling came back with it")
+        XCTAssertEqual(rows.count, 0, "a row is still offered after the last bringing-back")
+    }
+
     /// Answers the microphone prompt if it is showing. The label depends on the
     /// simulator's own language, so the button is found by position in the
     /// alert rather than by what it says: permission alerts put the allowing

@@ -518,6 +518,20 @@ struct Memory: Identifiable, Codable, Hashable {
     /// said, and she is the one person who may.
     var deletedAt: Date?
 
+    /// Brought back by the teller, and the moment it was: the one thing
+    /// that reopens a taking-back (§19).
+    ///
+    /// Two moments, and the later one is the state, on the server
+    /// (`backend/src/sync.ts`) as on this phone — except that this phone
+    /// keeps its one rule: `restore(memoryID:)` clears `deletedAt` and
+    /// stamps this, so `told` never reads it. It travels so that the server
+    /// can tell a restoration from a stale phone that never saw the
+    /// deletion, which sends nil on both, and so that this phone's copy of
+    /// the row, pushed back later, cannot bury the telling again.
+    ///
+    /// `Optional` for rule 10's reason, like the teller above.
+    var restoredAt: Date?
+
     /// The audio is saved but not yet transcribed — the quota was full or the
     /// network was down. A derived property, not a separate state to sync.
     ///

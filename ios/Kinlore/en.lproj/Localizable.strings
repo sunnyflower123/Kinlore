@@ -203,7 +203,6 @@
 "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua." = "Nobody has told anything yet. Press the button above and start talking.";
 "Poista tämä muisto" = "Delete this memory";
 "Poista" = "Delete";
-"Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa." = "The memory leaves the family archive, recording and all, and cannot be brought back.";
 "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu." = "Nobody was found for \"%@\". The search looks through names and through what has been told about people.";
 "Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä." = "Nothing was found for \"%@\". The search looks through what has been told and through the names.";
 "Ei osumia" = "No matches";
@@ -915,3 +914,11 @@
 "Arkiston paikat" = "The archive's places";
 "Ei paikkaa" = "No place";
 "Kortille ei mahdu enempää tietoja." = "The card has no room for more facts.";
+
+/* A telling taken back, and brought back by its teller from the card (26 Sep 2026, ARCHITECTURE §19). */
+"Poistettu %@" = "Deleted %@";
+"Palauta" = "Bring back";
+"Palauta muisto, poistettu %@" = "Bring the memory back, deleted %@";
+"Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan." = "The memory disappears from the family's view on every phone. You can bring it back from this card for 30 days.";
+"Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa." = "The memory disappears from the family's view on every phone, and this card goes with it. It cannot be brought back.";
+"Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu." = "The memory disappears from the family's view on every phone. For 30 days you can bring it back from the card it was filed under.";

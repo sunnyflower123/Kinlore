@@ -185,7 +185,6 @@
 "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua." = "Kukaan ei ole vielä kertonut mitään. Paina yllä olevaa nappia ja ala puhua.";
 "Poista tämä muisto" = "Poista tämä muisto";
 "Poista" = "Poista";
-"Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa." = "Muisto poistuu perheen arkistosta äänityksineen, eikä sitä voi palauttaa.";
 "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu." = "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu.";
 "Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä." = "Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä.";
 "Ei osumia" = "Ei osumia";
@@ -785,3 +784,11 @@
 "Arkiston paikat" = "Arkiston paikat";
 "Ei paikkaa" = "Ei paikkaa";
 "Kortille ei mahdu enempää tietoja." = "Kortille ei mahdu enempää tietoja.";
+
+/* A telling taken back, and brought back by its teller from the card (26 Sep 2026, ARCHITECTURE §19). */
+"Poistettu %@" = "Poistettu %@";
+"Palauta" = "Palauta";
+"Palauta muisto, poistettu %@" = "Palauta muisto, poistettu %@";
+"Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan.";
+"Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa.";
+"Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu.";

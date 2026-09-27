@@ -78,7 +78,13 @@ struct MemoryDTO: Codable {
     var teller_subject_id: String?
     var teller_hidden: Int?
     var created_at: Double
+    /// Incoming: the state of the row rather than the column — nil where
+    /// the restoration below is newer (`sync.ts`). Outgoing: as stored.
     var deleted_at: Double?
+    /// The moment the teller brought it back (§19). Optional in both
+    /// directions for the teller's reason above: a Worker that has not
+    /// been redeployed sends none, and nearly every telling has none.
+    var restored_at: Double?
     var seq: Int?
 }
 
@@ -549,6 +555,7 @@ extension Memory {
             // rejection never left the device (§3) — this one is sent for the
             // same reason: a removal that stops here is not a removal.
             deleted_at: deletedAt?.timeIntervalSince1970,
+            restored_at: restoredAt?.timeIntervalSince1970,
             seq: nil
         )
     }
@@ -586,7 +593,8 @@ extension Memory {
             mentionedSubjectIDs: dto.mentions ?? [],
             tellerSubjectID: dto.teller_subject_id,
             tellerHidden: dto.teller_hidden == 1 ? true : nil,
-            deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
+            deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) },
+            restoredAt: dto.restored_at.map { Date(timeIntervalSince1970: $0) }
         )
     }
 }

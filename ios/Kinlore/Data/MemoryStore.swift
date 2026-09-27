@@ -909,6 +909,60 @@ final class MemoryStore {
         save()
     }
 
+    /// How long a card offers a taken-back telling to its teller. The window
+    /// is the card's and not the server's, which accepts a restoration at
+    /// any age and deletes nothing from R2 (§19).
+    static let restorationWindow: TimeInterval = 30 * 24 * 60 * 60
+
+    /// The teller's own tellings taken back from this card within the
+    /// window, the newest taking-back first: the row for what went a
+    /// minute ago sits where the eye lands. Only the author's, because the
+    /// row is a way back and the server refuses a restoration from anybody
+    /// else exactly as it refuses their tombstone (`sync.ts`). A telling
+    /// whose card went with it (`takeBack`) has no card to be offered on,
+    /// which is why the dialog promises nothing in that case.
+    func restorable(for subjectID: String, author memberID: String, now: Date = .now) -> [Memory] {
+        memories.filter {
+            $0.subjectID == subjectID
+                && ($0.authorID == nil || $0.authorID == memberID)
+                && $0.deletedAt.map { now.timeIntervalSince($0) < Self.restorationWindow } == true
+        }
+        .sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) }
+    }
+
+    /// The teller brings a telling back. `deletedAt` is cleared so that
+    /// every reader of `told` sees it again, and the moment is stamped so
+    /// that the restoration wins on the server over the tombstone it
+    /// answers — where a bare nil, which is also what a phone that never
+    /// saw the deletion sends, must not. Asks nothing first: this is the
+    /// reversible half of a pair, and a telling brought back by mistake
+    /// can be taken back again.
+    ///
+    /// What the taking-back tidied away stays tidied: the proposals it
+    /// alone had put in the family list were never confirmed (rule 4), and
+    /// a name can be given again on the card.
+    func restore(memoryID: String) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }),
+              memories[index].deletedAt != nil else { return }
+        memories[index].deletedAt = nil
+        memories[index].restoredAt = .now
+        dirtyMemories.insert(memoryID)
+        save()
+    }
+
+    /// Whether taking this telling back takes its card with it — a moment
+    /// that held nothing else — which is when the dialog cannot promise a
+    /// way back. The same test `takeBack` makes on the home, asked before
+    /// the row is gone.
+    func cardGoesWith(memoryID: String) -> Bool {
+        guard let memory = memories.first(where: { $0.id == memoryID }),
+              let home = subjects.first(where: { $0.id == memory.subjectID }),
+              home.kind == .event, home.deletedAt == nil else { return false }
+        return !told.contains {
+            $0.id != memoryID && ($0.subjectID == home.id || $0.mentionedSubjectIDs.contains(home.id))
+        }
+    }
+
     /// The same taking back, from the memory's own card the day after.
     ///
     /// `discardSavedMemory` on the result screen knows what its telling
@@ -1671,7 +1725,7 @@ final class MemoryStore {
             "archive", "unseen", "deck", "blind", "related", "dated", "faces", "facts",
             "unplaced", "unarrived", "mentioned",
             "film", "film-untold", "film-week", "film-family", "film-tree",
-            "aimed",
+            "aimed", "restorable",
         ].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
@@ -1878,6 +1932,43 @@ final class MemoryStore {
         let toivo = Subject(id: "demo-toivo", kind: .person, title: "Toivo")
         subjects = [aino, eeva, kalle, sanni, photo, puumala, karjala, rejected]
             + (seed == "related" ? [toivo] : [])
+        // `-seed restorable` is the archive with three tellings of this
+        // phone's own under the photograph (§19): one live, for the card's
+        // way out to be pressed on; one taken back three days ago, which
+        // the card offers back; and one taken back forty days ago, which it
+        // no longer does. This phone's own because `authorID` is nil — a
+        // telling never synced is the phone's — so the rows show without a
+        // Keychain identity the seed cannot know. Under the photograph and
+        // not a moment, because a moment that held nothing else goes with
+        // its last telling and leaves no card to come back to.
+        let takenBack: [Memory] = seed == "restorable"
+            ? [
+                Memory(
+                    id: "demo-memory-own", subjectID: photo.id,
+                    authorName: String(localized: "Minä"),
+                    body: "Laiturin päässä oli aina joku onkimassa, ja illalla vene soudettiin rantaan.",
+                    source: .typed,
+                    createdAt: Date.now.addingTimeInterval(-5 * 24 * 60 * 60)
+                ),
+                Memory(
+                    id: "demo-memory-taken-back", subjectID: photo.id,
+                    authorName: String(localized: "Minä"),
+                    body: "Rantaan tuli joka kesä sama pariskunta Kuopiosta. Otin tämän takaisin kolme päivää sitten.",
+                    source: .typed,
+                    createdAt: Date.now.addingTimeInterval(-4 * 24 * 60 * 60),
+                    deletedAt: Date.now.addingTimeInterval(-3 * 24 * 60 * 60)
+                ),
+                Memory(
+                    id: "demo-memory-long-gone", subjectID: photo.id,
+                    authorName: String(localized: "Minä"),
+                    body: "Saunan takana kasvoi vadelmia. Otin tämän takaisin neljäkymmentä päivää sitten.",
+                    source: .typed,
+                    createdAt: Date.now.addingTimeInterval(-41 * 24 * 60 * 60),
+                    deletedAt: Date.now.addingTimeInterval(-40 * 24 * 60 * 60)
+                ),
+            ]
+            : []
+
         memories = [
             Memory(
                 id: "demo-memory-aino",
@@ -1920,7 +2011,7 @@ final class MemoryStore {
                    authorName: "Mummo", body: "Kalle ajoi puutavaraa.", source: .typed),
             Memory(id: "demo-memory-sanni", subjectID: sanni.id, authorID: "demo-mummo",
                    authorName: "Mummo", body: "Sanni hoiti kauppaa.", source: .typed),
-        ]
+        ] + takenBack
         // `-seed film` and `-seed film-untold`: the archive the demo video's
         // takes are shot from (docs/VIDEO.md, the v16 takes). The blind card
         // needs exactly what `-seed blind` gives it — a proposal heard in a
