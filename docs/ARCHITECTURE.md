@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 322 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 325 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -3486,6 +3486,41 @@ those same categories, which is how the contrast problem survived this long.
   Measured on the Perhe screen's audit picture, 6 Sep 2026: the two findings
   were the invite footer's lines under the bar. Allowed only with no element
   and only under a bar — a word with an element is still judged.
+- **A contrast finding at a frame the settled screen never had.** The audit
+  simulates the other text sizes on the live screen, and a `Form` re-laid
+  out at a smaller size scrolls under it; it can then report an element with
+  its largest-size height at a position from the simulated layout, where the
+  settled screen draws something else. Measured 27 Sep 2026 from the
+  recordings of two `testCreateFamilyForm` runs that were red alone on a
+  private simulator: the form's last page, settled with *"Luo arkisto"* at
+  y 755, reported the phone question's row at y 505.33 — where the smallest
+  simulated layout draws it — and its footer at y 754, over the *"Luo
+  arkisto"* cell, whose commonest colours are two papers a hair apart. So
+  `SettledScreen` reads every labelled frame and one picture before the
+  audit begins; a finding at a frame the settled screen did not hold is
+  measured by `ContrastMeter` where that screen drew the element and
+  forgiven only above the minimum, one the screen held nowhere a reader
+  could see is left to the page that holds it, and one at a frame the
+  screen did hold is judged as before, with the settled screen's own reading
+  of the element on its line. Nothing is forgiven by name, and each way out
+  is printed to the run's log. `SettledScreenTests` holds the rule to its
+  word with fixed frames and drawn pixels, since the frame it exists for is
+  the one no test can make the audit report on purpose: a faint word (1.64:1)
+  stays red at its own frame and is condemned where it is drawn when reported
+  elsewhere, an inked one (13.91:1) is forgiven only there, and a word under
+  the tab bar is left to the page that holds it.
+
+  Where it stops, measured the same day: *left to the page that holds it*
+  trusts the picture taken before the audit. In `testFirstMinute` at the
+  largest size that picture held *"Miten hän kertoo muistonsa?"* at
+  y −176.67, above the top of the screen, while the audit reported it at
+  y 301, where the picture after the audit draws it — the same frame
+  477.67 pt apart. `FirstMinuteSheet` swaps its first page for its second
+  inside one `ScrollView`, so the picture caught the second page scrolled
+  down. The sweep has one page, and nothing judged the finding. Whether a
+  reader is left at that offset or the sheet moves out of it by itself, the
+  recordings cannot say: the picture after the audit shows the layout the
+  audit left, not the one it found.
 - The guessing round's truncated preview (§13): a teaser, whole text one tap
   away, all of it in the accessibility label.
 - `Lisää sukulainen`, where a `Menu` reported a label frame smaller than the

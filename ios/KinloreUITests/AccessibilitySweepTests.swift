@@ -132,6 +132,23 @@ import XCTest
 /// to the decimal, and were the audit's default-size simulation rather than
 /// the screen: the measurement is beside
 /// `AccessibilityPolicy.isDefaultSizeSimulationArtefact`.
+///
+/// **`testCreateFamilyForm` again on 27 Sep 2026, and this time alone, at a
+/// load of 6 to 11 on a private simulator, on `main` and on a branch of it
+/// — which the lines above say is a finding.** It was, and not the form's:
+/// the audit's frames were not the elements'. Its recordings show the form's
+/// last page at the largest size settled through the two seconds before the
+/// audit, *"Luo arkisto"* at y 755 and the phone question above the top of
+/// the screen; the findings put that question's row at y 505.33 with its
+/// largest-size height, and its footer at y 754 and, in the other run, at
+/// 201.67 — positions the settled screen never had, the row's being where
+/// the audit's own smallest simulated layout draws it. The elements measure
+/// 21.00:1 and 9.72:1 wherever they are drawn. So the answer is neither the
+/// form nor a name on a list: `SettledScreen` in AccessibilityAudit.swift
+/// reads every frame and one picture before the audit begins, and a contrast
+/// finding at a frame the settled screen did not hold is measured where that
+/// screen drew the element, and forgiven only above the minimum. The
+/// measurements are beside the struct.
 final class AccessibilitySweepTests: XCTestCase {
     private static let largest = "UICTContentSizeCategoryAccessibilityXXXL"
 

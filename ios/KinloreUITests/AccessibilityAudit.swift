@@ -25,8 +25,15 @@ struct ContrastMeter {
     init?(app: XCUIApplication) {
         let bounds = app.frame
         guard bounds.width > 0, let cgImage = app.screenshot().image.cgImage else { return nil }
-        image = cgImage
-        pixelsPerPoint = CGFloat(cgImage.width) / bounds.width
+        self.init(image: cgImage, pixelsPerPoint: CGFloat(cgImage.width) / bounds.width)
+    }
+
+    /// A picture from anywhere, for the check that holds the settled-screen
+    /// rule to its word (`SettledScreenTests`): the arithmetic is the same on
+    /// a drawn picture as on a screenshot.
+    init(image: CGImage, pixelsPerPoint: CGFloat) {
+        self.image = image
+        self.pixelsPerPoint = pixelsPerPoint
     }
 
     /// The contrast between the darkest and the lightest thing inside a frame.
@@ -131,6 +138,197 @@ struct ContrastMeter {
     }
 }
 
+/// The screen as it was when the audit began: every labelled element's
+/// frame, and one picture of it.
+///
+/// `performAccessibilityAudit` simulates the other Dynamic Type sizes on the
+/// live screen, and a `Form` re-laid out at a smaller size does not stay
+/// where it was — the page loop in `AccessibilitySweepTests` has known that
+/// since 21 Sep 2026 and finds every page from the top for it. What that
+/// loop could not answer, and this does, is a contrast finding whose frame
+/// is one the settled screen never had. Measured 27 Sep 2026 from the
+/// recordings of two `testCreateFamilyForm` runs that were red alone, on a
+/// private simulator at a load of 6 to 11, on `main` and on a branch of it:
+///
+/// - The page the audit judged was the setup form's last, at the largest
+///   size, unchanged through the two seconds of recording before the audit
+///   began: *"Luo arkisto"* at y 755, the *"Kenen puhelin tämä on"* section
+///   above the top of the screen.
+/// - One run reported that section's *"Isovanhemman"* row at
+///   `{{16, 505.33}, {370, 155.33}}` and its footer at
+///   `{{16, 754}, {370, 366.67}}`, and on its fifth page the first
+///   section's footer at `{{16, 412}, {370, 566.67}}`; the other reported
+///   the same footer at y 201.67. Every height is the element's at the
+///   largest size; every y is a position the settled screen did not have.
+///   The row's 505.33 is where the recording shows that row in the audit's
+///   own smallest simulated layout, a frame in which the whole form fits on
+///   one screen — *Isovanhemman* at y 501 and *Luo arkisto* at 781 by OCR.
+/// - Inside those frames the settled screen draws something else: at the
+///   row's, and at y 201.67, the next section's sentence (84 % `#F0F0F4`,
+///   9 % `#3C3C3E`); at y 754, the *"Luo arkisto"* cell — 46 % `#F0F0F4`
+///   and 44 % `#FDFDFC`, two papers a hair apart, and 6 % of the button's
+///   blue. In the simulated layouts the footer's frame holds two papers
+///   again, 48 % and 37 %. Which picture the audit read cannot be told from
+///   a recording; that its frames were not the elements' can.
+/// - The elements themselves pass wherever they are drawn: *"Isovanhemman"*
+///   21.00:1, the footers 9.72:1, `#3D3D3E` on `#F2F2F7`.
+///
+/// So a contrast finding at a frame the settled screen did not hold is
+/// answered from the settled screen — its own frames, its own pixels,
+/// `ContrastMeter`'s arithmetic — rather than from the audit's reading of a
+/// layout its simulation moved. It is not forgiven by name: a genuinely
+/// faint sentence measures faint here too, and one the settled screen held
+/// nowhere a reader could see it is the business of the page that holds it,
+/// as an element scrolled off the top already is in `AccessibilityPolicy`.
+/// A finding at a frame the screen *did* hold is judged exactly as before,
+/// and its line carries the settled screen's own reading of the element.
+///
+/// Read before the audit, never after: the audit leaves the list wherever
+/// its simulation put it, and its tree with the rows that layout had.
+struct SettledScreen {
+    /// The element types a contrast finding names in this suite: words, and
+    /// the buttons and fields that hold them.
+    static let judged: Set<XCUIElement.ElementType> = [.staticText, .button, .textField, .textView]
+
+    /// Every labelled element's frame, by label. A label can be on screen
+    /// more than once — *"Poista"* on every invite row — so all of them.
+    private let frames: [String: [CGRect]]
+    private let bounds: CGRect
+    private let tabBar: CGRect
+    private let keyboard: CGRect
+    private let topChrome: CGRect
+    private let meter: ContrastMeter?
+
+    /// One snapshot and one screenshot; nil when the tree cannot be read, and
+    /// then the audit is judged as it was before this existed.
+    init?(app: XCUIApplication, tabBar: CGRect, keyboard: CGRect, topChrome: CGRect) {
+        guard let root = try? app.snapshot() else { return nil }
+        var frames: [String: [CGRect]] = [:]
+        var pending: [XCUIElementSnapshot] = [root]
+        while let node = pending.popLast() {
+            if !node.label.isEmpty { frames[node.label, default: []].append(node.frame) }
+            pending.append(contentsOf: node.children)
+        }
+        self.init(
+            frames: frames, bounds: app.frame, tabBar: tabBar, keyboard: keyboard,
+            topChrome: topChrome, meter: ContrastMeter(app: app)
+        )
+    }
+
+    /// A screen from anywhere: fixed frames and a drawn picture, for
+    /// `SettledScreenTests`, which holds the rule to its word.
+    init(frames: [String: [CGRect]], bounds: CGRect, tabBar: CGRect, keyboard: CGRect, topChrome: CGRect, meter: ContrastMeter?) {
+        self.frames = frames
+        self.bounds = bounds
+        self.tabBar = tabBar
+        self.keyboard = keyboard
+        self.topChrome = topChrome
+        self.meter = meter
+    }
+
+    /// What becomes of a contrast finding at a frame this screen never held.
+    enum Decision {
+        /// Measured where the screen drew it, at or above the minimum: the
+        /// line for the run's log.
+        case forgiven(String)
+        /// Below the minimum where the screen drew it, or unmeasurable there:
+        /// the finding's line, extended with that reading.
+        case condemned(String)
+        /// The screen held it nowhere a reader could see: the line for the
+        /// log, and the page that holds it judges it.
+        case left(String)
+    }
+
+    /// The decision, in one place so that it can be checked with fixed
+    /// frames and drawn pixels: `line` is the finding as the audit reported
+    /// it, `reported` its frame, `context` the audit's.
+    func decide(_ line: String, label: String, reported: CGRect, context: String) -> Decision {
+        let at = NSCoder.string(for: reported)
+        switch verdict(for: label) {
+        case .measured(let ratio, let frame) where ratio >= ContrastMeter.minimum:
+            return .forgiven(
+                "[audit] \(context): \"\(label)\" reported at \(at), drawn at \(NSCoder.string(for: frame)), "
+                    + String(format: "%.2f:1 there — the audit's frame, not the screen's", ratio)
+            )
+        case .measured(let ratio, let frame):
+            return .condemned(line + String(format: " drawn at %@, measured %.2f:1 there", NSCoder.string(for: frame), ratio))
+        case .unmeasurable(let frame):
+            return .condemned(line + " drawn at \(NSCoder.string(for: frame)), unmeasurable there")
+        case .notOnThisPage(let frame):
+            return .left(
+                "[audit] \(context): \"\(label)\" reported at \(at), which the settled screen held "
+                    + (frame.map { "at \(NSCoder.string(for: $0))" } ?? "nowhere") + " — not on this page"
+            )
+        }
+    }
+
+    /// Whether the settled screen held `label` at `frame`, to the half point.
+    func held(_ label: String, at frame: CGRect) -> Bool {
+        (frames[label] ?? []).contains { Self.same($0, frame) }
+    }
+
+    enum Verdict {
+        /// The settled screen held the element nowhere a reader could see it:
+        /// not in its tree, or scrolled off the top or the bottom, or under
+        /// the chrome — the places `AccessibilityPolicy` forgives a finding
+        /// whose frame is real.
+        case notOnThisPage(CGRect?)
+        /// Its pixels where the settled screen drew it — the lowest ratio
+        /// where the label is drawn more than once — and the part of that
+        /// frame the reader could see.
+        case measured(Double, CGRect)
+        /// A frame on the page the meter could not read: reported and not
+        /// forgiven, as everywhere else here.
+        case unmeasurable(CGRect)
+    }
+
+    func verdict(for label: String) -> Verdict {
+        let onPage = (frames[label] ?? []).compactMap(visible)
+        guard let first = onPage.first else { return .notOnThisPage(frames[label]?.first) }
+        var lowest: (ratio: Double, frame: CGRect) = (.infinity, first)
+        for frame in onPage {
+            guard let ratio = meter?.ratio(in: frame) else { return .unmeasurable(frame) }
+            if ratio < lowest.ratio { lowest = (ratio, frame) }
+        }
+        return .measured(lowest.ratio, lowest.frame)
+    }
+
+    /// The part of a frame a reader could see on the settled screen: on the
+    /// screen, above the tab bar and the keys, and below the strip under the
+    /// top chrome that `AccessibilityPolicy` forgives as a fade. Nil under a
+    /// line's height — a row whose last sixteen points show above the bar is
+    /// paper to the meter, and paper is not a colour to fail it on.
+    ///
+    /// A line's height or the element's own, whichever is less. The first
+    /// version held every frame to sixteen points, so a caption shorter than
+    /// a line was not on the page wherever it stood, and a faint one reported
+    /// at a moved frame was left to a page that would never judge it. Found
+    /// 27 Sep 2026 in the run that was to land this: `testFamily`'s *"vanhenee
+    /// 2 päivän päästä"*, 14.33 pt tall, was left at the default size.
+    private func visible(_ frame: CGRect) -> CGRect? {
+        let rect = frame.intersection(bounds)
+        guard !rect.isNull else { return nil }
+        // Edges rather than a height: `CGRect.height` reads a negative height
+        // as its absolute value, and a frame wholly under the bar would come
+        // back as a frame above it.
+        var top = rect.minY
+        var bottom = rect.maxY
+        if !topChrome.isNull { top = max(top, topChrome.maxY + 24) }
+        for chrome in [tabBar, keyboard] where !chrome.isNull && rect.intersects(chrome) {
+            bottom = min(bottom, chrome.minY)
+        }
+        // Half a point of slack, so that a frame nothing clipped is not lost
+        // to the rounding in its own edges.
+        guard bottom - top >= min(16, frame.height) - 0.5 else { return nil }
+        return CGRect(x: rect.minX, y: top, width: rect.width, height: bottom - top)
+    }
+
+    private static func same(_ a: CGRect, _ b: CGRect) -> Bool {
+        abs(a.minX - b.minX) < 0.5 && abs(a.minY - b.minY) < 0.5
+            && abs(a.width - b.width) < 0.5 && abs(a.height - b.height) < 0.5
+    }
+}
+
 /// The shared accessibility check.
 ///
 /// `performAccessibilityAudit()` throws on the first issue and names only its
@@ -173,6 +371,10 @@ extension XCTestCase {
         // sideways inside the page that scrolls down.
         let scrollers = app.scrollViews.allElementsBoundByIndex.map(\.frame)
         let contentFrame = scrollers.max { $0.height < $1.height } ?? .null
+        // The settled screen, read before the audit touches it: what a
+        // finding at a frame this screen never had is answered from. Nil when
+        // the tree cannot be read, and nothing changes then.
+        let settled = SettledScreen(app: app, tabBar: tabBarFrame, keyboard: keyboardFrame, topChrome: topFrame)
 
         var found: [String] = []
         // Contrast findings in the fade above the tab bar, held back until the
@@ -185,6 +387,14 @@ extension XCTestCase {
         // audit holds the accessibility channel, and asking the same channel for
         // a picture in the middle of it is not a thing to retry.
         var deferred: [(line: String, frame: CGRect)] = []
+        // Contrast findings at a frame the settled screen did not hold, decided
+        // from that screen once the audit has let go of the channel.
+        var moved: [(line: String, label: String, reported: CGRect)] = []
+        // Contrast findings at a frame the settled screen did hold, judged as
+        // before and annotated below with that screen's own reading of the
+        // element, so that text read mid-fade and a colour that is wrong do
+        // not arrive as the same line.
+        var held: [(index: Int, label: String)] = []
 
         try app.performAccessibilityAudit { issue in
             if AccessibilityPolicy.isDeliberate(
@@ -201,6 +411,17 @@ extension XCTestCase {
             let where_ = element.map { "\($0.elementType.rawValue)@\(NSCoder.string(for: $0.frame))\($0.identifier.isEmpty ? "" : " id=\($0.identifier)")" } ?? "-"
             let line = "\(issue.compactDescription) — \"\(label)\" [\(where_)]"
 
+            // A frame the settled screen never had: the audit's simulation of
+            // the other text sizes moved the layout under it, and its reading
+            // is of whatever the screen draws there. Decided from the settled
+            // screen below — measured, not forgiven; `SettledScreen` says why.
+            if issue.auditType == .contrast, let element, let settled,
+               SettledScreen.judged.contains(element.elementType), !element.label.isEmpty,
+               !settled.held(element.label, at: element.frame) {
+                moved.append((line, element.label, element.frame))
+                return true
+            }
+
             // The fade above the tab bar is decided by counting pixels, once the
             // audit has let go of the channel.
             if issue.auditType == .contrast, !tabBarFrame.isNull, let frame = element?.frame,
@@ -210,6 +431,9 @@ extension XCTestCase {
                 return true
             }
 
+            if issue.auditType == .contrast, let element, settled != nil, !element.label.isEmpty {
+                held.append((found.count, element.label))
+            }
             found.append(line)
             // Collected rather than thrown, so the run reaches the end.
             return true
@@ -241,13 +465,22 @@ extension XCTestCase {
         // on an audit that reported two issues: as an argument its directory
         // stayed empty, as an environment prefix it held one 540 940-byte PNG.
         //
-        // **Give it a path under `/tmp`.** A prefix inside a session's own
-        // scratchpad produces no file at all: the simulator cannot write into
-        // `/private/tmp/claude-<uid>/…`, the write below is `try?`, and so the
-        // run prints its findings and stays otherwise identical — nothing says
-        // the picture is missing except the empty directory. Measured 19 Sep
-        // 2026, when the same command with `/tmp/kinlore-shot/card` wrote the
-        // PNG on the first attempt.
+        // **Give it a directory that already exists.** `write(to:)` does not
+        // create one and the write below is `try?`, so a prefix whose
+        // directory is missing prints its findings and leaves nothing behind
+        // — nothing says the picture is missing except the empty directory.
+        // Measured 27 Sep 2026 with the same call outside the simulator: into
+        // a directory that did not exist it wrote nothing, and `try?`
+        // swallowed the error.
+        //
+        // This paragraph used to say "give it a path under `/tmp`", because on
+        // 19 Sep 2026 a prefix inside a session's scratchpad
+        // (`/private/tmp/claude-<uid>/…`) produced no file and
+        // `/tmp/kinlore-shot/card` wrote one on the first attempt. The
+        // scratchpad was not the cause: on 27 Sep 2026 one session's audits
+        // wrote 90 PNGs into a directory inside its own. A directory that did
+        // not exist fits both days, but it is a reading of 19 Sep, not a
+        // measurement of it.
         //
         // **It is taken here, after the audit has finished**, so it is the
         // settled screen and not necessarily the one the audit judged. It
@@ -258,9 +491,30 @@ extension XCTestCase {
         // when the cheaper answer, that the test passed on its own, had not
         // been asked yet (CLAUDE.md, beside the worktree rule).
         if let shot = ProcessInfo.processInfo.environment["KINLORE_AUDIT_SHOT"],
-           !found.isEmpty || !deferred.isEmpty {
+           !found.isEmpty || !deferred.isEmpty || !moved.isEmpty {
             let name = context.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "/", with: "_")
             try? app.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(shot)-\(name).png"))
+        }
+        // The findings at a frame the settled screen never had, from that
+        // screen. Each way out is written to the log, because a forgiveness
+        // nobody can see looks exactly like a check that ran.
+        if let settled {
+            for (line, label, reported) in moved {
+                switch settled.decide(line, label: label, reported: reported, context: context) {
+                case .forgiven(let note), .left(let note): print(note)
+                case .condemned(let extended): found.append(extended)
+                }
+            }
+            for (index, label) in held {
+                switch settled.verdict(for: label) {
+                case .measured(let ratio, let frame):
+                    found[index] += String(format: " — the settled screen measures %.2f:1 there, at %@", ratio, NSCoder.string(for: frame))
+                case .unmeasurable:
+                    found[index] += " — unmeasurable on the settled screen"
+                case .notOnThisPage:
+                    found[index] += " — not on the settled screen"
+                }
+            }
         }
         if !deferred.isEmpty {
             let meter = ContrastMeter(app: app)
