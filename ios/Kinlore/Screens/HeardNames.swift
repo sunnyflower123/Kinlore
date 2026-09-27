@@ -74,6 +74,10 @@ struct HeardNameRow: View {
                 }
             }
             .buttonStyle(.plain)
+            // The row draws its own chevron, in `Elder.supporting`; the list
+            // would add its grey one at the far edge, and two arrows on one
+            // row read as two places to go.
+            .navigationLinkIndicatorVisibility(.hidden)
 
             HStack(spacing: 16) {
                 Button("Vahvista", action: onConfirm)
