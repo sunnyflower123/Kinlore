@@ -1731,6 +1731,33 @@ final class MemoryStore {
             save()
             return
         }
+        // `-seed alphabet`: four people and four places, made in an order
+        // that is neither the alphabet's nor its reverse, for the lists that
+        // read by name. A Finnish phone sorts Ä and Ö after Z where an English
+        // one puts them beside A and O; a card named in lower case — a name
+        // corrected by hand is spelt the way the hand typed it — is where
+        // the order a machine counts characters in parts from a reader's. A
+        // list sorted either wrong way reads visibly wrong (`ListOrderTests`).
+        if seed == "alphabet" {
+            let start = Date(timeIntervalSince1970: 1_700_000_000)
+            let made: [(SubjectKind, String)] = [
+                (.person, "Zacharias"), (.person, "Örjan"), (.person, "Aino"), (.person, "mummo"),
+                (.place, "Vaasa"), (.place, "Ähtäri"), (.place, "Kuopio"), (.place, "mökki"),
+            ]
+            subjects = made.enumerated().map { index, card in
+                Subject(kind: card.0, title: card.1, createdAt: start.addingTimeInterval(Double(index)))
+            }
+            memories = []
+            questions = []
+            relations = []
+            dirtySubjects = []
+            dirtyMemories = []
+            dirtyQuestions = []
+            dirtyRelations = []
+            syncSeq = 0
+            save()
+            return
+        }
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "faces", "facts",
             "unplaced", "unarrived", "mentioned",
