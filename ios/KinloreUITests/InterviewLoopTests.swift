@@ -15,6 +15,12 @@ import XCTest
 /// makes no sound. What is checked is the call, not the voice — the speaker on
 /// the question screen is labelled only while `InterviewVoice.speak` is
 /// running, so the label is the call made visible.
+///
+/// And how a conversation ends when nobody ends it: an answer that has gone
+/// quiet ends it the way "Riittää tältä erää" does, and a first telling is
+/// never cut (`AnswerWatch`). `-meter silent` is the silence. A simulator
+/// records from the Mac's own microphone, and a test cannot count on the room
+/// around it.
 final class InterviewLoopTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -91,6 +97,84 @@ final class InterviewLoopTests: XCTestCase {
         XCTAssertFalse(app.buttons["Riittää tältä erää"].exists, "a written telling started talking")
         XCTAssertFalse(app.images["Luen kysymyksen ääneen"].exists, "a written telling was read aloud")
         reach(app.buttons["Jatketaan jutellen"], in: app, "the button that starts the conversation")
+    }
+
+    /// An answer nobody ends. The loop opens the microphone after every
+    /// question by itself, and until 27 Sep 2026 an answer that had gone quiet
+    /// kept it open for as long as nobody touched the phone.
+    func testASilentAnswerEndsTheConversation() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "silent"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        // The question. Under `-voice stub` it is still being read, and the
+        // record button answers it, as it does for somebody who answers
+        // before the voice has finished.
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "the telling ended somewhere other than its first question"
+        )
+        app.buttons["Aloita kertominen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the answer never started recording"
+        )
+
+        // Well short of the limit it is still listening: a pause to remember
+        // is not the end of an answer.
+        Thread.sleep(forTimeInterval: 15)
+        XCTAssertTrue(app.staticTexts["Kuuntelen"].exists, "a silent answer was ended long before its limit")
+
+        // Then, with nothing pressed, the result — and no further question.
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 45),
+            "a silent answer never ended: the microphone the loop opened is still open"
+        )
+        XCTAssertFalse(app.buttons["Riittää tältä erää"].exists, "the conversation went on to another question")
+        XCTAssertFalse(app.images["Luen kysymyksen ääneen"].exists, "the voice went on after the conversation ended")
+
+        // Kaarina is the answer's own name (`StubTranscriptionService.samples[1]`),
+        // so the answer the silence ended was kept; Aino and Toivo are the
+        // telling's. All of them wait to be confirmed (rule 4).
+        for name in ["Kaarina", "Aino", "Toivo"] {
+            reach(app.buttons["Vahvista \(name)"], in: app, "the name \(name), to confirm")
+        }
+    }
+
+    /// The first telling is never cut, however quiet: whoever pressed record
+    /// can press stop, and a long pause to remember is part of a story.
+    func testASilentTellingIsNeverCut() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "silent"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+
+        // An answer in the conversation would have ended at 25 seconds.
+        Thread.sleep(forTimeInterval: 35)
+        XCTAssertTrue(app.staticTexts["Kuuntelen"].exists, "the first telling was ended by its silence")
+
+        // Stopped by hand, it is a telling like any other: kept, and on to
+        // its first question.
+        app.buttons["Lopeta kertominen"].tap()
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "the quiet telling did not go on to its question"
+        )
     }
 
     /// Scrolls until the element is there, and then insists that it is. A

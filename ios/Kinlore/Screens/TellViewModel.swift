@@ -224,6 +224,12 @@ final class TellViewModel {
             guard let self else { return }
             Task { await self.stopAndProcess() }
         }
+        // An answer that has gone quiet, or run for ten minutes, ends the
+        // conversation the way "Riittää tältä erää" does (`AnswerWatch`).
+        recorder.onLimit = { [weak self] in
+            guard let self else { return }
+            Task { await self.finishAfterThisAnswer() }
+        }
     }
 
     // MARK: - Recording
@@ -239,7 +245,16 @@ final class TellViewModel {
             return
         }
         do {
-            try recorder.start()
+            // Only an answer in the conversation is watched. The first telling
+            // is left to the hand that began it (`AnswerWatch`).
+            var watch = isInterviewing ? AnswerWatch() : nil
+            #if DEBUG
+            // `-watch off`: only a hand ends an answer, as before 27 Sep 2026.
+            // For a test that stands on the listening screen longer than the
+            // quiet a simulator hears is allowed to last.
+            if UserDefaults.standard.string(forKey: "watch") == "off" { watch = nil }
+            #endif
+            try recorder.start(watching: watch)
             phase = .recording
             #if DEBUG
             sweepForTests(at: "recording")

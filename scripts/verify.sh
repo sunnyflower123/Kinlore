@@ -168,6 +168,18 @@ question_ladder() {
 		&& "$OUT/question-ladder-check"
 }
 
+# When an answer in the conversation is over without anybody saying so: 25
+# seconds of silence, or ten minutes of anything. Both ways of being wrong are
+# silent — an answer cut while somebody is remembering what came next, or a
+# microphone the loop opened recording an empty room on a screen that never
+# sleeps — and a screenshot of either shows "Kuuntelen". Added 27 Sep 2026.
+answer_watch() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/answer-watch-check" scripts/answer-watch-check.swift \
+		ios/Kinlore/Recording/AnswerWatch.swift \
+		&& "$OUT/answer-watch-check"
+}
+
 # What the model is told about the family's archive before it writes a
 # follow-up question. Until 19 Sep 2026 it was told nothing but the transcript,
 # so it could only ask about a gap in ninety seconds of speech and asked the
@@ -311,6 +323,7 @@ echo "Invariants"
 run "no key is in the tree, and none ever was" node scripts/secret-check.mjs
 run "the paid archive is offered on a rhythm" upsell_rhythm
 run "nobody is asked more than they can answer" question_ladder
+run "a silent answer ends, a pause does not" answer_watch
 run "a question aims at what the archive lacks" extraction_context
 run "no date is sharper than what was said" date_hint
 run "the app asks again later, and not for the weather" transcription_catchup

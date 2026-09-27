@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 319 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 108 sweep tests, each auditing one screen at the default text size and again at the largest, out of 321 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -2491,6 +2491,54 @@ Decisions, in the order they were argued about:
   silently attached, and the next telling on that screen, about anything at
   all, marked it answered and taught the ladder at its level. Every return to
   idle now resets the question with the phase.
+- **An answer nobody ends, ends by itself, since 27 Sep 2026.** The loop
+  opens the microphone after every question, so the stop button is the one
+  control in the conversation the teller never pressed to begin with. An
+  answer that has gone quiet for 25 seconds, or has run for ten minutes, ends
+  the conversation the way *"Riittää tältä erää"* does: the answer is kept and
+  transcribed, no further question is asked, and the names every round heard
+  wait unconfirmed on the result card (`AnswerWatch`, fed by
+  `AudioRecorder.tick` on the recording's own clock). Until then a teller who
+  had said her piece and sat waiting for the app's turn left *"Kuuntelen"*
+  standing on a screen the recorder keeps awake, for as long as nobody
+  touched the phone.
+
+  The ten minutes end the conversation too, rather than moving on: a radio
+  left on is not silence, and a loop that went on asking it questions would
+  send ten minutes of it to be transcribed every round. The first telling is
+  not watched at all — whoever pressed record can press stop, and a long
+  pause to remember belongs to a story.
+
+  Silence is anything below −40 dBFS, measured rather than chosen. Three
+  recordings the app made on the test phone, read in the meter's 50 ms
+  windows: the room between words at −51 to −64, a breath or the phone moving
+  in the hand at −42 to −49, the recordings' 95th percentile at −15 or −16.
+  The longest pause in them against −40 is 1.5 s, and 2.25 s with every
+  sample made 20 dB quieter. −45 would have left a little more room for a
+  voice further from the phone, and let a breath hold the microphone open,
+  which is the failure the limit exists for. `scripts/answer-watch-check.swift`
+  (in `verify.sh`) holds the arithmetic, and failed against each of five
+  deliberately broken watches; `InterviewLoopTests` holds the wiring under
+  `-meter silent`, which makes the meter read digital silence, because a
+  simulator records from the Mac's own microphone. For the same reason a
+  simulator's answers are mostly silence, and the two older tests that stand
+  on the second round's listening screen — the sweep that audits it, and the
+  one that ends the conversation by tapping — launch with `-watch off`, which
+  leaves the ending to a hand as before: on a loaded machine the watch could
+  end that round with the audit still running, or beat the tap.
+
+  One edge is left as it was. An answer with no words in it at all reaches
+  the transcription as silence, and an empty reply from the Worker is
+  `RemoteError.emptyResult`: the answer lands where a network failure lands,
+  on *"Äänesi on tallessa"* with the audio kept (rule 3), not on the result
+  card, and the earlier rounds' names are saved unconfirmed without being
+  listed there — the same screen, and the same gap, as a quota running out
+  mid-loop above. It is saved as a telling waiting for its text, so the
+  catch-up asks about the same silence again: three times, and then at
+  `TranscriptionAttempts`' slowing pace, which never quite stops. A silent
+  answer stopped by hand has always taken this road. What the watch changes
+  is how often it is taken: an unanswered question used to record until
+  somebody noticed, and now ends here after 25 seconds.
 
 One knowingly open edge: every round adds three questions and answers one, so
 a long interview grows the open-question list. That is today's behaviour for

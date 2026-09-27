@@ -233,7 +233,7 @@ final class SilentFailureTests: XCTestCase {
     /// the microphone had armed itself, the big button asked the next question
     /// and the only other one threw the answer away.
     func testTheConversationCanBeEndedWhileAnswering() {
-        let app = launch(["-seed", "empty", "-screen", "interview"])
+        let app = launch(["-seed", "empty", "-screen", "interview", "-watch", "off"])
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
@@ -242,7 +242,10 @@ final class SilentFailureTests: XCTestCase {
         // ends its FIRST spoken round by itself too, three seconds after the
         // microphone arms, so a way out found on that round can be gone by
         // the time it is tapped. On a loaded machine it was (26 Sep 2026).
-        // The second round nothing ends but a tap. So let the first one go:
+        // The second round nothing ends but a tap: `-watch off` keeps
+        // `AnswerWatch` from ending it after 25 seconds of the quiet room a
+        // simulator hears, which would beat the tap this test is about on a
+        // loaded machine. So let the first one go:
         // when the listening screen leaves within the timer's reach, wait
         // for it to come back; when it does not leave, the round in front of
         // the test is already the second, and there is nothing to wait for.

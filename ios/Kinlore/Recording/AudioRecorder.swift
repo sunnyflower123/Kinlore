@@ -26,12 +26,18 @@ final class AudioRecorder {
     /// screen must never tell.
     var onCut: (() -> Void)?
 
+    /// Called at most once per watched recording, when `AnswerWatch` says the
+    /// answer is over: a silence, or the length limit. As with `onCut`, the
+    /// recorder only notices; what ending means is the owner's to say.
+    var onLimit: (() -> Void)?
+
     private var recorder: AVAudioRecorder?
     private var ticker: Timer?
     private var interruptionObserver: NSObjectProtocol?
     private var isPausedByInterruption = false
     private var frozenTicks = 0
     private var hasCut = false
+    private var watch: AnswerWatch?
 
     /// Only as many samples are kept as fit in the waveform. Old ones are
     /// dropped, so memory use does not grow during a long recording.
@@ -81,7 +87,9 @@ final class AudioRecorder {
         }
     }
 
-    func start() throws {
+    /// `watch` is given for an answer in the conversation and for nothing
+    /// else; see `AnswerWatch` for why the first telling is left alone.
+    func start(watching watch: AnswerWatch? = nil) throws {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
         try session.setActive(true)
@@ -109,6 +117,7 @@ final class AudioRecorder {
         isPausedByInterruption = false
         frozenTicks = 0
         hasCut = false
+        self.watch = watch
 
         // The screen must not go dark mid-telling. Without this, iOS's
         // auto-lock suspends the app a couple of minutes into exactly the
@@ -150,6 +159,7 @@ final class AudioRecorder {
         isPausedByInterruption = false
         ticker?.invalidate()
         ticker = nil
+        watch = nil
         recorder?.stop()
         let url = recorder?.url
         let duration = elapsed
@@ -234,11 +244,27 @@ final class AudioRecorder {
 
         // averagePower is in decibels, typically −60…0. Normalised so that quiet
         // speech still stands out from complete silence.
-        let db = recorder.averagePower(forChannel: 0)
+        var db = recorder.averagePower(forChannel: 0)
+        #if DEBUG
+        if Self.hearsNothing { db = -160 }
+        #endif
         let normalized = max(0, (db + 55) / 55)
         levels.append(normalized)
         if levels.count > maxLevels { levels.removeFirst(levels.count - maxLevels) }
+
+        if watch?.hasEnded(hearing: db, at: elapsed) == true {
+            watch = nil
+            onLimit?()
+        }
     }
+
+    #if DEBUG
+    /// `-meter silent`: the meter reads digital silence whatever the
+    /// microphone hears. A simulator records from the Mac's own microphone,
+    /// so a test that needs a silent answer cannot count on the room around
+    /// it. `InterviewLoopTests.testASilentAnswerEndsTheConversation`.
+    private static let hearsNothing = UserDefaults.standard.string(forKey: "meter") == "silent"
+    #endif
 }
 
 /// The telling the app was killed under.

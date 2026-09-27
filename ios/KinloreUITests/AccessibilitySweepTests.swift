@@ -1428,10 +1428,13 @@ final class AccessibilitySweepTests: XCTestCase {
     /// like testAudioSaved.
     /// The listening screen inside the interview loop, which carries one
     /// button the plain one does not. Audited on the second round: the aid
-    /// stops the first after three seconds, and the second stays.
+    /// stops the first after three seconds, and the second stays — under
+    /// `-watch off`, because a simulator hears a quiet room and `AnswerWatch`
+    /// would end the round 25 seconds in, which a loaded machine can reach
+    /// with the audit still running.
     func testInterviewRecordingIsAudited() throws {
         for size in [nil, Self.largest] {
-            let app = launch(["-seed", "empty", "-screen", "interview"], textSize: size)
+            let app = launch(["-seed", "empty", "-screen", "interview", "-watch", "off"], textSize: size)
             let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
             let allow = springboard.buttons["Allow"]
             if allow.waitForExistence(timeout: 5) { allow.tap() }
