@@ -57,12 +57,14 @@ enum AppServices {
         ["once", "silence"].contains(UserDefaults.standard.string(forKey: "defer") ?? "")
     }
 
-    /// `-defer silence`: **every** transcription in the run fails the way a
-    /// recording with no words in it fails.
+    /// `-defer silence`: **every** transcription in the run fails with a reply
+    /// that has no words in it (`RemoteError.emptyResult`).
     ///
-    /// That is the realistic permanent failure — a button pressed and nothing
-    /// said — and it is the one the catch-up has to stop asking about, because
-    /// every attempt is paid for and none of them can ever succeed. Unlike
+    /// That stands in for the realistic permanent failure — a button pressed
+    /// and nothing said — which the Worker itself answers 502 today
+    /// (`openrouter.ts`). The catch-up counts both on the recording's side and
+    /// has to slow its asking down for either, because every attempt is paid
+    /// for and none of them can ever succeed. Unlike
     /// `-defer once` it is wired into `transcription()` itself so the catch-up
     /// meets it too: here the interesting part *is* the second, third and fourth
     /// try.

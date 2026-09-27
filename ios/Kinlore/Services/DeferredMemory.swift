@@ -167,7 +167,8 @@ final class TranscriptionCatchUp {
         case .emptyResult:
             // The server answered and there were no words in it. That is a fact
             // about the seconds that were recorded, and it will be just as true
-            // tomorrow.
+            // tomorrow. The Worker answers a silence 502 today rather than
+            // with no words (`openrouter.ts`), which lands on the same side.
             return false
         }
     }

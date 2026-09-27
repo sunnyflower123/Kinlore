@@ -2527,30 +2527,39 @@ Decisions, in the order they were argued about:
   leaves the ending to a hand as before: on a loaded machine the watch could
   end that round with the audit still running, or beat the tap.
 
-  An answer with no words in it at all has a road of its own, since the
-  same day. The Worker answers a silence with an empty reply,
-  `RemoteError.emptyResult`, and inside the conversation that now ends it
-  the way the watch does: on the result the rounds before it made, their
-  names waiting to be confirmed, and the card still showing the last answer
-  that had words (`TellViewModel.keepWordlessAnswer`). The recording is kept
-  (rule 3) as a telling waiting for its text on the same card, and joins the
-  session's tellings, so the answer to who told them reaches it too. The
-  question stays open and the ladder records a skip, as for an answer under
-  a second. It used to fall through to the network's road — *"Äänesi on
-  tallessa"*, the rounds' names on no screen, the question marked answered
-  — and `InterviewLoopTests` holds the new one under `-answer wordless`,
-  which empties the answer and only the answer. A quota running out
-  mid-loop keeps that screen: its answer may well have words, and they are
-  what it is waiting for.
+  An answer that comes back with no words in it has a road of its own in
+  the app, since the same day. `RemoteTranscriptionService` turns a 200
+  whose text is blank into `RemoteError.emptyResult`, and inside the
+  conversation that now ends it the way the watch does: on the result the
+  rounds before it made, their names waiting to be confirmed, and the card
+  still showing the last answer that had words
+  (`TellViewModel.keepWordlessAnswer`). The recording is kept (rule 3) as a
+  telling waiting for its text on the same card, and joins the session's
+  tellings, so the answer to who told them reaches it too. The question
+  stays open and the ladder records a skip, as for an answer under a
+  second. It used to fall through to the network's road — *"Äänesi on
+  tallessa"*, none of the rounds' names on that screen, the question marked
+  answered — and `InterviewLoopTests` holds the new one under
+  `-answer wordless`, which empties the answer and only the answer. A quota
+  running out mid-loop keeps that screen: its answer may well have words,
+  and they are what it is waiting for.
 
-  What is left is the price of keeping it. A telling waiting for its text is
-  one the catch-up asks about, so the same silence is uploaded again on
-  `TranscriptionAttempts`' schedule — three times on the day, four more in
-  the first month, then once a month — nineteen times in its first year
-  besides the answer's own upload, whether the app is opened every hour or
-  once a day. The Worker meters the seconds of a reply with no words like
-  any other, so a silence the watch ended spends 25 seconds of the family's
-  month each time, of the free tier's 600. What the watch changes is how
+  **The Worker does not send that reply today, so in production a silence
+  still takes the network's road.** `complete()` refuses a reply with no
+  content as 502 (`openrouter.ts`), and the route answers it
+  `upstream_failed` like any other upstream failure (rule 9). A silent
+  answer the watch ends therefore lands on *"Äänesi on tallessa"* with its
+  recording kept, and the catch-up asks about it again. The stubs model the
+  200 with no words; nothing in production leads to the road above.
+
+  What is left is the price of keeping the recording. A telling waiting for
+  its text is one the catch-up asks about, so the same silence is uploaded
+  again on `TranscriptionAttempts`' schedule — three times on the day, four
+  more in the first month, then once a month — nineteen times in its first
+  year besides the answer's own upload, whether the app is opened every
+  hour or once a day. Each upload is a model call this project pays for.
+  The family's month is not charged for it, because the route writes the
+  meter only once the words are in hand. What the watch changes is how
   often this road is taken: an unanswered question used to record until
   somebody noticed, and now ends here after 25 seconds.
 
@@ -3860,10 +3869,11 @@ round at the first failure. Both halves were wrong, and in the same way: they
 assumed a failure says something about the *moment*.
 
 Two failures say something about the **recording** instead, and neither is
-hypothetical. A button pressed with nothing said produces a transcript with no
-words in it. Audio the hallucination guard refuses (§7 of the transcribe path)
-produces an error every time it is sent. Neither will ever succeed, and each
-attempt is charged for whether or not any words come back.
+hypothetical. A button pressed with nothing said gets a reply with no words in
+it, which `complete()` refuses as a 502 (`openrouter.ts`). Audio the
+hallucination guard refuses (§7 of the transcribe path) produces an error every
+time it is sent. Neither will ever succeed, and each attempt is paid for
+upstream whether or not any words come back.
 
 Retrying those forever cost two things. **Money**, on every launch, for as long
 as the memory existed. And worse, **the memories behind it**: the queue is
@@ -3876,6 +3886,10 @@ So a failure is classified once and the answer decides both questions:
 |---|---|---|---|
 | the moment | no network, 401, quota, 429 | stops — everything else meets the same wall | untouched; none of it was its fault |
 | the recording | no words in the answer, audio refused, 5xx | goes on to the next one | counted |
+
+"No words in the answer" is `RemoteError.emptyResult`, a 200 whose text is
+blank. The Worker does not send one today — the silence above reaches the app
+as the 502 — and the classifier puts both on the recording's side.
 
 **Three counted failures, and the app asks again a day later — then two days
 after that, four, eight, sixteen, and every thirty days for as long as the
@@ -3956,10 +3970,13 @@ on the result screen and the memory is in the gallery. It was run against the
 old behaviour first and fails there on all four of its assertions — a test that
 would have passed either way proves nothing.
 
-The giving-up half with `-defer silence`, which fails every attempt the way an
-empty transcript does. Across four launches the tally reads 1, 2, 3 — and then 3
-again: the fourth launch does not touch it, because by then the app has stopped
-asking.
+The slowing-down half with `-defer silence`, which fails every attempt with
+`emptyResult` rather than with the 502 the Worker gives a silence; the tally
+counts the two alike. Across four launches the tally reads 1, 2, 3 — and then 3
+again: the fourth launch does not touch it. That was measured when the third
+failure was the last. Since 26 Sep 2026 the same launch leaves it at 3 for a
+different reason, the day `isDue` waits after the third failure, and
+`transcription-catchup-check.swift` holds that schedule.
 
 ### No removal is owed
 

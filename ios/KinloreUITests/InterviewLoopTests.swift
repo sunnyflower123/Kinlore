@@ -20,8 +20,8 @@ import XCTest
 /// quiet ends it the way "Riittää tältä erää" does, and a first telling is
 /// never cut (`AnswerWatch`). `-meter silent` is the silence. A simulator
 /// records from the Mac's own microphone, and a test cannot count on the room
-/// around it. What the Worker makes of a silence, a reply with no words, is
-/// `-answer wordless`.
+/// around it. A reply with no words in it is `-answer wordless`, and it is
+/// not one the Worker sends today: the Worker answers a silence 502.
 final class InterviewLoopTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -151,10 +151,12 @@ final class InterviewLoopTests: XCTestCase {
         }
     }
 
-    /// The same silence as the Worker answers it: a reply with no words in
-    /// it. Until 27 Sep 2026 that ended the conversation on "Äänesi on
-    /// tallessa", and the names the telling had heard were on no screen at
-    /// all. `-answer wordless` empties the answer and only the answer.
+    /// The same silence as a reply with no words in it. Until 27 Sep 2026
+    /// that ended the conversation on "Äänesi on tallessa", with none of the
+    /// names the telling had heard on that screen. `-answer wordless` empties
+    /// the answer and only the answer. The Worker does not send this reply
+    /// today: it answers a silence 502 (`openrouter.ts`), which still ends
+    /// the conversation on "Äänesi on tallessa".
     func testAWordlessAnswerLandsOnTheRoundsBeforeIt() {
         let app = launch(["-seed", "empty", "-voice", "stub", "-answer", "wordless"])
 

@@ -337,9 +337,10 @@ final class TellViewModel {
             phase = .transcribing
             #if DEBUG
             // `-answer wordless`: an answer in the conversation comes back
-            // the way the Worker answers a silence, with no words in it. Only
-            // an answer — the telling before it is transcribed as usual, or
-            // there would be no conversation to answer in.
+            // as a reply with no words in it, which the Worker does not send
+            // today (see the catch below). Only an answer — the telling
+            // before it is transcribed as usual, or there would be no
+            // conversation to answer in.
             if isInterviewing, UserDefaults.standard.string(forKey: "answer") == "wordless" {
                 throw RemoteError.emptyResult
             }
@@ -347,12 +348,18 @@ final class TellViewModel {
             let text = try await transcription.transcribe(audioURL: url)
             await process(transcript: text, audioURL: url, duration: duration)
         } catch RemoteError.emptyResult where isInterviewing {
-            // An answer with no words in it: the silence `AnswerWatch` ends,
-            // or one stopped by hand. Until 27 Sep 2026 it fell through to
-            // the last catch as though the network had failed — onto "Äänesi
-            // on tallessa", with the names the rounds before it heard on no
-            // screen at all and the question it never answered marked
-            // answered.
+            // A reply with no words in it, which `RemoteTranscriptionService`
+            // throws on a 200 whose text is blank. Until 27 Sep 2026 it fell
+            // through to the last catch as though the network had failed —
+            // onto "Äänesi on tallessa", with none of the names the rounds
+            // before it heard on that screen and the question it never
+            // answered marked answered.
+            //
+            // The Worker does not send that reply today. `complete()` refuses
+            // a reply with no content (`openrouter.ts`), so a silent answer —
+            // the one `AnswerWatch` ends, or one stopped by hand — arrives as
+            // a 502 and still takes the last catch: the recording is kept, the
+            // screen says "Äänesi on tallessa", and the catch-up asks again.
             keepWordlessAnswer(audioURL: url, duration: duration)
         } catch let error as RemoteError where error.isQuota {
             // A quota must not reject a recording. The audio is irreplaceable
@@ -741,6 +748,11 @@ final class TellViewModel {
     }
 
     /// Ends the conversation on an answer that came back with no words.
+    ///
+    /// Reached through `RemoteError.emptyResult`, which `-answer wordless`
+    /// raises and nothing in production does today: the Worker answers a
+    /// silence 502 (`openrouter.ts`), and that answer takes the network's road
+    /// in `stopAndProcess`.
     ///
     /// It lands where "Riittää tältä erää" lands, on the result the rounds
     /// before it made: their names wait there to be confirmed (rule 4), and

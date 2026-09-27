@@ -84,25 +84,31 @@ struct StubTranscriptionService: TranscriptionService {
 }
 
 #if DEBUG
-/// Fails the run's first transcription as though the AI minutes had run out,
-/// then gets out of the way and lets the real service through.
+/// Fails the way a reply with no words in it fails: `RemoteError.emptyResult`,
+/// which `RemoteTranscriptionService` throws on a 200 whose text is blank.
 ///
-/// Switched on with `-defer once`. One failure rather than every failure,
-/// because the interesting half is what happens next: the audio is saved, the
-/// catch-up finds it, and the memory finishes itself.
-/// Fails the way a recording with nothing said into it fails: the server answers
-/// and there are no words in the answer.
+/// That is not how the Worker answers a silence today. `complete()` refuses a
+/// reply with no content (`openrouter.ts`), so the route answers 502
+/// `upstream_failed` and the app meets it as `badStatus(502)`. The catch-up
+/// counts the two alike, which is what this stands in for.
 ///
 /// Switched on with `-defer silence`, and it never stops failing — which is the
 /// point. This is the shape of a permanent failure, and what matters is that the
 /// catch-up counts it, moves on to the next recording rather than stopping, and
-/// eventually stops asking. See docs/ARCHITECTURE.md §16.
+/// after the third failure asks only a day later, then less and less often. See
+/// docs/ARCHITECTURE.md §16.
 struct SilentRecordingTranscriptionService: TranscriptionService {
     func transcribe(audioURL: URL) async throws -> String {
         throw RemoteError.emptyResult
     }
 }
 
+/// Fails the run's first transcription as though the AI minutes had run out,
+/// then gets out of the way and lets the real service through.
+///
+/// Switched on with `-defer once`. One failure rather than every failure,
+/// because the interesting half is what happens next: the audio is saved, the
+/// catch-up finds it, and the memory finishes itself.
 struct DeferringTranscriptionService: TranscriptionService {
     let wrapped: TranscriptionService
 
