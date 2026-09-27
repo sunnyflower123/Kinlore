@@ -277,12 +277,15 @@ final class DeckTests: XCTestCase {
     /// tätä" ended at 704 on a reader's phone and 711 on a grandparent's,
     /// under a family member's question "Kirjoita sen sijaan" at 677 and 727,
     /// and on a first launch at 663 and 680 — in English at 704 and 723. On a
-    /// 13 mini the same rows reached 5, 12 and 28 points into the bar.
+    /// 13 mini, whose bar begins at 729, the rows under a card reached 5 and
+    /// 12 points into it, the question's 28 and the first launch's in English
+    /// 4 and 24.
     ///
     /// At accessibility sizes the page is taller than the phone on purpose,
     /// and the quiet rows are below the fold by design; the record button is
     /// not, and on the SE at the largest size it ended at 641 on the plain
-    /// screen, 662 under a card and 711 on a first launch in English.
+    /// screen, 662 under a card and 711 on a first launch in English — on the
+    /// mini at 741 there, 12 points into its bar.
     ///
     /// Before the screen measured its room this failed 18 times on the SE,
     /// once for every way on under the bar. Since, it passes there, on the

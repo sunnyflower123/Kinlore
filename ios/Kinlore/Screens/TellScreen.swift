@@ -800,7 +800,18 @@ private struct IdleView: View {
                 Spacer(minLength: 0)
             }
 
-            RecordButton(isRecording: false) {
+            // Without its glow once the air is taken. The spacer over the
+            // button kept the glow 28 from the text above it without being
+            // asked — two gaps of 14 even at no height — and `Squeeze.air`
+            // takes that to 8, which on the SE put "Puhu ihan rauhassa ja
+            // vapaasti." inside it: the text measures 9.54:1 from the pixels,
+            // and the audit failed it anyway, on a first launch and under a
+            // family member's question at the default size, alone on a quiet
+            // machine (27 Sep 2026). Giving the 28 back instead cost 20 pt
+            // the SE does not have: under a family member's question on a
+            // grandparent's phone in English, "Write instead" would have
+            // ended at 594, under the bar.
+            RecordButton(isRecording: false, glows: !squeezed.contains(.air)) {
                 Task {
                     if let cardQuestion {
                         await model.answer(cardQuestion)
@@ -815,14 +826,6 @@ private struct IdleView: View {
                 recordButton = edge
                 giveWayIfNeeded()
             }
-            // The same 28 above the disc as below it, for the same glow. The
-            // spacer over the button kept it without being asked — two gaps of
-            // 14 even at no height — and `Squeeze.air` took it to 8, which put
-            // "Puhu ihan rauhassa ja vapaasti." inside the glow on the SE: the
-            // text measures 9.54:1 from the pixels, and the audit still failed
-            // it on a first launch and under a family member's question at the
-            // default size, alone on a quiet machine (27 Sep 2026).
-            .padding(.top, squeezed.contains(.air) ? 28 - gap : 0)
 
             // fixedSize on every label below: under vertical pressure SwiftUI
             // truncates a Text before it shrinks anything else, and a truncated
@@ -832,11 +835,10 @@ private struct IdleView: View {
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                // One of the two gaps the squeeze above is not allowed to take
-                // (the other is over the disc), and the audit is what said so:
-                // the button's glow is a red shadow at radius 14, it reaches
-                // some 28 pt past the disc, and this line is measured against
-                // whatever is behind it. At the stack's new
+                // The one gap the squeeze above is not allowed to take, and the
+                // audit is what said so: the button's glow is a red shadow at
+                // radius 14, it reaches some 28 pt past the disc, and this line
+                // is measured against whatever is behind it. At the stack's new
                 // 14 pt all five Kerro sweeps went red at the default text size
                 // with "Contrast failed — Paina ja ala puhua" (19 Sep 2026).
                 // 14 here puts the caption back where 28 had it — and so does
@@ -1002,9 +1004,11 @@ private struct IdleView: View {
     /// grandparent's, where the disc itself reached 586; with a family
     /// member's question, "Kirjoita sen sijaan" ended at 677 and 727 and the
     /// question card at 603 and 653; and on a first launch it ended at 663
-    /// and 680, and in English at 704 and 723. On a 13 mini the rows reached
-    /// 5, 12 and 28 points into its bar. The accessibility audit saw none of
-    /// it, because the tree keeps an element's whole frame when the bar is
+    /// and 680, and in English at 704 and 723. On a 13 mini, whose bar begins
+    /// at 729, the rows under a card reached 5 and 12 points into it, the
+    /// question's 28 and the first launch's in English 4 and 24, and at the
+    /// largest size in English the disc 12. The accessibility audit saw none
+    /// of it, because the tree keeps an element's whole frame when the bar is
     /// drawn over it — and none of it is one swipe away for the person this
     /// screen is built for: she does not scroll a screen with one big button
     /// on it, so a way on under the bar is a way on she does not have.
@@ -1052,9 +1056,10 @@ private struct IdleView: View {
     /// with contrast findings `main` does not have (27 Sep 2026). A size
     /// already measured comes back as it was, in the same frame as the size.
     private enum Squeeze: Int, CaseIterable, Comparable {
-        /// The two empty spacers, the stack's gaps 14 → 8 with the disc kept
-        /// 28 from what is above it and from its caption, the questions' extra
-        /// 4, and the top margin 24 → 12.
+        /// The two empty spacers, the stack's gaps 14 → 8 with the caption
+        /// kept 28 from the disc, the questions' extra 4, the top margin
+        /// 24 → 12, and the disc's resting glow, which the 8 over it would
+        /// otherwise put behind the text there.
         case air
         /// The reassurance's short form, which accessibility sizes and starter
         /// questions already get.
@@ -2830,6 +2835,9 @@ private struct FailureView: View {
 /// it is large, round and always in the same place.
 private struct RecordButton: View {
     let isRecording: Bool
+    /// The resting glow. Off only on the Tell tab of a phone too small for
+    /// the air round the disc (`Squeeze.air`); a recording always glows.
+    var glows = true
     let action: () -> Void
 
     @State private var pulse = false
@@ -2840,7 +2848,7 @@ private struct RecordButton: View {
                 Circle()
                     .fill(Elder.wax.gradient)
                     .shadow(
-                        color: Elder.wax.opacity(isRecording ? 0.5 : 0.25),
+                        color: Elder.wax.opacity(isRecording ? 0.5 : glows ? 0.25 : 0),
                         radius: isRecording ? 28 : 14
                     )
 

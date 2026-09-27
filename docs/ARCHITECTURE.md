@@ -4964,8 +4964,10 @@ under a photograph's card ended at 704 on a reader's phone and 711 on a
 grandparent's; *"Kirjoita sen sijaan"* ended at 677 and 727 under a family
 member's question and at 663 and 680 on a first launch — 704 and 723 in
 English, where the title takes two lines; and at the largest text size the
-record button itself ended at 641. On a 13 mini the rows reached 5, 12 and 28
-points into its bar. No audit sees it — the tree holds a row whether or not
+record button itself ended at 641. On a 13 mini, whose bar begins at 729, the
+rows under a card reached 5 and 12 points into it, the question's 28 and the
+first launch's in English 4 and 24, and at the largest size in English the
+record button 12. No audit sees it — the tree holds a row whether or not
 the bar is drawn over it — and none of it is one swipe away for somebody who
 does not scroll a screen with one big button on it. So `IdleView` measures at
 rest where its last way on ends — at accessibility sizes, where the page
@@ -4986,18 +4988,25 @@ the row 68 points for nothing. And the steps are kept per text size, because
 the size can change under a running screen — the audit's own Dynamic Type
 check scales it and back — and both simpler answers, one set for every size
 and a set emptied at every change, turned the Kerro sweeps on the SE red with
-contrast findings `main` does not have. After, on the SE: the card's rows end
-at 576, the question's at 557 and 573, the first launch's at 551 and 562 with
-both starters in Finnish and at 538 and 551 with one in English, and the
-record button at the largest size at 576 at the lowest, under a card whose
-photograph gives way from 150 to 116. On the 17 Pro the
-screen takes no step: in 24 screenshots — four states, a reader's phone, a
-grandparent's and the largest size, in both languages — every pixel between
-the status bar and the tab bar is `main`'s, and in the accessibility tree only
-two text frames under a card at the largest size move, by under a point.
-`DeckTests.testEveryWayOnClearsTheTabBarAtRest` compares frames: 18 failures on
-the SE before the change, green after on the SE, the 13 mini and the 17 Pro.
-Six of the seven Kerro sweeps pass on the SE, among them
+contrast findings `main` does not have. The air takes the disc's resting glow
+with it. Its red reaches some 28 points, which the spacer over the disc kept
+clear without being asked, and at the 8 the squeeze leaves there the audit
+failed *"Puhu ihan rauhassa ja vapaasti."* on a first launch and under a
+family member's question, alone on a quiet machine, while the pixels measure
+9.54:1. Giving the 28 back instead would have put *"Write instead"* at 594,
+under the bar, beneath a family member's question on a grandparent's phone in
+English, where every other step is already taken. After, on the SE: the card's
+rows end at 576, the question's at 557 and 573, the first launch's at 551 and
+562 with both starters in Finnish and at 538 and 551 with one in English, and
+the record button at the largest size at 576 at the lowest, under a card whose
+photograph gives way from 150 to 116. On the 17 Pro the screen takes no step:
+in 24 screenshots — four states, a reader's phone, a grandparent's and the
+largest size, in both languages — every pixel between the status bar and the
+tab bar is `main`'s, and in the accessibility tree only two text frames under
+a card at the largest size move, by under a point.
+`DeckTests.testEveryWayOnClearsTheTabBarAtRest` compares frames: 18 failures
+on the SE before the change, green after on the SE, the 13 mini and the 17
+Pro. Six of the seven Kerro sweeps pass on the SE, among them
 `testTellPermissionUnasked`, which `main` fails there on this very row; the
 seventh fails on the album before it reaches Kerro, on `main` as well.
 
