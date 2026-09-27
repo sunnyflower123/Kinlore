@@ -345,7 +345,7 @@ needs and nothing else.
   the map of a place a telling had just named, the card said *"Nobody has told
   anything yet"*, because a subject listed what was told **about** it and never
   what merely named it. `SubjectDetailScreen` reads both since 19 Sep 2026 and
-  the card says *"Named in one memory"* with the telling under it.
+  the card says *"Named elsewhere in one memory"* with the telling under it.
 
 The photographs are `film-photo.jpg` for the first and `film-photo-2.jpg`
 onwards for the rest, in the folder the recipe above already uses:
