@@ -976,11 +976,17 @@ final class MemoryStore {
     /// The same taking back, from the memory's own card the day after.
     ///
     /// `discardSavedMemory` on the result screen knows what its telling
-    /// proposed and which question it answered; a card knows only the row. So
-    /// the tidying here is what the row itself can vouch for: the people this
+    /// proposed; a card knows only the row and what points at it. So the
+    /// tidying here is what the row itself can vouch for: the people this
     /// memory alone put in the family list, and the moment it alone was filed
     /// under. Anyone confirmed, or named by another telling, stays — and so
     /// does a photo or a person, whatever they hold.
+    ///
+    /// The question it answered points at it, and is open again as it is
+    /// after the result screen's taking-back. Until 27 Sep 2026 it was not:
+    /// answered by a telling that no longer existed, it was off the card and
+    /// asked of nobody ever again. `answeredMemoryID` stays on it, which is
+    /// what lets `restore` close it once more.
     ///
     /// Returns whether the home subject went with it: the card the caller is
     /// standing on has then nothing left to show.
@@ -988,6 +994,9 @@ final class MemoryStore {
     func takeBack(memoryID: String) -> Bool {
         guard let memory = memories.first(where: { $0.id == memoryID }) else { return false }
         remove(memoryID: memoryID)
+        for answered in questions where answered.answered && answered.answeredMemoryID == memoryID {
+            reopen(questionID: answered.id)
+        }
         for id in memory.mentionedSubjectIDs {
             if let subject = subjects.first(where: { $0.id == id }),
                !subject.confirmed, subject.deletedAt == nil, isOrphaned(subjectID: id) {

@@ -2638,12 +2638,13 @@ kept small on purpose:
   reference would otherwise fail every row of it, on every retry.
 - **The answer is the latest one.** `answered_memory_id`, unused until then as
   well, records the newest telling that answered the question rather than the
-  first: an answer taken back on the result screen reopens the question it
-  answered (`MemoryStore.reopen`), and the telling that answers it next is the
-  one the asker should be pointed to. The question is found by its
-  `answeredMemoryID` rather than by the one on screen, since 27 Sep 2026: a
-  conversation ended on an unanswered follow-up had reopened the follow-up and
-  left the answered question closed over a telling that was gone.
+  first: an answer taken back, on the result screen or from its card, reopens
+  the question it answered (`MemoryStore.reopen`), and the telling that
+  answers it next is the one the asker should be pointed to. The question is
+  found by its `answeredMemoryID` rather than by the one on screen, since
+  27 Sep 2026: a conversation ended on an unanswered follow-up had reopened
+  the follow-up and left the answered question closed over a telling that was
+  gone.
 
 The name travels like the asker's: `target_name` is derived on read from
 `member.display_name`, and the asking phone writes it locally so the line shows
@@ -4754,9 +4755,12 @@ the same two sentences, with the card named as *the one it was filed under*,
 because on the tab no card is in view.
 
 **What it does bring back is the answer.** Taking a telling back reopens
-every question it had answered (`discardSavedMemory`, since a7dd4f0) and
-`reopen` clears only `answered`, so `answeredMemoryID` still names the
-telling. `restore(memoryID:)` answers each of those again; without that, a
+every question it had answered — on the result screen
+(`discardSavedMemory`, since a7dd4f0), and from its card (`takeBack`) since
+27 Sep 2026, where until then the question stayed answered by a telling that
+was gone, off the card and asked of nobody — and `reopen` clears only
+`answered`, so `answeredMemoryID` still names the telling.
+`restore(memoryID:)` answers each of those again; without that, a
 telling brought back would sit on its card under its own question, still
 open, and the family would be asked it a second time. A question answered in
 the meantime by another telling names that one and is left alone. It is the
