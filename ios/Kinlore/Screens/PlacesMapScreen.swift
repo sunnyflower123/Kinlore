@@ -150,6 +150,7 @@ struct PlacesMapScreen: View {
     private var places: [Subject] {
         store.subjects(of: .place)
             .filter { $0.confirmed && $0.place?.precision.mapSpanMetres != nil }
+            .sorted(by: Subject.byName)
     }
 
     /// The family's places that have nowhere to be drawn: never looked up,
@@ -159,6 +160,7 @@ struct PlacesMapScreen: View {
     private var unplaced: [Subject] {
         store.subjects(of: .place)
             .filter { $0.confirmed && $0.place?.precision.mapSpanMetres == nil }
+            .sorted(by: Subject.byName)
     }
 
     /// The place the map was opened on, as the store has it now: a point

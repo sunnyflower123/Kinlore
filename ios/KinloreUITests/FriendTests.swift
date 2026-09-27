@@ -23,8 +23,9 @@ final class FriendTests: XCTestCase {
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
         eeva.tap()
         // A relative's row is one element, "Kalle, Puoliso": the name and
-        // what they are to this person, read in one breath.
-        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
+        // what they are to this person, read in one breath — and since
+        // 27 Sep 2026 a link to his card, so a button.
+        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
         XCTAssertFalse(app.staticTexts["Ystävät"].exists, "a heading over no friends")
 
         addFriend(named: "Ritva", in: app)
@@ -32,8 +33,8 @@ final class FriendTests: XCTestCase {
         let heading = app.staticTexts["Ystävät"]
         for _ in 0 ..< 4 where !heading.exists { app.swipeUp() }
         XCTAssertTrue(heading.waitForExistence(timeout: 10), "the friend has no heading of her own")
-        XCTAssertTrue(app.staticTexts["Ritva, Ystävä"].exists, "the friend is not on the card, or the row does not say what she is")
-        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].exists, "the spouse is gone, or lost his caption")
+        XCTAssertTrue(app.buttons["Ritva, Ystävä"].exists, "the friend is not on the card, or the row does not say what she is")
+        XCTAssertTrue(app.buttons["Kalle, Puoliso"].exists, "the spouse is gone, or lost his caption")
     }
 
     /// Taking a friendship back asks about a friendship, not about kinship,
@@ -43,10 +44,10 @@ final class FriendTests: XCTestCase {
         let eeva = app.staticTexts["Eeva"]
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
         eeva.tap()
-        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
+        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
         addFriend(named: "Ritva", in: app)
 
-        let ritva = app.staticTexts["Ritva, Ystävä"]
+        let ritva = app.buttons["Ritva, Ystävä"]
         for _ in 0 ..< 4 where !ritva.exists { app.swipeUp() }
         XCTAssertTrue(ritva.waitForExistence(timeout: 10), "the friend is not on the card")
         // In the tree is not on screen. A row under the tab bar is in the tree
@@ -73,7 +74,7 @@ final class FriendTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Poistetaanko sukulaisuus?"].exists, "a friend is asked about as kin")
         app.alerts.buttons["Poista"].tap()
 
-        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the spouse went with the friend")
+        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the spouse went with the friend")
         XCTAssertFalse(ritva.exists, "the friend is still on the card")
         XCTAssertFalse(app.staticTexts["Ystävät"].exists, "an empty heading was left behind")
     }

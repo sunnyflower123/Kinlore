@@ -15,10 +15,10 @@ struct RelationsSection: View {
 
     var body: some View {
         Section {
-            group("Vanhemmat", store.relatives(of: subject.id, kind: .parentOf), kind: .parentOf)
-            group("Lapset", store.relatives(of: subject.id, kind: .parentOf, asParent: true), kind: .parentOf, asParent: true)
+            group("Vanhempi", store.relatives(of: subject.id, kind: .parentOf), kind: .parentOf)
+            group("Lapsi", store.relatives(of: subject.id, kind: .parentOf, asParent: true), kind: .parentOf, asParent: true)
             group("Puoliso", store.relatives(of: subject.id, kind: .spouseOf), kind: .spouseOf)
-            group("Sisarukset", store.relatives(of: subject.id, kind: .siblingOf), kind: .siblingOf)
+            group("Sisarus", store.relatives(of: subject.id, kind: .siblingOf), kind: .siblingOf)
 
             // A sheet of plain buttons, not a `Menu`, since 21 Sep 2026 — the
             // choice the tree's person sheet had already made. Measured the
@@ -135,6 +135,10 @@ struct RelationsSection: View {
     /// A `LocalizedStringKey`, not a `String`. As a `String` the four captions
     /// were shown exactly as written, so an English phone read "Vanhemmat"
     /// under every parent until 13 Sep 2026.
+    ///
+    /// In the singular since 27 Sep 2026, as the friend's always was: each
+    /// row is one person, and VoiceOver reads the name and the caption as
+    /// one phrase — "Toivo, Vanhempi", where it read "Toivo, Vanhemmat".
     @ViewBuilder
     private func group(
         _ title: LocalizedStringKey, _ people: [Subject], kind: RelationKind, asParent: Bool = false
@@ -182,65 +186,65 @@ private struct RelativeRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            // One VoiceOver element per relative, "Matti, Vanhemmat", with
-            // the swipe action below as its action. Until 21 Sep 2026 the row
-            // was three stops — the icon read as "Tili", the symbol's own
-            // name, then the name, then the caption — and the first sweep
-            // over a card with relatives on it failed the two texts as hit
-            // areas: the swipe action makes every element in the row
-            // actionable, and they measured 20 and 14 points tall. Twelve
-            // findings on six relatives at the default text size, none at
-            // the largest, where both fonts reach 44. The element is the
-            // whole left of the row, never under the tap target's minimum.
-            HStack(spacing: 12) {
-                // The relative's own disc since 27 Sep 2026 — her face, when
-                // her card has one — where every confirmed relative wore the
-                // same grey outline of a head. A proposal keeps the outline
-                // with the question mark: the shape that says nobody has
-                // checked it (rule 4), in the colour that says the same.
-                if relation?.confirmed == true {
-                    SubjectAvatar(subject: relative)
-                } else {
-                    Image(systemName: "person.crop.circle.badge.questionmark")
-                        .font(.title3)
-                        .foregroundStyle(Elder.proposal)
+        // One VoiceOver element per relative, "Matti, Vanhempi", with the
+        // swipe action below as its action. Until 21 Sep 2026 the row was
+        // three stops — the icon read as "Tili", the symbol's own name, then
+        // the name, then the caption — and the first sweep over a card with
+        // relatives on it failed the two texts as hit areas: the swipe action
+        // makes every element in the row actionable, and they measured 20
+        // and 14 points tall. Twelve findings on six relatives at the default
+        // text size, none at the largest, where both fonts reach 44. The
+        // element is the whole left of the row, never under the tap target's
+        // minimum — and on a confirmed relative, the whole tile.
+        Group {
+            if relation?.confirmed == true {
+                // A confirmed relative is a way to her own card (27 Sep
+                // 2026). Until then the row said who somebody was and led
+                // nowhere, and her card was back on the list and down it by
+                // name — on a grandparent's phone, where no tree is drawn,
+                // the only way there was. The whole tile takes the tap, its
+                // padding too: the edge of a card that does nothing is where
+                // an old finger lands.
+                NavigationLink(value: relative) {
+                    tile {
+                        identity
+                        Spacer(minLength: 0)
+                        // Its own chevron, in the palette, as on the names
+                        // heard (`HeardNamesScreen`); the list's is hidden
+                        // rather than doubled.
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Elder.supporting)
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous))
                 }
+                .buttonStyle(.plain)
+                .navigationLinkIndicatorVisibility(.hidden)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(spoken)
+                .accessibilityHint("Avaa henkilön kortin.")
+            } else {
+                // A proposal leads nowhere. The card at the end of a guess is
+                // the guess drawn as fact (rule 4), and the proposal's one
+                // action is on its row.
+                tile {
+                    identity
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(spoken)
+                        .accessibilityAddTraits(.isStaticText)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(relative.displayTitle)
-                        .font(.body.weight(.medium))
-                    Text(groupTitle)
-                        // The identifier is for
-                        // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                        // and nothing else (26 Sep 2026).
-                        .accessibilityIdentifier("relative.caption")
-                        .font(.caption)
-                        .foregroundStyle(Elder.supporting)
+                    Spacer()
+
+                    if let relation, !relation.confirmed {
+                        Button("Vahvista") { store.confirmRelation(id: relation.id) }
+                            .font(.subheadline.weight(.semibold))
+                            .buttonStyle(.borderless)
+                            .foregroundStyle(Color.primary)
+                            .elderTapTarget()
+                    }
                 }
-            }
-            .frame(minHeight: Elder.minTapTarget)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(relative.displayTitle) + Text(", ") + Text(groupTitle))
-            .accessibilityAddTraits(.isStaticText)
-
-            Spacer()
-
-            if let relation, !relation.confirmed {
-                Button("Vahvista") { store.confirmRelation(id: relation.id) }
-                    .font(.subheadline.weight(.semibold))
-                    .buttonStyle(.borderless)
-                    .foregroundStyle(Color.primary)
-                    .elderTapTarget()
             }
         }
-        // A tile of its own on the paper since 27 Sep 2026, in the card's
-        // shape (`elderCard`), one under another, rather than a line of the
-        // section's white block; the swipe slides the tile aside as it slid
-        // the line.
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .elderCard()
         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
@@ -270,6 +274,52 @@ private struct RelativeRow: View {
         } message: {
             Text(removalMessage)
         }
+    }
+
+    /// The disc, the name, and what the relative is to this person.
+    private var identity: some View {
+        HStack(spacing: 12) {
+            // The relative's own disc since 27 Sep 2026 — her face, when
+            // her card has one — where every confirmed relative wore the
+            // same grey outline of a head. A proposal keeps the outline
+            // with the question mark: the shape that says nobody has
+            // checked it (rule 4), in the colour that says the same.
+            if relation?.confirmed == true {
+                SubjectAvatar(subject: relative)
+            } else {
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                    .font(.title3)
+                    .foregroundStyle(Elder.proposal)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(relative.displayTitle)
+                    .font(.body.weight(.medium))
+                Text(groupTitle)
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (26 Sep 2026).
+                    .accessibilityIdentifier("relative.caption")
+                    .font(.caption)
+                    .foregroundStyle(Elder.supporting)
+            }
+        }
+        .frame(minHeight: Elder.minTapTarget)
+    }
+
+    /// The name and the caption in one breath, "Toivo, Vanhempi".
+    private var spoken: Text {
+        Text(relative.displayTitle) + Text(", ") + Text(groupTitle)
+    }
+
+    /// A tile of its own on the paper since 27 Sep 2026, in the card's shape
+    /// (`elderCard`), one under another, rather than a line of the section's
+    /// white block; the swipe slides the tile aside as it slid the line.
+    private func tile<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 12) { content() }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .elderCard()
     }
 }
 

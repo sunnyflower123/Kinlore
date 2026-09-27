@@ -443,6 +443,14 @@ struct Subject: Identifiable, Codable, Hashable {
         default: return kind.label
         }
     }
+
+    /// The order the family's lists of people and places read in: by name,
+    /// in the alphabet of the phone's own language — Ä and Ö after Z on a
+    /// Finnish phone, beside A and O on an English one — with case ignored
+    /// and a number read as a number, "Talo 2" before "Talo 10".
+    static func byName(_ a: Subject, _ b: Subject) -> Bool {
+        a.displayTitle.localizedStandardCompare(b.displayTitle) == .orderedAscending
+    }
 }
 
 // MARK: - Memory

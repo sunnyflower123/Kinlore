@@ -137,7 +137,7 @@ struct GalleryScreen: View {
     /// and nobody has vouched for is a merkintä inside the telling, answered
     /// on the memory's own row, and not a card among the family's places.
     private var places: [Subject] {
-        store.subjects(of: .place, matching: query).filter(\.confirmed)
+        store.subjects(of: .place, matching: query).filter(\.confirmed).sorted(by: Subject.byName)
     }
 
     /// What is typed in the search field.

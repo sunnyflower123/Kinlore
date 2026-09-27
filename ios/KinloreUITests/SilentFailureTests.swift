@@ -86,7 +86,7 @@ final class SilentFailureTests: XCTestCase {
         // spouse the same file holds.
         app.staticTexts["Vanha Aino"].tap()
         XCTAssertTrue(
-            app.staticTexts["Vanha Eino, Puoliso"].waitForExistence(timeout: 10),
+            app.buttons["Vanha Eino, Puoliso"].waitForExistence(timeout: 10),
             "the relationship this version can read was lost with the one it cannot"
         )
     }

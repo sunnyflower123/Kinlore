@@ -112,7 +112,7 @@ final class NameCorrectionTests: XCTestCase {
         let eeva = app.staticTexts["Eeva"]
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
         eeva.tap()
-        XCTAssertTrue(app.staticTexts["Kalle, Puoliso"].waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
+        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
 
         // Then Eeva's name is corrected onto Aino, and the cards merge.
         let correct = app.buttons["Korjaa nimi"]
@@ -132,8 +132,9 @@ final class NameCorrectionTests: XCTestCase {
         XCTAssertTrue(aino.waitForExistence(timeout: 10), "Aino is not on the list")
         aino.tap()
         // The row is one element since 21 Sep 2026: the name and the caption
-        // in one label, "Kalle, Puoliso".
-        let spouse = app.staticTexts["Kalle, Puoliso"]
+        // in one label, "Kalle, Puoliso", and a link to his card since
+        // 27 Sep 2026.
+        let spouse = app.buttons["Kalle, Puoliso"]
         for _ in 0 ..< 4 where !spouse.exists { app.swipeUp() }
         XCTAssertTrue(spouse.waitForExistence(timeout: 10), "the spouse did not follow the merge, or is somebody else")
     }

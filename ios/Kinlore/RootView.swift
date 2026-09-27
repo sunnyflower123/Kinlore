@@ -384,8 +384,12 @@ struct PeopleScreen: View {
     /// quiet row at the bottom (`HeardNamesScreen`), with the sentence it was
     /// heard in. The orange "Ehdotus" row used to stand among the family,
     /// which put a guess beside the people it was a guess about.
+    ///
+    /// By name since 27 Sep 2026 (`Subject.byName`). Newest first is the
+    /// order the store keeps, and nobody looks for an aunt by when her card
+    /// was made.
     private var people: [Subject] {
-        store.subjects(of: .person, matching: query).filter(\.confirmed)
+        store.subjects(of: .person, matching: query).filter(\.confirmed).sorted(by: Subject.byName)
     }
 
     /// The names waiting behind the door.

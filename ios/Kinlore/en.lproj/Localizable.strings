@@ -147,9 +147,9 @@
 "Vanhempi" = "Parent";
 "Puoliso" = "Spouse";
 "Sisarus" = "Sibling";
-"Vanhemmat" = "Parents";
 "Lapset" = "Children";
 "Sisarukset" = "Siblings";
+"Avaa henkilön kortin." = "Opens the person's card.";
 "Kuka on lapsi?" = "Who is the child?";
 "Kuka on vanhempi?" = "Who is the parent?";
 "Kuka on puoliso?" = "Who is the spouse?";

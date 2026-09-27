@@ -1371,7 +1371,7 @@ enum AccessibilityPolicy {
         // The card's memories heading — "1 muisto", "N muistoa" — under a
         // photograph whose file is on this phone (26 Sep 2026).
         "card.memoriesHeading",
-        // The relative row's caption — "Ystävä", "Vanhemmat" (26 Sep 2026).
+        // The relative row's caption — "Ystävä", "Vanhempi" (26 Sep 2026).
         "relative.caption",
         // The rename row under a photograph with no file on this phone,
         // "Anna kuvalle nimi" and its two other wordings (26 Sep 2026).
