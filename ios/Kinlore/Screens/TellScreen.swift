@@ -774,10 +774,11 @@ private struct IdleView: View {
                     Text(title)
                 }
             }
-            // The serif, and this is the one line on the screen that gets it:
-            // the question is what the screen is about, and everything else
-            // here — the reassurance, the starter, the counter — stays in SF
-            // where an 80-year-old reads it at arm's length.
+            // The display weight, and this is the one line on the screen that
+            // gets it: the question is what the screen is about, and
+            // everything else here — the reassurance, the starter, the
+            // counter — stays at the weight an 80-year-old reads at arm's
+            // length.
             .font(Elder.display(.largeTitle))
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
@@ -800,7 +801,7 @@ private struct IdleView: View {
                 Spacer(minLength: 0)
             }
 
-            // Without its glow once the air is taken. The spacer over the
+            // No glow and no rings once the air is taken. The spacer over the
             // button kept the glow 28 from the text above it without being
             // asked — two gaps of 14 even at no height — and `Squeeze.air`
             // takes that to 8, which on the SE put "Puhu ihan rauhassa ja
@@ -1058,8 +1059,8 @@ private struct IdleView: View {
     private enum Squeeze: Int, CaseIterable, Comparable {
         /// The two empty spacers, the stack's gaps 14 → 8 with the caption
         /// kept 28 from the disc, the questions' extra 4, the top margin
-        /// 24 → 12, and the disc's resting glow, which the 8 over it would
-        /// otherwise put behind the text there.
+        /// 24 → 12, and the disc's resting glow and rings, which the 8 over
+        /// it would otherwise put behind the text there.
         case air
         /// The reassurance's short form, which accessibility sizes and starter
         /// questions already get.
@@ -1303,7 +1304,11 @@ private struct RecordingView: View {
                 .padding(.horizontal, 8)
 
             Text(Self.timeText(model.recorder.elapsed))
-                .font(.system(.title2, design: .monospaced))
+                // The app's own rounded face, with figures of one width so
+                // that the count does not jitter as it runs. It was set in
+                // the monospaced face, the one line on the screen that read
+                // as a machine's.
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(Elder.supporting)
                 .monospacedDigit()
                 // The first audit ever run on this screen reported the timer
@@ -1321,9 +1326,10 @@ private struct RecordingView: View {
             Text("Paina kun olet valmis")
                 .font(.headline)
                 // Full primary rather than Elder.supporting, which every
-                // sibling caption wears: this one sits within the pulsing
-                // record disc's reach, and the first audit of this screen
-                // measured it under the minimum there. The instruction for
+                // sibling caption wears: this one sits within the record
+                // disc's reach — its glow, and its rings at the top of a
+                // breath — and the first audit of this screen measured it
+                // under the minimum there. The instruction for
                 // ending a telling is also the one caption that must never
                 // be the faint one.
                 .foregroundStyle(.primary)
@@ -1508,7 +1514,9 @@ private struct AskingView: View {
             // without anybody listening (`InterviewLoopTests`, `-voice stub`).
             Image(systemName: "speaker.wave.2.fill")
                 .font(.system(size: 44))
-                .foregroundStyle(.tint)
+                // Ink: wax is for what starts a telling, and on this screen
+                // that is the disc below (`Elder.wax`).
+                .foregroundStyle(Color.primary)
                 .symbolEffect(.variableColor.iterative, isActive: model.voice.isSpeaking)
                 .accessibilityLabel("Luen kysymyksen ääneen")
                 .accessibilityHidden(!model.voice.isSpeaking)
@@ -2239,15 +2247,22 @@ private struct ResultView: View {
             // Two of the three. Three under the names was a wall; the third is
             // still stored, and the interview loop and the subject's own Tell
             // screen offer it (12 Sep 2026).
+            // Bubbles, as the memory above them is: these are things said to
+            // the teller, and nothing here is pressed. So the mark is
+            // `supporting` and not wax — the button under them is what starts
+            // talking.
             ForEach(model.newQuestions.prefix(2)) { question in
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
-                        .foregroundStyle(.tint)
+                        .foregroundStyle(Elder.supporting)
                         .font(.title3)
                     Text(question.text)
                         .elderBody()
+                    Spacer(minLength: 0)
                 }
-                .padding(.vertical, 4)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .elderBubble()
             }
 
             // One tap turns the questions into a spoken conversation: the app
@@ -2389,16 +2404,84 @@ private struct MemoryCard: View {
                 .elderBody()
 
             // The original audio is playable right next to the memory: it is not
-            // a step on the way to text but part of the product.
+            // a step on the way to text but part of the product. Its shape
+            // first, then the button that plays it.
             if let memory, memory.audioFilename != nil || memory.audioR2Key != nil {
-                MemoryPlaybackButton(memory: memory)
+                VStack(alignment: .leading, spacing: 6) {
+                    VoiceShape(memory: memory)
+                    MemoryPlaybackButton(memory: memory)
+                        // Ink on honey. The button's words are a caption's
+                        // size, and wax on honey is a glyph's colour and never
+                        // a sentence's (`Elder.honey`).
+                        .tint(Color.primary)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
-        // A block and not a card: this is what the telling became, and the one
-        // card on the screen worth a thickness.
-        .elderBlock()
+        // Somebody's words, so a bubble. And on the slab `elderBlock` gives a
+        // card, in the bubble's own shape: this is what the telling became,
+        // and the one thing on the screen worth a thickness.
+        .elderBubble()
+        .background {
+            Elder.bubble
+                .fill(Elder.block)
+                .offset(x: 5, y: 7)
+        }
+    }
+}
+
+/// The recording's own shape, under the words it became (`AudioEnvelope`).
+///
+/// Only from a file on this phone. A telling just made always has one, and a
+/// recording that is still only in R2 is not downloaded for a picture of
+/// itself. Nothing stands in for it when there is no file or it cannot be
+/// read: a made-up shape would be a picture of a voice that is not the
+/// teller's.
+///
+/// Drawn in `supporting` on honey — a graphic, judged at 3:1 and measured at
+/// 6.73:1 as text — so that it stays quieter than the words above it.
+private struct VoiceShape: View {
+    let memory: Memory
+
+    /// Empty until the file has been read, which on a five-minute telling is
+    /// a moment after the screen appears. The strip keeps its height
+    /// meanwhile, so the button under it does not move.
+    @State private var bars: [Float] = []
+
+    private static let count = 48
+
+    private var fileURL: URL? {
+        guard let filename = memory.audioFilename, MediaStore.exists(filename) else { return nil }
+        return MediaStore.url(for: filename)
+    }
+
+    var body: some View {
+        if let url = fileURL {
+            GeometryReader { geometry in
+                let spacing: CGFloat = 3
+                let count = CGFloat(Self.count)
+                let width = max(2, (geometry.size.width - spacing * (count - 1)) / count)
+                HStack(alignment: .center, spacing: spacing) {
+                    ForEach(bars.indices, id: \.self) { index in
+                        Capsule()
+                            .fill(Elder.supporting)
+                            // Silence as a thin line rather than a gap, as on
+                            // the listening screen.
+                            .frame(width: width, height: max(3, CGFloat(bars[index]) * geometry.size.height))
+                    }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
+            }
+            .frame(height: 24)
+            .accessibilityHidden(true)
+            .task(id: url) {
+                let count = Self.count
+                bars = await Task.detached(priority: .utility) {
+                    AudioEnvelope.bars(of: url, count: count) ?? []
+                }.value
+            }
+        }
     }
 }
 
@@ -2834,23 +2917,25 @@ private struct FailureView: View {
 /// The app's most important control. It has to be findable without reading, so
 /// it is large, round and always in the same place.
 private struct RecordButton: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     let isRecording: Bool
-    /// The resting glow. Off only on the Tell tab of a phone too small for
-    /// the air round the disc (`Squeeze.air`); a recording always glows.
+    /// The resting glow and the rings round the disc at rest. Off only on
+    /// the Tell tab of a phone too small for the air round the disc
+    /// (`Squeeze.air`); a recording always has both.
     var glows = true
     let action: () -> Void
-
-    @State private var pulse = false
 
     var body: some View {
         Button(action: action) {
             ZStack {
                 Circle()
                     .fill(Elder.wax.gradient)
-                    .shadow(
-                        color: Elder.wax.opacity(isRecording ? 0.5 : glows ? 0.25 : 0),
-                        radius: isRecording ? 28 : 14
-                    )
+                    // One glow for both states. It was twice as wide and
+                    // twice as strong while recording, and the rings say that
+                    // now — a haze 28 points deep round a breathing ring was
+                    // the same news twice, on the caption's side of the disc.
+                    .shadow(color: Elder.wax.opacity(isRecording || glows ? 0.25 : 0), radius: 14)
 
                 Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                     .font(.system(size: isRecording ? 60 : 72))
@@ -2863,21 +2948,60 @@ private struct RecordButton: View {
                     .contentTransition(.symbolEffect(.replace))
             }
             .frame(width: Elder.recordButtonSize, height: Elder.recordButtonSize)
-            .scaleEffect(pulse ? 1.04 : 1.0)
+            // The rings are drawn outside the disc's frame and take no room in
+            // the layout, so the room has to be there already: they reach 24
+            // points past the disc, 26 at the top of a breath, and every
+            // screen this button is on keeps 28 clear above and below it —
+            // except the Tell tab squeezed for air, which leaves them out
+            // with the glow (`glows`).
+            .background {
+                if isRecording && !reduceMotion {
+                    // In and out once every 2.6 seconds while it listens:
+                    // slower than breath at rest, so that it reads as the
+                    // phone waiting rather than hurrying anybody.
+                    Color.clear.phaseAnimator([false, true]) { _, drawn in
+                        RecordRings(inner: drawn ? 16 : 10, outer: drawn ? 26 : 18)
+                    } animation: { _ in
+                        .easeInOut(duration: 1.3)
+                    }
+                } else if isRecording {
+                    // Reduce Motion: where a breath starts, and still.
+                    RecordRings(inner: 10, outer: 18)
+                } else if glows {
+                    RecordRings(inner: 12, outer: 24)
+                }
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(isRecording ? String(localized: "Lopeta kertominen") : String(localized: "Aloita kertominen"))
         .accessibilityHint(isRecording ? String(localized: "Tallentaa muiston") : String(localized: "Nauhoittaa puheesi ja tallentaa sen muistoksi"))
-        .onAppear { pulse = isRecording }
-        .onChange(of: isRecording) { _, recording in
-            guard recording else {
-                pulse = false
-                return
-            }
-            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
-                pulse = true
-            }
+    }
+}
+
+/// Two rings of wax round the disc, the inner one stronger: the room the one
+/// loud control on the screen stands in. `inner` and `outer` are how far past
+/// the disc each reaches.
+///
+/// Wax at 13 % and 7 % on the paper, so they are a tint round the disc and
+/// never an edge of anything — the disc's own 5.12:1 against the paper is
+/// what makes it an object. Nothing reads them: they are hidden from
+/// VoiceOver and let every tap through to whatever they lie over.
+private struct RecordRings: View {
+    let inner: CGFloat
+    let outer: CGFloat
+
+    var body: some View {
+        let size = Elder.recordButtonSize
+        ZStack {
+            Circle()
+                .fill(Elder.wax.opacity(0.07))
+                .frame(width: size + 2 * outer, height: size + 2 * outer)
+            Circle()
+                .fill(Elder.wax.opacity(0.13))
+                .frame(width: size + 2 * inner, height: size + 2 * inner)
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

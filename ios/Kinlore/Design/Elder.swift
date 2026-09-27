@@ -153,6 +153,20 @@ enum Elder {
     /// written.
     static let cardRadius: CGFloat = 22
 
+    /// The shape of something somebody said: `cardRadius` on three corners
+    /// and 6 points on the one nearest the speaker, the way a speech bubble
+    /// points without a tail to draw. `elderBubble` draws it, and the result
+    /// screen's memory stands on a slab of the same shape.
+    static var bubble: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            topLeadingRadius: cardRadius,
+            bottomLeadingRadius: 6,
+            bottomTrailingRadius: cardRadius,
+            topTrailingRadius: cardRadius,
+            style: .continuous
+        )
+    }
+
     /// The slab a card sits on: the same cream, two steps darker, offset down
     /// and to the right with no blur at all.
     ///
@@ -253,9 +267,7 @@ enum Elder {
     /// **A text style and not a point size, which is the whole safety of
     /// it.** `.custom(_:size:)` without `relativeTo:` stops answering the
     /// text-size setting, and so does a bare point size; both fail rule 1
-    /// silently. Naming the style cannot be wrong that way. It is also the
-    /// idiom already in this codebase: `.system(.title2, design: .monospaced)`
-    /// is how the recording counter is drawn.
+    /// silently. Naming the style cannot be wrong that way.
     static func display(_ style: Font.TextStyle) -> Font {
         .system(style, design: .rounded, weight: .bold)
     }
@@ -418,13 +430,24 @@ extension View {
             .overlay(shape.strokeBorder(Elder.rule, lineWidth: 1))
     }
 
+    /// What somebody said, rather than a thing: a memory's words, a question
+    /// put to the teller. `honey` is what tells it from a card, and `rule` is
+    /// its edge for the reason `honey` gives — against the paper the fill
+    /// measures 1.10:1, which is no edge at all. Ink on it, and nothing
+    /// coloured smaller than a glyph.
+    func elderBubble() -> some View {
+        background(Elder.honey, in: Elder.bubble)
+            .overlay(Elder.bubble.strokeBorder(Elder.rule, lineWidth: 1))
+    }
+
     /// A card with a thickness: the same card, on a hard slab.
     ///
     /// The offset is 5 x 7 points with a blur of zero, which is what makes it
     /// read as a printed block rather than as a floating panel — a blurred
     /// shadow is a screen's idea of depth and a slab is a page's. The rows on
-    /// the result screen and the card they sit under are the two places it
-    /// belongs, because those are the ones a person acts on.
+    /// the result screen are where it belongs, because those are the ones a
+    /// person acts on; the memory they sit under stands on the same slab in
+    /// its bubble's shape (`elderBubble`).
     ///
     /// It adds nothing to the *edge*: `elderCard` keeps its hairline
     /// underneath, and the rule that a shadow may never be the only boundary
