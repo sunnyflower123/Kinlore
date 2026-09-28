@@ -110,6 +110,31 @@ user just told.
 |-----|------|
 | RevenueCat **Test Store API key** | Designed for the client side, and still not in the repository: in a public clone it would hand the paid tier on the production Worker to anybody. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling — **in a Debug build only**, because a Release build stops on a Test Store key by RevenueCat's design (the `Kinlore Production` paragraph above). Without a key, purchases are unavailable but the app works normally. |
 
+### RevenueCat — the project behind the keys
+
+Nothing in the repository creates the RevenueCat side. This is what the code
+expects of it:
+
+- **An entitlement under any identifier**, with every product you sell
+  attached to it. Neither side looks for a name: the app asks whether any
+  entitlement is active (`hasActivePurchase` in `RevenueCatPurchases.swift`),
+  and the Worker keeps the furthest expiry among the customer's active ones
+  (`furthestExpiry` in `entitlement.ts`). `RC_ENTITLEMENT_ID` in
+  `wrangler.jsonc` is read by no code.
+- **A current offering with a published paywall.** The app names no offering
+  and no package: `PaywallSheet.swift` shows RevenueCatUI's `PaywallView`
+  without an offering, which draws the current one's paywall and packages. The
+  products are Test Store products, since the Test Store key above is the only
+  key the app is given.
+- **A v2 secret key** as `RC_SECRET_KEY`, with the permission
+  `customer_information:customers:read`; a v1 key does not work with the v2
+  API. The Worker's one call with it is `GET /v2/projects/{RC_PROJECT_ID}/customers/{id}/active_entitlements`,
+  from `/entitlement/sync` and from `reconcileStaleEntitlement`.
+  `RC_PROJECT_ID` is the project's id, under `vars` in `wrangler.jsonc`.
+- **A webhook** to `/webhook/revenuecat` on your Worker, whose authorization
+  header value is exactly `RC_WEBHOOK_SECRET`. The Worker compares the whole
+  header in constant time and answers `401` to anything else.
+
 ### iOS app — signing for a real device
 
 A simulator build needs nothing here; a build for a phone needs a development

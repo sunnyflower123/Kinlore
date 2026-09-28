@@ -29,7 +29,7 @@ hackathon. Target category: **Next Gen Award** (student category).
 **Reading it as a judge:** this README, then
 [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) — §1 for what is built and what is
 not, §6 for the money — then the code both of them name. The RevenueCat half is
-mapped file by file under **Who pays**, and the app builds and runs on a
+mapped file by file under [**Who pays**](#who-pays), and the app builds and runs on a
 simulator with no keys and no Apple team (**Setting it up**, step 1).
 [`CLAUDE.md`](CLAUDE.md) is not product documentation: it is the working
 agreement of the AI coding sessions that did most of the typing, mostly about
@@ -321,7 +321,10 @@ step 3) against a Worker that has `RC_SECRET_KEY` — without it
 `/entitlement/sync` answers `503`, because it will not take the phone's word. A
 DEBUG build with `-seed` and no backend address skips the server and opens the
 archive by itself (`Session.syncPurchase`), which is how the film's take is
-made.
+made. What your own RevenueCat project needs for all of this — the
+entitlement, the offering and its paywall, the secret key's permission and
+the webhook — is in
+[`SETUP.md`](docs/SETUP.md#revenuecat--the-project-behind-the-keys).
 
 ## The cloud question, unanswered in public
 
