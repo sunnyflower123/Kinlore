@@ -111,6 +111,21 @@ function paidFamily() {
 
 const event = (type, extra = {}) => ({ type, app_user_id: 'cust-1', ...extra })
 
+/// RevenueCat's own sample TRANSFER event, with this file's App User IDs in
+/// its two arrays (revenuecat.com/docs/integrations/webhooks/sample-events).
+/// It has no `app_user_id`: the common fields and those arrays are the whole
+/// event, and RevenueCat sends it once, for the receiving customer.
+const transfer = (from, to) => ({
+	app_id: '1234567890',
+	event_timestamp_ms: 78789789798798,
+	id: 'CD489E0E-5D52-4E03-966B-A7F17788E432',
+	store: 'APP_STORE',
+	transferred_from: from,
+	transferred_to: to,
+	type: 'TRANSFER',
+	environment: 'PRODUCTION',
+})
+
 try {
 	console.log('— what keeps the month that was paid for —')
 	{
@@ -146,6 +161,15 @@ try {
 			JSON.stringify({ result, family: family() }),
 		)
 	}
+	{
+		const { env, family } = paidFamily()
+		await handleWebhook(env, transfer(['cust-9'], ['cust-1']))
+		check(
+			'a transfer to the payer takes nothing away',
+			family().entitlement === 'archive',
+			JSON.stringify(family()),
+		)
+	}
 
 	console.log('— and what ends it at once —')
 	{
@@ -161,10 +185,13 @@ try {
 			JSON.stringify(family()))
 	}
 	{
+		// Sent as `event('TRANSFER')` until 28 Sep 2026, with an
+		// `app_user_id` no TRANSFER carries — so this passed while the
+		// Worker answered every real one `missing_app_user_id`.
 		const { env, family } = paidFamily()
-		await handleWebhook(env, event('TRANSFER'))
-		check('and a transfer away', family().entitlement === 'free',
-			JSON.stringify(family()))
+		const result = await handleWebhook(env, transfer(['cust-1'], ['cust-9']))
+		check('and a transfer away from the payer', family().entitlement === 'free',
+			JSON.stringify({ result, family: family() }))
 	}
 
 	console.log('— and a second payer is not forgotten —')

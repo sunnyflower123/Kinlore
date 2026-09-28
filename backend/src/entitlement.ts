@@ -282,6 +282,11 @@ type WebhookEvent = {
 	/// Why a CANCELLATION happened. UNSUBSCRIBE is auto-renew going off;
 	/// CUSTOMER_SUPPORT is a refund. The distinction is the whole event.
 	cancel_reason?: string
+	/// A TRANSFER's losing side: the App User IDs the purchases were taken
+	/// from. RevenueCat documents TRANSFER with the common fields and
+	/// `transferred_from`/`transferred_to` only — it carries no `app_user_id`
+	/// (revenuecat.com/docs/integrations/webhooks/event-types-and-fields).
+	transferred_from?: string[]
 }
 
 /// Whether an event ends the entitlement immediately, regardless of the
@@ -296,10 +301,40 @@ type WebhookEvent = {
 ///   paid for the moment anybody toggled the switch.
 /// - SUBSCRIPTION_PAUSED does not end access either; RevenueCat's guidance
 ///   is to revoke on the EXPIRATION that follows the pause.
-/// - EXPIRATION, and a TRANSFER away, end it at once.
+/// - EXPIRATION ends it at once. So does a TRANSFER, for the customers it
+///   takes from — but it names them in `transferred_from` rather than
+///   `app_user_id`, so it has a branch of its own in `handleWebhook`.
 function revokes(event: WebhookEvent): boolean {
-	if (event.type === 'EXPIRATION' || event.type === 'TRANSFER') return true
+	if (event.type === 'EXPIRATION') return true
 	return event.type === 'CANCELLATION' && event.cancel_reason === 'CUSTOMER_SUPPORT'
+}
+
+/// A TRANSFER ends the tier each `transferred_from` customer held here.
+///
+/// This branch exists because the event has no `app_user_id`. Without it a
+/// TRANSFER reached the lookup in `handleWebhook`, was answered
+/// `missing_app_user_id` and took nothing away. Only the losing side is
+/// written: the receiving customer reports its own purchase through
+/// /entitlement/sync, which asks RevenueCat rather than believing an event.
+async function revokeTransferred(env: Env, from: unknown) {
+	const customerIDs = Array.isArray(from)
+		? from.filter((id): id is string => typeof id === 'string' && id !== '')
+		: []
+	if (customerIDs.length === 0) return { ignored: 'missing_transferred_from' as const }
+
+	let result: { entitlement: string; expiresAt: number | null } | null = null
+	for (const customerID of customerIDs) {
+		const member = await env.DB.prepare(
+			'SELECT id, family_id FROM member WHERE rc_app_user_id = ?',
+		)
+			.bind(customerID)
+			.first<{ id: string; family_id: string }>()
+		if (!member) continue
+		result = await applyEntitlement(env, member.family_id, member.id, null)
+		// The outcome only, as below: no family or customer id.
+		console.log(`[entitlement] TRANSFER → ${result.entitlement}`)
+	}
+	return result ?? { ignored: 'unknown_customer' as const }
 }
 
 /// Keeps the entitlement current without the app being opened.
@@ -307,6 +342,8 @@ function revokes(event: WebhookEvent): boolean {
 /// Without the webhook, a renewed subscription would only show up when the payer
 /// next launches the app — and they are not the one who uses it most.
 export async function handleWebhook(env: Env, event: WebhookEvent) {
+	if (event.type === 'TRANSFER') return revokeTransferred(env, event.transferred_from)
+
 	const customerID = event.app_user_id
 	if (!customerID) return { ignored: 'missing_app_user_id' as const }
 
