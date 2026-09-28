@@ -91,6 +91,7 @@ fi
 
 echo "— the app —"
 xcrun swiftc -O -o "$TMP/gif" "$ROOT/scripts/frames-to-gif.swift"
+xcrun swiftc -O -o "$TMP/mount" "$ROOT/scripts/mount-prints.swift"
 xcrun simctl install "$SIM" "$APP"
 # A fresh simulator has not answered the microphone question, and the alert
 # then sits over every later launch (the note under `-mic unasked`, SETUP.md).
@@ -174,6 +175,12 @@ still "$MEDIA/04-person.png"      -seed archive -tab people -screen person -pers
 still "$MEDIA/05-family.png"      -seed family -tab people -screen family
 still "$MEDIA/06-result-xxxl.png" -seed empty -screen result \
 	-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL
+# The README's table shows the first three as prints in an album, squared off
+# and held by photo corners (mount-prints.swift says how). docs/DETAILS.md and
+# Devpost keep the screenshots themselves.
+"$TMP/mount" "$MEDIA/01-tell.png" "$MEDIA/mounted/01-tell.png" \
+	"$MEDIA/02-result.png" "$MEDIA/mounted/02-result.png" \
+	"$MEDIA/03-who-is-this.png" "$MEDIA/mounted/03-who-is-this.png"
 # The stub pipeline reaches the result about three seconds after launch, and
 # the interview's first spoken round ends by itself (docs/VIDEO.md, SETUP.md).
 frames "$MEDIA/demo.gif"           12 1.0 0.50 -seed empty -screen result

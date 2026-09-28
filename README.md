@@ -1,12 +1,12 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/lockup-dark.svg">
-    <img src="docs/logo/lockup.svg" alt="Kinlore" width="340">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/title-plate-dark.svg">
+    <img src="docs/logo/title-plate.svg" alt="Kinlore" width="420">
   </picture>
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-blue.svg" alt="Apache 2.0 licence"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-5B4A3E?labelColor=241A14" alt="Apache 2.0 licence"></a>
 </p>
 
 A family's shared memory archive. Anyone in the family tells what they
@@ -34,9 +34,16 @@ hackathon, in the Next Gen Award (the student category).
 
 <p align="center"><sub>Simulator, stub pipeline: the waiting is real and the model call is canned.<br><code>scripts/readme-shots.sh</code> makes this GIF and the pictures below.</sub></p>
 
-| <img src="docs/media/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, freely, a large red microphone button with Press and start talking under it, and a Write instead link."> | <img src="docs/media/02-result.png" alt="The result screen: Memory saved, a Move to another card button, the date 1950s, the card Who told this memory? with the answers Me, Someone else and I would rather not be named, and below it the beginning of the spoken text kept as it was said — in Finnish, because the sample telling is."> | <img src="docs/media/03-who-is-this.png" alt="The blind card: a drawn stand-in photograph, the question Who is this?, four names in identical black buttons — Sanni, Aino, Eeva and Kalle — and I do not remember below them."> |
+| <img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, freely, a large red microphone button with Press and start talking under it, and a Write instead link." width="1179"> | <img src="docs/media/mounted/02-result.png" alt="The result screen: Memory saved, a Move to another card button, the date 1950s, the card Who told this memory? with the answers Me, Someone else and I would rather not be named, and below it the beginning of the spoken text kept as it was said — in Finnish, because the sample telling is." width="1179"> | <img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a drawn stand-in photograph, the question Who is this?, four names in identical black buttons — Sanni, Aino, Eeva and Kalle — and I do not remember below them." width="1179"> |
 |---|---|---|
 | **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. | **Who is this?** One of the four names is the proposal, and nothing on the screen says which. |
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/divider-dark.svg">
+    <img src="docs/logo/divider.svg" alt="" width="320">
+  </picture>
+</p>
 
 ## What it does
 

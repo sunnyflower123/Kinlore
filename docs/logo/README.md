@@ -59,7 +59,10 @@ The primary user is 80 years old, and the mark is no exception to that rule.
 | `favicon.svg` | Redrawn for 16 px, see below |
 | `favicon-16.png`, `favicon-32.png` | Raster fallbacks for browsers that want them |
 | `lockup.svg` | Mark + name, horizontal, for light surfaces |
-| `lockup-dark.svg` | The same for dark surfaces — the root README switches between them |
+| `lockup-dark.svg` | The same for dark surfaces — DETAILS.md and simple.html switch between them |
+| `title-plate.svg` | The lockup on a parchment plate with a double rule, the root README's title |
+| `title-plate-dark.svg` | The same on espresso with amber rules, for GitHub's dark theme |
+| `divider.svg`, `divider-dark.svg` | The mark between two hairlines, where the root README's pictures end |
 | `concept-b-bubble.svg` | Alternative: the talking photo |
 | `concept-a-rings.svg` | Rejected, see above |
 
@@ -150,7 +153,8 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift scripts/out
 ```
 
 The script prints the bounding box to stderr. The viewBox has to be wide enough
-for its right edge, or the name clips again.
+for its right edge, or the name clips again. The two title plates carry the
+same path inside a scaled group, so a new outline goes into all four files.
 
 ## Favicon
 

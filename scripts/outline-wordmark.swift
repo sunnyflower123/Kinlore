@@ -19,7 +19,8 @@
 //
 // Arguments: <text> <family> <weight> <size> <kerning> <baseline-x> <baseline-y>
 // Writes the path data to stdout and the resolved font and bounding box to
-// stderr. Paste the result into the <path d="..."> of docs/logo/lockup*.svg.
+// stderr. Paste the result into the <path d="..."> of docs/logo/lockup*.svg
+// and docs/logo/title-plate*.svg.
 
 import CoreText
 import CoreGraphics
