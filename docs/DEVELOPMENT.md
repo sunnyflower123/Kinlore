@@ -554,6 +554,21 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/kinship-check.swift ios/Kinlore/Services/Kinship.swift \
   && /tmp/kinship-check
 
+# A memory's text naming a relative the teller never mentioned. In a take for
+# the demo film on 28 Sep 2026, the answer "Toivo did. He always had the
+# camera.", spoken by a synthetic voice, was saved as "Toivo, our dad, always
+# had the camera.", and the prompt forbidding it was the only guard.
+# `RemoteExtractionService` now keeps her own words whenever the text names a
+# relationship her telling did not, in either language and in any Finnish case.
+# This holds the table behind that: the sentence itself, every relationship in
+# both languages, the spoken forms the prompt tidies (*faija* into *isä*), and
+# the words that only begin like one (*isäntä*, *enough*). Costs nothing. Run it
+# after touching RelationWords.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/relation-words-check \
+  scripts/relation-words-check.swift ios/Kinlore/Services/RelationWords.swift \
+  && /tmp/relation-words-check
+
 # What the album's search finds when somebody types a year (ARCHITECTURE §8
 # item 12). "2000" found nothing on 28 Sep 2026 in an album with photographs
 # from 2003 and 2015 in it, and every way of reading a year wrongly is silent —

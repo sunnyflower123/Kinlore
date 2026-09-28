@@ -459,8 +459,21 @@ struct RemoteExtractionService: ExtractionService {
             timeout: Self.extractionTimeout(transcript: transcript)
         )
 
+        // What she said, with the names she corrected: where every relationship
+        // in the memory's text has to come from, and what replaces a text that
+        // names one from anywhere else (`RelationWords`). The stub's base-form
+        // replacement is enough for that. It is there so that a corrected name
+        // that is itself a relation word, a grandmother the family calls Mummo,
+        // does not read as one the model added.
+        let said = corrections.reduce(transcript) { $0.replacingOccurrences(of: $1.from, with: $1.to) }
+        let unsaid = RelationWords.unsaid(in: reply.body, said: said)
+        if !unsaid.isEmpty {
+            // The count and nothing else: the words are the family's.
+            print("[extract] the text named \(unsaid.count) relationship(s) the telling did not, keeping her own words")
+        }
+
         return ExtractionResult(
-            body: reply.body,
+            body: unsaid.isEmpty ? reply.body : said,
             mentions: reply.mentions.compactMap { mention in
                 // An unknown kind is dropped rather than guessed as a person:
                 // a wrong relative is worse than a missing one.

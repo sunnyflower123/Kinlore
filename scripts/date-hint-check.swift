@@ -30,9 +30,10 @@
 //     ios/Kinlore/Services/ExtractionContext.swift \
 //     ios/Kinlore/Services/PurchaseService.swift \
 //     ios/Kinlore/Services/Transcription.swift \
-//     ios/Kinlore/Services/Colourisation.swift
+//     ios/Kinlore/Services/Colourisation.swift \
+//     ios/Kinlore/Services/RelationWords.swift
 //
-// Seven files for one function is the price of compiling the real one instead
+// Eight files for one function is the price of compiling the real one instead
 // of a copy: AppServices.swift names every service protocol in the app, and
 // `-enable-bare-slash-regex` is for the regex literals in Extraction.swift.
 // The line is long and it is checked by the compiler, so it fails loudly and

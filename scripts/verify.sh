@@ -251,8 +251,20 @@ date_hint() {
 		ios/Kinlore/Services/AppServices.swift ios/Kinlore/Model/Models.swift \
 		ios/Kinlore/Services/Extraction.swift ios/Kinlore/Services/ExtractionContext.swift \
 		ios/Kinlore/Services/PurchaseService.swift ios/Kinlore/Services/Transcription.swift \
-		ios/Kinlore/Services/Colourisation.swift \
+		ios/Kinlore/Services/Colourisation.swift ios/Kinlore/Services/RelationWords.swift \
 		&& "$OUT/date-hint-check"
+}
+
+# A memory's text naming a relative the teller never mentioned: "Toivo, our
+# dad, always had the camera." from an answer that said "Toivo did." Added
+# 28 Sep 2026, when that sentence reached a card in a take for the demo film,
+# the teller a synthetic voice. Rule 4's wrong relationship in her own voice,
+# and silent: the sentence reads like hers.
+relation_words() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/relation-words-check" scripts/relation-words-check.swift \
+		ios/Kinlore/Services/RelationWords.swift \
+		&& "$OUT/relation-words-check"
 }
 
 # Where the family tree puts people and the lines between them. Pure arithmetic
@@ -352,6 +364,7 @@ run "nobody is asked more than they can answer" question_ladder
 run "a silent answer ends, a pause does not" answer_watch
 run "a question aims at what the archive lacks" extraction_context
 run "no date is sharper than what was said" date_hint
+run "no memory names a relative nobody said" relation_words
 run "the app asks again later, and not for the weather" transcription_catchup
 run "a child is drawn below her parents" family_tree_layout
 run "every word in the tree is exact" kinship

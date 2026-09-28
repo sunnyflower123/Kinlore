@@ -106,8 +106,8 @@ never overwrites a real one.
 
 **What keeps "done" true now.** `./scripts/verify.sh` runs every check in this
 repository that costs nothing, each one for a failure that leaves a working app
-behind. On 28 Sep 2026 that was 56 checks: 12 drive a Worker started locally, 2
-need a simulator of your own, and the other 42 need neither. Its header names
+behind. On 29 Sep 2026 that was 57 checks: 12 drive a Worker started locally, 2
+need a simulator of your own, and the other 43 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
 The UI suite has 341 UI tests, including 110 accessibility sweeps that audit a
