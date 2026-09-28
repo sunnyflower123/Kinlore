@@ -1840,6 +1840,31 @@ final class MemoryStore {
             save()
             return
         }
+        // `-seed large`: the same family a year or two into the archive, with
+        // a hundred and fifty photographs and the tellings, places, questions
+        // and proposals such an archive gathers (`LargeArchiveFixture`), for
+        // looking at every screen at the size it is built for. It writes its
+        // own seen baseline, so the three newest tellings from other phones
+        // arrive as news, and it draws its photographs on the first launch.
+        if seed == "large" {
+            let fixture = LargeArchiveFixture.archive(me: Identity.loadOrCreate().memberID)
+            subjects = fixture.subjects
+            memories = fixture.memories
+            questions = fixture.questions
+            relations = fixture.relations
+            dirtySubjects = []
+            dirtyMemories = []
+            dirtyQuestions = []
+            dirtyRelations = []
+            retiredQuestions = []
+            syncSeq = 0
+            UserDefaults.standard.set(fixture.seen, forKey: NewFromFamily.seenKey)
+            UserDefaults.standard.removeObject(forKey: Deck.skippedKey)
+            UserDefaults.standard.removeObject(forKey: BlindConfirmation.answeredKey)
+            print("[store] seed large: drew \(fixture.drawn) pictures in \(String(format: "%.1f", fixture.drawing)) s")
+            save()
+            return
+        }
         // `-seed alphabet`: four people and four places, made in an order
         // that is neither the alphabet's nor its reverse, for the lists that
         // read by name. A Finnish phone sorts Ä and Ö after Z where an English

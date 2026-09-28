@@ -297,6 +297,11 @@ final class Session {
             // (`MemoryStore`); this is what their card reads to say why.
             seedDemoFamily(photosUsed: 20)
             return
+        case "large":
+            // A family's archive a year or two in; the store seeds the
+            // archive (`LargeArchiveFixture`), and this is its family.
+            seedLargeFamily()
+            return
         default:
             // `-you <card id>` with any store seed: a family whose "you" is
             // linked to that card, as `PATCH /family/me` links it for real,
@@ -1023,6 +1028,56 @@ final class Session {
             entitlement: "free",
             aiSeconds: .init(used: 7 * 60, limit: 10 * 60),
             photos: .init(used: photosUsed, limit: 20)
+        )
+    }
+
+    /// The family behind `-seed large` (`LargeArchiveFixture`): Elina, who
+    /// started the archive a year and a half ago, the eight members whose
+    /// phones told the rest of it, and one invitation still open. A paying
+    /// family, as one with a hundred and fifty photographs is, since the free
+    /// archive stops at twenty. This phone is Elina, on her own card unless
+    /// `-you` says otherwise.
+    private func seedLargeFamily() {
+        let now = Date.now.timeIntervalSince1970
+        let day: Double = 24 * 60 * 60
+        mode = .inFamily(id: "large-family")
+        UserDefaults.standard.removeObject(forKey: Self.pendingPersonLinkKey)
+        acknowledgeSharedIdentity()
+        let yourCard: String?
+        switch UserDefaults.standard.string(forKey: "you") {
+        case nil: yourCard = ClanFixture.you
+        case "none": yourCard = nil
+        case let card: yourCard = card
+        }
+        let me = identity.memberID
+        let name = LargeArchiveFixture.myName
+        family = Family(
+            id: "large-family",
+            name: LargeArchiveFixture.familyName,
+            entitlement: "archive",
+            you: Family.You(id: me, role: "owner", displayName: name, personSubjectID: yourCard),
+            members: [
+                Member(
+                    id: me, displayName: name, role: "owner",
+                    joinedAt: now - LargeArchiveFixture.myJoined * day, personSubjectID: yourCard
+                ),
+            ] + LargeArchiveFixture.phones.map { phone in
+                Member(
+                    id: phone.id, displayName: phone.name, role: "member",
+                    joinedAt: now - phone.joined * day, personSubjectID: "clan-" + phone.card
+                )
+            },
+            invites: [
+                Invite(
+                    code: "large-oskari", expiresAt: now + 5 * day, usedCount: 0,
+                    displayName: LargeArchiveFixture.invited
+                ),
+            ]
+        )
+        usage = EntitlementClient.Usage(
+            entitlement: "archive",
+            aiSeconds: .init(used: 94 * 60, limit: nil),
+            photos: .init(used: 150, limit: nil)
         )
     }
     #endif

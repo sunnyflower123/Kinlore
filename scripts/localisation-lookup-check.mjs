@@ -122,6 +122,8 @@ const EXEMPT = [
    'the demo archive — memories written INTO an archive, where an English word would be somebody\'s record of their own family'],
   ['Data/ClanFixture.swift',
    'demo names'],
+  ['Data/LargeArchiveFixture.swift',
+   'the large demo archive (`-seed large`): records written INTO an archive, each in both languages, and the phone\'s language picks one when the seed runs'],
   ['Services/QuestionLadder.swift',
    'matching patterns read against a transcript, not shown to anybody'],
   ['Services/Extraction.swift',

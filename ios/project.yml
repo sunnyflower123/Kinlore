@@ -73,6 +73,22 @@ schemes:
     run:
       config: Release
 
+  # A family's archive a year or two in, for seeing the app at the size it is
+  # built for: 150 photographs, the clan's people, places on the map, some 250
+  # tellings, questions and proposals (LargeArchiveFixture). Debug with no
+  # `-api` runs on stubs, so nothing reaches a server and nothing costs
+  # credit. Every launch from Xcode replaces the archive on the device it runs
+  # on, so pick a simulator rather than a phone that holds a real family. The
+  # first launch also draws the photographs, about a second on a simulator.
+  Kinlore Large Archive:
+    build:
+      targets:
+        Kinlore: all
+    run:
+      config: Debug
+      commandLineArguments:
+        "-seed large": true
+
 targets:
   Kinlore:
     type: application
