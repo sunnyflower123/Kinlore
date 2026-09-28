@@ -701,7 +701,13 @@ final class FilmDriver: XCTestCase {
     /// defaults and RevenueCat's secret in the Worker.
     func testFilmThePurchaseLive() throws {
         let app = try rollLive(["-screen", "family"])
-        guard statusReads(app, ["Free", "Ilmainen"], timeout: 30) else {
+        // The offer is drawn only for a family that has not paid, and the
+        // paywall's own button carries the same words: none of either, for
+        // two seconds, is the sheet gone and the family paid.
+        let offers = app.buttons.matching(NSPredicate(
+            format: "label IN %@", ["Open the whole archive", "Avaa koko arkisto"]
+        ))
+        guard statusReads(app, ["Free", "Ilmainen"], timeout: 30, proxy: { offers.firstMatch.exists }) else {
             throw NeverArrived(labels: ["Status: Free, on the family screen"])
         }
         beat(2.6) // Free, and the month's minutes used up
@@ -727,7 +733,8 @@ final class FilmDriver: XCTestCase {
         try tap(app.buttons, ["Test valid purchase"], timeout: 30)
         // The Test Store, then `/entitlement/sync`, then RevenueCat's REST
         // answer, then the refresh: unmeasured, and shown whole either way.
-        guard statusReads(app, ["Paid", "Maksullinen"], timeout: 90) else {
+        guard statusReads(app, ["Paid", "Maksullinen"], timeout: 90,
+                          proxy: { !offers.firstMatch.exists }, holding: 2.0) else {
             throw NeverArrived(labels: ["Status: Paid — the purchase did not reach the family"])
         }
         beat(6.0)
@@ -923,16 +930,47 @@ final class FilmDriver: XCTestCase {
     /// Whether the family screen's Status row reads one of these words: as
     /// its row's value, or as a text of its own, whichever this iOS builds
     /// out of a `LabeledContent`.
-    private func statusReads(_ app: XCUIApplication, _ words: [String], timeout: TimeInterval) -> Bool {
+    ///
+    /// On 28 Sep 2026 the row read Free on screen while its "Status" element
+    /// carried an empty value and no element at all was called Free, so a
+    /// caller may pass `proxy`, a fact that only the state it waits for makes
+    /// true, and how long it must stay true before it is believed.
+    private func statusReads(
+        _ app: XCUIApplication, _ words: [String], timeout: TimeInterval,
+        proxy: (() -> Bool)? = nil, holding: TimeInterval = 0
+    ) -> Bool {
         let rows = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Status", "Tila"]))
+        // Any element type, for the same reason as `proxy`.
+        let named = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", words))
+        // What the tree says about the row, for the record, whenever the words
+        // themselves were not what answered.
+        func record(_ why: String) {
+            let lines = app.debugDescription.split(separator: "\n").filter { line in
+                (["Status", "Tila"] + words).contains(where: { line.contains($0) })
+            }
+            print("FILM \(why); the tree has: \(lines.map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: " | "))")
+        }
         let deadline = Date().addingTimeInterval(timeout)
+        var proxySince: Date?
         repeat {
             for row in rows.allElementsBoundByIndex {
-                if let value = row.value as? String, words.contains(value) { return true }
+                if let value = row.value as? String, words.contains(where: { value.localizedCaseInsensitiveContains($0) }) { return true }
             }
             if words.contains(where: { app.staticTexts[$0].exists }) { return true }
+            if named.firstMatch.exists { return true }
+            if let proxy, proxy() {
+                let now = Date()
+                if proxySince == nil { proxySince = now }
+                if let since = proxySince, now.timeIntervalSince(since) >= holding {
+                    record("\(words[0]) read from its proxy, not from the row")
+                    return true
+                }
+            } else {
+                proxySince = nil
+            }
             Thread.sleep(forTimeInterval: 0.3)
         } while Date() < deadline
+        record("\(words[0]) never read")
         return false
     }
 
