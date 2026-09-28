@@ -235,6 +235,88 @@ struct ExtractionContextCheck {
             ["Missä tämä on otettu?"], against: []
         ), ["Missä tämä on otettu?"])
 
+        // Two people are two questions, however many words they share. Until
+        // 28 Sep 2026 Kalle's question shared three of its four words with
+        // Aino's and was dropped as its repeat, in either language, so the
+        // second person a telling named was never asked about and nothing on
+        // the screen said so.
+        check(
+            "the same question about somebody else survives",
+            ExtractionContext.deduplicated(["Millainen ihminen Kalle oli?"], against: already),
+            ["Millainen ihminen Kalle oli?"]
+        )
+        check(
+            "and in English",
+            ExtractionContext.deduplicated(
+                ["What sort of person was Kalle?"], against: ["What sort of person was Aino?"]
+            ),
+            ["What sort of person was Kalle?"]
+        )
+        // Finnish carries the name in a case ending and English in a
+        // possessive, so the name is rarely the word a list of names holds.
+        check(
+            "an inflected name is still somebody else",
+            ExtractionContext.deduplicated(
+                ["Mitä kaikkea muistat Kallesta?"], against: ["Mitä kaikkea muistat Ainosta?"]
+            ),
+            ["Mitä kaikkea muistat Kallesta?"]
+        )
+        check(
+            "in the genitive too",
+            ExtractionContext.deduplicated(
+                ["Mitä Kallen isä teki työkseen?"], against: ["Mitä Ainon isä teki työkseen?"]
+            ),
+            ["Mitä Kallen isä teki työkseen?"]
+        )
+        check(
+            "and after an English possessive",
+            ExtractionContext.deduplicated(
+                ["What did Kalle's father do for a living?"], against: ["What did Aino's father do for a living?"]
+            ),
+            ["What did Kalle's father do for a living?"]
+        )
+        check(
+            "a place is somebody else as well",
+            ExtractionContext.deduplicated(
+                ["Millainen paikka Kuopio oli?"], against: ["Millainen paikka Puumala oli?"]
+            ),
+            ["Millainen paikka Kuopio oli?"]
+        )
+        check(
+            "two people in one reply are both kept",
+            ExtractionContext.deduplicated(
+                ["Millainen ihminen Aino oli?", "Millainen ihminen Kalle oli?"], against: []
+            ),
+            ["Millainen ihminen Aino oli?", "Millainen ihminen Kalle oli?"]
+        )
+        // And a restatement still goes. The word that opens a sentence has a
+        // capital whatever it is, so it names nobody.
+        check(
+            "a question word that opens the sentence is not a name",
+            ExtractionContext.deduplicated(["Kertoisitko, millainen ihminen Aino oli?"], against: already),
+            [String]()
+        )
+        check(
+            "and a question that names nobody is not about somebody else",
+            ExtractionContext.deduplicated(["Millainen ihminen hän oli?"], against: already),
+            [String]()
+        )
+        check(
+            "an English restatement is dropped",
+            ExtractionContext.deduplicated(
+                ["What kind of person was Aino?"], against: ["What sort of person was Aino?"]
+            ),
+            [String]()
+        )
+        check(
+            "and so is one with more on the end",
+            ExtractionContext.deduplicated(
+                ["What sort of person was Aino, and what did she do for a living?"],
+                against: ["What sort of person was Aino?"]
+            ),
+            [String]()
+        )
+
         // MARK: - Not more than five
 
         print("\n— one subject carries at most five open questions —")

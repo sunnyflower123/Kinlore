@@ -184,13 +184,23 @@ extension ExtractionContext {
     /// then a shared-word ratio. A near-miss left in is one repeated question; a
     /// good question thrown out is a hole nobody ever hears about, so the
     /// threshold sits high enough that only a restatement trips it.
+    ///
+    /// Except between people, where no threshold can tell. *"Millainen
+    /// ihminen Kalle oli?"* shares three of its four words with Aino's
+    /// question, and until 28 Sep 2026 it was dropped as its repeat, in
+    /// either language: the question the archive asked about one person it
+    /// never asked about the next. So two questions that each name somebody
+    /// the other does not are two questions, however many words they share
+    /// (`names(in:)`).
     static func deduplicated(_ incoming: [String], against existing: [String]) -> [String] {
         var kept: [String] = []
-        var seen = existing.map(words(of:))
+        var seen = existing.map { (words: words(of: $0), names: names(in: $0)) }
         for question in incoming {
-            let candidate = words(of: question)
-            guard !candidate.isEmpty else { continue }
-            let repeats = seen.contains { overlap(candidate, $0) >= 0.7 }
+            let candidate = (words: words(of: question), names: names(in: question))
+            guard !candidate.words.isEmpty else { continue }
+            let repeats = seen.contains {
+                !differentPeople(candidate.names, $0.names) && overlap(candidate.words, $0.words) >= 0.7
+            }
             if repeats { continue }
             kept.append(question)
             seen.append(candidate)
@@ -209,6 +219,37 @@ extension ExtractionContext {
                 .components(separatedBy: CharacterSet.alphanumerics.inverted)
                 .filter { $0.count > 2 }
         )
+    }
+
+    /// The names in a question: every word with a capital that does not open
+    /// a sentence, since the word that opens one has a capital whatever it is.
+    /// Taken as they stand, inflection and all, for the reason `words(of:)`
+    /// gives: *"Ainosta"* is not *"Aino"*, so the same person moved into
+    /// another case reads as somebody else and both questions survive. A name
+    /// that opens the question is not seen at all, which leaves the ratio to
+    /// decide as before; the model's questions open with the question word.
+    private static func names(in question: String) -> Set<String> {
+        var names: Set<String> = []
+        for sentence in question.components(separatedBy: CharacterSet(charactersIn: ".?!")) {
+            let tokens = sentence.components(separatedBy: CharacterSet.alphanumerics.inverted)
+                .filter { !$0.isEmpty }
+            for token in tokens.dropFirst() where token.count > 1 && token.first?.isUppercase == true {
+                names.insert(token.lowercased())
+            }
+        }
+        return names
+    }
+
+    /// Whether each of two questions names somebody the other does not.
+    ///
+    /// Not merely different names: *"Millainen ihminen hän oli?"* names
+    /// nobody, and a question that adds a second name on the end is the
+    /// longer restatement `overlap` already folds. A question in capitals
+    /// throughout has a capital on every word, so it names every word it has,
+    /// and a question about the same person names nobody it lacks: the ratio
+    /// decides, as before.
+    private static func differentPeople(_ a: Set<String>, _ b: Set<String>) -> Bool {
+        !a.isSubset(of: b) && !b.isSubset(of: a)
     }
 
     /// The most questions one subject carries open before a model's reply

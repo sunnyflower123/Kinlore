@@ -3006,6 +3006,20 @@ drops a restatement on the client as well, so the archive's question list stops
 growing by three a round whether or not the model cooperated — which is the cap
 §10 deferred to "the store" and the note above claimed was already closed.
 
+The ratio could not tell people apart. *"Millainen ihminen Kalle oli?"* shares
+three of its four words with *"Millainen ihminen Aino oli?"*, over the 0.7
+threshold, and *"What sort of person was Kalle?"* four of five with Aino's, so
+until 28 Sep 2026 the same question about a second person was dropped as a
+repeat of the first, and nothing showed the gap. **Two questions that each
+name somebody the other does not are now two questions**, however many words
+they share. A name is a word with a capital that does not open a sentence,
+taken inflected as it stands (*Ainosta*, *Kallen*, *Kalle's*), so no list of
+names has to know every case ending. The restatements still fold, in both
+languages: a question with more on the end, one that names nobody, one that
+opens with another word (*Kertoisitko, millainen…*). The eleven checks added
+to `scripts/extraction-context-check.swift` for it failed seven before the fix
+and pass after it.
+
 It stopped the repeats, not the growth, because each telling still brings three
 questions and answers at most one. **Since 25 Sep 2026 one subject carries at
 most five open questions** (`ExtractionContext.openQuestionCap`). A model's
