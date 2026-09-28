@@ -218,9 +218,10 @@ top of a screen, and clipping happens further down.
 
 An audit shares that limit on a screen taller than the phone: it judges only
 what the accessibility tree holds, and a list builds only the rows near the
-screen. So the two setup forms, Perhe and all three states of Settings are
-audited page by page at the largest size, and Help (*Näin tämä toimii*) and the
-album by decade are still judged there only as far as the first screen reaches.
+screen. So the two setup forms, Family (*Perhe*) and all three states of
+Settings are audited page by page at the largest size, and Help, *How this
+works* (*Näin tämä toimii*), and the album by decade are still judged there
+only as far as the first screen reaches.
 The comparison that found it sits behind `KINLORE_XXXL_LOSS` in
 `AccessibilitySweepTests.swift`.
 
@@ -372,10 +373,10 @@ not close that hole.
 say before their button that the recording is sent to be written down and that
 the original is kept (`WhereMemoriesGo`; `ConsentOrderTests` checks at both
 text sizes that it is on screen whenever the button is), and the create form
-offers *"Vain minulle, tälle puhelimelle"*: an archive kept to one phone, which
-sends no recording and transcribes nothing (the guard in
-`TellViewModel.stopAndProcess`). `LocalModeTests` pins what that mode says and
-not the guard itself, and its header says why. Since 26 Sep 2026 the notice,
+offers *"Only for me, on this phone"* (*"Vain minulle, tälle puhelimelle"*):
+an archive kept to one phone, which sends no recording and transcribes nothing
+(the guard in `TellViewModel.stopAndProcess`). `LocalModeTests` pins what that
+mode says and not the guard itself, and its header says why. Since 26 Sep 2026 the notice,
 the Help screen and the microphone prompt say that the recording goes through
 OpenRouter to a model, and the notice and Help add the photograph that has
 travelled with a telling about one since 19 Sep 2026

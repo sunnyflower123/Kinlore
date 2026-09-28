@@ -57,14 +57,16 @@ The findings, each measured on 17 Aug:
    buttons that both assume you already know. *(Stands as an observation; the
    fix this document proposed for it was measured and rejected before it was
    proposed — see §3.1.)*
-3. **The joiner lands as if nothing had been shared.** After
-   *"Liity perheeseen"* the mode flips and `RootView` opens on the default tab
-   — Kerro (`RootView.swift:16-25`) — with starter questions, exactly like a
-   founder with an empty archive. The family's memories, the thing that was
-   shared, are one tab away and nothing points there. Worse: until the first
-   pull completes, Muistot shows *"Ei vielä kuvia. Lisää vanha valokuva…"*
-   (`GalleryScreen.swift:144-158`) — a false sentence on a phone that just
-   joined a family with photos.
+3. **The joiner lands as if nothing had been shared.** After *"Join a family"*
+   (*"Liity perheeseen"*) the mode flips and `RootView` opens on the default
+   tab — Tell (*Kerro*; `RootView.swift:16-25`) — with starter questions,
+   exactly like a founder with an empty archive. The family's memories, the
+   thing that was shared, are one tab away and nothing points there. Worse:
+   until the first pull completes, Album (*Albumi*, called *Muistot* until 13
+   Sep 2026) shows *"No photographs yet. …"* (*"Ei vielä kuvia. Lisää vanha
+   valokuva…"*; the second sentence is *"Photograph an old picture from the
+   album…"* now) (`GalleryScreen.swift:144-158`) — a false sentence on a phone
+   that just joined a family with photos.
 4. **A link tapped at the wrong time does nothing at all.** `invitedCode` is
    read only while `OnboardingScreen` is mounted; in `.local` or `.inFamily`
    the code is parsed, stored and never read (`KinloreApp.swift:96-99`). The
@@ -123,9 +125,10 @@ places, all derived.
 - **The door.** The founder walks through *"Aloita perheen arkisto"* and a
   form that asks who they are and whose phone it is. The invited walks through
   a link into *"Liity perheeseen"* and gives only a name.
-- **The first landing.** The founder lands on Kerro, because an empty archive
-  has nothing to read and the first telling is the product. The invited lands
-  on **Muistot**, because something was shared and the arrival must show it.
+- **The first landing.** The founder lands on Tell (*Kerro*), because an empty
+  archive has nothing to read and the first telling is the product. The invited
+  lands on **Album** (*Albumi*), because something was shared and the arrival
+  must show it.
 - **The offer slot.** The result screen's one card is the invitation while
   the family is one person, and the paid archive after that. The elder in the
   middle of checking names sees neither — the no-card-beside-proposals rule
@@ -250,7 +253,7 @@ in this arc works if the joiner cannot read what they joined.
 ### 4.3 The arrival lands on what was shared
 
 At the moment `join` succeeds, set a one-shot device-local flag; `RootView`
-consumes it and opens on **Muistot**. Two states of that first view:
+consumes it and opens on **Album** (*Albumi*). Two states of that first view:
 
 - **While the first pull runs** (store empty, cursor 0, sync in flight):
   a waiting state instead of the false invitation —
@@ -403,9 +406,10 @@ Two shapes, one derivation:
   on their subject's own Tell screen; the front screen never shows what the
   model thought of by itself (ARCHITECTURE §12).
 - **The reader returns.** New, and the smallest instrument that answers
-  finding 7: **"Uutta perheeltä"** — a section at the top of Muistot listing
-  tellings by *other* members this phone has not seen, author and subject on
-  the row, tap → the subject's card. Visiting Muistot marks everything seen.
+  finding 7: **"New from the family"** (*"Uutta perheeltä"*) — a section at
+  the top of Album (*Albumi*) listing tellings by *other* members this phone has
+  not seen, author and subject on the row, tap → the subject's card. Visiting
+  Album marks everything seen.
   No red badges, no counts on the tab bar, no notifications — a section that
   exists when there is something and does not when there is not, exactly like
   `SyncNote` facing the other direction.
@@ -419,14 +423,14 @@ Two shapes, one derivation:
   archive into the section (the arrival state frames that case), and
   "by other members" is exactly `authorID != me` with nil excluded, since a
   locally told memory has no author id until the server assigns one.
-- **The default tab follows it.** Unseen tellings by others → open on
-  Muistot; otherwise → Kerro. The elder whose family has been reading her
-  stories opens onto *their* newest telling — which is the reading loop
-  finally pointing both ways. Risk, named: if the phase E visit shows the
+- **The default tab follows it.** Unseen tellings by others → open on Album
+  (*Albumi*); otherwise → Tell (*Kerro*). The elder whose family has been
+  reading her stories opens onto *their* newest telling — which is the reading
+  loop finally pointing both ways. Risk, named: if the phase E visit shows the
   flip costs her the button, the flip (one condition) is reverted and the
   section stays.
 
-**Revised 5 Sep 2026:** the flip is gated on whose phone it is. A reader's phone still opens on Muistot when the family has told something; a grandparent's (the text-floor signal from *"kenen puhelin tämä on"*) opens on Kerro every time, and the blind card moves to her Muistot for the same reason (founder's-eye review, findings #75, #76, #81, #83).
+**Revised 5 Sep 2026:** the flip is gated on whose phone it is. A reader's phone still opens on Album (*Albumi*) when the family has told something; a grandparent's (the text-floor signal from *"Whose phone this is"* (*"Kenen puhelin tämä on"*)) opens on Tell (*Kerro*) every time, and the blind card moves to her Album for the same reason (founder's-eye review, findings #75, #76, #81, #83).
 
 **The removal that pays for it:** the map screen. PLAN §10 holds it as an
 open decision; this document closes it — **no map in v1**, the coordinates
@@ -504,9 +508,9 @@ re-litigate them:
 - **Tooltips and coach marks.** Hostile to VoiceOver, hostile to large text,
   and they explain screens that should instead explain themselves (the
   empty-state-as-invitation rule already does this).
-- **Tab-bar badges with numbers.** A number on Muistot is a debt; the
-  "Uutta perheeltä" section is an offer. (Also: §21 — no new mechanism where
-  a section already carries the act.)
+- **Tab-bar badges with numbers.** A number on Album (*Albumi*) is a debt; the
+  "New from the family" ("Uutta perheeltä") section is an offer. (Also: §21 —
+  no new mechanism where a section already carries the act.)
 - **A role picker or "elder mode".** Roles are derived (§2). A mode switch is
   a setting a family would have to discover, set, and get wrong.
 - **Family rename.** A family is named when it is created and no route
@@ -533,7 +537,7 @@ P1 in early phase D beside the paywall craft it neighbours.
 | P0-1 | ~~Intro survives accessibility sizes~~ | 3.1 | — | — | **Withdrawn** — measured and rejected in `OnboardingScreen.intro` before this document proposed it |
 | P0-2 | Invite card in the offer slot, family of one | 3.2 | 1–1½ | replaces the upsell card there; deletes a false sentence | **Built 17 Aug 2026** |
 | P0-3 | Link always answered (3 strings, moved guard) | 4.1 | ½ | completion of ARCH §4's known shortcoming | **Built 17 Aug 2026** |
-| P0-4 | Joiner lands on Muistot + "Haetaan perheen muistoja…" | 4.3 | 1 | state derivation, no new surface | **Built 17 Aug 2026** — and found the first pull waited for a relaunch; fixed with it |
+| P0-4 | Joiner lands on Album (*Albumi*) + "Fetching the family's memories…" ("Haetaan perheen muistoja…") | 4.3 | 1 | state derivation, no new surface | **Built 17 Aug 2026** — and found the first pull waited for a relaunch; fixed with it |
 | P0-5 | *"Kenen puhelin tämä on"* on the join form | 5 | ½ | §16 precedent: rule 1 completion | **Built 17 Aug 2026** |
 | P0-6 | Production URL default (deploy day) | 7 | ¼ | config, not feature | **Built 24 Aug** — Release default, DEBUG stays on stubs (§7); R2 had been enabled since 17 Aug |
 | P1-1 | "Uutta perheeltä" + derived default tab | 6 | 2 | **the map is formally out of v1** (built anyway 21 Sep 2026, the debt open — §6) | **Built 17 Aug 2026** — the payment is recorded in PLAN §10's map row; mechanism corrected to a seen-id list, see §6 |
@@ -552,11 +556,12 @@ join form in both directions, three new launch arguments in SETUP.md
 The two independent fixes §1 flagged are done, both 17 Aug 2026: the invite
 link keeps its key fragment (the parser reattaches it, and `-invite` with a
 full URL drives the real parser in `SilentFailureTests`), and the photo-limit
-402 is decoded, counted and said — a `SyncNote`-shaped line on Muistot,
-*"…ei mahtunut ilmaiseen arkistoon. … tallessa tässä puhelimessa ja lähtee
-perheelle kun tilaa on."* — never a modal, never a red badge, cleared by the
-re-sync that going paid now triggers. ARCHITECTURE §4 and §5 carry the full
-accounts.
+402 is decoded, counted and said — a `SyncNote`-shaped line on Album
+(*Albumi*), *"…did not fit the free archive. … safe on this phone and travels
+to the family when there is room."* (*"…ei mahtunut ilmaiseen arkistoon. …
+tallessa tässä puhelimessa ja lähtee perheelle kun tilaa on."*) — never a
+modal, never a red badge, cleared by the re-sync that going paid now triggers.
+ARCHITECTURE §4 and §5 carry the full accounts.
 
 **Every item ships with its tests** in the house pattern: a sweep audit at
 both text sizes for each new state (the arrival-waiting state, the invite
