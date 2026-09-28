@@ -719,6 +719,7 @@
 "Kartta" = "Kartta";
 "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin.";
 "Avaa paikan kortin." = "Avaa paikan kortin.";
+"Avaa kuvan koko näytölle." = "Avaa kuvan koko näytölle.";
 "Kartta perheen paikoista." = "Kartta perheen paikoista.";
 
 /* The family's map opened on one place — see en.lproj. */

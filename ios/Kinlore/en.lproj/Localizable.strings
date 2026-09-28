@@ -845,6 +845,7 @@
 "Kartta" = "Map";
 "Kartta. Jokainen paikka on nappi, joka avaa paikan kortin." = "Map. Every place is a button that opens the place's card.";
 "Avaa paikan kortin." = "Opens the place's card.";
+"Avaa kuvan koko näytölle." = "Opens the photograph full screen.";
 "Kartta perheen paikoista." = "A map of the family's places.";
 
 /* The family's map opened on one place (25 Sep 2026), from the small map on a

@@ -454,9 +454,10 @@ final class FilmDriver: XCTestCase {
         // As far as the photograph and no further. The card opened out of its
         // tile, and one more pull at its top closes it back into the album
         // (27 Sep 2026), which two fixed swipes can reach.
-        // Both the picture and the title are the untitled photograph's name.
+        // Both the picture and the title are the untitled photograph's name,
+        // and the picture is a button, since it opens to the whole screen.
         let untitled = ["Photograph", "Valokuva"]
-        let photograph = app.images.matching(NSPredicate(format: "label IN %@", untitled)).firstMatch
+        let photograph = app.buttons.matching(NSPredicate(format: "label IN %@", untitled)).firstMatch
         let title = app.navigationBars
             .matching(NSPredicate(format: "identifier IN %@ OR label IN %@", untitled, untitled)).firstMatch
         for _ in 0 ..< 4 where !(photograph.exists && title.exists

@@ -74,11 +74,17 @@ struct ColourSheet: View {
 
     private func proposal(_ coloured: UIImage) -> some View {
         VStack(alignment: .leading, spacing: 20) {
+            // Opened to the whole screen by a tap, as the photograph it colours
+            // is: the question is whether it looks right, and the answer is
+            // in the faces as much as in the sky.
             Image(uiImage: coloured)
                 .resizable()
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-                .accessibilityLabel("Väritetty ehdotus. Värit ovat tekoälyn arvaus siitä, mitä kuvasta on kerrottu.")
+                .opensToTheWholeScreen(
+                    coloured,
+                    label: String(localized: "Väritetty ehdotus. Värit ovat tekoälyn arvaus siitä, mitä kuvasta on kerrottu.")
+                )
 
             Text("Näyttääkö tältä?")
                 .font(Elder.display(.title2))

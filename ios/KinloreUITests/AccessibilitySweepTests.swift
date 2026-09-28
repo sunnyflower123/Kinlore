@@ -2468,7 +2468,8 @@ final class AccessibilitySweepTests: XCTestCase {
     /// The photograph is required by its label before the audit, so losing
     /// the label fails here by name rather than only as the audit's finding.
     /// The seed's photograph is untitled, so the label is the word an
-    /// untitled one is shown under, `displayTitle`'s *"Valokuva"*.
+    /// untitled one is shown under, `displayTitle`'s *"Valokuva"* — on a
+    /// button, since the picture opens to the whole screen (`PhotoViewer`).
     ///
     /// At the default size the picture holds the memories' heading at
     /// y 756.33, where the audit's simulation reports it. That finding is
@@ -2480,8 +2481,23 @@ final class AccessibilitySweepTests: XCTestCase {
     func testPhotoDetailWithThePicture() throws {
         try sweep("Photo detail with the picture", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
-            require(app.images["Valokuva"], "the photograph, by its label")
+            require(app.buttons["Valokuva"], "the photograph, by its label")
             XCTAssertTrue(hasStoppedDrawing(app), "the photo card was still being drawn when the audit ran")
+        }
+    }
+
+    /// The same photograph opened to the whole screen from its card: the
+    /// picture on ink, and above it the close control in cream on the same
+    /// ink, where a picture brought close never reaches it to take its
+    /// contrast. The picture is required by the label it has on the card.
+    func testPhotoViewer() throws {
+        try sweep("Photo viewer", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            require(app.buttons["Valokuva"], "the photograph on its card").tap()
+            require(app.buttons["photoViewer.close"], "the way to close the photograph")
+            let photo = require(app.images["photoViewer.photo"], "the photograph on its own")
+            XCTAssertEqual(photo.label, "Valokuva", "the photograph is named otherwise than on its card")
+            XCTAssertTrue(hasStoppedDrawing(app), "the photograph was still arriving when the audit ran")
         }
     }
 

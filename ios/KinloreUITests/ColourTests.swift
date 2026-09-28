@@ -35,9 +35,10 @@ final class ColourTests: XCTestCase {
     /// title — read from frames, since `isHittable` fails outright on a row
     /// the list holds outside the window — and the card has to be open
     /// before anything is read off it. The photograph is untitled, so
-    /// both it and the title are `displayTitle`'s *"Valokuva"*.
+    /// both it and the title are `displayTitle`'s *"Valokuva"*, and it is a
+    /// button, since it opens to the whole screen (`PhotoViewer`).
     private func backToThePhotograph(_ app: XCUIApplication) {
-        let photograph = app.images["Valokuva"]
+        let photograph = app.buttons["Valokuva"]
         let title = app.navigationBars["Valokuva"]
         let inView = { photograph.exists && title.exists && photograph.frame.minY >= title.frame.maxY - 1 }
         for _ in 0 ..< 6 where !inView() { app.swipeDown() }
@@ -63,7 +64,8 @@ final class ColourTests: XCTestCase {
         app.buttons["Kyllä, tallenna värit"].tap()
 
         backToThePhotograph(app)
-        let colours = app.images[kept]
+        // A button, since it opens to the whole screen as the photograph does.
+        let colours = app.buttons[kept]
         XCTAssertTrue(colours.waitForExistence(timeout: 10), "the kept colouring is not on the card")
         XCTAssertTrue(
             app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Vahvisti")).firstMatch.exists,
@@ -81,7 +83,8 @@ final class ColourTests: XCTestCase {
             "never came back to the card"
         )
         backToThePhotograph(app)
-        XCTAssertFalse(app.images[kept].exists, "an uncertain answer kept the colours")
+        // Either element, so that this cannot pass by asking for the wrong one.
+        XCTAssertFalse(app.buttons[kept].exists || app.images[kept].exists, "an uncertain answer kept the colours")
     }
 
     func testNoOpensTheTellingForThePhotograph() {

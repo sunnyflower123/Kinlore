@@ -784,10 +784,14 @@ private struct IdleView: View {
                     // the rows below leave it: `Squeeze.card`.
                     .frame(maxHeight: photoCeiling ?? (typeSize.isAccessibilitySize ? 150 : 200))
                     .clipShape(RoundedRectangle(cornerRadius: 14))
+                    // A tap opens it to the whole screen: 200 points is
+                    // enough to know the picture by and not the faces in it,
+                    // and the question under it is often who they are.
+                    //
                     // A scanned photograph has no description and the app must
                     // not invent one — guessing at the content is precisely
                     // what rule 4 forbids. What is said is what is known.
-                    .accessibilityLabel("Valokuva, josta ei ole vielä kerrottu")
+                    .opensToTheWholeScreen(photo, label: String(localized: "Valokuva, josta ei ole vielä kerrottu"))
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
                         photoDrawn = height
                     }
@@ -1798,8 +1802,12 @@ struct BlindCardView: View {
                     // the answer to whoever is listening rather than looking —
                     // the audience this card is most for, and the same leak the
                     // cut round's mask existed to stop, arriving by the other
-                    // door.
-                    .accessibilityLabel("Valokuva, jossa on joku")
+                    // door. The whole screen a tap opens it to says the same
+                    // words and nothing else, which `BlindConfirmationTests`
+                    // walks as it walks this card: the face the question is
+                    // about is a few points wide here, and a closer look is
+                    // what answers it.
+                    .opensToTheWholeScreen(image, label: String(localized: "Valokuva, jossa on joku"))
             }
 
             VStack(spacing: 18) {

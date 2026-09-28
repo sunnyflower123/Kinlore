@@ -955,7 +955,12 @@ struct SubjectDetailScreen: View {
                         .scaledToFit()
                         .clipShape(Self.picture)
                         .overlay(Self.picture.strokeBorder(Elder.rule, lineWidth: 1))
-                        .accessibilityLabel("Väritetty kuva. Värit ovat tekoälyn arvaus kerrotun mukaan.")
+                        // Opened like the photograph above it, and under the
+                        // words it is described by here.
+                        .opensToTheWholeScreen(
+                            colourImage,
+                            label: String(localized: "Väritetty kuva. Värit ovat tekoälyn arvaus kerrotun mukaan.")
+                        )
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 } header: {
@@ -1661,6 +1666,10 @@ struct SubjectDetailScreen: View {
                 .scaledToFit()
                 .clipShape(Self.picture)
                 .overlay(Self.picture.strokeBorder(Elder.rule, lineWidth: 1))
+                // A tap opens it to the whole screen, where it can be brought
+                // closer: a face in a group photograph is a few points wide
+                // here, and until 28 Sep 2026 a tap did nothing at all.
+                //
                 // The card's main content had no description until 26 Sep
                 // 2026: the audit said "Element has no description", and
                 // VoiceOver passed over the photograph as if it were not
@@ -1670,7 +1679,7 @@ struct SubjectDetailScreen: View {
                 // looked up a second time as a key. The blind card draws its
                 // photograph in `BlindCardView`, where no label may name the
                 // proposal; this is not that picture.
-                .accessibilityLabel(current.displayTitle)
+                .opensToTheWholeScreen(image, label: current.displayTitle)
         } else if MediaLoader.hasNotArrived(current) {
             photoSlot {
                 photoAbsence {

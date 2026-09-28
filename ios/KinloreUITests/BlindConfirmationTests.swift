@@ -109,14 +109,80 @@ final class BlindConfirmationTests: XCTestCase {
         // else on the screen is described as the card's photograph. Counted by
         // that label and not as "all pictures": the first run of this line
         // counted five — the tab bar's four icons — and the Kerro tab keeps a
-        // photograph of its own in the deck above the card.
-        let photographs = app.images.matching(
+        // photograph of its own in the deck above the card. As any element,
+        // since the photograph is a button that opens it to the whole screen
+        // (`PhotoViewer`), and an image as well would be counted too.
+        let photographs = app.descendants(matching: .any).matching(
             NSPredicate(format: "label == %@", "Valokuva, jossa on joku")
         ).count
         XCTAssertEqual(
             photographs, 1,
             "the card describes \(photographs) pictures as its photograph; there is one"
         )
+    }
+
+    /// The photograph opened to the whole screen says no more than it did on
+    /// the card, in both of the card's places: the same words, a way to close
+    /// it, and none of the four names.
+    ///
+    /// The face the question is about is a few points wide on the card, so
+    /// the closer look is what answers it — and the one screen of this card
+    /// the first test cannot see, because it is not open while that test
+    /// walks. Walked here by the viewer's own container, so that whatever
+    /// the card under it keeps in the tree is not mistaken for a leak.
+    /// Closing it answers nothing: the question and the names are still
+    /// there.
+    func testThePhotographOpenedWholeNamesNobody() {
+        // Nothing after a viewer that did not open says anything.
+        continueAfterFailure = false
+        let places: [(String, [String])] = [
+            ("a reader's Kerro tab", ["-seed", "blind"]),
+            ("her album", ["-seed", "blind", "-elder.largerText", "YES", "-tab", "memories"]),
+        ]
+        let names = ["Aino", "Eeva", "Kalle", "Sanni"]
+        let described = "Valokuva, jossa on joku"
+        for (place, arguments) in places {
+            let app = launch(arguments)
+            card(app)
+
+            // An image while it opened nothing, a button once it does, so
+            // that without the viewer this fails at the tap.
+            let picture = app.descendants(matching: .any).matching(NSPredicate(
+                format: "label == %@ AND (elementType == %d OR elementType == %d)",
+                described,
+                XCUIElement.ElementType.image.rawValue,
+                XCUIElement.ElementType.button.rawValue
+            )).firstMatch
+            XCTAssertTrue(picture.waitForExistence(timeout: 10), "on \(place), never arrived: the card's photograph")
+            picture.tap()
+            let viewer = app.otherElements["photoViewer"]
+            XCTAssertTrue(viewer.waitForExistence(timeout: 10), "on \(place), a tap on the card's photograph opened nothing")
+
+            XCTAssertEqual(
+                app.images["photoViewer.photo"].label, described,
+                "on \(place), the photograph is described otherwise than on the card"
+            )
+            for element in [viewer] + viewer.descendants(matching: .any).allElementsBoundByIndex {
+                let said = [element.label, element.value as? String ?? ""]
+                for name in names where said.contains(where: { $0.contains(name) }) {
+                    XCTFail("on \(place), the photograph opened whole named \(name): \"\(said.joined(separator: " / "))\"")
+                }
+                XCTAssertFalse(
+                    element.label.localizedCaseInsensitiveContains("ehdotus"),
+                    "on \(place), the photograph opened whole called something a proposal: \"\(element.label)\""
+                )
+            }
+
+            let close = app.buttons["photoViewer.close"]
+            XCTAssertTrue(close.exists, "on \(place), the photograph opened with no way to close it")
+            close.tap()
+            XCTAssertTrue(viewer.waitForNonExistence(timeout: 10), "on \(place), Sulje did not close the photograph")
+            XCTAssertTrue(app.staticTexts["Kuka tässä on?"].waitForExistence(timeout: 5), "on \(place), closing the photograph took the question with it")
+            for name in names {
+                XCTAssertTrue(app.buttons[name].exists, "on \(place), closing the photograph took \(name) off the card")
+            }
+            app.terminate()
+        }
     }
 
     /// A name that matches confirms the person, which is the strongest

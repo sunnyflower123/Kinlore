@@ -10,12 +10,12 @@ import SwiftUI
 /// which is why the approach stops and why there is no Ken Burns.
 ///
 /// One place for all of it, because a photograph opens from more than one
-/// place — the album's tiles, and the picture on its card once that opens to
-/// the whole screen — and every one of them should open the same way. The
-/// picture it opens from takes `stepInSource(_:in:)`; the screen it opens
-/// into takes `steppedInto(from:in:)`, which zooms and keeps the time; the
-/// picture there takes `stepInApproach()`, and whatever comes in under it
-/// `stepInFollows()`.
+/// place — the album's tiles, and every picture that opens to the whole
+/// screen (`opensToTheWholeScreen`) — and every one of them should open the
+/// same way. The picture it opens from takes `stepInSource(_:in:)`; the
+/// screen it opens into takes `steppedInto(from:in:)`, which zooms and keeps
+/// the time; the picture there takes `stepInApproach()`, and whatever comes
+/// in under it `stepInFollows()`.
 ///
 /// Reduce Motion takes the movement away and keeps the way in. The zoom
 /// stays, because with Reduce Motion on the system draws it as a cross-fade,
