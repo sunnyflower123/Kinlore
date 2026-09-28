@@ -109,7 +109,7 @@ began — that was backwards.
 
 | Phase | Days | Goal | Capacity |
 |-------|------|------|----------|
-| **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. Swot check. RevenueCat account + Test Store. ~~GitHub public + licence~~ — moved to 28 Sep on purpose, see §5 row 4. | holiday |
+| **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. RevenueCat account + Test Store. ~~GitHub public + licence~~ — moved to 28 Sep on purpose, see §5 row 4. | holiday |
 | **B** | 4–10 Aug | **Backbone + magic moment.** Photo picking, memories, dictation → transcription → extraction → follow-up questions. The last week of the holiday goes to the hardest part. | holiday, full |
 | — | **~11 Aug** | **School starts** | |
 | **C** | 11–31 Aug | Person cards + relationships. Confirmation UI for proposals was dropped in favour of the guessing round, which was then cut itself — see §4.1. | evenings |
@@ -122,8 +122,8 @@ pointless — which is why it sits in the holiday and not alongside school.
 
 ### Phase E does not go through TestFlight
 
-This row said "TestFlight" and contradicted the first paragraph of CLAUDE.md,
-which drops App Store Connect for want of time. **TestFlight *is* App Store
+This row said "TestFlight" and contradicted §2, which drops App Store Connect
+for want of time. **TestFlight *is* App Store
 Connect** — there is no route to one without the other — and it costs more than
 the app record. A grandmother is not a member of the developer team, so she is
 an *external* tester, and the first build of every version then waits for Beta
@@ -213,9 +213,8 @@ It will. This is decided in advance so that nobody has to choose while exhausted
 2. RevenueCat Test Store + paywall — a rule requirement, but small work
 3. The demo video
 4. Repo in English + OSS licence visible in GitHub's About section — **on
-   28 Sep, and deliberately not before** (CLAUDE.md's opening carries the dates
-   and the reason; §3 scheduled it in phase A and that schedule is superseded,
-   not slipped)
+   28 Sep, and deliberately not before** (§3 scheduled it in phase A and that
+   schedule is superseded, not slipped)
 
 **Cut in this order, from the bottom up:**
 
@@ -275,7 +274,6 @@ memory.body           mentioned subjects      follow-up questions
 | # | Risk | Action |
 |---|------|--------|
 | 2 | **Finnish ASR on elderly speech.** The whole app rests on this. | **Half done — see below.** The engine was chosen by measurement; the go/no-go was never actually run. |
-| 3 | **The student email only arrives when school starts** | The domain can be checked already: `./scripts/check-swot.sh <domain>`. Upper secondary school domains are on the list under municipality directories. |
 | 4 | **School takes more time than expected** | The cut order in §5 is decided in advance. The heaviest work is in the holiday. |
 | 5 | **The demo video is left to the last evening** | It has its own phase (F). The video is a deliverable, not an afterthought. |
 | 6 | ~~**The repo stays in Finnish**~~ | **Done.** Translated, and the boundary is written down in CLAUDE.md so it stays. |

@@ -9,7 +9,8 @@
 //
 // Reads the sealed material on stdin from the Swift half's `emit`, and writes
 // what it sealed in return to the path given as the first argument, for that
-// half's `verify` to open. The command that chains all three is in CLAUDE.md.
+// half's `verify` to open. The command that chains all three is in
+// docs/DEVELOPMENT.md.
 //
 // Exit status is the point: 0 when a browser can read this archive, 1 when it
 // cannot. Shown to be load-bearing by tampering with one character of a sealed

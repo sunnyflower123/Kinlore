@@ -414,7 +414,7 @@ needs a new family: erase both simulators and start again from her telling.
    them.
 4. Decide stub or live per scene — the recipes above run either way.
 5. `xcrun simctl list devices | grep -c "(Booted)"` — a starved machine
-   drops frames the same way it invents test failures (CLAUDE.md).
+   drops frames the same way it invents test failures (DEVELOPMENT.md).
 6. The Devpost rules, read 5 Sep 2026 from
    `revenuecat-shipaton-2026.devpost.com/rules`: the video *"should be less
    than two (2) minutes. Judges are not required to watch beyond two

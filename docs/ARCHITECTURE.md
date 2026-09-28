@@ -4310,7 +4310,7 @@ The lookup lives in `PlaceLookup`, apart from the resolver that walks the
 archive, so that both tables below can be re-measured against the shipping code:
 
 ```
-scripts/geo-check.swift          # the command is in CLAUDE.md
+scripts/geo-check.swift          # the command is in docs/DEVELOPMENT.md
 ```
 
 Every claim in this section is a claim about somebody else's gazetteer. It can
@@ -4372,7 +4372,7 @@ than by design — which is the reason to check it rather than lean on it.
 `geo-check.swift` carries the measurement as its fourth claim: twelve names
 said out loud, not one of them a street. Whoever changes `precision(of:)`, or
 adds `.pointOfInterest` to `resultTypes` so that a hairdresser named Koivula
-can win the query, turns that claim red — and CLAUDE.md already sends anybody
+can win the query, turns that claim red — and docs/DEVELOPMENT.md already sends anybody
 who touches `PlaceLookup.swift` to run it, which is as close to automatic as a
 check that costs a network round trip gets here. What the check buys is not the
 rule; it is that the day the rule starts mattering is a day somebody is told.

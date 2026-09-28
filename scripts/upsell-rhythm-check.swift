@@ -11,7 +11,7 @@
 // store, a grandparent's included.
 //
 // None of that shows up in a screenshot, and none of it fails a build. Run it
-// after touching UpsellRhythm.swift — the command is in CLAUDE.md.
+// after touching UpsellRhythm.swift — the command is in docs/DEVELOPMENT.md.
 //
 //   swiftc -parse-as-library -o /tmp/upsell-rhythm-check \
 //     scripts/upsell-rhythm-check.swift ios/Kinlore/Services/UpsellRhythm.swift

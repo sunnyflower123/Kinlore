@@ -489,7 +489,7 @@ extension XCTestCase {
         // picture the findings were made on", and on 12 Sep 2026 a red finding
         // was measured from one at 18.21:1 and called the audit's mistake —
         // when the cheaper answer, that the test passed on its own, had not
-        // been asked yet (CLAUDE.md, beside the worktree rule).
+        // been asked yet (docs/DEVELOPMENT.md, beside the worktree rule).
         if let shot = ProcessInfo.processInfo.environment["KINLORE_AUDIT_SHOT"],
            !found.isEmpty || !deferred.isEmpty || !moved.isEmpty {
             let name = context.replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: "/", with: "_")

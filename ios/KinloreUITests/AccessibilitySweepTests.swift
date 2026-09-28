@@ -70,9 +70,10 @@ import XCTest
 ///
 /// The shape is the first two tests' rather than the third's — green alone, red
 /// in company, the finding naming nothing. What is new is the failure mode. A
-/// timeout is the one red the pixel method in CLAUDE.md cannot answer, because
-/// a busy machine can make the audit report a colour that is not there but the
-/// colour it reports is still measurable; here there is no colour at all.
+/// timeout is the one red the pixel method in docs/DEVELOPMENT.md cannot
+/// answer, because a busy machine can make the audit report a colour that is
+/// not there but the colour it reports is still measurable; here there is no
+/// colour at all.
 ///
 /// And the host was not starved. Four devices booted throughout, 34 s per test
 /// against the 25 s this suite has run at, and the tree clean before the build
@@ -110,10 +111,10 @@ import XCTest
 /// every session on it. That is what the evening's two "runaway
 /// testmanagerd"s were, and only `kill -9` ends one. And **a red that
 /// reproduces alone at any load is a finding**, whatever the paragraphs
-/// above say about company: the pixel method in CLAUDE.md answers a colour
-/// the audit reported, and this audit reported nothing — which the lines
-/// above already say to reproduce before believing, and which, reproduced,
-/// still took a sample of the daemon to explain.
+/// above say about company: the pixel method in docs/DEVELOPMENT.md answers
+/// a colour the audit reported, and this audit reported nothing — which the
+/// lines above already say to reproduce before believing, and which,
+/// reproduced, still took a sample of the daemon to explain.
 ///
 /// **Six reds in one suite run on `main`, 26 Sep 2026, each run alone twice
 /// on a private simulator in Finnish before anything was touched.** Four

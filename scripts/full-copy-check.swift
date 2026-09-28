@@ -6,7 +6,7 @@
 // one that is complete; a copy that fetches on cellular looks like a working
 // app until the bill; a copy that fetches the same file on every round looks
 // like a working app until the phone is full. None of it fails a build. Run
-// this after touching FullCopy.swift — the command is in CLAUDE.md.
+// this after touching FullCopy.swift — the command is in docs/DEVELOPMENT.md.
 //
 //   swiftc -parse-as-library -o /tmp/full-copy-check \
 //     scripts/full-copy-check.swift ios/Kinlore/Services/FullCopy.swift

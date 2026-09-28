@@ -15,7 +15,8 @@
 //   - a body encrypts to a different string every time, so the server cannot
 //     tell two identical memories apart
 //
-// Run it after touching FamilyCrypto.swift — the command is in CLAUDE.md.
+// Run it after touching FamilyCrypto.swift — the command is in
+// docs/DEVELOPMENT.md.
 //
 //   swiftc -parse-as-library -o /tmp/family-crypto-check \
 //     scripts/family-crypto-check.swift ios/Kinlore/Services/FamilyCrypto.swift \

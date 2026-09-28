@@ -1,7 +1,7 @@
 // Rule 7, as a check instead of a habit.
 //
 // `OPENROUTER_API_KEY` lives only as a Worker secret, and CLAUDE.md's
-// instruction for keeping it that way is "check `.dev.vars` before every
+// instruction for keeping it that way was "check `.dev.vars` before every
 // push". That is a reminder rather than a check, and this repository has
 // already been taught what a reminder is worth: `family-crypto-check` sat
 // broken for a week because its own instruction said to run it after touching
@@ -27,8 +27,8 @@
 //      is the commit about to be made.
 //   3. The history. No commit ever held one. CLAUDE.md asserted this in
 //      prose before anything re-measured it, and every commit since was a
-//      chance to make it false. Rule 7 now carries the count and the date it
-//      was taken, and this is what takes them.
+//      chance to make it false. Each run prints how many blobs and commits
+//      it read, so a clean result says what it covered.
 //
 // It also tests itself. A matcher that has quietly stopped matching is worse
 // than no matcher, because it reports green — so every pattern is run against

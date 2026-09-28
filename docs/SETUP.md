@@ -196,7 +196,7 @@ With the program, four steps, and each is the account holder's to take:
    beside it in `schema.sql` are the migration. **Done on 26 Sep 2026**, with
    the deploy ARCHITECTURE §25 records.
 4. The app gets `aps-environment` in its entitlements, and a signed device
-   build (CLAUDE.md, Commands) has to pass before it is committed — a build
+   build (DEVELOPMENT.md, Commands) has to pass before it is committed — a build
    asking for an entitlement its App ID does not have fails to sign, which is
    why it is not in the repository before step 1.
 

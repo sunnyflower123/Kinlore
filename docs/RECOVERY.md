@@ -3,7 +3,7 @@
 Read this before typing anything. Two of the commands below make the day worse
 when run against the wrong target, and the last time a command here looked like
 it had run and had not was `schema.sql` against an existing database
-(CLAUDE.md, Commands).
+(DEVELOPMENT.md, Commands).
 
 Written 5 Sep 2026 against the founder's-eye review's finding #50: *the shared
 archive has no backup and rests on one hobbyist account*. Everything below was

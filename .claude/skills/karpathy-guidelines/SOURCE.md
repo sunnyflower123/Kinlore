@@ -20,4 +20,5 @@ this one file is not.
 
 The guidelines are derived from Andrej Karpathy's observations on where language
 models go wrong when they write code. Why they are in *this* repository, and
-what that does and does not claim, is in [CLAUDE.md](../../../CLAUDE.md).
+what that does and does not claim, is in
+[docs/DEVELOPMENT.md](../../../docs/DEVELOPMENT.md#the-assistants-rules--checked-in-not-personal-setup).

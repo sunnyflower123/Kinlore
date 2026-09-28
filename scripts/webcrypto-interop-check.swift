@@ -35,7 +35,8 @@
 // ä and ö through the seal, and a NUL byte rides in the binary case. Translating
 // them would test something else.
 //
-// Run it after touching FamilyCrypto.swift — the command is in CLAUDE.md.
+// Run it after touching FamilyCrypto.swift — the command is in
+// docs/DEVELOPMENT.md.
 //
 //   swiftc -parse-as-library -o /tmp/webcrypto-interop-check \
 //     scripts/webcrypto-interop-check.swift \

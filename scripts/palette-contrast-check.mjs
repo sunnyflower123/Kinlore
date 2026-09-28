@@ -19,10 +19,10 @@
 // consecutive suite runs proved it cannot be trusted under load: a run that
 // began at load 7 and ended at 472 reported three contrast failures that were
 // all the machine, and a run at load 638 reported three more of the same
-// (docs in `AccessibilitySweepTests`' header and CLAUDE.md). This costs
-// nothing, needs no simulator, and answers at any load — so the two are not
-// alternatives. The audit catches a pair nobody wrote down; this catches the
-// palette drifting out from under the sentences that justify it.
+// (docs in `AccessibilitySweepTests`' header and docs/DEVELOPMENT.md). This
+// costs nothing, needs no simulator, and answers at any load — so the two are
+// not alternatives. The audit catches a pair nobody wrote down; this catches
+// the palette drifting out from under the sentences that justify it.
 //
 //   node scripts/palette-contrast-check.mjs
 //

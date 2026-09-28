@@ -13,7 +13,7 @@
 // compares it with what the engine drew, first on named cases (the app's
 // `-seed clan` among them) and then on 5 000 random families with the links
 // shuffled. It costs nothing: no simulator, no network. Run it after touching
-// FamilyTreeLayout.swift — the command is in CLAUDE.md.
+// FamilyTreeLayout.swift — the command is in docs/DEVELOPMENT.md.
 //
 //   swiftc -parse-as-library -o /tmp/family-tree-layout-check \
 //     scripts/family-tree-layout-check.swift ios/Kinlore/Services/FamilyTreeLayout.swift

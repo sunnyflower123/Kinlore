@@ -34,8 +34,9 @@ not, §6 for the money — then the code both of them name. The RevenueCat half 
 mapped file by file under [**Who pays**](#who-pays), and the app builds and runs on a
 simulator with no keys and no Apple team (**Setting it up**, step 1).
 [`CLAUDE.md`](../CLAUDE.md) is not product documentation: it is the working
-agreement of the AI coding sessions that did most of the typing, mostly about
-several of them sharing one tree. Read it after the code, not before.
+agreement of the AI coding sessions that did most of the typing, and
+[`DEVELOPMENT.md`](DEVELOPMENT.md) is its long form, much of it about several of
+them sharing one tree. Read them after the code, not before.
 
 ## The one thing it does
 
@@ -170,7 +171,7 @@ The last three need a Worker running (`cd backend && npm run dev`), and the last
 two an OpenRouter key in it as well — they spend model credit, which is why
 `verify.sh` leaves them out. The first three need only Xcode and node. The full
 commands, with the arguments this machine forces, are in
-[`CLAUDE.md`](../CLAUDE.md#commands).
+[`DEVELOPMENT.md`](DEVELOPMENT.md#commands).
 
 ## Measured, not claimed
 
@@ -204,7 +205,7 @@ above, and the last full run written down, at `a4fdf0f` on a quiet machine on
 `AccessibilitySweepTests.swift` keeps the tests that go red in company and green
 alone, rather than explaining them away. (On a simulator shared with another
 session, the 15 Aug commit reported 15 failures that were not real — see
-`CLAUDE.md`.)
+[`DEVELOPMENT.md`](DEVELOPMENT.md#commands).)
 
 But the number is not the argument. This is one screen at the default text size
 and at the largest one iOS offers, which is the size rule 1 is actually about:
@@ -256,8 +257,9 @@ a judge to read.
 state which Xcode was installed here. It was wrong, I "fixed" it — backwards —
 and wrote the new wrong version with more certainty than the old one. Following
 it fails as *"Invalid runtime"*, which reads like a broken Xcode and is not one.
-The file now says: measure before editing this line, and paste the output rather
-than a remembered number.
+The entry, now in [`DEVELOPMENT.md`](DEVELOPMENT.md#environment-notes), says:
+measure before editing this line, and paste the output rather than a remembered
+number.
 
 **I carried five candidate names for a year without checking any of them.** Two
 were already taken outright, by apps doing this same thing. Checking costs one
@@ -411,7 +413,7 @@ the family can neither export nor clear.
 | `backend/` | Cloudflare Worker + D1 (metadata) + R2 (photos and audio). |
 | `scripts/` | The checks in the table above, plus `asr-bench.mjs` and the logo tooling. |
 | `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `UX.md` (the arc between the screens), `VIDEO.md` (the demo video's shot list), `RECOVERY.md` (when something on the server has gone wrong), `logo/`. |
-| `.claude/` | The Claude Code setup the sessions here share: the [guideline file](../.claude/skills/karpathy-guidelines/SKILL.md) they work under — vendored, MIT, [why](../CLAUDE.md#the-assistants-rules--checked-in-not-personal-setup); a hook in `settings.json` (`hooks/big-read.sh`, `hooks/big-read.mjs`) that stops a whole-file read of a large file; and a `bulk-reader` subagent (`agents/bulk-reader.md`) that reads many files and reports file:line facts. |
+| `.claude/` | The Claude Code setup the sessions here share: the [guideline file](../.claude/skills/karpathy-guidelines/SKILL.md) they work under — vendored, MIT, [why](DEVELOPMENT.md#the-assistants-rules--checked-in-not-personal-setup); a hook in `settings.json` (`hooks/big-read.sh`, `hooks/big-read.mjs`) that stops a whole-file read of a large file; and a `bulk-reader` subagent (`agents/bulk-reader.md`) that reads many files and reports file:line facts. |
 
 ## Setting it up
 
