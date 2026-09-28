@@ -237,8 +237,9 @@ magic moment is missing, there is nothing to show.
 
 ## 6. Design principles
 
-1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver,
-   large tap targets. Accessibility *is* this app's design.
+1. **The primary user is whoever wants to tell, often an older person.**
+   Dynamic Type up to XXL, VoiceOver, large tap targets. Accessibility *is*
+   this app's design.
 2. **Never paywall telling.** The paywall limits photos and AI minutes.
 3. **Uncertainty is a first-class state.** "Sometime in the fifties" is stored
    as a range.

@@ -47,8 +47,8 @@ hackathon, in the Next Gen Award (the student category).
 
 ## What it does
 
-- You press one big button and talk about an old photo for 90 seconds. The
-  memory is kept in your own voice and in readable words, attached to the photo.
+- You press one big button and talk about an old photo. The memory is kept in
+  your own voice and in readable words, attached to the photo.
 - The names and places it heard come back as proposals, each with the sentence
   it was heard in. None of them enters the family tree until a person says yes
   (rule 4).

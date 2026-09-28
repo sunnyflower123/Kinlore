@@ -42,11 +42,11 @@ them sharing one tree. Read them after the code, not before.
 
 ## The one thing it does
 
-> Grandmother presses a big button and rambles for 90 seconds about an old
-> photo. The app returns: the memory in her own voice and in readable words,
-> attached to the photo; the names and places it heard, each with the
-> sentence it was heard in, waiting for a person's yes; the time as she said
-> it — and two questions back.
+> A grandparent, or anyone else who wants to tell, presses a big button and
+> talks about an old photo. The app returns: the memory in their own voice
+> and in readable words, attached to the photo; the names and places it
+> heard, each with the sentence it was heard in, waiting for a person's yes;
+> the time as it was said — and two questions back.
 
 <p align="center">
   <img src="media/demo.gif" alt="The app at work — Putting the memory in order, finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s, and the question Who told this memory? with the answers Me, Someone else and I would rather not be named." width="320">
@@ -96,11 +96,11 @@ teller's is kept as it was recorded (rule 3) and never synthesised.
 
 ## Six rules that do not bend
 
-1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver,
-   large tap targets. If a new screen does not work at the largest text size, it
-   is not done. Colours come from `Elder.swift`, never from `.secondary` or the
-   system blue — every one of those measures below the contrast minimum, and
-   contrast is the one rule eyes cannot check.
+1. **The primary user is whoever wants to tell, often an older person.** Dynamic
+   Type up to XXL, VoiceOver, large tap targets. If a new screen does not work
+   at the largest text size, it is not done. Colours come from `Elder.swift`,
+   never from `.secondary` or the system blue — every one of those measures
+   below the contrast minimum, and contrast is the one rule eyes cannot check.
 2. **Telling is never paywalled.** The paywall limits photos, AI minutes and
    colourisations, not the act of writing or dictating a memory.
 3. **The original audio and the raw transcript are always kept.** The speaker
@@ -187,10 +187,10 @@ justify.
 **Two of them are bad, and they are printed here on purpose.** The chosen model,
 `gemini-3.6-flash`, scores 65 % on Finnish proper nouns against the bench's own
 tripwire of 80 %, and a word error rate of 37.3 % against its own *"above 30 %
-is not usable"* — on synthesised speech, which is kinder than a real 80-year-old
-voice. The run that chose it read 68 % and 37.8 %, so both runs missed both
-bars. English, in the second run, reads 60 % on names and a word error rate of
-29.9 %: below the name bar too, and a tenth of a point inside the other.
+is not usable"* — on synthesised speech, which is kinder than the real voice of
+an older person. The run that chose it read 68 % and 37.8 %, so both runs missed
+both bars. English, in the second run, reads 60 % on names and a word error rate
+of 29.9 %: below the name bar too, and a tenth of a point inside the other.
 
 The concept was not dropped anyway, and
 [PLAN.md §8](PLAN.md#risk-2-honestly) argues why in full: the original audio
@@ -571,12 +571,12 @@ that for itself whenever Xcode is at that path.
 ## Two languages, on purpose
 
 The repo is written in **English**: docs, comments, identifiers, commit
-messages. The app's user interface is **written in Finnish**, because the person
-it exists for is a Finnish 80-year-old — and it **speaks English by default**,
-because the app has to be shown to people who do not read Finnish. A Finnish
-phone still gets Finnish. The Finnish source strings are the lookup keys, so
-writing a new one still means writing Finnish; `scripts/localisation-check.mjs`
-fails if it has no English.
+messages. The app's user interface is **written in Finnish**, because it was
+made first for Finnish tellers, many of them older — and it **speaks English by
+default**, because the app has to be shown to people who do not read Finnish. A
+Finnish phone still gets Finnish. The Finnish source strings are the lookup
+keys, so writing a new one still means writing Finnish;
+`scripts/localisation-check.mjs` fails if it has no English.
 
 The pipeline follows **who is speaking**, not who is reading the screen: there
 are two system prompts and two hallucination ceilings, and the app says which

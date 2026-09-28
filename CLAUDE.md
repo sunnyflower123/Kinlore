@@ -1,10 +1,11 @@
 # Kinlore
 
-A family's shared memory archive. An old person rambles and the AI gives it
-structure: memories attach to photos and people, the family tree grows out of
-the stories, and open questions come back to be asked. It is an entry in the
-RevenueCat Shipaton 2026 hackathon (Next Gen, the student category); purchases
-run on the RevenueCat Test Store, and there is no App Store release.
+A family's shared memory archive. Anyone in the family tells what they
+remember, out loud or in writing, and the AI gives it structure: memories
+attach to photos and people, the family tree grows out of the stories, and
+open questions come back to be asked. It is an entry in the RevenueCat
+Shipaton 2026 hackathon (Next Gen, the student category); purchases run on the
+RevenueCat Test Store, and there is no App Store release.
 
 The plan and the scope are in [docs/PLAN.md](docs/PLAN.md). Read it before
 adding features: the scope is deliberately cut, and every addition requires a
@@ -69,13 +70,13 @@ on this. Schema: [backend/schema.sql](backend/schema.sql).
 
 ## Rules that do not bend
 
-1. **The primary user is 80 years old.** Dynamic Type up to XXL, VoiceOver and
-   large tap targets. A screen that fails at the largest text size is not done.
-   This is not a compliance checklist; it is the product. Colours come from
-   `Elder.swift` and the accent colour asset, never from `.secondary`,
-   `.tertiary`, `.orange`, `.red` or the system blue: all of them measure below
-   the contrast minimum, and contrast is the one rule eyes cannot check. Run
-   the accessibility tests after touching a screen
+1. **The primary user is whoever wants to tell, often an older person.**
+   Dynamic Type up to XXL, VoiceOver and large tap targets. A screen that fails
+   at the largest text size is not done. This is not a compliance checklist; it
+   is the product. Colours come from `Elder.swift` and the accent colour asset,
+   never from `.secondary`, `.tertiary`, `.orange`, `.red` or the system blue:
+   all of them measure below the contrast minimum, and contrast is the one rule
+   eyes cannot check. Run the accessibility tests after touching a screen
    ([ARCHITECTURE §15](docs/ARCHITECTURE.md#15-contrast--the-rule-that-was-never-measured)).
 2. **Telling is never paywalled.** The paywall limits photos, AI minutes and
    colourisations, never writing or dictating a memory. The grandparent who

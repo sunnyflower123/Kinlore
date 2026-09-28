@@ -3412,10 +3412,11 @@ day that changes.
 
 ## 15. Contrast — the rule that was never measured
 
-Rule 1 of the product says the primary user is 80 years old. Dynamic Type,
-VoiceOver and tap targets were designed for from the start. **Contrast was not,
-because contrast is not something eyes can check** — a screen looks fine, and a
-screenshot looks fine, and the number is still 4.0 when the minimum is 4.5.
+Rule 1 of the product says the primary user is whoever wants to tell, often an
+older person. Dynamic Type, VoiceOver and tap targets were designed for from
+the start. **Contrast was not, because contrast is not something eyes can
+check** — a screen looks fine, and a screenshot looks fine, and the number is
+still 4.0 when the minimum is 4.5.
 
 The guessing round's accessibility audit found it by accident: all four answers
 below the minimum on a screen that had been looked at half a dozen times. So the

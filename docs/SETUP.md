@@ -318,8 +318,9 @@ constraint, but because it is better for this audience:
    `Bearer <member_id>.<secret>`.
 3. You join a family with an invite link. No email, no password, no login screen.
 
-**An 80-year-old never hits a login wall** — she gets a link from a grandchild
-and she is in. That is precisely the point where this audience normally drops out.
+**An older teller never hits a login wall** — they get a link from a grandchild
+and they are in. That is precisely the point where this audience normally drops
+out.
 
 **What that flag also carries, said plainly since 9 Sep 2026.** `Keychain.query(_:)`
 builds one query shape for all three entries — `member_id`, `device_secret` and

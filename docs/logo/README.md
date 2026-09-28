@@ -46,7 +46,7 @@ The file is kept in the repo so the reasoning stays traceable.
 
 Ink on parchment is 14:1, amber on ink 7.3:1. The figures come from the source
 artwork; the operating system's own processing changes the result, see above.
-The primary user is 80 years old, and the mark is no exception to that rule.
+Whoever tells is often an older person, and the mark is no exception to rule 1.
 
 ## Files
 
@@ -105,8 +105,8 @@ The app used to open on a white flash, which is also how the demo video would
 have started.
 
 This is not a splash screen. Nothing is held for effect: the frame appears only
-for as long as the app takes to draw, and making an 80-year-old wait to admire a
-logo would be the opposite of what this app is for.
+for as long as the app takes to draw, and making an older teller wait to admire
+a logo would be the opposite of what this app is for.
 
 ### The launch screen lies to you
 
