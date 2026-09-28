@@ -417,9 +417,10 @@ the family can neither export nor clear.
 
 ## Setting it up
 
-**Prerequisites:** Xcode 26.6 (iOS 26.5 simulator SDK), XcodeGen
-(`brew install xcodegen`), Node 22.18+. **Nothing from Apple beyond Xcode** — no
-paid developer account, no certificates, no Sign in with Apple. The two push
+**Prerequisites:** Xcode 26 or later (built here with Xcode 27.0, tested on an
+iOS 26.5 simulator), XcodeGen (`brew install xcodegen`), Node 22.18+.
+**Nothing from Apple beyond Xcode** — no paid developer account, no
+certificates, no Sign in with Apple. The two push
 notifications are the one exception, and nothing waits on them. What else is not
 needed, and why, is in [`SETUP.md`](SETUP.md#what-is-not-needed).
 

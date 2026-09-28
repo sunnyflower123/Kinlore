@@ -52,8 +52,8 @@ hackathon, in the Next Gen Award (the student category).
 - The original recording and the raw transcript are kept forever (rule 3). A
   date stays as vague as it was said, so "sometime in the fifties" is stored as
   a decade (rule 5).
-- The interface is written in Finnish and shows English on a phone set to any
-  other language. The speech pipeline follows whoever is speaking.
+- The app shows English by default and Finnish on a phone set to Finnish. The
+  speech pipeline follows whoever is speaking.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
 The app has 338 UI tests, including 109 accessibility sweeps that audit a screen
@@ -119,9 +119,9 @@ see the paywall with a key of your own.
 
 ## Run it in about two minutes
 
-You need Xcode 26.6 (iOS 26.5 simulator SDK) and XcodeGen
-(`brew install xcodegen`). You do not need a paid developer account,
-certificates or any keys.
+You need Xcode 26 or later (it is built here with Xcode 27.0 and tested on an
+iOS 26.5 simulator) and XcodeGen (`brew install xcodegen`). You do not need a
+paid developer account, certificates or any keys.
 
 ```bash
 git clone https://github.com/sunnyflower123/Kinlore.git
