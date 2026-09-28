@@ -297,8 +297,9 @@ own header: *"TTS does not produce dialect, stammering, self-correction,
 overlapping speech, or a sentence trailing off. A real elderly speaker does all
 of that. These figures are therefore optimistic."* The tripwire — *below ~80 %
 on proper nouns, rethink the concept* — is about absolute quality on real
-speech, and no real speech has been through it. `samples/LUEMINUT.txt` has said
-what is needed from the beginning: three recordings of an actual elderly voice.
+speech, and no real speech has been scored against it. `samples/LUEMINUT.txt`
+has said what is needed from the beginning: three recordings of an actual
+elderly voice.
 
 **And the optimistic numbers already missed both bars.** 68 % on Finnish proper
 nouns against a tripwire of 80 %, and a word error rate of 37.8 % against the
@@ -319,6 +320,10 @@ comes back well enough that the family recognises what she said. Three
 recordings answer it, the phase E test with a grandparent is where they come
 from, and until then this row is a measurement that has not been taken rather
 than a risk that has been retired.
+
+On the weekend of 26–27 September 2026 my grandparent spoke into the app on a
+real iPhone, running the production build against the production Worker. A
+measured result of that session does not exist.
 
 ### The visit that takes the measurement
 

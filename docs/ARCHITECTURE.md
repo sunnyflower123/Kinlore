@@ -93,6 +93,10 @@ The critical path is open: family and sync work, so everything else stands on
 them. What is left is either cuttable or somebody's to record — see PLAN.md §8
 for the one measurement that has not been taken.
 
+On the weekend of 26–27 September 2026 my grandparent spoke into the app on a
+real iPhone, running the production build against the production Worker. A
+measured result of that session does not exist.
+
 **Verified rules.** Confirmation is one-way, merges are sticky, only the author
 edits their own, and another family can neither see nor write. The outbox
 survives the app being closed, and a locally changed row is not lost underneath
