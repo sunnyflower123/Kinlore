@@ -501,34 +501,37 @@ run "a browser can open what the phone sealed" webcrypto_interop
 # which is checked in its place.
 doc_counts() {
 	local bad=0 seen_tests=0 seen_sweeps=0 seen_here
-	local tests sweeps doc said
+	local tests sweeps doc said hit
 
 	tests=$(grep -rhE '^[[:space:]]+func test' ios/KinloreUITests/*.swift | wc -l | tr -d ' ')
 	sweeps=$(grep -cE 'try sweep\(' ios/KinloreUITests/AccessibilitySweepTests.swift)
 
+	# Every mention, not only the first. ARCHITECTURE.md §1 states both counts
+	# twice since 28 Sep 2026, and a second copy nobody checks is the one that
+	# drifts. Each hit is "line:count".
 	for doc in docs/ARCHITECTURE.md README.md docs/DETAILS.md docs/DEVELOPMENT.md; do
 		seen_here=0
 
-		said=$(grep -oE '[0-9]+ UI tests' "$doc" | head -1 | grep -oE '^[0-9]+')
-		if [ -n "$said" ]; then
+		for hit in $(grep -noE '[0-9]+ UI tests' "$doc" | cut -d' ' -f1); do
 			seen_tests=1
 			seen_here=1
+			said=${hit#*:}
 			[ "$said" = "$tests" ] || {
-				echo "$doc says $said UI tests. Counted in ios/KinloreUITests: $tests"
+				echo "$doc:${hit%%:*} says $said UI tests. Counted in ios/KinloreUITests: $tests"
 				bad=1
 			}
-		fi
+		done
 
-		said=$(grep -oE '[0-9]+ (of them an accessibility sweep|sweep tests|accessibility (sweeps|audits))' "$doc" \
-			| head -1 | grep -oE '^[0-9]+')
-		if [ -n "$said" ]; then
+		for hit in $(grep -noE '[0-9]+ (of them an accessibility sweep|sweep tests|accessibility (sweeps|audits))' "$doc" \
+			| cut -d' ' -f1); do
 			seen_sweeps=1
 			seen_here=1
+			said=${hit#*:}
 			[ "$said" = "$sweeps" ] || {
-				echo "$doc says $said sweep tests. Counted sweep() calls: $sweeps"
+				echo "$doc:${hit%%:*} says $said sweep tests. Counted sweep() calls: $sweeps"
 				bad=1
 			}
-		fi
+		done
 
 		[ "$seen_here" = 1 ] || {
 			echo "$doc states neither count any more"

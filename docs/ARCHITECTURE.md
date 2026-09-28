@@ -6,7 +6,7 @@ that has been built since; what was finished before it began is described in
 [PLAN.md](PLAN.md) §7.
 
 **If you read one section, read [§1](#1-where-things-stand)** — an inventory of
-what is built and what is not, ending in a warning about why that inventory has
+what is built and what is not, ending in what keeps it true now and why it has
 been wrong before. Sections 15 to 20 are about things that were wrong: what
 they were, how they hid, and what found them.
 
@@ -104,15 +104,28 @@ the remote version. A rejection travels and cannot be revived by a device that
 missed it. An audio-only memory is stored rather than dropped, and an empty body
 never overwrites a real one.
 
-**And a warning that is worth more than the list above.** Nearly every item here
-was written as done long before it was true, and each one looked done from the
-outside: the transcription that waited for a text nothing was bringing, the
-deletion the client never sent, the rate limit that existed only in this
-document, the audit that measured the wrong screen and passed. They were found
-by reading a promise and then checking the code that was supposed to keep it —
-not by using the app, which behaved perfectly in every one of those cases. That
-is the failure mode this project has, and the reason to distrust this table is
-that it has been wrong in exactly this way before.
+**What keeps "done" true now.** `./scripts/verify.sh` runs every check in this
+repository that costs nothing, each one for a failure that leaves a working app
+behind. On 28 Sep 2026 that was 56 checks: 12 drive a Worker started locally, 2
+need a simulator of your own, and the other 42 need neither. Its header names
+what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
+model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
+The UI suite has 340 UI tests, including 110 accessibility sweeps that audit a
+screen at the default text size and again at the largest, and `verify.sh`
+counts both and fails if this document, the README, DETAILS.md or
+DEVELOPMENT.md states a different number anywhere. The last full run written
+down, at `a4fdf0f` on 19 Sep 2026, left four sweeps red with one finding each
+([DETAILS.md](DETAILS.md#measured-not-claimed)).
+
+**Why a check, and not a look at the app.** Nearly every item here was written
+as done long before it was true, and each looked done from the outside: the
+transcription that waited for a text nothing was bringing, the deletion the
+client never sent, the rate limit that existed only in this document, the audit
+that measured the wrong screen and passed. They were found by reading a promise
+and checking the code meant to keep it, not by using the app, which behaved
+perfectly in every one of those cases. That is the failure mode this project
+has, and the reason to distrust this table is that it has been wrong in exactly
+this way before.
 
 ## 2. Five decisions that determine the rest
 
