@@ -310,6 +310,11 @@ cottage phone in the paragraph above still waits for its signal, but no
 longer for a lifecycle moment after it. What Muistot shows in the meantime is
 the third state in docs/UX.md §4.3.
 
+The *founder's-eye review* cited above and throughout the repository was a
+review of the app dated 3 Sep 2026; its findings are numbered, the commits that
+fixed them from that evening on cite them as *finding #N*, and the review's own
+report is not in the repository.
+
 The one row the outbox deliberately holds back is a memory whose audio has not
 reached R2 yet: the server would refuse it, and a refused row is cleared from
 the outbox exactly as a stored one is. See §16.
