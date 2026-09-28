@@ -1624,6 +1624,12 @@ private struct ProcessingView: View {
             Spacer()
         }
         .padding(Elder.screenPadding)
+        // The width, which every other phase takes from its scroll view's
+        // frame and this one had nothing to take it from. The paper is hung
+        // on the screen's `Group`, so it stopped at the longest line and the
+        // window's white showed down both sides while a telling was being
+        // put in order. The README's GIF showed it on 28 Sep 2026.
+        .frame(maxWidth: .infinity)
         .animation(.easeInOut, value: phase)
     }
 }
