@@ -61,8 +61,8 @@ hackathon, in the Next Gen Award (the student category).
 - The original recording and the raw transcript are kept forever (rule 3). A
   date stays as vague as it was said, so "sometime in the fifties" is stored as
   a decade (rule 5).
-- The app shows English by default and Finnish on a phone set to Finnish. The
-  speech pipeline follows whoever is speaking.
+- The app shows English by default and Finnish on a phone set to Finnish, and
+  hears speech as that language.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
 The app has 340 UI tests, including 110 accessibility sweeps that audit a screen
@@ -144,8 +144,11 @@ proposed.
 The stubs cannot listen. A recording comes back as one of three sample tellings
 in turn, in the phone's language, whatever you said
 (`StubTranscriptionService`), and only a Worker hears your own words. The
-backend, the keys and the command-line test runs are in
-[DETAILS.md](docs/DETAILS.md#setting-it-up) and [SETUP.md](docs/SETUP.md).
+`Kinlore Production` scheme is a Release build against the deployed one: run
+it, keep *Between the family* on the first form, and it hears what you say,
+within the free tier's limits. The backend, the keys and the command-line test
+runs are in [DETAILS.md](docs/DETAILS.md#setting-it-up) and
+[SETUP.md](docs/SETUP.md).
 
 ## Licence
 
