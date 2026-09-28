@@ -501,26 +501,44 @@ enum ArchiveSearchCheck {
         print("\n— a thousand photographs —")
         let large = archive(photos: 1_000, events: 150, people: 120, tellings: 1_500, seed: 11)
         // What the album asks per keystroke: photographs, moments, places,
-        // tellings. The slowest query of five, measured three times.
-        var slowest = 0.0
+        // tellings. The slowest query of five, measured three times, on the
+        // process's CPU clock and on the wall's. The process's rather than the
+        // thread's, so that work handed to another thread would still count.
+        var slowest = (cpu: 0.0, wall: 0.0)
         for typed in ["2000", "Aino 1950", "traktori", "ennen 1960", "mökki"] {
-            let times = (0 ..< 3).map { _ -> Double in
-                let start = Date()
+            let times = (0 ..< 3).map { _ -> (cpu: Double, wall: Double) in
+                let cpu = clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID)
+                let wall = Date()
                 _ = found(.photo, typed, large.subjects, large.told)
                 _ = found(.event, typed, large.subjects, large.told)
                 _ = found(.place, typed, large.subjects, large.told)
                 _ = tellings(typed, large.subjects, large.told)
-                return Date().timeIntervalSince(start)
+                return (
+                    Double(clock_gettime_nsec_np(CLOCK_PROCESS_CPUTIME_ID) - cpu) / 1e9,
+                    Date().timeIntervalSince(wall)
+                )
             }
-            slowest = max(slowest, times.min() ?? 0)
+            slowest.cpu = max(slowest.cpu, times.map(\.cpu).min() ?? 0)
+            slowest.wall = max(slowest.wall, times.map(\.wall).min() ?? 0)
         }
-        print(String(format: "       slowest keystroke: %.0f ms", slowest * 1_000))
-        // A bound for a return to the scans to fail rather than a stopwatch.
-        // Measured 28 Sep 2026 in this same unoptimised build: the scans this
-        // replaced took 0.7 s per keystroke at this size, and this search 26 ms
-        // at a load average of 95 and 181 ms at 215. The fastest of three runs,
-        // so that a busy machine does not turn it red.
-        check("a keystroke over 1,000 photographs and 1,500 tellings takes under 0.5 s", slowest < 0.5)
+        print(String(
+            format: "       slowest keystroke: %.0f ms of CPU, %.0f ms on the wall clock",
+            slowest.cpu * 1_000, slowest.wall * 1_000
+        ))
+        // A bound for a return to the scans to fail rather than a stopwatch,
+        // so it is held against CPU time. The wall clock also counts the time
+        // this process waits for a core, and on a machine building and running
+        // simulators for other work that is most of it: on 28 Sep 2026 it read
+        // 717 ms at a load average of about 370 and failed the check with
+        // nothing slower. In twenty runs that evening, at load averages from
+        // 20 to 270, the wall clock read 39 ms to 1.07 s and the CPU clock 39
+        // to 96 ms. The CPU clock moves too, because a busy machine runs this
+        // partly on its slower cores, but it stayed under a fifth of the
+        // bound. The scans this replaced took 0.7 s per keystroke at this size
+        // in this same unoptimised build, and `Before`'s, timed in this
+        // search's place, read 1.5 s of CPU at a load average of 280. The
+        // fastest of three runs, so that a busy machine does not turn it red.
+        check("a keystroke over 1,000 photographs and 1,500 tellings takes under 0.5 s of CPU", slowest.cpu < 0.5)
 
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
