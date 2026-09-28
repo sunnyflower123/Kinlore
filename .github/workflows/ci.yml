@@ -1,24 +1,18 @@
 # The checks a stranger can trust without taking anybody's word for it.
 #
-# NOTHING HERE RUNS AT THE MOMENT, and the reason is not in this file. The
-# account's included Actions minutes are spent, so every run is refused before
-# a runner is allocated and dies in four to five seconds. That looks exactly
-# like a broken build from the outside — a red tick, no output — and it is not
-# one: no step ever executed. Measured on the billing page rather than guessed.
+# While this repository is private, a push runs nothing. The account's
+# included Actions minutes are spent (read on the billing page), and a run
+# refused for that fails in four to five seconds with no step executed, which
+# looks from outside exactly like a broken build. So the push job is skipped
+# on a private repository: a job whose `if:` is false is never started, and
+# GitHub reports it as skipped rather than failed. It runs by itself once the
+# repository is public, where Actions is free. The four-second failures were
+# first blamed on the macOS multiplier, and moving this job to Ubuntu did not
+# fix them, because no runner was ever started.
 #
-# It comes back by itself when the month rolls over, and it stops mattering the
-# day this repository goes public, because Actions is free and unmetered there.
-#
-# The split below is still the right shape and was worth making. Actions is
-# metered on private repositories and a macOS minute counts as ten, so the check
-# that runs on every push is the one that needs nothing but Linux, and
-# everything that needs Xcode runs on pull requests and on request. Put the
-# macOS jobs back on push when the repository goes public.
-#
-# One correction worth keeping, because the wrong version was committed first:
-# the four-second failures were blamed on the macOS multiplier, and moving the
-# push check to Ubuntu did not fix them. Ubuntu cannot start in four seconds
-# either. The multiplier was real and the diagnosis was still wrong.
+# Everything that needs Xcode runs on pull requests and on request, because a
+# macOS minute counts as ten on a private repository. Put those jobs back on
+# push once the repository is public.
 
 name: CI
 
@@ -29,10 +23,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Every push. Ubuntu, one minute, no Xcode involved.
+  # Every push. Ubuntu, one minute, no Xcode involved. Skipped while the
+  # repository is private (see the top of this file).
   types:
     name: Types
     runs-on: ubuntu-latest
+    if: github.event.repository.private == false
     steps:
       - uses: actions/checkout@v4
 
@@ -48,9 +44,9 @@ jobs:
       - run: npm run typecheck
         working-directory: backend
 
-  # The silent-failure checks: the guessing round's name masking and the upsell
-  # rhythm. Both compile a source file of the app against a checking harness, so
-  # both need a Swift toolchain, so both need macOS here.
+  # The silent-failure checks. Many of them compile a source file of the app
+  # against a checking harness, so they need a Swift toolchain, so they need
+  # macOS here.
   #
   # This runs `scripts/verify.sh` — the same command the README gives a human,
   # rather than a CI-only reimplementation of it that can drift from the one

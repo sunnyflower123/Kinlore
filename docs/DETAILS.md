@@ -158,7 +158,9 @@ CI runs that same script rather than a reimplementation of it, so the two cannot
 drift apart — but on pull requests and on request, not on every push. The Swift
 checks in it need macOS, a macOS minute is metered at ten while this repository
 is private, and every push getting one is how you find out in four seconds that
-the meter said no. Every push still gets the backend type check, on Linux.
+the meter said no. Every push gets the backend type check, on Linux, once the
+repository is public; while it is private a push runs nothing, because the
+included minutes are spent and a refused run looks exactly like a broken build.
 
 | Claim | Command |
 |---|---|
