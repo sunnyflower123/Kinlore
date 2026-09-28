@@ -707,7 +707,7 @@
 "Tämä on perheen ainoa kopio. Tyhjennyksen jälkeen muistoja ei saa enää auki mistään, ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne." = "This is the family's only copy. After emptying, the memories can no longer be opened anywhere, and open invitations are cancelled. Export the archive first if you want to keep them.";
 "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne." = "The memories are deleted for good. Export the archive first if you want to keep them.";
 "Nauhoitus ei käynnistynyt." = "The recording never started.";
-"Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen." = "The name is corrected on this card and among the relatives. The text of the memories already told stays as it was.";
+"Nimi korjataan tähän korttiin ja sukuun." = "The name is corrected on this card and among the relatives.";
 "Perheestä ei voitu poistua" = "The family could not be left";
 "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään." = "Leaving the family does not delete the memories you told. They stay in the family's archive, because what is told is meant to outlast the one who told it.";
 "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla." = "You leave the family and this device's memories are deleted. The family's memories stay with the others.";
@@ -929,3 +929,22 @@
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan." = "The memory disappears from the family's view on every phone. You can bring it back from this card for 30 days.";
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa." = "The memory disappears from the family's view on every phone, and this card goes with it. It cannot be brought back.";
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu." = "The memory disappears from the family's view on every phone. For 30 days you can bring it back from the card it was filed under.";
+
+/* A name corrected on its card, and then in the tellings that say it (28 Sep 2026, ARCHITECTURE §17). */
+"Yksi muisto, jossa nimi lukee, on tallennettu toisen puhelimella. Sen tekstiä voi muuttaa vain se, joka sen tallensi." = "One memory that says the name was saved on someone else's phone. Only whoever saved it can change its text.";
+"%lld muistoa, joissa nimi lukee, on tallennettu muiden puhelimilla. Niiden tekstiä voi muuttaa vain se, joka ne tallensi." = "%lld memories that say the name were saved on other people's phones. Only whoever saved them can change their text.";
+"Nimi on nyt %@." = "The name is now %@.";
+"Yhdessä muistossa lukee yhä %@." = "One memory still says %@.";
+"%lld muistossa lukee yhä %@." = "%lld memories still say %@.";
+"Korjaa nimi myös muistoon" = "Correct the name in the memory too";
+"Korjaa nimi myös muistoihin" = "Correct the name in the memories too";
+"Jätä teksti ennalleen" = "Leave the text as it is";
+"Tekstin voit korjata itse muiston alta: ”Muokkaa tai poista”." = "You can correct the text yourself under the memory: “Edit or delete”.";
+"Korjataan muistoa %lld, kaikkiaan %lld…" = "Correcting memory %lld of %lld…";
+"Keskeytä" = "Stop";
+"Nimi korjattiin yhteen muistoon." = "The name was corrected in one memory.";
+"Nimi korjattiin %lld muistoon." = "The name was corrected in %lld memories.";
+"Yhden muiston teksti jäi korjaamatta." = "The text of one memory was left uncorrected.";
+"%lld muiston teksti jäi korjaamatta." = "The text of %lld memories was left uncorrected.";
+"Voit yrittää uudelleen tai korjata tekstin itse muiston alta: ”Muokkaa tai poista”." = "You can try again, or correct the text yourself under the memory: “Edit or delete”.";
+"Avaa kortin. Siellä nimen voi myös korjata." = "Opens the card, where the name can also be corrected.";

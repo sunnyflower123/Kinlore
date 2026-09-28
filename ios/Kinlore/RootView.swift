@@ -628,6 +628,7 @@ struct PeopleScreen: View {
             #endif
             .elderSurface()
         }
+        .environment(\.openCard, { path.append($0) })
     }
 
     /// One quiet row for the names the extraction heard and nobody has
@@ -1334,7 +1335,7 @@ struct SubjectDetailScreen: View {
             } else {
                 Section {
                     ForEach(memories) { memory in
-                        MemoryRow(memory: memory)
+                        MemoryRow(memory: memory, cardID: current.id)
                     }
                     // On the paper under the last bubble, as `MemoryRow`'s own
                     // buttons are: a row of the list's own white here would be
@@ -1778,7 +1779,7 @@ struct SubjectDetailScreen: View {
                     // itself drew `systemGray4` here until 19 Sep 2026
                     // and `Elder.card` after; the bubble is the surface
                     // now, and the row says so for itself.
-                    MemoryRow(memory: memory)
+                    MemoryRow(memory: memory, cardID: current.id)
                 }
             } header: {
                 // Two whole sentences rather than one with a number in it:
@@ -1799,17 +1800,29 @@ struct SubjectDetailScreen: View {
     }
 }
 
+extension EnvironmentValues {
+    /// Pushes a card onto the stack the view is on — the people tab's or
+    /// the album's, the two that open cards. For a way to a card inside a
+    /// list row, which a `NavigationLink` cannot be without taking the whole
+    /// row (`MemoryRow.namedHereLinks`, `HeardNameRow.open`). Set on the
+    /// stack itself, so the cards it pushes have it too; nil anywhere else.
+    @Entry var openCard: ((Subject) -> Void)? = nil
+}
+
 private struct MemoryRow: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.openCard) private var openCard
     @State private var isConfirmingRemoval = false
     @State private var isEditingText = false
     @State private var isMoving = false
     @State private var isChoosing = false
     @State private var chosen: MemoryChoice?
     let memory: Memory
+    /// The card the row is read on, which its names do not link back to.
+    var cardID: String?
 
     /// Four truths for one row, in the order they are decided.
     ///
@@ -1845,6 +1858,47 @@ private struct MemoryRow: View {
         memory.mentionedSubjectIDs
             .compactMap { store.subject(id: $0) }
             .filter { !$0.confirmed && $0.deletedAt == nil }
+    }
+
+    /// The names this telling says that the family has already checked.
+    ///
+    /// Somebody who read "Hilda" where it should say Hilma had no way from
+    /// the story to the name until 28 Sep 2026: a name nobody had checked
+    /// was a link (`heardHere`), and a checked one was a word in the text and
+    /// nothing more. People and places, whose names were heard rather than
+    /// written by the app; only those the words say (`NameInText`), which is
+    /// what a reader can notice is wrong; and not the card being read, which
+    /// a chip would only open again.
+    private var namedHere: [Subject] {
+        var seen: Set<String> = []
+        return memory.mentionedSubjectIDs
+            .compactMap { store.subject(id: $0) }
+            .filter { named in
+                named.confirmed && named.deletedAt == nil
+                    && (named.kind == .person || named.kind == .place)
+                    && named.id != cardID
+                    && NameInText.carries(named.title, in: memory.body)
+                    && seen.insert(named.id).inserted
+            }
+    }
+
+    /// Honey chips, as the card's other small ways on are, and buttons
+    /// rather than links. A `NavigationLink` in a list row takes the whole
+    /// row whatever its style: in the first build it drew as the list's own
+    /// link and not as a chip, and a tap on the story's words opened the
+    /// card (28 Sep 2026). A button keeps to its own frame, and the stack
+    /// it pushes onto comes from the screen around it (`openCard`).
+    private func namedHereLinks(_ open: @escaping (Subject) -> Void) -> some View {
+        ForEach(namedHere) { named in
+            Button {
+                open(named)
+            } label: {
+                Label(named.displayTitle, systemImage: named.kind.symbolName)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .buttonStyle(.elderSecondary)
+            .accessibilityHint("Avaa kortin. Siellä nimen voi myös korjata.")
+        }
     }
 
     /// The teller's disc and the line under the telling. The disc is her
@@ -1968,6 +2022,18 @@ private struct MemoryRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .elderBubble()
 
+            // The checked names in the words above, each the way to its card,
+            // where a wrong one is corrected (§17) — and the correction there
+            // offers to put the right name back into these words. None where
+            // no stack around the row opens cards.
+            if let openCard, !namedHere.isEmpty {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 10) { namedHereLinks(openCard) }
+                    VStack(alignment: .leading, spacing: 10) { namedHereLinks(openCard) }
+                }
+                .padding(.horizontal, 4)
+            }
+
             // Under the bubble and not in it, since the bubble came: the
             // rows carry *Poista* in `destructive`, which is measured on the
             // paper and not on honey, where a coloured word is never a
@@ -1990,7 +2056,8 @@ private struct MemoryRow: View {
                             subject: subject,
                             sentence: nil,
                             onConfirm: { store.confirm(subjectID: subject.id) },
-                            onReject: { store.remove(subjectID: subject.id) }
+                            onReject: { store.remove(subjectID: subject.id) },
+                            open: openCard
                         )
                     }
                 }

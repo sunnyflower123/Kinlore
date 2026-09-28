@@ -1304,6 +1304,19 @@ final class TellViewModel {
     }
 
     func confirm(_ subject: Subject) {
+        // A name typed into the row and then ticked is the typed name being
+        // confirmed. Until 28 Sep 2026 the tick confirmed the name as heard
+        // and dropped what was typed: "Toivonen" typed, the tick, and "Toivo"
+        // in the family, with nothing on the screen to say so. An edited row
+        // now does what the button under the rows does — every name typed
+        // on the screen corrected and confirmed, and the memory's text with
+        // them. Whether this row is edited is `pendingCorrections`' test.
+        let typed = editedNames[subject.id]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !typed.isEmpty, typed.compare(subject.title, options: .caseInsensitive) != .orderedSame {
+            guard !isCorrecting else { return }
+            Task { await applyCorrections() }
+            return
+        }
         store.confirm(subjectID: subject.id)
         proposals.removeAll { $0.id == subject.id }
     }

@@ -203,6 +203,7 @@ struct GalleryScreen: View {
                 archive.searchable(text: $query, prompt: Text("Etsi"))
             }
         }
+        .environment(\.openCard, { path.append($0) })
     }
 
     /// The tab's root: the three states, and everything hung on them.

@@ -607,7 +607,7 @@
 "Tämä on perheen ainoa kopio. Tyhjennyksen jälkeen muistoja ei saa enää auki mistään, ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne." = "Tämä on perheen ainoa kopio. Tyhjennyksen jälkeen muistoja ei saa enää auki mistään, ja avoimet kutsut perutaan. Vie arkisto ensin, jos haluat säilyttää ne.";
 "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne." = "Muistot poistetaan lopullisesti. Vie arkisto ensin, jos haluat säilyttää ne.";
 "Nauhoitus ei käynnistynyt." = "Nauhoitus ei käynnistynyt.";
-"Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen." = "Nimi korjataan tähän korttiin ja sukuun. Kerrottujen muistojen teksti jää ennalleen.";
+"Nimi korjataan tähän korttiin ja sukuun." = "Nimi korjataan tähän korttiin ja sukuun.";
 "Perheestä ei voitu poistua" = "Perheestä ei voitu poistua";
 "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään." = "Perheestä poistuminen ei poista kertomiasi muistoja. Ne jäävät perheen arkistoon, koska kerrottu on tarkoitettu säilymään kertojaansa pidempään.";
 "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla." = "Poistut perheestä ja tämän laitteen muistot poistetaan. Perheen muistot säilyvät muilla.";
@@ -799,3 +799,22 @@
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen tältä kortilta 30 päivän ajan.";
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa.";
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu.";
+
+/* A name corrected on its card, and then in the tellings that say it (28 Sep 2026, ARCHITECTURE §17). */
+"Yksi muisto, jossa nimi lukee, on tallennettu toisen puhelimella. Sen tekstiä voi muuttaa vain se, joka sen tallensi." = "Yksi muisto, jossa nimi lukee, on tallennettu toisen puhelimella. Sen tekstiä voi muuttaa vain se, joka sen tallensi.";
+"%lld muistoa, joissa nimi lukee, on tallennettu muiden puhelimilla. Niiden tekstiä voi muuttaa vain se, joka ne tallensi." = "%lld muistoa, joissa nimi lukee, on tallennettu muiden puhelimilla. Niiden tekstiä voi muuttaa vain se, joka ne tallensi.";
+"Nimi on nyt %@." = "Nimi on nyt %@.";
+"Yhdessä muistossa lukee yhä %@." = "Yhdessä muistossa lukee yhä %@.";
+"%lld muistossa lukee yhä %@." = "%lld muistossa lukee yhä %@.";
+"Korjaa nimi myös muistoon" = "Korjaa nimi myös muistoon";
+"Korjaa nimi myös muistoihin" = "Korjaa nimi myös muistoihin";
+"Jätä teksti ennalleen" = "Jätä teksti ennalleen";
+"Tekstin voit korjata itse muiston alta: ”Muokkaa tai poista”." = "Tekstin voit korjata itse muiston alta: ”Muokkaa tai poista”.";
+"Korjataan muistoa %lld, kaikkiaan %lld…" = "Korjataan muistoa %lld, kaikkiaan %lld…";
+"Keskeytä" = "Keskeytä";
+"Nimi korjattiin yhteen muistoon." = "Nimi korjattiin yhteen muistoon.";
+"Nimi korjattiin %lld muistoon." = "Nimi korjattiin %lld muistoon.";
+"Yhden muiston teksti jäi korjaamatta." = "Yhden muiston teksti jäi korjaamatta.";
+"%lld muiston teksti jäi korjaamatta." = "%lld muiston teksti jäi korjaamatta.";
+"Voit yrittää uudelleen tai korjata tekstin itse muiston alta: ”Muokkaa tai poista”." = "Voit yrittää uudelleen tai korjata tekstin itse muiston alta: ”Muokkaa tai poista”.";
+"Avaa kortin. Siellä nimen voi myös korjata." = "Avaa kortin. Siellä nimen voi myös korjata.";

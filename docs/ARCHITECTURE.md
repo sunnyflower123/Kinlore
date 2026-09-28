@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 111 sweep tests, each auditing one screen at the default text size and again at the largest, out of 347 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 114 sweep tests, each auditing one screen at the default text size and again at the largest, out of 353 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -110,7 +110,7 @@ behind. On 29 Sep 2026 that was 58 checks: 12 drive a Worker started locally, 2
 need a simulator of your own, and the other 44 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 347 UI tests, including 111 accessibility sweeps that audit a
+The UI suite has 353 UI tests, including 114 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -4291,11 +4291,64 @@ the merged one stays as a tombstone with a forwarding address so that nothing
 anywhere points at nothing (§2.5). The sheet says so before the tap rather than
 after it, because a merge that arrives as a surprise looks like data loss.
 
-**The memories' text is left alone**, and the sheet says that too. Re-writing
-every memory that names the person would need the model and the family's
-minutes, and the right name on the card matters more than the wording inside a
-story — the same trade the correction at telling time already makes when
-re-extraction fails.
+**The words follow, on a tap (28 Sep 2026).** Until that day the sheet
+corrected the card and said the stories stayed as they were, because rewriting
+them "would need the model and the family's minutes". The minutes were never
+true — `/extract` is on no family's meter (`worker.ts`) — and the rest left a
+card reading *Hilma* above stories that still said *Hildan kanssa*. Now, once
+the card is saved, the sheet counts the tellings tied to it whose words still
+say the old name (`NamedTellings`, `NameInText`, which finds the name's stem at
+the start of a word, so *Hildan* and *Pekan* count) and offers to correct them,
+saying how many. The correction is the Tell screen's: each telling's text goes
+back through extraction with the name as a `NameCorrection`, and `updateBody`
+writes the text that comes back. The body goes in rather than the raw
+transcript, because an earlier hand — *Muokkaa tekstiä*, a name fixed at the
+result — has corrected the body where the transcript is still wrong. Nothing
+is rewritten without the tap, *Jätä teksti ennalleen* is the other answer, and
+the recording and the raw transcript are rule 3's and never touched. The card
+is renamed either way: the right name on it still matters more than the
+wording inside a story.
+
+Only this phone's own tellings are offered, since the server takes a telling's
+body from its author and nobody else (`sync.ts`); the others are counted and
+said beside the offer and left to whoever saved them. When they are the only
+tellings that say the name — the usual case, a grandchild correcting a name
+the grandmother was heard to say — the step offers nothing and says that, and
+who can change the words, rather than letting the sheet close on a story that
+still reads the old name. A telling that fails waits for *Yritä uudelleen*, and a
+failure of the moment — the network, the free tier's day — stops the run
+rather than failing every telling after it in turn.
+
+The steps after the name are a page of words and buttons, as the memory's own
+choice sheet is, and not `Form` rows. As rows they failed the audit at the
+default size — the offer's two buttons and its footer, from 400 pt down the
+sheet, and the outcome's *Valmis*, each *partially unsupported*, the position
+signature of `AccessibilityAudit.swift` — and the name step's footer was cut
+back to one sentence for the same reason: three sentences there pushed
+*Peruuta* down into it.
+
+**The way from a story to the name.** A name nobody has checked has been a
+link on its telling since 12 Sep 2026 (*Kuulin nämä*). A checked one was a word
+in the text and led nowhere, so a grandchild who read *Hilda* where it should
+say Hilma had no road to the pencil. A telling now carries the checked people
+and places its words name as chips under the bubble, each opening the card
+where the correction is (`MemoryRow.namedHere`) — all but the card being read,
+which a chip would only open again. The chips are buttons that push onto the
+stack the card is on (`openCard`), not `NavigationLink`s: a link in a list row
+takes the whole row whatever its style, and in the first build the chip drew as
+the list's own link rather than honey, and a tap on the story's words opened
+the card. The unchecked names under a telling had the same fault, measured the
+same evening: on a telling that heard *Puumalassa*, *Aino* and *Toivo*, a tap on
+Aino, or on the words, pushed all three cards with Toivo's on top, so the name
+tapped was not the card that opened. They are buttons on a telling too
+(`HeardNameRow.open`); behind the people list's door, where each name is a row
+of its own, they stay links.
+
+**The tick means what was typed.** A row on the result screen could be edited
+and then ticked, and until 28 Sep 2026 the tick confirmed the name as heard and
+dropped the edit: *Toivonen* typed, *Toivo* in the family, and nothing on the
+screen said so. An edited row's tick now does what the button under the rows
+does (`TellViewModel.confirm`), and VoiceOver reads the name it will confirm.
 
 This is not new machinery. Sync has had a conflict rule for *"a subject renamed
 on two devices"* since §3 was written; until now the app could not produce that
@@ -4317,6 +4370,28 @@ opens with the name already in it, what is typed reaches the card's title, and
 Tallenna stays disabled while there is nothing to save. The audit covers the
 sheet at the default size and at the largest one, which is what a text field on
 a sheet most needs.
+
+The words, the chips and the tick the same way, on `-seed misheard` (28 Sep
+2026): `testANameReadInAStoryIsCorrectedWordsAndAll` starts on the
+photograph's story, finds that its words open nothing, takes the chip to the
+card, corrects *Hilda* to *Hilma* and finds this phone's two tellings
+rewritten and Mummo's as she left it; `testATellingAnswersItsOwnHeardNames`
+taps a telling's words and then *Aino* under it, and finds her card and, one
+step back, the telling;
+`testLeavingTheWordsAloneLeavesThem` changes no words without the tap; and
+`testATickConfirmsTheNameAsTyped` finds the typed name in the family.
+`testAMergeAsksBeforeItHappens` reads the step that offers nothing, since the
+plain archive's one telling about Eeva is Mummo's.
+`testCorrectNameOffer`, `testCorrectNameOutcome` and
+`testPhotoDetailNameInTheStory` audit the two new steps and the chip at both
+sizes. The stub replaces the name's letters instead of inflecting it, so what
+the model makes of a text that is already tidy was measured apart from the
+tests, on 28 Sep 2026, with two made-up tellings through a local Worker: a
+person, *Hilda* to *Hilma* in four cases, and a place, *Lahti* to *Lohja*,
+whose inner cases have to become outer ones (*Lahdessa* to *Lohjalla*). Both
+came back word for word as expected and changed nothing else, in 10–12 s a
+telling, for $0.0157 the two.
+
 ---
 
 ## 18. Places on a map — the three columns and what they cannot promise

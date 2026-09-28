@@ -2775,6 +2775,93 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The correction's second step (28 Sep 2026, ARCHITECTURE §17): the card
+    /// is corrected, and the sheet says how many of this phone's tellings
+    /// still say the old name and offers to put the new one into their words.
+    /// `-seed misheard`'s Hilda corrected to Hilma, whose tellings are two of
+    /// this phone's and one of Mummo's, so every sentence the step can say is
+    /// on it at once. At the largest size the step is taller than the phone,
+    /// so its top is judged on the way down and the sweep judges the bottom.
+    func testCorrectNameOffer() throws {
+        try sweep(
+            "Korjaa nimi, the words",
+            arguments: ["-seed", "misheard", "-tab", "people", "-screen", "person", "-person", "demo-hilda"]
+        ) { app, isLargest in
+            try correctHildaToHilma(in: app, auditingTheTop: isLargest, "Korjaa nimi, the words")
+            // Dragged rather than reached: the step is a page that holds
+            // every word from the start, so the button is in the tree before
+            // it is on the screen and `reach` would not move it.
+            let way = reach(app.buttons["Jätä teksti ennalleen"], in: app, "the way out of the offer")
+            drag(way, toMinY: 330, in: app)
+            XCTAssertTrue(hasStoppedDrawing(app), "the offer was still being drawn when the audit ran")
+        }
+    }
+
+    /// What came of it when nothing could be corrected: `-defer structure`
+    /// fails every request, so the step says how many were left, the way to
+    /// try again and the way to correct the words by hand — the longest the
+    /// outcome can be.
+    func testCorrectNameOutcome() throws {
+        try sweep(
+            "Korjaa nimi, the outcome",
+            arguments: [
+                "-seed", "misheard", "-defer", "structure",
+                "-tab", "people", "-screen", "person", "-person", "demo-hilda",
+            ]
+        ) { app, isLargest in
+            // The offer itself is `testCorrectNameOffer`'s to judge.
+            try correctHildaToHilma(in: app, auditingTheTop: false, "Korjaa nimi, the outcome")
+            reach(app.buttons["Korjaa nimi myös muistoihin"], in: app, "the offer to correct the words").tap()
+            require(app.staticTexts["2 muiston teksti jäi korjaamatta."], "the outcome, with the tellings left")
+            if isLargest {
+                XCTAssertTrue(hasStoppedDrawing(app), "the outcome's top was still being drawn")
+                judgedAbove.formUnion(labelsInTree(app))
+                let abortAfterAudit = continueAfterFailure
+                continueAfterFailure = true
+                defer { continueAfterFailure = abortAfterAudit }
+                try audit(app, "Korjaa nimi, the outcome, the top, largest text size")
+            }
+            // Dragged for the offer's reason above.
+            let done = reach(app.buttons["Valmis"], in: app, "the way out of the outcome")
+            drag(done, toMinY: 330, in: app)
+            XCTAssertTrue(hasStoppedDrawing(app), "the outcome was still being drawn when the audit ran")
+        }
+    }
+
+    /// Hilda's pencil, "Hilma" typed and saved, to the offer. The return key
+    /// lets the keyboard go first, as a person would. With `auditingTheTop`
+    /// the offer's top is audited here, before anything scrolls it away.
+    private func correctHildaToHilma(in app: XCUIApplication, auditingTheTop: Bool, _ name: String) throws {
+        reach(app.buttons["Korjaa nimi"], in: app, "the correction button").tap()
+        let field = require(app.textFields.firstMatch, "the name field")
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "Hilma\n")
+        reach(app.buttons["Tallenna"], in: app, "the save button").tap()
+        require(app.staticTexts["Nimi on nyt Hilma."], "the offer to correct the words")
+        guard auditingTheTop else { return }
+        XCTAssertTrue(hasStoppedDrawing(app), "the offer's top was still being drawn")
+        judgedAbove.formUnion(labelsInTree(app))
+        let abortAfterAudit = continueAfterFailure
+        continueAfterFailure = true
+        defer { continueAfterFailure = abortAfterAudit }
+        try audit(app, "\(name), the top, largest text size")
+    }
+
+    /// A checked name in a story as the way to its card (28 Sep 2026, §17):
+    /// the chip under the telling. `-seed misheard`'s photograph carries a
+    /// telling of this phone's own whose words name Hilda, confirmed; the
+    /// plain archive's words name nobody confirmed, so no other sweep draws
+    /// one. Dragged clear of both bars, as `testPersonCardWithoutAStory`
+    /// drags the row it judges.
+    func testPhotoDetailNameInTheStory() throws {
+        try sweep("Photo detail, a name in the story", arguments: ["-seed", "misheard", "-tab", "memories"]) { app, _ in
+            reachPhotoTile(in: app).tap()
+            let chip = reach(app.buttons["Hilda"], in: app, "the name under the story", swipes: 6)
+            drag(chip, toMinY: 330, in: app)
+            XCTAssertTrue(hasStoppedDrawing(app), "the photo card was still being drawn when the audit ran")
+        }
+    }
+
     /// Asking is the other half of the question loop, and it is a sheet with a
     /// text field — the one control type nothing else here covers.
     func testAskQuestionSheet() throws {

@@ -37,47 +37,73 @@ struct HeardNameRow: View {
     let sentence: String?
     let onConfirm: () -> Void
     let onReject: () -> Void
+    /// How the name opens its card inside a row that holds more than the
+    /// name — a telling (`MemoryRow`), with its words and every other name
+    /// it heard. Nil on a row of its own, which the link may take whole.
+    var open: ((Subject) -> Void)? = nil
 
     @State private var isConfirmingReject = false
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            NavigationLink(value: subject) {
-                HStack(alignment: .top, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        // The name on its own line, exactly as the people
-                        // list shows it: the tests find a person by the name
-                        // alone, and so does VoiceOver's rotor. The kind is a
-                        // runtime String — the Finnish IS the key — handed
-                        // over as a key to be looked up.
-                        Text(subject.displayTitle)
-                            .font(.body.weight(.medium))
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(LocalizedStringKey(subject.kind.label))
-                            // The identifier is for
-                            // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                            // and nothing else (26 Sep 2026).
-                            .accessibilityIdentifier("heardName.kind")
-                            .font(.caption)
-                            .foregroundStyle(Elder.supporting)
-                        if let sentence {
-                            Text(verbatim: sentence)
-                                .font(.subheadline)
-                                .foregroundStyle(Elder.supporting)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
+    private var name: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                // The name on its own line, exactly as the people
+                // list shows it: the tests find a person by the name
+                // alone, and so does VoiceOver's rotor. The kind is a
+                // runtime String — the Finnish IS the key — handed
+                // over as a key to be looked up.
+                Text(subject.displayTitle)
+                    .font(.body.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(LocalizedStringKey(subject.kind.label))
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (26 Sep 2026).
+                    .accessibilityIdentifier("heardName.kind")
+                    .font(.caption)
+                    .foregroundStyle(Elder.supporting)
+                if let sentence {
+                    Text(verbatim: sentence)
+                        .font(.subheadline)
                         .foregroundStyle(Elder.supporting)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .buttonStyle(.plain)
-            // The row draws its own chevron, in `Elder.supporting`; the list
-            // would add its grey one at the far edge, and two arrows on one
-            // row read as two places to go.
-            .navigationLinkIndicatorVisibility(.hidden)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Elder.supporting)
+        }
+        // The whole width answers, the gap between the name and its chevron
+        // included. A plain button answers only where it draws, and inside a
+        // telling the row is no longer the list's to take (28 Sep 2026).
+        .contentShape(Rectangle())
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // A button inside a telling. As a link there it took the
+            // telling's whole row, and every other name's link with it: on a
+            // telling that heard Puumalassa, Aino and Toivo, a tap on Aino —
+            // or on the story's words — pushed all three cards, Toivo's on
+            // top (28 Sep 2026).
+            if let open {
+                Button {
+                    open(subject)
+                } label: {
+                    name
+                }
+                .buttonStyle(.plain)
+            } else {
+                NavigationLink(value: subject) {
+                    name
+                }
+                .buttonStyle(.plain)
+                // The row draws its own chevron, in `Elder.supporting`; the list
+                // would add its grey one at the far edge, and two arrows on one
+                // row read as two places to go.
+                .navigationLinkIndicatorVisibility(.hidden)
+            }
 
             HStack(spacing: 16) {
                 Button("Vahvista", action: onConfirm)

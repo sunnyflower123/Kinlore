@@ -2699,6 +2699,13 @@ private struct ProposalRow: View {
             .compare(subject.title, options: .caseInsensitive) != .orderedSame
     }
 
+    /// The name the tick confirms: the typed one once there is one
+    /// (`TellViewModel.confirm`), so VoiceOver says what the tap does.
+    private var tickName: String {
+        let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return typed.isEmpty ? subject.title : typed
+    }
+
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: subject.kind.symbolName)
@@ -2779,7 +2786,7 @@ private struct ProposalRow: View {
                     .elderTapTarget()
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Vahvista \(subject.title)")
+            .accessibilityLabel("Vahvista \(tickName)")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 6)

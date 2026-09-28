@@ -1896,7 +1896,7 @@ final class MemoryStore {
             "archive", "unseen", "deck", "blind", "related", "dated", "years", "faces", "facts",
             "unplaced", "unarrived", "mentioned",
             "film", "film-untold", "film-week", "film-family", "film-tree", "film-toivo",
-            "aimed", "restorable",
+            "aimed", "restorable", "misheard",
         ].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
         // plus a seen-baseline with nothing in it, so every telling by the
@@ -2611,6 +2611,39 @@ final class MemoryStore {
                 authorName: "Mummo", body: "Aino opetti minut uimaan.", source: .typed,
                 mentionedSubjectIDs: [aino.id]
             ))
+        }
+        // `-seed misheard`: the archive with a name confirmed as it was
+        // heard — "Hilda", where the tellers meant Hilma — and three tellings
+        // whose words say it (§17). Two are this phone's own (`authorID` nil,
+        // as in `-seed restorable`), one under the photograph and one on her
+        // card, so the card's correction has words it may put right and the
+        // photograph's telling has her name to lead back to her card from.
+        // The third is Mummo's, which the correction counts and leaves alone:
+        // the server takes a telling's words only from whoever saved it.
+        if seed == "misheard" {
+            let hilda = Subject(id: "demo-hilda", kind: .person, title: "Hilda")
+            subjects.append(hilda)
+            memories += [
+                Memory(
+                    id: "demo-memory-hilda-photo", subjectID: photo.id,
+                    authorName: String(localized: "Minä"),
+                    body: "Hilda souti meidät saareen, ja Hildan kahvipannu kulki aina mukana.",
+                    source: .typed,
+                    mentionedSubjectIDs: [hilda.id]
+                ),
+                Memory(
+                    id: "demo-memory-hilda-own", subjectID: hilda.id,
+                    authorName: String(localized: "Minä"),
+                    body: "Hildalla oli sininen huivi.",
+                    source: .typed,
+                    mentionedSubjectIDs: [hilda.id]
+                ),
+                Memory(
+                    id: "demo-memory-hilda-mummo", subjectID: hilda.id, authorID: "demo-mummo",
+                    authorName: "Mummo", body: "Hilda lauloi rannalla.", source: .typed,
+                    mentionedSubjectIDs: [hilda.id]
+                ),
+            ]
         }
         // Same reason as the skips above: which proposals this device has
         // already answered is device state that outlives a launch on purpose,
