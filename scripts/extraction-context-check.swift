@@ -273,6 +273,73 @@ struct ExtractionContextCheck {
             [String]()
         )
 
+        // MARK: - Newer questions replace older ones
+
+        // The cap alone froze a card at whatever its first two tellings asked:
+        // every later reply, the ones that saw the photograph included, was
+        // admitted nothing. A turnover that went wrong is as silent as the
+        // freeze was. Retiring a person's question takes back a request
+        // somebody made of the family; retiring on an empty reply leaves a
+        // card with nothing to ask.
+        print("\n— a newer telling's questions replace the machine's older ones —")
+        func machine(_ id: String, _ text: String) -> FollowUpQuestion {
+            FollowUpQuestion(id: id, subjectID: "p1", text: text)
+        }
+        func person(_ id: String, _ text: String) -> FollowUpQuestion {
+            FollowUpQuestion(id: id, subjectID: "p1", text: text, authorID: "m-ville", authorName: "Ville")
+        }
+        let old = zip(["o1", "o2", "o3", "o4", "o5"], five).map { machine($0, $1) }
+        let asked = person("v1", "Kuka otti tämän kuvan?")
+
+        check("a question with an asker is a person's", asked.isMachine, false)
+        check(
+            "so is one with only the asker's name on it",
+            FollowUpQuestion(subjectID: "p1", text: "Kuka?", authorName: "Ville").isMachine,
+            false
+        )
+        check("one the extraction wrote is the machine's", old[0].isMachine, true)
+
+        let full = ExtractionContext.turnover(fresh, on: old)
+        check("a full card of old ones admits every fresh question", full.admitted, fresh)
+        check("and retires every old one", full.retired, ["o1", "o2", "o3", "o4", "o5"])
+
+        let mixed = ExtractionContext.turnover(fresh, on: Array(old.prefix(2)) + [asked])
+        check("a person's question is never retired", mixed.retired, ["o1", "o2"])
+
+        let people = (1 ... 4).map { person("v\($0)", "Kysymys numero \($0) Villeltä?") }
+        let crowded = ExtractionContext.turnover(fresh, on: people + [old[0]])
+        check("it still counts towards the cap", crowded.admitted, [fresh[0]])
+        check("and the one machine question beside it goes", crowded.retired, ["o1"])
+
+        let fivePeople = (1 ... 5).map { person("v\($0)", "Kysymys numero \($0) Villeltä?") }
+        let noRoom = ExtractionContext.turnover(fresh, on: fivePeople)
+        check("five people's questions leave no room", noRoom.admitted, [String]())
+        check("and nothing is retired", noRoom.retired, [String]())
+
+        let answering = ExtractionContext.turnover(fresh, on: old, answering: "o5")
+        check("the question being answered is not retired", answering.retired, ["o1", "o2", "o3", "o4"])
+        check("and frees its slot", answering.admitted, fresh)
+        check(
+            "and is still a repeat to ask again",
+            ExtractionContext.turnover(["Mitä saaressa oikein syötiin?"], on: old, answering: "o5").admitted,
+            [String]()
+        )
+
+        let nothing = ExtractionContext.turnover([], on: old)
+        check("a reply with no questions retires nothing", nothing.retired, [String]())
+        let onlyRepeats = ExtractionContext.turnover(["Kuka oikein otti tämän kuvan?"], on: [asked, old[0]])
+        check("nor does one that only restates a person's question", onlyRepeats.retired, [String]())
+        check(
+            "a restatement of a retiring question replaces it",
+            ExtractionContext.turnover(["Millainen ihminen Aino oikein oli?"], on: [old[0]]),
+            ExtractionContext.Turnover(admitted: ["Millainen ihminen Aino oikein oli?"], retired: ["o1"])
+        )
+        check(
+            "an empty card retires nothing and admits what the cap allows",
+            ExtractionContext.turnover(fresh, on: []),
+            ExtractionContext.Turnover(admitted: fresh, retired: [])
+        )
+
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
 

@@ -2592,7 +2592,13 @@ One knowingly open edge: every round adds three questions and answers one, so
 a long interview grows the open-question list. That is today's behaviour for
 every answered question, not something the loop introduced — if it starts to
 hurt, the cap belongs in the store, not here. It went there on 25 Sep 2026:
-one subject carries at most five open questions (§12).
+one subject carries at most five open questions (§12). The cap then pinched
+the other way: from the third round on, a reply could add only the one
+question its answer made room for, the model's first rather than the one the
+ladder would have chosen. Since 28 Sep 2026 each round's reply replaces the
+machine's other open questions on the card (§12, "What a card keeps asking"),
+so every round has a fresh three to choose from, and the card keeps the last
+round's.
 
 The pairing required by "every addition requires a removal" (CLAUDE.md): the
 drawn family-tree graph, already last in line in §8, is now formally out of
@@ -2983,7 +2989,9 @@ ordinary telling and the catch-up in `DeferredMemory`, and before this the
 catch-up did not de-duplicate at all. A question a person asked is never
 held back, though it counts towards the five. Neither is a question synced
 from another phone, which is why the count can go past five. The gate decides
-only what this phone adds.
+only what this phone adds. Since 28 Sep 2026 the gate is `turnover`, which
+runs `admitted` against what stays on the card once the machine's older
+questions have given way ("What a card keeps asking", below).
 
 ### What the questions leave alone — 26 Sep 2026
 
@@ -3036,6 +3044,72 @@ Marjatan viimeinen päivä oli?"*, so that half stays a measurement made by hand
 Not measured: level 5, where two slots ask for level 5; levels 1–3; a telling
 sent with no level; the smell-or-sound gap, which no telling produced either
 before or after; and real elderly speech.
+
+### What a card keeps asking — 28 Sep 2026
+
+It showed on an older card, whose open questions had nothing in particular to
+do with the photograph or with what had been told under it. The cap above was
+the cause. Two tellings fill a card's five slots, and from then on `admitted`
+let nothing in, so a card's questions were whatever its first tellings had
+raised; on a card told about before 19 Sep, those came from a transcript
+alone. Every later telling sent the photograph, got back questions
+about it, and lost all three at the gate. The cap stopped the growth by
+freezing the list.
+
+**A reply that brings anything new now retires the machine's older questions
+on its card** (`ExtractionContext.turnover`). The newest reply is the
+best-informed one there is: it saw the photograph, the holes and every question
+still open, and was asked not to repeat any of them. The retired questions
+leave by the road a taking-back already used (§19). `add(questions:retiring:)`
+takes them out of `questions` and queues a tombstone for each in
+`retiredQuestions` in the same write, the push carries `deleted_at`, and every
+other phone's pull removes them. Nothing new is stored and the Worker is
+unchanged; `FollowUpQuestion.isMachine` is computed.
+
+Three things are never retired. A question a person asked, with an `authorID`
+or an `authorName` on it, is a request somebody made of the family; it still
+counts towards the five, so five of them leave no room and retire nothing. The
+question the telling answers stays and is marked answered, so what was
+answered, and by which telling, is untouched. And nothing goes when nothing
+new came: a failed or verbatim extraction, or a reply that only restated what
+is open, leaves the card as it was.
+
+Every road a reply takes into the archive goes through it: the Tell screen,
+each round of the interview, "Kirjoita se itse" and the catch-up. The catch-up
+had been asking with the words alone, so a recording that waited for its text
+came back with questions about the speech; it now sends what the Tell screen
+sends for the card the recording is filed under (§16). A telling moved to
+another card leaves no questions behind: they were aimed at the old card, and
+`MemoryStore.move` retires them as a taking-back does. On the result screen,
+taking the telling back or moving it gives the old card back the questions its
+reply had replaced (`MemoryStore.reinstate`), as new rows, because a tombstone
+is for good.
+
+The limits, each chosen:
+
+- **The newest reply decides.** A good question the reply before it asked goes
+  with the rest, and since it is no longer on the list that tells the next
+  reply what not to repeat, it can come back while the hole is still open. A
+  card's questions are its last telling's, not the best of all of them.
+- **Only the result screen gives anything back.** It alone knows what its
+  reply replaced. A telling taken back or moved from its card a day later
+  leaves that card without machine questions until somebody tells about it
+  again, because starters are offered only on a card nobody has told about.
+- **An answer given on another phone** to a question retired here is kept as
+  a telling, and the question stays retired, because the server keeps
+  `deleted_at` once it has it.
+- **A card nobody tells about again keeps its old questions.** Refreshing them
+  from the photograph and every memory under it would send memory text, which
+  aiming a question has never done (above); it would need a Worker route, a
+  prompt in both languages, a sentence in the disclosure and a deploy. It is
+  left as a decision rather than built.
+
+`scripts/extraction-context-check.swift` holds the rule in 17 checks: the
+retirement of the machine's questions, a person's question kept and still
+counted, the answered question kept, an empty or repeating reply retiring
+nothing, and a restatement of a retiring question replacing it. Two deliberate
+bugs, retiring a person's question and retiring on an empty reply, failed 6
+and 2 of them.
 
 ## 13. The guessing round — built, then cut
 
@@ -4046,10 +4120,10 @@ to cost a transcript; it now costs a day.
 
 If transcription succeeds but extraction does not, **the memory lands in the
 teller's own words** rather than being thrown away and re-transcribed later.
-Transcription costs the family real minutes; extraction is text, a fraction of a
-cent, and deliberately unmetered (§7). So a transcript that has been paid for is
-never discarded because the cheap half failed. Structure is what degrades — not
-the telling.
+Transcription costs the family real minutes; extraction is a fraction of a
+cent, the photograph included (§12), and deliberately unmetered (§7). So a
+transcript that has been paid for is never discarded because the cheap half
+failed. Structure is what degrades — not the telling.
 
 The same rule holds where the telling actually happens, which it did not for a
 while. The Tell screen answered a failed extraction with `.failed`, so neither
@@ -4068,6 +4142,17 @@ may have been looking at it; `describe` fills empty fields only, so a title
 written by hand in the meantime survives. That is also why the subject is
 created **untitled**: a placeholder written before anything had been read would
 have been filled in by nothing, and become permanent.
+
+**The text is asked about that same card**, since 28 Sep 2026. Until then the
+catch-up sent the words and nothing else, so a recording that waited for its
+text came back with questions about the speech alone, the shape §12 measured
+away on 19 Sep, and on a photograph they said nothing about the picture. It now
+sends what the Tell screen sends: the card's context and, for a photograph,
+the picture (`extractionContext(for:excluding:)`, `modelPhoto(for:)`), with the
+recording itself left out of the card's count. "Kirjoita se itse" asks about
+the recording's card too, whatever the screen was aimed at when the typing
+began. The disclosure already covers the picture: *"Kun kerrot valokuvasta,
+kuva lähtee mukaan."*
 
 ### Verified
 
@@ -4804,7 +4889,11 @@ phone killed before the push still sends it). The server needed nothing:
 the upsert keeps it with `COALESCE`, so once a tombstone lands no later push
 of the question from any phone can bring it back. It travels with the
 status *dismissed*, the schema's third word, for the builds that read
-`status` and not the column. Four limits, each chosen:
+`status` and not the column. Since 28 Sep 2026 the same road carries two more
+kinds of question: the ones a telling moved to another card had raised, and
+the machine's older ones a newer telling's questions replace (§12, "What a
+card keeps asking"). A telling taken back on its result screen gives its card
+back the questions it had replaced, as new rows. Four limits, each chosen:
 
 - **Restoring the telling does not bring them back**, for the reason the
   proposals it tidied away stay tidied (above): the card offers the telling

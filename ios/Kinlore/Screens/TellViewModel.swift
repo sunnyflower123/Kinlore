@@ -82,6 +82,13 @@ final class TellViewModel {
     /// them.
     private var sessionMemoryIDs: [String] = []
     private(set) var newQuestions: [FollowUpQuestion] = []
+    /// The open questions the saved telling's reply took off its card
+    /// (`ExtractionContext.turnover`), held while its result screen is up.
+    /// Taking the telling back there, or moving it to another card, puts them
+    /// back (`MemoryStore.reinstate`): they gave way to a telling the card
+    /// no longer holds. Follows `savedMemoryID`, because that is the one
+    /// telling both buttons act on.
+    private var replaced: [FollowUpQuestion] = []
     /// Whether this result screen carries the offer slot — the invitation
     /// while the family is one person, the paid archive after that
     /// (`UpsellRhythm.card`, docs/UX.md §3.2).
@@ -447,6 +454,9 @@ final class TellViewModel {
     func discardSavedMemory() {
         guard let savedMemoryID else { return }
         store.remove(memoryID: savedMemoryID)
+        // Its own questions went with it (`remove(memoryID:)`), and the ones
+        // they had replaced on the card come back.
+        store.reinstate(replaced)
 
         for subject in proposals where !subject.confirmed && store.isOrphaned(subjectID: subject.id) {
             store.remove(subjectID: subject.id)
@@ -617,27 +627,25 @@ final class TellViewModel {
         await process(transcript: text, audioURL: nil, duration: nil)
     }
 
-    /// The photograph this telling is about, sized for the model, or nil.
-    ///
-    /// Only a `photo` subject, and only the picture as it was taken: a
-    /// colourisation is the family's guess at the colours (rule 4, and only
-    /// after somebody said yes to it), and asking a model what it sees in
-    /// another model's output is a question about the wrong picture.
-    ///
-    /// Read on the main actor before the call rather than inside it, because
-    /// this is disk work and `process` is already awaiting a network round —
-    /// but it is one downsample of one file, which `MediaStore` does through
-    /// ImageIO without decoding the whole image.
-    private var modelPhoto: Data? {
-        guard let target, target.kind == .photo, let filename = target.imageFilename else { return nil }
-        return MediaStore.modelImage(named: filename)
-    }
-
     // MARK: - Pipeline
 
     private func process(transcript text: String, audioURL: URL?, duration: TimeInterval?) async {
         transcript = text
         phase = .organizing
+
+        // What the words are about. Ordinarily the card the screen is aimed
+        // at, or none in free dictation. Typed to finish a recording that is
+        // already filed, they are about that recording's card, whatever the
+        // screen was aimed at when the typing began — free dictation had no
+        // card at all — and the recording is left out of the card's count,
+        // because it is the telling being extracted. The catch-up asks the
+        // same way (`TranscriptionCatchUp.run`). A recording the catch-up
+        // finished first is not waiting, and the typed text is then a
+        // telling of its own (`save`).
+        let waiting = completingMemoryID.flatMap { id in
+            store.told.first { $0.id == id && $0.body.isEmpty }
+        }
+        let aim = waiting.flatMap { store.subject(id: $0.subjectID) } ?? target
 
         // The teller's own level travels with the request, so the questions that
         // come back are ones they can actually answer. See
@@ -661,8 +669,8 @@ final class TellViewModel {
                 transcript: text,
                 corrections: [],
                 level: ladderLevel,
-                context: store.extractionContext(for: target),
-                photo: modelPhoto
+                context: store.extractionContext(for: aim, excluding: waiting?.id),
+                photo: store.modelPhoto(for: aim)
             )
             wasOrganised = true
         } catch {
@@ -710,6 +718,8 @@ final class TellViewModel {
     /// an event of its own. The text is left empty, and
     /// `isAwaitingTranscription` tells the UI that transcription is pending.
     private func saveAudioOnly(audioURL: URL, duration: TimeInterval) {
+        // Nothing has read the words, so nothing on the card gave way to them.
+        replaced = []
         guard let audioName = Self.persistAudio(from: audioURL) else {
             // No words, and now no recording: a memory with neither is a row
             // reading "Ääni tallessa" over nothing. The screen says what
@@ -917,18 +927,21 @@ final class TellViewModel {
         // it is handed. Three per telling for ever, with nothing in between, is
         // why a fourth telling about one photograph used to produce the first
         // telling's questions again. No repeat, and never more than
-        // `openQuestionCap` open on one subject (`ExtractionContext.admitted`).
+        // `openQuestionCap` open on one subject; and the machine's older
+        // questions on the card give way to these, which saw the photograph
+        // and everything already asked (`ExtractionContext.turnover`). The
+        // question this telling answers stays, to be marked answered below.
         let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }
-        let answeringNow = open.first { $0.id == question?.id }?.text
-        let admitted = ExtractionContext.admitted(
-            extracted.questions.map(\.text), against: open.map(\.text), answeringNow: answeringNow
+        let turnover = ExtractionContext.turnover(
+            extracted.questions.map(\.text), on: open, answering: question?.id
         )
         let questions = extracted.questions
-            .filter { admitted.contains($0.text) }
+            .filter { turnover.admitted.contains($0.text) }
             .map {
                 FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level, askedFrom: memory.id)
             }
-        store.add(questions: questions)
+        replaced = open.filter { turnover.retired.contains($0.id) }
+        store.add(questions: questions, retiring: turnover.retired)
         newQuestions = questions
         // Measured on the raw transcript rather than the cleaned body: what was
         // actually said is the evidence, and the cleanup can lengthen a
@@ -965,6 +978,7 @@ final class TellViewModel {
         proposals = completion.proposals
         placedSubject = completion.home
         newQuestions = completion.questions
+        replaced = completion.replaced
         savedMemoryID = memoryID
         sessionMemoryIDs.append(memoryID)
         // Kept from the recording rather than from this pass, which had no
@@ -1041,9 +1055,19 @@ final class TellViewModel {
     /// line follows, so the sentence on screen says where it is now — in its
     /// own words, because "sijoitin" and "lisäsin" were the AI's and the card's
     /// doing, and this was the teller's.
+    ///
+    /// The questions it raised stay on this screen, where the conversation
+    /// can go on about it on the new card, while the stored ones are retired
+    /// (`MemoryStore.move`); the ones they replaced on the old card go back,
+    /// once the telling has actually left it.
     func move(to subject: Subject) {
         guard let id = savedMemoryID else { return }
+        let from = store.told.first { $0.id == id }?.subjectID
         store.move(memoryID: id, to: subject.id)
+        if from != subject.id, store.told.contains(where: { $0.id == id && $0.subjectID == subject.id }) {
+            store.reinstate(replaced)
+            replaced = []
+        }
         placedSubject = subject
         movedByHand = true
     }
@@ -1315,6 +1339,7 @@ final class TellViewModel {
         placedSubject = nil
         proposals = []
         newQuestions = []
+        replaced = []
         showsUpsell = false
         savedAudioDuration = nil
         savedMemoryID = nil

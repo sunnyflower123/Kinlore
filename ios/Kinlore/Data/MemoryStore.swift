@@ -48,11 +48,13 @@ final class MemoryStore {
     private(set) var dirtyMemories: Set<String> = []
     private(set) var dirtyQuestions: Set<String> = []
     private(set) var dirtyRelations: Set<String> = []
-    /// Questions withdrawn with the telling that raised them, each carrying
-    /// its `deletedAt`, until a push has carried the tombstone. Out of
-    /// `questions` rather than flagged inside it, so that no reader of the
-    /// open list has to know they exist; on disk, so that a phone killed
-    /// before the push still sends them. See `remove(memoryID:)`.
+    /// Questions taken off their card for good, each carrying its
+    /// `deletedAt`, until a push has carried the tombstone: withdrawn or
+    /// moved away with the telling that raised them, or replaced by a newer
+    /// telling's (`add(questions:retiring:)`). Out of `questions` rather than
+    /// flagged inside it, so that no reader of the open list has to know they
+    /// exist; on disk, so that a phone killed before the push still sends
+    /// them. See `retire(questionIDs:)`.
     private(set) var retiredQuestions: [FollowUpQuestion] = []
 
     private let fileURL: URL
@@ -490,10 +492,54 @@ final class MemoryStore {
         save()
     }
 
-    func add(questions newQuestions: [FollowUpQuestion]) {
+    /// `retiring` names the open questions the new ones replace, which a
+    /// telling's reply decides (`ExtractionContext.turnover`). One write for
+    /// both halves, so that no save can land with the card holding neither
+    /// the old questions nor the new.
+    func add(questions newQuestions: [FollowUpQuestion], retiring retiredIDs: [String] = []) {
+        retire(questionIDs: retiredIDs)
         questions.append(contentsOf: newQuestions)
         dirtyQuestions.formUnion(newQuestions.map(\.id))
         save()
+    }
+
+    /// Puts questions a telling replaced back on their card, when the telling
+    /// that replaced them is taken back or moved off it on its result screen
+    /// (`TellViewModel.replaced`).
+    ///
+    /// As new rows, with the words, the level, the age and the telling that
+    /// raised them, and not as the old ones: the server keeps a tombstone for
+    /// good (`COALESCE` in `sync.ts`), so a retired id can never be open again.
+    func reinstate(_ replaced: [FollowUpQuestion]) {
+        guard !replaced.isEmpty else { return }
+        add(questions: replaced.map {
+            FollowUpQuestion(
+                subjectID: $0.subjectID,
+                text: $0.text,
+                storedLevel: $0.storedLevel,
+                createdAt: $0.createdAt,
+                askedFrom: $0.askedFrom
+            )
+        })
+    }
+
+    /// Takes open questions off their card for good and queues a tombstone
+    /// for each. Never a question a person asked, whoever the caller: only
+    /// the extraction's own questions are the app's to take away. Nor one
+    /// already answered, whose answer is somebody's telling pointing at it.
+    /// Does not save; its callers do.
+    private func retire(questionIDs: [String]) {
+        let ids = Set(questionIDs)
+        let going = questions.filter { ids.contains($0.id) && $0.isMachine && !$0.answered }
+        guard !going.isEmpty else { return }
+        let goingIDs = Set(going.map(\.id))
+        questions.removeAll { goingIDs.contains($0.id) }
+        dirtyQuestions.subtract(goingIDs)
+        retiredQuestions += going.map { question in
+            var tombstone = question
+            tombstone.deletedAt = .now
+            return tombstone
+        }
     }
 
     /// Fills in a subject's date from what was told about it.
@@ -923,17 +969,7 @@ final class MemoryStore {
         guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
         memories[index].deletedAt = .now
         dirtyMemories.insert(memoryID)
-        let raised = questions.filter { $0.askedFrom == memoryID && !$0.answered }
-        if !raised.isEmpty {
-            let ids = Set(raised.map(\.id))
-            questions.removeAll { ids.contains($0.id) }
-            dirtyQuestions.subtract(ids)
-            retiredQuestions += raised.map { question in
-                var tombstone = question
-                tombstone.deletedAt = .now
-                return tombstone
-            }
-        }
+        retire(questionIDs: questions.filter { $0.askedFrom == memoryID }.map(\.id))
         save()
     }
 
@@ -1053,6 +1089,14 @@ final class MemoryStore {
     /// with it, exactly as it goes when the telling is taken back — an
     /// untitled or auto-named event with nothing left under it is not a card.
     ///
+    /// The questions it raised that are still open do not go with it, and do
+    /// not stay either, since 28 Sep 2026. They were aimed at the old card,
+    /// at its photograph, its holes and its open questions, so on the new
+    /// one they would be questions about another card; left behind they
+    /// asked the family about a telling that was no longer there. They are
+    /// retired as a taking-back retires them, and the new card's next telling
+    /// asks its own.
+    ///
     /// Returns whether the old home went: the card the caller is standing on
     /// has then nothing left to show.
     @discardableResult
@@ -1064,6 +1108,7 @@ final class MemoryStore {
         let from = memories[index].subjectID
         memories[index].subjectID = subjectID
         dirtyMemories.insert(memoryID)
+        retire(questionIDs: questions.filter { $0.askedFrom == memoryID }.map(\.id))
         save()
         if let home = subjects.first(where: { $0.id == from }),
            home.kind == .event, home.deletedAt == nil, isOrphaned(subjectID: home.id) {

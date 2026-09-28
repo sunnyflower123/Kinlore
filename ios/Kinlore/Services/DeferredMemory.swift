@@ -22,6 +22,10 @@ enum DeferredMemory {
         /// arrived on time.
         var mentioned: [Subject]
         var questions: [FollowUpQuestion]
+        /// The open questions these took the place of on the card
+        /// (`ExtractionContext.turnover`), for a result screen that can still
+        /// take the telling back.
+        var replaced: [FollowUpQuestion]
 
         /// The ones a human still has to confirm. Someone already known is not
         /// asked about again, which is why this is narrower than `mentioned`.
@@ -77,17 +81,19 @@ enum DeferredMemory {
         )
 
         // The same gate as the ordinary path (`TellViewModel.save`): no repeat
-        // of a question already open, and no more than `openQuestionCap` open
-        // on one subject. A recording that waited a week is no reason to go
-        // over it.
-        let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }.map(\.text)
-        let admitted = ExtractionContext.admitted(extracted.questions.map(\.text), against: open)
+        // of a question already open, no more than `openQuestionCap` open on
+        // one subject, and the machine's older questions on the card give way
+        // to these. A recording that waited a week is no reason to go over
+        // the cap. Nothing is being answered here: the question this
+        // recording answered was closed when its audio was saved.
+        let open = store.questions.filter { !$0.answered && $0.subjectID == home.id }
+        let turnover = ExtractionContext.turnover(extracted.questions.map(\.text), on: open)
         let questions = extracted.questions
-            .filter { admitted.contains($0.text) }
+            .filter { turnover.admitted.contains($0.text) }
             .map {
                 FollowUpQuestion(subjectID: home.id, text: $0.text, storedLevel: $0.level, askedFrom: memory.id)
             }
-        store.add(questions: questions)
+        store.add(questions: questions, retiring: turnover.retired)
 
         // Whatever this recording cost in failed attempts, it is finished now
         // and the tally is of no further use. Typing the text by hand clears it
@@ -98,7 +104,8 @@ enum DeferredMemory {
         return Completion(
             home: store.subject(id: home.id) ?? home,
             mentioned: mentioned,
-            questions: questions
+            questions: questions,
+            replaced: open.filter { turnover.retired.contains($0.id) }
         )
     }
 }
@@ -247,13 +254,27 @@ final class TranscriptionCatchUp {
             }
 
             // Transcription has now cost the family real minutes, and extraction
-            // is text — a fraction of a cent, and deliberately unmetered (§7). So
+            // is a fraction of a cent, and deliberately unmetered (§7). So
             // a transcript that has been paid for is never thrown away because
             // the cheap half failed: the memory lands in the teller's own words
             // instead, which is what `raw_transcript` is for anyway. Structure is
             // what degrades, not the telling.
-            let extracted = (try? await extraction.extract(transcript: text, level: level))
-                ?? .verbatim(text)
+            //
+            // Asked exactly as the Tell screen asks, about the card the
+            // recording is filed under: the archive's holes, the questions
+            // open there and, for a photograph, the picture. Until 28 Sep 2026
+            // this sent the words alone, so every recording that waited for
+            // its text came back with questions about the speech and nothing
+            // else, which is what the photograph was sent to stop (§12). The
+            // recording itself is left out of the card's count.
+            let home = store.subject(id: memory.subjectID)
+            let extracted = (try? await extraction.extract(
+                transcript: text,
+                corrections: [],
+                level: level,
+                context: store.extractionContext(for: home, excluding: memory.id),
+                photo: store.modelPhoto(for: home)
+            )) ?? .verbatim(text)
 
             if DeferredMemory.fillIn(
                 memoryID: memory.id, transcript: text, extracted: extracted, store: store

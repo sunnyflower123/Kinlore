@@ -241,6 +241,55 @@ extension ExtractionContext {
         return Array(deduplicated(incoming, against: open).prefix(room))
     }
 
+    /// What a telling does to the questions open on its card: the fresh ones
+    /// it lets in, and the ids of the machine's older ones they replace.
+    struct Turnover: Equatable {
+        var admitted: [String]
+        var retired: [String]
+    }
+
+    /// The newest telling's questions replace the machine's older ones on the
+    /// same card, since 28 Sep 2026.
+    ///
+    /// The cap alone froze a card's questions at whatever its first tellings
+    /// raised. Two tellings fill five slots, and from then on a reply was
+    /// admitted nothing: questions written from a transcript alone, before the
+    /// extraction was shown the archive and the photograph (19 Sep), stayed
+    /// on the card for good, and every later telling's questions about the
+    /// photograph were dropped at the gate. It showed on an older card, whose
+    /// open questions had nothing in particular to do with the photograph or
+    /// with what had been told under it.
+    ///
+    /// So a reply that brings anything new retires every open question the
+    /// extraction wrote on that card, and takes their place. The newest reply
+    /// is the best-informed one there is: it saw the photograph, the
+    /// archive's holes and every question still open, and was asked not to
+    /// repeat any of them. Three things are never retired: a question a person
+    /// asked (`FollowUpQuestion.isMachine`), which still counts towards the
+    /// cap, so five of them leave no room and retire nothing; the question
+    /// this telling answers, which is marked answered next, and answered
+    /// history stays; and anything at all when nothing new came, because a
+    /// failed or verbatim extraction, or a reply that only restated what is
+    /// open, must not empty a card.
+    ///
+    /// A fresh question is compared only with what stays. One that restates a
+    /// retiring question replaces it, rather than being dropped as a repeat of
+    /// a question that is about to go.
+    static func turnover(
+        _ incoming: [String],
+        on open: [FollowUpQuestion],
+        answering questionID: String? = nil
+    ) -> Turnover {
+        let retiring = open.filter { $0.isMachine && $0.id != questionID }
+        let staying = open.filter { question in !retiring.contains { $0.id == question.id } }
+        let fresh = admitted(
+            incoming,
+            against: staying.map(\.text),
+            answeringNow: staying.first { $0.id == questionID }?.text
+        )
+        return Turnover(admitted: fresh, retired: fresh.isEmpty ? [] : retiring.map(\.id))
+    }
+
     /// How much of the shorter question is contained in the longer one.
     ///
     /// Not a symmetric measure on purpose: *"Millainen ihminen Aino oli?"* and

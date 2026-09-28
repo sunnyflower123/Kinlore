@@ -650,12 +650,22 @@ struct FollowUpQuestion: Identifiable, Codable, Hashable {
     /// The telling whose extraction raised it, on the phone that told it and
     /// nowhere else: never sent, kept through a pull by `applyRemote`. What
     /// lets taking that telling back take its open questions with it
-    /// (`MemoryStore.remove(memoryID:)`), since 27 Sep 2026. Nil for a
+    /// (`MemoryStore.remove(memoryID:)`), since 27 Sep 2026, and moving it to
+    /// another card too (`move(memoryID:to:)`), since 28 Sep. Nil for a
     /// question a person asked, for one raised on another phone, and for
     /// every question raised before the field existed.
     var askedFrom: String?
-    /// When it was withdrawn with the telling that raised it. Set only on the
-    /// copy waiting in `MemoryStore.retiredQuestions` to go to the server as
-    /// a tombstone; a question in `questions` never carries it.
+    /// When it was taken off its card for good: withdrawn or moved away with
+    /// the telling that raised it, or replaced by a newer telling's questions
+    /// (`ExtractionContext.turnover`). Set only on the copy waiting in
+    /// `MemoryStore.retiredQuestions` to go to the server as a tombstone; a
+    /// question in `questions` never carries it.
     var deletedAt: Date?
+
+    /// Whether the extraction wrote it rather than a person. Only the
+    /// machine's questions are ever retired by a newer telling
+    /// (`ExtractionContext.turnover`): a person's question is a request
+    /// somebody made of the family. Either half of an asker makes it a
+    /// person's. Computed, so nothing new is stored (rule 10).
+    var isMachine: Bool { authorID == nil && authorName == nil }
 }
