@@ -2507,7 +2507,7 @@ Added after the inventory above: the follow-up questions the extraction
 already produces are now asked aloud. A spoken telling goes straight on to the
 loop, and a written one starts it from one button on the result screen,
 *"Jatketaan jutellen"* — the app reads out the question the ladder selected, in the voice of
-whichever language is being spoken (`InterviewVoice` follows `SpokenLanguage`,
+the language the app is shown in (`InterviewVoice` follows `SpokenLanguage`,
 so an English phone gets its own English voice), starts recording when the
 sentence ends, and the answer
 runs through the same transcribe → extract → save pipeline as any other

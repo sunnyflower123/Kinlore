@@ -585,12 +585,15 @@ Finnish phone still gets Finnish. The Finnish source strings are the lookup
 keys, so writing a new one still means writing Finnish;
 `scripts/localisation-check.mjs` fails if it has no English.
 
-The pipeline follows **who is speaking**, not who is reading the screen: there
-are two system prompts and two hallucination ceilings, and the app says which
-applies. The English prompt is not the Finnish one translated — its first rule
-teaches a model about case endings that English does not have. The test
-transcripts stay Finnish because they are the input under test. The boundary and
-its exceptions are spelled out in [CLAUDE.md](../CLAUDE.md).
+The pipeline follows **the language the app is shown in**, as the closest guess
+at who is speaking: there are two system prompts and two hallucination
+ceilings, and the app sends `lang` from its own localisation. So a Finnish
+grandmother telling into a phone set to English gets the English prompt, which
+`SpokenLanguage` admits where it is defined. The English prompt is not the
+Finnish one translated — its first rule teaches a model about case endings that
+English does not have. The test transcripts stay Finnish because they are the
+input under test. The boundary and its exceptions are spelled out in
+[CLAUDE.md](../CLAUDE.md).
 
 ## Licence
 
