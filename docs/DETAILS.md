@@ -28,7 +28,7 @@ story nobody could get told.
 Side project for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon. Target category: **Next Gen Award** (student category).
 
-**Reading it as a judge:** this README, then
+**Reading it as a judge:** this page, then
 [`ARCHITECTURE.md`](ARCHITECTURE.md) — §1 for what is built and what is
 not, §6 for the money — then the code both of them name. The RevenueCat half is
 mapped file by file under [**Who pays**](#who-pays), and the app builds and runs on a

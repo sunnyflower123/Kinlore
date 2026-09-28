@@ -313,7 +313,7 @@ webcrypto_interop() {
 echo
 echo "Invariants"
 # First, because it is the only failure here that cannot be undone by the next
-# commit. The repository goes public on 28 Sep and publishes its history rather
+# commit. The repo goes public at submission and publishes its history rather
 # than its head, so a key committed today and deleted tomorrow is published
 # anyway. Rule 7's instruction was "check .dev.vars before every push", which is
 # a reminder rather than a check; this is the check. It scans the tree, every

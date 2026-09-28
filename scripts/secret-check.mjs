@@ -9,7 +9,7 @@
 //
 // **The asymmetry is why this one is worth a script.** Every other invariant
 // here fails into something that can be fixed by the next commit. This one
-// cannot. The repository goes public on 28 Sep and publishes its *history*,
+// cannot. The repo goes public at submission and publishes its *history*,
 // not merely its head — so a key committed today and deleted tomorrow is
 // still published, and the only remedy left is rotating the key and rewriting
 // 260-odd commits. Against that it is free: 0.34 s on a quiet machine, and

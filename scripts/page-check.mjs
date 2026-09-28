@@ -250,11 +250,11 @@ for (const lang of ['fi', 'en']) {
 }
 
 // --- 10. every link the page offers actually goes somewhere -----------------
-// This page is where a stranger arrives first, and from 28 Sep 2026 it is also
-// the DSA contact surface. Its links into the repository answer 404 until the
-// repo turns public, so between now and then a correct one and a stale one look
-// exactly alike from here: neither can be clicked, and only one of them starts
-// working on the day it has to.
+// This page is where a stranger arrives first, and from submission day it is
+// also the DSA contact surface. Its links into the repository answer 404 until
+// the repo turns public, so between now and then a correct one and a stale one
+// look exactly alike from here: neither can be clicked, and only one of them
+// starts working on the day it has to.
 //
 // The failure has a base rate in this repository rather than a theoretical one.
 // Seventy paths exist in history and not at HEAD — docs/ARKKITEHTUURI.md before

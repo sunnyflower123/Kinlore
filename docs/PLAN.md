@@ -109,7 +109,7 @@ began — that was backwards.
 
 | Phase | Days | Goal | Capacity |
 |-------|------|------|----------|
-| **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. RevenueCat account + Test Store. ~~GitHub public + licence~~ — moved to 28 Sep on purpose, see §5 row 4. | holiday |
+| **A** | 31 Jul – 3 Aug | **Kill the risks.** ASR test on real elderly speech. RevenueCat account + Test Store. ~~GitHub public + licence~~ — moved to the day of submission on purpose, see §5 row 4. | holiday |
 | **B** | 4–10 Aug | **Backbone + magic moment.** Photo picking, memories, dictation → transcription → extraction → follow-up questions. The last week of the holiday goes to the hardest part. | holiday, full |
 | — | **~11 Aug** | **School starts** | |
 | **C** | 11–31 Aug | Person cards + relationships. Confirmation UI for proposals was dropped in favour of the guessing round, which was then cut itself — see §4.1. | evenings |
@@ -213,8 +213,9 @@ It will. This is decided in advance so that nobody has to choose while exhausted
 2. RevenueCat Test Store + paywall — a rule requirement, but small work
 3. The demo video
 4. Repo in English + OSS licence visible in GitHub's About section — **on
-   28 Sep, and deliberately not before** (§3 scheduled it in phase A and that
-   schedule is superseded, not slipped)
+   the day of submission, and deliberately not before** (§3 scheduled it in
+   phase A and that schedule is superseded, not slipped). On 28 Sep 2026 the
+   date moved from 28 Sep to the day of submission.
 
 **Cut in this order, from the bottom up:**
 
