@@ -121,7 +121,7 @@ targets:
         # 19 Sep wording also said the service kept nothing and that nobody was
         # identified from the voice. The first is the provider's to say, not
         # ours, and the second was a claim about our prompts rather than about
-        # anybody's model. README.md, "What passes through it in the clear".
+        # anybody's model. docs/DETAILS.md, "What passes through it in the clear".
         NSMicrophoneUsageDescription: >-
           Kinlore tallentaa kertomasi muistot omalla äänelläsi, jotta perheesi
           voi kuunnella ne myöhemmin. Perheen arkistossa ääni lähetetään

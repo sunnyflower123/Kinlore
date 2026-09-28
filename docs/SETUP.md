@@ -358,7 +358,7 @@ and only if you test a lot of long recordings.
 
 ## Order of operations for a new setup
 
-1. Nothing, to run the app on stubs in a simulator (README, *Setting it up*,
+1. Nothing, to run the app on stubs in a simulator (DETAILS.md, *Setting it up*,
    step 1).
 2. One OpenRouter key in `backend/.dev.vars`: the local Worker transcribes and
    extracts with it, and `scripts/asr-bench.mjs` reads its OpenRouter engines'

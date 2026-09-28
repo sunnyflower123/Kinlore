@@ -463,6 +463,10 @@ run "a browser can open what the phone sealed" webcrypto_interop
 # other two files and never opened the one every session reads first. So each
 # document must now state a count of its own: a sentence reworded away in one
 # of them can no longer hide behind another still carrying it.
+#
+# docs/DETAILS.md joined the list when the README was split, which makes four.
+# It holds the long README word for word, count row included, and the short
+# README that replaced it still states both numbers in a sentence of its own.
 doc_counts() {
 	local bad=0 seen_tests=0 seen_sweeps=0 seen_here
 	local tests sweeps doc said
@@ -470,7 +474,7 @@ doc_counts() {
 	tests=$(grep -rhE '^[[:space:]]+func test' ios/KinloreUITests/*.swift | wc -l | tr -d ' ')
 	sweeps=$(grep -cE 'try sweep\(' ios/KinloreUITests/AccessibilitySweepTests.swift)
 
-	for doc in docs/ARCHITECTURE.md README.md CLAUDE.md; do
+	for doc in docs/ARCHITECTURE.md README.md docs/DETAILS.md CLAUDE.md; do
 		seen_here=0
 
 		said=$(grep -oE '[0-9]+ UI tests' "$doc" | head -1 | grep -oE '^[0-9]+')
