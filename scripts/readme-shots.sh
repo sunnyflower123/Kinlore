@@ -184,6 +184,8 @@ still "$MEDIA/06-result-xxxl.png" -seed empty -screen result \
 # The stub pipeline reaches the result about three seconds after launch, and
 # the interview's first spoken round ends by itself (docs/VIDEO.md, SETUP.md).
 frames "$MEDIA/demo.gif"           12 1.0 0.50 -seed empty -screen result
+# The README's GIF is mounted the same way; docs/DETAILS.md keeps this one.
+"$TMP/mount" "$MEDIA/demo.gif" "$MEDIA/mounted/demo.gif"
 frames "$MEDIA/demo-interview.gif" 18 1.3 0.55 -seed empty -screen interview
 
 if [ -n "$DEVPOST" ]; then

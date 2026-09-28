@@ -1,4 +1,5 @@
-// The README's table pictures as prints in a photo album.
+// The README's pictures as prints in a photo album: the three stills in the
+// table and the demo GIF above them.
 //
 // A screenshot taken with `--mask=black` has the phone's rounded corners drawn
 // in black (readme-shots.sh says why the mask is on), and an album print has
@@ -15,25 +16,31 @@
 // `--k-rule-strong` from docs/assets/kinlore.css: light paper corners read on
 // white and on GitHub's dark page alike, where the app's ink would vanish.
 //
-//   xcrun swiftc -O -o /tmp/mount scripts/mount-prints.swift
-//   /tmp/mount <in.png> <out.png> [<in.png> <out.png> …]
+// A GIF is mounted frame by frame and written back looping, each picture shown
+// for as long as it was. Its frames are 380 px wide, so they keep their own
+// width.
 //
-// readme-shots.sh runs it on the first three stills after taking them. A print
-// is 480 px wide, about twice what a table column gives it on github.com.
+//   xcrun swiftc -O -o /tmp/mount scripts/mount-prints.swift
+//   /tmp/mount <in.png|in.gif> <out> [<in> <out> …]
+//
+// readme-shots.sh runs it on the first three stills after taking them, and on
+// docs/media/demo.gif after making it. A still's print is 480 px wide, about
+// twice what a table column gives it on github.com.
 
 import CoreGraphics
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-let width = 480            // the print, before the corners' reach
+let width = 480            // a print's width, before the corners' reach; a narrower picture keeps its own
 let reach = 4              // how far a photo corner reaches past the print's edge
 let cornerLeg = 0.10       // a photo corner's leg, as a fraction of the print's width
 let paper = CGColor(srgbRed: 0xC9 / 255.0, green: 0xB3 / 255.0, blue: 0x93 / 255.0, alpha: 1)
+let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 
 let args = CommandLine.arguments
 guard args.count >= 3, args.count % 2 == 1 else {
-    FileHandle.standardError.write("usage: mount <in.png> <out.png> [<in.png> <out.png> …]\n".data(using: .utf8)!)
+    FileHandle.standardError.write("usage: mount <in.png|in.gif> <out> [<in> <out> …]\n".data(using: .utf8)!)
     exit(2)
 }
 
@@ -42,11 +49,10 @@ func fail(_ message: String) -> Never {
     exit(1)
 }
 
-func mount(_ inPath: String, _ outPath: String) {
-    guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: inPath) as CFURL, nil),
-          let shot = CGImageSourceCreateImageAtIndex(source, 0, nil) else { fail("cannot read \(inPath)") }
+/// The screenshot with its mask painted out, and how far the mask reached in
+/// along the top edge.
+func squaredOff(_ shot: CGImage, _ name: String) -> (CGImage, Int) {
     let w = shot.width, h = shot.height
-    let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 
     // The screenshot in a buffer we can edit, top row first.
     let canvas = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
@@ -61,7 +67,11 @@ func mount(_ inPath: String, _ outPath: String) {
     // solid black, then its anti-aliased edge up to where the row's paper
     // begins. The edge is a pixel or two wide except in the top row, where the
     // curve meets the edge of the screen and fades out over about 45 px on an
-    // iPhone 16. A row never reaches further than the one above it.
+    // iPhone 16's 1179 px, and over proportionally less on a narrower picture.
+    // A picture that was scaled down, as the GIF's frames were, also has a
+    // light halo beside the edge, and that is taken with it. A row never
+    // reaches further than the one above it.
+    let far = 48 * w / 1179
     func measure(fromRight: Bool) -> [(solid: Int, covered: Int)] {
         var rows: [(solid: Int, covered: Int)] = []
         var previous = w / 4
@@ -69,9 +79,10 @@ func mount(_ inPath: String, _ outPath: String) {
             func at(_ i: Int) -> Int { offset(fromRight ? w - 1 - i : i, y) }
             var solid = 0
             while solid < previous && black(at(solid)) { solid += 1 }
-            let clean = lightness(at(solid + 48))
+            let clean = lightness(at(solid + far))
             var covered = solid
-            while covered < min(solid + 48, previous) && lightness(at(covered)) < clean - 6 { covered += 1 }
+            while covered < min(solid + far, previous) && lightness(at(covered)) < clean - 6 { covered += 1 }
+            while covered < min(solid + far, previous) && lightness(at(covered)) > clean + 6 { covered += 1 }
             if covered == 0 { break }
             rows.append((solid, covered))
             previous = covered
@@ -90,7 +101,7 @@ func mount(_ inPath: String, _ outPath: String) {
         }
     }
     if wrong * 100 > checked {
-        fail("\(inPath): \(wrong) of \(checked) pixels in the bottom corners are not the mask the top corners measured")
+        fail("\(name): \(wrong) of \(checked) pixels in the bottom corners are not the mask the top corners measured")
     }
 
     for (flipX, flipY) in [(false, false), (true, false), (false, true), (true, true)] {
@@ -104,11 +115,16 @@ func mount(_ inPath: String, _ outPath: String) {
             }
         }
     }
-    let squared = canvas.makeImage()!
+    return (canvas.makeImage()!, mask.first?.covered ?? 0)
+}
 
-    let printW = CGFloat(width), printH = (CGFloat(h) * printW / CGFloat(w)).rounded()
+/// A squared-off picture as a print: scaled down, with a hairline and four
+/// photo corners.
+func mounted(_ squared: CGImage) -> CGImage {
+    let printW = CGFloat(min(width, squared.width))
+    let printH = (CGFloat(squared.height) * printW / CGFloat(squared.width)).rounded()
     let r = CGFloat(reach)
-    let out = CGContext(data: nil, width: width + 2 * reach, height: Int(printH) + 2 * reach, bitsPerComponent: 8,
+    let out = CGContext(data: nil, width: Int(printW) + 2 * reach, height: Int(printH) + 2 * reach, bitsPerComponent: 8,
                         bytesPerRow: 0, space: sRGB, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
     out.interpolationQuality = .high
     let frame = CGRect(x: r, y: r, width: printW, height: printH)
@@ -130,17 +146,61 @@ func mount(_ inPath: String, _ outPath: String) {
         out.closePath()
     }
     out.fillPath()
+    return out.makeImage()!
+}
 
-    guard let image = out.makeImage(),
-          let destination = CGImageDestinationCreateWithURL(URL(fileURLWithPath: outPath) as CFURL,
-                                                            UTType.png.identifier as CFString, 1, nil) else {
-        fail("cannot write \(outPath)")
+func same(_ a: CGImage, _ b: CGImage) -> Bool {
+    guard let x = a.dataProvider?.data, let y = b.dataProvider?.data else { return false }
+    return a.width == b.width && a.height == b.height && (x as Data) == (y as Data)
+}
+
+func mount(_ inPath: String, _ outPath: String) {
+    guard let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: inPath) as CFURL, nil),
+          CGImageSourceGetCount(source) > 0 else { fail("cannot read \(inPath)") }
+    let gif = CGImageSourceGetType(source) as String? == UTType.gif.identifier
+    let count = gif ? CGImageSourceGetCount(source) : 1
+
+    // A GIF frame the same as the one before it lengthens that one instead.
+    // With a transparent ground ImageIO stores every GIF frame whole, and the
+    // demo holds its finished result for seven identical frames, which would
+    // otherwise take its size from 85 KB to 350.
+    var prints: [(image: CGImage, delay: Double)] = []
+    var deepest = 0
+    for index in 0..<count {
+        guard let shot = CGImageSourceCreateImageAtIndex(source, index, nil) else {
+            fail("cannot read frame \(index) of \(inPath)")
+        }
+        let (squared, deep) = squaredOff(shot, gif ? "\(inPath) frame \(index)" : inPath)
+        let image = mounted(squared)
+        deepest = max(deepest, deep)
+        let old = (CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any])?[
+            kCGImagePropertyGIFDictionary] as? [CFString: Any] ?? [:]
+        let delay = (old[kCGImagePropertyGIFUnclampedDelayTime] ?? old[kCGImagePropertyGIFDelayTime]) as? Double ?? 0.1
+        if let last = prints.last, same(last.image, image) {
+            prints[prints.count - 1].delay += delay
+        } else {
+            prints.append((image, delay))
+        }
     }
-    CGImageDestinationAddImage(destination, image, nil)
+
+    guard let destination = CGImageDestinationCreateWithURL(URL(fileURLWithPath: outPath) as CFURL,
+                                                            (gif ? UTType.gif : UTType.png).identifier as CFString,
+                                                            prints.count, nil) else { fail("cannot write \(outPath)") }
+    if gif {
+        CGImageDestinationSetProperties(destination, [
+            kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]   // loop forever
+        ] as CFDictionary)
+    }
+    for (image, delay) in prints {
+        let properties = gif ? [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: delay]] as CFDictionary : nil
+        CGImageDestinationAddImage(destination, image, properties)
+    }
     guard CGImageDestinationFinalize(destination) else { fail("cannot write \(outPath)") }
     let bytes = (try? FileManager.default.attributesOfItem(atPath: outPath)[.size] as? Int) ?? 0
     let name = URL(fileURLWithPath: outPath).pathComponents.suffix(2).joined(separator: "/")
-    print("  \(name)  (\(image.width) × \(image.height), \(bytes / 1024) KB, mask \(mask.first?.covered ?? 0) px deep)")
+    let frames = gif ? "\(count) frames in \(prints.count), " : ""
+    let size = "\(prints[0].image.width) × \(prints[0].image.height)"
+    print("  \(name)  (\(frames)\(size), \(bytes / 1024) KB, mask \(deepest) px deep)")
 }
 
 for i in stride(from: 1, to: args.count, by: 2) {
