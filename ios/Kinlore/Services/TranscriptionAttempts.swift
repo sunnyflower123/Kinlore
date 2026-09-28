@@ -49,8 +49,12 @@ enum TranscriptionAttempts {
     private static let countKey = "transcription-failures"
     private static let whenKey = "transcription-last-failure"
 
+    /// `.standard`, and nothing in the app changes it. The check gives it a
+    /// store of the run's own, for the reason `QuestionLadder.defaults` gives.
+    static var defaults = UserDefaults.standard
+
     static func failures(for memoryID: String) -> Int {
-        (UserDefaults.standard.dictionary(forKey: countKey)?[memoryID] as? Int) ?? 0
+        (defaults.dictionary(forKey: countKey)?[memoryID] as? Int) ?? 0
     }
 
     /// When this device last failed on the recording. Absent for a tally
@@ -58,7 +62,7 @@ enum TranscriptionAttempts {
     /// are the recordings the old rule retired, and the next round picks them
     /// up first.
     static func lastFailure(for memoryID: String) -> Date? {
-        guard let seconds = UserDefaults.standard.dictionary(forKey: whenKey)?[memoryID] as? Double
+        guard let seconds = defaults.dictionary(forKey: whenKey)?[memoryID] as? Double
         else { return nil }
         return Date(timeIntervalSince1970: seconds)
     }
@@ -93,12 +97,12 @@ enum TranscriptionAttempts {
     }
 
     static func recordFailure(_ memoryID: String, at now: Date = Date()) {
-        var counts = UserDefaults.standard.dictionary(forKey: countKey) ?? [:]
+        var counts = defaults.dictionary(forKey: countKey) ?? [:]
         counts[memoryID] = failures(for: memoryID) + 1
-        UserDefaults.standard.set(counts, forKey: countKey)
-        var whens = UserDefaults.standard.dictionary(forKey: whenKey) ?? [:]
+        defaults.set(counts, forKey: countKey)
+        var whens = defaults.dictionary(forKey: whenKey) ?? [:]
         whens[memoryID] = now.timeIntervalSince1970
-        UserDefaults.standard.set(whens, forKey: whenKey)
+        defaults.set(whens, forKey: whenKey)
     }
 
     /// Written out twice rather than as a loop over the two keys, because
@@ -106,20 +110,20 @@ enum TranscriptionAttempts {
     /// holds `reset()` to clearing each one — a loop variable is a key it
     /// cannot find a reset for.
     static func clear(_ memoryID: String) {
-        if var counts = UserDefaults.standard.dictionary(forKey: countKey), counts[memoryID] != nil {
+        if var counts = defaults.dictionary(forKey: countKey), counts[memoryID] != nil {
             counts.removeValue(forKey: memoryID)
-            UserDefaults.standard.set(counts, forKey: countKey)
+            defaults.set(counts, forKey: countKey)
         }
-        if var whens = UserDefaults.standard.dictionary(forKey: whenKey), whens[memoryID] != nil {
+        if var whens = defaults.dictionary(forKey: whenKey), whens[memoryID] != nil {
             whens.removeValue(forKey: memoryID)
-            UserDefaults.standard.set(whens, forKey: whenKey)
+            defaults.set(whens, forKey: whenKey)
         }
     }
 
     /// Part of "Tyhjennä tämä laite", like the ladder's own reset: this counts
     /// attempts made by whoever holds the phone, and it leaves with them.
     static func reset() {
-        UserDefaults.standard.removeObject(forKey: countKey)
-        UserDefaults.standard.removeObject(forKey: whenKey)
+        defaults.removeObject(forKey: countKey)
+        defaults.removeObject(forKey: whenKey)
     }
 }

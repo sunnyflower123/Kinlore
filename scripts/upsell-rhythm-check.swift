@@ -22,6 +22,14 @@ import Foundation
 enum UpsellRhythmCheck {
     @MainActor
     static func main() {
+        // A count of this run's own, kept and removed as question-ladder-check
+        // keeps its ladder: two verify.sh runs at once counted each other's
+        // tellings, and 2 of 5 such pairs passed.
+        let store = FileManager.default.temporaryDirectory
+            .appendingPathComponent("upsell-rhythm-check.\(UUID().uuidString)")
+        try! FileManager.default.createDirectory(at: store, withIntermediateDirectories: true)
+        let suite = store.appendingPathComponent("rhythm").path
+        UpsellRhythm.defaults = UserDefaults(suiteName: suite)!
         var failures = 0
 
         func check(_ label: String, _ actual: Bool, _ expected: Bool) {
@@ -189,7 +197,8 @@ enum UpsellRhythmCheck {
             UpsellRhythm.slotShows(card: nil, rhythm: true, proposalsRemaining: false), false
         )
 
-        UpsellRhythm.reset()
+        UpsellRhythm.defaults.removePersistentDomain(forName: suite)
+        try? FileManager.default.removeItem(at: store)
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
     }

@@ -153,14 +153,14 @@ enum QuestionLadder {
             return clamp(UserDefaults.standard.double(forKey: "comfort"))
         }
         #endif
-        let stored = UserDefaults.standard.object(forKey: comfortKey) as? Double ?? start
+        let stored = defaults.object(forKey: comfortKey) as? Double ?? start
         return decayed(stored, lastAnswered: lastAnswered)
     }
 
     /// Records how an answer went and moves the ladder.
     static func record(_ outcome: Outcome, at level: QuestionLevel) {
         var value = comfort
-        var streak = UserDefaults.standard.integer(forKey: streakKey)
+        var streak = defaults.integer(forKey: streakKey)
 
         switch outcome {
         case .fluent where Double(level.rawValue) >= value.rounded():
@@ -182,7 +182,6 @@ enum QuestionLadder {
             streak = 0
         }
 
-        let defaults = UserDefaults.standard
         defaults.set(clamp(value), forKey: comfortKey)
         defaults.set(streak, forKey: streakKey)
         // Written on every outcome, including the ones that moved nothing:
@@ -348,7 +347,6 @@ enum QuestionLadder {
     /// Forgets where the person had got to. Part of "Tyhjennä tämä laite": the
     /// ladder describes whoever holds the phone, so it leaves with them.
     static func reset() {
-        let defaults = UserDefaults.standard
         defaults.removeObject(forKey: comfortKey)
         defaults.removeObject(forKey: streakKey)
         defaults.removeObject(forKey: answeredKey)
@@ -362,8 +360,17 @@ enum QuestionLadder {
     private static let streakKey = "ladder.streak"
     private static let answeredKey = "ladder.answeredAt"
 
+    /// Where the three keys live: `.standard`, and nothing in the app changes
+    /// it. `scripts/question-ladder-check.swift` points it at a store of the
+    /// run's own, because the standard defaults of a command-line tool are a
+    /// domain named after its executable: two `verify.sh` runs at once shared
+    /// one ladder and failed each other's checks, five rounds out of five. The
+    /// `-comfort` override above stays on `.standard`, since it is a launch
+    /// argument and not something the ladder stored.
+    static var defaults = UserDefaults.standard
+
     private static var lastAnswered: Date? {
-        let stamp = UserDefaults.standard.double(forKey: answeredKey)
+        let stamp = defaults.double(forKey: answeredKey)
         return stamp > 0 ? Date(timeIntervalSince1970: stamp) : nil
     }
 

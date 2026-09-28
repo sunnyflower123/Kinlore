@@ -48,6 +48,18 @@ enum QuestionLadderCheck {
 
     @MainActor
     static func main() {
+        // A ladder of this run's own. This tool's standard defaults are shared
+        // by every run of it, so two verify.sh runs at once moved each other's
+        // ladder: 0 of 5 such pairs passed, and each passed alone. The suite is
+        // named by a path inside a directory removed at the end: a suite with
+        // a plain name lives in ~/Library/Preferences, where cfprefsd rewrites
+        // an emptied domain's file a second or so after it is removed, and
+        // every run would leave one behind.
+        let store = FileManager.default.temporaryDirectory
+            .appendingPathComponent("question-ladder-check.\(UUID().uuidString)")
+        try! FileManager.default.createDirectory(at: store, withIntermediateDirectories: true)
+        let suite = store.appendingPathComponent("ladder").path
+        QuestionLadder.defaults = UserDefaults(suiteName: suite)!
         var failures = 0
 
         func check(_ label: String, _ actual: some Equatable, _ expected: some Equatable) {
@@ -64,7 +76,7 @@ enum QuestionLadderCheck {
 
         /// Puts the last answer this far in the past.
         func lastAnswered(daysAgo: Double) {
-            UserDefaults.standard.set(
+            QuestionLadder.defaults.set(
                 Date.now.addingTimeInterval(-daysAgo * 86_400).timeIntervalSince1970,
                 forKey: answeredKey
             )
@@ -283,7 +295,8 @@ enum QuestionLadderCheck {
         check("the ladder is back at the bottom, not merely paused",
               QuestionLadder.comfort, 1.0)
 
-        QuestionLadder.reset()
+        QuestionLadder.defaults.removePersistentDomain(forName: suite)
+        try? FileManager.default.removeItem(at: store)
         print(failures == 0 ? "\nall checks passed" : "\n\(failures) failed")
         exit(failures == 0 ? 0 : 1)
     }

@@ -78,6 +78,15 @@ enum TranscriptionCatchUpCheck {
     @MainActor
     static func main() {
         typealias Attempts = TranscriptionAttempts
+        // A tally of this run's own, kept as question-ladder-check keeps its
+        // ladder and removed once the executed half is done: two verify.sh runs
+        // at once reset and counted each other's tallies, and 0 of 5 such pairs
+        // passed.
+        let store = FileManager.default.temporaryDirectory
+            .appendingPathComponent("transcription-catchup-check.\(UUID().uuidString)")
+        try! FileManager.default.createDirectory(at: store, withIntermediateDirectories: true)
+        let suite = store.appendingPathComponent("attempts").path
+        Attempts.defaults = UserDefaults(suiteName: suite)!
         let one = "memory-one"
         let two = "memory-two"
         let day: TimeInterval = 24 * 60 * 60
@@ -162,9 +171,9 @@ enum TranscriptionCatchUpCheck {
 
         print("\n— what an older build left behind —")
         let old = "memory-retired-under-the-old-rule"
-        var counts = UserDefaults.standard.dictionary(forKey: "transcription-failures") ?? [:]
+        var counts = Attempts.defaults.dictionary(forKey: "transcription-failures") ?? [:]
         counts[old] = 3
-        UserDefaults.standard.set(counts, forKey: "transcription-failures")
+        Attempts.defaults.set(counts, forKey: "transcription-failures")
         check(
             "a tally of three with no timestamp reads as three refusals",
             Attempts.failures(for: old) == 3 && Attempts.hasFailedRepeatedly(on: old) && Attempts.lastFailure(for: old) == nil
@@ -216,8 +225,10 @@ enum TranscriptionCatchUpCheck {
         )
         check(
             "and every timestamp with it",
-            UserDefaults.standard.dictionary(forKey: "transcription-last-failure") == nil
+            Attempts.defaults.dictionary(forKey: "transcription-last-failure") == nil
         )
+        Attempts.defaults.removePersistentDomain(forName: suite)
+        try? FileManager.default.removeItem(at: store)
 
         // The tally above is right on its own and would stay right with the
         // classifier's arms swapped — and swapped is exactly the defect the

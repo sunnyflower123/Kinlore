@@ -35,24 +35,28 @@ enum UpsellRhythm {
 
     private static let key = "tellings-since-upsell"
 
+    /// `.standard`, and nothing in the app changes it. The check gives it a
+    /// store of the run's own, for the reason `QuestionLadder.defaults` gives.
+    static var defaults = UserDefaults.standard
+
     /// Called once per finished telling, when the result screen is built.
     ///
     /// It counts even when it answers false: a telling that proposed names is
     /// still a telling, and the rhythm should not stall behind an archive that
     /// happens to name somebody every time.
     static func shouldShow(hasProposals: Bool) -> Bool {
-        let count = UserDefaults.standard.integer(forKey: key) + 1
+        let count = defaults.integer(forKey: key) + 1
         guard !hasProposals, count >= every else {
-            UserDefaults.standard.set(count, forKey: key)
+            defaults.set(count, forKey: key)
             return false
         }
-        UserDefaults.standard.set(0, forKey: key)
+        defaults.set(0, forKey: key)
         return true
     }
 
     /// Part of emptying the device, like the ladder's own reset.
     static func reset() {
-        UserDefaults.standard.removeObject(forKey: key)
+        defaults.removeObject(forKey: key)
     }
 
     // MARK: - What the slot holds

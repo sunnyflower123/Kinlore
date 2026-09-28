@@ -99,9 +99,10 @@ function resetsIn(source) {
 /// counted reads reported all eight as records this phone must forget, which
 /// is both wrong and the kind of wrong that gets a check disabled.
 ///
-/// Both receiver spellings are here on purpose: the ladder binds
-/// `UserDefaults.standard` to a local before writing, so a matcher that
-/// insisted on the full name would read that file as storing nothing and pass.
+/// Both receiver spellings are here on purpose: the ladder, the upsell rhythm
+/// and the transcription tally write through a `defaults` property, which
+/// their checks point at a store of their own, so a matcher that insisted on
+/// the full name would read those three files as storing nothing and pass.
 function keysIn(source) {
 	const keys = new Set()
 	const call = /(?:UserDefaults\.standard|defaults)\.(?:set|removeObject)\(/g
