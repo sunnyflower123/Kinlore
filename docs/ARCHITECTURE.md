@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 114 sweep tests, each auditing one screen at the default text size and again at the largest, out of 353 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 115 sweep tests, each auditing one screen at the default text size and again at the largest, out of 356 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -110,7 +110,7 @@ behind. On 29 Sep 2026 that was 58 checks: 12 drive a Worker started locally, 2
 need a simulator of your own, and the other 44 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 353 UI tests, including 114 accessibility sweeps that audit a
+The UI suite has 356 UI tests, including 115 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -5834,13 +5834,12 @@ addition needs a removal; §5 carries it as the first thing to cut.
 
 ### The flow
 
-A photograph's card offers **"Väritä kerronnan mukaan"** once something has been
-told about it (`colourable` in `SubjectDetailScreen`), and never on a
-grandparent's phone — the text-floor signal — because there the question has to
-come before the colours, and that card is not built. The footer under the button
-says what leaves the phone: the photograph and the memories told about it. It is
-the one place in the app a photograph leaves without being sealed first (lever
-3), and the words go with it the way a transcript does.
+A photograph's card offers **"Väritä kerronnan mukaan"** whenever it has a
+picture (`colourable` in `SubjectDetailScreen`), and never on a grandparent's
+phone — the text-floor signal — whose switch promises that photographs are not
+coloured there (*"eikä kuvien väritystä tarjota"*, `HelpScreen`). The footer
+under the button says what leaves the phone: the photograph, unsealed (lever
+3), and the memories told about it, the words going the way a transcript does.
 
 So it is not offered at all on a phone whose archive was kept to itself. That
 phone's onboarding promised *"Perheen palvelimelle ne eivät lähde"*, and the Worker
@@ -5849,14 +5848,34 @@ left. The first build offered it there anyway, and nothing but reading the
 promise beside the gate found it; `ColourTests` holds it now, through the same
 `isLocalByChoice` that keeps transcription off that phone.
 
+The button asks before it colours (28 Sep 2026). `ColourSheet` opens on the
+card's own telling, the same `TellScreen`, titled **"Mitä värejä muistat tästä
+kuvasta?"**: the colours are what the model cannot see and a person may
+remember, and until then the button coloured at once from whatever had been
+told, which was rarely about colour. The question is a prompt like the
+ladder's starters, which no row holds and nothing marks answered, and the
+telling is saved like any other, recording and raw transcript included (rule
+3). Saved with its words, it hands over to the colouring by itself, and the
+tellings go to the model newest first, so it is the first thing read. The
+result screen is skipped and no conversation follows a spoken telling there
+(`endsWithTheTelling`): a name heard in it waits unconfirmed on the person
+list (rule 4). A recording kept without its words lands on its own screen and
+colours nothing, because there is nothing new to read.
+
+Somebody with nothing to add has a second way under the way to write,
+**"Väritä jo kerrotun mukaan"**, from what was told before, offered only once
+something has been. A spent month refuses the colouring and not the telling
+(rule 2): the telling saved on the way stays on the card, and the refusal says
+so.
+
 `ColourSheet` shows the colouring and asks **"Näyttääkö tältä?"**:
 
 - **"Kyllä, tallenna värit"** keeps it, beside the photograph and never in its
   place, with the name of whoever said yes.
-- **"Ei, kerron lisää"** opens the telling for the same photograph, and the next
-  colouring reads the correction first: the tellings go to the model newest
-  first, and its instruction says the first of two quotations that disagree is
-  the one to follow.
+- **"Ei, kerron lisää"** asks for the colours again on the same telling, and the
+  next colouring reads the correction first: the tellings go to the model
+  newest first, and its instruction says the first of two quotations that
+  disagree is the one to follow.
 - **"En tiedä"** keeps nothing. Rule 5 stores uncertainty rather than rounding it
   into a yes.
 
@@ -5931,7 +5950,7 @@ photographs.
 | Rule 9 on a failed colouring | `leak-check.mjs` |
 | The server's newest-yes rules | `subject-rules-check.mjs` — 6 breakages, 6 caught |
 | The phone's merge, and a yes sent only with its key | `colour-sync-check.swift` — 5 breakages, 5 caught |
-| The three answers, no offer on a phone kept to itself, and the sheet at both text sizes | `ColourTests` — the local-mode gate deleted, caught; `AccessibilitySweepTests.testColourSheet` |
+| The telling first and its hand-over, the second way, the three answers, a spent month keeping the telling, no offer on a phone kept to itself, and the sheet at both text sizes | `ColourTests` — the local-mode gate deleted, caught; `AccessibilitySweepTests.testColourTelling` and `testColourSheet` |
 
 ### Not yet
 
@@ -5944,7 +5963,6 @@ photographs.
   measurement, and no model has been shown a correction yet.
 - **No way to take a colouring back.** A later yes replaces an earlier one;
   nothing removes one.
-- **The grandparent's own card**, where the question comes before any colour.
 - **The export and the full copy carry it by code, not by check.**
   `export-check.mjs` and `full-copy-check.swift` were not extended.
 - **Paid colouring has no fair-use number** beside PLAN §10's five hours of

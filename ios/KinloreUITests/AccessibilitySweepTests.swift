@@ -3021,17 +3021,47 @@ final class AccessibilitySweepTests: XCTestCase {
 
     /// The question over a colouring: the picture, a heading in the display
     /// face, and three answers. `-seed blind` is the fixture whose photograph
-    /// has both a picture and a telling, which is what the colour button waits
-    /// for, and the stub answers with a tint that keeps every edge — so the
-    /// sheet reaches its question rather than its refusal, and no credit is
-    /// spent. Audited once the stub's answer is on screen: the progress view
-    /// before it never stops drawing.
+    /// has both a picture and a telling, so the sheet's second way — from what
+    /// was told before — is there to take, and the stub answers with a tint
+    /// that keeps every edge — so the sheet reaches its question rather than
+    /// its refusal, and no credit is spent. Audited once the stub's answer is
+    /// on screen: the progress view before it never stops drawing.
     func testColourSheet() throws {
         try sweep("Värit kerronnan mukaan", arguments: ["-seed", "blind", "-tab", "memories"]) { app, _ in
             reachPhotoTile(in: app).tap()
             reach(app.buttons["Väritä kerronnan mukaan"], in: app, "the way to colour the photograph").tap()
+            reach(app.buttons["Väritä jo kerrotun mukaan"], in: app, "the way to colour from what was told").tap()
             require(app.staticTexts["Näyttääkö tältä?"], "the question over the colouring")
             XCTAssertTrue(hasStoppedDrawing(app), "the colour sheet was still being drawn when the audit ran")
+        }
+    }
+
+    /// What the colour sheet opens on since 28 Sep 2026: the photograph's
+    /// telling, titled by the colours, with the second way under the way to
+    /// write. Settled on the title and not on the screen, because the record
+    /// button pulses for as long as it is there (`hasStoppedDrawing`).
+    ///
+    /// At the default size the second way is on the screen without a scroll,
+    /// which is the promise of a way that saves somebody a telling; at the
+    /// largest size the screen is taller than the phone on purpose, as the
+    /// Tell tab is (`testTellPermissionUnasked`).
+    func testColourTelling() throws {
+        try sweep("Värit kerronnan mukaan, kertominen", arguments: ["-seed", "blind", "-tab", "memories"]) { app, isLargest in
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Väritä kerronnan mukaan"], in: app, "the way to colour the photograph").tap()
+            let title = require(app.staticTexts["tell.title"], "the Tell screen's title")
+            settle(title)
+            XCTAssertEqual(title.label, "Mitä värejä muistat tästä kuvasta?", "the Tell screen's title is not the colours")
+            require(app.buttons["Aloita kertominen"], "the button that answers it")
+            let second = require(app.buttons["Väritä jo kerrotun mukaan"], "the way to colour from what was told")
+            if !isLargest {
+                let window = app.windows.firstMatch.frame
+                XCTAssertTrue(
+                    second.frame.maxY <= window.maxY,
+                    "\"Väritä jo kerrotun mukaan\" is below the screen: "
+                        + "\(NSCoder.string(for: second.frame)) against \(NSCoder.string(for: window))"
+                )
+            }
         }
     }
 

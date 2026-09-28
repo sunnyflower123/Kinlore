@@ -755,9 +755,6 @@ struct SubjectDetailScreen: View {
     /// in its place.
     @State private var colourImage: UIImage?
     @State private var isColouring = false
-    /// "Ei, kerron lisää" on the colour sheet: the telling opens once that
-    /// sheet has gone, because a sheet cannot be presented over a leaving one.
-    @State private var tellsAfterColouring = false
     @AppStorage(Elder.largerTextKey) private var largerText = false
     @State private var isTelling = false
     /// The open question pressed on this card: the Tell screen answering it.
@@ -828,24 +825,21 @@ struct SubjectDetailScreen: View {
     }
 
     /// Whether this photograph can be coloured by what was told about it: it is
-    /// on screen, something has been said about it, this is not the
-    /// grandparent's phone, and this phone was not told to keep its archive to
-    /// itself.
+    /// on screen, this is not the grandparent's phone, and this phone was not
+    /// told to keep its archive to itself.
     ///
-    /// Something told, because the Worker refuses a colouring with nothing to
-    /// go by — a guess in the shape of a photograph is rule 4's failure — and a
-    /// button that can only ever be refused is a broken button. Not on her phone
-    /// (the text-floor signal), because there the question has to come before
-    /// the colours, and the card that asks it first is not built. And not on a
-    /// phone kept to itself, whose onboarding promised "Perheen palvelimelle ne
-    /// eivät lähde": colouring sends the photograph and those memories to the
-    /// Worker, and even a refusal there arrives after the bytes have left. It
-    /// is the gate that keeps transcription off that phone (`TellScreen`).
+    /// Nothing needs to have been told yet, since 28 Sep 2026: the colour
+    /// sheet asks for the colours first (`ColourSheet`), so the Worker, which
+    /// refuses a colouring with nothing to go by, is never asked without a
+    /// telling. Not on her phone (the text-floor signal), whose switch promises
+    /// that photographs are not coloured there (*"eikä kuvien väritystä
+    /// tarjota"*, `HelpScreen`). And not on a phone kept to itself, whose
+    /// onboarding promised "Perheen palvelimelle ne eivät lähde": colouring
+    /// sends the photograph and those memories to the Worker, and even a
+    /// refusal there arrives after the bytes have left. It is the gate that
+    /// keeps transcription off that phone (`TellScreen`).
     private var colourable: Bool {
         current.kind == .photo && image != nil && !largerText && !session.isLocalByChoice
-            && store.memories(for: subject.id).contains {
-                !$0.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            }
     }
 
     /// Whether this card is the one this phone's member is in the tree, as
@@ -1390,8 +1384,10 @@ struct SubjectDetailScreen: View {
                     // photograph began sending it too — `WhereMemoriesGo` says
                     // that one. The last sentence is about the archive and says
                     // so, because right after a named service it would read as
-                    // a promise made on that service's behalf.
-                    Text("Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Arkistoon ei tallenneta mitään ennen kuin vastaat.")
+                    // a promise made on that service's behalf. It names the
+                    // colours since 28 Sep 2026, when the sheet began with a
+                    // telling that is saved like any other.
+                    Text("Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Värejä ei tallenneta arkistoon ennen kuin vastaat.")
                         .foregroundStyle(Elder.supporting)
                         // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
                         // and nothing else (27 Sep 2026).
@@ -1598,14 +1594,9 @@ struct SubjectDetailScreen: View {
         .sheet(isPresented: $isAsking) {
             AskQuestionSheet(subject: subject)
         }
-        .sheet(isPresented: $isColouring, onDismiss: {
-            if tellsAfterColouring {
-                tellsAfterColouring = false
-                isTelling = true
-            }
-        }) {
+        .sheet(isPresented: $isColouring) {
             if let image {
-                ColourSheet(subject: current, photograph: image) { tellsAfterColouring = true }
+                ColourSheet(subject: current, photograph: image)
             }
         }
         // Keyed on the object as well as the file: a yes confirmed on another

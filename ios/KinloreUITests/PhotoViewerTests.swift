@@ -208,7 +208,9 @@ final class PhotoViewerTests: XCTestCase {
     /// The colours open too: the proposal the question is asked over, and the
     /// colours kept on the card. Looking at the proposal answers nothing, so
     /// the question is still there once it closes. The model is the stub
-    /// (`-api ""`), as in `ColourTests`.
+    /// (`-api ""`), as in `ColourTests`. The button opens on a telling that
+    /// asks for the colours (28 Sep 2026), and the way to the proposal
+    /// without one is the sheet's second, from what was told before.
     func testTheColoursOpenAsTheProposalAndOnceKept() {
         let app = launch(["-seed", "blind", "-tab", "memories"])
         openCard(app)
@@ -216,6 +218,9 @@ final class PhotoViewerTests: XCTestCase {
         for _ in 0 ..< 6 where !colour.exists { app.swipeUp() }
         XCTAssertTrue(colour.waitForExistence(timeout: 10), "the card offers no colouring")
         colour.tap()
+        let told = app.buttons["Väritä jo kerrotun mukaan"]
+        XCTAssertTrue(told.waitForExistence(timeout: 10), "never arrived: the way to colour from what was told")
+        told.tap()
         XCTAssertTrue(app.staticTexts["Näyttääkö tältä?"].waitForExistence(timeout: 20), "never arrived: the question over the colouring")
 
         opensAndCloses("Väritetty ehdotus. Värit ovat tekoälyn arvaus siitä, mitä kuvasta on kerrottu.", in: app)

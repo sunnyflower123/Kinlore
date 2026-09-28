@@ -25,6 +25,11 @@ struct StubColourisationService: ColourisationService {
     func colourise(canvas: Data, told: [String], aspect: String) async throws -> Data {
         try await Task.sleep(for: simulatedDelay)
         #if DEBUG
+        // `-colour spent`: the month's colourings are used up, answered the
+        // way the Worker's 402 is. `ColourTests` shows the telling kept anyway.
+        if UserDefaults.standard.string(forKey: "colour") == "spent" {
+            throw RemoteError.quotaExceeded(kind: "colourisations", used: 5, limit: 5)
+        }
         // The film's own captured reply, when a shooting day has put one in
         // the container. Same arrangement as `MemoryStore.filmPhotoFile()` and
         // the same reason as `StubExtractionService.filmResult`: what a take

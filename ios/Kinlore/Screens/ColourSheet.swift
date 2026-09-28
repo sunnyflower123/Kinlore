@@ -1,16 +1,26 @@
 import SwiftUI
 import UIKit
 
-/// A photograph coloured by what was told about it — and a question before
-/// anything is kept.
+/// A photograph coloured by what was told about it — asked for first, and
+/// answered before anything is kept.
 ///
-/// Nothing here is saved on its way in. The model's picture is a proposal: the
-/// lock lays only its hue on the photograph's own brightness, and refuses one
-/// whose shapes moved. What survives waits on this screen for a person.
-/// "Kyllä" keeps it beside the original, marked in its own pixels. "Ei, kerron
-/// lisää" opens the telling, so the next round is coloured by the correction.
-/// "En tiedä" keeps nothing, and that is an answer: rule 5 stores uncertainty
-/// rather than rounding it into a yes.
+/// The sheet opens on the card's own telling, titled *"Mitä värejä muistat
+/// tästä kuvasta?"*, because the colours are what the model cannot see and a
+/// person may remember (28 Sep 2026; until then the button coloured at once
+/// from whatever had been told, which was rarely about colour). Saved, the
+/// telling hands over to the colouring by itself and is the first thing the
+/// model reads. It is a telling like any other: its recording and raw
+/// transcript are kept (rule 3), and it is kept when the month's colourings
+/// are spent (rule 2). Somebody with nothing to add has a second way, from
+/// what has been told before, whenever something has.
+///
+/// The model's picture is a proposal: the lock lays only its hue on the
+/// photograph's own brightness, and refuses one whose shapes moved. What
+/// survives waits on this screen for a person. "Kyllä" keeps it beside the
+/// original, marked in its own pixels. "Ei, kerron lisää" asks for the colours
+/// again, so the next round is coloured by the correction. "En tiedä" keeps
+/// nothing, and that is an answer: rule 5 stores uncertainty rather than
+/// rounding it into a yes.
 struct ColourSheet: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -18,37 +28,57 @@ struct ColourSheet: View {
 
     let subject: Subject
     let photograph: UIImage
-    /// "Ei, kerron lisää". The card opens the telling once this sheet has gone,
-    /// because a second sheet cannot be presented over one that is leaving.
-    let onTellMore: () -> Void
 
     private enum Phase {
+        case telling
         case colouring
         case proposal(UIImage)
         case refused(String)
     }
 
-    @State private var phase = Phase.colouring
+    @State private var phase = Phase.telling
+    /// One more for every hand-over to the colouring, which is what runs it.
+    @State private var round = 0
+    /// A telling was saved on this sheet, and a refusal says it is kept.
+    @State private var toldHere = false
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    switch phase {
-                    case .colouring:
-                        colouring
-                    case .proposal(let coloured):
-                        proposal(coloured)
-                    case .refused(let reason):
-                        refused(reason)
+            Group {
+                if case .telling = phase {
+                    // One screen in place of another, and not a second sheet:
+                    // a sheet cannot be presented over one that is leaving,
+                    // and the correction comes back here the same way.
+                    TellScreen(
+                        target: subject,
+                        question: question,
+                        onClose: { dismiss() },
+                        onTold: {
+                            toldHere = true
+                            colourNow()
+                        },
+                        onColourFromTold: hasTold ? { colourNow() } : nil
+                    )
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            switch phase {
+                            case .telling, .colouring:
+                                colouring
+                            case .proposal(let coloured):
+                                proposal(coloured)
+                            case .refused(let reason):
+                                refused(reason)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(Elder.screenPadding)
                     }
+                    .elderSurface()
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Elder.screenPadding)
             }
             .navigationTitle("Värit kerronnan mukaan")
             .navigationBarTitleDisplayMode(.inline)
-            .elderSurface()
         }
         // The accent, named. Without this the answers here were drawn in the
         // system blue — measured from the audit's own screenshot, white on
@@ -57,7 +87,35 @@ struct ColourSheet: View {
         // not isolated; naming the asset is what brought it back, and the
         // sweep is what says so.
         .tint(Color("AccentColor"))
-        .task { await colour() }
+        .task(id: round) {
+            guard round > 0 else { return }
+            await colour()
+        }
+    }
+
+    /// The question the telling opens on: concrete, and answered in a word or
+    /// two, like the ladder's starters (`QuestionLadder.starters(for:)`). A
+    /// prompt like them, too, which no row holds and nothing marks answered.
+    private var question: FollowUpQuestion {
+        FollowUpQuestion(
+            id: "colours-\(subject.id)",
+            subjectID: subject.id,
+            text: String(localized: "Mitä värejä muistat tästä kuvasta?"),
+            storedLevel: QuestionLevel.naming.rawValue
+        )
+    }
+
+    /// Whether anything with words has been told about the photograph, which
+    /// is what the second way colours from.
+    private var hasTold: Bool {
+        store.memories(for: subject.id).contains {
+            !$0.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    private func colourNow() {
+        phase = .colouring
+        round += 1
     }
 
     // The ways out are rows on the screen and not a toolbar button: a toolbar
@@ -91,15 +149,14 @@ struct ColourSheet: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
 
-            Text("Värit on arvattu kuvasta kerrotun mukaan. Mitään ei tallenneta, ellet vahvista.")
+            // The colours, and not "anything": a telling saved on this sheet
+            // is already in the archive.
+            Text("Värit on arvattu kuvasta kerrotun mukaan. Niitä ei tallenneta, ellet vahvista.")
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
 
             answer(Text("Kyllä, tallenna värit"), prominent: true) { keep(coloured) }
-            answer(Text("Ei, kerron lisää"), prominent: false) {
-                onTellMore()
-                dismiss()
-            }
+            answer(Text("Ei, kerron lisää"), prominent: false) { phase = .telling }
             answer(Text("En tiedä"), prominent: false) { dismiss() }
         }
     }
@@ -108,6 +165,12 @@ struct ColourSheet: View {
         VStack(alignment: .leading, spacing: 20) {
             Text(reason)
                 .elderBody()
+            // A spent month, or a colouring that failed, takes nothing that
+            // was told (rule 2), and the one who told it is the one reading.
+            if toldHere {
+                Text("Kertomasi on tallessa kuvan kortilla.")
+                    .elderBody()
+            }
             answer(Text("Sulje"), prominent: false) { dismiss() }
         }
     }

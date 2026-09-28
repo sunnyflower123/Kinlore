@@ -193,14 +193,30 @@ final class TellViewModel {
     /// taken-back telling from deleting a photograph the family already had.
     private(set) var initialTarget: Subject?
     private let initialQuestion: FollowUpQuestion?
+    /// Whether the screen was opened on a prompt: a question no stored row
+    /// holds, like the ladder's starters. The colour sheet's *"Mitä värejä
+    /// muistat tästä kuvasta?"* is the one (`ColourSheet`). Read once, when
+    /// the screen opens, because a row it was opened from is in the store
+    /// then and may not be later.
+    private let opensOnPrompt: Bool
+
+    /// The telling is all this screen is for, and saving it ends it: no
+    /// conversation follows a spoken one, and the offer slot does not count
+    /// it. Set by the colour sheet, which hands the saved telling straight to
+    /// the colouring instead of showing its result.
+    let endsWithTheTelling: Bool
 
     /// The question the screen was opened with, while it is still open. The
     /// idle screen makes it the title and the big button answers it; once a
     /// telling has answered it, the next one on this screen is about anything
     /// at all, and nothing is recorded against it again.
+    ///
+    /// A prompt is never answered — nothing marks it, because a prompt is
+    /// not a debt — so it stays the title for as long as the screen is open.
     var openedQuestion: FollowUpQuestion? {
-        guard let initialQuestion,
-              store.questions.contains(where: { $0.id == initialQuestion.id && !$0.answered })
+        guard let initialQuestion else { return nil }
+        if opensOnPrompt { return initialQuestion }
+        guard store.questions.contains(where: { $0.id == initialQuestion.id && !$0.answered })
         else { return nil }
         return initialQuestion
     }
@@ -211,16 +227,21 @@ final class TellViewModel {
         extraction: ExtractionService,
         target: Subject? = nil,
         question: FollowUpQuestion? = nil,
-        canTranscribe: Bool = true
+        canTranscribe: Bool = true,
+        endsWithTheTelling: Bool = false
     ) {
         self.store = store
         self.transcription = transcription
         self.extraction = extraction
         self.canTranscribe = canTranscribe
+        self.endsWithTheTelling = endsWithTheTelling
         self.target = target
         self.question = question
         self.initialTarget = target
         self.initialQuestion = question
+        self.opensOnPrompt = question.map { opened in
+            !store.questions.contains { $0.id == opened.id }
+        } ?? false
 
         // A recording the system cut — a call that ended without permission
         // to resume, a microphone that quietly stopped — finishes exactly as
@@ -695,7 +716,8 @@ final class TellViewModel {
         } else {
             let wasRound = isInterviewing
             leaveInterview()
-            showsUpsell = UpsellRhythm.shouldShow(hasProposals: !proposals.isEmpty)
+            // Not counted when no result screen will carry the slot.
+            showsUpsell = !endsWithTheTelling && UpsellRhythm.shouldShow(hasProposals: !proposals.isEmpty)
             phase = .done
             // A spoken telling goes straight on to its first question
             // (`beginInterview`, 26 Sep 2026). Not a written one — the keyboard
@@ -705,8 +727,10 @@ final class TellViewModel {
             // counts this telling exactly as it did when the loop was a tap
             // away; the names wait unconfirmed and meet the result card when
             // the conversation ends. No `.done` frame is drawn in between:
-            // nothing here suspends before `ask` sets the phase again.
-            if !wasRound, audioURL != nil, !audioLost {
+            // nothing here suspends before `ask` sets the phase again. And not
+            // on a screen that ends with the telling: there the colouring is
+            // what comes next.
+            if !wasRound, audioURL != nil, !audioLost, !endsWithTheTelling {
                 await beginInterview()
             }
         }

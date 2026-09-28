@@ -24,6 +24,13 @@ struct TellScreen: View {
     /// Whether this screen may choose its own subject when it was given none.
     /// True on the tab and nowhere else: see `Deck`.
     var usesDeck = false
+    /// Set by the colour sheet (`ColourSheet`), and called once a telling has
+    /// been saved with its words, in place of the result screen: the sheet
+    /// swaps this screen for the colouring, which reads that telling first.
+    var onTold: (() -> Void)?
+    /// The colour sheet's second way: colour from what was told before,
+    /// without telling more. Nil when nothing has been told yet.
+    var onColourFromTold: (() -> Void)?
 
     @State private var model: TellViewModel?
     @State private var isConfirmingClose = false
@@ -152,7 +159,8 @@ struct TellScreen: View {
                 // member the server knows, so transcription can never succeed
                 // there — the model skips the attempt and the result screen
                 // says so (finding B4).
-                canTranscribe: !session.isLocalByChoice
+                canTranscribe: !session.isLocalByChoice,
+                endsWithTheTelling: onTold != nil
             )
             #if DEBUG
             // Screenshot aid: `-screen write` opens the typing view directly.
@@ -297,7 +305,8 @@ struct TellScreen: View {
                     model: model,
                     blind: blind,
                     onBlindDone: { blind = nil },
-                    onSkip: usesDeck ? { skipCard(model) } : nil
+                    onSkip: usesDeck ? { skipCard(model) } : nil,
+                    onColourFromTold: onColourFromTold
                 )
                 .onAppear { advancePastTold(model) }
             case .recording:
@@ -309,7 +318,12 @@ struct TellScreen: View {
             case .asking:
                 AskingView(model: model)
             case .done:
-                ResultView(model: model, onClose: onClose)
+                if onTold == nil {
+                    ResultView(model: model, onClose: onClose)
+                } else {
+                    // The frame before the colour sheet takes over.
+                    ProgressView()
+                }
             case .savedWithoutTranscript:
                 AudioSavedView(model: model, onClose: onClose)
             case .needsMicrophone:
@@ -323,6 +337,12 @@ struct TellScreen: View {
         // nothing from alternatives at exactly the moment she is concentrating.
         .toolbar(hidesTabBar(model.phase) ? .hidden : .visible, for: .tabBar)
         .modifier(NoPaperWithoutTheTabBar(barHidden: hidesTabBar(model.phase)))
+        // A telling saved with its words, on the colour sheet. A recording
+        // kept without them lands on its own screen instead, and colours
+        // nothing: what was just said is not there to be read first.
+        .onChange(of: model.phase) { _, phase in
+            if phase == .done { onTold?() }
+        }
     }
 
     /// The deck's card, and the one thing that outranks it.
@@ -472,6 +492,9 @@ private struct IdleView: View {
     /// than navigated to. A photograph somebody opened on purpose is not a card
     /// to be pushed aside.
     var onSkip: (() -> Void)?
+    /// The colour sheet's second way (`TellScreen.onColourFromTold`). Never on
+    /// the same screen as `onSkip`: the deck has no colour sheet.
+    var onColourFromTold: (() -> Void)?
 
     @State private var answering: FollowUpQuestion?
     /// What to say once she has answered, and the only state this card keeps.
@@ -610,6 +633,20 @@ private struct IdleView: View {
     private func skipButton(_ onSkip: @escaping () -> Void) -> some View {
         Button(action: onSkip) {
             Label("En muista tätä", systemImage: "arrow.forward")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .elderTapTarget()
+        }
+    }
+
+    /// Colouring from what the family has already told, for somebody who has
+    /// nothing to add. Quiet like the rows beside it: the question above is
+    /// what the screen asks.
+    private func colourButton(_ onColour: @escaping () -> Void) -> some View {
+        Button(action: onColour) {
+            Label("Väritä jo kerrotun mukaan", systemImage: "paintpalette")
                 .font(.body.weight(.medium))
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
@@ -998,7 +1035,7 @@ private struct IdleView: View {
     }
 
     /// The two quiet rows, as one block so that the last of them can be
-    /// measured.
+    /// measured — three on the colour sheet, whose second way is the last.
     ///
     /// Side by side with the way past a card, and only there. A card makes
     /// this screen taller than any state it has had, and stacked these two put
@@ -1019,6 +1056,9 @@ private struct IdleView: View {
                 writingButton
                 if let onSkip, model.target != nil {
                     skipButton(onSkip)
+                }
+                if let onColourFromTold {
+                    colourButton(onColourFromTold)
                 }
             }
         }

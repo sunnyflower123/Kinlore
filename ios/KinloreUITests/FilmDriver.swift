@@ -420,7 +420,9 @@ final class FilmDriver: XCTestCase {
     /// 4b · The colours come back, and a person decides whether they stay.
     ///
     /// ARCHITECTURE §24. The photograph's card offers *"Colour it by the
-    /// telling"* once somebody has told something about it — `colourable`,
+    /// telling"*, and since 28 Sep 2026 the sheet opens on a telling that asks
+    /// for the colours. The take goes the second way, *"Colour it by what was
+    /// told before"*, which is there only once somebody has told something —
     /// which is why this runs on `-seed film` and not `film-untold`. What
     /// comes back is a proposal and nothing else: `ColourLock` keeps the
     /// photograph's own lightness and takes only the hue from the reply, and
@@ -441,6 +443,8 @@ final class FilmDriver: XCTestCase {
         try reveal(app, app.buttons, ["Photograph", "Valokuva"]).tap()
         beat(2.6) // the card: the picture, the decade, what was told about it
         try reveal(app, app.buttons, ["Colour it by the telling", "Väritä kerronnan mukaan"]).tap()
+        beat(1.6) // the question about the colours, and the way past it
+        try tap(app.buttons, ["Colour it by what was told before", "Väritä jo kerrotun mukaan"])
         beat(1.0) // "Colouring by the telling…"
         _ = try find(app.staticTexts, ["Does it look like this?", "Näyttääkö tältä?"], timeout: 30)
         beat(3.4) // the colouring, read before anybody answers it
