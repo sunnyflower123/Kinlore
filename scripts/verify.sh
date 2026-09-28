@@ -181,6 +181,17 @@ decade() {
 		&& "$OUT/decade-check"
 }
 
+# The paper round an old print, cut from the album's picture of it. Both ways of
+# being wrong are silent: a border missed leaves the card as it was, and a
+# photograph's own light taken for paper loses a strip of it on a card that
+# still looks like a photograph.
+print_border() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/print-border-check" scripts/print-border-check.swift \
+		ios/Kinlore/Services/PrintBorder.swift \
+		&& "$OUT/print-border-check"
+}
+
 # Which question the app decides to put in front of an 80-year-old. A
 # staircase over three UserDefaults keys, and both ways of being wrong are
 # silent: the wall that makes an elderly teller give up, and the run of naming
@@ -402,6 +413,7 @@ run "a fact of a kind this build has no word for survives it" person_facts
 run "a merged card's tellings reach its survivor" merge_chain
 run "a year finds the photographs of its time" archive_search
 run "the fifties are the fifties on any phone" decade
+run "the album shows the picture, not the paper" print_border
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "a phone with no key sends the family nothing" keyless_sync
 run "a person's story is never composed over" story_rules

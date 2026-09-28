@@ -636,6 +636,19 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/decade-check.swift ios/Kinlore/Model/Models.swift \
   && /tmp/decade-check
 
+# The paper round an old print, cut from the album's picture of it and from
+# nothing else (ARCHITECTURE §8). Both ways of being wrong are silent: a border
+# missed leaves the card as it was, and a photograph's own light taken for
+# paper loses a strip of it on a card that still looks like a photograph.
+# Draws prints with their paper exactly where the drawing says — deckled,
+# askew, in colour, at two sizes — and ten things that are not paper, from a
+# pale vignette to a print lying on a dark table. Costs nothing. Run it after
+# touching PrintBorder.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/print-border-check \
+  scripts/print-border-check.swift ios/Kinlore/Services/PrintBorder.swift \
+  && /tmp/print-border-check
+
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
 # Wi-Fi only, never the last gigabyte, three failures ending a round, the

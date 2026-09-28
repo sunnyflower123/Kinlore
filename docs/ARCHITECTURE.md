@@ -110,8 +110,8 @@ never overwrites a real one.
 
 **What keeps "done" true now.** `./scripts/verify.sh` runs every check in this
 repository that costs nothing, each one for a failure that leaves a working app
-behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
-need a simulator of your own, and the other 47 need neither. Its header names
+behind. On 30 Sep 2026 that was 64 checks: 13 drive a Worker started locally, 2
+need a simulator of your own, and the other 49 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
 The UI suite has 405 UI tests, including 126 accessibility sweeps that audit a
@@ -2352,6 +2352,25 @@ Built, in the order they were built:
     (`scripts/decade-check.swift`). `-seed dated` is the one archive with a
     date in it, for the sweep; the plain one stays undated so DateTests can
     give one and then find the heading.
+
+    **And since 30 Sep 2026 a photograph is the main thing on the grid.**
+    Every third card is the width of the screen — two, then one across,
+    starting over at each decade — where until then a card was that wide
+    only as the last of an odd number; that is the rhythm of the design the
+    user chose, beside which the album's pictures were not yet what a person
+    looks at before opening one. A card that wide asks for a 1,200-pixel
+    thumbnail, which 600 had been stretched across. And the paper round an
+    old print is cut from the card's picture (`PrintBorder`): a scan keeps a
+    print's white or cream border, and on the grid it was the brightest thing
+    there, 7 to 18 per cent of each of the video's bordered prints. Only paper
+    on all four sides is cut, at most 12 per cent a side, and only in the
+    album — the photograph's own screen, the face picker, the colouring and
+    the export keep the whole print (`scripts/print-border-check.swift`).
+    Last, a card on the grid lies on the page the way the chosen design's
+    cards do, with a soft warm shade under its bottom edge (`elderShade`,
+    `Elder.shade`): the one blurred shadow under a card in the app, because a
+    photograph is a thing on the page and a card of words is not. The
+    hairline stays its edge.
 
     The row under it says when the telling was made — *"Mummo · 5.9.2026"*
     in the device's own short form — which the export had printed beside

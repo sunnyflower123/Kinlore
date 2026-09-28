@@ -12,7 +12,13 @@ enum MediaStore {
     /// viewing and for eventual printing.
     private static let maxDimension = 2048
 
-    private static let thumbnailDimension = 600
+    /// A thumbnail's longest side: a card half the screen wide, and every
+    /// other frame that asks for one.
+    static let thumbnailDimension = 600
+
+    /// A card the width of the screen: 345 points on a 393-point phone, 1,035
+    /// pixels at three to a point, which 600 was stretched across.
+    static let wideThumbnailDimension = 1200
 
     /// The two shapes of name this store writes.
     ///
@@ -65,9 +71,9 @@ enum MediaStore {
     }
 
     /// For the grid. Loading full-size images into a grid stutters.
-    static func loadThumbnail(named filename: String) -> UIImage? {
+    static func loadThumbnail(named filename: String, longestSide: Int = thumbnailDimension) -> UIImage? {
         guard let data = try? Data(contentsOf: url(for: filename)),
-              let jpeg = downsample(data, to: thumbnailDimension)
+              let jpeg = downsample(data, to: longestSide)
         else { return nil }
         return UIImage(data: jpeg)
     }
