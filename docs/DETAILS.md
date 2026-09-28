@@ -450,7 +450,10 @@ the phone's language, whatever was said (`StubTranscriptionService`), and only
 a Worker hears what you actually said: your own, through the `-api` argument in
 step 3, or the deployed one, through the `Kinlore Production` scheme — a
 Release build, which has the production address compiled in
-(`AppServices.productionURL`).
+(`AppServices.productionURL`). Keep *Between the family* on the app's first
+form, because a phone kept to itself sends nothing (`Session.keepToThisPhone`);
+the family is then made on the deployed Worker, and the free tier's limits
+apply to it, as **Who pays** gives them.
 
 Run `xcodegen generate` again after changing `project.yml` **and after adding or
 removing a source file** — XcodeGen globs the sources, so a new `.swift` file is
@@ -487,6 +490,7 @@ In Xcode: Product → Scheme → Edit Scheme → Run → Arguments.
 |---|---|
 | `-api http://localhost:8787` | Real transcription and extraction instead of stubs |
 | `-rcKey <RevenueCat Test Store key>` | Purchases, **in a Debug build only**. Without it the app works normally, minus the paywall |
+| `-seed family` | A demo family on the free tier with no server behind it, in a Debug build. With `-rcKey` and no `-api`, People → Settings (the gear) → Family members and invitations → Open the whole archive opens the paywall, and a Test Store purchase opens the archive without a server (`Session.syncPurchase`) |
 
 **A Test Store key stops a Release build, by RevenueCat's design.** The app
 compiles no key in: it reads `rcKey` from `UserDefaults` at launch, the same way
@@ -499,7 +503,7 @@ The `Kinlore` scheme runs Debug, so the argument is safe there. `Kinlore
 Production` and an archive build Release: give them neither the argument nor a
 `defaults write com.kinlore.app rcKey …` left on a simulator.
 
-Both arguments are optional, and there are about twenty more. The debug ones
+All three are optional, and there are about twenty more. The debug ones
 exist because some states cannot be reached by hand at all — a refused
 microphone, a family with no server behind it, an extraction that fails while
 transcription succeeds.
