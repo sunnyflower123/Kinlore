@@ -443,11 +443,12 @@ deliberate rather than a demo mode — development must not stop when the Worker
 is broken or there is no network — and it means anyone can try this without an
 account of any kind. The paywall is the one thing missing, because it needs a
 RevenueCat key; **Who pays** says why none is included. What the stubs cannot do
-is listen: a recording comes back as one of three canned Finnish samples in
-turn, whatever was said (`StubTranscriptionService`), and only a Worker hears
-what you actually said: your own, through the `-api` argument in step 3, or the
-deployed one, through the `Kinlore Production` scheme — a Release build, which
-has the production address compiled in (`AppServices.productionURL`).
+is listen: a recording comes back as one of three sample tellings in turn, in
+the phone's language, whatever was said (`StubTranscriptionService`), and only
+a Worker hears what you actually said: your own, through the `-api` argument in
+step 3, or the deployed one, through the `Kinlore Production` scheme — a
+Release build, which has the production address compiled in
+(`AppServices.productionURL`).
 
 Run `xcodegen generate` again after changing `project.yml` **and after adding or
 removing a source file** — XcodeGen globs the sources, so a new `.swift` file is

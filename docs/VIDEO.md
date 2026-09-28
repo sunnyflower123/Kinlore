@@ -22,7 +22,9 @@ Two paths exist per scene, and the choice is phase F's to make scene by scene:
   said the words on screen — and it works per round, not per evening. (The
   `-screen` runners seed their *opening* from a typed draft instead:
   `-screen result` types `samples[0]`, `-screen interview` types
-  `samples[2]`, and no speech needs to match a typed opening.)
+  `samples[2]`, and no speech needs to match a typed opening. On a phone that
+  is not Finnish every one of these is `englishSamples` instead, the same
+  three tellings in English, since 28 Sep 2026.)
 - **Live**: production is deployed (`https://memorize.arkiste.workers.dev`)
   and a Release build points there by default. Real transcription spends real
   credits and shows what was really said — and it is the only path where the

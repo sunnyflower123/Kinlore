@@ -171,11 +171,11 @@ struct TellScreen: View {
                     // rotate from the first, so the opening telling and the
                     // first round never share their names — which is what
                     // lets a test see whether the rounds accumulate.
-                    // English under `-sample film`, Finnish otherwise;
-                    // see `StubTranscriptionService.filmMemory`.
+                    // The film's English under `-sample film`, otherwise the
+                    // phone's language; see `StubTranscriptionService.filmMemory`.
                     created.draft = UserDefaults.standard.string(forKey: "sample") == "film"
                         ? StubTranscriptionService.filmMemory
-                        : StubTranscriptionService.samples[2]
+                        : StubTranscriptionService.inPhoneLanguage[2]
                     await created.submitTyped()
                     await created.beginInterview()
                     // beginInterview returns once the question has been spoken
@@ -200,11 +200,11 @@ struct TellScreen: View {
             if UserDefaults.standard.string(forKey: "screen") == "interviewed" {
                 Task {
                     created.beginWriting()
-                    // English under `-sample film`, Finnish otherwise;
-                    // see `StubTranscriptionService.filmMemory`.
+                    // The film's English under `-sample film`, otherwise the
+                    // phone's language; see `StubTranscriptionService.filmMemory`.
                     created.draft = UserDefaults.standard.string(forKey: "sample") == "film"
                         ? StubTranscriptionService.filmMemory
-                        : StubTranscriptionService.samples[2]
+                        : StubTranscriptionService.inPhoneLanguage[2]
                     await created.submitTyped()
                     await created.beginInterview()
                     try? await Task.sleep(for: .seconds(3))
@@ -234,7 +234,14 @@ struct TellScreen: View {
             if UserDefaults.standard.string(forKey: "screen") == "result" {
                 Task {
                     created.beginWriting()
-                    created.draft = StubTranscriptionService.samples[0]
+                    // Under `-sample film`, for the README's pictures, the
+                    // film's own telling rather than the interview's opening,
+                    // because the film's extraction names Puumala, Helmi and
+                    // Toivo whatever it is given, and this is the one telling
+                    // that says them. Otherwise the phone's language.
+                    created.draft = UserDefaults.standard.string(forKey: "sample") == "film"
+                        ? StubTranscriptionService.film
+                        : StubTranscriptionService.inPhoneLanguage[0]
                     await created.submitTyped()
                 }
             }

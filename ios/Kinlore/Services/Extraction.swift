@@ -185,12 +185,12 @@ struct StubExtractionService: ExtractionService {
     ///
     /// The heuristics below cannot read that sentence, and it is worth
     /// knowing why: "Helmi and Toivo." starts a sentence, so its first name is
-    /// never a proper noun to them; "the thirties" is not a year; and "at the
-    /// jetty" puts the place in front of the wrong word. Cheap and visible in
-    /// development, and useless on camera, where the screen has to show what
-    /// the app really made of these words. Until SHOOT-v16.md §1 has been
-    /// done, the mentions and the decade here are the film's script rather
-    /// than a measurement, like the names in `-seed film`.
+    /// never a proper noun to them, and "at the jetty" puts the place in front
+    /// of the wrong word. (They have read "the thirties" since 28 Sep 2026.)
+    /// Cheap and visible in development, and useless on camera, where the
+    /// screen has to show what the app really made of these words. Until
+    /// SHOOT-v16.md §1 has been done, the mentions and the decade here are the
+    /// film's script rather than a measurement, like the names in `-seed film`.
     static func filmResult(for transcript: String, corrections: [NameCorrection], level: Int?) -> ExtractionResult? {
         guard UserDefaults.standard.string(forKey: "sample") == "film" else { return nil }
         let corrected = { (name: String) -> String in corrections.first { $0.from == name }?.to ?? name }
@@ -247,7 +247,8 @@ struct StubExtractionService: ExtractionService {
         return false
     }
 
-    /// Picks either a four-digit year or a decade of the "50-luvulla" form.
+    /// Picks a four-digit year, or a decade: "50-luvulla" in Finnish, "the
+    /// fifties" or "the 1950s" in English.
     static func dateHint(in text: String) -> DateHint? {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Helsinki") ?? .current
@@ -266,6 +267,19 @@ struct StubExtractionService: ExtractionService {
             // 20–90 is read as the 1900s: talk about old photographs means the
             // last century in practice every time.
             let decade = 1900 + short
+            return DateHint(start: date(year: decade), end: date(year: decade + 9), precision: .decade)
+        }
+
+        // "The 1950s" is no year to the first pattern: the s leaves no word
+        // boundary after the digits. "The fifties" needs its "the", or "in her
+        // forties" would be a date.
+        if let match = text.firstMatch(of: /\b(1[89]\d0)s\b/),
+           let decade = Int(match.1) {
+            return DateHint(start: date(year: decade), end: date(year: decade + 9), precision: .decade)
+        }
+        let words = ["twenties", "thirties", "forties", "fifties", "sixties", "seventies", "eighties", "nineties"]
+        if let index = words.firstIndex(where: { text.lowercased().contains("the \($0)") }) {
+            let decade = 1920 + 10 * index
             return DateHint(start: date(year: decade), end: date(year: decade + 9), precision: .decade)
         }
 

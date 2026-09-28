@@ -141,11 +141,11 @@ simulator build needs no signing team. The app runs fully on stubs: record or
 type a memory, watch it come back structured, and look through the people it
 proposed.
 
-The stubs cannot listen. A recording comes back as one of three canned Finnish
-samples in turn, whatever you said (`StubTranscriptionService`), and only a
-Worker hears your own words. The backend, the keys and the command-line test
-runs are in [DETAILS.md](docs/DETAILS.md#setting-it-up) and
-[SETUP.md](docs/SETUP.md).
+The stubs cannot listen. A recording comes back as one of three sample tellings
+in turn, in the phone's language, whatever you said
+(`StubTranscriptionService`), and only a Worker hears your own words. The
+backend, the keys and the command-line test runs are in
+[DETAILS.md](docs/DETAILS.md#setting-it-up) and [SETUP.md](docs/SETUP.md).
 
 ## Licence
 

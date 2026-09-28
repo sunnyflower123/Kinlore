@@ -4080,9 +4080,9 @@ to lose a memory to a successful request.
   spend the family's AI minutes on an update that is then refused.
 - **The ladder is read, never written.** An outage is ours and not the teller's,
   and it must not cost them a level (§12).
-- **Never with stubs.** The stub transcriber returns a canned sample of Finnish
-  speech, which is right to develop a UI against and would be a forgery in an
-  archive.
+- **Never with stubs.** The stub transcriber returns a sample telling in the
+  phone's language, whatever was said, which is right to develop a UI against
+  and would be a forgery in an archive.
 
 ### Where it runs
 
