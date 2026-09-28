@@ -179,21 +179,22 @@ final class MemoryStore {
     /// its survivor and answers nothing for a rejected proposal, so a name
     /// the family refused finds nothing either.
     ///
+    /// **And by year**, since 28 Sep 2026. "2000" found nothing in an album
+    /// with photographs from 2003 and 2015 in it: a photograph dated on the
+    /// date sheet carries its year in `dateHint` and in none of its words. A
+    /// year, a decade, a span or a side of a year is now read as a date, in
+    /// Finnish or English, and a photograph or a moment is found when its date
+    /// overlaps it — best first — while the words typed beside it must all be
+    /// on the card. The rules are on `ArchiveSearch`, and
+    /// `scripts/archive-search-check.swift` holds them.
+    ///
     /// An empty query is not a filter: everything comes back, so the screen does
     /// not have to know whether a search is running.
     func subjects(of kind: SubjectKind, matching query: String) -> [Subject] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let all = subjects(of: kind)
-        guard !needle.isEmpty else { return all }
-        return all.filter { subject in
-            subject.displayTitle.localizedCaseInsensitiveContains(needle)
-                || memories(for: subject.id).contains { memory in
-                    memory.body.localizedCaseInsensitiveContains(needle)
-                        || memory.mentionedSubjectIDs.contains { id in
-                            self.subject(id: id)?.title.localizedCaseInsensitiveContains(needle) ?? false
-                        }
-                }
-        }
+        let search = ArchiveSearch.Query(query)
+        guard !search.isEmpty else { return all }
+        return ArchiveSearch.subjects(all, matching: search, in: ArchiveSearch.Archive(subjects: subjects, told: told))
     }
 
     /// A telling the search found, with the card it lives on.
@@ -220,23 +221,20 @@ final class MemoryStore {
     /// has no words to match. The card is resolved through `subject(id:)`
     /// like everywhere else: a merged one answers with its survivor, a
     /// rejected one is not listed.
+    ///
+    /// With a year typed (since 28 Sep 2026, `ArchiveSearch.memories`), a
+    /// telling is listed when its words say the date, or when words typed
+    /// beside the date match and its card's date fits; best first then. A
+    /// year alone lists no telling for merely being on a card of that time:
+    /// the photographs answer that themselves.
     func memories(matching query: String) -> [MemoryMatch] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !needle.isEmpty else { return [] }
-        func hit(_ text: String) -> Bool { text.localizedCaseInsensitiveContains(needle) }
-        return told
-            .filter { !$0.body.isEmpty }
-            .compactMap { memory -> MemoryMatch? in
-                guard let subject = subject(id: memory.subjectID) else { return nil }
-                let matches = hit(memory.body)
-                    || hit(subject.displayTitle)
-                    || (byline(for: memory).map(hit) ?? false)
-                    || memory.mentionedSubjectIDs.contains { id in
-                        self.subject(id: id).map { hit($0.title) } ?? false
-                    }
-                return matches ? MemoryMatch(memory: memory, subject: subject) : nil
-            }
-            .sorted { $0.memory.createdAt > $1.memory.createdAt }
+        let search = ArchiveSearch.Query(query)
+        guard !search.isEmpty else { return [] }
+        let archive = ArchiveSearch.Archive(subjects: subjects, told: told)
+        return ArchiveSearch.memories(matching: search, in: archive) { memory in
+            Self.byline(for: memory, resolve: archive.subject(id:))
+        }
+        .map { MemoryMatch(memory: $0.memory, subject: $0.subject) }
     }
 
     /// The questions worth putting in front of the teller right now.
@@ -1185,7 +1183,14 @@ final class MemoryStore {
     /// the author rather than to nothing: a missing card is not a request for
     /// privacy, and `subject(id:)` already follows a merge.
     func byline(for memory: Memory) -> String? {
-        if let id = memory.tellerSubjectID, let teller = subject(id: id), !teller.title.isEmpty {
+        Self.byline(for: memory) { subject(id: $0) }
+    }
+
+    /// The same three answers over any way of finding a card. The search asks
+    /// it of every telling per keystroke, over its own index rather than the
+    /// store's scan (`ArchiveSearch.Archive`).
+    nonisolated static func byline(for memory: Memory, resolve: (String) -> Subject?) -> String? {
+        if let id = memory.tellerSubjectID, let teller = resolve(id), !teller.title.isEmpty {
             return teller.displayTitle
         }
         if memory.tellerHidden == true { return nil }
@@ -1863,7 +1868,7 @@ final class MemoryStore {
             return
         }
         guard [
-            "archive", "unseen", "deck", "blind", "related", "dated", "faces", "facts",
+            "archive", "unseen", "deck", "blind", "related", "dated", "years", "faces", "facts",
             "unplaced", "unarrived", "mentioned",
             "film", "film-untold", "film-week", "film-family", "film-tree",
             "aimed", "restorable",
@@ -2507,7 +2512,7 @@ final class MemoryStore {
         // `-seed dated` is the deck's three undated photographs plus the
         // archive's one, dated to the fifties: the grid's decade heading and
         // its basket for the undated, on one screen, for the sweep.
-        if seed == "deck" || seed == "dated" {
+        if seed == "deck" || seed == "dated" || seed == "years" {
             // Three, so that the deck's patience — also three — is what ends a
             // run of pushes rather than the archive simply running out. Two
             // different endings that look identical on screen, and only one of
@@ -2566,7 +2571,7 @@ final class MemoryStore {
         if !["unseen", "film-week", "film-family"].contains(seed) {
             UserDefaults.standard.set(memories.map(\.id), forKey: NewFromFamily.seenKey)
         }
-        if seed == "dated", let index = subjects.firstIndex(where: { $0.id == photo.id }) {
+        if seed == "dated" || seed == "years", let index = subjects.firstIndex(where: { $0.id == photo.id }) {
             subjects[index].dateHint = DateHint(
                 start: Calendar.current.date(from: DateComponents(year: 1955, month: 1, day: 1)),
                 end: nil,
@@ -2577,6 +2582,31 @@ final class MemoryStore {
             // "Valokuva". The plain archive's stays untitled, because every
             // sweep that taps the tile finds it by that word.
             subjects[index].title = "Mökin ranta"
+        }
+        // `-seed years`: the dated archive plus three photographs dated to a
+        // year each, as the date sheet writes one — 1998, 2003 and 2015.
+        // "2000" found nothing on 28 Sep 2026 in an album like this, where
+        // it should find the second and third and never the first
+        // (`ArchiveSearch`, `SearchTests`). Titled, so each tile says which
+        // it is, and told nothing, so no words can say a year the date does
+        // not. Not added to `-seed dated`, whose screen the decade sweep
+        // audits as it is.
+        if seed == "years" {
+            var helsinki = Calendar(identifier: .gregorian)
+            helsinki.timeZone = DateHint.zone
+            for (year, title) in [(1998, "Kastejuhla"), (2003, "Lakkiaiset"), (2015, "Häät")] {
+                subjects.append(Subject(
+                    id: "demo-year-\(year)",
+                    kind: .photo,
+                    title: title,
+                    imageFilename: Self.demoPhotoFile(),
+                    dateHint: DateHint(
+                        start: helsinki.date(from: DateComponents(year: year, month: 1, day: 1)),
+                        end: helsinki.date(from: DateComponents(year: year, month: 12, day: 31)),
+                        precision: .year
+                    )
+                ))
+            }
         }
         // `-seed unplaced`: the archive with a confirmed place that nobody
         // has put on the map — a farm name the gazetteer does not know, which

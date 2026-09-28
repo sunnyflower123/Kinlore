@@ -638,7 +638,7 @@ struct GalleryScreen: View {
         ContentUnavailableView {
             Label("Ei osumia", systemImage: "magnifyingglass")
         } description: {
-            Text("Mikään ei löytynyt haulla \"\(query)\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä.")
+            Text("Mitään ei löytynyt haulla \"\(query)\". Haku etsii kerrotusta tekstistä, kohteiden nimistä ja vuosista, kuten 1956 tai 50-luku.")
                 .elderBody()
                 .foregroundStyle(Elder.supporting)
         }

@@ -155,6 +155,21 @@ merge_chain() {
 		&& "$OUT/merge-chain-check"
 }
 
+# What the album's search finds when somebody types a year. "2000" found
+# nothing on 28 Sep 2026 in an album with photographs from 2003 and 2015 in it,
+# and every way of reading a year wrongly is as silent: a century where a
+# decade was meant, a side of a year off by one, an undated photograph found by
+# a date nobody knows. The grid is tidy either way. Also holds that a search
+# with no year in it finds what it found before, and the time a keystroke takes
+# over a thousand photographs.
+archive_search() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/archive-search-check" scripts/archive-search-check.swift \
+		ios/Kinlore/Services/ArchiveSearch.swift ios/Kinlore/Services/MergeChain.swift \
+		ios/Kinlore/Model/Models.swift \
+		&& "$OUT/archive-search-check"
+}
+
 # Which question the app decides to put in front of an 80-year-old. A
 # staircase over three UserDefaults keys, and both ways of being wrong are
 # silent: the wall that makes an elderly teller give up, and the run of naming
@@ -335,6 +350,7 @@ run "a confirmed colouring survives an older phone" colour_sync
 run "a pull from zero changes nothing here" sync_fields
 run "a fact of a kind this build has no word for survives it" person_facts
 run "a merged card's tellings reach its survivor" merge_chain
+run "a year finds the photographs of its time" archive_search
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "a phone with no key sends the family nothing" keyless_sync
 run "one purchase unlocks one family" entitlement_binding

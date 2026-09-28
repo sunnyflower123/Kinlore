@@ -554,6 +554,20 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/kinship-check.swift ios/Kinlore/Services/Kinship.swift \
   && /tmp/kinship-check
 
+# What the album's search finds when somebody types a year (ARCHITECTURE §8
+# item 12). "2000" found nothing on 28 Sep 2026 in an album with photographs
+# from 2003 and 2015 in it, and every way of reading a year wrongly is silent —
+# a century where a decade was meant, a side of a year off by one, an undated
+# photograph found by a date nobody knows. Holds every spelling, the order,
+# that a query with no year finds what it found before, and a keystroke over
+# a thousand photographs. Costs nothing. Run it after touching
+# ArchiveSearch.swift or the search in MemoryStore.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/archive-search-check \
+  scripts/archive-search-check.swift ios/Kinlore/Services/ArchiveSearch.swift \
+  ios/Kinlore/Services/MergeChain.swift ios/Kinlore/Model/Models.swift \
+  && /tmp/archive-search-check
+
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
 # Wi-Fi only, never the last gigabyte, three failures ending a round, the

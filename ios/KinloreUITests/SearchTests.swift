@@ -111,6 +111,51 @@ final class SearchTests: XCTestCase {
         )
     }
 
+    /// A year, which is how a family dates what it looks for. "2000" found
+    /// nothing until 28 Sep 2026, in an album with photographs from 2003 and
+    /// 2015 in it: the search read it as four characters, and a photograph
+    /// dated on the date sheet carries its year in its date and in none of
+    /// its words. `-seed years` is that album — 1998, 2003 and 2015, beside
+    /// the fixture's fifties and three photographs nobody has dated — and
+    /// "2000" is the 2000s and after: the two later ones and none of the
+    /// rest. The order and every other spelling are
+    /// `scripts/archive-search-check.swift`'s. Both text sizes and audited,
+    /// because what a year finds is a screen of its own.
+    func testAYearFindsThePhotographsOfItsTime() throws {
+        func tile(_ title: String, in app: XCUIApplication) -> XCUIElement {
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+        }
+        for textSize in [nil, "UICTContentSizeCategoryAccessibilityXXXL"] {
+            let app = launch(["-seed", "years", "-tab", "memories"], textSize: textSize)
+            XCTAssertTrue(app.navigationBars["Albumi"].waitForExistence(timeout: 10), "the gallery")
+
+            search("2000", in: app)
+
+            // Found first, because an absence proves nothing until the grid
+            // has answered.
+            XCTAssertTrue(
+                tile("Lakkiaiset", in: app).waitForExistence(timeout: 5),
+                "\"2000\" did not find the photograph from 2003"
+            )
+            XCTAssertTrue(app.staticTexts["2000-luku"].exists, "the photograph from 2003 is not under its decade")
+            XCTAssertFalse(app.staticTexts["Ei osumia"].exists, "a year that found photographs was called no match")
+            // The grid is oldest decade first, so these would stand above it.
+            XCTAssertFalse(tile("Kastejuhla", in: app).exists, "\"2000\" found the photograph from 1998")
+            XCTAssertFalse(tile("Mökin ranta", in: app).exists, "\"2000\" found the photograph from the fifties")
+            XCTAssertFalse(app.staticTexts["1990-luku"].exists, "\"2000\" kept the nineties")
+            try audit(app, "Albumi, haku vuodella, \(textSize ?? "default")")
+
+            // At XXXL below the fold, and a grid does not build a tile that
+            // is not on screen.
+            let wedding = tile("Häät", in: app)
+            for _ in 0 ..< 4 where !wedding.exists { app.swipeUp() }
+            XCTAssertTrue(wedding.waitForExistence(timeout: 5), "\"2000\" did not find the photograph from 2015")
+            // And no basket after it: a date nobody gave fits no year.
+            app.swipeUp()
+            XCTAssertFalse(app.staticTexts["Ilman ajankohtaa"].exists, "\"2000\" found a photograph nobody has dated")
+        }
+    }
+
     /// A search that finds nothing is a different emptiness from an archive
     /// nobody has filled, and it must not offer the invitation meant for the
     /// second one.

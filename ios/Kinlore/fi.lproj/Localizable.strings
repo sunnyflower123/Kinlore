@@ -186,7 +186,7 @@
 "Poista tämä muisto" = "Poista tämä muisto";
 "Poista" = "Poista";
 "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu." = "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu.";
-"Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä." = "Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä.";
+"Mitään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä, kohteiden nimistä ja vuosista, kuten 1956 tai 50-luku." = "Mitään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä, kohteiden nimistä ja vuosista, kuten 1956 tai 50-luku.";
 "Ei osumia" = "Ei osumia";
 "Kuinka tarkkaan tiedät?" = "Kuinka tarkkaan tiedät?";
 "Perhe" = "Perhe";

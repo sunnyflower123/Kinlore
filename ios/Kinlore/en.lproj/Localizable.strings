@@ -204,7 +204,7 @@
 "Poista tämä muisto" = "Delete this memory";
 "Poista" = "Delete";
 "Kukaan ei löytynyt haulla \"%@\". Haku etsii nimistä ja siitä mitä ihmisistä on kerrottu." = "Nobody was found for \"%@\". The search looks through names and through what has been told about people.";
-"Mikään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä ja kohteiden nimistä." = "Nothing was found for \"%@\". The search looks through what has been told and through the names.";
+"Mitään ei löytynyt haulla \"%@\". Haku etsii kerrotusta tekstistä, kohteiden nimistä ja vuosista, kuten 1956 tai 50-luku." = "Nothing was found for \"%@\". The search looks through what has been told, through the names, and by year, such as 1956 or the 1950s.";
 "Ei osumia" = "No matches";
 "Kuinka tarkkaan tiedät?" = "How exactly do you know?";
 

@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 110 sweep tests, each auditing one screen at the default text size and again at the largest, out of 339 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 110 sweep tests, each auditing one screen at the default text size and again at the largest, out of 340 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -1975,6 +1975,32 @@ Built, in the order they were built:
     row by its words at both text sizes and audits it, and finds Eeva's one
     sentence from the album without her name in it.
 
+    **And by year, since 28 Sep 2026.** "2000" found nothing in an album with
+    photographs from 2003 and 2015 in it: the search read a year as four
+    characters, and a photograph dated on the date sheet (item 13) carries
+    its year in `dateHint` and in none of its words. Whoever typed it
+    expected everything from 2000 on. `ArchiveSearch` reads the query for
+    dates first, in Finnish and English — a year, a decade in any spelling
+    (*50-luvulla*, *viisikymmentäluvulla*, *1950s*, *the fifties*), a span
+    (*1950–1960*) and a side (*ennen 1960*, *after 1960*, *2000-luvulta
+    eteenpäin*) — and looks for the words left beside a date one by one. A
+    round year typed alone is its decade and a rounder one its century, so
+    *2000* is *2000-luku*, which in Finnish already means from 2000 on. A
+    photograph or a moment is found when its span of years overlaps what was
+    asked, because rule 5 keeps "sometime in the fifties" a span: certain
+    before possible, nearer before further. Nothing whose whole span lies
+    outside the question is found, and an undated card is found by a date
+    only when its own words say it, as it always was. With only a date
+    typed, the tellings listed are the ones that say it; the photographs
+    answer the rest. A person's date is not read. The grid still groups what
+    it is given by decade and the moments by date, so the order shows in the
+    tellings; on the grid the search decides what is there.
+    `scripts/archive-search-check.swift` holds every spelling, the order,
+    that a query with no date finds what it found before, and a keystroke
+    over a thousand photographs (26 ms, where the scans it replaced took
+    0.7 s); `SearchTests` walks the user's own "2000" on `-seed years` at
+    both text sizes.
+
     Out of the way by design — and on Albumi, since 19 Sep 2026, by a rule
     rather than by trust in the platform. The bargain was that `.searchable`
     keeps the field above the list until somebody pulls down, so the grandchild
@@ -2008,7 +2034,8 @@ Built, in the order they were built:
     Nothing was removed for this one; it is an addition, and the decision to
     take it was made deliberately rather than by forgetting the rule.
     The rows of tellings are an addition too, inside a state only a reader
-    who is already searching ever enters.
+    who is already searching ever enters. The years are not: they are the
+    same field finding what its reader expected it to find.
 
 13. **A date by hand**, on a photograph or a moment.
 
