@@ -1870,7 +1870,7 @@ final class MemoryStore {
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "years", "faces", "facts",
             "unplaced", "unarrived", "mentioned",
-            "film", "film-untold", "film-week", "film-family", "film-tree",
+            "film", "film-untold", "film-week", "film-family", "film-tree", "film-toivo",
             "aimed", "restorable",
         ].contains(seed) else { return }
         // `-seed unseen` is the archive with a reading debt: the same fixture,
@@ -2194,13 +2194,14 @@ final class MemoryStore {
         if seed?.hasPrefix("film") == true {
             let told = seed != "film-untold"
             let treeShot = seed == "film-tree"
+            let toivoCard = seed == "film-toivo"
             // Two later hours of the same archive, added 19 Sep 2026 for the
             // takes the video's §4 marks as needing a seed. `film-week` is her
             // phone after a week of telling and `film-family` is mine after the
             // invitation; both are the block below plus what that hour added,
             // because the film is one archive growing rather than five.
             let week = seed == "film-week"
-            let family = seed == "film-family"
+            let family = seed == "film-family" || toivoCard
             // Confirmed by the time the family is here: the blind card asks
             // about somebody else by then (see `film-family` below), and Helmi
             // was answered on the orange proposal row in the week between — the
@@ -2232,7 +2233,7 @@ final class MemoryStore {
                                    createdAt: before.addingTimeInterval(86_400))
             let liisa = Subject(id: "demo-film-liisa", kind: .person, title: "Liisa",
                                 createdAt: before.addingTimeInterval(2 * 86_400))
-            let filmToivo = Subject(id: "demo-film-toivo", kind: .person, title: "Toivo",
+            var filmToivo = Subject(id: "demo-film-toivo", kind: .person, title: "Toivo",
                                     createdAt: justNow.addingTimeInterval(10))
             var filmPhoto = photo
             // The thirties, as a decade: rule 5 on the one photograph the film
@@ -2245,10 +2246,44 @@ final class MemoryStore {
                     precision: .decade
                 )
             }
+            // `-seed film-toivo` is `film-family` with Toivo's card filled in
+            // the way a family fills one in: a face chosen from the jetty
+            // photograph, a birth and a trade, and the two relationships the
+            // film's tree scene adds by hand (Helmi his wife, Grandma their
+            // child; the relations are set with the others at the end). It is
+            // the README's picture of a person card, which at rest is
+            // otherwise "Choose a face" over two empty sections — true of a
+            // new card, and nothing like one a family has used. The spot is
+            // his face in the film's photograph, which the disc then shows
+            // with Helmi beside him (`Portrait.fraction`).
+            if toivoCard {
+                // Midnight in Helsinki, as every date in the archive is built
+                // (`DateHint.zone`): the device's own calendar puts the first
+                // of January in another decade on a phone far enough east.
+                var helsinki = Calendar(identifier: .gregorian)
+                helsinki.timeZone = DateHint.zone
+                filmToivo.portraitSubjectID = filmPhoto.id
+                filmToivo.portraitFocusX = 0.63
+                filmToivo.portraitFocusY = 0.17
+                filmToivo.portraitSetAt = before
+                filmToivo.facts = [
+                    PersonFact(
+                        id: "demo-film-toivo-birth", kind: "birth",
+                        date: DateHint(
+                            start: helsinki.date(from: DateComponents(year: 1900, month: 1, day: 1)),
+                            end: nil,
+                            precision: .decade
+                        ),
+                        placeSubjectID: puumala.id, updatedAt: before
+                    ),
+                    PersonFact(id: "demo-film-toivo-trade", kind: "occupation", text: "Boatbuilder", updatedAt: before),
+                ]
+                filmToivo.factsSetAt = before
+            }
             // Before the telling, neither Helmi nor Toivo exists: both are
             // first named in it, and the result screen has to be able to
             // propose them.
-            subjects = [elli, filmAino, liisa, filmPhoto, puumala] + (told ? [proposal, filmToivo] : []) + (treeShot ? [grandma] : [])
+            subjects = [elli, filmAino, liisa, filmPhoto, puumala] + (told ? [proposal, filmToivo] : []) + (treeShot || toivoCard ? [grandma] : [])
             let telling = StubTranscriptionService.film
             memories = [
                 // The decoys need memories of their own, or they are bare names
@@ -2639,6 +2674,15 @@ final class MemoryStore {
         // XCUITest, and a fixture is a fact rather than a race.
         relations = seed == "related"
             ? [Relation(fromSubjectID: eeva.id, toSubjectID: kalle.id, kind: .spouseOf, confirmed: true)]
+            : seed == "film-toivo"
+            ? [
+                Relation(id: "demo-film-toivo-helmi", fromSubjectID: "demo-film-toivo",
+                         toSubjectID: "demo-film-proposal", kind: .spouseOf, confirmed: true),
+                Relation(id: "demo-film-toivo-grandma", fromSubjectID: "demo-film-toivo",
+                         toSubjectID: "demo-film-grandma", kind: .parentOf, confirmed: true),
+                Relation(id: "demo-film-helmi-grandma", fromSubjectID: "demo-film-proposal",
+                         toSubjectID: "demo-film-grandma", kind: .parentOf, confirmed: true),
+            ]
             : []
         // Nothing is queued for the server: this archive is a fixture, and
         // pushing it into a real family would be a genuine mess.

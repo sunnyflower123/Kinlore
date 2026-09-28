@@ -329,6 +329,13 @@ her nephew's — and a second print with a name on it that nobody has confirmed.
 Exactly those three are left unseen, so the album opens on the rows the take
 needs and nothing else.
 
+`-seed film-toivo` is `-seed film-family` with Toivo's card filled in the way a
+family fills one in, added 28 Sep 2026 for the README's pictures
+(`scripts/readme-shots.sh`): a face chosen from the jetty photograph, a birth in
+the 1900s in Puumala, *Boatbuilder* as his trade, Helmi as his wife and a card
+for Grandma as their child. The film never shows it, and its facts are the
+fixture's rather than the script's.
+
 - **The album a week later** — `testFilmTheAlbum`, `-seed film-week -tab
   memories`. Three slow drags rather than flicks: a flick's deceleration
   belongs to the phone and lands wherever it lands, and the take has to be
