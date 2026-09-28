@@ -9,19 +9,21 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-blue.svg" alt="Apache 2.0 licence"></a>
 </p>
 
-A family's shared memory archive. An old person rambles; the AI turns it into
-structure: memories attach to photos and people, the family tree grows out of
-the stories, and open questions come back to be asked.
+A family's shared memory archive. Anyone in the family tells what they
+remember, out loud or in writing, and the AI gives it structure: memories
+attach to photos and people, the family tree grows out of the stories, and open
+questions come back to be asked.
 
-Kinlore is for the 80-year-old who knows the family's history and tells it out
-loud, but will never fill in a form or tag a photo. Album and genealogy apps ask
-for structured input from the one person who will never produce it, and so the
-knowledge disappears at the funeral.
+Album and genealogy apps ask for structured input: a form to fill in, a face to
+tag, a date to pick. A family's memory is not kept that way. It is told, a
+little at a time and by different people, and whatever nobody wrote down goes
+when they do. Kinlore keeps the telling and does the sorting itself.
 
-The 80-year-old in that paragraph is not a persona. It is my own grandparent,
-who tested it — which is why the rules further down read as constraints rather
-than good intentions, and why the failure that matters here is not a crash but a
-story nobody could get told.
+Everyone tells into the same archive from their own phone, and the app is built
+for the oldest teller as much as for the youngest. My own grandparent tested
+it, which is why the rules further down read as constraints rather than good
+intentions, and why the failure that matters here is not a crash but a story
+that never got told.
 
 I built it for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon, in the Next Gen Award (the student category).
@@ -61,11 +63,10 @@ at the default text size and again at the largest.
 
 ## Who pays
 
-The grandchild pays, and the whole family gets the archive. The grandparent
-whose stories fill it is not the one who buys the subscription, so RevenueCat
-grants the entitlement to the buyer and the backend maps it to a right for the
-whole family (`family.entitlement`). Purchases run on the RevenueCat Test Store,
-since there is no App Store release.
+One member pays, and the whole family gets the archive. Whoever tells is not
+necessarily whoever pays, so RevenueCat grants the entitlement to the buyer and
+the backend maps it to a right for the whole family (`family.entitlement`).
+Purchases run on the RevenueCat Test Store, since there is no App Store release.
 
 The free tier limits three things, counted on the server: ten minutes of
 transcription a month, twenty photographs in all and five colourisations a
