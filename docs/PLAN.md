@@ -180,7 +180,7 @@ exactly one person was shown to the rest of the family with the name taken out,
 and four person cards to choose from.
 
 **It was cut on 16 Aug 2026**, as §5 row 8 said it would be. What it was for and
-why it worked is kept in [`ARCHITECTURE.md` §13](ARCHITECTURE.md#13-the-guessing-round-built-then-cut);
+why it worked is kept in [`ARCHITECTURE.md` §13](ARCHITECTURE.md#13-the-guessing-round--built-then-cut);
 this section records the hole it leaves, because the hole is not where it looks.
 
 It was built to answer a real problem: everything in §4 is a **writing** loop,
@@ -330,13 +330,15 @@ done afterwards at all.
 **Before the door.** This sentence used to assert the whole thing; it has two
 halves and only one of them can be checked from here.
 
-**The Mac's half is measured, 12 Sep 2026.** The app compiles for arm64 and
-Xcode resolves device signing by itself — `BUILD SUCCEEDED` both with signing
-skipped and with it required, from a `project.yml` that names no
-`DEVELOPMENT_TEAM` at all. That was worth measuring because **nothing in this
-project had ever been built for a device**: every build in its history targeted
-the simulator, so §3's promise that "in the room, Xcode installs the build onto
-her phone directly" rested on nobody having tried it.
+**The Mac's half is measured, 12 Sep 2026.** The app compiles for arm64 —
+`BUILD SUCCEEDED` with signing skipped. Signing does not resolve by itself: a
+device build needs a development team, which `project.yml` does not name and
+`ios/Signing.xcconfig` takes from an untracked `ios/Signing.local.xcconfig`;
+[SETUP.md](SETUP.md#ios-app--signing-for-a-real-device) says how to write that
+file and what a build does without it. That was worth measuring because
+**nothing in this project had ever been built for a device**: every build in its
+history targeted the simulator, so §3's promise that "in the room, Xcode
+installs the build onto her phone directly" rested on nobody having tried it.
 
 **Her half cannot be measured from here**, and it is the part to do with her,
 once, before anything is installed: the phone paired to this Mac over a cable,
@@ -408,11 +410,6 @@ and neither should be made from a founder's memory of one afternoon.
 the grandchild does, and the whole family channel opens for every member.
 RevenueCat grants the entitlement to the buyer; the backend maps it to a
 channel-level right (`family.entitlement`).
-
-Explain this in the Devpost description: the criterion says "thoughtful
-RevenueCat implementation", not "a paywall exists". Ability to pay sits in a
-different person than the one producing the value — for this audience that is
-the only model that works, not a contest trick.
 
 The right moment for the paywall: **as soon as the first AI-structured memory is
 finished.**

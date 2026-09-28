@@ -408,8 +408,8 @@ the family can neither export nor clear.
 | `ios/` | SwiftUI app. The project is generated from `project.yml` with XcodeGen. |
 | `backend/` | Cloudflare Worker + D1 (metadata) + R2 (photos and audio). |
 | `scripts/` | The checks in the table above, plus `asr-bench.mjs` and the logo tooling. |
-| `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `logo/`. |
-| `.claude/` | The [guideline file](.claude/skills/karpathy-guidelines/SKILL.md) Claude Code works under here — vendored, MIT, [why](CLAUDE.md#the-assistants-rules--checked-in-not-personal-setup). |
+| `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `UX.md` (the arc between the screens), `VIDEO.md` (the demo video's shot list), `RECOVERY.md` (when something on the server has gone wrong), `logo/`. |
+| `.claude/` | The Claude Code setup the sessions here share: the [guideline file](.claude/skills/karpathy-guidelines/SKILL.md) they work under — vendored, MIT, [why](CLAUDE.md#the-assistants-rules--checked-in-not-personal-setup); a hook in `settings.json` (`hooks/big-read.sh`, `hooks/big-read.mjs`) that stops a whole-file read of a large file; and a `bulk-reader` subagent (`agents/bulk-reader.md`) that reads many files and reports file:line facts. |
 
 ## Setting it up
 

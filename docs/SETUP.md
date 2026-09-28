@@ -15,8 +15,9 @@ iOS  ──audio──▶  Worker  ──▶  ASR service
                     └────────▶  LLM (extraction)
 ```
 
-The app never talks directly to OpenAI or similar. That is why uploading audio
-to the Worker sits on the critical path of week 2.
+The app never talks to OpenRouter itself. It sends recordings, text and
+photographs to the Worker's `/transcribe`, `/extract` and `/colourise` routes
+(`worker.ts`), and only the Worker calls OpenRouter (`openrouter.ts`).
 
 ## Keys required
 
@@ -281,7 +282,8 @@ they follow the repo's language rule rather than the app's. See CLAUDE.md.
 ### Cloudflare
 
 No manual key. `npx wrangler login` handles it via OAuth.
-`CLOUDFLARE_API_TOKEN` is only needed if CI is ever set up.
+`CLOUDFLARE_API_TOKEN` is not needed either: CI (`.github/workflows/ci.yml`)
+typechecks, runs `verify.sh` and builds the app, and deploys nothing.
 
 When something on this account has gone wrong — a schema run against the wrong
 database, a deleted bucket, a lost login — read [RECOVERY.md](RECOVERY.md)
@@ -354,9 +356,14 @@ Orders of magnitude; check current prices yourself:
 **Realistic total for two months: under €20.** The largest single item is ASR,
 and only if you test a lot of long recordings.
 
-## Order of operations for week 0
+## Order of operations for a new setup
 
-1. Cloudflare account + `wrangler login`, `d1 create`, `r2 bucket create`
-2. One ASR key → run `scripts/asr-bench.mjs`
-3. RevenueCat account → project → Test Store → test key
-4. LLM key (can be the same as the ASR one)
+1. Nothing, to run the app on stubs in a simulator (README, *Setting it up*,
+   step 1).
+2. One OpenRouter key in `backend/.dev.vars`: the local Worker transcribes and
+   extracts with it, and `scripts/asr-bench.mjs` reads its OpenRouter engines'
+   key from the same file.
+3. Cloudflare account + `wrangler login`, `d1 create`, `r2 bucket create` —
+   only for the deployed half.
+4. RevenueCat account → project → Test Store → test key, with the project set
+   up as *RevenueCat — the project behind the keys* above describes.

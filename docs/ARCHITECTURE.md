@@ -86,7 +86,7 @@ An honest inventory, not a wish list:
 | The family's media on every phone, not only in R2 | **Done and checked**, see §5 — `FullCopy` after every sync, on Wi-Fi, voices first, with the number on the family screen |
 | Colouring a photograph by what was told about it | **Done and tested, deployed 13 Sep 2026**, see §24 — kept only after somebody answers yes, and the model was chosen on one photograph |
 | Repo in English | **Done** |
-| Moderation (`report`, `block`) | Formally out of v1, see §14 |
+| Moderation (`report`, `block`) | Formally out of v1, see §7 and the decision at the end of §14 |
 | Demo video | **In progress**, see docs/VIDEO.md — the shot list, the dry run of 28 Aug 2026 and the takes for the v16 and v21 cuts, which `FilmDriver` taps through. On 25 Sep 2026 three finished takes were found carrying Finnish prices and dates and had to be shot again; no finished cut is recorded in this repository |
 
 The critical path is open: family and sync work, so everything else stands on
