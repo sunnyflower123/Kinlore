@@ -63,7 +63,7 @@ An honest inventory, not a wish list:
 | Deferred transcription — the interrupted memory finishes itself | **Done and tested**, see §16 |
 | RevenueCat, shared family entitlement | **Done and driven end to end in production, 12 Sep 2026** — the binding rule, the webhook's revocation rules and the REST verification run against the shipping schema with RevenueCat replaced (§6); and on a Test Store key a real purchase reached `family.entitlement`, and a signed `INITIAL_PURCHASE` reached the deployed Worker. The paywall, two rows below, is the rest of it |
 | Audio playback, open questions, relationships | **Done and tested** |
-| Paywall | **Built, reached and drawn** — the key configures the SDK, the sheet opens and the purchase completes, and since 12 Sep 2026 the design in RevenueCat's dashboard is the app's own words and palette (§6). The code names no product, package or price: `PaywallSheet` shows RevenueCatUI's `PaywallView` for the dashboard's current offering, and any active entitlement, verified by the Worker, opens the family's archive. What the sheet offers is dashboard state and is recorded only with its date: PLAN §10 has the products made on 12 Sep 2026, and `FilmDriver.testFilmThePaywall` what the first keyed run read on 13 Sep. VIDEO.md's fifth scene films whichever is there |
+| Paywall | **Built, reached and drawn** — the key configures the SDK, the sheet opens and the purchase completes, and since 12 Sep 2026 the design in RevenueCat's dashboard is the app's own words and palette (§6). The code names no product, package or price: `PaywallSheet` shows RevenueCatUI's `PaywallView` for the dashboard's current offering, and any active entitlement, verified by the Worker, opens the family's archive. What the sheet offers is dashboard state and is recorded only with its date: PLAN §10 has the products made on 12 Sep 2026 and those that replaced them on 28 Sep, and `FilmDriver.testFilmThePaywall` what the first keyed run read on 13 Sep. VIDEO.md's fifth scene films whichever is there |
 | Interview loop (questions asked aloud) | **Done and tested** — runs hands-free round after round |
 | Asked questions (a person asks, the name travels) | **Done** |
 | Places, reachable rather than only stored | **Done and tested**, see §8 |
@@ -1363,16 +1363,25 @@ that question in one line and needs no app and no simulator.
 What it says is the app's vocabulary and not new words, because §21's rule is
 that a new word is a new thing to an 80-year-old: *"Open the whole archive"* as
 both the title and the button, the same words the button behind it already
-uses; *"No limits, and one payer opens it for the whole family"*; and
-**rule 2 said out loud on the money screen** — *"Telling is always free. It is
-never limited."* The palette is `Elder.swift`'s: `#F6EEDF` ground, `#FFFAF0`
-cards, `#1C1917` text, `#0B57D0` for the one blue button. RevenueCat's red
-appears nowhere, and neither does a testimonial — there are no users to quote.
+uses; *"More room for photographs and more transcription time, and one payer
+opens it for the whole family"*, the offer card's own sentence, which replaced
+*"No limits"* on 28 Sep 2026 (only an unenforced ceiling kept that one true,
+PLAN §10); and **rule 2 said out loud on the money screen** — *"Telling is
+always free. It is never limited."* The palette is `Elder.swift`'s: `#F6EEDF`
+ground, `#FFFAF0` cards, `#1C1917` text. The button and the *"BEST VALUE"*
+badge are that pair reversed, `#FFFAF0` on `#1C1917`, since 28 Sep 2026; the
+button was `#0B57D0` blue before. RevenueCat's red appears nowhere, and neither
+does a testimonial — there are no users to quote.
 
-**Measured from the app's pixels rather than the editor's preview**, because
-the editor cannot show either thing: text 15.17:1, white on the blue 6.39:1,
-the discount label's blue on cream 6.14:1, package rows 96 pt and the button
-84 pt against `Elder.minTapTarget`'s 60.
+**Measured from the app's pixels rather than the editor's preview** on
+12 Sep 2026, because the editor cannot show either thing: text 15.17:1, white
+on the blue 6.39:1, the discount label's blue on cream 6.14:1, package rows
+96 pt and the button 84 pt against `Elder.minTapTarget`'s 60. The redraw of
+28 Sep has not been measured that way. What it changed was read from the
+editor's computed styles: every text is `#1C1917` on `#F6EEDF` (15.17:1) or on
+`#FFFAF0` (16.81:1), and the button and the badge are the second pair
+reversed, so both blues and their ratios are gone. The tap targets were not
+measured again.
 
 At the very largest accessibility size the package rows sit below the fold and
 the screen scrolls to them. That was raised here as a defect and withdrawn:
@@ -1382,22 +1391,24 @@ and `IdleView`'s comment records that as a considered trade-off rather than an
 oversight. The paywall is consistent with the app; there is nothing to fix that
 would not also be a change to the app.
 
-**One thing that cannot be fixed from here:** the prices read *9,99 US$* and
-*79,99 US$*. Test Store has no currencies, real ones need App Store products,
-and §2.1 closed that route on 24 Aug. It will be visible on the video.
+**One thing that cannot be fixed from here:** the prices read in US dollars —
+*$149.99/yr* and *$39.99/mo* in the editor's English preview, where the first
+keyed run read *9,99 US$* and *79,99 US$*. Test Store has no currencies, real
+ones need App Store products, and §2.1 closed that route on 24 Aug. It will be
+visible on the video.
 
-**Superseded the same evening, and not yet redrawn.** PLAN §10 decided the
-prices on 12 Sep 2026: a year at 50 and the archive for ever at 80, each
-bought once, and no monthly plan. The paragraphs above describe the paywall
-as it still is — two packages, a discount label, 9,99 and 79,99 US$ — and
-they stay until the dashboard has `lifetime` back as a non-consumable,
-`yearly` at 50 and `monthly` out of the `default` offering, when they are
-rewritten from the pixels again rather than from the plan. One consequence
-lives in this file and is easy to misread: `handleWebhook` ignores a
-`NON_RENEWING_PURCHASE`, deliberately, because the event carries no expiry
-and a null must not end a tier the event was not about — so the perpetual
+**Redrawn twice since, and what is on sale is PLAN §10's to record, with its
+date.** On 12 Sep 2026 the month gave way to the archive for ever at 80; on
+28 Sep the month came back at 39.99, the year became 149.99, and the archive
+for ever left the `default` offering. The paywall has two cards, the year first
+with the badge and selected by default, and each shows RevenueCat's
+price-per-period variable rather than a typed price. One consequence of the
+perpetual purchase lives in this file and is easy to misread: `handleWebhook`
+ignores a `NON_RENEWING_PURCHASE`, deliberately, because the event carries no
+expiry and a null must not end a tier the event was not about — so a perpetual
 purchase is granted through `/entitlement/sync` and reconciliation, never
-through the webhook. PLAN §10 carries the arithmetic.
+through the webhook, and no product in the offering exercises that path today.
+PLAN §10 carries the arithmetic.
 
 **One thing measured on the way, recorded because it is invisible.**
 `quota.ts` reads `SELECT entitlement FROM family` and nothing in

@@ -536,7 +536,46 @@ finished.**
   Asked what should go to pay for it, the founder answered that nothing is
   removed now. So the removal is still owed, and it is now owed by a decision
   somebody took rather than by an oversight nobody noticed.
-- ~~**Prices.**~~ **Decided 12 Sep 2026: two purchases, each made once — a
+- ~~**Prices.**~~ **Changed 28 Sep 2026: a month at 39.99 and a year at
+  149.99, each bought by one member for the whole family. The archive for
+  ever goes and the monthly plan comes back.** That reverses the two
+  central choices of the 12 Sep decision below, which is kept as written
+  because it is the record of how the shape was reached. Four things in it
+  no longer hold. The gift ratio of 1.6 and the 54 € net belonged to the
+  archive for ever and describe nothing on sale. The fair-use worst case of
+  10.8 € a year now stands against a yearly price three times the old one,
+  not against a single payment that had to cover five years. The case
+  against a monthly plan is an argument the founder has overruled, not a
+  rule this file keeps. And phase E's question, whether the one real
+  grandchild would pay eighty once, has no product behind it. The
+  perpetual-purchase path described below stays in `entitlement.ts`, with
+  no product in the offering to exercise it.
+
+  **Done in the dashboard the same day.** `monthly_3999` (a monthly
+  subscription at 39.99) and `yearly_14999` (a yearly subscription at
+  149.99) were created, attached to the entitlement, and put into the
+  `default` offering's `$rc_monthly` and `$rc_annual` packages, and
+  `$rc_lifetime` was taken out of it once the redrawn paywall was
+  published. `yearly_50` and `lifetime_80` join `yearly`, `lifetime` and
+  `monthly` as products attached to no offering. The paywall has two
+  cards: *"A year for the family / Billed once a year"* first, badged
+  *"BEST VALUE"* and selected by default, then *"A month for the family /
+  Billed every month"*. Each shows RevenueCat's price-per-period variable
+  rather than a typed price, so a card cannot disagree with its product.
+  The Finnish locale gained both cards, and its subtitle, which still
+  promised *"Rajoja ei ole"* after the English had dropped *"No limits"*,
+  now uses the offer card's own sentence. ARCHITECTURE §6 and §1's paywall
+  row were rewritten the same day from the editor's computed styles; the
+  app's pixels have not been measured since the redraw.
+
+  One thing learnt on the way, twice. The builder writes an edit into
+  whichever of a text's *Default* and *Selected* tabs was clicked last,
+  whatever the panel shows after moving to another component, and an edit
+  in *Selected* creates an override with no Finnish, which the builder
+  reports only as a missing localisation. Click *Selected* and then
+  *Default* before typing, and read the canvas back afterwards.
+
+  **Decided 12 Sep 2026: two purchases, each made once — a
   year at 50 € and the archive for ever at 80 €. The monthly plan goes.**
   Free stays as it is and as `wrangler.jsonc` has it: 20 photographs in
   total and 10 minutes of transcription a month, per family. On the Test Store the
@@ -589,10 +628,11 @@ finished.**
   *more* transcription time (*"enemmän litterointiaikaa"*), where the card
   used to say *"rajoja ei ole"*; and the Perhe screen's usage rows tell a
   paid family what it has used, where both used to say *"rajaton"*. The
-  paywall's *"No limits"* is RevenueCat dashboard copy and not in this
-  repository, and it is true only while the ceiling stays a sentence. When
-  it becomes one number in `quota.ts` (v1.1), that sentence changes with it
-  and `quota-check.mjs` grows a case.
+  paywall caught up on 28 Sep 2026: its subtitle said *"No limits"* and
+  now carries the offer card's *"More room for photographs and more
+  transcription time"*. It is RevenueCat dashboard copy and not in this
+  repository. When the ceiling becomes one number in `quota.ts` (v1.1),
+  no screen has to change with it, and `quota-check.mjs` grows a case.
 
   **Colouring is a second running cost, and on the paid archive it has no
   ceiling either.** Added 13 Sep 2026 (ARCHITECTURE §24): about 3.4 c a
