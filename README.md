@@ -523,29 +523,42 @@ is at the end of [`SETUP.md`](docs/SETUP.md#cost-estimate-during-development).
 
 ## Building and testing from the command line
 
-This needs two things the machine forces. `DEVELOPER_DIR`
-is mandatory because `xcode-select` points at CommandLineTools and changing it
-would need `sudo`. And the simulator has to be given **by UDID**: four devices
-here are called *iPhone 17 Pro*, so a `name=` destination fails as *"Unable to
-find a device matching the provided destination specifier"*, which reads like a
-missing simulator and is not one.
-
-```bash
-SIM=$(DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun simctl list devices available | grep -m1 'iPhone 17 Pro (' | grep -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
-```
-
-```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcodebuild -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator -destination "id=$SIM" build
-```
-
 The UI tests need a simulator of their **own** — they install, launch and
 terminate one bundle id, and two runs on one device kill each other's process
-and report accessibility failures that are not real. Create one, then pass its
-id as `$KINLORE_TEST_SIM`:
+and report accessibility failures that are not real. Create one and hand its
+UDID to `scripts/verify.sh` as `KINLORE_TEST_SIM`; with it set, the script runs
+the UI suite after its other checks, and without it, it skips the suite and says
+so:
 
 ```bash
-xcrun simctl create kinlore-tests com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro com.apple.CoreSimulator.SimRuntime.iOS-26-5
+cd ios && xcodegen generate && cd ..   # verify.sh skips the UI suite without the project
+xcrun simctl list runtimes             # pick an installed iOS runtime's identifier
+SIM=$(xcrun simctl create kinlore-tests com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro <runtime-id>)
+KINLORE_TEST_SIM=$SIM ./scripts/verify.sh
 ```
+
+Give a simulator by UDID rather than by name: a `name=` destination that more
+than one simulator answers to fails as *"Unable to find a device matching the
+provided destination specifier"*, which reads like a missing simulator and is
+not one. Building, and the UI suite on its own with the language flags
+`verify.sh` gives it:
+
+```bash
+xcodebuild -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator -destination "id=$SIM" build
+xcodebuild -project ios/Kinlore.xcodeproj -scheme Kinlore -sdk iphonesimulator \
+  -destination "platform=iOS Simulator,id=$SIM" -testLanguage fi -testRegion FI test
+```
+
+The tests run in Finnish because they find what they tap by the words on
+screen, and those words are the Finnish strings the app uses as its
+localisation keys. On a simulator in any other language the app shows the
+English from `en.lproj`, and a test looking for *"Tutut nimet"* meets
+*"Familiar names"* instead.
+
+If `xcode-select -p` points at the Command Line Tools rather than at Xcode,
+prefix `xcrun` and `xcodebuild` with
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`. `verify.sh` does
+that for itself whenever Xcode is at that path.
 
 ## Two languages, on purpose
 
