@@ -96,8 +96,7 @@ struct GalleryScreen: View {
             return (photo, start)
         }
         guard !dated.isEmpty else { return [PhotoGroup(heading: nil, photos: photos)] }
-        let calendar = Calendar.current
-        let byDecade = Dictionary(grouping: dated) { calendar.component(.year, from: $0.start) / 10 * 10 }
+        let byDecade = Dictionary(grouping: dated) { DateHint.decade(of: $0.start) }
         var groups = byDecade.keys.sorted().map { decade in
             PhotoGroup(
                 heading: .decade(decade),

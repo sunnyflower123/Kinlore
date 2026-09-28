@@ -170,6 +170,17 @@ archive_search() {
 		&& "$OUT/archive-search-check"
 }
 
+# Which decade the album files a photograph under, on a phone in any zone.
+# Every date in the archive is midnight in Helsinki, and until 28 Sep 2026 the
+# headings read it on the phone's own calendar: in Los Angeles the date sheet's
+# "1950s" is 31.12.1949, so on every phone west of Finland the fifties sat
+# among the forties, and a heading reads as right whatever it says.
+decade() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/decade-check" scripts/decade-check.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/decade-check"
+}
+
 # Which question the app decides to put in front of an 80-year-old. A
 # staircase over three UserDefaults keys, and both ways of being wrong are
 # silent: the wall that makes an elderly teller give up, and the run of naming
@@ -351,6 +362,7 @@ run "a pull from zero changes nothing here" sync_fields
 run "a fact of a kind this build has no word for survives it" person_facts
 run "a merged card's tellings reach its survivor" merge_chain
 run "a year finds the photographs of its time" archive_search
+run "the fifties are the fifties on any phone" decade
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "a phone with no key sends the family nothing" keyless_sync
 run "one purchase unlocks one family" entitlement_binding

@@ -2100,9 +2100,14 @@ Built, in the order they were built:
     would be a reproach. The moments list orders the same way. The decade is
     interpolated as a `String`: an integer in a `Text` is formatted for the
     locale, and Finnish groups thousands, so the heading read *"1 950-luku"*
-    and the test looking for *"1950-luku"* found nothing. `-seed dated` is
-    the one archive with a date in it, for the sweep; the plain one stays
-    undated so DateTests can give one and then find the heading.
+    and the test looking for *"1950-luku"* found nothing. The decade is read
+    on the archive's clock (`DateHint.decade(of:)`) and not the phone's:
+    until 28 Sep 2026 it was `Calendar.current`, and the date sheet's
+    midnight on 1.1.1950 in Helsinki is 31.12.1949 in Los Angeles, so on any
+    phone west of Finland the fifties sat among the forties
+    (`scripts/decade-check.swift`). `-seed dated` is the one archive with a
+    date in it, for the sweep; the plain one stays undated so DateTests can
+    give one and then find the heading.
 
     The row under it says when the telling was made — *"Mummo · 5.9.2026"*
     in the device's own short form — which the export had printed beside

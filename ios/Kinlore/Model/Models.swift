@@ -58,11 +58,23 @@ struct DateHint: Codable, Hashable {
     /// before, which turns 1.1.1957 into a photograph from 1956.
     static let zone = TimeZone(identifier: "Europe/Helsinki") ?? .current
 
-    private static let calendar: Calendar = {
+    /// The archive's calendar: Gregorian, on `zone`. A date for the archive
+    /// is built in it and read back through it, never through the phone's.
+    static let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = zone
         return calendar
     }()
+
+    /// The decade an instant is filed under: 1950 for anything from midnight
+    /// on 1.1.1950 to the last minute of 1959, in Helsinki. The album's
+    /// headings come from here. Read on the phone's own calendar, as they were
+    /// until 28 Sep 2026, the date sheet's "1950s" is 31.12.1949 in Los
+    /// Angeles, and the fifties sat among the forties
+    /// (`scripts/decade-check.swift`).
+    static func decade(of date: Date) -> Int {
+        calendar.component(.year, from: date) / 10 * 10
+    }
 
     /// Human-readable form that states the uncertainty honestly.
     var displayText: String {

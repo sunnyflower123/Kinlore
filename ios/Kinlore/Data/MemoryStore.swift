@@ -2241,7 +2241,7 @@ final class MemoryStore {
             // picture is as undated as it was in the album.
             if told {
                 filmPhoto.dateHint = DateHint(
-                    start: Calendar.current.date(from: DateComponents(year: 1930, month: 1, day: 1)),
+                    start: DateHint.calendar.date(from: DateComponents(year: 1930, month: 1, day: 1)),
                     end: nil,
                     precision: .decade
                 )
@@ -2398,7 +2398,7 @@ final class MemoryStore {
                                 imageFilename: Self.filmPhotoFile(index),
                                 dateHint: decades[index].map {
                                     DateHint(
-                                        start: Calendar.current.date(
+                                        start: DateHint.calendar.date(
                                             from: DateComponents(year: $0, month: 1, day: 1)
                                         ),
                                         end: nil,
@@ -2472,7 +2472,7 @@ final class MemoryStore {
                     title: "",
                     imageFilename: Self.filmPhotoFile(2),
                     dateHint: DateHint(
-                        start: Calendar.current.date(from: DateComponents(year: 1940, month: 1, day: 1)),
+                        start: DateHint.calendar.date(from: DateComponents(year: 1940, month: 1, day: 1)),
                         end: nil,
                         precision: .decade
                     )
@@ -2608,7 +2608,7 @@ final class MemoryStore {
         }
         if seed == "dated" || seed == "years", let index = subjects.firstIndex(where: { $0.id == photo.id }) {
             subjects[index].dateHint = DateHint(
-                start: Calendar.current.date(from: DateComponents(year: 1955, month: 1, day: 1)),
+                start: DateHint.calendar.date(from: DateComponents(year: 1955, month: 1, day: 1)),
                 end: nil,
                 precision: .decade
             )

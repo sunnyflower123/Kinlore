@@ -568,6 +568,19 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   ios/Kinlore/Services/MergeChain.swift ios/Kinlore/Model/Models.swift \
   && /tmp/archive-search-check
 
+# Which decade the album files a photograph under, on a phone in any zone.
+# Every date in the archive is midnight in Helsinki; read on the phone's own
+# calendar, as the headings were until 28 Sep 2026, the date sheet's "1950s"
+# is 31.12.1949 in Los Angeles, and the fifties sat among the forties on every
+# phone west of Finland. Takes the decade under six zones, then reads
+# ios/Kinlore for the phone's calendar anywhere else. Costs nothing. Run it
+# from the root after touching `DateHint`, the album's decade headings or a
+# seed's dates.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/decade-check \
+  scripts/decade-check.swift ios/Kinlore/Model/Models.swift \
+  && /tmp/decade-check
+
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on
 # Wi-Fi only, never the last gigabyte, three failures ending a round, the
