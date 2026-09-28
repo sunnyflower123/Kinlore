@@ -314,12 +314,16 @@ final class TargetedQuestionTests: XCTestCase {
         )
 
         // The tellings sit above the open questions, where the sheet left the
-        // card scrolled, and only the teller's own row offers the taking-back.
+        // card scrolled, and only the teller's own row offers the taking-back,
+        // behind its one button since 28 Sep 2026.
+        let actions = app.buttons["Muokkaa tai poista"]
+        for _ in 0 ..< 4 where !actions.exists { app.swipeDown() }
+        for _ in 0 ..< 6 where !actions.exists { app.swipeUp() }
+        XCTAssertTrue(actions.waitForExistence(timeout: 10), "the card offers no way to take the answer back")
+        for _ in 0 ..< 3 where actions.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        actions.tap()
         let remove = app.buttons["Poista tämä muisto"]
-        for _ in 0 ..< 4 where !remove.exists { app.swipeDown() }
-        for _ in 0 ..< 6 where !remove.exists { app.swipeUp() }
-        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take the answer back")
-        for _ in 0 ..< 3 where remove.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the row's button offers no way to take the answer back")
         remove.tap()
         let confirm = app.buttons["Poista"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")

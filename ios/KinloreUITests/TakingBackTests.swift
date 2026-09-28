@@ -76,9 +76,13 @@ final class TakingBackTests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
 
+        // Behind the row's one button since 28 Sep 2026.
+        let actions = app.buttons["Muokkaa tai poista"]
+        for _ in 0 ..< 4 where !actions.exists { app.swipeUp() }
+        XCTAssertTrue(actions.waitForExistence(timeout: 10), "the card offers no way to take it back")
+        actions.tap()
         let remove = app.buttons["Poista tämä muisto"]
-        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
-        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take it back")
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the row's button offers no way to take it back")
         remove.tap()
 
         // The same question, in the same words, as on the result screen.
@@ -157,9 +161,12 @@ final class TakingBackTests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the telling is not in the gallery")
         row.tap()
 
+        let actions = app.buttons["Muokkaa tai poista"]
+        for _ in 0 ..< 4 where !actions.exists { app.swipeUp() }
+        XCTAssertTrue(actions.waitForExistence(timeout: 10), "the card offers no way to correct the text")
+        actions.tap()
         let edit = app.buttons["Muokkaa tekstiä"]
-        for _ in 0 ..< 4 where !edit.exists { app.swipeUp() }
-        XCTAssertTrue(edit.waitForExistence(timeout: 10), "the card offers no way to correct the text")
+        XCTAssertTrue(edit.waitForExistence(timeout: 10), "the row's button offers no way to correct the text")
         edit.tap()
 
         let field = app.descendants(matching: .any)["Muiston teksti"].firstMatch
@@ -346,9 +353,12 @@ final class TakingBackTests: XCTestCase {
 
         // Take the live telling back from the card, the ordinary way. Only
         // the teller's own row offers it; Mummo's does not.
+        let actions = app.buttons["Muokkaa tai poista"]
+        for _ in 0 ..< 4 where !actions.exists { app.swipeUp() }
+        XCTAssertTrue(actions.waitForExistence(timeout: 10), "the card offers no way to take it back")
+        actions.tap()
         let remove = app.buttons["Poista tämä muisto"]
-        for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
-        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take it back")
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the row's button offers no way to take it back")
         remove.tap()
         let confirm = app.buttons["Poista"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")
@@ -480,10 +490,13 @@ final class TakingBackTests: XCTestCase {
         )
 
         // Taken back from its row, above the questions.
+        let actions = app.buttons["Muokkaa tai poista"]
+        for _ in 0 ..< 6 where !actions.exists { app.swipeDown() }
+        XCTAssertTrue(actions.waitForExistence(timeout: 10), "the card offers no way to take the answer back")
+        for _ in 0 ..< 3 where actions.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        actions.tap()
         let remove = app.buttons["Poista tämä muisto"]
-        for _ in 0 ..< 6 where !remove.exists { app.swipeDown() }
-        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the card offers no way to take the answer back")
-        for _ in 0 ..< 3 where remove.frame.midY > bar.frame.minY - 8 { app.swipeUp() }
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "the row's button offers no way to take the answer back")
         remove.tap()
         let confirm = app.buttons["Poista"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the removal asked nothing first")

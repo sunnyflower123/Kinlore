@@ -1726,7 +1726,7 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// The memory row's own way out, which shows only on a telling of one's
+    /// The memory row's own button, which shows only on a telling of one's
     /// own. The fixture's memories are all Mummo's, so this one is told first
     /// and read back from its card, the way it would be the day after.
     func testMemoryCardOwnTelling() throws {
@@ -1744,9 +1744,25 @@ final class AccessibilitySweepTests: XCTestCase {
             require(row, "the telling in the gallery")
             row.tap()
             // On screen for the audit: at the largest size it is below the fold.
-            let remove = app.buttons["Poista tämä muisto"]
-            for _ in 0 ..< 4 where !remove.exists { app.swipeUp() }
-            require(remove, "the card's way to take the telling back")
+            let actions = app.buttons["Muokkaa tai poista"]
+            for _ in 0 ..< 4 where !actions.exists { app.swipeUp() }
+            require(actions, "the card's way to correct or take back the telling")
+        }
+    }
+
+    /// What the row's one button opens: the teller's own correction, move
+    /// and taking-back, on a sheet of their own since 28 Sep 2026.
+    func testMemoryChoiceSheet() throws {
+        try sweep(
+            "Memory choice sheet",
+            arguments: ["-seed", "empty", "-defer", "structure", "-screen", "interview"]
+        ) { app, _ in
+            require(app.staticTexts["Muisto tallennettu"], "the result screen")
+            reach(app.buttons["Kerro toinen muisto"], in: app, "the way on").tap()
+            app.tabBars.buttons["Albumi"].tap()
+            require(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch, "the telling in the gallery").tap()
+            reach(app.buttons["Muokkaa tai poista"], in: app, "the row's button").tap()
+            require(app.buttons["Poista tämä muisto"], "the sheet")
         }
     }
 
@@ -1790,7 +1806,8 @@ final class AccessibilitySweepTests: XCTestCase {
             reach(app.buttons["Kerro toinen muisto"], in: app, "the way on").tap()
             app.tabBars.buttons["Albumi"].tap()
             require(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Kerrottu ")).firstMatch, "the telling in the gallery").tap()
-            reach(app.buttons["Muokkaa tekstiä"], in: app, "the way to correct the text").tap()
+            reach(app.buttons["Muokkaa tai poista"], in: app, "the row's button").tap()
+            require(app.buttons["Muokkaa tekstiä"], "the way to correct the text").tap()
             require(app.buttons["Tallenna"], "the sheet")
         }
     }

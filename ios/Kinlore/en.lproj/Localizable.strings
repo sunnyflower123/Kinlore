@@ -371,6 +371,10 @@
 "Poistetaanko tämä kuva?" = "Delete this photo?";
 "Kuva poistuu perheen arkistosta, eikä sitä voi palauttaa." = "The photo leaves the family archive and cannot be brought back.";
 
+// The memory row: its one button, and the sheet it opens (28 Sep 2026).
+"Muokkaa tai poista" = "Edit or delete";
+"Tämä muisto" = "This memory";
+
 // The memory row: the teller corrects the words the family reads (4 Sep 2026).
 "Muokkaa tekstiä" = "Edit the text";
 "Muiston teksti" = "Memory text";

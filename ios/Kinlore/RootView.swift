@@ -1798,6 +1798,8 @@ private struct MemoryRow: View {
     @State private var isConfirmingRemoval = false
     @State private var isEditingText = false
     @State private var isMoving = false
+    @State private var isChoosing = false
+    @State private var chosen: MemoryChoice?
     let memory: Memory
 
     /// Four truths for one row, in the order they are decided.
@@ -1905,7 +1907,7 @@ private struct MemoryRow: View {
             // shadow would make a button of a surface that is not one. Ink
             // on it measures 13.74:1 and `supporting` 6.73:1, so the words,
             // the byline and the listen button sit inside; the names heard
-            // and the teller's own buttons stay out on the paper, where
+            // and the teller's own button stay out on the paper, where
             // *Poista* keeps the red it was measured in.
             VStack(alignment: .leading, spacing: 10) {
                 if memory.isAwaitingTranscription {
@@ -1986,50 +1988,27 @@ private struct MemoryRow: View {
                 .padding(.horizontal, 4)
             }
 
-            // The teller's own, the day after. The result screen offers this
-            // in the seconds after telling; a memory read back on its card
-            // tomorrow is the same "I did not mean to say that", and until
-            // 3 Sep 2026 the card had no answer to it. Quiet and last, as on
-            // the result screen: the rarest thing done here, and the one that
-            // must never be hit by mistake — so it asks first, in the same
-            // words.
+            // The teller's own, the day after: correct the words, move the
+            // telling, take it back (`MemoryChoiceSheet`). The result screen
+            // offers these in the seconds after telling; a memory read back
+            // on its card tomorrow is the same "I did not mean to say that",
+            // and until 3 Sep 2026 the card had no answer to it.
+            //
+            // One button and not the three it opens, since 28 Sep 2026. The
+            // three stood under every telling of one's own, and a card of a
+            // few tellings was mostly buttons, a page longer than its words.
+            // Ink, because the accent is the red of removal (`Elder.wax`).
             //
             // Own means told on this phone or by this member. A memory told
             // here carries no author until the pull hands it back, and one
             // that never syncs (a phone kept to itself) never gets one; the
             // server refuses a tombstone from anybody but the author either way.
             if memory.authorID == nil || memory.authorID == session.identity.memberID {
-                // The words the family reads, corrected by the one who said
-                // them. The name step reaches a heard name; a wrong ordinary
-                // word in the one sentence that mattered — "kuoli" for
-                // "kasvoi" — it cannot, and at the measured error rate that
-                // word is common. No model call and no minutes: the body is
-                // rewritten by hand, and rule 3's recording and raw transcript
-                // stay exactly as they were. Not while the text is still on
-                // its way: there is nothing to correct yet.
-                if !memory.isAwaitingTranscription {
-                    Button("Muokkaa tekstiä") { isEditingText = true }
-                        .buttonStyle(.borderless)
-                        .font(.body.weight(.medium))
-                        // Ink, and the removal below red: the accent is that
-                        // red since 26 Sep 2026 (`Elder.wax`).
-                        .foregroundStyle(Color.primary)
-                        .elderTapTarget()
-                }
-
-                // Where the telling is filed, corrected the day after. The
-                // AI's placement could be corrected nowhere until 5 Sep 2026
-                // (finding #27); the same sheet the result screen opens.
-                Button("Siirrä toiselle kortille") { isMoving = true }
+                Button("Muokkaa tai poista") { isChoosing = true }
                     .buttonStyle(.borderless)
                     .font(.body.weight(.medium))
                     .foregroundStyle(Color.primary)
-                    .elderTapTarget()
-
-                Button("Poista tämä muisto") { isConfirmingRemoval = true }
-                    .buttonStyle(.borderless)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Elder.destructive)
+                    .multilineTextAlignment(.leading)
                     .elderTapTarget()
             }
         }
@@ -2038,6 +2017,15 @@ private struct MemoryRow: View {
         .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
+        .sheet(isPresented: $isChoosing, onDismiss: afterChoosing) {
+            MemoryChoiceSheet(
+                opening: memory.isAwaitingTranscription ? nil : MemoryChoiceSheet.opening(of: memory.body),
+                canEditText: !memory.isAwaitingTranscription
+            ) { choice in
+                chosen = choice
+                isChoosing = false
+            }
+        }
         .sheet(isPresented: $isMoving) {
             MoveMemorySheet(current: memory.subjectID) { subject in
                 // A moment that held only this telling goes with it, and the
@@ -2072,6 +2060,130 @@ private struct MemoryRow: View {
         .sheet(isPresented: $isEditingText) {
             MemoryTextSheet(memory: memory)
         }
+    }
+
+    /// What was chosen on the sheet, done once the sheet is gone: nothing
+    /// can be presented over a sheet that is leaving, and the removal asks
+    /// its question on the card, over the telling it is about.
+    private func afterChoosing() {
+        guard let choice = chosen else { return }
+        chosen = nil
+        switch choice {
+        case .text: isEditingText = true
+        case .move: isMoving = true
+        case .removal: isConfirmingRemoval = true
+        }
+    }
+}
+
+private enum MemoryChoice {
+    case text, move, removal
+}
+
+/// What the teller can do to her own telling on its card, behind the row's
+/// one button.
+///
+/// A sheet of plain buttons rather than a menu or a confirmation dialog: a
+/// menu's rows barely grow with the text size and no UI test here has been
+/// able to open one, and on iOS 26 a confirmation dialog in a list comes up
+/// as a popover that draws no cancel action (`SettingsScreen`). The window's
+/// full height and no medium detent, for `TreePersonSheet`'s measured
+/// reason: a half-height sheet draws its content 4 % smaller than it lays it
+/// out, and the audit calls every line clipped.
+private struct MemoryChoiceSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    /// The telling's first words, because the sheet covers the card and the
+    /// teller may have several there. Nil while the text is on its way.
+    let opening: String?
+    /// Not while the text is still on its way: there is nothing to correct.
+    let canEditText: Bool
+    let choose: (MemoryChoice) -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Tämä muisto")
+                            .font(Elder.display(.title2))
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityAddTraits(.isHeader)
+                        if let opening {
+                            Text(verbatim: opening)
+                                .elderBody()
+                                .foregroundStyle(Elder.supporting)
+                        }
+                    }
+                    .padding(.bottom, 8)
+
+                    // The words the family reads, corrected by the one who
+                    // said them. The name step reaches a heard name; a wrong
+                    // ordinary word in the one sentence that mattered —
+                    // "kuoli" for "kasvoi" — it cannot, and at the measured
+                    // error rate that word is common. No model call and no
+                    // minutes: the body is rewritten by hand, and rule 3's
+                    // recording and raw transcript stay exactly as they were.
+                    if canEditText {
+                        action("Muokkaa tekstiä") { choose(.text) }
+                    }
+                    // Where the telling is filed. The AI's placement could be
+                    // corrected nowhere until 5 Sep 2026 (finding #27); the
+                    // same sheet the result screen opens.
+                    action("Siirrä toiselle kortille") { choose(.move) }
+                    // The rarest thing done here, and the one that must never
+                    // be hit by mistake: apart from the others, in the red it
+                    // was measured in on the paper, and it asks first.
+                    action("Poista tämä muisto", in: Elder.destructive) { choose(.removal) }
+                        .padding(.top, 12)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Sulje")
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
+                    }
+                    .padding(.top, 16)
+                }
+                .padding(Elder.screenPadding)
+                // Ink, for the tree menu's reason (`TreeMenuSheet`).
+                .tint(Color.primary)
+            }
+            .elderSurface()
+        }
+    }
+
+    /// A title and nothing else, the width inside the label so that the
+    /// whole row takes the tap — the tree's sheets' rows.
+    private func action(
+        _ title: LocalizedStringKey,
+        in colour: Color = .primary,
+        perform: @escaping () -> Void
+    ) -> some View {
+        Button(action: perform) {
+            Text(title)
+                .font(.body.weight(.medium))
+                .foregroundStyle(colour)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .elderTapTarget()
+        }
+        .buttonStyle(.borderless)
+    }
+
+    /// Whole words up to about sixty characters, and an ellipsis if the
+    /// telling goes on: enough to say which one, and never a line limit,
+    /// which the audit reports as clipped text.
+    static func opening(of body: String) -> String? {
+        let words = body.split(whereSeparator: \.isWhitespace)
+        guard let first = words.first else { return nil }
+        var line = String(first.prefix(60))
+        for word in words.dropFirst() {
+            if line.count + 1 + word.count > 60 { return line + "…" }
+            line += " " + word
+        }
+        return line.count < first.count ? line + "…" : line
     }
 }
 

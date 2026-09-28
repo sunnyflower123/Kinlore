@@ -76,7 +76,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 109 sweep tests, each auditing one screen at the default text size and again at the largest, out of 338 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 110 sweep tests, each auditing one screen at the default text size and again at the largest, out of 339 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
@@ -4887,6 +4887,23 @@ queue is read — a push carries it, only a push clears it, `snapshot()` and
 Three mutations turn it red: a payload without the queue, a `dto` without
 `deleted_at`, and a `load()` that forgets it.
 
+### One button on the card — 28 Sep 2026
+
+The card's three doors stood under every telling of one's own — *Muokkaa
+tekstiä*, *Siirrä toiselle kortille* and *Poista tämä muisto*, each a row of
+its own — and a card of a few tellings read as mostly buttons. The row now has
+one ink button, *Muokkaa tai poista*, and the three are on a full-height sheet
+of plain buttons under the telling's first words (`MemoryChoiceSheet`), the
+removal set apart in `destructive` and still asking first, on the card. Not a
+menu and not a confirmation dialog, for the reasons the sheet's comment gives.
+Measured with a throwaway probe of the list's content height on the
+photograph's card of `-seed restorable`, its three-day-old telling brought
+back so that the card holds three tellings, two of them the phone's own:
+1980 pt before and 1692 after at the default text size, 5704 and 5154 at the
+largest. The result screen keeps its buttons, because there the placement
+correction is the point of the screen. `testMemoryChoiceSheet` audits the
+sheet at both sizes.
+
 ## 20. Small promises the app was not keeping
 
 Each of these is one line of code and one thing the app said it did.
@@ -4983,7 +5000,8 @@ never do herself — and it was the one thing on that screen nothing could chang
 grandfather's war years filed under *"Kesä Puumalassa"* stayed there for good,
 while a misheard name got a whole correction flow (founder's-eye review,
 finding #27; fixed 5 Sep 2026). *"Siirrä toiselle kortille"* under the line, and
-on the memory's own row the day after, opens one sheet of the family's people,
+on the memory's own row the day after (behind its *"Muokkaa tai poista"* since
+28 Sep 2026, §19), opens one sheet of the family's people,
 places and events; `MemoryStore.move` refiles the telling, keeps its mentions,
 and takes an auto-made moment with it when nothing is left under it, exactly as
 taking the telling back does. The server's memory upsert now carries

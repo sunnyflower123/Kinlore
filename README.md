@@ -65,7 +65,7 @@ hackathon, in the Next Gen Award (the student category).
   speech pipeline follows whoever is speaking.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-The app has 338 UI tests, including 109 accessibility sweeps that audit a screen
+The app has 339 UI tests, including 110 accessibility sweeps that audit a screen
 at the default text size and again at the largest.
 
 ## Who pays
