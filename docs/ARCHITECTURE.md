@@ -1832,6 +1832,22 @@ Built, in the order they were built:
    `card.ask` and `card.colourNote` join both of the gate's sets, which
    forgive eighteen identifiers as unsupported and four as clipped, on the
    first launch only.
+
+   The colouring's own button above that footer, *Väritä kerronnan mukaan*,
+   took the same signature on 28 Sep 2026: reported as unsupported and as
+   clipped at 370 × 84 pt at y 482.33, where the footer's sweep leaves it,
+   on seven runs of seven on the branch that asks for the colours first and
+   on two of two on `main` at 16e12fb run alternately with it, the frame
+   identical to the decimal.
+   Measured before anything was forgiven (29 Sep 2026): a screenshot at that
+   frame shows the words whole on one line, and at the real largest size
+   whole on three lines in a button 211.33 pt tall, where the audit is
+   clean. Rebased onto c234726 the same sweep was clean four runs of four at
+   loads under 11, and so were two full audits of the card; whether the
+   change came with those commits or with the night's load (37 to 73 where
+   it was logged) was not split. So `card.colour` joins both sets, on the
+   button's words as `card.ask` is, and the gate forgives twenty
+   identifiers as unsupported and five as clipped.
 6. **Paywall** — RevenueCat's own, not a hand-built one: it is configured
    remotely, so prices and wording change without shipping a build. Every way in
    only exists when a RevenueCat key is configured — a dead button is worse than

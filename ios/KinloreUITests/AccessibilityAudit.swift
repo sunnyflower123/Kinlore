@@ -1340,7 +1340,7 @@ enum AccessibilityPolicy {
     ///     load of 5). The position signature at the top edge; the sweep
     ///     drags at the largest size and forgives nothing there.
     ///
-    /// Clipping is forgiven for the four texts that reported it and for no
+    /// Clipping is forgiven for the five texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
     /// layout with nothing forgiven, so a sentence that really lost its last
     /// line at the largest size is caught there. `.contrast` must never join
@@ -1409,6 +1409,21 @@ enum AccessibilityPolicy {
         // button, and what brings it was not split. On the words, as
         // `relative.add` is.
         "card.ask", "card.colourNote",
+        // The colouring's own button above that footer, "Väritä kerronnan
+        // mukaan" (29 Sep 2026), at the default size only: reported as
+        // unsupported and as clipped at 370 × 84 pt at y 482.33, where the
+        // footer's sweep leaves it, the frame identical to the decimal on
+        // every red run of 28 Sep — seven of seven on the H68 branch, and
+        // two of two on `main` at 16e12fb run alternately with it, at loads
+        // of 37 to 73 where the load was logged. A screenshot at that frame
+        // shows the words whole on one line, and whole on three lines at
+        // the real largest size, 370 × 211.33 pt, where the audit is clean.
+        // Rebased onto c234726 the same sweep was clean four runs of four at
+        // loads under 11, and so were two full audits of the card, with the
+        // button at y 482.33 and at y 640; whether the change came with
+        // those commits or with the load was not split. On the words, as
+        // `card.ask` is.
+        "card.colour",
         // The link above a telling filed under another card, by that card's
         // name — "Valokuva" for an untitled photograph (27 Sep 2026). A new
         // row, so none of its code was ever clean to compare with: at the
@@ -1420,12 +1435,15 @@ enum AccessibilityPolicy {
         "namedElsewhere.title",
     ]
 
-    /// The four that also reported `.textClipped` at the default size, and
-    /// only those four; each is drawn whole at a real AccessibilityXXXL.
+    /// The five that also reported `.textClipped` at the default size, and
+    /// only those five; each is drawn whole at a real AccessibilityXXXL.
     private static let simulationArtefactClippedIdentifiers: Set<String> = [
         "card.emptyState", "card.removal",
         // Clipped beside unsupported on every red run (27 Sep 2026).
         "card.ask", "card.colourNote",
+        // Clipped beside unsupported on every red run of the colour
+        // button (28 Sep 2026).
+        "card.colour",
     ]
 
     /// The join form's code field with a code in it, reported clipped by the

@@ -1367,10 +1367,19 @@ struct SubjectDetailScreen: View {
                     Button {
                         isColouring = true
                     } label: {
-                        Label("Väritä kerronnan mukaan", systemImage: "paintpalette")
-                            .font(.body.weight(.medium))
-                            .frame(maxWidth: .infinity)
-                            .elderTapTarget()
+                        Label {
+                            Text("Väritä kerronnan mukaan")
+                                // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                                // and nothing else (29 Sep 2026). On the words
+                                // rather than the button, as `card.ask`'s: the
+                                // audit reports the label.
+                                .accessibilityIdentifier("card.colour")
+                        } icon: {
+                            Image(systemName: "paintpalette")
+                        }
+                        .font(.body.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
                     }
                     .buttonStyle(.elderSecondary)
                     .listRowInsets(EdgeInsets())
