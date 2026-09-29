@@ -106,8 +106,8 @@ never overwrites a real one.
 
 **What keeps "done" true now.** `./scripts/verify.sh` runs every check in this
 repository that costs nothing, each one for a failure that leaves a working app
-behind. On 29 Sep 2026 that was 57 checks: 12 drive a Worker started locally, 2
-need a simulator of your own, and the other 43 need neither. Its header names
+behind. On 29 Sep 2026 that was 58 checks: 12 drive a Worker started locally, 2
+need a simulator of your own, and the other 44 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
 The UI suite has 341 UI tests, including 110 accessibility sweeps that audit a
@@ -5672,6 +5672,10 @@ What §13 asked to have back, and where each piece went:
   reaching for one.
 - **Nobody named in the same telling is a decoy.** They may be in the photograph
   too, and a question with two right answers teaches the archive nothing.
+- **Each proposal is dealt its own three** (29 Sep 2026). The newest three on
+  every card made the one name that changed the answer. They are dealt by a
+  second hash, because dealing by the seats' hash puts the answer last on most
+  cards (`scripts/blind-card-check.swift`).
 - **"En muista" is an answer.** It confirms nothing, un-confirms nothing, and it
   is what stops the card coming back for ever.
 - **One per person, one per session.** The first because a second attempt

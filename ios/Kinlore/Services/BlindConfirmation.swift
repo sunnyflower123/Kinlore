@@ -97,7 +97,12 @@ enum BlindConfirmation {
             }
             guard decoys.count >= fewestChoices - 1 else { continue }
 
-            let names = ([person] + decoys.prefix(choices - 1))
+            // Which three, dealt by the proposal. `people` is newest first, so
+            // taking its first three put the same three on every card, and in
+            // `-seed large`, sixty people and five proposals, the one name that
+            // changed from card to card was the answer (28 Sep 2026).
+            let dealt = decoys.sorted { pick(person.id, $0.id) < pick(person.id, $1.id) }
+            let names = ([person] + dealt.prefix(choices - 1))
                 .sorted { seat(person.id, $0.id) < seat(person.id, $1.id) }
             return Card(person: person, photo: photo, names: names)
         }
@@ -115,6 +120,25 @@ enum BlindConfirmation {
         var hash = 5381
         for byte in (seed + "/" + id).utf8 {
             hash = (hash &* 33 &+ Int(byte)) & 0xFF_FFFF
+        }
+        return hash
+    }
+
+    /// Which of the confirmed people stand beside the proposal.
+    ///
+    /// Stable for the same reasons as `seat`, and deliberately not `seat`.
+    /// Dealing by the hash that also seats the names takes the three with the
+    /// lowest seats, and the answer then sits last on most cards, the more
+    /// often the larger the family. Nor `seat` under another seed: for
+    /// identifiers of one length, as every `UUID` is, its order under any seed
+    /// is one circle turned round, so every card is dealt three neighbours on
+    /// it, and twelve people make twelve threes instead of 220. FNV-1a mixes
+    /// by XOR and multiply, and who is dealt says nothing about where they sit
+    /// (`scripts/blind-card-check.swift`).
+    private static func pick(_ seed: String, _ id: String) -> UInt32 {
+        var hash: UInt32 = 2_166_136_261
+        for byte in (seed + "/" + id).utf8 {
+            hash = (hash ^ UInt32(byte)) &* 16_777_619
         }
         return hash
     }

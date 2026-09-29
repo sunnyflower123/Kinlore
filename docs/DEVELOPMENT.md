@@ -569,6 +569,19 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   scripts/relation-words-check.swift ios/Kinlore/Services/RelationWords.swift \
   && /tmp/relation-words-check
 
+# The names the blind card deals beside the proposal (ARCHITECTURE §23). Until
+# 29 Sep 2026 every card got the archive's three newest confirmed people, so in
+# `-seed large` the one name that changed from card to card was the answer.
+# Deals 400 cards from one family and counts the threes, who is dealt and which
+# seat the answer takes: dealing by the hash that seats the names puts the
+# answer last on 308 of them. Pins the README's and the film's cards. Costs
+# nothing, with a stand-in `MemoryStore`. Run it after touching
+# BlindConfirmation.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/blind-card-check scripts/blind-card-check.swift \
+  ios/Kinlore/Services/BlindConfirmation.swift ios/Kinlore/Model/Models.swift \
+  && /tmp/blind-card-check
+
 # What the album's search finds when somebody types a year (ARCHITECTURE §8
 # item 12). "2000" found nothing on 28 Sep 2026 in an album with photographs
 # from 2003 and 2015 in it, and every way of reading a year wrongly is silent —

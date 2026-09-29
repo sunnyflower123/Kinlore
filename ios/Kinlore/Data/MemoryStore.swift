@@ -2200,9 +2200,9 @@ final class MemoryStore {
         // Until 13 Sep 2026 the proposal was a misheard "Elli" and the take
         // ended on a name left open; the cut built on it had to explain a
         // quiz. Exactly three confirmed people are not named in the telling,
-        // because `BlindConfirmation` takes its decoys from them in store
-        // order and a fourth would push the film's names off the card; Toivo
-        // is named in it, and is therefore never a decoy.
+        // because `BlindConfirmation` deals its three decoys from them and a
+        // fourth could be dealt in place of one of the film's names; Toivo is
+        // named in it, and is therefore never a decoy.
         //
         // English, unlike the rest of this fixture, because the film is shot in
         // English and the words on a filmed screen have to be the words on its

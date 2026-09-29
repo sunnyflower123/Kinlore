@@ -256,8 +256,8 @@ films five things for real and draws the rest, and three of the five need a
 state no seed above provides. `-seed film` is `-seed blind` with the film's
 people and the film's words: a proposal heard in the telling about the one
 photograph, three confirmed people who were not — exactly three, because the
-blind card takes its decoys from them in store order — Toivo confirmed and
-named, Puumala at `.town`. `-seed film-untold` is the same archive a minute
+blind card deals its three decoys from them and a fourth could take a film
+name's place — Toivo confirmed and named, Puumala at `.town`. `-seed film-untold` is the same archive a minute
 earlier, the photograph not yet spoken about, for filming the telling into.
 The photograph comes from `Documents/film-photo.jpg` in the app's container
 when the shooting day has put one there:

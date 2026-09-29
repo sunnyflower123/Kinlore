@@ -267,6 +267,17 @@ relation_words() {
 		&& "$OUT/relation-words-check"
 }
 
+# Which names the blind card deals beside the proposal, and which seat the
+# answer takes. Added 29 Sep 2026: every card got the archive's three newest
+# confirmed people, so in `-seed large` the one name that changed from card to
+# card was the answer. Silent, because each card alone is a fair question.
+blind_card() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/blind-card-check" scripts/blind-card-check.swift \
+		ios/Kinlore/Services/BlindConfirmation.swift ios/Kinlore/Model/Models.swift \
+		&& "$OUT/blind-card-check"
+}
+
 # Where the family tree puts people and the lines between them. Pure arithmetic
 # over confirmed people and relationships, and each way of being wrong is
 # silent: a child drawn a row above her mother still draws. Added 13 Sep 2026
@@ -365,6 +376,7 @@ run "a silent answer ends, a pause does not" answer_watch
 run "a question aims at what the archive lacks" extraction_context
 run "no date is sharper than what was said" date_hint
 run "no memory names a relative nobody said" relation_words
+run "no two blind cards give the answer away" blind_card
 run "the app asks again later, and not for the weather" transcription_catchup
 run "a child is drawn below her parents" family_tree_layout
 run "every word in the tree is exact" kinship
