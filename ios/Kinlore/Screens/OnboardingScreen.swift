@@ -459,12 +459,20 @@ private struct WhereMemoriesGo: View {
 
 /// The one screen in this app that a 30-year-old fills in.
 ///
-/// Which is the reason it asks who the phone is for. Setting up takes a few
-/// minutes and is done by a grandchild; the using is done for years by somebody
-/// who has never opened iOS Settings and will not be told to. The question is
-/// therefore asked in the only moment where the person who *can* answer it is
-/// already answering questions — and it is asked plainly, because a "make text
-/// larger" switch reads as an admission and "kenen puhelin tämä on" does not.
+/// Which is the reason it asks about the text. Setting up takes a few minutes
+/// and is often done by a grandchild; the using may be done for years by
+/// somebody who has never opened iOS Settings and will not be told to. The
+/// question is therefore asked in the only moment where the person who *can*
+/// answer it is already answering questions.
+///
+/// Asked by need since 30 Sep 2026, in the words of the Settings switch it
+/// sets (`largerText`, *"Isompi teksti"*). Until then it asked *"Kenen
+/// puhelin tämä on"* — a grandparent's, or mine — on the reasoning that a
+/// "make text larger" switch reads as an admission and a question about the
+/// owner does not. But that sorted the phone's owner by age, where rule 1's
+/// teller is whoever wants to tell, while what the answer sets is the larger
+/// text and the simpler app that comes with it. The footer says the second
+/// half.
 private struct CreateFamilyForm: View {
     @Environment(Session.self) private var session
     /// Where the founder's own card is made once the family exists. See
@@ -537,17 +545,17 @@ private struct CreateFamilyForm: View {
                 // Inline rather than a menu: both answers are visible without a
                 // tap, which is the difference between a question and a control
                 // somebody has to discover.
-                Picker("Kenen puhelin tämä on", selection: $largerText) {
-                    Text("Isovanhemman").tag(true)
-                    Text("Minun").tag(false)
+                Picker("Tekstin koko", selection: $largerText) {
+                    Text("Isompi teksti").tag(true)
+                    Text("Tavallinen teksti").tag(false)
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
             } header: {
-                Text("Kenen puhelin tämä on")
+                Text("Tekstin koko")
                     .foregroundStyle(Elder.supporting)
             } footer: {
-                Text("Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.")
+                Text("Isompi teksti tekee myös sovelluksesta yksinkertaisemman. Voit vaihtaa tämän myöhemmin asetuksista.")
                     .foregroundStyle(Elder.supporting)
             }
 
@@ -832,19 +840,20 @@ private struct JoinFamilyForm: View {
             // was the one path where the text-size floor could never be set,
             // on precisely the phone that is handed over (docs/UX.md §5). The
             // long why lives on `CreateFamilyForm`; the wording is identical
-            // on purpose — no new word for an old act (§21).
+            // on purpose, and since 30 Sep 2026 it is the Settings switch's
+            // own — no new word for an old act (§21).
             Section {
-                Picker("Kenen puhelin tämä on", selection: $largerText) {
-                    Text("Isovanhemman").tag(true)
-                    Text("Minun").tag(false)
+                Picker("Tekstin koko", selection: $largerText) {
+                    Text("Isompi teksti").tag(true)
+                    Text("Tavallinen teksti").tag(false)
                 }
                 .pickerStyle(.inline)
                 .labelsHidden()
             } header: {
-                Text("Kenen puhelin tämä on")
+                Text("Tekstin koko")
                     .foregroundStyle(Elder.supporting)
             } footer: {
-                Text("Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista.")
+                Text("Isompi teksti tekee myös sovelluksesta yksinkertaisemman. Voit vaihtaa tämän myöhemmin asetuksista.")
                     .foregroundStyle(Elder.supporting)
             }
 

@@ -36,7 +36,7 @@ final class BlindConfirmationTests: XCTestCase {
     /// the cut round's mask had to be a *word* rather than a gap to close.
     /// On a grandparent's phone the Kerro tab is the button and nothing else,
     /// and the card is on Muistot, where she reads. The launch argument is the
-    /// answer to "kenen puhelin tämä on".
+    /// answer "Isompi teksti" to the setup forms' "Tekstin koko".
     func testAGrandparentsPhoneKeepsTheButtonAndReadsTheCardOnMuistot() {
         let app = launch(["-seed", "blind", "-elder.largerText", "YES"])
         XCTAssertTrue(app.buttons["Aloita kertominen"].waitForExistence(timeout: 15), "her Kerro tab did not open on the button")

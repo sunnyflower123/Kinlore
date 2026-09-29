@@ -134,7 +134,8 @@ final class WipeTests: XCTestCase {
     /// The one answer that used to outlive the archive it was given for.
     ///
     /// `elder.largerText` is device state like the ladder's comfort — the
-    /// answer to *"kenen puhelin tämä on"*, asked in onboarding — and it was
+    /// answer to *"Tekstin koko"* (*"kenen puhelin tämä on"* until
+    /// 30 Sep 2026), asked in onboarding — and it was
     /// the last thing the wipe left behind. The cost was small and exactly
     /// wrong-shaped: a device returned to its first screen met that screen's
     /// own question with the previous household's answer already in it.
@@ -172,11 +173,11 @@ final class WipeTests: XCTestCase {
 
         // The inline picker draws both answers as rows and marks the chosen
         // one, so the question can be read without touching it.
-        let mine = app.buttons["Minun"]
-        XCTAssertTrue(mine.waitForExistence(timeout: 10), "never arrived: whose phone this is")
+        let standard = app.buttons["Tavallinen teksti"]
+        XCTAssertTrue(standard.waitForExistence(timeout: 10), "never arrived: the text size question")
         XCTAssertTrue(
-            mine.isSelected,
-            "the emptied device still remembered whose phone it was"
+            standard.isSelected,
+            "the emptied device still remembered the larger text"
         )
     }
 }

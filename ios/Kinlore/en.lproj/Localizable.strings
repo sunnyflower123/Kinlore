@@ -232,15 +232,14 @@
 "Poistu perheestä" = "Leave the family";
 "Et enää näe perheen uusia muistoja etkä voi kertoa niitä. Kertomasi muistot jäävät perheelle." = "You will not see the family's new memories any more, and you will not be able to tell any. The memories you told stay with the family.";
 
-/* --- Who you are, and which phone this is -------------------------------- */
+/* --- Who you are, and the text size -------------------------------------- */
 "Kuka sinä olet" = "Who you are";
 "Nimi" = "Name";
 "Nimesi" = "Your name";
-"Minun" = "Mine";
-"Kenen puhelin tämä on" = "Whose phone this is";
-"Isovanhemman" = "A grandparent's";
+"Tekstin koko" = "Text size";
 "Isompi teksti" = "Larger text";
-"Isovanhemman puhelimessa teksti on isompaa. Voit vaihtaa tämän myöhemmin asetuksista." = "On a grandparent's phone the text is larger. You can change this later in Settings.";
+"Tavallinen teksti" = "Standard text";
+"Isompi teksti tekee myös sovelluksesta yksinkertaisemman. Voit vaihtaa tämän myöhemmin asetuksista." = "Larger text also makes the app simpler. You can change this later in Settings.";
 "Sukupuu näkyy silloin listoina, ilman väritystä." = "The family tree then shows as lists, without colouring.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "This appears beside your memories, so the family knows who told them.";
 "%@ · %@" = "%@ · %@";

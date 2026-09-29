@@ -895,7 +895,7 @@ and its words do not try. Two limits, both priced. An identity that never
 joined anything asks too — one made by an earlier launch that stopped at the
 fork is held by the next — so that launch, offline, waits on the page rather
 than opening the fork: strict, for a case that is rare and harmless. And the
-text floor (*"Kenen puhelin tämä on"*) is device state, so a phone that came
+text floor (*"Tekstin koko"*) is device state, so a phone that came
 back starts without it. `ReturningPhoneTests` drives all three answers
 (`-seed returning`, `-homecoming ask`, `-homecoming unauthorized`), and every
 other UI test launches with `-homecoming off`, because the simulator's Keychain
@@ -1708,10 +1708,12 @@ Built, in the order they were built:
    link". Nothing else. One screen.
 
    The form behind the first one asks two things — the name, and, last and
-   not about the family at all: **whose phone is this.** Until 30 Sep 2026 it
-   asked first who it was between; the family is the default now, and an
-   archive kept to the phone is a quiet button under the form's own, behind a
-   confirmation. Setting up takes a grandchild a
+   not about the family at all: **the text size**, in the Settings switch's
+   own words (*"Larger text"* or *"Standard text"*), where until 30 Sep 2026
+   it asked whose phone this is. Until the same day it asked first who it
+   was between; the family is the default now, and an archive kept to the
+   phone is a quiet button under the form's own, behind a confirmation.
+   Setting up takes a grandchild a
    few minutes; the using is done for years by somebody who has never opened
    iOS Settings and will not be told to, and the answer sets the smallest text
    the app will draw (`Elder.textFloor`, a floor and never a ceiling — iOS's

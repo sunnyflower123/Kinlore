@@ -42,7 +42,7 @@ const source = readFileSync(AUDIT, 'utf8').split('\n')
 // another one, which is the same silence with different words.
 const MEASURED = [
 	'Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän.',
-	'Kenen puhelin tämä on',
+	'Tekstin koko',
 ]
 
 // Both types on purpose. The audit reports whichever the row's current shape

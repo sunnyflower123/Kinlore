@@ -846,9 +846,9 @@ final class FilmDriver: XCTestCase {
     }
 
     /// Her phone on its first launch against an empty Worker: the fork, "Start
-    /// a family archive", her name, and the phone marked as a grandparent's —
-    /// which is what she holds, and which also skips the first-minute sheet a
-    /// founder's own phone raises. A phone that already has its archive shows
+    /// a family archive", her name, and larger text — what her phone needs,
+    /// and the answer that also skips the first-minute sheet a founder's own
+    /// phone raises. A phone that already has its archive shows
     /// the tab bar instead and goes straight on, so any of her takes can be the
     /// evening's first.
     private func foundTheArchiveIfAsked(_ app: XCUIApplication) throws {
@@ -867,7 +867,7 @@ final class FilmDriver: XCTestCase {
         // takes the keyboard off the two answers below it.
         name.typeText("Grandma\n")
         beat(0.8)
-        try reveal(app, app.buttons, ["A grandparent's", "Isovanhemman"]).tap()
+        try reveal(app, app.buttons, ["Larger text", "Isompi teksti"]).tap()
         beat(1.0)
         try reveal(app, app.buttons, ["Create the archive", "Luo arkisto"]).tap()
         guard bar.waitForExistence(timeout: 40) else {

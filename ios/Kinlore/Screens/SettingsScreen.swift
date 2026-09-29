@@ -117,8 +117,9 @@ struct SettingsScreen: View {
                 .elderTapTarget()
             } footer: {
                 // What else the switch does, said where it is switched. It is
-                // the setup forms' "Kenen puhelin tämä on", and that answer
-                // has always been more than a text size: the tree is not
+                // the setup forms' "Tekstin koko" ("Kenen puhelin tämä on"
+                // until 30 Sep 2026), and that answer has always been more
+                // than a text size: the tree is not
                 // drawn (`PeopleTab.offersTree`), the album has no search
                 // field (GalleryScreen), colouring is not offered
                 // (`colourable`), and the paid archive is offered only beside

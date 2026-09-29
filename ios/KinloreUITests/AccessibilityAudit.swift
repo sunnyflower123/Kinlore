@@ -703,7 +703,15 @@ enum AccessibilityPolicy {
         // At AccessibilityXXXL the same screen audits clean and reports no
         // `textClipped` on this header, which is the half that would say the
         // words were actually being lost.
-        "Kenen puhelin tämä on",
+        //
+        // Renamed with the question on 30 Sep 2026: it was *"Kenen puhelin
+        // tämä on"*, and the section above it went the same day. Measured
+        // again that day with this line taken out: the create form, with
+        // that section gone, no longer reports the header, and the join
+        // form still does at the default size, at y 482 blank and at
+        // y 267.67 with its error note, and is clean at the real largest
+        // size. So the line stays.
+        "Tekstin koko",
     ]
 
     /// The photo card's empty state: the sentence, and the delete button that
