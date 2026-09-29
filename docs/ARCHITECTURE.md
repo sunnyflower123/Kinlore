@@ -3092,6 +3092,43 @@ name — and not to ask about age, health, money or mood, because the person
 answering is often in the photograph. That is rule 4 on a surface where the
 model can see faces and the app cannot.
 
+**Since 29 Sep 2026 a teller who is in the photograph is asked whether a person
+is them, never who it is.** A phone test told about a picture, said the teller
+was in it, and got back a question asking who the child holding up three
+fingers was: the teller, asked to name themselves as if they were a stranger.
+The model cannot see which face is the teller's, and rule 6 does not reach a
+question the speech only half answered. Rule 8 now ends in both prompts with
+what to do when the speech puts the teller in the photograph without saying
+which person they are. A question about an unnamed person offers the teller
+first, answered yes or no (*"Oletko sinä se, joka näyttää kolmea sormea?"*),
+once, and nobody else unnamed in it is asked about beside it, because if the
+answer is no, that one may be the teller. Rule 8 is sent only with a
+photograph, so an extraction without one gets the same prompt as before.
+
+Measured the same day with `google/gemini-3.6-flash` through a local Worker by
+`scripts/photo-question-bench.mjs`: three photographs generated for it, whose
+model, prompt and date are in the README beside them, ten tellings in the two
+languages, three runs each. On the six tellings that put the teller in the
+picture without placing them, the old prompt's 18 replies asked who an unnamed
+person in it was 6 times, asked the teller to pick themselves out (*"Which of
+the two women in the photograph is you?"*) 6 times, asked about an unnamed
+person as a stranger twice more, and never offered the teller. A first
+wording, without the clause about the others, offered in all 18 and still
+asked about a second unnamed person 3 times, all at the birthday table
+(*"Kuka on tuo silmälaseja käyttävä nuori mies ja millainen hän oli?"*). The
+wording that shipped offered the teller exactly once in each of the 18 and
+asked about nobody else unnamed. Two of its offers, both in English at level 2,
+came labelled level 2, where a bare "yes" reads as strain
+(`QuestionLevel.wordFloor`); the other 16 were level 1. One reply took the yes
+for granted (*"What kind of fish were you trying to catch?"*). The tellings
+that say which child the teller is, and the one about a photograph from before
+the teller was born, got no offer in any run and kept their questions about the
+people in it. All 90 replies had three questions, one of them about something
+visible, and none asked what the speech had said; those two are read by hand.
+The runs cost 81 US cents over 95 extractions, a smoke test included, and the
+photographs about 4. Not measured: a telling that does not say whether the
+teller is in the picture, and real elderly speech.
+
 Two checks, both free. `scripts/extraction-context-check.swift` runs the builder
 and the de-duplicator, which is why `ExtractionContext.build` is pure over the
 model types rather than a method on `MemoryStore` — the store reaches

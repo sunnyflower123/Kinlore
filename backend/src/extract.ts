@@ -671,7 +671,9 @@ At least one question must be about something VISIBLE in it that the speech did 
 
 Describe, never identify. "the woman on the left", "that striped dress" — do not put a name to a face unless the speech named them, and never say who somebody is. You cannot see who they are and neither can the app; a guess in the shape of a fact is the one thing this archive cannot carry.
 
-Do not ask about age, health, money or mood, and do not remark on how anybody looks. The person answering is often in the photograph.`
+Do not ask about age, health, money or mood, and do not remark on how anybody looks. The person answering is often in the photograph.
+
+If the speech says the teller is in the photograph but not which of the people in it they are, any unnamed person in it may be them. Then ask about a person in it by offering the teller first, as a question answered yes or no: "Is the one holding up three fingers you?" Do not ask "Who is the one holding up three fingers?" — it asks the teller to name themselves as if they were a stranger. Offer the teller once, and do not also ask who another unnamed person in it is or what they were like: if the answer is no, the teller may be exactly that one.`
 				: `
 
 8. VALOKUVA. Käyttäjän viestissä on se valokuva, jota muisto koskee. Katso sitä.
@@ -680,7 +682,9 @@ Vähintään yhden kysymyksen on koskettava jotakin, mikä kuvassa NÄKYY ja mis
 
 Kuvaile, älä tunnista. "Nainen vasemmalla", "se raidallinen mekko" — älä liitä nimeä kasvoihin, ellei puhe ole nimennyt häntä, äläkä koskaan sano kuka joku on. Et näe sitä, eikä sovelluskaan näe; arvaus faktan muodossa on juuri se, mitä tämä arkisto ei voi kantaa.
 
-Älä kysy iästä, terveydestä, varallisuudesta tai mielialasta äläkä huomauta kenenkään ulkonäöstä. Vastaaja on usein itse kuvassa.`
+Älä kysy iästä, terveydestä, varallisuudesta tai mielialasta äläkä huomauta kenenkään ulkonäöstä. Vastaaja on usein itse kuvassa.
+
+Jos puhe kertoo, että kertoja on itse kuvassa, mutta ei sitä, kuka kuvan ihmisistä hän on, kuka tahansa kuvassa oleva nimeämätön ihminen voi olla hän. Kysy silloin kuvan ihmisestä ensin, onko hän kertoja itse, niin että vastaus on kyllä tai ei: "Oletko sinä se, joka näyttää kolmea sormea?" Älä kysy "Kuka on se, joka näyttää kolmea sormea?" — se pyytää kertojaa nimeämään itsensä kuin vieraan ihmisen. Tarjoa kertojaa vain kerran, äläkä kysy lisäksi, kuka joku toinen kuvan nimeämätön ihminen on tai millainen hän oli: jos vastaus on ei, kertoja voi olla juuri se toinen.`
 	}
 
 	return out
