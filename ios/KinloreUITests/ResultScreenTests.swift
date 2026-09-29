@@ -124,6 +124,52 @@ final class ResultScreenTests: XCTestCase {
         )
     }
 
+    /// A name confirmed here says where it went: into the family, not yet
+    /// into the tree, and the one tap to the card where a relative is added
+    /// (30 Sep 2026). Until then the row went away and nothing said so. The
+    /// names still waiting keep rule 4's sentence above them, and a place
+    /// confirmed is not said to join anything.
+    func testAConfirmedNameSaysWhereItWent() {
+        let app = launch(["-seed", "empty", "-screen", "result"])
+        XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
+
+        let tick = app.buttons["Vahvista Toivo"]
+        for _ in 0 ..< 6 where !(tick.exists && tick.isHittable) { app.swipeUp() }
+        XCTAssertTrue(tick.waitForExistence(timeout: 10), "never arrived: the heard name's row")
+        tick.tap()
+
+        let added = app.staticTexts["Toivo on nyt lisätty sukuun."]
+        XCTAssertTrue(added.waitForExistence(timeout: 10), "a confirmed name said nothing about where it went")
+        XCTAssertTrue(
+            app.staticTexts["Hän saa paikan sukupuussa, kun hänen kortilleen lisätään sukulainen."].exists,
+            "nothing said that the tree waits for a relative"
+        )
+        XCTAssertTrue(
+            app.staticTexts["Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt."].exists,
+            "rule 4's sentence went while names are still waiting"
+        )
+
+        // The card, where the relative is added, and back to the same note.
+        app.buttons["Avaa kortti: Toivo"].tap()
+        XCTAssertTrue(app.navigationBars["Toivo"].waitForExistence(timeout: 10), "the note did not open his card")
+        let relative = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Lisää sukulainen")).firstMatch
+        for _ in 0 ..< 6 where !relative.exists { app.swipeUp() }
+        XCTAssertTrue(relative.exists, "the card the note opened has no way to add a relative")
+        app.navigationBars["Toivo"].buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(added.waitForExistence(timeout: 10), "back from the card is not the result with its note")
+
+        // The place the telling heard is confirmed with no note of its own.
+        let place = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Vahvista Puumala")).firstMatch
+        for _ in 0 ..< 6 where !(place.exists && place.isHittable) { app.swipeUp() }
+        XCTAssertTrue(place.waitForExistence(timeout: 10), "never arrived: the place's row")
+        place.tap()
+        XCTAssertTrue(place.waitForNonExistence(timeout: 10), "the place was not confirmed")
+        XCTAssertEqual(
+            app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", "on nyt lisätty sukuun.")).count, 1,
+            "a place was said to have been added to the family"
+        )
+    }
+
     /// The paid archive is offered on a reader's phone and never on a
     /// grandparent's, where the one who pays is somebody else (docs/PLAN.md
     /// §9) — and never on a phone with no store to buy from, where an offer is

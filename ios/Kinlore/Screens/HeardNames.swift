@@ -128,6 +128,72 @@ struct HeardNameRow: View {
     }
 }
 
+/// Where a name went once it was confirmed: into the family, and, until a
+/// relative is added on the card, not yet into the drawn tree. It comes with
+/// the one tap to that card, where *"Lisää sukulainen"* is.
+///
+/// Until 30 Sep 2026 a confirmed row simply went away. Nothing said that the
+/// person was now in the family, or that the tree would still draw them
+/// under *"Ei vielä sukupuussa"* until they had a relative, and with larger
+/// text the new name was hard to find again on the list (the user's phone,
+/// 29 Sep 2026). It stands where the row was, on the result screen and on the
+/// heard names alike. The blind card has its own sentence and does not
+/// take this.
+struct ConfirmedNameNote: View {
+    @Environment(MemoryStore.self) private var store
+    let person: Subject
+
+    /// Whether the drawn tree has a place for them: a confirmed tie of kin,
+    /// not a friendship, to another confirmed person. `FamilyTreeView` draws
+    /// that as a line; everybody else it draws under *"Ei vielä sukupuussa"*,
+    /// or with the friends.
+    private var isInTheTree: Bool {
+        let family = Set(store.subjects(of: .person).filter(\.confirmed).map(\.id))
+        return store.relations.contains { relation in
+            relation.confirmed && relation.deletedAt == nil && relation.kind != .friendOf
+                && ((relation.fromSubjectID == person.id && family.contains(relation.toSubjectID))
+                    || (relation.toSubjectID == person.id && family.contains(relation.fromSubjectID)))
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Elder.affirmative)
+                    .accessibilityHidden(true)
+                Text("\(person.displayTitle) on nyt lisätty sukuun.")
+                    .font(.body.weight(.medium))
+                    .fixedSize(horizontal: false, vertical: true)
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (30 Sep 2026).
+                    .accessibilityIdentifier("confirmedName.added")
+            }
+            if !isInTheTree {
+                Text("Hän saa paikan sukupuussa, kun hänen kortilleen lisätään sukulainen.")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+                    // The same, and for the same reason.
+                    .accessibilityIdentifier("confirmedName.tree")
+            }
+            // A link drawn as the honey chip, on a list row as well as on the
+            // result's scroll view. A link in a `List` row takes the row, so
+            // on the heard names the whole note opens the card, which is the
+            // one thing it offers.
+            NavigationLink(value: person) {
+                Text("Avaa kortti")
+                    .elderSecondarySurface()
+            }
+            .buttonStyle(.plain)
+            .navigationLinkIndicatorVisibility(.hidden)
+            .accessibilityLabel(Text("Avaa kortti: \(person.displayTitle)"))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 /// The names the extraction heard and nobody has checked, one screen behind
 /// the people list.
 ///
@@ -138,9 +204,20 @@ struct HeardNameRow: View {
 /// answer is one tap: it is somebody, or it is not.
 struct HeardNamesScreen: View {
     @Environment(MemoryStore.self) private var store
+    /// The names confirmed while this screen is open. Their rows stay where
+    /// they were and turn into the note that says where each one went
+    /// (`ConfirmedNameNote`), instead of vanishing under the finger that
+    /// answered them.
+    @State private var confirmedHere: [String] = []
 
     private var heard: [Subject] {
         store.subjects(of: .person).filter { !$0.confirmed }
+    }
+
+    /// The rows: the names still waiting, and the ones confirmed here, in
+    /// the list's own order.
+    private var rows: [Subject] {
+        store.subjects(of: .person).filter { !$0.confirmed || confirmedHere.contains($0.id) }
     }
 
     /// The newest telling that named the person, for the sentence — the tidied
@@ -168,14 +245,23 @@ struct HeardNamesScreen: View {
                         .elderBody()
                         .listRowBackground(Elder.paper)
                 }
-                ForEach(heard) { subject in
-                    HeardNameRow(
-                        subject: subject,
-                        sentence: sentence(for: subject),
-                        onConfirm: { store.confirm(subjectID: subject.id) },
-                        onReject: { store.remove(subjectID: subject.id) }
-                    )
-                    .listRowBackground(Elder.paper)
+                ForEach(rows) { subject in
+                    if subject.confirmed {
+                        ConfirmedNameNote(person: subject)
+                            .padding(.vertical, 6)
+                            .listRowBackground(Elder.paper)
+                    } else {
+                        HeardNameRow(
+                            subject: subject,
+                            sentence: sentence(for: subject),
+                            onConfirm: {
+                                store.confirm(subjectID: subject.id)
+                                confirmedHere.append(subject.id)
+                            },
+                            onReject: { store.remove(subjectID: subject.id) }
+                        )
+                        .listRowBackground(Elder.paper)
+                    }
                 }
             }
         }

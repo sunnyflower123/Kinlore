@@ -164,6 +164,8 @@ const ARTEFACT_IDS = [
 	'whereMemoriesGo',
 	'setup.keepHere',
 	'onboarding-error',
+	'confirmedName.added',
+	'confirmedName.tree',
 ]
 const CLIPPED_IDS = [
 	'card.emptyState',

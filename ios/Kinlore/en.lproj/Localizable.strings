@@ -96,6 +96,9 @@
 "%lld nimeä odottaa tarkistusta" = "%lld names waiting to be checked";
 "Nämä nimet kuultiin kerronnassa. Emme lisää sukuun ketään jota et ole hyväksynyt." = "These names were heard in a telling. Nobody joins the family tree unless you say so.";
 "Kaikki kuullut nimet on tarkistettu." = "Every name heard has been checked.";
+"%@ on nyt lisätty sukuun." = "%@ has been added to the family.";
+"Hän saa paikan sukupuussa, kun hänen kortilleen lisätään sukulainen." = "They get a place in the family tree once a relative is added to their card.";
+"Avaa kortti: %@" = "Open card: %@";
 "Vahvista" = "Confirm";
 "Hylkää" = "Reject";
 "En muista" = "I do not remember";

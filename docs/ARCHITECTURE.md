@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 121 sweep tests, each auditing one screen at the default text size and again at the largest, out of 388 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 123 sweep tests, each auditing one screen at the default text size and again at the largest, out of 392 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -113,7 +113,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 388 UI tests, including 121 accessibility sweeps that audit a
+The UI suite has 392 UI tests, including 123 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -5698,6 +5698,29 @@ under its day. The telling itself carries *"Kuulin nämä"* on its row, so a
 proposal ignored at the result is answered where the sentence is rather than
 nowhere. A place's card kept its map after one day without it — a confirmed
 place's map asserts nothing (§18). `HeardNamesTests` pins the three.
+
+**And where a confirmed name went** (30 Sep 2026). A tick on either row, the
+result's or the door's, took the row away and said nothing: not that the
+person was now in the family, and not that the drawn tree would keep them
+under *"Ei vielä sukupuussa"* until somebody gave them a relative. With larger
+text the new name was then hard to find on the list (the user's phone, 29 Sep
+2026). The row now turns into a note where it stood (`ConfirmedNameNote`):
+*"Toivo on nyt lisätty sukuun."*, then, while he has no confirmed tie of kin
+to a confirmed person, *"Hän saa paikan sukupuussa, kun hänen kortilleen
+lisätään sukulainen."*, and *Avaa kortti*, a link to the card where *Lisää
+sukulainen* is. Rule 4's sentence stays as it was above the names still
+waiting. A place gets no note, having no tree to be missing from, and neither
+does a name that a correction merged into a card the family already had. The
+blind card is untouched. The Tell screens stand on a stack that opens cards
+(`CardOpeningStack`), with `openCard` as on the album's and the people tab's,
+because a telling read on a card pushed there would otherwise fall back to
+name links that take the whole row. `ResultScreenTests`, `HeardNamesTests`
+and `NameCorrectionTests` pin the note, and `testResultAfterAConfirmation`
+and `testHeardNamesAfterAConfirmation` measure it at both sizes. The door's
+list reported the note's two texts as partially unsupported at the default
+size only, on two runs of two with the frames identical, while the result's
+scroll view and the real largest size were clean, so the two are keyed as the
+simulation's artefact (`AccessibilityPolicy`).
 
 Measured: `testResult` and `testResultWithProposals`, both text sizes, green —
 which is what checks the new `.bordered` labels against the contrast minimum,

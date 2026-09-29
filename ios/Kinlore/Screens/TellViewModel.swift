@@ -69,6 +69,14 @@ final class TellViewModel {
     private(set) var placedSubject: Subject?
     /// People and places proposed by the AI. The user confirms or rejects.
     private(set) var proposals: [Subject] = []
+    /// The people confirmed on this result screen, by id, in the order they
+    /// were confirmed: each leaves a note where the names are checked, saying
+    /// that they are in the family now and offering the way to their card,
+    /// where a relative is added (`ConfirmedNameNote`, 30 Sep 2026). People
+    /// only, since a place has no tree to be missing from, and never a name
+    /// that a correction merged into a card the family already had, because
+    /// that person joined nothing here. Cleared with the telling.
+    private(set) var confirmedPeople: [String] = []
 
     /// The names this telling resolved to people and places the family
     /// already has. Resolved by title alone, which is also how two Mattis
@@ -1317,9 +1325,21 @@ final class TellViewModel {
         // thing twice.
         for subject in proposals where editedNames[subject.id] != nil {
             store.confirm(subjectID: subject.id)
+            noteConfirmed(subject)
         }
         proposals = proposals.filter { editedNames[$0.id] == nil }
         editedNames = [:]
+    }
+
+    /// Records a person confirmed here for the note (`confirmedPeople`), unless
+    /// the correction merged them into a card the family already had: the
+    /// store follows the merge to the survivor, whose id is not this one.
+    private func noteConfirmed(_ subject: Subject) {
+        guard subject.kind == .person,
+              store.subject(id: subject.id)?.id == subject.id,
+              !confirmedPeople.contains(subject.id)
+        else { return }
+        confirmedPeople.append(subject.id)
     }
 
     // MARK: - Handling proposals
@@ -1351,6 +1371,7 @@ final class TellViewModel {
         }
         store.confirm(subjectID: subject.id)
         proposals.removeAll { $0.id == subject.id }
+        noteConfirmed(subject)
     }
 
     func reject(_ subject: Subject) {
@@ -1383,6 +1404,7 @@ final class TellViewModel {
         wasOrganised = true
         placedSubject = nil
         proposals = []
+        confirmedPeople = []
         newQuestions = []
         replaced = []
         showsUpsell = false

@@ -810,7 +810,7 @@ private struct IdleView: View {
             .scrollBounceBehavior(.basedOnSize)
         }
         .sheet(item: $answering) { question in
-            NavigationStack {
+            CardOpeningStack {
                 TellScreen(
                     target: question.subjectID.flatMap { store.subject(id: $0) },
                     question: question,
@@ -2216,8 +2216,9 @@ private struct ResultView: View {
                 // places, the ones to check and the ones the family already
                 // has — each with the sentence it was heard in. *"Kuulin nämä"*
                 // rather than a question: the rows are the question, and
-                // nothing on them is asserted (12 Sep 2026).
-                if !model.proposals.isEmpty || !model.known.isEmpty {
+                // nothing on them is asserted (12 Sep 2026). A name confirmed
+                // here keeps the section open for its note (30 Sep 2026).
+                if !model.proposals.isEmpty || !model.known.isEmpty || !confirmedHere.isEmpty {
                     heardSection
                 }
 
@@ -2462,7 +2463,7 @@ private struct ResultView: View {
             Text("Kuulin nämä")
                 .font(.headline)
 
-            if !model.proposals.isEmpty {
+            if !model.proposals.isEmpty || !confirmedHere.isEmpty {
                 proposalSection
             }
             if !model.known.isEmpty {
@@ -2525,15 +2526,36 @@ private struct ResultView: View {
         }
     }
 
+    /// The people confirmed on this screen, as the store has them now: a
+    /// correction may have renamed one since, and a card removed since has no
+    /// note left to give.
+    private var confirmedHere: [Subject] {
+        model.confirmedPeople.compactMap { id in
+            store.subject(id: id).flatMap { $0.kind == .person && $0.confirmed ? $0 : nil }
+        }
+    }
+
     private var proposalSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Speech recognition gets roughly one proper noun in three wrong,
             // and this is the only moment when the teller still remembers what
-            // they said.
-            Text("Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.")
-                .font(.subheadline)
-                .foregroundStyle(Elder.supporting)
-                .fixedSize(horizontal: false, vertical: true)
+            // they said. While there is still a name to check.
+            if !model.proposals.isEmpty {
+                Text("Kirjoita nimi uudelleen jos kuulin väärin. Emme lisää sukuun ketään jota et ole hyväksynyt.")
+                    .font(.subheadline)
+                    .foregroundStyle(Elder.supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            // Where each confirmed name went, above the names still waiting,
+            // so the one just answered takes the place of its row when the
+            // rows are answered from the top (`ConfirmedNameNote`).
+            ForEach(confirmedHere) { person in
+                ConfirmedNameNote(person: person)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .elderCard()
+            }
 
             ForEach(model.proposals) { subject in
                 ProposalRow(

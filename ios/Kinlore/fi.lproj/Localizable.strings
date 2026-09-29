@@ -86,6 +86,9 @@
 "%lld nimeä odottaa tarkistusta" = "%lld nimeä odottaa tarkistusta";
 "Nämä nimet kuultiin kerronnassa. Emme lisää sukuun ketään jota et ole hyväksynyt." = "Nämä nimet kuultiin kerronnassa. Emme lisää sukuun ketään jota et ole hyväksynyt.";
 "Kaikki kuullut nimet on tarkistettu." = "Kaikki kuullut nimet on tarkistettu.";
+"%@ on nyt lisätty sukuun." = "%@ on nyt lisätty sukuun.";
+"Hän saa paikan sukupuussa, kun hänen kortilleen lisätään sukulainen." = "Hän saa paikan sukupuussa, kun hänen kortilleen lisätään sukulainen.";
+"Avaa kortti: %@" = "Avaa kortti: %@";
 "Vahvista" = "Vahvista";
 "Hylkää" = "Hylkää";
 "En muista" = "En muista";

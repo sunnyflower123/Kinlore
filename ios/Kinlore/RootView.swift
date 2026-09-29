@@ -123,10 +123,11 @@ struct RootView: View {
             // was navigated to from a photo, a person or a question and already
             // knows what it is about.
             //
-            // On a stack of its own since 30 Sep 2026, for Settings and
-            // nothing else: the gear every tab has pushes it here
-            // (`TellScreen.showsSettings`).
-            NavigationStack {
+            // On a stack of its own since 30 Sep 2026: the gear every tab has
+            // pushes Settings here (`TellScreen.showsSettings`), and a name
+            // confirmed on the result opens its card here
+            // (`ConfirmedNameNote`).
+            CardOpeningStack {
                 TellScreen(usesDeck: true)
                     .settingsDestinations()
             }
@@ -1778,12 +1779,12 @@ struct SubjectDetailScreen: View {
             }
         }
         .sheet(isPresented: $isTelling) {
-            NavigationStack {
+            CardOpeningStack {
                 TellScreen(target: subject, onClose: { isTelling = false })
             }
         }
         .sheet(item: $answering) { question in
-            NavigationStack {
+            CardOpeningStack {
                 TellScreen(target: subject, question: question, onClose: { answering = nil })
             }
         }
@@ -2257,12 +2258,40 @@ private extension View {
 }
 
 extension EnvironmentValues {
-    /// Pushes a card onto the stack the view is on — the people tab's or
-    /// the album's, the two that open cards. For a way to a card inside a
+    /// Pushes a card onto the stack the view is on — the people tab's, the
+    /// album's, or since 30 Sep 2026 a Tell screen's (`CardOpeningStack`),
+    /// the stacks that open cards. For a way to a card inside a
     /// list row, which a `NavigationLink` cannot be without taking the whole
     /// row (`MemoryRow.namedHereLinks`, `HeardNameRow.open`). Set on the
     /// stack itself, so the cards it pushes have it too; nil anywhere else.
     @Entry var openCard: ((Subject) -> Void)? = nil
+}
+
+/// A stack that opens cards the way the album's and the people tab's do. It
+/// carries the card and map destinations, and `openCard` for the rows on a
+/// card that cannot be links.
+///
+/// The Tell screens stand on one since 30 Sep 2026, when a name confirmed on
+/// the result got its way to its card (`ConfirmedNameNote`). Without
+/// `openCard`, a telling read on a card pushed there would fall back to name
+/// links that take its whole row (`HeardNameRow.open`).
+struct CardOpeningStack<Content: View>: View {
+    @State private var path = NavigationPath()
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        NavigationStack(path: $path) {
+            content()
+                .navigationDestination(for: Subject.self) { subject in
+                    SubjectDetailScreen(subject: subject)
+                        // The Tell tab hides its bar once a telling is under
+                        // way, and a card pushed over it needs its own back.
+                        .toolbar(.visible, for: .navigationBar)
+                }
+                .placesMapDestinations()
+        }
+        .environment(\.openCard, { path.append($0) })
+    }
 }
 
 private struct MemoryRow: View {

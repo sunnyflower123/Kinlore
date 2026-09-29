@@ -344,6 +344,11 @@ final class NameCorrectionTests: XCTestCase {
         let tick = app.buttons["Vahvista Toivonen"]
         XCTAssertTrue(tick.waitForExistence(timeout: 5), "the tick does not say the name it confirms")
         tick.tap()
+        // And the note the tick leaves says the typed name too (30 Sep 2026).
+        XCTAssertTrue(
+            app.staticTexts["Toivonen on nyt lisätty sukuun."].waitForExistence(timeout: 15),
+            "the note does not name the person as typed"
+        )
 
         app.tabBars.buttons["Ihmiset"].tap()
         XCTAssertTrue(app.staticTexts["Toivonen"].waitForExistence(timeout: 15), "the typed name is not in the family")

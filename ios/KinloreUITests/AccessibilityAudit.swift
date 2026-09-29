@@ -1544,6 +1544,18 @@ enum AccessibilityPolicy {
         // audited clean at both sizes. The button on its words, as
         // `relative.add` is.
         "whereMemoriesGo", "setup.keepHere", "onboarding-error",
+        // The note a name confirmed behind the heard-names door turns into
+        // (30 Sep 2026): *"Aino on nyt lisätty sukuun."* and the line that
+        // the tree waits for a relative. A new row, so none of its code was
+        // ever clean to compare with: at the default size only, in the door's
+        // list, 201.33 × 20.33 pt at y 317.67 and 329.33 × 38 pt at y 348, on
+        // two runs of two, one in a batch and one alone, the frames identical
+        // to the decimal. The same note on the result's scroll view audited
+        // clean at both sizes in the same batch, and the door's list at the
+        // real largest size was clean with nothing forgiven on both runs. On
+        // the words, as `relative.add` is, and set for this alone, because
+        // the sentence carries a name.
+        "confirmedName.added", "confirmedName.tree",
     ]
 
     /// The nine that reported `.textClipped` at the default size, and only

@@ -1406,6 +1406,19 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The result once a name is confirmed: the note that says where it went,
+    /// in the place of its row and above the names still waiting (30 Sep
+    /// 2026). A new state of the screen, so it is measured at both sizes.
+    func testResultAfterAConfirmation() throws {
+        try sweep(
+            "Tulos, nimi vahvistettu",
+            arguments: ["-seed", "empty", "-screen", "result"]
+        ) { app, _ in
+            reach(app.buttons["Vahvista Toivo"], in: app, "the heard name's row", swipes: 6).tap()
+            require(app.staticTexts["Toivo on nyt lisätty sukuun."], "the note in its place")
+        }
+    }
+
     /// The same card as a spoken telling reaches it since 26 Sep 2026: through
     /// its first question and "Riittää tältä erää", with the names, the decade
     /// and "Kysyisin vielä" all waiting on it. `-screen result` above types
@@ -1728,6 +1741,16 @@ final class AccessibilitySweepTests: XCTestCase {
         try sweep("Kuullut nimet", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
             require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
             require(app.buttons["Vahvista Aino"], "the name heard, with its answer")
+        }
+    }
+
+    /// The same screen once the name is confirmed: the note in the place of
+    /// its row, with the way to her card (30 Sep 2026).
+    func testHeardNamesAfterAConfirmation() throws {
+        try sweep("Kuullut nimet, vahvistettu", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+            require(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch, "the door").tap()
+            require(app.buttons["Vahvista Aino"], "the name heard, with its answer").tap()
+            require(app.staticTexts["Aino on nyt lisätty sukuun."], "the note in its place")
         }
     }
 

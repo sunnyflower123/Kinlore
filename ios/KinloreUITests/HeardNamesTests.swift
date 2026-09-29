@@ -40,6 +40,41 @@ final class HeardNamesTests: XCTestCase {
         )
     }
 
+    /// A name confirmed behind the door says where it went, in the place of
+    /// its row: into the family, not yet into the tree, and the one tap to
+    /// the card where a relative is added (30 Sep 2026). The name still
+    /// waiting keeps its row.
+    func testAConfirmedNameSaysWhereItWent() {
+        let app = launch(["-seed", "empty", "-screen", "result"])
+        XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
+
+        app.tabBars.buttons["Ihmiset"].tap()
+        let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
+        XCTAssertTrue(door.waitForExistence(timeout: 10), "the names heard have no door")
+        door.tap()
+
+        let tick = app.buttons["Vahvista Toivo"]
+        XCTAssertTrue(tick.waitForExistence(timeout: 10), "never arrived: the names heard")
+        tick.tap()
+        XCTAssertTrue(
+            app.staticTexts["Toivo on nyt lisätty sukuun."].waitForExistence(timeout: 10),
+            "a confirmed name said nothing about where it went"
+        )
+        XCTAssertTrue(
+            app.staticTexts["Hän saa paikan sukupuussa, kun hänen kortilleen lisätään sukulainen."].exists,
+            "nothing said that the tree waits for a relative"
+        )
+        XCTAssertTrue(app.buttons["Vahvista Aino"].exists, "the name still waiting lost its row")
+
+        app.buttons["Avaa kortti: Toivo"].tap()
+        XCTAssertTrue(app.navigationBars["Toivo"].waitForExistence(timeout: 10), "the note did not open his card")
+        app.navigationBars["Toivo"].buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(
+            app.staticTexts["Toivo on nyt lisätty sukuun."].waitForExistence(timeout: 10),
+            "back from the card is not the names heard with the note"
+        )
+    }
+
     /// The same telling names a place, and a place nobody has checked is not
     /// a card among the family's places.
     func testAnUncheckedPlaceIsNotAmongThePlaces() {
