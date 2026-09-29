@@ -28,6 +28,10 @@ struct GalleryScreen: View {
     /// What the last import brought in. Held so the date can be asked once for
     /// the whole pile rather than thirty times, or not at all.
     @State private var justImported: [Subject] = []
+    /// What the camera saved in the session now open. One is opened on its
+    /// card when the camera closes (`openTheOnePhotographed`); more stay in
+    /// the album.
+    @State private var photographed: [Subject] = []
     #if DEBUG
     @State private var didSeedImport = false
     #endif
@@ -347,7 +351,7 @@ struct GalleryScreen: View {
                         Label("Kuvaa vanha valokuva", systemImage: "camera")
                     }
                     Button {
-                        isPickingFromLibrary = true
+                        pickFromLibrary()
                     } label: {
                         Label("Valitse kuvista", systemImage: "photo.on.rectangle.angled")
                     }
@@ -384,8 +388,20 @@ struct GalleryScreen: View {
         }
         // Full screen rather than a sheet: a camera under a card that can
         // be dragged away is a camera that gets dragged away mid-album.
-        .fullScreenCover(isPresented: $isPhotographing) {
-            CameraScreen(pickFromLibraryInstead: { isPickingFromLibrary = true })
+        //
+        // One photograph taken is opened once the camera has gone, from
+        // `onDismiss`, so that its card is pushed onto the album and not
+        // under a cover still on its way down.
+        .fullScreenCover(isPresented: $isPhotographing, onDismiss: openTheOnePhotographed) {
+            CameraScreen(
+                pickFromLibraryInstead: {
+                    // On to the phone's photographs: whatever the camera
+                    // took stays in the album, and the picker comes next.
+                    photographed = []
+                    pickFromLibrary()
+                },
+                didSave: { photographed.append($0) }
+            )
         }
         #if DEBUG
         // `-screen camera`, alongside the other screenshot aids: the camera
@@ -622,7 +638,7 @@ struct GalleryScreen: View {
             // Second, and quieter. A grandchild who has already scanned at a
             // computer has files; everybody else has an album.
             Button {
-                isPickingFromLibrary = true
+                pickFromLibrary()
             } label: {
                 Text("Valitse kuvista")
                     .font(.body.weight(.medium))
@@ -929,11 +945,53 @@ struct GalleryScreen: View {
             arrived.append(subject)
         }
 
-        // Asked for two or more, and never for one: a single photograph is
-        // opened and looked at, and its own card already carries the row. A
-        // pile is the case with no such moment — thirty cards nobody will open
-        // thirty times.
+        didImport(arrived, chosen: items.count)
+    }
+
+    /// Where an import ends, and what it opens.
+    ///
+    /// One photograph chosen, and arrived, is opened on its card, on this
+    /// stack as `openCard` opens one (30 Sep 2026). It is the photograph
+    /// somebody is about to tell about, and until then it landed somewhere in
+    /// the grid with nothing to say which tile it was. The card carries the
+    /// date row, so the date is asked for two or more only: a pile is the
+    /// case with no such moment — thirty cards nobody will open thirty times.
+    ///
+    /// On what was chosen as well as what arrived: two chosen and one lost
+    /// stay in the album, and the alert about the lost one is read over the
+    /// album rather than over a card nobody asked to open.
+    private func didImport(_ arrived: [Subject], chosen: Int) {
+        if chosen == 1, let photo = arrived.first {
+            path.append(photo)
+        }
         justImported = arrived.count > 1 ? arrived : []
+    }
+
+    /// The camera's half of the same rule: one photograph taken in the
+    /// session that has just closed is opened on its card, and two or more
+    /// stay in the album, where a sitting of thirty is looked at.
+    private func openTheOnePhotographed() {
+        if photographed.count == 1 {
+            path.append(photographed[0])
+        }
+        photographed = []
+    }
+
+    /// The way in from the phone's own photographs: the system picker, whose
+    /// choice `importPhotos` brings in.
+    ///
+    /// `-library stub` (DEBUG) stands in for the picker, which a test run
+    /// cannot drive, with one generated photograph handed to the import's own
+    /// ending — the same stand-in the face picker takes (`FacePickerSheet`).
+    private func pickFromLibrary() {
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "library") == "stub" {
+            let photo = MemoryStore.demoPhotoData().flatMap { store.addPhotograph(imageData: $0) }
+            didImport(photo.map { [$0] } ?? [], chosen: 1)
+            return
+        }
+        #endif
+        isPickingFromLibrary = true
     }
 }
 

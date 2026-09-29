@@ -10,6 +10,12 @@ import XCTest
 /// `-import 3` stands in for the system photo picker, which a test run cannot
 /// drive. What it does is exactly what a real import does at the end: hand the
 /// sheet the subjects that just arrived.
+///
+/// And one photograph, since 30 Sep 2026, which is opened on its card rather
+/// than left somewhere in the grid: chosen from the phone (`-library stub`,
+/// one generated picture in place of the picker) or taken with the camera
+/// (`-camera stub`, whose shutter saves the same picture). Two taken stay in
+/// the album.
 final class ImportTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -59,5 +65,91 @@ final class ImportTests: XCTestCase {
                 "did not get back to the gallery"
             )
         }
+    }
+
+    /// One photograph chosen from the phone is the one somebody is about to
+    /// tell about: its card opens, on the album's stack, and the pile's
+    /// question is not asked of it.
+    func testOnePhotoChosenFromThePhoneOpensItsCard() {
+        let app = launch(["-seed", "archive", "-tab", "memories", "-library", "stub"])
+
+        let add = app.buttons["Lisää kuvia"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "never arrived: the way to add photographs")
+        add.tap()
+        let choose = app.buttons["Valitse kuvista"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 10), "never arrived: the row that picks from the phone")
+        choose.tap()
+
+        XCTAssertTrue(
+            app.navigationBars["Valokuva"].waitForExistence(timeout: 10),
+            "one photograph chosen did not open its card"
+        )
+        XCTAssertTrue(
+            app.buttons["Kerro tästä muisto"].waitForExistence(timeout: 10),
+            "the card that opened is not the photograph's"
+        )
+        XCTAssertFalse(
+            app.staticTexts["Milloin nämä olivat?"].exists,
+            "one photograph was asked the question meant for a pile"
+        )
+        // Back is the album: the card was pushed onto its stack.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(
+            app.navigationBars["Albumi"].waitForExistence(timeout: 10),
+            "the card was not opened over the album"
+        )
+    }
+
+    /// One photograph taken opens its card once the camera has closed.
+    func testOnePhotographTakenOpensItsCardWhenTheCameraCloses() {
+        let app = launch(["-seed", "empty", "-tab", "memories", "-camera", "stub"])
+
+        photograph(1, in: app)
+
+        XCTAssertTrue(
+            app.navigationBars["Valokuva"].waitForExistence(timeout: 10),
+            "one photograph taken did not open its card when the camera closed"
+        )
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(
+            app.navigationBars["Albumi"].waitForExistence(timeout: 10),
+            "the card was not opened over the album"
+        )
+    }
+
+    /// Two taken stay in the album. The camera is for the sitting of thirty,
+    /// and thirty cards opened one on another would be thirty ways back.
+    func testTwoPhotographsTakenStayInTheAlbum() {
+        let app = launch(["-seed", "empty", "-tab", "memories", "-camera", "stub"])
+
+        photograph(2, in: app)
+
+        XCTAssertTrue(
+            app.navigationBars["Albumi"].waitForExistence(timeout: 10),
+            "the camera did not close onto the album"
+        )
+        XCTAssertFalse(
+            app.navigationBars["Valokuva"].waitForExistence(timeout: 3),
+            "two photographs taken opened a card"
+        )
+        let tiles = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Valokuva"))
+        XCTAssertTrue(tiles.firstMatch.waitForExistence(timeout: 10), "never arrived: the photographs taken")
+        XCTAssertEqual(tiles.count, 2, "the camera did not save two photographs")
+    }
+
+    /// Opens the camera from the empty album, presses the shutter `count`
+    /// times, each once the last is counted, and closes it.
+    private func photograph(_ count: Int, in app: XCUIApplication) {
+        let camera = app.buttons["Kuvaa vanha valokuva"]
+        XCTAssertTrue(camera.waitForExistence(timeout: 10), "never arrived: the way to the camera")
+        camera.tap()
+        let shutter = app.buttons["Kuvaa"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10), "never arrived: the shutter")
+        for shot in 1 ... count {
+            shutter.tap()
+            let counted = shot == 1 ? "Kuvattu 1 kuva" : "Kuvattu \(shot) kuvaa"
+            XCTAssertTrue(app.staticTexts[counted].waitForExistence(timeout: 10), "shot \(shot) was not saved")
+        }
+        app.buttons["Valmis"].tap()
     }
 }

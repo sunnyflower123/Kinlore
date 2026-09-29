@@ -38,6 +38,11 @@ struct CameraScreen: View {
     /// end — the same trade as the refused microphone (ARCHITECTURE §8.9): the
     /// way out is replaced by the way on, rather than being made prettier.
     let pickFromLibraryInstead: () -> Void
+    /// Each photograph as it is saved. The album opens the card of the one a
+    /// session took, once the camera has closed, and leaves two or more in
+    /// the grid (`GalleryScreen.openTheOnePhotographed`); the shutter itself
+    /// still never closes.
+    let didSave: (Subject) -> Void
 
     @State private var camera = CameraSession()
     @State private var captured = 0
@@ -154,7 +159,9 @@ struct CameraScreen: View {
         guard let filename = MediaStore.save(imageData: data) else { return }
         // The identical row a picked photograph makes. The title is left empty
         // on purpose — see `GalleryScreen.importPhotos`, which says why.
-        store.add(Subject(kind: .photo, title: "", imageFilename: filename))
+        let photo = Subject(kind: .photo, title: "", imageFilename: filename)
+        store.add(photo)
+        didSave(photo)
         captured += 1
         justSaved = true
         try? await Task.sleep(for: .seconds(2))
@@ -359,7 +366,13 @@ final class CameraSession: NSObject, AVCapturePhotoCaptureDelegate {
     @MainActor
     func capture() async -> Data? {
         #if DEBUG
-        if UserDefaults.standard.string(forKey: "camera") == "stub" { return nil }
+        // The stub's shutter saves the generated picture `-seed deck` and
+        // `-library stub` use, so that a test can photograph one and two
+        // (`ImportTests`). It returned nothing until 30 Sep 2026, when the
+        // stub only had controls to draw.
+        if UserDefaults.standard.string(forKey: "camera") == "stub" {
+            return MemoryStore.demoPhotoData()
+        }
         #endif
         guard !isCapturing else { return nil }
         isCapturing = true
