@@ -358,7 +358,7 @@ case $MODE in
 			what you say goes to the deployed Worker and comes back written down.
 
 			  1. Start a family archive: type your name and press "Create the
-			     archive". Do not choose to keep the memories on this phone only,
+			     archive", not "Keep the memories on this phone only" under it,
 			     because nothing said in such an archive is written out as text.
 			     The sheet that follows asks whose memories to keep; "Close"
 			     skips it.
@@ -428,9 +428,9 @@ case $MODE in
 			Worker all the same, opened from the home screen too.
 
 			  1. Start a family archive: type your name and press "Create the
-			     archive", and "Close" the sheet that follows. Do not keep the
-			     memories on this phone only: the paywall is for a family on the
-			     server.
+			     archive", not "Keep the memories on this phone only" under it,
+			     because the paywall is for a family on the server. "Close" the
+			     sheet that follows.
 			  2. Open Settings: Family tree, the ⋯ at the top right, and
 			     "Settings". Then "Family members and invitations": "Open the
 			     whole archive", under Usage, opens the paywall.
@@ -443,10 +443,10 @@ case $MODE in
 			one that joined with an invitation too, stops meeting the free tier's
 			limits of ten minutes of transcription a month, twenty photographs and
 			five colourisations a month, and "Family members and invitations" says
-			its Status is Paid.
-			Telling was never limited. A Test Store subscription renews on a fast
-			clock and ends by itself after a few renewals, and the family is then
-			on the free tier again with everything it holds.
+			its Status is Paid. Telling was never limited. A Test Store
+			subscription renews on a fast clock and ends by itself after a few
+			renewals, and the family is then on the free tier again with
+			everything it holds.
 		EOF
 		;;
 esac

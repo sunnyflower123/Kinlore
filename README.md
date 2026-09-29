@@ -150,8 +150,8 @@ minutes, and this Release build takes longer than the Debug one Xcode starts
 with; a second run rebuilds only what changed. The script installs nothing and
 leaves every other simulator alone. Then:
 
-1. **Start a family archive.** Type your name and press *Create the archive*.
-   Do not choose to keep the memories on this phone only, because nothing said
+1. **Start a family archive.** Type your name and press *Create the archive*,
+   not *Keep the memories on this phone only* under it, because nothing said
    in such an archive is written out as text. The sheet that follows asks
    whose memories to keep; *Close* skips it.
 2. **Tell it something.** The *Tell* tab opens on an example to read aloud:
@@ -169,10 +169,10 @@ transcription a month.
 
 `./scripts/try-it.sh --two` opens it on two simulators that can share one
 family. On the first, open Settings: *Family tree*, the ⋯ at the top right,
-and *Settings*. Then *Family members and invitations*,
-*Invite a family member* and *Share the invitation*. On the second: *Join with
-an invitation link*, paste the whole invitation and press *Join a family*. An
-invitation is valid for a week and lets one person in.
+and *Settings*. Then *Family members and invitations*, *Invite a family
+member* and *Share the invitation*. On the second: *Join with an invitation
+link*, paste the whole invitation and press *Join a family*. An invitation is
+valid for a week and lets one person in.
 
 Both of those are the real app, and the script opens nothing else unless you
 ask. What a family's archive looks like a year or two in is the one thing a
