@@ -3763,6 +3763,21 @@ the page fits and rests at the top, *"Älä tallenna tätä"* has its first 16.5
 points in sight at the screen's bare bottom edge, with no home indicator in
 front of them.
 
+**The Kerro tab's navigation stack lost the scroll — 29 Sep 2026.** Since the
+gear (`SettingsGear`, §14) stands on Kerro, the tab has a navigation stack of
+its own, and on a reader's phone its bar leaves with the recording as the tab
+bar does. The room then changes twice on a 17 Pro, 675 to 729 to 778, and each
+time the steps start over and end at the disc again, as they should. The
+scroll is what broke: UIKit takes the leaving bars out of the scroll view's
+insets in a pass of its own, after the room, and a scroll asked for between the
+two is lost. At the largest size the bottom inset went from 83 to 34 some 13 ms
+after the room reached 778, and the page stayed at its top, with the caption
+wholly below the window and the disc's last 37 points too. The frame checks in
+`testRecordingAQuestionIsAudited` and `testRecordingTheExampleIsAudited` caught
+it. What the page decides is unchanged; it now lands again whenever the scroll
+view's insets move (`WhenTheInsetsMove`). Only iOS 18 and later report them,
+so on iOS 17 the landing is still asked for once per decision.
+
 ### Three defaults, three fixes
 
 | Default | Measured | Replaced with |

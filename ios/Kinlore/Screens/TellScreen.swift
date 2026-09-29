@@ -1465,13 +1465,19 @@ private struct RecordingView: View {
                 // at the largest size it asks for the disc on a page the real
                 // room then shows whole; this way the last decision is the
                 // one that holds, whatever became of the first scroll.
-                .onChange(of: atTheDisc) { _, out in
-                    if out {
-                        reader.scrollTo(Self.stop, anchor: .bottom)
-                    } else {
-                        reader.scrollTo(Self.page, anchor: .top)
-                    }
-                }
+                .onChange(of: atTheDisc) { _, _ in land(reader) }
+                // And again when the scroll view's insets move, which they do
+                // after the room has: since the Kerro tab has a navigation
+                // stack of its own (`SettingsGear`), UIKit takes the bars that
+                // leave with the recording out of the insets in a pass of its
+                // own. On a 17 Pro at the largest size the bottom inset went
+                // from 83 to 34 some 13 ms after the room had grown to 778,
+                // and the scroll to the disc asked for between the two was
+                // lost: the page stayed at its top, with the caption wholly
+                // below the window and the disc's last 37 points too
+                // (29 Sep 2026). What the page lands on is still decided
+                // against the room; this only makes the landing hold.
+                .modifier(WhenTheInsetsMove { land(reader) })
             }
         }
         // The recorder keeps running while this is on screen, so saying no to it
@@ -1668,6 +1674,16 @@ private struct RecordingView: View {
     private static let page = "RecordingView.page"
     private static let stop = "RecordingView.stop"
 
+    /// Puts the page where `atTheDisc` says: the caption and the daylight
+    /// under it at the bottom of the room, or the page's top.
+    private func land(_ reader: ScrollViewProxy) {
+        if atTheDisc {
+            reader.scrollTo(Self.stop, anchor: .bottom)
+        } else {
+            reader.scrollTo(Self.page, anchor: .top)
+        }
+    }
+
     /// The next step, when the caption ends below the page's room — and only
     /// when it was measured as the screen is now. As in `IdleView`, what
     /// starts it is the caption out of sight and what it stops at is 8
@@ -1684,6 +1700,24 @@ private struct RecordingView: View {
             return
         }
         steps[typeSize, default: []].insert(next)
+    }
+}
+
+/// Calls `action` when the insets of the scroll view it is on change, as
+/// they do when a bar comes or goes, and never for a scroll. Before iOS 18
+/// nothing reports a scroll view's insets, and the page keeps the landing it
+/// was given (`RecordingView.land`).
+private struct WhenTheInsetsMove: ViewModifier {
+    let action: () -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18, *) {
+            content.onScrollGeometryChange(for: EdgeInsets.self) { $0.contentInsets } action: { _, _ in
+                action()
+            }
+        } else {
+            content
+        }
     }
 }
 

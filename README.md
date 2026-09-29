@@ -168,8 +168,8 @@ What you say is heard for real, within the free tier's ten minutes of
 transcription a month.
 
 `./scripts/try-it.sh --two` opens it on two simulators that can share one
-family. On the first, open Settings: *Family tree*, the ⋯ at the top right,
-and *Settings*. Then *Family members and invitations*, *Invite a family
+family. On the first, open Settings with the gear at the top right of
+*Album*. Then *Family members and invitations*, *Invite a family
 member* and *Share the invitation*. On the second: *Join with an invitation
 link*, paste the whole invitation and press *Join a family*. An invitation is
 valid for a week and lets one person in.
