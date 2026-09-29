@@ -318,7 +318,14 @@ cd ios && xcodegen generate
 # app supports. `--two` adds "Kinlore Try 2", for an invitation between two
 # phones; `--example` builds the Debug scheme and opens `-seed large`, the
 # invented Koivula family's archive, on "Kinlore Example", and only when
-# asked for. It exists because the scheme Xcode opens on runs on stubs, and
+# asked for. `--paywall` builds the Debug scheme too, because RevenueCat's SDK
+# stops a Release build given a Test Store key, and writes the deployed
+# Worker's address and that key, asked for without echo or read from
+# KINLORE_RC_KEY, into the app's settings on "Kinlore Paywall". The Release
+# runs delete `rcKey` from their own simulators' settings before launching,
+# and every run sets the app's own language to English (`AppleLanguages`, the
+# per-app setting), because the guides it prints name the English buttons.
+# The script exists because the scheme Xcode opens on runs on stubs, and
 # until 29 Sep 2026 the README sent a judge there: whatever they said, a
 # canned sample came back. It finds its simulators by exact name
 # and never touches another, and it needs no DEVELOPER_DIR prefix, because it

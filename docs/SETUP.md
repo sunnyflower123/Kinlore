@@ -91,7 +91,8 @@ the only kind this project has, and RevenueCat's SDK refuses one in a build
 without `DEBUG`: it shows an alert and then stops the app with `fatalError`
 (`checkForSimulatedStoreAPIKeyInRelease` in purchases-ios's
 `Configuration.swift`). The paywall and the purchase belong to the `Kinlore`
-scheme, which is Debug — `-rcKey` there, and `-api` beside it for a backend.
+scheme, which is Debug — `-rcKey` there, and `-api` beside it for a backend —
+and `scripts/try-it.sh --paywall` builds that scheme against the deployed Worker.
 
 ### Health check
 
@@ -109,7 +110,7 @@ user just told.
 
 | Key | Note |
 |-----|------|
-| RevenueCat **Test Store API key** | Designed for the client side, and still not in the repository: in a public clone it would hand the paid tier on the production Worker to anybody. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling — **in a Debug build only**, because a Release build stops on a Test Store key by RevenueCat's design (the `Kinlore Production` paragraph above). Without a key, purchases are unavailable but the app works normally. |
+| RevenueCat **Test Store API key** | Designed for the client side, and still not in the repository: in a public clone it would hand the paid tier on the production Worker to anybody. Supplied with the launch argument `-rcKey <key>` so Test Store and production can be swapped without recompiling — **in a Debug build only**, because a Release build stops on a Test Store key by RevenueCat's design (the `Kinlore Production` paragraph above). `scripts/try-it.sh --paywall` writes it into the app's settings on a simulator of its own instead, beside the deployed Worker's address, so that a launch from the home screen has both. Without a key, purchases are unavailable but the app works normally. |
 
 ### RevenueCat — the project behind the keys
 

@@ -109,8 +109,8 @@ and `./scripts/verify.sh` runs them all.
 A clone has no paywall, because the paywall needs a RevenueCat key and none is
 in the repository. A Test Store key in a public repo would hand the paid tier on
 the production Worker, and its model bill, to anybody.
-[DETAILS.md](docs/DETAILS.md#who-pays) has the full section, including how to
-see the paywall with a key of your own.
+[See the paywall](#see-the-paywall), under *Try it*, opens it with the key, and
+[DETAILS.md](docs/DETAILS.md#who-pays) has the full section.
 
 ## Where to look
 
@@ -168,8 +168,8 @@ What you say is heard for real, within the free tier's ten minutes of
 transcription a month.
 
 `./scripts/try-it.sh --two` opens it on two simulators that can share one
-family. On the first, open Settings: the gear on *People*, or the menu on
-*Family tree* once somebody is in it. Then *Family members and invitations*,
+family. On the first, open Settings: *Family tree*, the ⋯ at the top right,
+and *Settings*. Then *Family members and invitations*,
 *Invite a family member* and *Share the invitation*. On the second: *Join with
 an invitation link*, paste the whole invitation and press *Join a family*. An
 invitation is valid for a week and lets one person in.
@@ -197,6 +197,23 @@ language, whatever you said (`StubTranscriptionService`), which is what the
 tests need and why the script builds the other scheme. The backend, the keys
 and the command-line test runs are in
 [DETAILS.md](docs/DETAILS.md#setting-it-up) and [SETUP.md](docs/SETUP.md).
+
+### See the paywall
+
+The script's default build cannot show the paywall, because RevenueCat's SDK
+stops a Release build that is given a Test Store key, the only kind of key
+this project has. `--paywall` builds the Debug one instead, against the same
+deployed Worker, on a simulator of its own called *Kinlore Paywall*:
+
+```bash
+./scripts/try-it.sh --paywall
+```
+
+It asks for the key without showing it (or reads `KINLORE_RC_KEY`) and writes
+it nowhere but that simulator. The Test Store key is in the submission's
+Additional info, for judges. A Test Store purchase is simulated and no money
+moves; the script says where the offer is and what buying it opens for the
+whole family.
 
 ## Licence
 

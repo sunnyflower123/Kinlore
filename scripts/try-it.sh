@@ -4,6 +4,7 @@
 #   ./scripts/try-it.sh             Kinlore against the deployed Worker
 #   ./scripts/try-it.sh --two       the same on two simulators, to share a family
 #   ./scripts/try-it.sh --example   an invented family's archive, on stubs
+#   ./scripts/try-it.sh --paywall   the paywall, with a RevenueCat Test Store key
 #
 # Xcode opens this project on the `Kinlore` scheme, a Debug build that runs on
 # stubs, and the stubs cannot listen: a recording comes back as one of three
@@ -15,11 +16,23 @@
 # scheme's Run does in Xcode.
 #
 # It touches nothing it did not make. Its simulators are its own, found by name
-# and made on the first run: "Kinlore Try", "Kinlore Try 2" with --two and
-# "Kinlore Example" with --example, on the newest iOS runtime installed that
-# the app runs on. Its build goes to build/try-it, which git ignores. A second
-# run reuses both, keeps what the app holds and rebuilds only what changed. It
-# installs nothing on the Mac: Xcode and XcodeGen are asked for, never fetched.
+# and made on the first run: "Kinlore Try", "Kinlore Try 2" with --two,
+# "Kinlore Example" with --example and "Kinlore Paywall" with --paywall, on the
+# newest iOS runtime installed that the app runs on. Its build goes to
+# build/try-it, which git ignores. A second run reuses both, keeps what the app
+# holds and rebuilds only what changed. It installs nothing on the Mac: Xcode
+# and XcodeGen are asked for, never fetched.
+#
+# --paywall is the one run that needs a key: RevenueCat's Test Store key, which
+# the paywall needs and the repository does not hold. The SDK stops a Release
+# build that is given one (`checkForSimulatedStoreAPIKeyInRelease` in
+# purchases-ios), so --paywall builds the Debug `Kinlore` scheme and points it
+# at the deployed Worker through the app's settings, where the address and
+# the key stay for a launch from the home screen as well. The key is asked for
+# without being shown, or read from KINLORE_RC_KEY. It is never printed or
+# logged, and it is written nowhere but the app's settings on "Kinlore Paywall".
+# The Release runs take `rcKey` out of their own simulators' settings before
+# they launch, because a Test Store key left there would stop them the same way.
 #
 # The terminal gets a line per step. What xcodegen and xcodebuild say goes to
 # build/try-it/build.log, and a failure prints the end of it.
@@ -35,10 +48,18 @@ case "${1:-}" in
 	'') ;;
 	--two) MODE=two ;;
 	--example) MODE=example ;;
+	--paywall) MODE=paywall ;;
 	-h | --help) usage; exit 0 ;;
 	*) usage >&2; exit 2 ;;
 esac
 [ $# -le 1 ] || { usage >&2; exit 2; }
+
+# The Test Store key, for --paywall. It leaves the environment at once, in
+# every mode, so that nothing this script starts inherits it, and tracing is
+# off because a trace would print it.
+{ set +x; } 2>/dev/null
+KEY=${KINLORE_RC_KEY:-}
+unset KINLORE_RC_KEY
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
@@ -103,21 +124,82 @@ if ! command -v xcodegen >/dev/null 2>&1; then
 	exit 1
 fi
 
+if [ "$MODE" = paywall ]; then
+	# Asked for before the build, so that a wrong key costs no minutes.
+	if [ -z "$KEY" ]; then
+		if [ ! -t 0 ]; then
+			cat >&2 <<-'EOF'
+				--paywall needs RevenueCat's Test Store key, and there is no terminal to
+				ask for it in. Run it in a terminal and paste the key when asked, or
+				set KINLORE_RC_KEY.
+			EOF
+			exit 1
+		fi
+		read -rsp "RevenueCat Test Store key (it does not show as you paste): " KEY || true
+		echo
+	fi
+	case $KEY in
+		'')
+			echo "No key was given, so nothing was built." >&2
+			exit 1
+			;;
+		sk_*)
+			cat >&2 <<-'EOF'
+				That is RevenueCat's secret key, which belongs on a server and never in
+				an app. The paywall needs the Test Store key, which starts with test_.
+				Nothing was built or written.
+			EOF
+			exit 1
+			;;
+		test_*) ;;
+		*)
+			echo "That is not a Test Store key, which starts with test_. Nothing was built or written." >&2
+			exit 1
+			;;
+	esac
+	case $KEY in
+		*[[:space:]]*)
+			echo "The key has a space or a line break in it; copy it again. Nothing was built or written." >&2
+			exit 1
+			;;
+	esac
+	# The deployed Worker, read from the one line the Release build takes it
+	# from, so that the two cannot point at different places.
+	API=$(sed -nE 's|^[[:space:]]*static let productionURL = "(https://[^"]+)".*|\1|p' \
+		ios/Kinlore/Services/AppServices.swift)
+	if [ -z "$API" ]; then
+		echo "ios/Kinlore/Services/AppServices.swift names no productionURL to point the app at." >&2
+		exit 1
+	fi
+else
+	unset KEY
+fi
+
 case $MODE in
 	real) NAMES=("Kinlore Try") ;;
 	two) NAMES=("Kinlore Try" "Kinlore Try 2") ;;
 	example) NAMES=("Kinlore Example") ;;
+	paywall) NAMES=("Kinlore Paywall") ;;
 esac
-if [ "$MODE" = example ]; then
-	# The Koivula family a year or two in (LargeArchiveFixture), which is
-	# invented and DEBUG-only. It replaces the archive on every launch that
-	# carries it, so each run puts the example back as it was.
-	SCHEME=Kinlore CONFIG=Debug
-	ARGS=(-seed large)
-else
-	SCHEME="Kinlore Production" CONFIG=Release
-	ARGS=(-tryIt YES)
-fi
+case $MODE in
+	example)
+		# The Koivula family a year or two in (LargeArchiveFixture), which is
+		# invented and DEBUG-only. It replaces the archive on every launch that
+		# carries it, so each run puts the example back as it was.
+		SCHEME=Kinlore CONFIG=Debug
+		ARGS=(-seed large)
+		;;
+	paywall)
+		# Debug, which the SDK lets a Test Store key into. The address and the
+		# key go into the app's settings below rather than its arguments.
+		SCHEME=Kinlore CONFIG=Debug
+		ARGS=(-tryIt YES)
+		;;
+	*)
+		SCHEME="Kinlore Production" CONFIG=Release
+		ARGS=(-tryIt YES)
+		;;
+esac
 
 echo "Kinlore: the $SCHEME scheme ($CONFIG), built with $XCODE"
 echo "- generating the Xcode project"
@@ -230,12 +312,41 @@ for viewer in "$DEV/Applications/Simulator.app" "${DEV%/Developer}/Applications/
 	fi
 	break
 done
+
+# setting <udid> <name> <value> — writes one of the app's settings on that
+# simulator and reads it back to compare. Its output goes nowhere and the
+# value is never printed, because one of them is the key.
+setting() {
+	xcrun simctl spawn "$1" defaults write "$BUNDLE" "$2" -string "$3" >/dev/null 2>&1 \
+		&& [ "$(xcrun simctl spawn "$1" defaults read "$BUNDLE" "$2" 2>/dev/null)" = "$3" ]
+}
+
 for udid in "${UDIDS[@]}"; do
 	# An install over the last run's keeps the family and everything told.
 	xcrun simctl install "$udid" "$APP" >>"$LOG" 2>&1 || fail "Kinlore did not install."
+	# The app follows the phone's language, and the guide below is in English,
+	# so the app's own language is set to English: the per-app setting iOS
+	# keeps, which a launch from the home screen keeps too. The simulator's
+	# language is left as it is.
+	xcrun simctl spawn "$udid" defaults write "$BUNDLE" AppleLanguages -array en >>"$LOG" 2>&1 \
+		|| fail "Kinlore's language could not be set to English."
+	case $MODE in
+		paywall)
+			setting "$udid" api "$API" \
+				|| fail "The Worker's address did not stay in Kinlore's settings."
+			setting "$udid" rcKey "$KEY" \
+				|| fail "The key did not stay in Kinlore's settings."
+			;;
+		real | two)
+			# A Test Store key there would stop this Release build as it
+			# launches. "Not found" is the usual answer, and it is ignored.
+			xcrun simctl spawn "$udid" defaults delete "$BUNDLE" rcKey >/dev/null 2>&1 || true
+			;;
+	esac
 	xcrun simctl launch --terminate-running-process "$udid" "$BUNDLE" "${ARGS[@]}" \
 		>>"$LOG" 2>&1 || fail "Kinlore did not launch."
 done
+unset KEY
 
 # --- What to try ------------------------------------------------------------
 
@@ -267,6 +378,7 @@ case $MODE in
 
 			Two phones sharing one family:  ./scripts/try-it.sh --two
 			An invented example family:     ./scripts/try-it.sh --example
+			The paywall and a purchase:     ./scripts/try-it.sh --paywall
 		EOF
 		;;
 	two)
@@ -277,10 +389,10 @@ case $MODE in
 
 			  1. On "Kinlore Try", start a family archive: type your name and press
 			     "Create the archive", and "Close" the sheet that follows. Then
-			     Settings, which is the gear on People, or the menu on Family tree
-			     once somebody is in it. There: "Family members and invitations",
-			     "Invite a family member", give a name, then "Create an invitation",
-			     "Share the invitation" and "Copy".
+			     Settings: Family tree, the ⋯ at the top right, and "Settings".
+			     There: "Family members and invitations", "Invite a family
+			     member", give a name, then "Create an invitation", "Share the
+			     invitation" and "Copy".
 			  2. On "Kinlore Try 2", press "Join with an invitation link", paste the
 			     whole invitation and press "Join a family". The two simulators
 			     share the Mac's clipboard.
@@ -305,6 +417,36 @@ case $MODE in
 			as it was.
 
 			To be heard, run ./scripts/try-it.sh without --example.
+		EOF
+		;;
+	paywall)
+		cat <<-'EOF'
+
+			Kinlore is open on the simulator "Kinlore Paywall", with your Test Store
+			key in its settings. It is the Debug build, because RevenueCat stops a
+			Release build that has a Test Store key, and it talks to the deployed
+			Worker all the same, opened from the home screen too.
+
+			  1. Start a family archive: type your name and press "Create the
+			     archive", and "Close" the sheet that follows. Do not keep the
+			     memories on this phone only: the paywall is for a family on the
+			     server.
+			  2. Open Settings: Family tree, the ⋯ at the top right, and
+			     "Settings". Then "Family members and invitations": "Open the
+			     whole archive", under Usage, opens the paywall.
+			  3. Choose a plan and buy it. RevenueCat's Test Store asks whether to
+			     simulate a valid purchase or a failed one, and "Test valid
+			     purchase" buys: no money moves. The Worker then asks RevenueCat
+			     what was bought rather than taking the app's word for it.
+
+			One member buys, and the whole family has it: every phone in the family,
+			one that joined with an invitation too, stops meeting the free tier's
+			limits of ten minutes of transcription a month, twenty photographs and
+			five colourisations a month, and "Family members and invitations" says
+			its Status is Paid.
+			Telling was never limited. A Test Store subscription renews on a fast
+			clock and ends by itself after a few renewals, and the family is then
+			on the free tier again with everything it holds.
 		EOF
 		;;
 esac

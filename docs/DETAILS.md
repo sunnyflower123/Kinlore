@@ -326,9 +326,11 @@ checked by its row in the table further up.
 **A clone has no paywall to open.** It appears only with a RevenueCat key, and
 none is in the repository: a Test Store key in a public clone would hand the
 paid tier on the production Worker to anybody, and its model bill with it. The
-paywall and a Test Store purchase are in the demo video. To see them yourself,
-run the `Kinlore` scheme with a Test Store key of your own (**Setting it up**,
-step 3) against a Worker that has `RC_SECRET_KEY` — without it
+paywall and a Test Store purchase are in the demo video, and with the Test
+Store key `./scripts/try-it.sh --paywall` opens them against the deployed
+Worker (README, [*See the paywall*](../README.md#see-the-paywall)). To see them
+on your own, run the `Kinlore` scheme with a Test Store key of your own
+(**Setting it up**, step 3) against a Worker that has `RC_SECRET_KEY` — without it
 `/entitlement/sync` answers `503`, because it will not take the phone's word. A
 DEBUG build with `-seed` and no backend address skips the server and opens the
 archive by itself (`Session.syncPurchase`), which is how the film's take is
@@ -440,7 +442,10 @@ generates the project, builds the `Kinlore Production` scheme into
 `build/try-it`, makes a simulator of its own and opens the app there, so what
 is said reaches the deployed Worker and is heard. `--two` does the same on two
 simulators, to share one family, and `--example` opens `-seed large`, an
-invented family's archive a year or two in, on stubs and only when asked. It
+invented family's archive a year or two in, on stubs and only when asked.
+`--paywall` opens the Debug build against the deployed Worker with a RevenueCat
+Test Store key in its settings, because the SDK stops a Release build given
+one (README, [*See the paywall*](../README.md#see-the-paywall)). It
 installs nothing and touches no simulator it did not make. The steps below are
 the long way round, and the one to develop on.
 
