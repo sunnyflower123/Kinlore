@@ -316,10 +316,11 @@ cd ios && xcodegen generate
 # deployed Worker) into build/try-it and opens it on a simulator of its own,
 # "Kinlore Try", made on the first run on the newest installed iOS runtime the
 # app supports. `--two` adds "Kinlore Try 2", for an invitation between two
-# phones; `--example` builds the Debug scheme and opens the `-seed family`
-# archive on "Kinlore Example". It exists because the scheme Xcode opens on
-# runs on stubs, and until 29 Sep 2026 the README sent a judge there: whatever
-# they said, a canned sample came back. It finds its simulators by exact name
+# phones; `--example` builds the Debug scheme and opens `-seed large`, the
+# invented Koivula family's archive, on "Kinlore Example", and only when
+# asked for. It exists because the scheme Xcode opens on runs on stubs, and
+# until 29 Sep 2026 the README sent a judge there: whatever they said, a
+# canned sample came back. It finds its simulators by exact name
 # and never touches another, and it needs no DEVELOPER_DIR prefix, because it
 # falls back to /Applications/Xcode.app by itself when xcode-select points at
 # the Command Line Tools. The build's output is in build/try-it/build.log.

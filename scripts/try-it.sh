@@ -3,7 +3,7 @@
 #
 #   ./scripts/try-it.sh             Kinlore against the deployed Worker
 #   ./scripts/try-it.sh --two       the same on two simulators, to share a family
-#   ./scripts/try-it.sh --example   an example family on stubs, with no server
+#   ./scripts/try-it.sh --example   an invented family's archive, on stubs
 #
 # Xcode opens this project on the `Kinlore` scheme, a Debug build that runs on
 # stubs, and the stubs cannot listen: a recording comes back as one of three
@@ -109,8 +109,11 @@ case $MODE in
 	example) NAMES=("Kinlore Example") ;;
 esac
 if [ "$MODE" = example ]; then
+	# The Koivula family a year or two in (LargeArchiveFixture), which is
+	# invented and DEBUG-only. It replaces the archive on every launch that
+	# carries it, so each run puts the example back as it was.
 	SCHEME=Kinlore CONFIG=Debug
-	ARGS=(-seed family)
+	ARGS=(-seed large)
 else
 	SCHEME="Kinlore Production" CONFIG=Release
 	ARGS=(-tryIt YES)
@@ -254,7 +257,7 @@ case $MODE in
 			     loud; answer them, or press "That is enough for now".
 
 			Two phones sharing one family:  ./scripts/try-it.sh --two
-			An example family, no server:   ./scripts/try-it.sh --example
+			An invented example family:     ./scripts/try-it.sh --example
 		EOF
 		;;
 	two)
@@ -263,9 +266,11 @@ case $MODE in
 			Kinlore is open on two simulators, "Kinlore Try" and "Kinlore Try 2", and
 			both are the real app. To put them in one family:
 
-			  1. On "Kinlore Try", start a family archive, keeping "Between the
-			     family". Then People, the gear, "Family members and invitations",
-			     "Invite a family member": give a name, then "Create an invitation",
+			  1. On "Kinlore Try", start a family archive: type your name and press
+			     "Create the archive", and "Close" the sheet that follows. Then
+			     Settings, which is the gear on People, or the menu on Family tree
+			     once somebody is in it. There: "Family members and invitations",
+			     "Invite a family member", give a name, then "Create an invitation",
 			     "Share the invitation" and "Copy".
 			  2. On "Kinlore Try 2", press "Join with an invitation link", paste the
 			     whole invitation and press "Join a family". The two simulators
@@ -279,11 +284,15 @@ case $MODE in
 	example)
 		cat <<-'EOF'
 
-			This is an example family, on this simulator only ("Kinlore Example"):
-			a Debug build on stubs, with no server behind it. A telling here comes
-			back as one of three sample tellings, whatever you say, so nothing you
-			say is heard. The family's members and invitations are under People,
-			the gear, "Family members and invitations".
+			This is the example you asked for, on this simulator only ("Kinlore
+			Example"): a family's archive a year or two in. Everything in it is
+			invented: the Koivula family and its people, the pictures, which the app
+			drew here, and the tellings.
+
+			It is a Debug build on stubs, with no server behind it. A telling here
+			comes back as one of three sample tellings, whatever you say, so nothing
+			you say is heard, and the next run of --example puts the example back
+			as it was.
 
 			To be heard, run ./scripts/try-it.sh without --example.
 		EOF

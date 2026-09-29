@@ -439,9 +439,10 @@ repository root, as the README's [*Try it*](../README.md#try-it) says. It
 generates the project, builds the `Kinlore Production` scheme into
 `build/try-it`, makes a simulator of its own and opens the app there, so what
 is said reaches the deployed Worker and is heard. `--two` does the same on two
-simulators, to share one family, and `--example` opens the `-seed family`
-example of step 3 on stubs. It installs nothing and touches no simulator it did
-not make. The steps below are the long way round, and the one to develop on.
+simulators, to share one family, and `--example` opens `-seed large`, an
+invented family's archive a year or two in, on stubs and only when asked. It
+installs nothing and touches no simulator it did not make. The steps below are
+the long way round, and the one to develop on.
 
 ### 1. The app on its own — no keys, no backend
 

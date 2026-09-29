@@ -168,15 +168,22 @@ What you say is heard for real, within the free tier's ten minutes of
 transcription a month.
 
 `./scripts/try-it.sh --two` opens it on two simulators that can share one
-family. On the first: *People*, the gear, *Family members and invitations*,
+family. On the first, open Settings: the gear on *People*, or the menu on
+*Family tree* once somebody is in it. Then *Family members and invitations*,
 *Invite a family member* and *Share the invitation*. On the second: *Join with
 an invitation link*, paste the whole invitation and press *Join a family*. An
 invitation is valid for a week and lets one person in.
 
-`./scripts/try-it.sh --example` opens an example family on a simulator of its
-own, *Kinlore Example*. It is a Debug build on stubs with no server behind it,
-so a telling there comes back as one of three sample tellings whatever you say.
-Run the script without `--example` to be heard.
+Both of those are the real app, and the script opens nothing else unless you
+ask. What a family's archive looks like a year or two in is the one thing a
+first try cannot show, so there is an example of one, and you choose to see
+it: `./scripts/try-it.sh --example` opens it on a simulator of its own,
+*Kinlore Example*. **Everything in the example is invented**: the Koivula
+family and its people, the 150 pictures, which the app draws on the
+simulator the first time it opens, and some 250 tellings. It is a Debug build
+on stubs with no server behind it, so a telling there comes back as one of
+three sample tellings whatever you say, and each run of `--example` puts the
+example back as it was. Run the script without `--example` to be heard.
 
 To run it from Xcode instead: `cd ios && xcodegen generate && open
 Kinlore.xcodeproj`, choose the **Kinlore Production** scheme and an iPhone
