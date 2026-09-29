@@ -82,7 +82,12 @@ struct DateHint: Codable, Hashable {
         let year = Self.calendar.component(.year, from: start)
         switch precision {
         case .decade: return String(localized: "\(String(year / 10 * 10))-luku")
-        case .year: return "\(year)"
+        case .year:
+            // A span the extraction heard, "around 1955" as 1954 to 1956, is
+            // stored whole (`AppServices.dateHint`), and its first year alone
+            // would be sharper than what was said (rule 5).
+            let last = end.map { Self.calendar.component(.year, from: $0) } ?? year
+            return last > year ? "\(year)–\(last)" : "\(year)"
         case .month, .day:
             // The phone's own language, not Finnish spelled out here. This was
             // a `DateFormatter` pinned to fi_FI, which showed "kesäkuu 1957" on

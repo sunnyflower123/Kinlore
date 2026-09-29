@@ -1,5 +1,5 @@
 // Checks which decade the album files a photograph under, on a phone in any
-// time zone.
+// time zone, and how a span of years reads there.
 //
 // Every date in the archive is midnight in Helsinki (`DateHint.zone`): the
 // date sheet's "1950s" is 1.1.1950 at 00:00 there, and so is the extraction's.
@@ -12,9 +12,14 @@
 // twenties. Nothing looks wrong either way: a heading reads as right whatever
 // it says, and on this machine, in Helsinki, both were right.
 //
+// A span of years is the same clock read at its other end. The extraction
+// stores "around 1955" as 1954 to 1956, and until 29 Sep 2026 the card read
+// "1954": sharper than what was said, which is rule 5 broken on the screen
+// while the archive keeps it.
+//
 // So the decade is taken here under zones on both sides of Helsinki, at both
-// ends of a decade, and then the app's sources are read for the phone's own
-// calendar anywhere at all. Costs nothing: no simulator, no network, no key.
+// ends of a decade, the span with it, and then the app's sources are read for
+// the phone's own calendar anywhere at all. Costs nothing: no simulator, no network, no key.
 // Run it from the repository's root, as verify.sh does, after touching
 // `DateHint` in Models.swift, the decade headings in GalleryScreen.swift or a
 // seed's dates in MemoryStore.swift: the sources are found from the path it
@@ -90,8 +95,20 @@ enum DecadeCheck {
                 built == at(1930),
                 built.map { "\(Int($0.timeIntervalSince(at(1930)) / 3600)) h from it" } ?? "nothing was built"
             )
+            // West of Helsinki the span's end, 1.1.1956 there, is still 1955
+            // on the phone's calendar.
+            let span = DateHint(start: at(1954), end: at(1956), precision: .year).displayText
+            check("\"around 1955\", stored as 1954 to 1956, reads 1954–1956", span == "1954–1956", span)
         }
         NSTimeZone.default = home
+
+        print("— a year, and a span that is not one —")
+        let alone = DateHint(start: at(1954), end: nil, precision: .year).displayText
+        check("a year with no end reads 1954", alone == "1954", alone)
+        let same = DateHint(start: at(1954), end: at(1954), precision: .year).displayText
+        check("a span that ends in the year it starts reads 1954", same == "1954", same)
+        let backwards = DateHint(start: at(1956), end: at(1954), precision: .year).displayText
+        check("an end before the start is not drawn", backwards == "1956", backwards)
 
         print("— the phone's own calendar, anywhere in the app —")
         // The phone's calendar is right for one question, whether something

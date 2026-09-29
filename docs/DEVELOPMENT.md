@@ -600,10 +600,10 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
 # Every date in the archive is midnight in Helsinki; read on the phone's own
 # calendar, as the headings were until 28 Sep 2026, the date sheet's "1950s"
 # is 31.12.1949 in Los Angeles, and the fifties sat among the forties on every
-# phone west of Finland. Takes the decade under six zones, then reads
-# ios/Kinlore for the phone's calendar anywhere else. Costs nothing. Run it
-# from the root after touching `DateHint`, the album's decade headings or a
-# seed's dates.
+# phone west of Finland. Takes the decade under six zones, and the span "around
+# 1955" with it, which read "1954" until 29 Sep 2026, then reads ios/Kinlore for
+# the phone's calendar anywhere else. Costs nothing. Run it from the root after
+# touching `DateHint`, the album's decade headings or a seed's dates.
 DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -parse-as-library -o /tmp/decade-check \
   scripts/decade-check.swift ios/Kinlore/Model/Models.swift \
