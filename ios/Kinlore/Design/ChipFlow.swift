@@ -2,17 +2,20 @@ import SwiftUI
 
 /// Chips in rows, the way words fill a line: each takes its own width, a row
 /// fills from the left and the next begins under it, and every row is
-/// centred. `stacked` puts one chip on each row instead, at the row's full
-/// width for a chip that asks for it — the accessibility text sizes, where a
-/// chip is a sentence wide and two on one line would each be a column of
-/// broken words.
+/// centred — or, with `centred` off, starts at the leading edge. `stacked`
+/// puts one chip on each row instead, at the row's full width for a chip
+/// that asks for it — the accessibility text sizes, where a chip is a
+/// sentence wide and two on one line would each be a column of broken
+/// words.
 ///
 /// SwiftUI has no wrapping stack; this is the fifty lines it takes. Written
 /// 27 Sep 2026 for the facts on a person's card, the date and the name on a
-/// photograph's, and the row that adds a relative (`ChipRow`).
+/// photograph's, and the row that adds a relative (`ChipRow`); since 30 Sep
+/// 2026 it also lays out the names under a telling (`MemoryRow`), leading.
 struct ChipFlow: Layout {
     var spacing: CGFloat = 10
     var stacked = false
+    var centred = true
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
@@ -24,7 +27,7 @@ struct ChipFlow: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var y = bounds.minY
         for row in rows(in: bounds.width, subviews: subviews) {
-            var x = bounds.minX + (stacked ? 0 : (bounds.width - row.width) / 2)
+            var x = bounds.minX + (stacked || !centred ? 0 : (bounds.width - row.width) / 2)
             for item in row.items {
                 subviews[item.index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(item.size))
                 x += item.size.width + spacing

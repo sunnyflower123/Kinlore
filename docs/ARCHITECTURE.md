@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 396 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 397 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -113,7 +113,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 396 UI tests, including 124 accessibility sweeps that audit a
+The UI suite has 397 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -4590,6 +4590,21 @@ Aino, or on the words, pushed all three cards with Toivo's on top, so the name
 tapped was not the card that opened. They are buttons on a telling too
 (`HeardNameRow.open`); behind the people list's door, where each name is a row
 of its own, they stay links.
+
+**Whole names since 30 Sep 2026.** The chips were a `ViewThatFits` between a
+line of `Label`s and a column of them, and it chose the line where the line
+did not fit: the film's take of 29 Sep 2026 on the grandmother's phone, at
+its text floor (`Elder.textFloor`), drew a telling's three names in one row,
+each broken inside the word (*Pu-/uma/la*, *Hel/mi*, *Toi/vo*), and Mummo's
+telling on the jetty in `-seed story` did the same on the simulator, its
+Puumala 95 points tall where one line of the name is 22. They are laid out by
+`ChipFlow` now, from the leading edge (`centred: false`), and each is an icon
+and a `Text` like the caption's chips: a chip takes its own width, the row
+wraps whole chips, one to a row at the accessibility sizes, and a name wraps
+at its spaces only when it is wider than the row.
+`LayoutAtSizeTests.testTheNamesUnderATellingBreakNoWord` measures every chip
+of that telling against one line of its font, at the floor and at the largest
+size.
 
 **The tick means what was typed.** A row on the result screen could be edited
 and then ticked, and until 28 Sep 2026 the tick confirmed the name as heard and

@@ -140,6 +140,121 @@ final class LayoutAtSizeTests: XCTestCase {
         }
     }
 
+    /// The names under a telling, the checked people and places it says
+    /// (`MemoryRow.namedHere`), at a grandparent's text floor and at the
+    /// largest size. The film's takes of 29 Sep 2026 ran on the
+    /// grandmother's phone at the floor and drew a telling's three names
+    /// squeezed into one line of chips, each broken inside the word:
+    /// *Pu-/uma/la*, *Hel/mi*, *Toi/vo*. The row was a `ViewThatFits`
+    /// between a line of `Label`s and a column, and it took the line where
+    /// the line did not fit; on that row this test found Puumala 95 points
+    /// tall at the floor, where one line of it is 22.
+    ///
+    /// Every name here is one word, so a chip that broke no word is one
+    /// line of its font tall, and a broken one is two or three: each chip's
+    /// height is measured against the line, and the chips against each
+    /// other — on the screen, no two overlapping, and one to a row at the
+    /// accessibility sizes. `isHittable` sees none of this.
+    func testTheNamesUnderATellingBreakNoWord() {
+        let sizes: [(textSize: String?, category: UIContentSizeCategory, name: String)] = [
+            (nil, .extraLarge, "a grandparent's text floor"),
+            (Self.largest, .accessibilityExtraExtraExtraLarge, "the largest size"),
+        ]
+        for size in sizes {
+            let app = launch(
+                [
+                    "-seed", "story", "-tab", "people", "-screen", "person", "-person", "demo-story-jetty",
+                    "-story", "stub", "-elder.largerText", "YES",
+                ],
+                textSize: size.textSize
+            )
+            let logs = app.buttons["storyCard.logs"]
+            for _ in 0 ..< 8 where !logs.exists { app.swipeUp() }
+            XCTAssertTrue(logs.waitForExistence(timeout: 10), "never arrived: the log's button (\(size.name))")
+            let bar = app.tabBars.firstMatch.frame
+            let top = app.navigationBars.firstMatch.frame.maxY
+            drag(logs, toMinY: top + 60, in: app)
+            logs.tap()
+
+            // Mummo's telling names three, Aino first; the log lists it
+            // last, under Pekka's and Aino's own, which name one each.
+            let chips = app.buttons.matching(identifier: "memory.named")
+            let aino = chips.matching(NSPredicate(format: "label == %@", "Aino")).firstMatch
+            for _ in 0 ..< 12 where !aino.exists { app.swipeUp() }
+            XCTAssertTrue(aino.waitForExistence(timeout: 10), "never arrived: the names under Mummo's telling (\(size.name))")
+            // Her names brought up under the bar, so that all three are on
+            // screen at once at either size.
+            drag(aino, toMinY: top + 40, in: app)
+
+            let window = app.windows.firstMatch.frame
+            let shown = chips.allElementsBoundByIndex
+                .map { (label: $0.label, frame: $0.frame) }
+                .filter { $0.frame.minY >= top && $0.frame.maxY <= bar.minY }
+                .sorted { $0.frame.minY < $1.frame.minY }
+            for name in ["Puumala", "Aino", "Toivo"] {
+                XCTAssertTrue(shown.contains { $0.label == name }, "\(name) is not among the names on screen at \(size.name): \(shown.map(\.label))")
+            }
+
+            // One line of the chip's font, with the honey button's padding
+            // round it and never under its tap target (`elderSecondarySurface`):
+            // half a line more is the tolerance, and a broken word costs a
+            // whole one.
+            let line = Self.font(.body, size.category, weight: .semibold).lineHeight
+            let limit = max(60, line * 1.5 + 24)
+            for chip in shown {
+                XCTAssertLessThanOrEqual(
+                    chip.frame.height, limit,
+                    "\(chip.label) is \(Int(chip.frame.height)) points tall at \(size.name), where one line of it is \(Int(line)): the name is broken"
+                )
+                XCTAssertTrue(
+                    chip.frame.minX >= window.minX - 0.5 && chip.frame.maxX <= window.maxX + 0.5,
+                    "\(chip.label) runs off the screen at \(size.name): \(chip.frame)"
+                )
+            }
+            for (index, chip) in shown.enumerated() {
+                for other in shown[(index + 1)...] {
+                    XCTAssertFalse(
+                        chip.frame.insetBy(dx: 0.5, dy: 0.5).intersects(other.frame),
+                        "\(chip.label) and \(other.label) overlap at \(size.name): \(chip.frame), \(other.frame)"
+                    )
+                    if size.category.isAccessibilityCategory {
+                        XCTAssertGreaterThanOrEqual(
+                            other.frame.minY, chip.frame.maxY - 0.5,
+                            "\(chip.label) and \(other.label) share a row at \(size.name): \(chip.frame), \(other.frame)"
+                        )
+                    }
+                }
+            }
+            app.terminate()
+        }
+    }
+
+    /// Drags the card until the element's top is at `minY`, slowly enough
+    /// that the list stops where the finger lets go. Ten strokes of at most
+    /// 300 points: an element exists as soon as its row is on screen, and at
+    /// the largest size Mummo's chips are under words taller than the
+    /// screen, where three strokes left them all below the tab bar.
+    private func drag(_ element: XCUIElement, toMinY minY: CGFloat, in app: XCUIApplication) {
+        let middle = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        for _ in 0 ..< 10 where element.exists && abs(element.frame.minY - minY) > 20 {
+            let distance = max(-300, min(300, minY - element.frame.minY))
+            middle.press(
+                forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: distance)),
+                withVelocity: .slow, thenHoldForDuration: 0.5
+            )
+        }
+    }
+
+    /// The body in the weight a honey button draws it in, rounded, at a
+    /// text size.
+    private static func font(_ style: UIFont.TextStyle, _ category: UIContentSizeCategory, weight: UIFont.Weight) -> UIFont {
+        let traits = UITraitCollection(preferredContentSizeCategory: category)
+        let plain = UIFont.preferredFont(forTextStyle: style, compatibleWith: traits)
+        let rounded = plain.fontDescriptor.withDesign(.rounded) ?? plain.fontDescriptor
+        let weighted = rounded.addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: weight]])
+        return UIFont(descriptor: weighted, size: plain.pointSize)
+    }
+
     /// The font the app draws a text button in at the largest size: rounded
     /// since 26 Sep 2026 (`.fontDesign(.rounded)` at the root), which is a
     /// little wider than SF Pro, and medium, which is a little wider again —

@@ -2427,15 +2427,25 @@ private struct MemoryRow: View {
     /// link and not as a chip, and a tap on the story's words opened the
     /// card (28 Sep 2026). A button keeps to its own frame, and the stack
     /// it pushes onto comes from the screen around it (`openCard`).
+    ///
+    /// The icon and the name side by side rather than a `Label` since
+    /// 30 Sep 2026, the shape of the caption's date and place chips (the
+    /// note on the date chip says why), laid out where they are used by
+    /// `ChipFlow`, which takes each chip at its own width.
     private func namedHereLinks(_ open: @escaping (Subject) -> Void) -> some View {
         ForEach(namedHere) { named in
             Button {
                 open(named)
             } label: {
-                Label(named.displayTitle, systemImage: named.kind.symbolName)
-                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Image(systemName: named.kind.symbolName)
+                        .accessibilityHidden(true)
+                    Text(verbatim: named.displayTitle)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .buttonStyle(.elderSecondary)
+            .accessibilityIdentifier("memory.named")
             .accessibilityHint("Avaa kortin. Siellä nimen voi myös korjata.")
         }
     }
@@ -2565,10 +2575,18 @@ private struct MemoryRow: View {
             // where a wrong one is corrected (§17) — and the correction there
             // offers to put the right name back into these words. None where
             // no stack around the row opens cards.
+            //
+            // Each chip its own width and the row wrapping whole chips, one
+            // to a row at the accessibility sizes, since 30 Sep 2026. Until
+            // then a `ViewThatFits` chose between a line of `Label`s and a
+            // column of them, and it took the line where the line did not
+            // fit: at the grandmother's text floor the film drew *Pu-/uma/la*,
+            // *Hel/mi* and *Toi/vo* side by side, each broken inside the word
+            // (`LayoutAtSizeTests.testTheNamesUnderATellingBreakNoWord`, red
+            // on that row). From the leading edge, where the column stood.
             if let openCard, !namedHere.isEmpty {
-                ViewThatFits(in: .horizontal) {
-                    HStack(spacing: 10) { namedHereLinks(openCard) }
-                    VStack(alignment: .leading, spacing: 10) { namedHereLinks(openCard) }
+                ChipFlow(spacing: 10, stacked: typeSize.isAccessibilitySize, centred: false) {
+                    namedHereLinks(openCard)
                 }
                 .padding(.horizontal, 4)
             }
