@@ -52,6 +52,11 @@ export type SubjectRow = {
 	geo_confirmed_by: string | null
 	geo_confirmed_by_name?: string | null
 	geo_confirmed_at: number | null
+	// The card's story, sealed under the family key, and the moment it was
+	// last written on the phone that wrote it. On any kind of subject. The
+	// Worker stores the bytes and reads nothing in them (§27).
+	story: string | null
+	story_set_at: number | null
 	date_start: number | null
 	date_end: number | null
 	date_precision: string | null
@@ -210,7 +215,8 @@ export async function pull(env: Env, session: Session, since: number) {
 		        s.facts, s.facts_set_at,
 		        s.geo_confirmed_by, s.geo_confirmed_at,
 		        confirmer.display_name AS colour_confirmed_by_name,
-		        placer.display_name AS geo_confirmed_by_name
+		        placer.display_name AS geo_confirmed_by_name,
+		        s.story, s.story_set_at
 		 FROM subject s
 		 LEFT JOIN member confirmer ON confirmer.id = s.colour_confirmed_by
 		 LEFT JOIN member placer ON placer.id = s.geo_confirmed_by
@@ -312,6 +318,16 @@ export async function pull(env: Env, session: Session, since: number) {
 
 // ---------------------------------------------------------------- push
 
+/// Upper bound for a card's sealed story. Forty tellings of eight thousand
+/// characters is what `/story` accepts at most, and rule 5 of its prompt
+/// says the story is no shorter than the tellings; sealed and base64'd
+/// that is well inside this, and the phone stops at 90 000 bytes of JSON
+/// before sealing (`Story.byteLimit`). Two numbers well apart on purpose:
+/// a story the Worker refused would leave the server's older one standing,
+/// the phone would find its own newer on every pull, and push the same
+/// refusal for ever.
+const MAX_STORY_LENGTH = 131_072
+
 export async function push(env: Env, session: Session, payload: PushPayload) {
 	const family = session.familyID
 	const seq = await nextSeq(env, family)
@@ -410,6 +426,21 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				point = { lat: relay.lat, lon: relay.lon, precision: relay.geo_precision }
 			}
 		}
+		// The card's story: one sealed string under a moment, on any kind of
+		// subject. The Worker can read nothing in it, so the rule is the
+		// face's -- the newest wins whole, and a NULL moment is never later
+		// than anything. Both or neither: a story that is not a string, one
+		// past the cap, or a moment that is not a finite number is no
+		// opinion, and the rules below leave the row's own alone. A moment
+		// ahead of the clock is held to now, so it cannot lock out every
+		// later story.
+		const story =
+			typeof subject.story === 'string' &&
+			subject.story.length <= MAX_STORY_LENGTH &&
+			typeof subject.story_set_at === 'number' &&
+			Number.isFinite(subject.story_set_at)
+		const storyText = story ? (subject.story as string) : null
+		const storyAt = story ? Math.min(subject.story_set_at as number, timestamp) : null
 		// A colouring travels only with its file, its own member's name and a
 		// moment that has already happened. Anything short of that is sent on as
 		// nothing, which the upsert reads as "no opinion": a member cannot put
@@ -464,6 +495,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                      portrait_subject_id, portrait_focus_x, portrait_focus_y, portrait_set_at,
 				                      facts, facts_set_at,
 				                      lat, lon, geo_precision, geo_confirmed_by, geo_confirmed_at,
+				                      story, story_set_at,
 				                      date_start, date_end,
 				                      date_precision, confirmed, merged_into, created_by,
 				                      created_at, deleted_at, seq)
@@ -485,7 +517,7 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                            WHERE p.id = ? AND p.family_id = ? AND p.kind = 'photo'
 				                              AND p.deleted_at IS NULL)
 				              THEN ? ELSE NULL END,
-				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT(id) DO UPDATE SET
 				   title = excluded.title,
 				   r2_key = COALESCE(excluded.r2_key, subject.r2_key),
@@ -587,6 +619,17 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				                           THEN excluded.geo_confirmed_by ELSE subject.geo_confirmed_by END,
 				   geo_confirmed_at = CASE WHEN excluded.geo_confirmed_at > COALESCE(subject.geo_confirmed_at, 0)
 				                           THEN excluded.geo_confirmed_at ELSE subject.geo_confirmed_at END,
+				   -- The card's story, by the face's rule once more: one sealed
+				   -- string, the newest wins whole, and a NULL moment is never
+				   -- later than anything. A phone that never had the column
+				   -- sends neither and changes nothing; a phone whose story a
+				   -- person corrected keeps that reading over the model's
+				   -- whatever the moments say, and pushes it again under a
+				   -- newer one, which is how the correction wins here too (§27).
+				   story = CASE WHEN excluded.story_set_at > COALESCE(subject.story_set_at, 0)
+				                THEN excluded.story ELSE subject.story END,
+				   story_set_at = CASE WHEN excluded.story_set_at > COALESCE(subject.story_set_at, 0)
+				                       THEN excluded.story_set_at ELSE subject.story_set_at END,
 				   -- The same shape as the point above, and for the same reason.
 				   -- A device pushes its whole local row, so one that has never
 				   -- seen the date sends three nulls — and a plain assignment
@@ -643,6 +686,8 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				point.precision,
 				placedBy,
 				placedAt,
+				storyText,
+				storyAt,
 				subject.date_start ?? null,
 				subject.date_end ?? null,
 				subject.date_precision ?? null,

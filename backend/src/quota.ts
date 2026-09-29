@@ -16,6 +16,7 @@ import type { Env } from './worker'
 import type { Lang } from './extract'
 import { extractionBudget, mostSeconds } from './budget.ts'
 import { reconcileStaleEntitlement } from './entitlement.ts'
+import { render, storyBudget, storyModel, type StoryCard } from './story.ts'
 
 export type QuotaDenial = {
 	error: 'quota_exceeded'
@@ -214,7 +215,7 @@ export async function recordColourisation(env: Env, session: Session): Promise<v
 async function reserveFreeTierDay(
 	env: Env,
 	session: Session,
-	route: 'transcribe' | 'extract' | 'colourise',
+	route: 'transcribe' | 'extract' | 'colourise' | 'story',
 	charge: number,
 	limit: number,
 ): Promise<boolean> {
@@ -292,6 +293,31 @@ export function reserveExtraction(
 	const charge = extractionBudget(transcript, lang, env.MODEL_EXTRACT) + read
 	const limit = Number(env.FREE_TIER_EXTRACTION_TOKENS_PER_DAY) || 300_000
 	return reserveFreeTierDay(env, session, 'extract', charge, limit)
+}
+
+/// A story is charged as a structuring is: every token it may write — its
+/// `max_tokens`, which grows with the tellings (`storyBudget`) — plus every
+/// byte of the card the phone sent, as the prompt renders it: the tellings,
+/// the story so far, the title, the date and the confirmed names all reach
+/// the model unshortened, so all of them are read. The system prompt rides
+/// uncharged, a constant the price carries.
+///
+/// Priced from OpenRouter's /models on 26 Sep 2026 ($0.75 and $3.75 a
+/// million for the model that composes): the dearest charged unit is a
+/// floor-sized call — 6 000 tokens of room and a card of a few hundred bytes
+/// — whose reply fills its budget twice, the second attempt after a reply
+/// that would not parse, 5.5 c for 6 200 units. So 300 000 a day is at most
+/// $2.65, in 48 such calls, while a card of three tellings answered in four
+/// hundred tokens costs under a cent. The day also has to hold the largest
+/// card the route accepts on its own: forty tellings of a thousand
+/// characters, a story so far of twenty thousand, forty names and a title
+/// and tellers at the label's cap, charged 175 610 in Finnish and 251 810 in
+/// a script of three-byte letters (`free-tier-ceiling-check.mjs`).
+export function reserveStory(env: Env, session: Session, card: StoryCard): Promise<boolean> {
+	const read = new TextEncoder().encode(render(card)).length
+	const charge = storyBudget(card, storyModel(env)) + read
+	const limit = Number(env.FREE_TIER_STORY_TOKENS_PER_DAY) || 300_000
+	return reserveFreeTierDay(env, session, 'story', charge, limit)
 }
 
 /// A colouring is one round, as it is for the month: each costs the same image

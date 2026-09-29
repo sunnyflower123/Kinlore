@@ -29,11 +29,13 @@ import {
 	recordColourisation,
 	reserveColourisation,
 	reserveExtraction,
+	reserveStory,
 	reserveTranscription,
 	usage,
 } from './quota.ts'
 import { notify, registerToken, unregisterToken } from './apns.ts'
 import { pull, push } from './sync.ts'
+import { composeStory, shapeStoryCard } from './story.ts'
 import { transcribe } from './transcribe.ts'
 
 export interface Env {
@@ -44,6 +46,9 @@ export interface Env {
 	MODEL_EXTRACT_FALLBACK: string
 	MODEL_TRANSCRIBE: string
 	MODEL_COLOURISE: string
+	/// Which model composes a card's story (§27). Optional: a Worker deployed
+	/// without the var composes on `story.ts`'s default.
+	MODEL_STORY?: string
 	RC_SECRET_KEY: string
 	RC_PROJECT_ID: string
 	RC_WEBHOOK_SECRET: string
@@ -55,6 +60,7 @@ export interface Env {
 	FREE_TIER_AI_SECONDS_PER_DAY: string
 	FREE_TIER_EXTRACTION_TOKENS_PER_DAY: string
 	FREE_TIER_COLOURISATIONS_PER_DAY: string
+	FREE_TIER_STORY_TOKENS_PER_DAY: string
 	RC_ENTITLEMENT_ID: string
 	/// The two unauthenticated writes, metered. Optional on purpose — see
 	/// `withinRateLimit`.
@@ -646,6 +652,32 @@ export default {
 					)
 				} catch (err) {
 					return failure(err, 'extract')
+				}
+			}
+
+			case '/story': {
+				// The story on a card, composed from what was told about it
+				// (§27). The phone opens the sealed tellings and sends the
+				// words, as it sends a transcript to /extract, and seals what
+				// comes back before it travels. No family's meter counts it,
+				// like /extract — the phone asks once per card and again only
+				// when a telling has been added — and it is authenticated for
+				// /extract's reason: on a public URL an open model call is
+				// billed to rule 7's key. The free tier's day (§7) bounds it
+				// after the session check, so a stranger cannot spend it: a
+				// refusal is the rate limiter's 429, and the card says the
+				// story could not be composed now and keeps its tellings.
+				const payload = await readJSON<unknown>(request)
+				if (payload === null) return json({ error: 'invalid_json' }, 400)
+				const card = shapeStoryCard(payload)
+				if (card === 'missing_memories') return json({ error: 'missing_memories' }, 400)
+				if (card === 'story_too_long') return json({ error: 'story_too_long' }, 413)
+				if (!session) return json({ error: 'unauthorized' }, 401)
+				if (!(await reserveStory(env, session, card))) return json({ error: 'too_many_requests' }, 429)
+				try {
+					return json(await composeStory(env, card))
+				} catch (err) {
+					return failure(err, 'story')
 				}
 			}
 

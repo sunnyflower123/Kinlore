@@ -58,16 +58,20 @@
 		// route — every free family together, because a family costs nothing
 		// to make and a limit per family is a limit on nothing (quota.ts).
 		// Priced on 26 Sep 2026 at the most a call can cost: at worst $4.56,
-		// $5.54 and $0.80 a day, about $11 together. A refused call never costs
-		// a memory: the audio waits for its text, a telling is kept in its own
-		// words, a photograph stays as it was. The seconds may not fall below
-		// 26 215, the charge for the largest recording the Worker accepts, nor
-		// the tokens below 283 979, the charge for the longest telling the app
-		// can make, or that input is refused every day, even one nobody else
-		// has touched (free-tier-ceiling-check.mjs).
+		// $5.54, $0.80 and $2.65 a day, about $14 together. A refused call
+		// never costs a memory: the audio waits for its text, a telling is
+		// kept in its own words, a photograph stays as it was, a card keeps
+		// its tellings and composes on a later visit. The seconds may not fall
+		// below 26 215, the charge for the largest recording the Worker
+		// accepts, nor the extraction tokens below 283 979, the charge for the
+		// longest telling the app can make, nor the story tokens below
+		// 251 810, the charge for the largest card the route accepts in a
+		// script of three-byte letters, or that input is refused every day,
+		// even one nobody else has touched (free-tier-ceiling-check.mjs).
 		"FREE_TIER_AI_SECONDS_PER_DAY": "36000",
 		"FREE_TIER_EXTRACTION_TOKENS_PER_DAY": "300000",
 		"FREE_TIER_COLOURISATIONS_PER_DAY": "20",
+		"FREE_TIER_STORY_TOKENS_PER_DAY": "300000",
 		"RC_ENTITLEMENT_ID": "archive",
 		// The project identifier from the RevenueCat dashboard. Not a secret,
 		// unlike RC_SECRET_KEY and RC_WEBHOOK_SECRET.
@@ -137,7 +141,14 @@
 		// cardigan nobody mentioned, where flash kept them apart. At half the price
 		// a correcting second round costs what one flash round does. One photograph
 		// is not a sample.
-		"MODEL_COLOURISE": "google/gemini-3.1-flash-lite-image"
+		"MODEL_COLOURISE": "google/gemini-3.1-flash-lite-image",
+		// The story on a card, composed from its tellings (ARCHITECTURE §27). The
+		// extraction's model, because the story prompt was measured on it
+		// (`scripts/story-bench.mjs`: four cards on 26 Sep 2026, two more on
+		// 28 Sep) and on nothing else: the cards through this model kept the
+		// tellers' register and the gaps, and said the one unconfirmed name as
+		// its teller's. Not a comparison; one model on six cards.
+		"MODEL_STORY": "google/gemini-3.6-flash"
 	},
 
 	"observability": { "enabled": true }

@@ -252,6 +252,21 @@ CREATE TABLE subject (
   geo_confirmed_by TEXT REFERENCES member(id),
   geo_confirmed_at INTEGER,
 
+  -- any kind
+  --
+  -- The card's story: what was told about it, ordered into one text by the
+  -- model or corrected by hand, as one sealed string under the family key
+  -- (docs/ARCHITECTURE.md §27). The Worker stores the bytes and reads
+  -- nothing in them -- not the text, not which tellings it was composed
+  -- from, not whether a person edited it; the phones do. The moment is
+  -- what settles two phones: the newest story wins whole, the face's rule,
+  -- and a NULL moment is never later than anything, so a phone that has
+  -- never seen the column wipes nothing. For existing databases:
+  --   ALTER TABLE subject ADD COLUMN story TEXT;
+  --   ALTER TABLE subject ADD COLUMN story_set_at REAL;
+  story         TEXT,
+  story_set_at  REAL,
+
   -- Uncertain dating is the rule, not the exception. "Sometime in the fifties"
   -- is stored as the range [1950, 1959] with precision 'decade' — neither
   -- forced into a false date nor thrown away.
@@ -485,7 +500,7 @@ CREATE TABLE usage_counter (
 -- deployed, or every such call answers 502 until it does.
 CREATE TABLE free_tier_day (
   day           TEXT NOT NULL,        -- 'YYYY-MM-DD' UTC
-  route         TEXT NOT NULL,        -- 'transcribe'|'extract'|'colourise'
+  route         TEXT NOT NULL,        -- 'transcribe'|'extract'|'colourise'|'story'
   used          INTEGER NOT NULL DEFAULT 0,  -- seconds, tokens or rounds
   PRIMARY KEY (day, route)
 );

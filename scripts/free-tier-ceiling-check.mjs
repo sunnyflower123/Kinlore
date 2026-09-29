@@ -34,7 +34,7 @@
 //      its bytes can hold whatever `seconds` says, because the model is paid
 //      for what it hears; a telling pays for its length, corrections
 //      included; and a reply cut off at its budget cost what a kept one does.
-//      `/extract` and `/colourise` have days of their own.
+//      `/extract`, `/colourise` and `/story` have days of their own.
 //   5. **A paid family is neither refused nor counted.**
 //   6. **Rule 2.** Once every pool is spent, a typed memory and a recording's
 //      audio still save and still reach the family.
@@ -55,7 +55,7 @@
 //
 //   node scripts/free-tier-ceiling-check.mjs
 //
-// After touching quota.ts, budget.ts, the three AI routes in worker.ts, or the
+// After touching quota.ts, budget.ts, the four AI routes in worker.ts, or the
 // FREE_TIER_* values in wrangler.jsonc.
 
 import { AsyncLocalStorage } from 'node:async_hooks'
@@ -193,7 +193,9 @@ globalThis.fetch = async (url, init) => {
 	upstream.push(body)
 	const message = body.modalities?.includes('image')
 		? { content: null, images: [{ image_url: { url: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ' } }] }
-		: { content: body.response_format ? JSON.stringify(EXTRACTED) : 'Äiti leipoi pullaa.' }
+		: body.response_format?.json_schema?.name === 'story'
+			? { content: JSON.stringify({ story: 'Mummo kertoo, että äiti leipoi pullaa.' }) }
+			: { content: body.response_format ? JSON.stringify(EXTRACTED) : 'Äiti leipoi pullaa.' }
 	return new Response(JSON.stringify({ choices: [{ message, finish_reason: cutOff ? 'length' : 'stop' }] }), {
 		status: 200,
 		headers: { 'content-type': 'application/json' },
@@ -221,6 +223,7 @@ function world(pools = {}) {
 		MODEL_EXTRACT_FALLBACK: shipped('MODEL_EXTRACT_FALLBACK'),
 		MODEL_TRANSCRIBE: shipped('MODEL_TRANSCRIBE'),
 		MODEL_COLOURISE: shipped('MODEL_COLOURISE'),
+		MODEL_STORY: shipped('MODEL_STORY'),
 		FREE_PHOTO_LIMIT: '20',
 		FREE_AI_SECONDS_PER_MONTH: '600',
 		FREE_COLOURISATIONS_PER_MONTH: '5',
@@ -270,6 +273,17 @@ const structure = (env, who, transcript = SHORT, extra = {}) =>
 const colourise = (env, who) =>
 	call(env, 'POST', '/colourise', { image: '/9j/4AAQSkZJRgABAQ', told: ['Äidin mekko oli tummanvihreä'], aspect: '4:3' }, who.auth)
 
+/// One card with one short telling, as the phone sends it (`StoryRequest`).
+const CARD = {
+	lang: 'fi',
+	kind: 'photo',
+	title: 'Mökin laituri',
+	date: '1950-luku',
+	mentions: [{ name: 'Aino', kind: 'person' }],
+	memories: [{ teller: 'Mummo', told: '14.6.2025', source: 'voice', text: SHORT }],
+}
+const compose = (env, who, card = CARD) => call(env, 'POST', '/story', card, who.auth)
+
 const refused = (reply) =>
 	reply.status === 429 && JSON.stringify(reply.body) === JSON.stringify({ error: 'too_many_requests' })
 const statuses = (replies) => replies.map((r) => r.status).join(' ')
@@ -278,11 +292,15 @@ try {
 	// The pools below are small on purpose, so a scenario spends one in a few
 	// calls. A clip is charged 300 s (the floor in quota.ts), so a thousand-
 	// second day holds three; a five-word telling is charged its output budget
-	// plus its bytes, 3 136 tokens, so a ten-thousand-token day holds three.
+	// plus its bytes, 3 136 tokens, so a ten-thousand-token day holds three;
+	// a card of one short telling is charged the story's floor plus the bytes
+	// of the card as rendered, about 6 150, so a twenty-thousand day holds
+	// three.
 	const SMALL = {
 		FREE_TIER_AI_SECONDS_PER_DAY: '1000',
 		FREE_TIER_EXTRACTION_TOKENS_PER_DAY: '10000',
 		FREE_TIER_COLOURISATIONS_PER_DAY: '2',
+		FREE_TIER_STORY_TOKENS_PER_DAY: '20000',
 	}
 
 	console.log('— many new families share one day —')
@@ -351,7 +369,7 @@ try {
 		check('and what they spent stays spent', refused(next), `${next.status}`)
 	})
 
-	console.log('— /extract and /colourise have days too —')
+	console.log('— /extract, /colourise and /story have days too —')
 	await scenario('structuring', async () => {
 		const { env } = world(SMALL)
 		const before = upstream.length
@@ -391,6 +409,34 @@ try {
 		check('and the third family is refused', refused(replies[2]), statuses(replies))
 		check('two reached the model', upstream.length - before === 2, `${upstream.length - before} calls`)
 	})
+	await scenario('composing', async () => {
+		const { env } = world(SMALL)
+		const before = upstream.length
+		const replies = []
+		for (let i = 0; i < 4; i += 1) replies.push(await compose(env, await stranger(env)))
+		check('three short cards spend a twenty-thousand-token day', replies.slice(0, 3).every((r) => r.status === 200), statuses(replies))
+		check('and the fourth is refused', refused(replies[3]), statuses(replies))
+		check('three reached the model', upstream.length - before === 3, `${upstream.length - before} calls`)
+	})
+	await scenario('a long card', async () => {
+		// Ten tellings of two thousand characters: charged their budget,
+		// 11 500, and their twenty thousand bytes. Then a short card under a
+		// story so far at its cap, which reaches the prompt whole and so is
+		// read, and charged, like a telling.
+		const { env } = world(SMALL)
+		const who = await stranger(env)
+		const before = upstream.length
+		const long = await compose(env, who, {
+			...CARD,
+			memories: Array.from({ length: 10 }, () => ({ ...CARD.memories[0], text: 'sana '.repeat(400) })),
+		})
+		check('twenty thousand characters cost more than a fresh day holds', refused(long), `${long.status}`)
+		const under = await compose(env, who, { ...CARD, soFar: 'sana '.repeat(4000) })
+		check('and so does a short card under a long story so far', refused(under), `${under.status}`)
+		const short = await compose(env, who)
+		check('while a short card on the same day still goes', short.status === 200, `${short.status}`)
+		check('one call reached the model', upstream.length - before === 1, `${upstream.length - before} calls`)
+	})
 
 	console.log('— a paid family is neither refused nor counted —')
 	await scenario('an archive family', async () => {
@@ -408,7 +454,12 @@ try {
 		check('the paid family goes on once it is spent', late.status === 200, `${late.status}`)
 		const coloured = await colourise(env, payer)
 		const structured = await structure(env, payer, 'sana '.repeat(1000))
-		check('in the other two routes as well', coloured.status === 200 && structured.status === 200, `${coloured.status} ${structured.status}`)
+		const composed = await compose(env, payer, { ...CARD, soFar: 'sana '.repeat(4000) })
+		check(
+			'in the other three routes as well',
+			coloured.status === 200 && structured.status === 200 && composed.status === 200,
+			`${coloured.status} ${structured.status} ${composed.status}`,
+		)
 	})
 
 	console.log('— rule 2: a spent day costs structure, never the telling —')
@@ -417,13 +468,15 @@ try {
 			FREE_TIER_AI_SECONDS_PER_DAY: '300',
 			FREE_TIER_EXTRACTION_TOKENS_PER_DAY: '3200',
 			FREE_TIER_COLOURISATIONS_PER_DAY: '1',
+			FREE_TIER_STORY_TOKENS_PER_DAY: '6500',
 		})
 		const who = await stranger(env)
 		await transcribe(env, who)
 		await structure(env, who)
 		await colourise(env, who)
-		const spent = [await transcribe(env, who), await structure(env, who), await colourise(env, who)]
-		check('all three pools are spent', spent.every(refused), statuses(spent))
+		await compose(env, who)
+		const spent = [await transcribe(env, who), await structure(env, who), await colourise(env, who), await compose(env, who)]
+		check('all four pools are spent', spent.every(refused), statuses(spent))
 
 		const audio = await call(env, 'POST', '/media?kind=audio', new Uint8Array(4500).fill(7), who.auth)
 		check('the recording\'s audio still uploads', audio.status === 200 && typeof audio.body?.key === 'string', `${audio.status}`)
@@ -463,15 +516,18 @@ try {
 	console.log('— the shipped values admit the longest honest input —')
 	await scenario('wrangler.jsonc', async () => {
 		const pools = Object.fromEntries(
-			['FREE_TIER_AI_SECONDS_PER_DAY', 'FREE_TIER_EXTRACTION_TOKENS_PER_DAY', 'FREE_TIER_COLOURISATIONS_PER_DAY'].map(
-				(name) => [name, shipped(name)],
-			),
+			[
+				'FREE_TIER_AI_SECONDS_PER_DAY',
+				'FREE_TIER_EXTRACTION_TOKENS_PER_DAY',
+				'FREE_TIER_COLOURISATIONS_PER_DAY',
+				'FREE_TIER_STORY_TOKENS_PER_DAY',
+			].map((name) => [name, shipped(name)]),
 		)
-		check('all three pools are set in wrangler.jsonc', Object.values(pools).every((v) => Number(v) > 0), JSON.stringify(pools))
+		check('all four pools are set in wrangler.jsonc', Object.values(pools).every((v) => Number(v) > 0), JSON.stringify(pools))
 		/// Each input on a day of its own, since the claim is about one of them.
 		const emptyDay = async () => {
-			const { env } = world(pools)
-			return { env, who: await stranger(env) }
+			const { db, env } = world(pools)
+			return { db, env, who: await stranger(env) }
 		}
 
 		// The largest body `/transcribe` accepts; one character more is a 413.
@@ -501,6 +557,36 @@ try {
 			lang: 'en',
 		}, day3.who.auth)
 		check('and the longest English one', en.status === 200, `${en.status}`)
+
+		// The largest card `/story` accepts: forty tellings of a thousand
+		// characters, which is the card's cap of 40 000 together, a story so
+		// far at its own cap, forty names and a title and tellers at the
+		// label's — once in Finnish, whose ä is two bytes, and once in a script
+		// of three-byte letters, the most a character the caps count can weigh.
+		// Each on a day of its own; what each was charged is read back from
+		// the pool, since the number is what the shipped value is set against.
+		const largestCard = (letter) => ({
+			lang: 'fi',
+			kind: 'photo',
+			title: letter.repeat(200),
+			date: '1950-luku',
+			mentions: Array.from({ length: 40 }, () => ({ name: letter.repeat(200), kind: 'person' })),
+			memories: Array.from({ length: 40 }, () => ({
+				teller: letter.repeat(200),
+				told: '14.6.2025',
+				source: 'voice',
+				text: letter.repeat(1000),
+			})),
+			soFar: letter.repeat(20_000),
+		})
+		const charged = (db) => db.prepare("SELECT used FROM free_tier_day WHERE route = 'story'").get()?.used
+		const day4 = await emptyDay()
+		const finnish = await compose(day4.env, day4.who, largestCard('ä'))
+		check('the largest card the route accepts, in Finnish', finnish.status === 200, `${finnish.status}`)
+		const day5 = await emptyDay()
+		const heavy = await compose(day5.env, day5.who, largestCard('€'))
+		check('and in a script of three-byte letters', heavy.status === 200, `${heavy.status}`)
+		console.log(`       (charged ${charged(day4.db)} and ${charged(day5.db)} of ${pools.FREE_TIER_STORY_TOKENS_PER_DAY})`)
 	})
 
 	console.log('— rules 8 and 9 —')
