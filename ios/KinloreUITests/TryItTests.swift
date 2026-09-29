@@ -16,6 +16,13 @@ final class TryItTests: XCTestCase {
     /// The example as the Finnish table has it, which is what the suite runs in.
     static let sentence = "Mummoni Anna kasvoi Helsingissä. Hän meni naimisiin Valtterin kanssa joskus viisikymmentäluvulla, ja kamera oli aina Valtterilla."
 
+    /// The example on the screen, found by its label. `staticTexts[sentence]`
+    /// throws before it looks: a query refuses an identifier over 128
+    /// characters, and the Finnish sentence has 129.
+    static func example(in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label == %@", sentence)).firstMatch
+    }
+
     /// The first of the opening starters, which the example stands in for.
     private static let starter = "Kuka on vanhin ihminen, jonka muistat?"
 
@@ -26,7 +33,7 @@ final class TryItTests: XCTestCase {
     func testTheExampleIsOfferedOnlyWhenTryingItOut() {
         let trying = launch(["-seed", "empty", "-tryIt", "YES"])
         XCTAssertTrue(
-            trying.staticTexts[Self.sentence].waitForExistence(timeout: 15),
+            Self.example(in: trying).waitForExistence(timeout: 15),
             "a trial install's first Tell screen has no example"
         )
         XCTAssertTrue(trying.buttons["Kirjoita se puolestani"].exists, "no way to have the example typed")
@@ -38,7 +45,7 @@ final class TryItTests: XCTestCase {
             plain.staticTexts[Self.starter].waitForExistence(timeout: 15),
             "the first launch lost its starters"
         )
-        XCTAssertFalse(plain.staticTexts[Self.sentence].exists, "the example is offered on an install nobody is trying out")
+        XCTAssertFalse(Self.example(in: plain).exists, "the example is offered on an install nobody is trying out")
         XCTAssertFalse(plain.buttons["Kirjoita se puolestani"].exists, "the example's button is on an ordinary install")
         plain.terminate()
 
@@ -46,7 +53,7 @@ final class TryItTests: XCTestCase {
         // the moment the example is for.
         let told = launch(["-seed", "archive", "-tryIt", "YES"])
         XCTAssertTrue(told.buttons["Aloita kertominen"].waitForExistence(timeout: 15), "never arrived: the record button")
-        XCTAssertFalse(told.staticTexts[Self.sentence].exists, "the example is offered over an archive with tellings in it")
+        XCTAssertFalse(Self.example(in: told).exists, "the example is offered over an archive with tellings in it")
         told.terminate()
     }
 
@@ -81,7 +88,7 @@ final class TryItTests: XCTestCase {
             app.buttons["Aloita kertominen"].waitForExistence(timeout: 10),
             "finishing did not return to the idle screen"
         )
-        XCTAssertFalse(app.staticTexts[Self.sentence].exists, "the example outlived the first telling")
+        XCTAssertFalse(Self.example(in: app).exists, "the example outlived the first telling")
         XCTAssertFalse(app.buttons["Kirjoita se puolestani"].exists, "the example's button outlived the first telling")
     }
 
@@ -91,7 +98,7 @@ final class TryItTests: XCTestCase {
     func testTryingItOutSurvivesALaunchWithoutTheArgument() {
         let app = launch(["-seed", "empty", "-tryIt", "YES"])
         XCTAssertTrue(
-            app.staticTexts[Self.sentence].waitForExistence(timeout: 15),
+            Self.example(in: app).waitForExistence(timeout: 15),
             "a trial install's first Tell screen has no example"
         )
         app.terminate()
@@ -104,7 +111,7 @@ final class TryItTests: XCTestCase {
         app.launchArguments = arguments
         app.launch()
         XCTAssertTrue(
-            app.staticTexts[Self.sentence].waitForExistence(timeout: 15),
+            Self.example(in: app).waitForExistence(timeout: 15),
             "the install forgot it was being tried out when the argument went"
         )
         app.terminate()

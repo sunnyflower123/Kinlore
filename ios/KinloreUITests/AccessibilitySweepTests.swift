@@ -1580,7 +1580,7 @@ final class AccessibilitySweepTests: XCTestCase {
             let allow = springboard.buttons["Allow"]
             if allow.waitForExistence(timeout: 5) { allow.tap() }
             require(app.staticTexts["Kuuntelen"], "the recording screen")
-            require(app.staticTexts[TryItTests.sentence], "the example while it is read")
+            require(TryItTests.example(in: app), "the example while it is read")
             let disc = require(app.buttons["Lopeta kertominen"], "the disc")
             let caption = require(app.staticTexts["Paina kun olet valmis"], "its caption")
             let window = app.windows.firstMatch.frame
@@ -1686,7 +1686,7 @@ final class AccessibilitySweepTests: XCTestCase {
     /// size where that is a promise, the example's own button among them.
     func testTellTryingItOut() throws {
         try sweep("Kerro, kokeilu", arguments: ["-seed", "empty", "-tryIt", "YES"]) { app, isLargest in
-            require(app.staticTexts[TryItTests.sentence], "the example")
+            require(TryItTests.example(in: app), "the example")
             let typeIt = require(app.buttons["Kirjoita se puolestani"], "the way to have it typed")
             let typing = require(app.buttons["Kirjoita sen sijaan"], "the way that needs no permission")
             if !isLargest {
