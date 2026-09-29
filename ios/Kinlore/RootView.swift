@@ -122,9 +122,16 @@ struct RootView: View {
             // that has to find its own subject. Every other use of this screen
             // was navigated to from a photo, a person or a question and already
             // knows what it is about.
-            TellScreen(usesDeck: true)
-                .tabItem { Label("Kerro", systemImage: "mic.circle.fill") }
-                .tag(Tab.tell)
+            //
+            // On a stack of its own since 30 Sep 2026, for Settings and
+            // nothing else: the gear every tab has pushes it here
+            // (`TellScreen.showsSettings`).
+            NavigationStack {
+                TellScreen(usesDeck: true)
+                    .settingsDestinations()
+            }
+            .tabItem { Label("Kerro", systemImage: "mic.circle.fill") }
+            .tag(Tab.tell)
 
             // The tab is named for what it opens, and that is two different
             // screens on two phones: a family member's opens the drawn tree,
@@ -278,6 +285,38 @@ struct HelpRoute: Hashable {}
 /// And for opening a single-device archive to a family, one step below
 /// Settings and offered only there. See `EnableSharingScreen`.
 struct SharingRoute: Hashable {}
+
+/// The way to Settings, in the trailing corner of every tab's bar since
+/// 30 Sep 2026: Albumi, Ihmiset in both of its views, and Kerro on the idle
+/// screen of a reader's phone (`TellScreen.showsSettings`). Until then it
+/// stood on the people list alone, and over the tree it was a row in the
+/// menu, so somebody who wanted a setting from the album had to know which
+/// tab kept it.
+///
+/// The identifier tells this one from the tree menu's row of the same name.
+struct SettingsGear: View {
+    var body: some View {
+        NavigationLink(value: SettingsRoute()) {
+            Image(systemName: "gearshape")
+                .elderTapTarget()
+        }
+        .accessibilityLabel("Asetukset")
+        .accessibilityIdentifier("settings")
+    }
+}
+
+extension View {
+    /// Settings and the three screens it opens, on whichever tab's stack the
+    /// gear was pressed. A stack that pushes a value it has no destination
+    /// for does nothing at all, so a row in Settings would have gone dead on
+    /// every tab but the one that registered these.
+    func settingsDestinations() -> some View {
+        navigationDestination(for: SettingsRoute.self) { _ in SettingsScreen() }
+            .navigationDestination(for: FamilyRoute.self) { _ in FamilyScreen() }
+            .navigationDestination(for: HelpRoute.self) { _ in HelpScreen() }
+            .navigationDestination(for: SharingRoute.self) { _ in EnableSharingScreen() }
+    }
+}
 
 /// Whether this phone's third tab is the family tree or the list of people.
 ///
@@ -499,23 +538,12 @@ struct PeopleScreen: View {
             .navigationDestination(for: HeardNamesRoute.self) { _ in
                 HeardNamesScreen()
             }
-            .navigationDestination(for: FamilyRoute.self) { _ in
-                FamilyScreen()
-            }
-            .navigationDestination(for: SettingsRoute.self) { _ in
-                SettingsScreen()
-            }
-            .navigationDestination(for: HelpRoute.self) { _ in
-                HelpScreen()
-            }
-            .navigationDestination(for: SharingRoute.self) { _ in
-                EnableSharingScreen()
-            }
+            .settingsDestinations()
             // A place card opens on this stack too, through the memories on a
             // person's card, and the small map on it opens the family's map.
             .placesMapDestinations()
             .toolbar {
-                // Settings belongs under People rather than as its own tab:
+                // Settings is a gear on the tabs rather than a tab of its own:
                 // three tabs is already the limit of what an 80-year-old holds
                 // in mind. It is shown without a backend too — a single-device
                 // archive is exactly the one with no copy anywhere else, and it
@@ -528,18 +556,23 @@ struct PeopleScreen: View {
                 // the group then and the group grows leftwards. Which is the
                 // same complaint as the button that used to sit under the empty
                 // state: whoever had just used it went looking where they had
-                // used it. Album's "+" can sit beside nothing and stay put;
-                // this bar has a conditional item in it, so this one cannot.
+                // used it. Album's "+" sits beside nothing that comes and goes
+                // and stays put; this bar has a conditional item in it, so
+                // this one cannot.
                 //
                 // Not a row in the list either, and that is measured: as a row
                 // above the door to the heard names it moved the audit's
                 // Dynamic Type finding onto that unchanged door (13 Sep 2026),
                 // and with the row gone the door passed again.
                 //
-                // None of these three over the tree (19 Sep 2026). The tree's
-                // bar has one button, the menu, and the same three doors are
-                // behind it — the drawing is the screen there, and a bar of
-                // controls over a map is the thing a map does without.
+                // The first two not over the tree (19 Sep 2026). The tree's
+                // bar has the menu, and the same doors are behind it — the
+                // drawing is the screen there, and a bar of controls over a
+                // map is the thing a map does without. The gear stands over
+                // it too since 30 Sep 2026, as on every tab (`SettingsGear`):
+                // the way to Settings had been a row in that menu, and so on
+                // the one phone that opens on the tree it was nowhere to be
+                // seen.
                 if !showsTree {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
@@ -564,14 +597,8 @@ struct PeopleScreen: View {
                         .accessibilityLabel("Sukupuu")
                     }
                 }
-                if !showsTree {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink(value: SettingsRoute()) {
-                            Image(systemName: "gearshape")
-                                .elderTapTarget()
-                        }
-                        .accessibilityLabel("Asetukset")
-                    }
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsGear()
                 }
             }
             // The card is opened once the sheet has gone, so it is pushed onto

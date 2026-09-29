@@ -358,10 +358,16 @@ struct GalleryScreen: View {
                 }
                 .accessibilityLabel("Lisää kuvia")
             }
+            // The gear every tab has since 30 Sep 2026 (`SettingsGear`).
+            // Declared last, so it takes the corner here as on the other tabs.
+            ToolbarItem(placement: .topBarTrailing) {
+                SettingsGear()
+            }
         }
         .navigationDestination(for: Subject.self) { subject in
             SubjectDetailScreen(subject: subject)
         }
+        .settingsDestinations()
         .navigationDestination(for: TileOpening.self) { opening in
             SubjectDetailScreen(subject: opening.photo)
                 .steppedInto(from: opening.photo.id, in: tiles)

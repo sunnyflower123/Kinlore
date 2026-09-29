@@ -7,13 +7,14 @@ import XCTest
 /// Where people land is `scripts/family-tree-layout-check.swift`'s question,
 /// and which word a card gets is `scripts/kinship-check.swift`'s. These ask
 /// what only a running app can answer: that Ihmiset opens on the tree with
-/// the whole confirmed family in it and nothing else on the screen, that the
-/// list and every other door are behind the one menu button, that a person
-/// in the tree opens their card or takes a new relative on the spot, that
-/// every word is inside the drawing, that the picture zooms under two
-/// fingers and keeps its people as tap targets at the smallest size, that
-/// a phone linked to no card opens on the oldest generation and not on
-/// paper, and that a grandparent's phone keeps the list.
+/// the whole confirmed family in it and nothing else on the screen but the
+/// menu and the gear every tab has, that the list and every other door are
+/// behind the menu, that a person in the tree opens their card or takes a
+/// new relative on the spot, that every word is inside the drawing, that the
+/// picture zooms under two fingers and keeps its people as tap targets at
+/// the smallest size, that a phone linked to no card opens on the oldest
+/// generation and not on paper, and that a grandparent's phone keeps the
+/// list.
 ///
 /// The suite's launch helper passes `-people list`, so the tests written about
 /// the list keep testing the list. These pass `-people tree`, or `default` to
@@ -38,11 +39,12 @@ final class FamilyTreeTests: XCTestCase {
         XCTAssertFalse(app.buttons["Aino"].exists, "a name nobody has checked is drawn in the tree")
         XCTAssertTrue(app.buttons["Valikko"].exists, "no menu over the tree")
         XCTAssertTrue(app.buttons["Koko suku"].exists, "no way to fit the whole family")
-        // Nothing else. The drawing is the screen, and the three doors the
-        // list keeps in its bar wait behind the menu.
+        // Nothing else. The drawing is the screen, and the doors the list
+        // keeps in its bar wait behind the menu — all but the gear every tab
+        // has since 30 Sep 2026, which is in the menu as well.
         XCTAssertFalse(app.buttons["Luettelo"].exists, "the way to the list stands on the tree rather than in the menu")
         XCTAssertFalse(app.buttons["Lisää henkilö"].exists, "the way to add a person stands on the tree rather than in the menu")
-        XCTAssertFalse(app.buttons["Asetukset"].exists, "the settings stand on the tree rather than in the menu")
+        XCTAssertTrue(app.buttons["settings"].exists, "the tree has no gear, which every tab has")
         // A phone linked to no card has nobody to say *Sinä* about, and no
         // card to fly home to.
         XCTAssertFalse(app.staticTexts["Sinä"].exists, "somebody is marked as you on a phone linked to no card")
@@ -60,7 +62,11 @@ final class FamilyTreeTests: XCTestCase {
         app.buttons["Valikko"].tap()
         XCTAssertTrue(app.buttons["Luettelo"].waitForExistence(timeout: 10), "the menu has no way to the list")
         XCTAssertTrue(app.buttons["Lisää henkilö"].exists, "the menu has no way to add a person")
-        XCTAssertTrue(app.buttons["Asetukset"].exists, "the menu has no way to the settings")
+        // The menu's row, and not the gear on the bar beneath the sheet.
+        let settingsRow = app.buttons.matching(
+            NSPredicate(format: "label == %@ AND identifier != %@", "Asetukset", "settings")
+        ).firstMatch
+        XCTAssertTrue(settingsRow.exists, "the menu has no way to the settings")
         XCTAssertTrue(app.staticTexts["Mitä viivat tarkoittavat"].exists, "the menu does not say what the lines mean")
         let door = app.buttons["1 nimi odottaa tarkistusta"]
         XCTAssertTrue(door.exists, "the name heard and never checked has no door in the menu")

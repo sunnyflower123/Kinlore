@@ -1,7 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// The app's most important screen. One button, no menus, no settings.
+/// The app's most important screen. One button, no menus, and no settings
+/// but the gear every tab has, on a reader's phone only (`showsSettings`).
 struct TellScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -46,6 +47,23 @@ struct TellScreen: View {
     /// wearing the opposite face.
     @State private var blind: BlindConfirmation.Card?
 
+    @AppStorage(Elder.largerTextKey) private var largerText = false
+
+    /// The gear every tab has (`SettingsGear`, since 30 Sep 2026), on the
+    /// tab's idle screen, which is its root, and on a reader's phone. Not on
+    /// a grandparent's, where this tab is the button and nothing else
+    /// (`blindCard`): she reaches Settings from Albumi and Ihmiset. Not in the
+    /// other phases either, which are a telling under way or what came of it.
+    /// The navigation bar comes and goes with the gear, so no other phase of
+    /// the tab is drawn under an empty one.
+    ///
+    /// True before the model exists, so that the bar is already in place when
+    /// the idle screen first lays out: `IdleView` measures its room once.
+    private var showsSettings: Bool {
+        guard usesDeck, !largerText else { return false }
+        return model.map { $0.phase == .idle } ?? true
+    }
+
     var body: some View {
         Group {
             if let model {
@@ -66,7 +84,13 @@ struct TellScreen: View {
                     Button("Sulje") { requestClose() }
                 }
             }
+            if showsSettings {
+                ToolbarItem(placement: .topBarTrailing) {
+                    SettingsGear()
+                }
+            }
         }
+        .toolbar(usesDeck && !showsSettings ? .hidden : .automatic, for: .navigationBar)
         // The interview is the one phase that can outlive this view, and a
         // swipe is how it did.
         //

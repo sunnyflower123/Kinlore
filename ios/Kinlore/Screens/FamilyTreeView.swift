@@ -245,9 +245,10 @@ struct FamilyTreeView: View {
             band(yours: yours)
         }
         .toolbar {
-            // The one control on the screen that is not the drawing. A menu's
-            // rows barely grow with the text size and no UI test here has
-            // been able to open one, so what it opens is a sheet of plain
+            // The one control on the screen that is not the drawing, beside
+            // the gear every tab has (`SettingsGear`, since 30 Sep 2026). A
+            // menu's rows barely grow with the text size and no UI test here
+            // has been able to open one, so what it opens is a sheet of plain
             // buttons rather than a `Menu`.
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
