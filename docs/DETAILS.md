@@ -166,7 +166,7 @@ included minutes are spent and a refused run looks exactly like a broken build.
 
 | Claim | Command |
 |---|---|
-| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 392 UI tests, 123 of them an accessibility sweep at both text sizes |
+| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 394 UI tests, 124 of them an accessibility sweep at both text sizes |
 | One purchase unlocks one family, and never a second | `node scripts/entitlement-binding-check.mjs` |
 | The paid archive is offered after a telling on a rhythm, never beside a name a human is being asked to confirm, never on a grandparent's phone and never where there is nothing to buy — while the purchase beside a ceiling the family has hit stands on every phone with a store | `swiftc … scripts/upsell-rhythm-check.swift` |
 | A place's looked-up coordinates follow its title through sync, a point somebody placed stays where they put it, and rubbish is refused | `node scripts/place-sync-check.mjs` |
@@ -604,7 +604,10 @@ The repo is written in **English**: docs, comments, identifiers, commit
 messages. The app's user interface is **written in Finnish**, because it was
 made first for Finnish tellers, many of them older — and it **speaks English by
 default**, because the app has to be shown to people who do not read Finnish. A
-Finnish phone still gets Finnish. The Finnish source strings are the lookup
+Finnish phone still gets Finnish, and Settings → *Language* (*Kieli*) chooses
+English or Finnish on any phone, from the next time the app opens: it writes
+the same per-app setting iOS keeps (`AppLanguage`), and *Same as the phone*
+(*Puhelimen kieli*) removes it. The Finnish source strings are the lookup
 keys, so writing a new one still means writing Finnish;
 `scripts/localisation-check.mjs` fails if it has no English.
 
@@ -612,11 +615,12 @@ The pipeline follows **the language the app is shown in**, as the closest guess
 at who is speaking: there are two system prompts and two hallucination
 ceilings, and the app sends `lang` from its own localisation. So a Finnish
 grandmother telling into a phone set to English gets the English prompt, which
-`SpokenLanguage` admits where it is defined. The English prompt is not the
-Finnish one translated — its first rule teaches a model about case endings that
-English does not have. The test transcripts stay Finnish because they are the
-input under test. The boundary and its exceptions are spelled out in
-[CLAUDE.md](../CLAUDE.md).
+`SpokenLanguage` admits where it is defined, unless Finnish is chosen in
+Settings, which moves the screen and the prompt together. The English prompt is
+not the Finnish one translated — its first rule teaches a model about case
+endings that English does not have. The test transcripts stay Finnish because
+they are the input under test. The boundary and its exceptions are spelled out
+in [CLAUDE.md](../CLAUDE.md).
 
 ## Licence
 

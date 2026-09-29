@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 123 sweep tests, each auditing one screen at the default text size and again at the largest, out of 392 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 394 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -113,7 +113,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 392 UI tests, including 123 accessibility sweeps that audit a
+The UI suite has 394 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -3406,8 +3406,64 @@ every tab: Albumi, Kerro, and Ihmiset over the tree as well, where the way to
 Settings had been a row in the tree's menu and so, on the phone that opens on
 the tree, nowhere in sight. Kerro shows it on a reader's phone only, over the
 idle screen: a grandparent's Kerro is the button and nothing else. Each tab's
-stack registers Settings and the three screens it opens
+stack registers Settings and the four screens it opens
 (`settingsDestinations()`), and `SettingsGearTests` opens it from each.
+
+### The language (built 29 Sep 2026)
+
+The last row in Settings is *Kieli* (*Language*), with the current choice
+under it, and it opens `LanguageScreen`: *Puhelimen kieli* (*Same as the
+phone*), the default, then English and Suomi, each written in its own
+language whatever the app is in. A phone that is not set to Finnish still
+opens in English until somebody chooses otherwise.
+
+Last, and not where it belongs. The language is how this phone shows the app,
+as the text size is, and the row was built beside *Isompi teksti* first and
+measured there twice. Every row in this List is a 90 pt cell, and anything
+above the wipe row moves it: as a section of its own the row moved the rest
+125 pt, and inside the text size's section 90 pt. Both times the wipe row fell
+out of the rows the List builds at launch, on an archive kept to this phone by
+choice and in a family of one or of several, so that four of the five
+`WipeTests`, which look for it without scrolling, could not find it. The
+section of its own also hid it from `LocalModeTests`' quiet button and brought
+back three Dynamic Type findings, on *Poistu perheestä* at the default size
+and on the *Arkisto* header at both. No finding was forgiven, and the tests
+that look for the wipe row still look without scrolling. Below it the language
+moves nothing. Measured in drags of half the window from the top of Settings
+on a 17 Pro, the row is one drag down at the default size in every state, and
+at the largest four on an archive with no server behind it or kept to this
+phone by choice, and five in a family: one drag past the wipe row, two in a
+family of several, where the footer that tells leaving from emptying lies
+between them. The Settings sweeps' pages at the largest size end on it.
+
+The choice is `AppleLanguages` in the app's own defaults domain, the per-app
+setting iOS itself keeps and reads when the app starts, and *Puhelimen kieli*
+removes the key (`AppLanguage`). So it takes effect the next time the app
+starts, and the line under the answers says so. The system resolves the
+language once per process: switching under a running app would take
+swizzling the bundle or quitting from under the person who asked, and would
+leave some screen half in one language either way. A return from the
+background is the same process, and keeps the old language until the app is
+ended, by iOS or by hand.
+
+What the app hears moves with it, because `SpokenLanguage.current` reads the
+same resolved localisation. From the next start, `lang` on transcription,
+extraction, the story and creating or joining a family is the chosen
+language's, and so are the interview's voice and the export's page. Suomi on
+an English phone is thereby the one way to give a Finnish teller the Finnish
+prompt, at the price of a Finnish screen.
+
+A screen of its own, decided while the row stood beside *Isompi teksti*, where
+this List is at its height limit (*Emptying*, below): inline, the answers
+would be three rows and a footer, and there they cost Settings one row. At the
+end three rows would move nothing, and it stays one row, so that the answers
+stand with the sentence that says when they take effect and the end of
+Settings grows by one cell. The wipe leaves the choice alone, as it leaves
+`TryIt`: it is the phone's setting for the app, not something the archive
+knows about the person holding it. `LanguageChoiceTests` scrolls to the row,
+chooses English, launches again and reads it back, then checks that *Puhelimen
+kieli* takes the key away. `testSettingsLanguage` sweeps the screen at both
+sizes.
 
 ### The way into a family
 
@@ -6752,7 +6808,8 @@ modifier (`pictureEdge`), where a height cap for small phones can go.
    keeping asks nothing and is the prominent button. An unedited story
    needs none of this: rule 1 composes it again or clears it by itself.
 10. **The story's language is the composing phone's.** Transcription's rule
-   — the prompt follows the phone's language, the app's guess at who is
+   — the prompt follows the app's language, the phone's or the one chosen in
+   Settings (§14), as the app's guess at who is
    speaking — has no one speaker to guess at here: three tellers may have
    told in two languages, and a telling does
    not record which. So `lang` is the language of the phone that composes,

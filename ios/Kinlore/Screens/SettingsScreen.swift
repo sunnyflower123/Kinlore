@@ -39,6 +39,10 @@ struct SettingsScreen: View {
     @State private var isConfirmingWipe = false
 
     @AppStorage(Elder.largerTextKey) private var largerText = false
+    /// Read again whenever this screen appears, which includes coming back
+    /// from `LanguageScreen`: the choice is in the app's own defaults domain,
+    /// which nothing here observes (`AppLanguage.chosen`).
+    @State private var language = AppLanguage.chosen
 
     /// Leaving is only offered when there is somebody to leave it to. The last
     /// member leaving would not delete the archive, it would strand it.
@@ -341,8 +345,42 @@ struct SettingsScreen: View {
                         .foregroundStyle(Elder.supporting)
                 }
             }
+
+            // The language, last. It belongs beside the text size, both being
+            // how this phone shows the app, and it was built there first
+            // (29 Sep 2026). But every row in this List is a 90 pt cell, and
+            // anything above the wipe row moves it: as a section of its own
+            // after "Isompi teksti" the row moved the rest 125 pt, and inside
+            // that section 90 pt. Both times the wipe row left the rows the
+            // List builds at launch on a phone kept to itself and in a family,
+            // and four of the five `WipeTests`, which look for it without
+            // scrolling, could not find it; the section of its own also
+            // brought back the Dynamic Type findings this List is known for,
+            // on "Poistu perheestä" and the "Arkisto" header. Below the wipe
+            // row it moves nothing (docs/ARCHITECTURE.md, "The language").
+            //
+            // A row that names the choice and opens the three answers on a
+            // screen of their own (`LanguageScreen`), which also says when a
+            // change takes effect. Two plain `Text`s, for the reason the
+            // sharing row above gives: they compose into the link's own
+            // element, where a `Label` or a `LabeledContent` would not, and
+            // the second is in `Elder.supporting` rather than the framework's
+            // grey.
+            Section {
+                NavigationLink(value: LanguageRoute()) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Kieli")
+                            .font(.body.weight(.medium))
+                        Text(verbatim: language.name)
+                            .foregroundStyle(Elder.supporting)
+                    }
+                    .elderTapTarget()
+                }
+                .accessibilityIdentifier("language")
+            }
         }
         .navigationTitle("Asetukset")
+        .onAppear { language = AppLanguage.chosen }
         .task {
             await session.refresh()
             #if DEBUG

@@ -65,14 +65,15 @@ hackathon, in the Next Gen Award (the student category).
   date stays as vague as it was said, so "sometime in the fifties" is stored as
   a decade (rule 5).
 - The app shows English by default and Finnish on a phone set to Finnish, and
-  hears speech as that language.
+  hears speech as that language. Settings can choose English or Finnish
+  instead, from the next time the app opens.
 - Settings has larger text, which also makes the app simpler, the export of the
   whole archive as one file (the memories as a readable page, the original
-  recordings and the photos), the family's members and invitations, and a way
-  to leave the family or clear the phone.
+  recordings and the photos), the family's members and invitations, a way to
+  leave the family or clear the phone, and the language.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-The app has 392 UI tests, including 123 accessibility sweeps that audit a screen
+The app has 394 UI tests, including 124 accessibility sweeps that audit a screen
 at the default text size and again at the largest.
 
 ## Who pays

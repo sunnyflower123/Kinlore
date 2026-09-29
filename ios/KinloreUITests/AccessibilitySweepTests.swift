@@ -351,15 +351,13 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// The last thing on the Settings screen of a phone that can leave its
-    /// family: the footer under the wipe row, which tells leaving from
-    /// emptying. The other two states have one row and nothing to tell it
-    /// from, so since 26 Sep 2026 they have no footer there, and their sweeps
-    /// end at the wipe row itself.
-    private func settingsFooter(in app: XCUIApplication) -> XCUIElement {
-        app.staticTexts.matching(NSPredicate(
-            format: "label BEGINSWITH %@", "Perheestä poistuminen"
-        )).firstMatch
+    /// The last thing on the Settings screen in every state: the language
+    /// row, below the wipe row since 29 Sep 2026 (`SettingsScreen` says why).
+    /// Until then the sweeps ended at the wipe row, or on a phone that can
+    /// leave its family at the footer under it, which tells leaving from
+    /// emptying; both are on the pages above this one.
+    private func settingsEnd(in app: XCUIApplication) -> XCUIElement {
+        app.buttons["language"]
     }
 
     /// What audits inside a `sweep` closure have already judged, so that the
@@ -2234,9 +2232,33 @@ final class AccessibilitySweepTests: XCTestCase {
             if isLargest {
                 try auditPageByPage(
                     app, "Asetukset, largest text size",
-                    to: app.buttons["Tyhjennä ja aloita alusta"], "the wipe row, last on the screen"
+                    to: settingsEnd(in: app), "the language row, last on the screen"
                 )
             }
+        }
+    }
+
+    /// The choice of language, one step below Settings (`LanguageScreen`):
+    /// three answers in an inline picker, two of them names written in their
+    /// own language whatever the app is in, and the sentence that says when a
+    /// change takes effect. `-appLanguage phone` so that the check mark is
+    /// where a phone nobody has changed has it. The row that opens it is last
+    /// on Settings, where the Settings sweeps' pages at the largest size end.
+    func testSettingsLanguage() throws {
+        try sweep(
+            "Kieli",
+            arguments: ["-seed", "archive", "-tab", "people", "-screen", "settings", "-appLanguage", "phone"]
+        ) { app, _ in
+            // Tapped where it is drawn, above the tab bar: the tree holds a
+            // row under the bar as hittable, and a tap there is the bar's.
+            let row = reach(settingsEnd(in: app), in: app, "the language row", swipes: 8)
+            if row.frame.maxY > app.tabBars.firstMatch.frame.minY { app.swipeUp() }
+            settle(row)
+            row.tap()
+            // Settled, because the audit would otherwise read the screen
+            // while the push is still sliding it in.
+            settle(require(app.buttons["Suomi"], "the choice of language"))
+            require(app.staticTexts["Kinlore vaihtaa kielen, kun se avataan seuraavan kerran."], "when it takes effect")
         }
     }
 
@@ -2362,7 +2384,7 @@ final class AccessibilitySweepTests: XCTestCase {
             if isLargest {
                 try auditPageByPage(
                     app, "Asetukset, vain tämä puhelin, largest text size",
-                    to: app.buttons["Tyhjennä ja aloita alusta"], "the wipe row, last on the screen"
+                    to: settingsEnd(in: app), "the language row, last on the screen"
                 )
             }
         }
@@ -2422,13 +2444,13 @@ final class AccessibilitySweepTests: XCTestCase {
             )
             reach(app.buttons["Tyhjennä ja aloita alusta"], in: app, "the wipe row")
             // At the largest size the two rows above are landmarks, and the
-            // measurement is every page from the top to the last footer:
+            // measurement is every page from the top to the last row:
             // between them sat the export row and the text-size row, which no
             // audit had in front of it.
             if isLargest {
                 return try auditPageByPage(
                     app, "Asetukset perheessä, largest text size",
-                    to: settingsFooter(in: app), "the footer under the wipe row"
+                    to: settingsEnd(in: app), "the language row, last on the screen"
                 )
             }
             settle(familyRow)

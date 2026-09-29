@@ -12,7 +12,9 @@
    language rather than for somebody to narrate over Finnish screens.
 
    To see it: -AppleLanguages "(en)" as a launch argument, or set the simulator
-   to English. Nothing in the app switches language on its own.
+   to English, or choose English under Settings -> Language (`AppLanguage`),
+   which takes effect the next time the app starts. Nothing in the app switches
+   language on its own.
 
    The register is deliberate. This app addresses an 80-year-old directly and
    plainly, never brightly, and the English says the same things the same way:
@@ -249,6 +251,9 @@
 "Tavallinen teksti" = "Standard text";
 "Isompi teksti tekee myös sovelluksesta yksinkertaisemman. Voit vaihtaa tämän myöhemmin asetuksista." = "Larger text also makes the app simpler. You can change this later in Settings.";
 "Sukupuu näkyy silloin listoina, ilman väritystä." = "The family tree then shows as lists, without colouring.";
+"Kieli" = "Language";
+"Puhelimen kieli" = "Same as the phone";
+"Kinlore vaihtaa kielen, kun se avataan seuraavan kerran." = "Kinlore changes language the next time it opens.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "This appears beside your memories, so the family knows who told them.";
 "%@ · %@" = "%@ · %@";
 

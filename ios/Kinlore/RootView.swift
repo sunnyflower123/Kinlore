@@ -287,6 +287,10 @@ struct HelpRoute: Hashable {}
 /// Settings and offered only there. See `EnableSharingScreen`.
 struct SharingRoute: Hashable {}
 
+/// And for the language the app is shown in, one step below Settings. See
+/// `LanguageScreen`.
+struct LanguageRoute: Hashable {}
+
 /// The way to Settings, in the trailing corner of every tab's bar since
 /// 30 Sep 2026: Albumi, Ihmiset in both of its views, and Kerro on the idle
 /// screen of a reader's phone (`TellScreen.showsSettings`). Until then it
@@ -307,7 +311,7 @@ struct SettingsGear: View {
 }
 
 extension View {
-    /// Settings and the three screens it opens, on whichever tab's stack the
+    /// Settings and the four screens it opens, on whichever tab's stack the
     /// gear was pressed. A stack that pushes a value it has no destination
     /// for does nothing at all, so a row in Settings would have gone dead on
     /// every tab but the one that registered these.
@@ -316,6 +320,7 @@ extension View {
             .navigationDestination(for: FamilyRoute.self) { _ in FamilyScreen() }
             .navigationDestination(for: HelpRoute.self) { _ in HelpScreen() }
             .navigationDestination(for: SharingRoute.self) { _ in EnableSharingScreen() }
+            .navigationDestination(for: LanguageRoute.self) { _ in LanguageScreen() }
     }
 }
 

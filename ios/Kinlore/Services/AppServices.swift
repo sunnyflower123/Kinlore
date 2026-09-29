@@ -249,14 +249,17 @@ private func post<Response: Decodable>(
 ///
 /// The app's own resolved localisation is the closest available answer without
 /// asking: a phone showing Finnish is a phone somebody chose Finnish on, and
-/// whoever talks into it is overwhelmingly likely to be speaking it.
+/// whoever talks into it is overwhelmingly likely to be speaking it. The choice
+/// in Settings (`AppLanguage`) is part of that resolution since 29 Sep 2026, so
+/// it moves this too, from the next launch.
 ///
 /// WHERE IT IS WRONG, said rather than hidden: an English-reading grandchild
 /// holding the phone while a Finnish grandmother talks. The English prompt then
 /// meets Finnish speech, asks for names "as they stand alone", and has no rule
 /// about case endings — so "Ainon" and "Aino" become two people in the tree.
-/// If that turns out to happen, the answer is to ask the teller which language
-/// they are about to speak, not to guess harder here.
+/// Suomi in Settings is the one way round it today, at the price of a Finnish
+/// screen. If that turns out not to be enough, the answer is to ask the teller
+/// which language they are about to speak, not to guess harder here.
 enum SpokenLanguage {
     static var current: String {
         Bundle.main.preferredLocalizations.first?.hasPrefix("fi") == true ? "fi" : "en"

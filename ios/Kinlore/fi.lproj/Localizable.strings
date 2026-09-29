@@ -225,6 +225,9 @@
 "Tavallinen teksti" = "Tavallinen teksti";
 "Isompi teksti tekee myös sovelluksesta yksinkertaisemman. Voit vaihtaa tämän myöhemmin asetuksista." = "Isompi teksti tekee myös sovelluksesta yksinkertaisemman. Voit vaihtaa tämän myöhemmin asetuksista.";
 "Sukupuu näkyy silloin listoina, ilman väritystä." = "Sukupuu näkyy silloin listoina, ilman väritystä.";
+"Kieli" = "Kieli";
+"Puhelimen kieli" = "Puhelimen kieli";
+"Kinlore vaihtaa kielen, kun se avataan seuraavan kerran." = "Kinlore vaihtaa kielen, kun se avataan seuraavan kerran.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi.";
 "%@ · %@" = "%@ · %@";
 "Pidä muistot vain tässä puhelimessa" = "Pidä muistot vain tässä puhelimessa";
