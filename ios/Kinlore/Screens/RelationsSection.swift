@@ -7,99 +7,52 @@ import SwiftUI
 /// a grandparent's phone has only this. Since 13 Sep 2026 a family member's
 /// phone also draws the whole family (`FamilyTreeView`, what Ihmiset opens on
 /// there); until then the drawing was a cut in the plan (PLAN.md §5).
+///
+/// The way to add one is not here since 30 Sep 2026: it is
+/// `AddRelativeButton`, at the top of the card.
 struct RelationsSection: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
 
-    @State private var adding: RelationKind?
-
     var body: some View {
-        Section {
-            group("Vanhempi", store.relatives(of: subject.id, kind: .parentOf), kind: .parentOf)
-            group("Lapsi", store.relatives(of: subject.id, kind: .parentOf, asParent: true), kind: .parentOf, asParent: true)
-            group("Puoliso", store.relatives(of: subject.id, kind: .spouseOf), kind: .spouseOf)
-            group("Sisarus", store.relatives(of: subject.id, kind: .siblingOf), kind: .siblingOf)
-
-            // A sheet of plain buttons, not a `Menu`, since 21 Sep 2026 — the
-            // choice the tree's person sheet had already made. Measured the
-            // day the friend was added as a fifth item after a divider: on
-            // iOS 26.5 that item never fired, tapped at its centre, at its
-            // edge, pressed, with the menu opened upward over its own row
-            // and downward clear of it, while the four above it fired every
-            // time. And the menu opened only under its words, so a finger
-            // in the middle of the row met nothing. The whole row takes the
-            // tap now, and the sheet's rows grow with the text size.
-            // A honey chip since 27 Sep 2026, the shape the card's other
-            // additions have (`ChipRow`: *Lisää tieto*, the date and the
-            // name on a photograph), and ink on it rather than the accent,
-            // which is the red of removal (`Elder.wax`).
-            ChipRow {
-                Button {
-                    isChoosingKind = true
-                } label: {
-                    // An `HStack` and not a `Label`, like the card's other
-                    // chips: measured under `ChipFlow`'s unspecified
-                    // proposal, a `Label` in a `List` answered 120 points
-                    // wide and several hundred tall, its words and icon at
-                    // the bottom of a honey column (27 Sep 2026).
-                    HStack(spacing: 8) {
-                        Image(systemName: "person.badge.plus")
-                        Text("Lisää sukulainen")
-                            .fixedSize(horizontal: false, vertical: true)
-                            // The identifier is for
-                            // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                            // and nothing else (26 Sep 2026). On the words
-                            // rather than the button: the audit reports the
-                            // label.
-                            .accessibilityIdentifier("relative.add")
-                    }
-                    .font(.body.weight(.medium))
-                }
-                // Both sheets hang off this one row, not off the section. A
-                // modifier on a `Section` in a `List` reaches every row in it,
-                // so a section with relatives on it presented the sheet from
-                // each of them at once, and the presentations that lost put the
-                // binding back: the sheet came up and went away on its own,
-                // measured 21 Sep 2026 as a button that existed and could not
-                // be tapped. The kind is carried across the sheet's dismissal
-                // rather than acted on inside it: two sheets cannot change
-                // places on the same frame, which is the tree's
-                // `afterPersonSheet` and `RelationPicker`'s own rule about the
-                // name sheet.
-                .sheet(isPresented: $isChoosingKind, onDismiss: startAdding) {
-                    RelativeKindSheet { kind, asChild in
-                        pending = (kind, asChild)
-                        isChoosingKind = false
-                    }
-                }
-                .sheet(item: $adding) { kind in
-                    RelationPicker(subject: subject, kind: kind, asChild: isAddingChild) {
-                        adding = nil
-                        isAddingChild = false
-                    }
-                }
-            }
-        } header: {
-            Text("Suku")
-                .foregroundStyle(Elder.supporting)
-        } footer: {
-            if hasUnconfirmed {
-                // "Sovelluksen", not "tekoälyn". The help page says "Sovellus
-                // arvaa puheesta nimiä ja sukulaisuuksia" and its heading is
-                // "Sovellus ehdottaa, ihminen päättää"; this was the one screen
-                // still naming the same thing differently, and it is the screen
-                // where somebody decides whether to believe a proposal. Rule 4
-                // is about who confirms, not about advertising what guessed.
-                Text("Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.")
+        let parents = store.relatives(of: subject.id, kind: .parentOf)
+        let children = store.relatives(of: subject.id, kind: .parentOf, asParent: true)
+        let spouses = store.relatives(of: subject.id, kind: .spouseOf)
+        let siblings = store.relatives(of: subject.id, kind: .siblingOf)
+        // The section exists only while somebody is in it, as the friends'
+        // below always has: the row that adds a relative stood in it until
+        // 30 Sep 2026, and without it a card with no relatives would carry
+        // *Suku* over nothing. The footer's condition is in the gate so
+        // that the sentence about proposals is never lost with it.
+        if !parents.isEmpty || !children.isEmpty || !spouses.isEmpty || !siblings.isEmpty || hasUnconfirmed {
+            Section {
+                group("Vanhempi", parents, kind: .parentOf)
+                group("Lapsi", children, kind: .parentOf, asParent: true)
+                group("Puoliso", spouses, kind: .spouseOf)
+                group("Sisarus", siblings, kind: .siblingOf)
+            } header: {
+                Text("Suku")
                     .foregroundStyle(Elder.supporting)
+            } footer: {
+                if hasUnconfirmed {
+                    // "Sovelluksen", not "tekoälyn". The help page says "Sovellus
+                    // arvaa puheesta nimiä ja sukulaisuuksia" and its heading is
+                    // "Sovellus ehdottaa, ihminen päättää"; this was the one screen
+                    // still naming the same thing differently, and it is the screen
+                    // where somebody decides whether to believe a proposal. Rule 4
+                    // is about who confirms, not about advertising what guessed.
+                    Text("Oranssilla merkityt ovat sovelluksen ehdotuksia. Vahvista vain ne jotka tiedät oikeiksi — väärä sukulaisuus on pahempi kuin puuttuva.")
+                        .foregroundStyle(Elder.supporting)
+                }
             }
         }
 
         // Friends, apart from the relatives (21 Sep 2026): a friend is a
         // person card like any other, and the line to one is not kinship, so
         // it is not under *Suku* and the tree draws it apart. The section
-        // exists only while somebody is in it — the way in is the row above
-        // — so a card with no friend carries no empty heading.
+        // exists only while somebody is in it — the way in is the button at
+        // the top of the card — so a card with no friend carries no empty
+        // heading.
         let friends = store.relatives(of: subject.id, kind: .friendOf)
         if !friends.isEmpty {
             Section {
@@ -115,17 +68,6 @@ struct RelationsSection: View {
                     .accessibilityIdentifier("friends.heading")
             }
         }
-    }
-
-    @State private var isAddingChild = false
-    @State private var isChoosingKind = false
-    @State private var pending: (kind: RelationKind, asChild: Bool)?
-
-    private func startAdding() {
-        guard let (kind, asChild) = pending else { return }
-        pending = nil
-        isAddingChild = asChild
-        adding = kind
     }
 
     private var hasUnconfirmed: Bool {
@@ -148,6 +90,98 @@ struct RelationsSection: View {
                 RelativeRow(subject: subject, relative: person, kind: kind, asParent: asParent, groupTitle: title)
             }
         }
+    }
+}
+
+/// *Lisää sukulainen*, the first thing under a person's name and face since
+/// 30 Sep 2026, above the facts and the story. From 28 Sep it stood at the
+/// foot of the relatives, under the story and its tellings, and on the test
+/// phone the card of a name just confirmed — which says the person gets a
+/// place in the tree once a relative is added — had to be scrolled to reach
+/// it. The relatives themselves stay under the story, which is what a card
+/// reads as, and this is the card's one way to add one.
+///
+/// Shown wherever that row was: on every person card, on every phone. On a
+/// grandparent's, where no tree is drawn, it is the only way to a
+/// relationship; and a name nobody has confirmed had the row as well.
+///
+/// Full width, ink on honey (`elderSecondary`), like the card's other honey
+/// actions (*Kysy perheeltä*): not the accent, which is the red of removal
+/// and the card's one *Kerro tästä muisto*.
+struct AddRelativeButton: View {
+    @Environment(\.dynamicTypeSize) private var typeSize
+    let subject: Subject
+
+    @State private var isChoosingKind = false
+    @State private var pending: (kind: RelationKind, asChild: Bool)?
+    @State private var adding: RelationKind?
+    @State private var isAddingChild = false
+
+    var body: some View {
+        // A sheet of plain buttons, not a `Menu`, since 21 Sep 2026 — the
+        // choice the tree's person sheet had already made. Measured the day
+        // the friend was added as a fifth item after a divider: on iOS 26.5
+        // that item never fired, tapped at its centre, at its edge, pressed,
+        // with the menu opened upward over its own row and downward clear of
+        // it, while the four above it fired every time. And the menu opened
+        // only under its words, so a finger in the middle of the row met
+        // nothing. The whole button takes the tap, and the sheet's rows grow
+        // with the text size.
+        Button {
+            isChoosingKind = true
+        } label: {
+            // The icon above the words at the accessibility sizes, so that
+            // *sukulainen* has the button's whole width to itself.
+            let layout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(spacing: 6))
+                : AnyLayout(HStackLayout(spacing: 10))
+            layout {
+                Image(systemName: "person.badge.plus")
+                    .accessibilityHidden(true)
+                Text("Lisää sukulainen")
+                    .fixedSize(horizontal: false, vertical: true)
+                    // The identifier is for
+                    // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                    // and nothing else (26 Sep 2026). On the words rather
+                    // than the button: the audit reports the label.
+                    .accessibilityIdentifier("relative.add")
+            }
+            .font(.body.weight(.medium))
+            .frame(maxWidth: .infinity)
+            .elderTapTarget()
+        }
+        .buttonStyle(.elderSecondary)
+        // The words and nothing else, whatever the label holds.
+        .accessibilityLabel(Text("Lisää sukulainen"))
+        // Both sheets hang off this one button, not off a section. A modifier
+        // on a `Section` in a `List` reaches every row in it, so a section
+        // with relatives on it presented the sheet from each of them at once,
+        // and the presentations that lost put the binding back: the sheet
+        // came up and went away on its own, measured 21 Sep 2026 as a button
+        // that existed and could not be tapped. The kind is carried across
+        // the sheet's dismissal rather than acted on inside it: two sheets
+        // cannot change places on the same frame, which is the tree's
+        // `afterPersonSheet` and `RelationPicker`'s own rule about the name
+        // sheet.
+        .sheet(isPresented: $isChoosingKind, onDismiss: startAdding) {
+            RelativeKindSheet { kind, asChild in
+                pending = (kind, asChild)
+                isChoosingKind = false
+            }
+        }
+        .sheet(item: $adding) { kind in
+            RelationPicker(subject: subject, kind: kind, asChild: isAddingChild) {
+                adding = nil
+                isAddingChild = false
+            }
+        }
+    }
+
+    private func startAdding() {
+        guard let (kind, asChild) = pending else { return }
+        pending = nil
+        isAddingChild = asChild
+        adding = kind
     }
 }
 
@@ -329,9 +363,9 @@ private struct RelativeRow: View {
 /// Which relative to add, on a sheet of plain buttons — the shape the tree's
 /// `TreePersonSheet` already had, and for the same reasons: a menu's rows
 /// barely grow with the text size, and a menu's fifth item never fired (see
-/// the note at *"Lisää sukulainen"* in `RelationsSection`). The friend's
-/// button stands after a gap: not kin, so not among them (§21, "Perhe is not
-/// suku"), while the row that opens this still says *Lisää sukulainen*.
+/// the note in `AddRelativeButton`). The friend's button stands after a gap:
+/// not kin, so not among them (§21, "Perhe is not suku"), while the button
+/// that opens this still says *Lisää sukulainen*.
 private struct RelativeKindSheet: View {
     @Environment(\.dismiss) private var dismiss
 

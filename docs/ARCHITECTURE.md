@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 395 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 396 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -113,7 +113,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 395 UI tests, including 124 accessibility sweeps that audit a
+The UI suite has 396 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -1830,6 +1830,49 @@ Built, in the order they were built:
    the same row in both its tests, and both met the same bar in the suite
    and alone — the row's centre at y 814.7, inside a bar from 791 — so its
    helper drags the card the same way.
+
+   **At the top of the card since 30 Sep 2026.** *Lisää sukulainen* is a
+   full-width honey button of its own (`AddRelativeButton`), the first
+   thing under the name and the face and above the facts and the story,
+   asked for from the test phone: the card of a name just confirmed says
+   the person gets a place in the tree once a relative is added, and the
+   way to add one was at the foot of the relatives, a scroll down under
+   the story. The relatives stay under the story, which is what the card
+   reads as, and *Suku* is drawn only while somebody is in it, as
+   *Ystävät* always was. The button shows wherever the row did — every
+   person card on every phone, a grandparent's and a name nobody has
+   confirmed included — and there is one per card, which
+   `RelativeRowTests.testTheWayToAddARelativeStandsAboveTheStoryOnce`
+   measures by the frames: on the screen the card opens on, above the
+   story, and none beside a relative added through it. At the largest size
+   the card now opens on the face, the name and the button, with the facts
+   and *Kerro tästä muisto* a screen down, where the list has not built
+   them: `testPersonCard` judges the button there instead, dragged to
+   mid-screen, `testPersonCardWithAFriend` knows the card by it, and the
+   fact sweeps reach what they wait for or tap. So do three tests that
+   looked below the button without scrolling, at the default size too:
+   the spouse on Vanha Aino's card in `SilentFailureTests`, and the story
+   and the failed compose's note on Aino's in `StoryCardTests`.
+   `testPersonCardWithFacts` drags at both sizes — at the default size its
+   last row back to where it stood, under the bar with the four facts
+   above it, and at the largest size to y 200 rather than 330. With the
+   button above, *Kerro tästä
+   muisto* under that row was reported unsupported and clipped at the real
+   largest size at y 458.33, three runs of three, and at 528.33, drawn whole
+   on two lines in the run's recording; the same frame with the button's
+   section taken out was clean twice, and at 328.33 it is clean on every
+   run. The finding follows what stands above the Kerro button, not its
+   code — the §15 signature once more. On the card with nothing told about
+   her, `testPersonCardWithoutAStory` drags *Poista henkilö* to y 584
+   rather than 700 at the default size: at 700 *Valitse kasvot* stood
+   across the navigation bar's lower edge, and the audit failed to complete
+   in time on two runs of two. At the largest size that page is judged
+   inside the sweep with the allowance the row to the photograph above it
+   has, on the button's words: the audit steps through the smaller sizes
+   with the list at its top and the button below the screen, and reported
+   the words unsupported and clipped where the recording draws them whole
+   on one line. The sweep ends on the card's top instead, as
+   `testPersonCard` does, and was clean alone on two runs of two.
 
    Two more texts took the same default-size signature with the card's new
    shapes, and are forgiven the same way: *Kysy perheeltä* and, under a

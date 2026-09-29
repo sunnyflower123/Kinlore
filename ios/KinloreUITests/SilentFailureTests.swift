@@ -83,10 +83,16 @@ final class SilentFailureTests: XCTestCase {
             "a file with one unreadable row was reported as an unreadable file"
         )
         // The row this version can read is still there: her card names the
-        // spouse the same file holds.
+        // spouse the same file holds. Swiped to since 30 Sep 2026, when
+        // *Lisää sukulainen* went to the top of the card and pushed the
+        // relatives below the screen it opens on, where the list has not
+        // built them.
         app.staticTexts["Vanha Aino"].tap()
+        XCTAssertTrue(app.navigationBars["Vanha Aino"].waitForExistence(timeout: 10), "her card did not open")
+        let spouse = app.buttons["Vanha Eino, Puoliso"]
+        for _ in 0 ..< 4 where !spouse.exists { app.swipeUp() }
         XCTAssertTrue(
-            app.buttons["Vanha Eino, Puoliso"].waitForExistence(timeout: 10),
+            spouse.waitForExistence(timeout: 10),
             "the relationship this version can read was lost with the one it cannot"
         )
     }

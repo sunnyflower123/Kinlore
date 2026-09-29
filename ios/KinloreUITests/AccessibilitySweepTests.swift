@@ -1933,7 +1933,9 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     /// A person's card while nothing has been told about them, which is when
-    /// the card can be deleted: the fixture's Aino.
+    /// the card can be deleted: the fixture's Aino. At the largest size on
+    /// three pages since 30 Sep 2026: the row to the photograph, the way to
+    /// delete her, and the card's top.
     func testPersonCardWithoutAStory() throws {
         try sweep("Person card without a story", arguments: ["-seed", "archive", "-tab", "people"]) { app, isLargest in
             // Through the door: a name nobody has checked is not on the list.
@@ -1993,7 +1995,51 @@ final class AccessibilitySweepTests: XCTestCase {
             // at 770.67 and measured 1.08:1 there. So at both sizes the
             // button is dragged clear of the bar, as somebody about to press
             // it would, and the card is judged there.
-            drag(removal, toMinY: 700, in: app)
+            //
+            // At the default size to y 584 rather than 700 since 30 Sep 2026,
+            // when *Lisää sukulainen* came to the top of the card. At 700 the
+            // recording has *Valitse kasvot* across the navigation bar's lower
+            // edge, and the audit failed to complete in time on two runs of
+            // two, one alone: the sign of words under the bar's glass
+            // (ARCHITECTURE §15). At 584 the button's section is whole under
+            // the bar, *Tiedot* is clear of it, and the audit was clean.
+            drag(removal, toMinY: isLargest ? 700 : 584, in: app)
+            if isLargest {
+                // At the largest size this page is judged here, with one
+                // allowance, and the sweep's own audit judges the card's top
+                // instead (30 Sep 2026). With *Lisää sukulainen* above the
+                // facts, the audit's Dynamic Type check steps through the
+                // smaller sizes with the list at its top and this button
+                // below the screen: the sweep's recording shows the list at
+                // its top at two of them, and back on the button at the end.
+                // The button's words were then reported as unsupported and as
+                // clipped at 320.33 × 63.33 pt at y 697.33, where the same
+                // recording draws them whole on one line. The row to the
+                // photograph above has the same allowance for the same
+                // reason. Contrast, the tap target and the rest of the page
+                // are measured as before.
+                XCTAssertTrue(hasStoppedDrawing(app), "the way to delete her was still being drawn")
+                judgedAbove.formUnion(labelsInTree(app))
+                do {
+                    let abortAfterAudit = continueAfterFailure
+                    continueAfterFailure = true
+                    defer { continueAfterFailure = abortAfterAudit }
+                    try audit(
+                        app, "Person card without a story, the way to delete her, largest text size",
+                        alsoAllowing: { issue in
+                            (issue.auditType == .dynamicType || issue.auditType == .textClipped)
+                                && issue.element?.identifier == "card.removal"
+                        }
+                    )
+                }
+                // The card's top, where `testPersonCard` judges a card at this
+                // size: *Lisää sukulainen* dragged to y 330, clear of the tab
+                // bar.
+                let add = app.buttons["Lisää sukulainen"]
+                for _ in 0 ..< 12 where !(add.exists && add.isHittable) { app.swipeDown() }
+                drag(require(add, "the way to add a relative, at the card's top"), toMinY: 330, in: app)
+                XCTAssertTrue(hasStoppedDrawing(app), "the card's top was still being drawn")
+            }
         }
     }
 
@@ -2013,12 +2059,24 @@ final class AccessibilitySweepTests: XCTestCase {
 
     /// A person's card carries the proposal row and the relationships, which are
     /// the two places in the app where a colour means something.
+    ///
+    /// At the largest size the card has opened on the face, the name and
+    /// *Lisää sukulainen* since 30 Sep 2026, and *Kerro tästä muisto* is a
+    /// screen further down, where the list has not built it. The button is
+    /// judged there instead, dragged clear of the tab bar, since no other
+    /// sweep has it on screen at that size.
     func testPersonCard() throws {
         try sweep(
             "Person card",
             arguments: ["-seed", "archive", "-tab", "people", "-screen", "person"]
-        ) { app, _ in
-            require(app.buttons["Kerro tästä muisto"], "the person card")
+        ) { app, isLargest in
+            if isLargest {
+                let add = require(app.buttons["Lisää sukulainen"], "the person card")
+                drag(add, toMinY: 330, in: app)
+                XCTAssertTrue(hasStoppedDrawing(app), "the card was still being drawn")
+            } else {
+                require(app.buttons["Kerro tästä muisto"], "the person card")
+            }
         }
     }
 
@@ -2064,7 +2122,10 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card, friend",
             arguments: ["-seed", "clan", "-tab", "people", "-screen", "person", "-person", "clan-jonne"]
         ) { app, isLargest in
-            require(app.buttons["Kerro tästä muisto"], "the person card")
+            // Known by *Lisää sukulainen* since 30 Sep 2026, the first button
+            // under the face: *Kerro tästä muisto* went a screen down at the
+            // largest size, where the list has not built it.
+            require(app.buttons["Lisää sukulainen"], "the person card")
             // The row and not its heading since 26 Sep 2026. Reached by the
             // heading, the largest size arrived with *"Ystävät"* under the
             // tab bar and the row unbuilt below it, so the audit there judged
@@ -2097,14 +2158,16 @@ final class AccessibilitySweepTests: XCTestCase {
             arguments: ["-seed", "related", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, _ in
             // Dragged clear of the tab bar before the tap since 27 Sep 2026:
-            // with the relatives drawn as tiles the row stands under the bar
+            // with the relatives drawn as tiles the row stood under the bar
             // on Eeva's card at the default text size, and a tap at its
             // centre landed on the bar — the sheet never came, in the suite
             // and alone, and the run's recording showed the chip behind the
             // glass. Reached is not hittable, and `isHittable` does not know
             // it: gated on that, the test dragged nothing and tapped the bar
-            // again, three runs the same day. The frames are compared.
-            let add = reach(app.buttons["Lisää sukulainen"], in: app, "the row that adds a relative")
+            // again, three runs the same day. The frames are compared. At
+            // the top of the card since 30 Sep 2026; the drag stays for any
+            // size that puts the button under the bar.
+            let add = reach(app.buttons["Lisää sukulainen"], in: app, "the button that adds a relative")
             let bar = app.tabBars.firstMatch
             if bar.exists && add.frame.maxY > bar.frame.minY { drag(add, toMinY: 330, in: app) }
             add.tap()
@@ -2166,16 +2229,28 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card with facts",
             arguments: ["-seed", "facts", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, isLargest in
-            require(app.buttons["Syntynyt, 1930-luku, Puumala"], "the birth on the card")
+            reach(app.buttons["Syntynyt, 1930-luku, Puumala"], in: app, "the birth on the card")
             // The section's last row, below the fold at the largest size: a
             // List realises only the rows on screen, so it is scrolled to,
             // not waited for. At the default size the row's words are the
             // audit's simulation artefact, measured and keyed as `fact.add`
             // in `AccessibilityPolicy`; nothing else here is forgiven.
-            // At the largest size the row is then dragged to mid-screen, as
-            // the photograph's memories heading is, and judged there.
             let add = reach(app.buttons["Lisää tieto"], in: app, "the row that adds a fact")
-            if isLargest { drag(add, toMinY: 330, in: app) }
+            // Dragged at both sizes since 30 Sep 2026, when *Lisää sukulainen*
+            // came to stand above the section. At the default size it pushed
+            // the trade under the tab bar and this row off the screen, so the
+            // row goes back to y 795, under the bar where it stood before,
+            // with the four facts above it. At the largest size it goes to
+            // y 200 rather than to 330, where it went before: with the button
+            // above, *Kerro tästä muisto* under the row was reported
+            // unsupported and clipped at the real largest size, 370 × 139.33
+            // pt at y 458.33 on three runs of three and at 528.33 with the row
+            // at 400, drawn whole on two lines in the run's recording. The
+            // same frame at 458.33 with the button's section taken out, the
+            // Kerro button's code untouched, was clean twice, and at 328.33,
+            // with the row at 200, it is clean on every run: the finding
+            // follows what stands above it (ARCHITECTURE §15).
+            drag(add, toMinY: isLargest ? 200 : 795, in: app)
         }
     }
 
@@ -2185,7 +2260,7 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card, add a fact, the kinds",
             arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, _ in
-            require(app.buttons["Lisää tieto"], "the row that adds a fact").tap()
+            factRow(app.buttons["Lisää tieto"], in: app, "the row that adds a fact").tap()
             require(app.buttons["Syntymä"], "the kinds to choose from")
         }
     }
@@ -2197,7 +2272,7 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card, add a fact, a birth's parts",
             arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, _ in
-            require(app.buttons["Lisää tieto"], "the row that adds a fact").tap()
+            factRow(app.buttons["Lisää tieto"], in: app, "the row that adds a fact").tap()
             require(app.buttons["Syntymä"], "the kinds to choose from").tap()
             require(app.buttons["Valitse paikka"], "the place row of a birth")
         }
@@ -2209,7 +2284,7 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card, add a fact, the place chooser",
             arguments: ["-seed", "archive", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, _ in
-            require(app.buttons["Lisää tieto"], "the row that adds a fact").tap()
+            factRow(app.buttons["Lisää tieto"], in: app, "the row that adds a fact").tap()
             require(app.buttons["Syntymä"], "the kinds to choose from").tap()
             require(app.buttons["Valitse paikka"], "the place row of a birth").tap()
             require(app.buttons["Puumala"], "the archive's places")
@@ -2224,9 +2299,21 @@ final class AccessibilitySweepTests: XCTestCase {
             "Person card, a fact being changed",
             arguments: ["-seed", "facts", "-tab", "people", "-screen", "person", "-person", "demo-eeva"]
         ) { app, _ in
-            require(app.buttons["Syntynyt, 1930-luku, Puumala"], "the birth on the card").tap()
+            factRow(app.buttons["Syntynyt, 1930-luku, Puumala"], in: app, "the birth on the card").tap()
             require(app.buttons["Poista tieto"], "the removal on the sheet")
         }
+    }
+
+    /// A row of the facts, which stand under *Lisää sukulainen* since 30 Sep
+    /// 2026 and at the largest size below the screen the card opens on:
+    /// scrolled to, since the list has not built it, and dragged clear of the
+    /// tab bar when it stands under it, since a tap there lands on the bar.
+    private func factRow(_ element: XCUIElement, in app: XCUIApplication, _ what: String) -> XCUIElement {
+        let row = reach(element, in: app, what)
+        if row.frame.maxY > app.tabBars.firstMatch.frame.minY {
+            drag(row, toMinY: 330, in: app)
+        }
+        return row
     }
 
     /// The spot: the photograph with the ring on it, the card's disc beside

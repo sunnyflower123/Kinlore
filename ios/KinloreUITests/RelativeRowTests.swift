@@ -52,6 +52,71 @@ final class RelativeRowTests: XCTestCase {
         XCTAssertTrue(spouse.exists, "no link reads \"Ritva, Puoliso\"")
     }
 
+    /// *Lisää sukulainen* at the top of a person's card (30 Sep 2026): on
+    /// the screen the card opens on, above the story, and the card's only
+    /// one. Until then it stood at the foot of the relatives, under the
+    /// story and its tellings, and the card of a name just confirmed — which
+    /// says the person gets a place in the tree once a relative is added —
+    /// had to be scrolled to find it. Toivo's card in `-seed story` has a
+    /// story and nobody related to him; a spouse is added through the
+    /// button, and she is listed under the story with no second way to add
+    /// a relative beside her, where the old row stood.
+    func testTheWayToAddARelativeStandsAboveTheStoryOnce() {
+        let app = launch([
+            "-seed", "story", "-tab", "people", "-screen", "person", "-person", "demo-story-toivo", "-story", "stub",
+        ])
+        XCTAssertTrue(app.navigationBars["Toivo"].waitForExistence(timeout: 10), "Toivo's card")
+        let add = app.buttons["Lisää sukulainen"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "no way to add a relative on the card as it opens")
+        XCTAssertEqual(adds(in: app).count, 1, "more than one way to add a relative on the card")
+        let bar = app.tabBars.firstMatch.frame
+        XCTAssertLessThanOrEqual(add.frame.maxY, bar.minY, "the button is not on the screen the card opens on: \(add.frame), tab bar at \(bar.minY)")
+
+        // Above the story: the button dragged to the top of the screen, so
+        // that the story under it is drawn too, and the two frames compared.
+        let top = app.navigationBars.firstMatch.frame.maxY
+        let story = app.otherElements["storyCard.story"]
+        for _ in 0 ..< 3 where !story.exists && add.frame.minY > top + 40 {
+            let start = add.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(
+                forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -min(200, add.frame.minY - top - 16))),
+                withVelocity: .slow, thenHoldForDuration: 0.5
+            )
+        }
+        XCTAssertTrue(story.waitForExistence(timeout: 10), "the story is not on screen under the button")
+        XCTAssertTrue(add.exists, "the button left the screen before the story came onto it")
+        XCTAssertLessThanOrEqual(add.frame.maxY, story.frame.minY, "the button is not above the story: button \(add.frame), story \(story.frame)")
+
+        // A spouse through the button, and her row under the story.
+        add.tap()
+        let spouse = app.buttons["Lisää puoliso"]
+        XCTAssertTrue(spouse.waitForExistence(timeout: 10), "the button opened no sheet of relatives")
+        spouse.tap()
+        let someoneNew = app.buttons["Joku uusi"]
+        XCTAssertTrue(someoneNew.waitForExistence(timeout: 10), "the picker")
+        someoneNew.tap()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the name field")
+        field.tap()
+        field.typeText("Aili")
+        app.buttons["Tallenna"].tap()
+
+        let row = app.buttons["Aili, Puoliso"]
+        reach(row, in: app)
+        XCTAssertTrue(row.exists, "the spouse added through the button is not on the card")
+        for other in adds(in: app) {
+            XCTAssertLessThan(
+                other.frame.maxY, row.frame.minY,
+                "a way to add a relative stands among the relatives again: \(other.frame), the spouse's row \(row.frame)"
+            )
+        }
+    }
+
+    /// Every button on screen that adds a relative.
+    private func adds(in app: XCUIApplication) -> [XCUIElement] {
+        app.buttons.matching(NSPredicate(format: "label == %@", "Lisää sukulainen")).allElementsBoundByIndex
+    }
+
     /// Scrolls down until the element is there. A list does not build the
     /// rows nobody can see, and every row this test asks for stands below
     /// the one before it.

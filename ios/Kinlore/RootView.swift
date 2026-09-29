@@ -1360,7 +1360,18 @@ struct SubjectDetailScreen: View {
             // what a card says first — and written by a person, never by the
             // extraction (rule 4). The section, its rows and its sheets are
             // `PersonFacts.swift`'s; this screen only says where it goes.
+            //
+            // Above them since 30 Sep 2026, the way to add a relative: the
+            // first thing under the name and the face, where the card of a
+            // name just confirmed is opened to do exactly that. Its own
+            // section, on the paper; the relatives it adds are listed under
+            // the story (`RelationsSection`).
             if subject.kind == .person {
+                Section {
+                    AddRelativeButton(subject: subject)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
                 PersonFactsSection(subject: current)
             }
 
@@ -1548,7 +1559,8 @@ struct SubjectDetailScreen: View {
 
             // Relationships only for people: a photo or an event has none.
             // Under the story and its tellings since 28 Sep 2026, which are
-            // the top of the card; above them until then.
+            // the top of the card; above them until then. The way to add one
+            // is not here but at the top, since 30 Sep 2026.
             if subject.kind == .person {
                 RelationsSection(subject: subject)
             }

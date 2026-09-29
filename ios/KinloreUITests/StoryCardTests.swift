@@ -74,7 +74,7 @@ final class StoryCardTests: XCTestCase {
     /// tellings were open when the story came, and stay open under it.
     func testTellingsWithNoStoryComposeOne() {
         let app = open("demo-story-aino")
-        require(story(in: app), "the story the stub composed for Aino", in: app)
+        reach(story(in: app), "the story the stub composed for Aino", in: app)
         let text = storyText(in: app)
         XCTAssertTrue(text.hasPrefix("Mummo kertoo, että"), "the story does not start with the oldest telling: \(text)")
         XCTAssertTrue(text.contains("Pekka kertoo, että"), "the story does not carry the second telling: \(text)")
@@ -152,9 +152,9 @@ final class StoryCardTests: XCTestCase {
     /// them, and the reading failing is not the memory failing.
     func testAFailedComposeSaysSoAndKeepsTheTellings() {
         let app = open("demo-story-aino", story: "fail")
-        XCTAssertTrue(
-            app.staticTexts["Tarinaa ei saatu koottua nyt. Muistot ovat tallessa."].waitForExistence(timeout: 20),
-            "the card does not say the story could not be composed"
+        reach(
+            app.staticTexts["Tarinaa ei saatu koottua nyt. Muistot ovat tallessa."],
+            "the card's word that the story could not be composed", in: app
         )
         XCTAssertTrue(app.buttons["Yritä uudelleen"].exists, "no second try is offered")
         XCTAssertFalse(story(in: app).exists, "a story is on the card although nothing composed one")
@@ -359,6 +359,26 @@ final class StoryCardTests: XCTestCase {
     ) -> XCUIElement {
         XCTAssertTrue(element.waitForExistence(timeout: 20), "never arrived: \(what)", file: file, line: line)
         return element
+    }
+
+    /// Swipes until the element is in the tree, waiting at each place for
+    /// what the stub composes, and then insists on it as `require` does. A
+    /// person's card has had *Lisää sukulainen* above its story since 30 Sep
+    /// 2026, and on Aino's the story section starts below the screen the
+    /// card opens on, where the list has not built it; a photograph's story
+    /// is on that screen and is required where it stands.
+    @discardableResult
+    private func reach(
+        _ element: XCUIElement,
+        _ what: String,
+        in app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
+        for _ in 0 ..< 4 where !element.waitForExistence(timeout: 3) {
+            app.swipeUp()
+        }
+        return require(element, what, in: app, file: file, line: line)
     }
 
     /// Swipes until the element is on screen and clear of the tab bar, so a

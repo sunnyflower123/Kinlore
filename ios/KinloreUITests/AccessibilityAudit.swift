@@ -1444,7 +1444,9 @@ enum AccessibilityPolicy {
         // the heard name's kind, and the listen button's words.
         "memory.heard", "heardName.kind", "memory.playback",
         // The card's last section (26 Sep 2026): the empty state's sentence
-        // and the removal button beside it.
+        // and the removal button beside it. Since 30 Sep 2026 one page allows
+        // both types on the button at the largest size too, and says why:
+        // `testPersonCardWithoutAStory`.
         "card.emptyState", "card.removal",
         // The card's memories heading — "1 muisto", "N muistoa" — under a
         // photograph whose file is on this phone (26 Sep 2026).

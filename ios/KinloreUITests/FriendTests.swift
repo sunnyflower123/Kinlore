@@ -14,9 +14,9 @@ final class FriendTests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// From Eeva's card: Lisää sukulainen, Lisää ystävä, Joku uusi, a name —
-    /// and the friend is on the card under a heading of her own, while the
-    /// spouse stays under Suku.
+    /// From Eeva's card: Lisää sukulainen at its top, Lisää ystävä, Joku
+    /// uusi, a name — and the friend is on the card under a heading of her
+    /// own, while the spouse stays under Suku.
     func testAFriendIsAddedFromTheCardAndListedApart() {
         let app = launch(["-seed", "related", "-tab", "people"])
         let eeva = app.staticTexts["Eeva"]
@@ -84,28 +84,19 @@ final class FriendTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Ystävät"].exists, "an empty heading was left behind")
     }
 
-    /// The card's row, the friend's button on the sheet it opens, and somebody
-    /// new by name.
+    /// The card's button, the friend's button on the sheet it opens, and
+    /// somebody new by name.
     private func addFriend(named name: String, in app: XCUIApplication) {
-        let row = app.buttons["Lisää sukulainen"]
-        for _ in 0 ..< 4 where !row.exists { app.swipeUp() }
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "the way to add a relative")
-        // Since the relatives became tiles (27 Sep 2026) the row stands
-        // under the tab bar on Eeva's card at the default size, and a tap
-        // at its centre lands on the bar: the sheet never came, in both
-        // tests. `isHittable` answers yes under the glass, so the frames are
-        // compared, and the card is dragged up the way the friend's row is
-        // before its swipe.
-        let bar = app.tabBars.firstMatch.frame
-        let middle = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        for _ in 0 ..< 4 where row.frame.maxY > bar.minY {
-            middle.press(
-                forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -200)),
-                withVelocity: .slow, thenHoldForDuration: 0.5
-            )
-        }
-        XCTAssertLessThanOrEqual(row.frame.maxY, bar.minY, "the row that adds a relative never came out from under the tab bar")
-        row.tap()
+        // At the top of the card since 30 Sep 2026, under the name and the
+        // face, so a test that has read down to the relatives goes back up
+        // for it — until it is on screen whole, under the navigation bar,
+        // where a tap at its centre lands on the button and not on the bar.
+        let button = app.buttons["Lisää sukulainen"]
+        let top = app.navigationBars.firstMatch.frame.maxY
+        for _ in 0 ..< 6 where !button.exists || button.frame.minY < top { app.swipeDown() }
+        XCTAssertTrue(button.waitForExistence(timeout: 10), "the way to add a relative")
+        XCTAssertGreaterThanOrEqual(button.frame.minY, top, "the button that adds a relative is under the navigation bar")
+        button.tap()
         let friend = app.buttons["Lisää ystävä"]
         XCTAssertTrue(friend.waitForExistence(timeout: 10), "the sheet offers no friend")
         friend.tap()
