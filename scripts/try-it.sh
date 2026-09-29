@@ -216,11 +216,20 @@ echo "- starting the simulator and opening Kinlore"
 for udid in "${UDIDS[@]}"; do
 	xcrun simctl bootstatus "$udid" -b >>"$LOG" 2>&1 || fail "The simulator did not start."
 done
-# Simulator draws a window for every simulator that is running. The argument
-# only chooses which one comes to the front when it was not open already.
+# The window onto the simulator: Simulator.app up to Xcode 26, and DeviceHub
+# from Xcode 27, which has no Simulator.app. Simulator draws a window for every
+# simulator that is running, and the argument only chooses which one comes to
+# the front when it was not open already. Without a window the app still
+# installs and launches, and the guide below says where to look.
 DEV=${DEVELOPER_DIR:-$(xcode-select -p)}
-open -a "$DEV/Applications/Simulator.app" --args -CurrentDeviceUDID "${UDIDS[0]}" 2>/dev/null \
-	|| open -a Simulator
+WINDOW=''
+for viewer in "$DEV/Applications/Simulator.app" "${DEV%/Developer}/Applications/DeviceHub.app"; do
+	[ -d "$viewer" ] || continue
+	if open -a "$viewer" --args -CurrentDeviceUDID "${UDIDS[0]}" >>"$LOG" 2>&1; then
+		WINDOW=${viewer##*/}
+	fi
+	break
+done
 for udid in "${UDIDS[@]}"; do
 	# An install over the last run's keeps the family and everything told.
 	xcrun simctl install "$udid" "$APP" >>"$LOG" 2>&1 || fail "Kinlore did not install."
@@ -248,9 +257,9 @@ case $MODE in
 			       in the fifties, and he always had the camera.
 
 			     Press the microphone and read it, or tell something of your own.
-			     iOS asks for the microphone first, and the Mac may then ask on
-			     Simulator's behalf. "Type it for me" puts it in the write field
-			     instead, and "Save" sends it.
+			     iOS asks for the microphone first, and the Mac may then ask as
+			     well. "Type it for me" puts it in the write field instead, and
+			     "Save" sends it.
 			  3. See what comes back: the people as proposals nobody has confirmed
 			     yet, and "sometime in the fifties" kept as the 1950s rather than a
 			     guessed year. A spoken telling is followed by questions asked out
@@ -276,7 +285,8 @@ case $MODE in
 			     whole invitation and press "Join a family". The two simulators
 			     share the Mac's clipboard.
 			  3. Tell something on one of them. The other fetches it when Kinlore
-			     comes to the front there: Shift-Command-H, then Kinlore.
+			     comes to the front there: go to its home screen (Shift-Command-H
+			     in Simulator) and open Kinlore again.
 
 			An invitation is valid for a week and lets one person in.
 		EOF
@@ -295,6 +305,23 @@ case $MODE in
 			as it was.
 
 			To be heard, run ./scripts/try-it.sh without --example.
+		EOF
+		;;
+esac
+
+LISTED="\"${NAMES[0]}\""
+[ ${#NAMES[@]} -eq 1 ] || LISTED="$LISTED and \"${NAMES[1]}\""
+case $WINDOW in
+	Simulator.app) ;;
+	DeviceHub.app)
+		echo
+		echo "If no window shows Kinlore, DeviceHub has $LISTED under Simulators."
+		;;
+	*)
+		cat <<-EOF
+
+			No window onto the simulator opened. Kinlore is running all the same:
+			open Simulator (Xcode 26) or DeviceHub (Xcode 27) and choose $LISTED.
 		EOF
 		;;
 esac

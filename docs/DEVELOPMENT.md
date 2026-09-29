@@ -324,9 +324,11 @@ cd ios && xcodegen generate
 # and never touches another, and it needs no DEVELOPER_DIR prefix, because it
 # falls back to /Applications/Xcode.app by itself when xcode-select points at
 # the Command Line Tools. The build's output is in build/try-it/build.log.
-# What it opens talks to PRODUCTION, and a telling there spends OpenRouter
-# credit: it is not the way to try a change, which is the Kinlore scheme with
-# `-api` and a local Worker.
+# The window onto the simulator is Simulator.app up to Xcode 26 and DeviceHub
+# from Xcode 27, which has no Simulator.app; the app launches whether or not
+# one opens. What it opens talks to PRODUCTION, and a telling there spends
+# OpenRouter credit: it is not the way to try a change, which is the Kinlore
+# scheme with `-api` and a local Worker.
 ./scripts/try-it.sh
 
 # A simulator for BUILDING, by UDID. `name=iPhone 17 Pro` does not resolve on
