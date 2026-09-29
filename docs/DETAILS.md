@@ -166,7 +166,7 @@ included minutes are spent and a refused run looks exactly like a broken build.
 
 | Claim | Command |
 |---|---|
-| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 377 UI tests, 120 of them an accessibility sweep at both text sizes |
+| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 378 UI tests, 120 of them an accessibility sweep at both text sizes |
 | One purchase unlocks one family, and never a second | `node scripts/entitlement-binding-check.mjs` |
 | The paid archive is offered after a telling on a rhythm, never beside a name a human is being asked to confirm, never on a grandparent's phone and never where there is nothing to buy — while the purchase beside a ceiling the family has hit stands on every phone with a store | `swiftc … scripts/upsell-rhythm-check.swift` |
 | A place's looked-up coordinates follow its title through sync, a point somebody placed stays where they put it, and rubbish is refused | `node scripts/place-sync-check.mjs` |
@@ -383,10 +383,14 @@ not close that hole.
 say before their button that the recording is sent to be written down and that
 the original is kept (`WhereMemoriesGo`; `ConsentOrderTests` checks at both
 text sizes that it is on screen whenever the button is), and the create form
-offers *"Only for me, on this phone"* (*"Vain minulle, tälle puhelimelle"*):
-an archive kept to one phone, which sends no recording and transcribes nothing
-(the guard in `TellViewModel.stopAndProcess`). `LocalModeTests` pins what that
-mode says and not the guard itself, and its header says why. Since 26 Sep 2026 the notice,
+offers an archive kept to one phone, which sends no recording and transcribes
+nothing (the guard in `TellViewModel.stopAndProcess`). Since 30 Sep 2026 that
+is a quiet button under the form's own, *"Keep the memories on this phone
+only"* (*"Pidä muistot vain tässä puhelimessa"*), and its confirmation says
+where the memories stay before anything is set; until then it was the form's
+first question, *"Who this is between"*. `LocalModeTests` walks that button
+to the mode and pins what the mode says, not the guard itself, and its header
+says why. Since 26 Sep 2026 the notice,
 the Help screen and the microphone prompt say that the recording goes through
 OpenRouter to a model, and the notice and Help add the photograph that has
 travelled with a telling about one since 19 Sep 2026
@@ -452,10 +456,11 @@ the phone's language, whatever was said (`StubTranscriptionService`), and only
 a Worker hears what you actually said: your own, through the `-api` argument in
 step 3, or the deployed one, through the `Kinlore Production` scheme — a
 Release build, which has the production address compiled in
-(`AppServices.productionURL`). Keep *Between the family* on the app's first
-form, because a phone kept to itself sends nothing (`Session.keepToThisPhone`);
-the family is then made on the deployed Worker, and the free tier's limits
-apply to it, as **Who pays** gives them.
+(`AppServices.productionURL`). Create the archive on the app's first form
+rather than *Keep the memories on this phone only*, because a phone kept to
+itself sends nothing (`Session.keepToThisPhone`); the family is then made on
+the deployed Worker, and the free tier's limits apply to it, as **Who pays**
+gives them.
 
 Run `xcodegen generate` again after changing `project.yml` **and after adding or
 removing a source file** — XcodeGen globs the sources, so a new `.swift` file is

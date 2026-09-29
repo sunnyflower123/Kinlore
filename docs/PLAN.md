@@ -861,6 +861,11 @@ finished.**
      instead: nothing is sent, nothing is written down, and the memory can be
      written by hand.
 
+     **No longer a question since 30 Sep 2026.** The family is the default,
+     and the single-phone archive is a quiet button under *"Luo arkisto"*,
+     *"Pidä muistot vain tässä puhelimessa"*, whose confirmation carries that
+     notice before *"Vain minulle, tälle puhelimelle"* sets `local_only`.
+
      **Two things it does not do**, both deliberate and both worth knowing
      before this is called finished:
 

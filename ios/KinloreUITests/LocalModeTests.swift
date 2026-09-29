@@ -19,9 +19,9 @@ import XCTest
 /// with a timing assertion that would flake.
 final class LocalModeTests: XCTestCase {
     func testLocalModeSaysTheTextIsNotComing() {
-        // `-local_only YES` is the same UserDefaults key the onboarding form's
-        // "Vain minulle, tälle puhelimelle" writes, so this exercises the real
-        // mode decision rather than simulating its outcome.
+        // `-local_only YES` is the same UserDefaults key the onboarding
+        // confirmation's "Vain minulle, tälle puhelimelle" writes, so this
+        // exercises the real mode decision rather than simulating its outcome.
         let app = launch(
             ["-seed", "empty", "-local_only", "YES"],
             api: "http://127.0.0.1:9"
@@ -81,11 +81,13 @@ final class LocalModeTests: XCTestCase {
 
     /// The door out of the single-device archive.
     ///
-    /// "Keiden kesken" is answered on the first form in the app, before anybody
-    /// knows what the app does, and until this existed the only thing that
-    /// unmade it was "Tyhjennä tämä laite" — an exit priced at every memory on
-    /// the phone. The cost of the wrong answer was the whole product: this mode
-    /// attempts no transcription at all.
+    /// The single-phone archive is chosen on the first form in the app, before
+    /// anybody knows what the app does — as the answer to "Keiden kesken"
+    /// until 30 Sep 2026, and since then behind a quiet button — and until
+    /// this existed the only thing that unmade it was "Tyhjennä tämä laite",
+    /// an exit priced at every memory on the phone. The cost of the wrong
+    /// answer was the whole product: this mode attempts no transcription at
+    /// all.
     ///
     /// **What this pins, exactly.** The row exists only where the choice was
     /// made (`isLocalByChoice` needs both the flag and an address), the dialog
@@ -146,6 +148,16 @@ final class LocalModeTests: XCTestCase {
         create.tap()
         XCTAssertTrue(create.waitForExistence(timeout: 15), "the failed create took the form away")
 
+        // And the quiet way to a single-phone archive is not offered over one
+        // (`canStayAlone`). Swiped to the end first: a `Form` does not build
+        // a row nobody can see, so a row missing far below the screen would
+        // pass without having been looked for.
+        app.swipeUp()
+        XCTAssertFalse(
+            app.buttons["Pidä muistot vain tässä puhelimessa"].exists,
+            "the fork over a single-phone archive offers that archive again"
+        )
+
         app.navigationBars.buttons.firstMatch.tap()
         let cancel = app.buttons["Peruuta"]
         XCTAssertTrue(cancel.waitForExistence(timeout: 10), "the fork over an archive has no way out")
@@ -178,6 +190,95 @@ final class LocalModeTests: XCTestCase {
             app.buttons["Ota perhe käyttöön"].exists,
             "a build with no address offers a family it cannot reach"
         )
+    }
+
+    /// The single-phone archive taken the way a founder takes it since
+    /// 30 Sep 2026: the quiet button under *"Luo arkisto"*, and a confirmation
+    /// that says the kept-here sentence before anything is set.
+    ///
+    /// Cancelled first, because this button acts where the question it
+    /// replaced only selected a row, so the way out of the confirmation has
+    /// to leave the form as it was. Then confirmed, and the archive it makes
+    /// is the chosen one: Settings offers the door to a family, which only
+    /// `local_only` with an address behind it does (`isLocalByChoice`).
+    ///
+    /// **Emptied at the end.** `keepToThisPhone` writes `local_only` to the
+    /// persistent domain, which no launch argument clears, and every later
+    /// test on this simulator would open to a single-phone archive. The wipe
+    /// is the one thing that takes it away, so it runs again on the way out
+    /// if the test stopped short of it.
+    func testTheQuietButtonKeepsTheArchiveToThisPhone() {
+        let api = "http://127.0.0.1:9"
+        let app = launch([], api: api)
+        addTeardownBlock { [self] in emptyIfStillKeptHere(api: api) }
+
+        let create = app.buttons["Aloita perheen arkisto"]
+        XCTAssertTrue(create.waitForExistence(timeout: 10), "never arrived: the first screen")
+        create.tap()
+        XCTAssertTrue(
+            app.staticTexts["Kuka sinä olet"].waitForExistence(timeout: 10),
+            "never arrived: the create form"
+        )
+
+        // The form's last row, so possibly under the fold.
+        let quiet = app.buttons["Pidä muistot vain tässä puhelimessa"]
+        for _ in 0 ..< 4 where !(quiet.exists && quiet.isHittable) { app.swipeUp() }
+        XCTAssertTrue(quiet.exists && quiet.isHittable, "never arrived: the quiet button under the create button")
+
+        quiet.tap()
+        let confirmation = app.alerts.firstMatch
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 10), "the quiet button set the mode without asking")
+        XCTAssertTrue(
+            confirmation.staticTexts.matching(
+                NSPredicate(format: "label BEGINSWITH %@", "Muistot ja alkuperäinen ääni säilyvät puhelimessa")
+            ).firstMatch.exists,
+            "the confirmation does not say what the choice means"
+        )
+        confirmation.buttons["Peruuta"].tap()
+        XCTAssertTrue(quiet.waitForExistence(timeout: 10), "cancelling took the form away")
+        XCTAssertFalse(app.tabBars.firstMatch.exists, "cancelling set up an archive anyway")
+
+        quiet.tap()
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 10), "the confirmation did not come back")
+        confirmation.buttons["Vain minulle, tälle puhelimelle"].tap()
+
+        let people = app.tabBars.buttons["Ihmiset"]
+        XCTAssertTrue(people.waitForExistence(timeout: 15), "confirming did not open an archive")
+        people.tap()
+        let settings = app.buttons["Asetukset"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10), "never arrived: the way to Settings")
+        settings.tap()
+        XCTAssertTrue(
+            app.buttons["Ota perhe käyttöön"].waitForExistence(timeout: 10),
+            "the archive is not the chosen single-phone one: Settings offers no door to a family"
+        )
+
+        empty(app)
+        XCTAssertTrue(create.waitForExistence(timeout: 15), "emptying did not return to the first screen")
+    }
+
+    /// *"Tyhjennä ja aloita alusta"* and its confirmation, from Settings.
+    private func empty(_ app: XCUIApplication) {
+        app.buttons["Tyhjennä ja aloita alusta"].tap()
+        let confirm = app.buttons["Tyhjennä"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10), "the wipe asked nothing first")
+        confirm.tap()
+    }
+
+    /// The phone as the test above found it, if that test stopped between
+    /// its confirmation and its wipe. Relaunched into Settings, which only an
+    /// archive has; on the first screen there is nothing to do.
+    private func emptyIfStillKeptHere(api: String) {
+        let app = launch(["-tab", "people", "-screen", "settings"], api: api)
+        defer { app.terminate() }
+        let fork = app.buttons["Aloita perheen arkisto"]
+        let wipe = app.buttons["Tyhjennä ja aloita alusta"]
+        for _ in 0 ..< 75 where !fork.exists && !wipe.exists {
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        guard wipe.exists else { return }
+        empty(app)
+        _ = fork.waitForExistence(timeout: 15)
     }
 
     /// Answers the microphone prompt if it is showing, by position rather than

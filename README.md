@@ -72,7 +72,7 @@ hackathon, in the Next Gen Award (the student category).
   to leave the family or clear the phone.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-The app has 377 UI tests, including 120 accessibility sweeps that audit a screen
+The app has 378 UI tests, including 120 accessibility sweeps that audit a screen
 at the default text size and again at the largest.
 
 ## Who pays
@@ -152,10 +152,10 @@ The stubs cannot listen. A recording comes back as one of three sample tellings
 in turn, in the phone's language, whatever you said
 (`StubTranscriptionService`), and only a Worker hears your own words. The
 `Kinlore Production` scheme is a Release build against the deployed one: run
-it, keep *Between the family* on the first form, and it hears what you say,
-within the free tier's limits. The backend, the keys and the command-line test
-runs are in [DETAILS.md](docs/DETAILS.md#setting-it-up) and
-[SETUP.md](docs/SETUP.md).
+it, create the archive on the first form rather than *Keep the memories on
+this phone only*, and it hears what you say, within the free tier's limits.
+The backend, the keys and the command-line test runs are in
+[DETAILS.md](docs/DETAILS.md#setting-it-up) and [SETUP.md](docs/SETUP.md).
 
 ## Licence
 

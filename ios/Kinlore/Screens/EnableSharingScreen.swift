@@ -2,10 +2,11 @@ import SwiftUI
 
 /// The way out of a single-device archive that does not cost the archive.
 ///
-/// *"Keiden kesken"* is answered on the first form in the app, before anybody
-/// knows what the app does, and until this existed the only thing that unmade
-/// it was *"Tyhjennä tämä laite"* — an exit priced at every memory on the
-/// phone. The wrong answer was expensive too: the kept-here mode attempts no
+/// The single-phone archive is chosen on the first form in the app, before
+/// anybody knows what the app does — as the answer to *"Keiden kesken"* until
+/// 30 Sep 2026, behind a quiet button since — and until this existed the only
+/// thing that unmade it was *"Tyhjennä tämä laite"*, an exit priced at every
+/// memory on the phone. The wrong answer was expensive too: the kept-here mode attempts no
 /// transcription at all, so one picker answered out of habit turned the product
 /// off for good on that device.
 ///

@@ -161,6 +161,9 @@ const ARTEFACT_IDS = [
 	'caption.place',
 	'facts.heading',
 	'relative.name',
+	'whereMemoriesGo',
+	'setup.keepHere',
+	'onboarding-error',
 ]
 const CLIPPED_IDS = [
 	'card.emptyState',

@@ -774,14 +774,16 @@ final class AccessibilitySweepTests: XCTestCase {
             // nobody can see: at the largest text size a landmark further down
             // has not been made yet, and waiting for it reads as "the form never
             // arrived". That is what happened when §10 lever 2 put a section
-            // above the one this used to watch for.
-            require(app.staticTexts["Keiden kesken"], "the setup form")
+            // above the one this used to watch for; it went on 30 Sep 2026.
+            require(app.staticTexts["Kuka sinä olet"], "the setup form")
             // At the largest size the form is several screenfuls tall, and a
-            // row is not in the tree until it is near the screen.
+            // row is not in the tree until it is near the screen. Paged to
+            // the quiet button, the form's last row since 30 Sep 2026, so the
+            // way to the single-phone archive is measured with the rest.
             if isLargest {
                 try auditPageByPage(
                     app, "Uusi arkisto, largest text size",
-                    to: app.buttons["Luo arkisto"], "the setup form's button"
+                    to: app.buttons["Pidä muistot vain tässä puhelimessa"], "the setup form's quiet button"
                 )
             }
         }
@@ -816,17 +818,17 @@ final class AccessibilitySweepTests: XCTestCase {
     /// not be made, in the app's language — rather than one written for a
     /// test.
     ///
-    /// Not page by page. The rows above the note are the blank form, which the
-    /// two sweeps above already page through at the largest size; what is new
-    /// is the last row, so `showErrorNote` brings it on and the sweep's own
-    /// audit judges the screen it ends on, at both sizes.
+    /// Not page by page. The rows around the note are the blank form, which
+    /// the two sweeps above already page through at the largest size; what is
+    /// new is the row under the button, so `showErrorNote` brings it on and
+    /// the sweep's own audit judges the screen it ends on, at both sizes.
     ///
     /// The newline typed after the name is the return key, which puts the
     /// keyboard away: the button is under it otherwise.
     func testCreateFamilyFormError() throws {
         try sweep("Uusi arkisto, virhe", arguments: [], api: "http://127.0.0.1:9", forgivingTheBarEdge: true) { app, _ in
             require(app.buttons["Aloita perheen arkisto"], "the way into setup").tap()
-            require(app.staticTexts["Keiden kesken"], "the setup form")
+            require(app.staticTexts["Kuka sinä olet"], "the setup form")
             let name = reach(app.textFields["Nimesi"], in: app, "the name field")
             name.tap()
             name.typeText("Testaaja\n")
@@ -873,7 +875,9 @@ final class AccessibilitySweepTests: XCTestCase {
         let window = app.windows.firstMatch.frame
         reach(note, in: app, "the note under the button", swipes: 3)
         // Built is not shown: a list makes its next row a little before that
-        // row scrolls in. One more flick, which at the list's end is the end.
+        // row scrolls in. One more flick, which at the list's end is the end
+        // — on the join form the note is the last row, and on the create form
+        // since 30 Sep 2026 only the quiet button is under it.
         if note.frame.maxY > window.maxY {
             app.swipeUp()
         }

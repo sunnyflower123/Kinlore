@@ -40,10 +40,11 @@ final class ConsentOrderTests: XCTestCase {
             // largest text size waiting for something further down waits for
             // something that does not exist yet — which is how this read as
             // "the form never arrived" when §10 lever 2 added a section above
-            // the one this used to watch for.
+            // the one this used to watch for. That section went on
+            // 30 Sep 2026, and the name's is first again.
             checkNoticeReachesTheButton(
                 onboardingButton: "Aloita perheen arkisto",
-                landmark: "Keiden kesken",
+                landmark: "Kuka sinä olet",
                 commit: "Luo arkisto",
                 textSize: size
             )
@@ -153,9 +154,11 @@ final class ConsentOrderTests: XCTestCase {
     /// anything, and the failure was read as a position for an hour because
     /// that is what it said.
     ///
-    /// `whereMemoriesGo` is on both branches of the notice, so the one the
-    /// form carries is the one this returns, exactly as before. The
-    /// identifier is invisible to VoiceOver, which reads the label.
+    /// `whereMemoriesGo` is on the one sentence the notice has had since
+    /// 30 Sep 2026, when the kept-here one moved into the confirmation behind
+    /// *"Pidä muistot vain tässä puhelimessa"*, above the button that sets
+    /// that archive up. The identifier is invisible to VoiceOver, which reads
+    /// the label.
     private func notice(in app: XCUIApplication) -> XCUIElement {
         app.staticTexts["whereMemoriesGo"]
     }

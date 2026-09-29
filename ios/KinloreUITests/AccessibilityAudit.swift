@@ -1515,6 +1515,20 @@ enum AccessibilityPolicy {
         // reported clipping and nothing else, and is here because the
         // clipped set below is kept a subset of this one.
         "facts.heading", "relative.name",
+        // The create form's consent sentence and the row under "Luo arkisto"
+        // (30 Sep 2026): the quiet button on the blank form and, once a
+        // request has failed, the error note that takes its place. The
+        // question in front of the form went that day and the rows under it
+        // moved up, and the finding stayed with the place rather than the
+        // words: 370 × 109.67 pt at y 477.67 for the sentence, and y 729.67
+        // for the button (370 × 90) and for the note (370 × 76.67) alike.
+        // Red on both sweeps on two runs of two on the H80 branch, the
+        // second alone; `main` at a08993e clean on the same two sweeps; the
+        // real largest size clean on every run, paged down to the quiet
+        // button. The join form carries the same sentence and note and
+        // audited clean at both sizes. The button on its words, as
+        // `relative.add` is.
+        "whereMemoriesGo", "setup.keepHere", "onboarding-error",
     ]
 
     /// The nine that reported `.textClipped` at the default size, and only

@@ -144,7 +144,8 @@ Everything else is one app. The difference is composed, never configured.
 ## 3. Arrival 1 — the founder, who opens and buys
 
 The spine exists and is right: fork → *"Uusi arkisto"* (name, whose phone,
-keiden kesken, consent above the button) → Kerro with opening starters →
+consent above the button, and the single-phone archive as a quiet button under
+it — *keiden kesken* until 30 Sep 2026) → Kerro with opening starters →
 first telling → result with *"Kuulin nämä"* (*"Kuulinko nimet oikein?"* until
 12 Sep 2026, when the screen stopped naming the moment and started showing the
 sentence each name was heard in — ARCHITECTURE §22) → rhythm-gated offer →
@@ -614,11 +615,15 @@ each is now built.
 
 ### 11.1 The archive that could be chosen and never unchosen
 
-*"Keiden kesken"* is answered on `CreateFamilyForm`, the first form in the app,
-by somebody who does not yet know what the app does. Answering *"Vain minulle,
-tälle puhelimelle"* set `local_only`, and the only thing in the app that
-unset it was `Session.renewIdentity()` — the second half of *"Tyhjennä tämä
-laite"*, which takes every memory on the phone with it.
+*"Keiden kesken"* was answered on `CreateFamilyForm`, the first form in the
+app, by somebody who does not yet know what the app does. Answering *"Vain
+minulle, tälle puhelimelle"* set `local_only`, and the only thing in the app
+that unset it was `Session.renewIdentity()` — the second half of *"Tyhjennä
+tämä laite"*, which takes every memory on the phone with it. Since 30 Sep 2026
+it is not a question: the family is the default, and the single-phone archive
+is a quiet button under *"Luo arkisto"*, *"Pidä muistot vain tässä
+puhelimessa"*, whose confirmation ends in the same *"Vain minulle, tälle
+puhelimelle"*.
 
 The price of the wrong answer was not a preference but the product: this mode
 attempts no transcription at all (§7's finding B4), so one picker answered out

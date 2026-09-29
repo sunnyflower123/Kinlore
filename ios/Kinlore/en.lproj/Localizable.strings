@@ -246,15 +246,13 @@
 "%@ · %@" = "%@ · %@";
 
 /* --- Where the memories live: this phone, or the family ------------------ */
-"Keiden kesken" = "Who this is between";
+"Pidä muistot vain tässä puhelimessa" = "Keep the memories on this phone only";
 "Vain minulle, tälle puhelimelle" = "Only for me, on this phone";
-"Perheen kesken" = "Between the family";
 "Nyt muistot ovat vain tässä puhelimessa, eikä puheesta kirjoiteta tekstiä." = "For now the memories are on this phone only, and speech is not written out as text.";
 "Perheen kesken kutsumasi jäsenet näkevät muistot, ja kertomasi kirjoitetaan tekstiksi." = "Between the family, the members you invite can see the memories, and what you tell is written out as text.";
 "Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa." = "This archive is still yours alone. An invited family member can see the memories and tell their own.";
 "Tämän puhelimen muistot lähtevät sille perheelle, jonka perustat tai johon liityt." = "This phone's memories go to whichever family you start or join.";
 "Takaisin vain tähän puhelimeen ei pääse." = "There is no way back to this phone alone.";
-"Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen." = "You can choose either one. The family can be turned on later in Settings — but what has been told to a family cannot be taken back to this phone alone.";
 
 /* --- Paying, and what the free archive holds ----------------------------- */
 "Ilmainen arkisto" = "The free archive";

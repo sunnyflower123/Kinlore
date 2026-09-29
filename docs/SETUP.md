@@ -213,7 +213,7 @@ xcrun simctl launch <device> com.kinlore.app -tab people -screen person
 | Argument | Build | What it does |
 |---|---|---|
 | `-api <url>` | any | Points the app at a backend; `-api ""` means none at all. Without the argument a DEBUG build runs on stubs — deliberately, so development does not stop when the Worker is broken — and a Release build uses production. |
-| `-local_only YES` | any | The same UserDefaults key the onboarding form's *"Only for me, on this phone"* (*"Vain minulle, tälle puhelimelle"*) writes: the chosen local mode, without filling the form. `LocalModeTests` launches with it beside a dead `-api` address to check the mode promises nothing it cannot deliver. |
+| `-local_only YES` | any | The same UserDefaults key the onboarding form's *"Keep the memories on this phone only"* (*"Pidä muistot vain tässä puhelimessa"*) writes once confirmed: the chosen local mode, without filling the form. `LocalModeTests` launches with it beside a dead `-api` address to check the mode promises nothing it cannot deliver. |
 | `-rcKey <key>` | DEBUG | The RevenueCat Test Store key. Without it purchases and the paywall do not exist, and the app works normally. The app reads it in any build, but in Release a Test Store key stops the app at launch — RevenueCat's own guard, not this app's (the `Kinlore Production` paragraph under *Backend — as Worker secrets*). |
 | `-tab memories` / `-tab people` | DEBUG | Opens on that tab instead of Tell. |
 | `-screen write` | DEBUG | Opens the typing view directly. |

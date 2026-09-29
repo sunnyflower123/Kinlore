@@ -31,7 +31,8 @@ struct OnboardingScreen: View {
 
     /// Presented as a sheet over an archive kept to this phone, from
     /// EnableSharingScreen: the fork gets a way to cancel, and the create form
-    /// stops offering "vain minulle", which is where the phone already is.
+    /// stops offering "pidä muistot vain tässä puhelimessa", which is where
+    /// the phone already is.
     var fromLocalArchive = false
 
     /// Presented over an archive whose device the server has stopped knowing
@@ -410,52 +411,33 @@ struct OnboardingScreen: View {
 /// worth more than the fix — a wrapper in a footer is invisible on screen and
 /// visible only to the audit.
 private struct WhereMemoriesGo: View {
-    /// Whether the archive being set up is shared with a family.
-    ///
-    /// Both sentences change with the answer now, and both have to: *"muistot
-    /// näkyvät perheen jäsenille"* is false on a phone that keeps them to
-    /// itself, and since finding B4 the second clause splits too. The kept-here
-    /// mode has no member the server knows, so nothing is sent and no text is
-    /// ever written — this notice used to say *"lähetetään silti palveluumme"*,
-    /// which was true while the mode still tried and met a 401, and became a
-    /// false promise the day the attempt was removed. A consent notice that is
-    /// wrong in either clause is worse than none.
-    ///
-    /// Since 26 Sep 2026 the shared branch names who hears the voice and what
-    /// travels with it: OpenRouter and the model behind it, where
-    /// *"palvelussamme"* read as writing done in house, and the photograph of
-    /// a telling about one (`ExtractionContext.swift`), which had gone along
-    /// unmentioned since 19 Sep. Of the three things the 19 Sep wording said
-    /// did not happen, it keeps the one `openrouter.ts` sets on every request
-    /// — no training, `data_collection: 'deny'` — and drops the two nothing
-    /// here can make good on: what a provider keeps for its own running is the
-    /// provider's to say, and "nobody is identified from the voice" was a claim
-    /// about our prompts rather than about anybody's model. The archived audio
-    /// is still sealed with the family key. The microphone permission text in
-    /// `ios/project.yml` and the Help screen say the same. The
-    /// kept-here branch deliberately gained no such clause: nothing reaches
-    /// the service, so there is nothing to describe, and `MemoryStore.save()`
-    /// writes plain JSON, so a sentence about encryption would be the one kind
-    /// of untruth a consent notice cannot afford.
-    ///
-    /// Since 26 Sep 2026 the kept-here branch names the phone's own backup.
-    /// It used to say *"jäävät tähän puhelimeen"* and *"ei lähetetä
-    /// mihinkään"*, and both were false for anybody whose phone backs up to
-    /// iCloud: the archive is in Documents, and iOS takes Documents into the
-    /// backup. That is not excluded, and on purpose — it is the one second
-    /// copy this archive gets without anybody doing anything, and rule 3 is
-    /// about the voice outliving the phone. So the sentence was made true
-    /// rather than the backup made smaller: what does not happen is the
-    /// family server and the writing into text.
-    var isShared = true
-
     var body: some View {
         Section {
         } footer: {
-            // Two `Text`s with one literal each. As a ternary of parts joined
-            // with `+` this was a String, shown verbatim in every language —
-            // the informed-consent sentence, Finnish on an English phone
-            // (founder's-eye review, 3 Sep 2026, finding #38).
+            // One literal in one `Text`. Until 30 Sep 2026 the create form
+            // asked who the archive was between, and this said one of two
+            // sentences, a `Text` with a literal each: as a ternary of parts
+            // joined with `+` it had been a String, shown verbatim in every
+            // language — the informed-consent sentence, Finnish on an English
+            // phone (founder's-eye review, 3 Sep 2026, finding #38). The
+            // kept-here sentence is now the message of the confirmation behind
+            // `CreateFamilyForm`'s quiet button, and its history went with it.
+            //
+            // Since 26 Sep 2026 the sentence names who hears the voice and
+            // what travels with it: OpenRouter and the model behind it, where
+            // *"palvelussamme"* read as writing done in house, and the
+            // photograph of a telling about one (`ExtractionContext.swift`),
+            // which had gone along unmentioned since 19 Sep. Of the three
+            // things the 19 Sep wording said did not happen, it keeps the one
+            // `openrouter.ts` sets on every request — no training,
+            // `data_collection: 'deny'` — and drops the two nothing here can
+            // make good on: what a provider keeps for its own running is the
+            // provider's to say, and "nobody is identified from the voice" was
+            // a claim about our prompts rather than about anybody's model. The
+            // archived audio is still sealed with the family key. The
+            // microphone permission text in `ios/project.yml` and the Help
+            // screen say the same.
+            //
             // The identifier is how `ConsentOrderTests` finds this sentence,
             // and it is not decoration. That test used to find it by a clause
             // of the sentence itself, and rewording the shared branch on
@@ -466,16 +448,9 @@ private struct WhereMemoriesGo: View {
             // of two things must not depend on the wording of either, and
             // `.accessibilityIdentifier` is invisible to VoiceOver, which
             // reads the label.
-            Group {
-                if isShared {
-                    Text("Muistot näkyvät perheen jäsenille. Kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
-                        .accessibilityIdentifier("whereMemoriesGo")
-                } else {
-                    Text("Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse.")
-                        .accessibilityIdentifier("whereMemoriesGo")
-                }
-            }
-            .foregroundStyle(Elder.supporting)
+            Text("Muistot näkyvät perheen jäsenille. Kertomasi ääni lähetetään OpenRouter-palvelun kautta tekoälylle, joka kirjoittaa puheen tekstiksi. Kun kerrot valokuvasta, kuva lähtee mukaan. Niillä ei opeteta tekoälyä. Alkuperäinen ääni säilytetään arkistossa salattuna, ja vain perheen omat puhelimet avaavat sen.")
+                .foregroundStyle(Elder.supporting)
+                .accessibilityIdentifier("whereMemoriesGo")
         }
     }
 }
@@ -504,29 +479,30 @@ private struct CreateFamilyForm: View {
     /// Set by pressing the button with the form not filled in. See `missing`.
     @State private var wasPressedEmpty = false
 
-    /// PLAN.md §10 lever 2, asked as a question rather than offered as a third
-    /// button on the screen before.
+    /// PLAN.md §10 lever 2: an archive kept to this phone, which sends no
+    /// recording and writes no text. Since 30 Sep 2026 it is a quiet button
+    /// under the one that creates the family, with a confirmation behind it
+    /// that says what the choice means before anything is set. Until then it
+    /// was this form's first question, *"Keiden kesken"*, in front of the
+    /// name and asked of every founder, with the family already chosen.
     ///
-    /// It belongs here because this is where the archive is created, which is
-    /// the sentence lever 1 was written from — and because the first screen had
-    /// no room. Two buttons at the largest text size already fill it; the intro
-    /// paragraph was dropped entirely to keep the second one above the fold, and
-    /// a third would have spent that fix on the least-used of the three.
+    /// Confirmed, because the button acts at once. The question's two rows
+    /// could be changed until *"Luo arkisto"* was pressed; this one sets the
+    /// mode on the tap, and the one way back is `EnableSharingScreen`, which
+    /// takes the phone's memories to a family rather than undoing the choice.
     ///
-    /// Not offered when joining. An invitation is somebody else's family, and
-    /// "join, but keep it to myself" is not a thing that could be honoured.
-    @State private var sharing: Sharing = .family
+    /// On this form rather than on the fork before it, which at the largest
+    /// text size has room for two buttons and no more. Not offered when
+    /// joining: an invitation is somebody else's family, and "join, but keep
+    /// it to myself" is not a thing that could be honoured.
+    @State private var isConfirmingAlone = false
 
-    private enum Sharing: Hashable { case family, alone }
-
-    private var isShared: Bool { sharing == .family }
-
-    /// The name is what a family sees beside a memory. Nothing shows it on a
-    /// phone that has no family, so it is not asked for there — a field somebody
-    /// fills in that changes nothing is a small dishonesty, and this is the
-    /// first form in the app.
+    /// The name is what a family sees beside a memory, so the family is not
+    /// created without one. The archive kept to this phone does not ask for
+    /// it: nothing shows a name on a phone with no family, and its button is
+    /// not held back by an empty field.
     private var isReady: Bool {
-        !isShared || !name.trimmingCharacters(in: .whitespaces).isEmpty
+        !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     /// What is still missing, said in words, instead of a button gone grey.
@@ -546,43 +522,6 @@ private struct CreateFamilyForm: View {
 
     var body: some View {
         Form {
-            // First, because it decides what the rest of the form is for. The
-            // same inline shape as the question below it: both answers visible
-            // without a tap, which is the difference between a question and a
-            // control somebody has to discover.
-            //
-            // Above the name rather than below it so that choosing the single
-            // phone takes a field away underneath the finger rather than out
-            // from under it.
-            if canStayAlone {
-            Section {
-                // A type of its own rather than a `Bool`, because the section
-                // below is also an inline `Picker` over two cases and two `Bool`
-                // pickers in one `Form` put `.tag(true)` and `.tag(false)` on
-                // four rows — the same tag type and values twice, which SwiftUI
-                // matches by type and value. It is the clearer code either way.
-                //
-                // It was **not** the cause of the audit finding this section
-                // arrived with, and that is worth recording so nobody spends the
-                // build on it twice: changing the tags from `Bool` to this enum
-                // left "Dynamic Type font sizes are partially unsupported" on
-                // the header below, byte for byte the same finding at the same
-                // coordinates.
-                Picker("Keiden kesken", selection: $sharing) {
-                    Text("Perheen kesken").tag(Sharing.family)
-                    Text("Vain minulle, tälle puhelimelle").tag(Sharing.alone)
-                }
-                .pickerStyle(.inline)
-                .labelsHidden()
-            } header: {
-                Text("Keiden kesken")
-                    .foregroundStyle(Elder.supporting)
-            } footer: {
-                Text("Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen.")
-                    .foregroundStyle(Elder.supporting)
-            }
-            }
-
             Section {
                 TextField("Nimesi", text: $name)
                     .textInputAutocapitalization(.words)
@@ -613,14 +552,16 @@ private struct CreateFamilyForm: View {
             }
 
             // Above the button rather than below it, which is where it was
-            // until this section was added. Measured, not preferred: with the
-            // "keiden kesken" question in front of it the form grew past the
-            // point where a `Form` builds rows nobody can see, and at
+            // until the "keiden kesken" question went in front of the form.
+            // Measured, not preferred: with that question the form grew past
+            // the point where a `Form` builds rows nobody can see, and at
             // AccessibilityXXXL the notice did not exist at all by the time
             // "Luo arkisto" became pressable — `ConsentOrderTests` said so in
             // those words. Lever 1 is an order, so the order is what had to
-            // move; the sentence itself is unchanged.
-            WhereMemoriesGo(isShared: isShared)
+            // move; the sentence itself is unchanged. The question went on
+            // 30 Sep 2026 and the order stays: a shorter form is no reason to
+            // put the sentence back under the button somebody presses.
+            WhereMemoriesGo()
 
             Section {
                 Button {
@@ -667,8 +608,39 @@ private struct CreateFamilyForm: View {
                 }
             }
 
+            // Straight under the button, because it is about the button: the
+            // single-phone archive below cannot fail.
             if let error = session.lastError {
                 Section { ErrorNote(text: error) }
+            }
+
+            // The quiet way, last: ink on the paper with no row drawn under
+            // it, where the family's button above is wax. The fork's join
+            // link looked like this until 30 Sep 2026.
+            if canStayAlone {
+                Section {
+                    Button {
+                        // Not while the family is being made: the two would
+                        // race for `session.mode`.
+                        guard !session.isWorking else { return }
+                        isConfirmingAlone = true
+                    } label: {
+                        // Ink on the text rather than on the button, which
+                        // a list styles as one of its own rows.
+                        Text("Pidä muistot vain tässä puhelimessa")
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Color.primary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity)
+                            .elderTapTarget()
+                            // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                            // and nothing else. On the words rather than the
+                            // button: the audit reports the label.
+                            .accessibilityIdentifier("setup.keepHere")
+                    }
+                    .listRowBackground(Color.clear)
+                }
             }
         }
         // Paper under the rows, as on every other form in the app. The one
@@ -677,6 +649,40 @@ private struct CreateFamilyForm: View {
         // until 30 Sep 2026 both setup forms did.
         .elderSurface()
         .navigationTitle("Uusi arkisto")
+        // The kept-here sentence, said before the mode is set rather than
+        // after, and the button under it is the answer the question's second
+        // row used to give. An alert, as at every confirmation in the app
+        // since 5 Sep 2026: on iOS 26 a `confirmationDialog` over a list is a
+        // popover with no cancel action drawn (`SettingsScreen`).
+        //
+        // Nothing reaches the service in this mode, so the sentence says what
+        // happens instead. It used to say *"lähetetään silti palveluumme"*,
+        // which was true while the mode still tried and met a 401, and became
+        // a false promise the day the attempt was removed (finding B4). It
+        // has no clause about encryption: `MemoryStore.save()` writes plain
+        // JSON, and a sentence about encryption would be the one kind of
+        // untruth a consent notice cannot afford.
+        //
+        // Since 26 Sep 2026 it names the phone's own backup. It used to say
+        // *"jäävät tähän puhelimeen"* and *"ei lähetetä mihinkään"*, and both
+        // were false for anybody whose phone backs up to iCloud: the archive
+        // is in Documents, and iOS takes Documents into the backup. That is
+        // not excluded, and on purpose — it is the one second copy this
+        // archive gets without anybody doing anything, and rule 3 is about the
+        // voice outliving the phone. So the sentence was made true rather than
+        // the backup made smaller: what does not happen is the family server
+        // and the writing into text.
+        .alert("Pidä muistot vain tässä puhelimessa", isPresented: $isConfirmingAlone) {
+            // The single-phone archive reaches no network, so it is not a
+            // `Task` and cannot fail. That asymmetry is the feature: the
+            // option is taken by somebody uneasy about the server, and making
+            // it wait on the server answering would be a poor joke. See
+            // `Session.keepToThisPhone`.
+            Button("Vain minulle, tälle puhelimelle") { session.keepToThisPhone() }
+            Button("Peruuta", role: .cancel) {}
+        } message: {
+            Text("Muistot ja alkuperäinen ääni säilyvät puhelimessa — ja sen iCloud-varmuuskopiossa, jos se on päällä. Perheen palvelimelle ne eivät lähde, eikä puheesta kirjoiteta tekstiä: voit kirjoittaa muistot itse.")
+        }
     }
 
     /// No family name is asked for any more, and the server's own default fills
@@ -685,11 +691,6 @@ private struct CreateFamilyForm: View {
     /// nothing renames a family later, so the field's own footer — *"voit
     /// päättää myöhemmin"* — was a promise nothing in the app kept.
     private func start() {
-        // The single-phone archive reaches no network, so it is not a `Task` and
-        // cannot fail. That asymmetry is the feature: the option is taken by
-        // somebody uneasy about the server, and making it wait on the server
-        // answering would be a poor joke. See `Session.keepToThisPhone`.
-        guard isShared else { return session.keepToThisPhone() }
         Task { await session.createFamily(named: "", displayName: name, archive: store) }
     }
 }

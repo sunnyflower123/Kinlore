@@ -222,15 +222,13 @@
 "Sukupuu näkyy silloin listoina, ilman väritystä." = "Sukupuu näkyy silloin listoina, ilman väritystä.";
 "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi." = "Tämä näkyy muistojesi vieressä, jotta perhe tietää kuka kertoi.";
 "%@ · %@" = "%@ · %@";
-"Keiden kesken" = "Keiden kesken";
+"Pidä muistot vain tässä puhelimessa" = "Pidä muistot vain tässä puhelimessa";
 "Vain minulle, tälle puhelimelle" = "Vain minulle, tälle puhelimelle";
-"Perheen kesken" = "Perheen kesken";
 "Nyt muistot ovat vain tässä puhelimessa, eikä puheesta kirjoiteta tekstiä." = "Nyt muistot ovat vain tässä puhelimessa, eikä puheesta kirjoiteta tekstiä.";
 "Perheen kesken kutsumasi jäsenet näkevät muistot, ja kertomasi kirjoitetaan tekstiksi." = "Perheen kesken kutsumasi jäsenet näkevät muistot, ja kertomasi kirjoitetaan tekstiksi.";
 "Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa." = "Tämä arkisto on vielä vain sinun. Kutsuttu perheenjäsen näkee muistot ja voi kertoa omansa.";
 "Tämän puhelimen muistot lähtevät sille perheelle, jonka perustat tai johon liityt." = "Tämän puhelimen muistot lähtevät sille perheelle, jonka perustat tai johon liityt.";
 "Takaisin vain tähän puhelimeen ei pääse." = "Takaisin vain tähän puhelimeen ei pääse.";
-"Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen." = "Voit valita jommankumman. Perheen voi ottaa käyttöön myöhemmin Asetuksista — mutta perheelle kerrottua ei saa takaisin vain tähän puhelimeen.";
 "Ilmainen arkisto" = "Ilmainen arkisto";
 "Litterointiaikaa tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld." = "Litterointiaikaa tässä kuussa jäljellä noin %lld minuuttia, ja kuville tilaa %lld.";
 "Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle." = "Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle.";
