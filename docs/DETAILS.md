@@ -434,7 +434,16 @@ certificates, no Sign in with Apple. The two push
 notifications are the one exception, and nothing waits on them. What else is not
 needed, and why, is in [`SETUP.md`](SETUP.md#what-is-not-needed).
 
-### 1. The app on its own — no keys, no backend, about two minutes
+**To try the app rather than work on it**, run `./scripts/try-it.sh` from the
+repository root, as the README's [*Try it*](../README.md#try-it) says. It
+generates the project, builds the `Kinlore Production` scheme into
+`build/try-it`, makes a simulator of its own and opens the app there, so what
+is said reaches the deployed Worker and is heard. `--two` does the same on two
+simulators, to share one family, and `--example` opens the `-seed family`
+example of step 3 on stubs. It installs nothing and touches no simulator it did
+not make. The steps below are the long way round, and the one to develop on.
+
+### 1. The app on its own — no keys, no backend
 
 ```bash
 git clone https://github.com/sunnyflower123/Kinlore.git

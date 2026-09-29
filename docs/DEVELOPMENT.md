@@ -311,6 +311,23 @@ while working on one thing — but the run before a commit is this one:
 # there on disk. This has cost time twice.
 cd ios && xcodegen generate
 
+# The app for somebody TRYING it rather than working on it: the README's
+# "Try it". It generates the project, builds `Kinlore Production` (Release, the
+# deployed Worker) into build/try-it and opens it on a simulator of its own,
+# "Kinlore Try", made on the first run on the newest installed iOS runtime the
+# app supports. `--two` adds "Kinlore Try 2", for an invitation between two
+# phones; `--example` builds the Debug scheme and opens the `-seed family`
+# archive on "Kinlore Example". It exists because the scheme Xcode opens on
+# runs on stubs, and until 29 Sep 2026 the README sent a judge there: whatever
+# they said, a canned sample came back. It finds its simulators by exact name
+# and never touches another, and it needs no DEVELOPER_DIR prefix, because it
+# falls back to /Applications/Xcode.app by itself when xcode-select points at
+# the Command Line Tools. The build's output is in build/try-it/build.log.
+# What it opens talks to PRODUCTION, and a telling there spends OpenRouter
+# credit: it is not the way to try a change, which is the Kinlore scheme with
+# `-api` and a local Worker.
+./scripts/try-it.sh
+
 # A simulator for BUILDING, by UDID. `name=iPhone 17 Pro` does not resolve on
 # this machine at all: four simulators carry that name, two of them on the same
 # runtime, and an ambiguous name fails as "Unable to find a device matching the

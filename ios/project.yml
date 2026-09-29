@@ -71,12 +71,19 @@ schemes:
   # names in them. A Release build has the production address compiled in, so
   # every launch is the same app. DEBUG-only arguments (`-seed`, `-screen`) do
   # nothing here.
+  #
+  # `-tryIt YES` since 29 Sep 2026, which marks the install as one somebody is
+  # trying the app out on: this scheme is how a judge runs the real app from
+  # Xcode, and `scripts/try-it.sh`, the other way, launches this same build
+  # with the same argument, so that the two give the same app.
   Kinlore Production:
     build:
       targets:
         Kinlore: all
     run:
       config: Release
+      commandLineArguments:
+        "-tryIt YES": true
 
   # A family's archive a year or two in, for seeing the app at the size it is
   # built for: 150 photographs, the clan's people, places on the map, some 250

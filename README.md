@@ -132,29 +132,59 @@ see the paywall with a key of your own.
 - [`docs/DETAILS.md`](docs/DETAILS.md), the long version of this page: what was
   measured, what I got wrong, what the server can read, and the full setup.
 
-## Run it in about two minutes
+## Try it
 
-You need Xcode 26 or later (it is built here with Xcode 27.0 and tested on an
-iOS 26.5 simulator) and XcodeGen (`brew install xcodegen`). You do not need a
-paid developer account, certificates or any keys.
+You need a Mac with Xcode 26 or later (it is built here with Xcode 27.0 and
+tested on an iOS 26.5 simulator) and XcodeGen (`brew install xcodegen`). You do
+not need a paid developer account, certificates or any keys.
 
 ```bash
 git clone https://github.com/sunnyflower123/Kinlore.git
-cd Kinlore/ios && xcodegen generate && open Kinlore.xcodeproj
+cd Kinlore && ./scripts/try-it.sh
 ```
 
-Pick an iPhone simulator and press Run. The `Kinlore` scheme builds Debug, and a
-simulator build needs no signing team. The app runs fully on stubs: record or
-type a memory, watch it come back structured, and look through the people it
-proposed.
+[`scripts/try-it.sh`](scripts/try-it.sh) builds the real app, the
+`Kinlore Production` scheme against the deployed Worker, and opens it on a
+simulator of its own called *Kinlore Try*. The first build takes several
+minutes, and this Release build takes longer than the Debug one Xcode starts
+with; a second run rebuilds only what changed. The script installs nothing and
+leaves every other simulator alone. Then:
 
-The stubs cannot listen. A recording comes back as one of three sample tellings
-in turn, in the phone's language, whatever you said
-(`StubTranscriptionService`), and only a Worker hears your own words. The
-`Kinlore Production` scheme is a Release build against the deployed one: run
-it, create the archive on the first form rather than *Keep the memories on
-this phone only*, and it hears what you say, within the free tier's limits.
-The backend, the keys and the command-line test runs are in
+1. **Start a family archive.** Keep *Between the family*, type your name and
+   press *Create the archive*.
+2. **Tell it something.** On the *Tell* tab, press the microphone and talk, or
+   read this aloud: *"My grandmother Anna grew up in Helsinki. She married
+   Walter sometime in the fifties, and he always had the camera."* *Write
+   instead* takes it typed.
+3. **See what comes back.** A spoken telling is followed by questions asked out
+   loud; answer them or press *That is enough for now*. The names it heard are
+   proposals that nobody has confirmed yet (rule 4), and "sometime in the
+   fifties" is kept as the 1950s rather than a guessed year (rule 5).
+
+What you say is heard for real, within the free tier's ten minutes of
+transcription a month.
+
+`./scripts/try-it.sh --two` opens it on two simulators that can share one
+family. On the first: *People*, the gear, *Family members and invitations*,
+*Invite a family member* and *Share the invitation*. On the second: *Join with
+an invitation link*, paste the whole invitation and press *Join a family*. An
+invitation is valid for a week and lets one person in.
+
+`./scripts/try-it.sh --example` opens an example family on a simulator of its
+own, *Kinlore Example*. It is a Debug build on stubs with no server behind it,
+so a telling there comes back as one of three sample tellings whatever you say.
+Run the script without `--example` to be heard.
+
+To run it from Xcode instead: `cd ios && xcodegen generate && open
+Kinlore.xcodeproj`, choose the **Kinlore Production** scheme and an iPhone
+simulator, and press Run.
+
+For development, Xcode opens on the `Kinlore` scheme: a Debug build that runs
+fully on stubs, with no network and no signing team. The stubs cannot listen. A
+recording comes back as one of three sample tellings in turn, in the phone's
+language, whatever you said (`StubTranscriptionService`), which is what the
+tests need and why the script builds the other scheme. The backend, the keys
+and the command-line test runs are in
 [DETAILS.md](docs/DETAILS.md#setting-it-up) and [SETUP.md](docs/SETUP.md).
 
 ## Licence
