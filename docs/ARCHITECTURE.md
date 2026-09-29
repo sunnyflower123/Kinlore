@@ -1855,6 +1855,45 @@ Built, in the order they were built:
    it was logged) was not split. So `card.colour` joins both sets, on the
    button's words as `card.ask` is, and the gate forgives twenty
    identifiers as unsupported and five as clipped.
+
+   The story on a card (§27) took the same signature on 29 Sep 2026, on
+   the two sweeps whose card carries a note under a story a person
+   corrected: at the default size only, every text of the story's section
+   but the story itself — the provenance line and the edit button, the
+   proposal's words, note and two buttons, the taken-back note's heading,
+   sentence and two buttons, and the consent line under either note,
+   unsupported and clipped. Alone twice each, the frames identical to the
+   decimal, the heading reported on one run of the two. Neither the
+   photograph taken away above the story nor the section rebuilt as one row
+   changed it, no text involved carries a line limit, a scale factor or a
+   size cap, and the same provenance line, edit button and consent line
+   audit clean on the jetty's card. The
+   caption's two chips did the same on the card of a photograph past the
+   free ceiling, at two heights, and audit clean on the archive's
+   photograph in the same frames. At the real largest size those sweeps
+   are judged page by page with nothing forgiven and are clean, and the
+   pictures at that size show every one of these texts grown and whole.
+   So thirteen identifiers join the first set, set on the parts for this
+   alone because a proposal's words are the family's, and the consent line
+   joins the second.
+
+   The person card took it the same day, once the story moved its sections:
+   a caption under the portrait and an inline title above the Tiedot
+   section, and the relatives under the story and its tellings. At the
+   default size only, the *Tiedot* heading was reported unsupported on the
+   card waiting to be yours, three runs of three, and the *Ystävät* heading
+   clipped on the card with a friend, with the friend's name and caption
+   under it on two of the three — one run in a batch and two alone, the
+   frames identical to the decimal, each text drawn whole in the audit's own
+   screenshot, none of their code changed, and `main` at 81e2a84 green on
+   both sweeps within the hour. At the real largest size both sweeps are
+   clean, and pictures at that size, taken before any audit, show both
+   headings and the friend's row grown and whole. So the heading and the
+   name are given identifiers and join the first set, the name although it
+   reported clipping alone, because the second set is kept inside the
+   first; the *Ystävät* heading, the name and the caption join the second.
+   The gate forgives thirty-five identifiers as unsupported and nine as
+   clipped, and `AccessibilityPolicy` keeps each one's frames.
 6. **Paywall** — RevenueCat's own, not a hand-built one: it is configured
    remotely, so prices and wording change without shipping a build. Every way in
    only exists when a RevenueCat key is configured — a dead button is worse than

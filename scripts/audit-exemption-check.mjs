@@ -146,8 +146,33 @@ const ARTEFACT_IDS = [
 	'card.colourNote',
 	'card.colour',
 	'namedElsewhere.title',
+	'storyCard.provenance',
+	'storyCard.editStory',
+	'storyCard.proposal',
+	'storyCard.proposalNote',
+	'storyCard.acceptProposal',
+	'storyCard.dismissProposal',
+	'storyCard.takenBack',
+	'storyCard.takenBackNote',
+	'storyCard.keepStory',
+	'storyCard.recomposeStory',
+	'storyCard.consent',
+	'caption.date',
+	'caption.place',
+	'facts.heading',
+	'relative.name',
 ]
-const CLIPPED_IDS = ['card.emptyState', 'card.removal', 'card.ask', 'card.colourNote', 'card.colour']
+const CLIPPED_IDS = [
+	'card.emptyState',
+	'card.removal',
+	'card.ask',
+	'card.colourNote',
+	'card.colour',
+	'storyCard.consent',
+	'friends.heading',
+	'relative.name',
+	'relative.caption',
+]
 
 function quotedStrings(declaration) {
 	const start = source.findIndex((l) => l.includes(declaration))

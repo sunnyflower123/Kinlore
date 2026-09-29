@@ -294,6 +294,9 @@ private struct RelativeRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(relative.displayTitle)
+                    // For the same gate as the caption's, and nothing else
+                    // (29 Sep 2026).
+                    .accessibilityIdentifier("relative.name")
                     .font(.body.weight(.medium))
                 Text(groupTitle)
                     // The identifier is for

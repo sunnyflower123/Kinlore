@@ -31,6 +31,11 @@ struct PersonFactsSection: View {
         } header: {
             Text("Tiedot")
                 .foregroundStyle(Elder.supporting)
+                // Keyed for the audit's default-size simulation since the
+                // caption under the portrait and the inline title moved the
+                // section (29 Sep 2026); the measurement is in
+                // `AccessibilityPolicy`.
+                .accessibilityIdentifier("facts.heading")
         }
     }
 }

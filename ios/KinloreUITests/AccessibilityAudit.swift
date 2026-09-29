@@ -1339,8 +1339,71 @@ enum AccessibilityPolicy {
     ///     audits clean at both sizes (alone twice, 45.1 s and 44.3 s, at a
     ///     load of 5). The position signature at the top edge; the sweep
     ///     drags at the largest size and forgives nothing there.
+    ///   * The story on a card (29 Sep 2026, §27), on the two sweeps whose
+    ///     card carries a note under a story a person corrected.
+    ///     `testStoryCardWithAProposal` and
+    ///     `testStoryCardWithATellingTakenBack` reported, at the default size
+    ///     only, every text of the story's section but the story itself:
+    ///     *"Muokattu käsin"* (105.33 × 18 pt at y 145) and the edit button
+    ///     beside it on both cards; the proposal's words, its note and its
+    ///     two buttons (y 262, 347, 397 and 469); the taken-back note's
+    ///     heading (247 × 18 pt at y 232, on one run of the two), its
+    ///     sentence and its two buttons (y 262, 352 and 424); and the consent
+    ///     line under either note, 370 × 74 pt, unsupported and clipped.
+    ///     Alone twice each at a load under ten, the frames identical to the
+    ///     decimal, and every one drawn whole in the audit's own screenshot.
+    ///     Ruled out, each with the parts' own code untouched: the
+    ///     photograph's section taken away above the story (the same
+    ///     findings on both cards, at two heights each); the section rebuilt
+    ///     as one row holding every part (the same); and typography, read
+    ///     rather than run — every one of these is a text style, fixed
+    ///     vertically, with no `lineLimit`, `minimumScaleFactor` or
+    ///     `dynamicTypeSize` cap on it or on anything above it. What the
+    ///     finding follows is the card: the same provenance line in its other
+    ///     wording, the edit button and the consent line audit clean on the
+    ///     jetty's card in `testStoryCardWithItsLogOpen` on every run of the
+    ///     day, and the first two on Toivo's and Puumala's cards, whose
+    ///     consent line went red and clean with nothing but a drag between.
+    ///     At a real AccessibilityXXXL both sweeps are judged page by page
+    ///     with nothing forgiven and are clean, and the pictures at that size
+    ///     show each of these texts grown and whole — the consent line ending
+    ///     in *"tekoälyä."*, the taken-back sentence in *"katoavat."*, the
+    ///     four buttons one above another. Keyed on identifiers, set on the
+    ///     parts for this purpose alone, because a proposal's words are the
+    ///     family's.
+    ///   * The caption's two chips on the card of a photograph past the free
+    ///     ceiling (the same day). `testPhotoDetailPastTheCeiling` reported
+    ///     *"Lisää ajankohta"* and *"Puumala"* partially unsupported at the
+    ///     default size, 122.33 × 20.33 and 68.33 × 20.33 pt at y 553.5,
+    ///     alone twice with the frames identical, and at y 297.5 with the
+    ///     card dragged up — red at every height, the memories heading's
+    ///     shape. The same chips on the archive's photograph, in the same
+    ///     frames to the decimal, audit clean, and the ceiling's card at the
+    ///     real largest size is clean on every run.
+    ///   * The person card's sections, once the story moved them (the same
+    ///     day): a caption under the portrait and an inline title above the
+    ///     Tiedot section, and the relatives under the story and its
+    ///     tellings. `testPersonCardWaitingToBeYou` reported the *"Tiedot"*
+    ///     heading partially unsupported at the default size, 370 × 40.33 pt
+    ///     at y 546.66, on three runs of three, and `testPersonCardWithAFriend`
+    ///     the *"Ystävät"* heading clipped, 370 × 40.33 pt at y 502, on the
+    ///     same three, with the friend's row under it clipped on two of
+    ///     them — her name, 37 × 20.33 pt at y 566, and its caption,
+    ///     36.33 × 14.33 pt at y 588.33. One run in a batch and two alone,
+    ///     at loads under six, the frames identical to the decimal, and each
+    ///     text drawn whole in the audit's own screenshot. None of their
+    ///     code changed, and `main` at 81e2a84 was green on both sweeps on
+    ///     the same simulator within the hour. At a real AccessibilityXXXL
+    ///     both sweeps are clean with nothing forgiven — the waiting card's
+    ///     page there ends above the Tiedot heading — and pictures at that
+    ///     size, taken page by page before any audit, show both headings and
+    ///     the friend's row grown and whole. The audit's own screenshot could
+    ///     not: taken after it, it drew the friend's card as empty paper, the
+    ///     half-rebuilt list the sweep's loss check describes. Keyed on
+    ///     identifiers, the two new ones set for this purpose alone, because
+    ///     a relative's name is the family's.
     ///
-    /// Clipping is forgiven for the five texts that reported it and for no
+    /// Clipping is forgiven for the nine texts that reported it and for no
     /// other, and only on this launch: the second still measures the real
     /// layout with nothing forgiven, so a sentence that really lost its last
     /// line at the largest size is caught there. `.contrast` must never join
@@ -1433,10 +1496,29 @@ enum AccessibilityPolicy {
         // dragged to the same place, clean with nothing forgiven. On the
         // words, as `relative.add` is.
         "namedElsewhere.title",
+        // The story's section on a card with a note under a story a person
+        // corrected (29 Sep 2026, §27): the provenance line and the edit
+        // button, the proposal's words, note and two buttons, the taken-back
+        // note's heading, sentence and two buttons, and the consent line
+        // under them.
+        "storyCard.provenance", "storyCard.editStory",
+        "storyCard.proposal", "storyCard.proposalNote",
+        "storyCard.acceptProposal", "storyCard.dismissProposal",
+        "storyCard.takenBack", "storyCard.takenBackNote",
+        "storyCard.keepStory", "storyCard.recomposeStory",
+        "storyCard.consent",
+        // The caption's date and place chips on the card of a photograph
+        // past the free ceiling (29 Sep 2026, §27).
+        "caption.date", "caption.place",
+        // The person card's "Tiedot" heading, once the story moved the
+        // card's sections (29 Sep 2026); and the relative row's name, which
+        // reported clipping and nothing else, and is here because the
+        // clipped set below is kept a subset of this one.
+        "facts.heading", "relative.name",
     ]
 
-    /// The five that also reported `.textClipped` at the default size, and
-    /// only those five; each is drawn whole at a real AccessibilityXXXL.
+    /// The nine that reported `.textClipped` at the default size, and only
+    /// those nine; each is drawn whole at a real AccessibilityXXXL.
     private static let simulationArtefactClippedIdentifiers: Set<String> = [
         "card.emptyState", "card.removal",
         // Clipped beside unsupported on every red run (27 Sep 2026).
@@ -1444,6 +1526,12 @@ enum AccessibilityPolicy {
         // Clipped beside unsupported on every red run of the colour
         // button (28 Sep 2026).
         "card.colour",
+        // The same, on both story sweeps (29 Sep 2026).
+        "storyCard.consent",
+        // Clipped alone, once the story moved the person card's sections
+        // (29 Sep 2026): the "Ystävät" heading on every red run, and the
+        // friend's row under it, name and caption, on two of three.
+        "friends.heading", "relative.name", "relative.caption",
     ]
 
     /// The join form's code field with a code in it, reported clipped by the
