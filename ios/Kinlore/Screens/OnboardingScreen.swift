@@ -60,10 +60,17 @@ struct OnboardingScreen: View {
     ///
     /// The title says what the app is and the two buttons say what can be done.
     /// A promise nobody can reach the buttons past is not a promise.
+    ///
+    /// Rewritten on 30 Sep 2026 to name the whole family as the ones who tell.
+    /// It asked the family to gather what *the grandparents* remember, which
+    /// is narrower than rule 1's teller, whoever in the family wants to tell.
+    /// One sentence now, and shorter in both languages (English 90 characters
+    /// against 95, Finnish 77 against 97), so it grows no taller at xxxLarge,
+    /// the largest size that still shows it.
     private var intro: LocalizedStringKey? {
         typeSize.isAccessibilitySize
             ? nil
-            : "Kerätkää yhdessä talteen se mitä isovanhemmat muistavat. Kerro omalla äänelläsi — me järjestämme."
+            : "Jokainen perheessä voi kertoa muistonsa omalla äänellään — me järjestämme ne."
     }
 
     var body: some View {
@@ -292,12 +299,19 @@ struct OnboardingScreen: View {
             // The mark is decoration. At accessibility sizes it competes with
             // the two buttons for the same screen, and the buttons win.
             if !typeSize.isAccessibilitySize {
-                Image(systemName: "photo.stack")
-                    .font(.system(size: 72))
-                    .foregroundStyle(.tint)
-                    // Decoration, and VoiceOver was reading it out as
-                    // "photo.stack" — the symbol's own name, in English, on the
-                    // first screen of a Finnish app.
+                // The medallion the launch screen has just drawn at 120 pt
+                // (`UILaunchScreen` in project.yml), so the first screen goes
+                // on from the first frame. It was the system's `photo.stack`
+                // until 30 Sep 2026: a generic symbol straight after the app's
+                // own mark.
+                Image("LaunchMark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 96, height: 96)
+                    // Decoration. The symbol that stood here was read out by
+                    // VoiceOver as "photo.stack" — its own name, in English, on
+                    // the first screen of a Finnish app — and an image is read
+                    // by its asset's name the same way.
                     .accessibilityHidden(true)
             }
 
@@ -338,15 +352,16 @@ struct OnboardingScreen: View {
                     route = .join
                 } label: {
                     Text("Liity kutsulinkillä")
-                        .font(.body.weight(.medium))
+                        .font(.body.weight(.semibold))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
-                        .elderTapTarget()
                 }
-                .controlSize(.large)
-                // Ink, not the accent: wax is the button above (`Elder.wax`).
-                .foregroundStyle(Color.primary)
+                // Ink on honey, the second button's look everywhere else in
+                // the app (`ElderSecondaryButtonStyle`): wax is the button
+                // above. Bare ink on the paper until 30 Sep 2026.
+                .buttonStyle(.elderSecondary)
+                .elderTapTarget()
             }
 
             // Over a local archive the fork is a sheet, and a sheet needs a way
@@ -656,6 +671,11 @@ private struct CreateFamilyForm: View {
                 Section { ErrorNote(text: error) }
             }
         }
+        // Paper under the rows, as on every other form in the app. The one
+        // on `OnboardingScreen`'s stack is the fork's alone: a form pushed
+        // onto the stack paints its own grey over it (`elderSurface`), and
+        // until 30 Sep 2026 both setup forms did.
+        .elderSurface()
         .navigationTitle("Uusi arkisto")
     }
 
@@ -880,6 +900,8 @@ private struct JoinFamilyForm: View {
                 Section { ErrorNote(text: error) }
             }
         }
+        // Paper under the rows, for the reason on `CreateFamilyForm`.
+        .elderSurface()
         .navigationTitle("Liity perheeseen")
         // Inline, because the automatic mode drew this title twice on the
         // rejoin sheet: the bar showed it inline while the large title was
