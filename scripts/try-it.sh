@@ -234,16 +234,20 @@ case $MODE in
 			Kinlore is open on the simulator "Kinlore Try", and it is the real app:
 			what you say goes to the deployed Worker and comes back written down.
 
-			  1. Start a family archive. Keep "Between the family", type your name
-			     and press "Create the archive". The sheet that follows asks whose
-			     memories to keep; "Close" skips it.
-			  2. On the Tell tab, press the microphone and talk, or read this aloud:
+			  1. Start a family archive: type your name and press "Create the
+			     archive". Do not choose to keep the memories on this phone only,
+			     because nothing said in such an archive is written out as text.
+			     The sheet that follows asks whose memories to keep; "Close"
+			     skips it.
+			  2. The Tell tab opens on an example to read aloud:
 
 			       My grandmother Anna grew up in Helsinki. She married Walter sometime
 			       in the fifties, and he always had the camera.
 
+			     Press the microphone and read it, or tell something of your own.
 			     iOS asks for the microphone first, and the Mac may then ask on
-			     Simulator's behalf. "Write instead" takes it typed.
+			     Simulator's behalf. "Type it for me" puts it in the write field
+			     instead, and "Save" sends it.
 			  3. See what comes back: the people as proposals nobody has confirmed
 			     yet, and "sometime in the fifties" kept as the 1950s rather than a
 			     guessed year. A spoken telling is followed by questions asked out

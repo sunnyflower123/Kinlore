@@ -35,7 +35,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 120 accessibility sweeps that already run here, each
+contrast rows, against the 121 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false

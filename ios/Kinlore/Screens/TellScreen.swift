@@ -616,13 +616,18 @@ private struct IdleView: View {
     /// result, one tap from the same loop), and the Tell screen opened from
     /// their subject lists them below — and this screen carries a family
     /// member's question alone.
+    ///
+    /// On an install somebody is trying the app out on, the example stands
+    /// where the opening starters would, and the list is empty
+    /// (`offersExample`). A family member's question still comes first.
     private var offer: (questions: [FollowUpQuestion], isStarter: Bool) {
         guard let target = model.target else {
             let open = store.openQuestions(
                 limit: 2, excludingAuthor: session.identity.memberID, onlyAuthored: true,
                 viewer: session.identity.memberID
             )
-            return open.isEmpty ? (store.openingQuestions(), true) : (open, false)
+            guard open.isEmpty else { return (open, false) }
+            return (offersExample ? [] : store.openingQuestions(), true)
         }
         let own = store.openQuestions(
             limit: 2, for: target.id, excludingAuthor: session.identity.memberID
@@ -676,6 +681,56 @@ private struct IdleView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .elderTapTarget()
+        }
+    }
+
+    /// Whether the example sentence (`TryIt`) is offered: on an install
+    /// somebody is trying the app out on, in free dictation, before anything
+    /// has been told — the moment the opening starters are for, which it
+    /// replaces (`offer`). Drawn only where no family member's question is
+    /// offered either, which the stack checks.
+    private var offersExample: Bool {
+        TryIt.isOn && model.target == nil && model.openedQuestion == nil && store.told.isEmpty
+    }
+
+    /// The example: what it is and what to do with it, the sentence in the
+    /// bubble that holds what somebody said, and a way to have it typed.
+    ///
+    /// Read aloud, it goes through the same press as any telling, and the
+    /// sentence stays on the listening screen while it is read, because the
+    /// press takes this screen away (`RecordingView`). Typed, it only fills
+    /// the field: *"Tallenna"* is still pressed by whoever is trying it, as
+    /// for anything they write, so nothing is sent that they did not send.
+    ///
+    /// Compact is the squeeze's `card` step: the bubble's padding and the
+    /// gaps, never the words or the button's 60 points.
+    private func exampleCard(compact: Bool) -> some View {
+        VStack(spacing: compact ? 6 : 10) {
+            Text("Esimerkki: paina mikrofonia ja lue tämä ääneen.")
+                .font(.subheadline)
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            // Ink on honey and nothing else on it, as `elderBubble` asks: the
+            // instruction above stays on the paper, where `supporting` was
+            // measured.
+            Text(TryIt.sentence)
+                .elderBody()
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, compact ? 8 : 14)
+                .elderBubble()
+
+            Button {
+                model.beginWriting()
+                model.draft = TryIt.sentence
+            } label: {
+                Label("Kirjoita se puolestani", systemImage: "text.cursor")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.elderSecondary)
         }
     }
 
@@ -811,6 +866,7 @@ private struct IdleView: View {
             // Resolved once: what is offered at the bottom decides how long the
             // reassurance at the top can afford to be.
             let offered = offer
+            let showsExample = offersExample && offered.questions.isEmpty
             // The steps each edge below is measured under, and the text size,
             // so that a measurement taken before a step, or at another size,
             // is never read as one taken now.
@@ -910,7 +966,7 @@ private struct IdleView: View {
                     if let cardQuestion {
                         await model.answer(cardQuestion)
                     } else {
-                        await model.startRecording()
+                        await model.startRecording(reading: showsExample ? TryIt.sentence : nil)
                     }
                 }
             }
@@ -1036,6 +1092,13 @@ private struct IdleView: View {
                     }
                 }
                 .padding(.top, squeezed.contains(.air) ? 0 : 4)
+            }
+
+            // Where the starters would be, and on the same terms: under the
+            // button it is read with, above the quiet rows.
+            if showsExample {
+                exampleCard(compact: squeezed.contains(.card))
+                    .padding(.top, squeezed.contains(.air) ? 0 : 4)
             }
 
             waysOn
@@ -1164,7 +1227,9 @@ private struct IdleView: View {
         /// The photograph down to what the rows leave it, never under 100 —
         /// the floor `BlindCardView` chose, below which a face stops being
         /// something to recognise — or the question cards' padding 14 → 8,
-        /// never under 44, without the heading above them.
+        /// never under 44, without the heading above them. On an install
+        /// somebody is trying out, the example's bubble 14 → 8 and its gaps
+        /// 10 → 6, with every word of it and its button kept.
         case card
         /// One starter question instead of two. Starters only: a family
         /// member's question is a way on, and stays.
@@ -1231,8 +1296,11 @@ private struct IdleView: View {
             if deckPhoto != nil { return (photoDrawn ?? 0) > 100 }
             // The cards are under the button, which is all an accessibility
             // size asks to clear. And they are drawn only where the stack
-            // draws them, which is the condition repeated here.
-            return !offer.questions.isEmpty && cardQuestion == nil && !accessibility
+            // draws them, which is the condition repeated here — the example
+            // where the questions would be.
+            let offered = offer
+            if offersExample && offered.questions.isEmpty { return !accessibility }
+            return !offered.questions.isEmpty && cardQuestion == nil && !accessibility
         case .oneStarter:
             let offered = offer
             return reassured && offered.isStarter && offered.questions.count > 1
@@ -1441,8 +1509,14 @@ private struct RecordingView: View {
             // they have not had time to memorise, because they only just chose
             // it. Where it and the disc cannot both fit, it is a scroll above
             // the disc rather than gone (`atTheDisc`).
-            if let question = model.question {
-                Text(question.text)
+            //
+            // With no question, the example sentence stands here on an install
+            // somebody is trying out (`TryIt`), for the same reason: the press
+            // that started this took away the screen it was to be read from.
+            // Only when that screen showed it, which the press says
+            // (`readingAloud`) rather than this screen guessing.
+            if let prompt = model.question?.text ?? model.readingAloud {
+                Text(prompt)
                     // The same display face it wore on the screen before this
                     // one: it is the same question, still being answered.
                     .font(Elder.display(.title3))

@@ -1568,6 +1568,39 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The same screen with the example on it (`TryIt`), which stays there
+    /// while it is read aloud because the press took away the screen it was
+    /// read from. It is longer than any question put in that place, so the
+    /// frames are asked as well as the audit, as they are for a question.
+    func testRecordingTheExampleIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty", "-tryIt", "YES"], textSize: size)
+            require(app.buttons["Aloita kertominen"], "the record button").tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["Kuuntelen"], "the recording screen")
+            require(app.staticTexts[TryItTests.sentence], "the example while it is read")
+            let disc = require(app.buttons["Lopeta kertominen"], "the disc")
+            let caption = require(app.staticTexts["Paina kun olet valmis"], "its caption")
+            let window = app.windows.firstMatch.frame
+            let inSight = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in window.contains(disc.frame) && window.contains(caption.frame) },
+                object: nil
+            )
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [inSight], timeout: 10), .completed,
+                "the way to stop is out of sight: \(disc.frame) and \(caption.frame) in \(window)"
+            )
+            settle(caption)
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Kuuntelen, esimerkki, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
     /// The screen behind a refused microphone. Two buttons and a paragraph, and
     /// nothing had ever looked at it — reaching it by hand means answering a
     /// system prompt with "Älä salli" and then digging the app out of iOS
@@ -1641,6 +1674,30 @@ final class AccessibilitySweepTests: XCTestCase {
                     "\"Kirjoita sen sijaan\" is under the tab bar: "
                         + "\(NSCoder.string(for: typing.frame)) against \(NSCoder.string(for: bar.frame))"
                 )
+            }
+        }
+    }
+
+    /// The same first launch on an install somebody is trying out (`TryIt`):
+    /// the example to read aloud where the two starters were — an instruction,
+    /// a sentence of three lines in a bubble and a button of its own, taller
+    /// than the starters on the screen that had the least room to give. So, as
+    /// above, the ways past the microphone are asked to clear the bar at the
+    /// size where that is a promise, the example's own button among them.
+    func testTellTryingItOut() throws {
+        try sweep("Kerro, kokeilu", arguments: ["-seed", "empty", "-tryIt", "YES"]) { app, isLargest in
+            require(app.staticTexts[TryItTests.sentence], "the example")
+            let typeIt = require(app.buttons["Kirjoita se puolestani"], "the way to have it typed")
+            let typing = require(app.buttons["Kirjoita sen sijaan"], "the way that needs no permission")
+            if !isLargest {
+                let bar = app.tabBars.firstMatch
+                for (name, way) in [("Kirjoita se puolestani", typeIt), ("Kirjoita sen sijaan", typing)] {
+                    XCTAssertTrue(
+                        bar.exists && way.frame.maxY <= bar.frame.minY,
+                        "\"\(name)\" is under the tab bar: "
+                            + "\(NSCoder.string(for: way.frame)) against \(NSCoder.string(for: bar.frame))"
+                    )
+                }
             }
         }
     }

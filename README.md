@@ -72,7 +72,7 @@ hackathon, in the Next Gen Award (the student category).
   to leave the family or clear the phone.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-The app has 383 UI tests, including 120 accessibility sweeps that audit a screen
+The app has 388 UI tests, including 121 accessibility sweeps that audit a screen
 at the default text size and again at the largest.
 
 ## Who pays
@@ -150,12 +150,15 @@ minutes, and this Release build takes longer than the Debug one Xcode starts
 with; a second run rebuilds only what changed. The script installs nothing and
 leaves every other simulator alone. Then:
 
-1. **Start a family archive.** Keep *Between the family*, type your name and
-   press *Create the archive*.
-2. **Tell it something.** On the *Tell* tab, press the microphone and talk, or
-   read this aloud: *"My grandmother Anna grew up in Helsinki. She married
-   Walter sometime in the fifties, and he always had the camera."* *Write
-   instead* takes it typed.
+1. **Start a family archive.** Type your name and press *Create the archive*.
+   Do not choose to keep the memories on this phone only, because nothing said
+   in such an archive is written out as text. The sheet that follows asks
+   whose memories to keep; *Close* skips it.
+2. **Tell it something.** The *Tell* tab opens on an example to read aloud:
+   *"My grandmother Anna grew up in Helsinki. She married Walter sometime in
+   the fifties, and he always had the camera."* Press the microphone and read
+   it, or tell something of your own. *Type it for me* puts it in the write
+   field instead, and *Save* sends it.
 3. **See what comes back.** A spoken telling is followed by questions asked out
    loud; answer them or press *That is enough for now*. The names it heard are
    proposals that nobody has confirmed yet (rule 4), and "sometime in the

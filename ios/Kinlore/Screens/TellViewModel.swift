@@ -262,7 +262,15 @@ final class TellViewModel {
 
     // MARK: - Recording
 
-    func startRecording() async {
+    /// Words the screen before the recording offered to be read out, kept in
+    /// front of whoever is reading them, because the press that started the
+    /// recording took that screen away. Only the example on an install
+    /// somebody is trying out is ever read (`TryIt`), and every start sets
+    /// this, so it lasts one recording.
+    private(set) var readingAloud: String?
+
+    func startRecording(reading words: String? = nil) async {
+        readingAloud = words
         guard await recorder.requestPermission() else {
             // Not a `failed` message. The old one said "salli mikrofoni
             // asetuksista" and gave a button that retried the refusal instead —

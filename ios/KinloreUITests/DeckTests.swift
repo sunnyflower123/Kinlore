@@ -303,6 +303,7 @@ final class DeckTests: XCTestCase {
             var skip = false
             var question = false
             var english = false
+            var example = false
         }
         let states = [
             State(name: "the plain button", seed: ["-seed", "archive"]),
@@ -314,6 +315,16 @@ final class DeckTests: XCTestCase {
                 name: "the first launch in English",
                 seed: ["-seed", "empty", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"],
                 english: true
+            ),
+            // An install somebody is trying out (`TryIt`): the example where
+            // the starters were, taller than they are, with a button of its
+            // own that is a way on like the rest.
+            State(name: "the first launch of a trial", seed: ["-seed", "empty", "-tryIt", "YES"], example: true),
+            State(
+                name: "the first launch of a trial in English",
+                seed: ["-seed", "empty", "-tryIt", "YES", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"],
+                english: true,
+                example: true
             ),
         ]
         let phones: [(name: String, arguments: [String])] = [
@@ -342,6 +353,11 @@ final class DeckTests: XCTestCase {
                     ).firstMatch
                     XCTAssertTrue(question.exists, "the family's question is not offered: \(place)")
                     ways.append(("Mummo's question", question))
+                }
+                if state.example {
+                    let typeIt = app.buttons[state.english ? "Type it for me" : "Kirjoita se puolestani"]
+                    XCTAssertTrue(typeIt.exists, "no way to have the example typed: \(place)")
+                    ways.append(("\"\(typeIt.label)\"", typeIt))
                 }
 
                 let bar = app.tabBars.firstMatch.frame

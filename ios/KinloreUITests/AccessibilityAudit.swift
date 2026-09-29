@@ -578,6 +578,13 @@ extension XCTestCase {
         if !arguments.contains("-homecoming") {
             app.launchArguments += ["-homecoming", "off"]
         }
+        // An install somebody is trying out keeps being one after the launch
+        // that said so (`TryIt`), and this simulator runs every test on one
+        // install. So a test is on an ordinary install unless it asks for a
+        // trial: `NO` is remembered just as `YES` is.
+        if !arguments.contains("-tryIt") {
+            app.launchArguments += ["-tryIt", "NO"]
+        }
         if let textSize {
             app.launchArguments += ["-UIPreferredContentSizeCategoryName", textSize]
         }

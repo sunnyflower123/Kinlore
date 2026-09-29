@@ -56,6 +56,11 @@
 "Kuuntelen" = "Listening";
 "Kirjoita se itse" = "Write it yourself";
 "Kirjoita sen sijaan" = "Write instead";
+/* The example on an install somebody is trying out (TryIt). The sentence is
+   written for the English recogniser, not translated: see TryIt.sentence. */
+"Esimerkki: paina mikrofonia ja lue tämä ääneen." = "An example: press the microphone and read this aloud.";
+"Mummoni Anna kasvoi Helsingissä. Hän meni naimisiin Valtterin kanssa joskus viisikymmentäluvulla, ja kamera oli aina Valtterilla." = "My grandmother Anna grew up in Helsinki. She married Walter sometime in the fifties, and he always had the camera.";
+"Kirjoita se puolestani" = "Type it for me";
 "Kirjoita ihan vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Write freely. You do not have to remember the order, or the years — we will put those in order for you.";
 "Muisto tallennettu" = "Memory saved";
 "En saanut järjesteltyä sitä juuri nyt. Kertomasi on tallessa omilla sanoillasi." = "I could not put it in order just now. What you told is kept, in your own words.";

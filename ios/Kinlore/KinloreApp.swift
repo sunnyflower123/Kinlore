@@ -64,6 +64,8 @@ struct KinloreApp: App {
     /// list from here so that this launch's own telling can never be on it.
     init() {
         RecordingRecovery.listOrphans()
+        // Before `body` too: the Tell screen asks it on its first frame.
+        TryIt.remember()
     }
 
     var body: some Scene {
