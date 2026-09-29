@@ -180,10 +180,11 @@ first try cannot show, so there is an example of one, and you choose to see
 it: `./scripts/try-it.sh --example` opens it on a simulator of its own,
 *Kinlore Example*. **Everything in the example is invented**: the Koivula
 family and its people, the 150 pictures, which the app draws on the
-simulator the first time it opens, and some 250 tellings. It is a Debug build
-on stubs with no server behind it, so a telling there comes back as one of
-three sample tellings whatever you say, and each run of `--example` puts the
-example back as it was. Run the script without `--example` to be heard.
+simulator in a few seconds the first time it opens, and some 250 tellings.
+It is a Debug build on stubs with no server behind it, so a telling there
+comes back as one of three sample tellings whatever you say, and each run of
+`--example` puts the example back as it was. Run the script without
+`--example` to be heard.
 
 To run it from Xcode instead: `cd ios && xcodegen generate && open
 Kinlore.xcodeproj`, choose the **Kinlore Production** scheme and an iPhone
