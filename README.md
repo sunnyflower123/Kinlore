@@ -58,11 +58,18 @@ hackathon, in the Next Gen Award (the student category).
   over three or four of the family's names, with the proposal unmarked among
   them. Any other answer confirms nothing and is never called wrong
   ([ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
+- The AI puts what the family told about a card together into one story at the
+  top of it, in the tellers' own words, and every telling stays under it as it
+  was told ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
 - The original recording and the raw transcript are kept forever (rule 3). A
   date stays as vague as it was said, so "sometime in the fifties" is stored as
   a decade (rule 5).
 - The app shows English by default and Finnish on a phone set to Finnish, and
   hears speech as that language.
+- Settings has larger text, which also makes the app simpler, the export of the
+  whole archive as one file (the memories as a readable page, the original
+  recordings and the photos), the family's members and invitations, and a way
+  to leave the family or clear the phone.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
 The app has 377 UI tests, including 120 accessibility sweeps that audit a screen

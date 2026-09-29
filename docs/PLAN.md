@@ -1002,8 +1002,10 @@ finished.**
   for it. What shipped: two system prompts in `extract.ts` and `transcribe.ts`
   written rather than translated, one description table so the schema shape
   cannot drift between them, `MAX_WORDS_PER_SECOND` as `{ fi: 4, en: 6 }` with
-  the arithmetic beside it, and a `lang` field carried from the app so the
-  pipeline follows who is SPEAKING. Absent means Finnish, so a client built
+  the arithmetic beside it, and a `lang` field carried from the app, which
+  sends its display language as its guess at who is speaking
+  (`SpokenLanguage`, which says where the guess is wrong). Absent means
+  Finnish, so a client built
   before this behaves exactly as it did. Verified against the real models: 22 of
   22 extraction cases, five English and seventeen Finnish, in one run — and the
   Finnish ones matter as much, because the schema was restructured under them.

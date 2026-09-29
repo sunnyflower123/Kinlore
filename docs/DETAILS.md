@@ -8,7 +8,7 @@ This is the full write-up behind the [README](../README.md).
 </p>
 
 <p align="center">
-  <a href="../LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-blue.svg" alt="Apache 2.0 licence"></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-5B4A3E?labelColor=241A14" alt="Apache 2.0 licence"></a>
 </p>
 
 A family's shared memory archive. Anyone in the family tells what they
@@ -27,7 +27,7 @@ it, which is why the rules further down read as constraints rather than good
 intentions, and why the failure that matters here is not a crash but a story
 that never got told.
 
-Side project for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
+Built for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon. Target category: **Next Gen Award** (student category).
 
 **Reading it as a judge:** this page, then
@@ -94,7 +94,9 @@ The voice asking is the phone's own speech synthesiser, reading the question on
 the device (`InterviewVoice.swift`). It is the only voice the app makes: the
 teller's is kept as it was recorded (rule 3) and never synthesised.
 
-## Six rules that do not bend
+## Six of the ten rules that do not bend
+
+The other four, and the full text, are in [CLAUDE.md](../CLAUDE.md#rules-that-do-not-bend).
 
 1. **The primary user is whoever wants to tell, often an older person.** Dynamic
    Type up to XXL, VoiceOver, large tap targets. If a new screen does not work
@@ -281,14 +283,14 @@ they were lying about which process they had hold of.
 ## Who pays
 
 **The payer is not the beneficiary.** Grandmother does not buy a subscription —
-the grandchild does, and the whole family channel opens for every member.
+the grandchild does, and the whole family's archive opens for every member.
 RevenueCat grants the entitlement to the buyer; the backend maps it to a
-channel-level right (`family.entitlement`). For an audience whose ability to pay
+family-level right (`family.entitlement`). For an audience whose ability to pay
 sits in a different person than the one producing the value, that is the only
 model that works. Details: [`ARCHITECTURE.md` §6](ARCHITECTURE.md#6-money).
 
 Purchases run on the **RevenueCat Test Store** — there is no App Store release,
-by decision ([PLAN.md §2](PLAN.md)).
+by decision ([PLAN.md §2](PLAN.md#2-why-next-gen-only)).
 
 **What the free tier limits** is three meters, counted on the server because a
 counter on the phone can be edited (`backend/src/quota.ts`): ten minutes of

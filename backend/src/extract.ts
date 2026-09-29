@@ -13,8 +13,9 @@
 /// carry across. The Finnish was tuned by measurement and is not to be edited on
 /// the way past. Everything else in this file is English.
 ///
-/// Which one is used follows WHO IS SPEAKING, not who is reading the screen —
-/// the app sends `lang` with the transcript. See PLAN.md §10.
+/// Which one is used follows `lang`, the app's guess at the language being
+/// spoken: it sends its own display language (`SpokenLanguage` in
+/// AppServices.swift, which says where that guess is wrong). See PLAN.md §10.
 
 // `.ts` on the specifier, and it is not a style choice: without it Node
 // cannot resolve this import, so nothing in this module could be loaded by

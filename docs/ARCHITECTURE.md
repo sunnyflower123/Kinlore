@@ -79,8 +79,8 @@ An honest inventory, not a wish list:
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
 | Accessibility sweep over every screen | **Done** — 120 sweep tests, each auditing one screen at the default text size and again at the largest, out of 377 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
-| The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
-| The story on a card, composed from its tellings | **Built and checked 26 Sep 2026**, the top of every card since 28 Sep, see §27 — on the phone and the local Worker; the two columns and the route are not in production |
+| The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
+| The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -1226,6 +1226,10 @@ the binding the same way the restore path does.
 
 ### After the money
 
+*Written before a RevenueCat key existed. The key, a real purchase and the
+paywall were verified on 12 Sep 2026: see
+[Driven end to end](#driven-end-to-end-12-sep-2026).*
+
 The purchase belongs to the buyer and the archive belongs to the family, and the
 second one is what they think they bought. Everything between the two is ours,
 and it is the part that can be reasoned about without a RevenueCat key — which
@@ -1314,7 +1318,8 @@ not one.
 
 What this does **not** check, and no amount of it could: a real Test Store key,
 a real purchase, a real webhook signature, and the paywall screen. Those are
-still the first things to do the day a key exists.
+still the first things to do the day a key exists. (Done on 12 Sep 2026, in
+the next section.)
 
 ### Driven end to end, 12 Sep 2026
 
@@ -6277,6 +6282,11 @@ is. And the place of a fact is not a word. It is a reference to one of the
 archive's own place cards, which is what puts a birthplace on
 `PlacesMapScreen` beside the places the family has told about.
 
+**Deployed 28 Sep 2026.** The two columns were added to production with
+`ALTER TABLE subject ADD COLUMN facts TEXT` and `ADD COLUMN facts_set_at
+REAL`, and the Worker deployed from `83d2ec5`; `facts-sync-check.mjs`
+passed against it.
+
 ### The flow
 
 The section's last row is **"Lisää tieto"**. It opens `FactSheet` on its
@@ -6443,9 +6453,6 @@ silently, and looking exactly like a fact nobody wrote.
 
 ### Not yet
 
-- **Production.** The two `ALTER TABLE` statements and the Worker deploy
-  are a decision taken at the keyboard, not in a commit; this section
-  records the date when it has happened.
 - **The export does not carry the facts.** `ArchiveExport` is unchanged;
   the tellings a fact came from are in it, the row on the card is not.
 - **The tree draws no years.** Deliberately: a birth on the card is a fact
@@ -6475,6 +6482,11 @@ family reads first. One view for every kind of subject, because a photograph
 and a grandmother are the same table and the same code path (§2) — and since
 28 Sep 2026 one card, too: the story is the top of the card every subject
 already had (`SubjectDetailScreen`), not a second screen beside it.
+
+**Deployed 29 Sep 2026.** The two columns were added to production with
+`ALTER TABLE subject ADD COLUMN story TEXT` and `ADD COLUMN story_set_at
+REAL`, and the Worker deployed from `26000a9`; `story-sync-check.mjs` passed
+17 of 17 against it.
 
 ### The flow
 
@@ -6639,8 +6651,9 @@ modifier (`pictureEdge`), where a height cap for small phones can go.
    keeping asks nothing and is the prominent button. An unedited story
    needs none of this: rule 1 composes it again or clears it by itself.
 10. **The story's language is the composing phone's.** Transcription's rule
-   — the prompt follows who is speaking — has no one speaker to follow
-   here: three tellers may have told in two languages, and a telling does
+   — the prompt follows the phone's language, the app's guess at who is
+   speaking — has no one speaker to guess at here: three tellers may have
+   told in two languages, and a telling does
    not record which. So `lang` is the language of the phone that composes,
    decided when it composes; the tellings cross verbatim in whatever
    language they were told, the prompt keeps each teller's words (its rule
@@ -6664,15 +6677,6 @@ modifier (`pictureEdge`), where a height cap for small phones can go.
 
 ### Not yet
 
-- **Production.** `ALTER TABLE subject ADD COLUMN story TEXT` and
-  `ADD COLUMN story_set_at REAL`, and the Worker deploy, are a decision
-  taken at the keyboard, not in a commit; this section records the date
-  when it has happened. Until then a phone on this build against the
-  deployed Worker composes nothing — `/story` answers 404, and the card is
-  the card it was, its tellings and nothing said about a story — and pushes
-  and pulls as before, the deployed Worker dropping the two fields it does
-  not know (`story-sync-check.mjs` proves a phone that does not know them
-  wipes nothing).
 - **The ADDITION half of the prompt is unmeasured.** `story-bench.mjs`
   measured the whole-story prompt; the proposal's prompt is that one with
   the story so far and the new tellings appended, and no reply of it has

@@ -10,9 +10,10 @@ options:
   # the Finnish source strings. The one person this was built for notices
   # nothing; everybody else stops needing a translator.
   #
-  # This is the interface only. What the app HEARS is still Finnish: the
-  # prompts, the ASR choice and the hallucination ceiling are calibrated on
-  # Finnish speech, and PLAN.md §10 says what changing that costs.
+  # The same language decides what the app hears: the app sends it as `lang`
+  # (SpokenLanguage in AppServices.swift), which picks the Worker's prompt and
+  # its hallucination ceiling. The Finnish prompt is the one tuned by
+  # measurement; PLAN.md §10 has the English pipeline, built on 30 Aug 2026.
   developmentLanguage: en
   deploymentTarget:
     iOS: "17.0"

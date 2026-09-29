@@ -7,8 +7,9 @@
 /// prompt is the one `scripts/story-bench.mjs` measured on the `-seed story`
 /// cards on 26 Sep 2026, moved here word for word. Its Finnish half was
 /// tuned by measurement and is not edited on the way past (CLAUDE.md,
-/// Language); which half runs follows who is SPEAKING, as it does for the
-/// extraction. What the model may do is the whole of the prompt: order, and
+/// Language); which half runs follows the `lang` the composing phone sends,
+/// its display language (ARCHITECTURE §27, rule 10). What the model may do is
+/// the whole of the prompt: order, and
 /// nothing else — no introduction, no judgement, a gap left a gap, a
 /// contradiction shown by name, an unconfirmed name said as its teller's
 /// (rule 4), and the tellers' own words at their own length (rule 3's
