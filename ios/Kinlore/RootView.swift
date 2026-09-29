@@ -2175,32 +2175,56 @@ struct SubjectDetailScreen: View {
 
     /// The tellings filed under something else that name this card, each
     /// under the way to where it is filed.
+    ///
+    /// On a person's card only the way, once for each card, since 30 Sep 2026.
+    /// Each telling that named them was listed whole under its way, so a
+    /// person named in several was a long scroll with the relatives far below
+    /// it (the user's phone, 29 Sep 2026). In the user's words: only the
+    /// picture and the name, and a tap opens the whole memory. The header
+    /// still counts the tellings. A place's card keeps them whole, because a
+    /// place is only ever named, and the tellings that name it are all it has
+    /// to show. A telling whose card is gone has no way to lead to, and is
+    /// listed whole on either.
     @ViewBuilder
     private func namedElsewhere(_ mentions: [Memory]) -> some View {
         if !mentions.isEmpty {
             Section {
-                ForEach(mentions) { memory in
-                    // A row of its own above the telling's, because a link
-                    // anywhere in a row takes the whole row over, and the
-                    // telling's row has buttons of its own.
-                    if let home = store.subject(id: memory.subjectID),
-                       home.id != subject.id, home.deletedAt == nil {
-                        NamedElsewhereLink(home: home)
-                            // On the paper like the telling under it: the
-                            // bubble below is the surface, and this row is
-                            // the way to where it is filed. No white of its
-                            // own, which above the honey would be a card
-                            // over a card.
-                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
+                if subject.kind == .person {
+                    let homes = mentions.compactMap(home(of:)).reduce(into: [Subject]()) { homes, home in
+                        if !homes.contains(where: { $0.id == home.id }) { homes.append(home) }
                     }
-                    // On the paper, in the honey bubble every telling is
-                    // read in since 27 Sep 2026 (`MemoryRow`). The row
-                    // itself drew `systemGray4` here until 19 Sep 2026
-                    // and `Elder.card` after; the bubble is the surface
-                    // now, and the row says so for itself.
-                    MemoryRow(memory: memory, cardID: current.id)
+                    ForEach(homes) { home in
+                        // On the paper, as above a telling: a way on, not a
+                        // card of its own.
+                        NamedElsewhereLink(home: home, tellingBelow: false)
+                            .onThePaper()
+                    }
+                    ForEach(mentions.filter { home(of: $0) == nil }) { memory in
+                        MemoryRow(memory: memory, cardID: current.id)
+                    }
+                } else {
+                    ForEach(mentions) { memory in
+                        // A row of its own above the telling's, because a link
+                        // anywhere in a row takes the whole row over, and the
+                        // telling's row has buttons of its own.
+                        if let home = home(of: memory) {
+                            NamedElsewhereLink(home: home)
+                                // On the paper like the telling under it: the
+                                // bubble below is the surface, and this row is
+                                // the way to where it is filed. No white of its
+                                // own, which above the honey would be a card
+                                // over a card.
+                                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+                        // On the paper, in the honey bubble every telling is
+                        // read in since 27 Sep 2026 (`MemoryRow`). The row
+                        // itself drew `systemGray4` here until 19 Sep 2026
+                        // and `Elder.card` after; the bubble is the surface
+                        // now, and the row says so for itself.
+                        MemoryRow(memory: memory, cardID: current.id)
+                    }
                 }
             } header: {
                 // Two whole sentences rather than one with a number in it:
@@ -2216,8 +2240,21 @@ struct SubjectDetailScreen: View {
                     }
                 }
                 .foregroundStyle(Elder.supporting)
+                // For `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
+                // and nothing else (30 Sep 2026).
+                .accessibilityIdentifier("namedElsewhere.heading")
             }
         }
+    }
+
+    /// The card a telling that names this one is filed under, while there is
+    /// one to open: not this card (a card merged into it), and not a card
+    /// taken away.
+    private func home(of memory: Memory) -> Subject? {
+        guard let home = store.subject(id: memory.subjectID),
+              home.id != subject.id, home.deletedAt == nil
+        else { return nil }
+        return home
     }
 }
 

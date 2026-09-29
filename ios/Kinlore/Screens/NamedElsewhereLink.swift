@@ -6,8 +6,13 @@ import SwiftUI
 /// A row of its own rather than a link on the telling, because a link anywhere
 /// in a row takes the whole row over, and the telling's row has buttons of its
 /// own — the voice to listen to, the author's menu.
+///
+/// On a person's card since 30 Sep 2026 the telling is not listed under it:
+/// the link is the way to it, once for each card whose tellings name them.
 struct NamedElsewhereLink: View {
     let home: Subject
+    /// Whether the telling is listed under the link, as on a place's card.
+    var tellingBelow = true
 
     @Environment(\.dynamicTypeSize) private var typeSize
 
@@ -37,7 +42,11 @@ struct NamedElsewhereLink: View {
             }
             .frame(maxWidth: .infinity, minHeight: Elder.minTapTarget, alignment: .leading)
         }
-        .accessibilityHint("Avaa kortin, jolla alla oleva muisto on.")
+        .accessibilityHint(
+            tellingBelow
+                ? Text("Avaa kortin, jolla alla oleva muisto on.")
+                : Text("Avaa kortin, jolla koko muisto on.")
+        )
         .accessibilityIdentifier("card.namedElsewhere")
     }
 }

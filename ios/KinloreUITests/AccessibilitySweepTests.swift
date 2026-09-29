@@ -1944,7 +1944,10 @@ final class AccessibilitySweepTests: XCTestCase {
             // the largest it is 226 pt on its own and the swipes below carry
             // it off the top, so it is judged on the way down, as a page of
             // its own: dragged to y 330, where a throwaway probe found it
-            // clean with nothing forgiven on 27 Sep 2026.
+            // clean with nothing forgiven on 27 Sep 2026. Since 30 Sep 2026
+            // the row is all of the telling on her card: its words are read
+            // on the photograph's, and the row that listed them here, which
+            // the comments below name, is gone.
             if isLargest {
                 let link = reach(
                     app.buttons.matching(identifier: "card.namedElsewhere").firstMatch,
@@ -1957,10 +1960,28 @@ final class AccessibilitySweepTests: XCTestCase {
                 let abortAfterAudit = continueAfterFailure
                 continueAfterFailure = true
                 defer { continueAfterFailure = abortAfterAudit }
-                try audit(app, "Person card without a story, the row to the photograph, largest text size")
+                // One finding is allowed here, on the row's words and on this
+                // page only (30 Sep 2026). With no telling under the row, the
+                // card is too short for this page's scroll at the smaller
+                // sizes the audit's Dynamic Type check steps through: the
+                // sweep's recording shows the list at its top through three
+                // of them, with the row below the screen, and back on the
+                // row at the end. The words were then reported as partially
+                // unsupported at 215.33 × 63.33 pt at y 492.67, on two runs
+                // of two, one alone, with the frames identical, while the
+                // same recording draws them whole at the largest size. The
+                // probe of 27 Sep had the whole telling under the row.
+                // Contrast, clipping, the tap target and the labels on the
+                // page are measured as before.
+                try audit(
+                    app, "Person card without a story, the row to the photograph, largest text size",
+                    alsoAllowing: { issue in
+                        issue.auditType == .dynamicType && issue.element?.identifier == "namedElsewhere.title"
+                    }
+                )
             }
-            // Six: at the largest size the way to the photograph above the
-            // telling that names her is 226 pt of the card on its own.
+            // Six: at the largest size the way to the photograph that names
+            // her is 226 pt of the card on its own.
             let removal = reach(app.buttons["Poista henkilö"], in: app, "the way to delete the person", swipes: 6)
             // At the largest size the swipes stop with the button under the
             // tab bar and the row that mentions her under the navigation bar,

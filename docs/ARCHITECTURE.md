@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 394 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 395 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -113,7 +113,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 394 UI tests, including 124 accessibility sweeps that audit a
+The UI suite has 395 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -6699,6 +6699,28 @@ was, below the tellings: a person's relatives (above the tellings until
 28 Sep 2026), the colouring, the questions — a question is a row that opens
 the Tell screen with the question as its title (§11) — and *Kysy
 perheeltä*.
+
+**The tellings that name the card from elsewhere**, filed under another card,
+come after its own under *Mainittu muualla yhdessä muistossa* or *Mainittu
+muualla 3 muistossa*, and above them while it has none. On a place's card
+each is listed whole under the way to the card it is filed under
+(`NamedElsewhereLink`), because a place is only ever named and those tellings
+are all it has to show. On a person's card, confirmed or not, only the ways
+are listed since 30 Sep 2026: one for each card, however many of its tellings
+name them, and the heading still counts the tellings. Each used to be a whole
+telling there, so a person named in several was a long scroll with the
+relatives far below (the user's phone, 29 Sep 2026). A tap opens the card
+where the telling is read, as its own row, or folded under that card's story
+when it has one. A telling whose card is gone has nowhere to lead and is
+listed whole. `NamedElsewhereTests` pins the way, the words that are no
+longer on the card, and one way for each card. On a card with nothing told
+about her the heading now reaches the last screen of
+`testPersonCardWithoutAStory`, where the audit reported it at the default size
+only, so it is keyed as the simulation's artefact (`namedElsewhere.heading`).
+The way's own page at the largest size allows one finding, on the way's name:
+the card is too short for that page's scroll at the smaller sizes the audit
+steps through, and the sweep's recording shows the list at its top while it
+does. Everything else on that page is measured as before.
 
 A phone that chose to stay local composes nothing and shows the tellings as
 every card did; so does a phone whose family server was deployed before this

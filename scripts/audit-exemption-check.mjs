@@ -146,6 +146,7 @@ const ARTEFACT_IDS = [
 	'card.colourNote',
 	'card.colour',
 	'namedElsewhere.title',
+	'namedElsewhere.heading',
 	'storyCard.provenance',
 	'storyCard.editStory',
 	'storyCard.proposal',

@@ -325,6 +325,7 @@
 "Mainittu muualla yhdessä muistossa" = "Named elsewhere in one memory";
 "Mainittu muualla %lld muistossa" = "Named elsewhere in %lld memories";
 "Avaa kortin, jolla alla oleva muisto on." = "Opens the card that holds the memory below.";
+"Avaa kortin, jolla koko muisto on." = "Opens the card that holds the whole memory.";
 "Tästä ei ole vielä omaa muistoa. Paina yllä olevaa nappia ja ala puhua." = "This card has no memory of its own yet. Press the button above and start talking.";
 "Ääntä ei saatu haettua — yritä uudelleen" = "The recording could not be fetched — try again";
 "Tätä äänitystä ei saatu soimaan" = "This recording would not play";

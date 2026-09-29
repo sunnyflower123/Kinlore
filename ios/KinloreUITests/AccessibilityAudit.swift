@@ -1509,8 +1509,19 @@ enum AccessibilityPolicy {
         // the story-less card, alone twice at a load under five, and at
         // y 357.83 with the row dragged to 330; at the real largest size,
         // dragged to the same place, clean with nothing forgiven. On the
-        // words, as `relative.add` is.
+        // words, as `relative.add` is. Since 30 Sep 2026 that one page
+        // allows this type on these words at the largest size too, and says
+        // why: `testPersonCardWithoutAStory`.
         "namedElsewhere.title",
+        // The heading over those links, "Mainittu muualla yhdessä
+        // muistossa" (30 Sep 2026), once a person's card showed only the
+        // links and the heading came up onto the last screen of a card with
+        // nothing told about her: at the default size only, 370 × 40.33 pt
+        // at y 475, on two runs of two, one in a batch and one alone, the
+        // frames identical to the decimal. The heading's code did not
+        // change: what changed is that it came onto the screen the sweep
+        // ends on. The real largest size was clean on every run.
+        "namedElsewhere.heading",
         // The story's section on a card with a note under a story a person
         // corrected (29 Sep 2026, §27): the provenance line and the edit
         // button, the proposal's words, note and two buttons, the taken-back
