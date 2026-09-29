@@ -29,9 +29,13 @@ settings:
 # Without this the command-line build breaks every time the project is
 # regenerated.
 packages:
+  # One exact version: the one the builds here had resolved and run on by
+  # 29 Sep 2026. Package.resolved lives inside the generated project, which git
+  # ignores, so `from: "5.0.0"` let each fresh clone take whatever 5.x was
+  # newest that day, and a judge could have built an SDK nobody here had run.
   RevenueCat:
     url: https://github.com/RevenueCat/purchases-ios
-    from: "5.0.0"
+    exactVersion: "5.83.2"
 
 schemes:
   Kinlore:
