@@ -56,6 +56,13 @@ struct SubjectDTO: Codable {
     var created_at: Double
     var deleted_at: Double?
     var seq: Int?
+    /// The card's story, sealed, and the moment it was set — the server's
+    /// tiebreak, like the face's. Optional in both directions: a Worker that
+    /// has not been redeployed sends neither, most cards have no story yet,
+    /// and a phone that has none to say sends neither rather than a pair of
+    /// nulls (both are "no opinion" to `sync.ts`, so either would do).
+    var story: String?
+    var story_set_at: Double?
 }
 
 struct MemoryDTO: Codable {
@@ -192,6 +199,10 @@ extension SyncPayload {
             // The facts are words too — a name, a trade, a note — and the
             // server compares nothing in them, so the ordinary seal.
             row.facts = subject.facts.map { FamilyCrypto.seal($0, with: key) ?? $0 }
+            // The story is a reading of the tellings and says everything
+            // they say; sealed like a body, with a fresh nonce, because the
+            // server never needs to compare two stories.
+            row.story = subject.story.map { FamilyCrypto.seal($0, with: key) ?? $0 }
             return row
         }
         copy.memories = memories.map { memory in
@@ -225,6 +236,7 @@ extension SyncPullReply {
             var row = subject
             row.title = subject.title.map { FamilyCrypto.open($0, with: key) ?? $0 }
             row.facts = subject.facts.map { FamilyCrypto.open($0, with: key) ?? $0 }
+            row.story = subject.story.map { FamilyCrypto.open($0, with: key) ?? $0 }
             return row
         }
         copy.memories = memories.map { memory in
@@ -331,7 +343,11 @@ extension Subject {
             // The one field the client used to hardcode to nil, which is why a
             // rejection never left the device. See docs/ARCHITECTURE.md §3.
             deleted_at: deletedAt?.timeIntervalSince1970,
-            seq: nil
+            seq: nil,
+            // Both or neither: the server reads a story without its moment,
+            // and a moment without its story, as no opinion.
+            story: storySetAt == nil ? nil : story.flatMap(Story.encoded),
+            story_set_at: story == nil ? nil : storySetAt?.timeIntervalSince1970
         )
     }
 
@@ -348,6 +364,13 @@ extension Subject {
             colourConfirmedByID: dto.colour_confirmed_by,
             colourConfirmedByName: dto.colour_confirmed_by_name,
             colourConfirmedAt: dto.colour_confirmed_at.map { Date(timeIntervalSince1970: $0) },
+            // A story that will not decode — another build's shape, or a
+            // row that would not open — is no story, and its moment goes
+            // with it, so that `withStory` keeps this phone's own.
+            story: dto.story.flatMap(Story.decoded),
+            storySetAt: dto.story.flatMap(Story.decoded) == nil
+                ? nil
+                : dto.story_set_at.map { Date(timeIntervalSince1970: $0) },
             portraitSubjectID: dto.portrait_subject_id,
             portraitFocusX: dto.portrait_focus_x,
             portraitFocusY: dto.portrait_focus_y,
@@ -462,6 +485,46 @@ extension Subject {
             row.factsSetAt = max(now, (factsSetAt ?? .distantPast).addingTimeInterval(0.001))
         }
         return (row, differs)
+    }
+
+    /// A pulled row laid over this phone's copy of it, as far as the story
+    /// goes — and whether this phone has to answer.
+    ///
+    /// The server keeps the newest story (`sync.ts`) and a pull is its
+    /// answer, with the exceptions the face has and two of the story's own.
+    /// A row that says nothing — no story, no moment, or one this build could
+    /// not read — takes nothing away. And **a story a person corrected is
+    /// never written over by a composed one**, whatever the moments say: two
+    /// phones can compose the same card in the same minute, and the one that
+    /// pulls second must not lose the family's own words to the model's.
+    /// Where this phone keeps its own over a newer pulled one, it is put
+    /// under a moment later than the server's and queued, so that the next
+    /// push settles the family on it; `needsPush` says so.
+    ///
+    /// Otherwise the pulled story stands. Two composed stories of the same
+    /// card differ only in wording, and the newer one is as good as the
+    /// older; two edited ones are the family's own disagreement, and the
+    /// newer is the family's last word. A pulled story that is this phone's
+    /// own, coming back, adopts the server's moment so that nothing is
+    /// pushed again for it.
+    func withStory(from local: Subject, now: Date = .now) -> (row: Subject, needsPush: Bool) {
+        var row = self
+        guard let pulled = story, let pulledAt = storySetAt else {
+            row.story = local.story
+            row.storySetAt = local.storySetAt
+            return (row, false)
+        }
+        guard let mine = local.story, let mineAt = local.storySetAt else { return (row, false) }
+        func keepMine() -> (row: Subject, needsPush: Bool) {
+            row.story = mine
+            row.storySetAt = max(now, pulledAt.addingTimeInterval(0.001))
+            return (row, true)
+        }
+        if mine.isEdited, !pulled.isEdited { return keepMine() }
+        if pulled.isEdited, !mine.isEdited { return (row, false) }
+        if mine == pulled { return (row, false) }
+        if mineAt > pulledAt { return keepMine() }
+        return (row, false)
     }
 
     private static func hint(from dto: SubjectDTO) -> DateHint? {
@@ -667,5 +730,47 @@ extension FollowUpQuestion {
             answeredMemoryID: dto.answered_memory_id,
             deletedAt: dto.deleted_at.map { Date(timeIntervalSince1970: $0) }
         )
+    }
+}
+
+// MARK: - The story on the wire
+
+extension Story {
+    /// The most a story may weigh on the wire before sealing. The Worker
+    /// refuses a sealed story past 131 072 characters (`sync.ts`), and a
+    /// sealed string is base64 of the JSON plus a nonce and a tag — about
+    /// four thirds of the bytes and a little. This is what stays under it,
+    /// and the card refuses a composed story that would not fit under it.
+    static let byteLimit = 90_000
+
+    /// The JSON the story crosses as, inside the seal. Sorted keys and whole
+    /// milliseconds, so that the same story is the same bytes on every phone
+    /// and `withStory` can compare two by value — a moment that has crossed
+    /// and come back is the same `Date` it left as (`Story.moment`).
+    static func encoded(_ story: Story) -> String? {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(Int64((date.timeIntervalSince1970 * 1000).rounded()))
+        }
+        guard let data = try? encoder.encode(story) else { return nil }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    /// The reverse, or nil for anything that is not a story this build can
+    /// read — which `withStory` then treats as no opinion.
+    static func decoded(_ raw: String) -> Story? {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let milliseconds = try decoder.singleValueContainer().decode(Double.self)
+            return Date(timeIntervalSince1970: milliseconds / 1000)
+        }
+        return try? decoder.decode(Story.self, from: Data(raw.utf8))
+    }
+
+    /// Whether this story is small enough to travel.
+    var fits: Bool {
+        (Self.encoded(self)?.utf8.count ?? .max) <= Self.byteLimit
     }
 }

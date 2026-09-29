@@ -63,6 +63,8 @@ enum Lever3RoundTripCheck {
         let body = "Aino tuli mökille joka kesä, ja rannassa puhuttiin sodan jälkeisistä vuosista."
         let transcript = "no niin, Aino tuli mökille joka kesä ja sitten rannassa istuttiin"
         let questionText = "Millainen ranta mökillä oli?"
+        // The card's story (§27): a reading of the telling, sealed like it.
+        let story = Story(text: "Aino kertoo, että hän tuli mökille joka kesä.", composedFrom: ["m1"])
         let words = ["Aino", "mökille", "Puumalassa", "rannassa", "ranta"]
         // Recognisable audio: an m4a-shaped head so the ftyp check means
         // something, and a marker no sealed byte stream may carry.
@@ -100,7 +102,8 @@ enum Lever3RoundTripCheck {
                 lat: nil, lon: nil, geo_precision: nil,
                 date_start: nil, date_end: nil, date_precision: nil,
                 confirmed: 1, merged_into: nil, created_at: now,
-                deleted_at: nil, seq: nil
+                deleted_at: nil, seq: nil,
+                story: Story.encoded(story), story_set_at: now
             )]
             payload.memories = [MemoryDTO(
                 id: UUID().uuidString, subject_id: subjectID,
@@ -136,7 +139,7 @@ enum Lever3RoundTripCheck {
             else { throw Failure("the pull came back without the pushed rows") }
 
             let stored = [
-                storedSubject.title ?? "", storedMemory.body,
+                storedSubject.title ?? "", storedSubject.story ?? "", storedMemory.body,
                 storedMemory.raw_transcript ?? "", storedQuestion.text,
             ]
             check(
@@ -152,6 +155,21 @@ enum Lever3RoundTripCheck {
             let opened = raw.opened(with: keyB)
             check("the title opens to the same words", opened.subjects
                 .first(where: { $0.id == subjectID })?.title == title)
+            // The moment comes back held to the server's clock, which runs in
+            // whole seconds: a moment set in the second the push arrived is
+            // "in the future" to it and is brought back to the top of that
+            // second (`sync.ts`, the rule every dated field shares). So the
+            // moment is within the second it was set in, not equal to it.
+            let openedSubject = opened.subjects.first(where: { $0.id == subjectID })
+            let openedStory: Story? = openedSubject?.story.flatMap(Story.decoded)
+            let openedMoment: Double = openedSubject?.story_set_at ?? -1
+            let sentStory: String = Story.encoded(story) ?? "nothing"
+            let gotStory: String = openedSubject?.story ?? "no story"
+            check(
+                "the story opens to the same words, within the second of its moment",
+                openedStory == story && openedMoment >= now.rounded(.down) && openedMoment <= now,
+                "got \(gotStory) at \(openedMoment), sent \(sentStory) at \(now)"
+            )
             check("the body opens to the same words", opened.memories.first?.body == body)
             check("the raw transcript opens too", opened.memories.first?.raw_transcript == transcript)
             check("the question opens too", opened.questions.first?.text == questionText)

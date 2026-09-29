@@ -275,6 +275,8 @@ enum ArchiveExport {
         .raw summary { color: #6f665c; font-size: .9rem; cursor: pointer; }
         .raw p { margin: .5rem 0 0; }
         .open { color: #6f665c; }
+        .story { margin: 1rem 0 1.5rem; }
+        .story .meta { margin-top: .25rem; }
         audio { width: 100%; margin-top: .5rem; }
         </style>
         </head>
@@ -308,7 +310,11 @@ enum ArchiveExport {
         var empty: [Subject] = []
 
         for subject in subjects {
-            let memories = store.memories(for: subject.id)
+            // Oldest first: on the page as on the card, the log is what was
+            // told and when (the app's *"Uutta perheeltä"* stays newest
+            // first — a different question). Until 26 Sep 2026 the page
+            // printed newest first, which reads a family's story backwards.
+            let memories = store.memories(for: subject.id).sorted { $0.createdAt < $1.createdAt }
             // An empty subject the extraction proposed and nobody confirmed is
             // left out rather than named. Rule 4: listed here it would be a
             // name the model heard, printed as somebody the family has not
@@ -350,6 +356,28 @@ enum ArchiveExport {
                 if !lines.isEmpty {
                     out += "<p class=\"meta\">\(escaped(lines.joined(separator: " · ")))</p>\n"
                 }
+            }
+
+            // The story before the log it was composed from, with its
+            // provenance: composed from so many tellings, or a person's own
+            // words. A proposal is not printed — it is the model's, and
+            // nobody has said yes to it (rule 4).
+            if let story = subject.story, !story.text.isEmpty {
+                let read = languageAttribute(for: story.text, on: pageLanguage)
+                out += "<section class=\"story\">\n"
+                for paragraph in story.text.components(separatedBy: "\n")
+                where !paragraph.trimmingCharacters(in: .whitespaces).isEmpty {
+                    out += "<p\(read)>\(escaped(paragraph))</p>\n"
+                }
+                let provenance: String = if story.isEdited {
+                    String(localized: "Muokattu käsin")
+                } else if story.composedFrom.count == 1 {
+                    String(localized: "Koottu yhdestä muistosta")
+                } else {
+                    String(localized: "Koottu \(story.composedFrom.count) muistosta")
+                }
+                out += "<p class=\"meta\">\(escaped(String(localized: "Tarina") + " · " + provenance))</p>\n"
+                out += "</section>\n"
             }
 
             for memory in memories {

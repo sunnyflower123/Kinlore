@@ -116,6 +116,32 @@ enum AppServices {
         guard let base = apiBaseURL else { return StubColourisationService() }
         return RemoteColourisationService(baseURL: base, token: token)
     }
+
+    /// Who composes a card's story (ARCHITECTURE §27), and nobody without a
+    /// family server: the story is the one thing here with no stub standing
+    /// in for the service, because a stub's story on the demo archive would
+    /// be a sentence per telling filmed as the product. `-story stub`,
+    /// `-story fail` and `-story missing` pin it in a DEBUG build, so a UI
+    /// test composes without a Worker, reaches the failure note without
+    /// breaking one, and meets the Worker that has no `/story` yet.
+    static func storyComposer(token: @escaping () -> String) -> StoryComposer? {
+        #if DEBUG
+        switch UserDefaults.standard.string(forKey: "story") {
+        case "stub": return StubStoryComposer()
+        case "fail": return FailingStoryComposer()
+        case "missing": return MissingStoryComposer()
+        default: break
+        }
+        #endif
+        guard let base = apiBaseURL else { return nil }
+        return RemoteStoryComposer(baseURL: base, token: token)
+    }
+
+    /// Set the first time this launch's family server answers `/story` with
+    /// a 404 — a Worker deployed before the story card — so that no card asks
+    /// it again until the app is opened next. Such a card is the card as it
+    /// was: its tellings, and no note about a story nobody can compose.
+    @MainActor static var storyNotOffered = false
 }
 
 // MARK: - Shared request
@@ -548,5 +574,36 @@ struct RemoteExtractionService: ExtractionService {
             end: date(reply.end_year),
             precision: precision == .day || precision == .month ? .year : precision
         )
+    }
+}
+
+// MARK: - The story
+
+/// `POST /story`: the card's tellings, and a story back. On no family's
+/// meter, like the extraction, and bounded on the Worker only by the free
+/// tier's day (`reserveStory`); asked for once per change in the card's
+/// tellings (`StoryPlan`) — which is what keeps it rare.
+struct RemoteStoryComposer: StoryComposer {
+    let baseURL: URL
+    let token: () -> String
+
+    private struct Reply: Decodable {
+        let story: String
+    }
+
+    func compose(_ request: StoryRequest) async throws -> String {
+        // Forty tellings of a long life are a long prompt and a long answer;
+        // the transcription's ceiling for the longest telling is the model.
+        let reply: Reply
+        do {
+            reply = try await post("story", baseURL: baseURL, token: token(), body: request, timeout: 120)
+        } catch RemoteError.badStatus(404) {
+            // A Worker from before the story card: every POST it does not
+            // know is a 404, and the new route never answers one.
+            throw StoryComposeFailure.notOffered
+        }
+        let text = reply.story.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { throw RemoteError.emptyResult }
+        return text
     }
 }

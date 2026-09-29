@@ -330,9 +330,27 @@ struct ElderSecondaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .elderSecondarySurface(isEnabled: isEnabled)
+            .opacity(configuration.isPressed ? 0.7 : 1)
+    }
+}
+
+extension ButtonStyle where Self == ElderSecondaryButtonStyle {
+    static var elderSecondary: ElderSecondaryButtonStyle { .init() }
+}
+
+extension View {
+    /// The honey button's surface, which `ElderSecondaryButtonStyle` draws
+    /// round every label it styles — here so that the one control that
+    /// cannot take the style is drawn the same: a `NavigationLink` in a
+    /// `List` row, which the list presents as its own row link whatever
+    /// button style it inherits. The caption's place chip is one (28 Sep
+    /// 2026, ARCHITECTURE §27), beside a date chip that is a button, and
+    /// until then it stood there as bare words a line higher.
+    func elderSecondarySurface(isEnabled: Bool = true) -> some View {
         let shape = RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
-        return configuration.label
-            .fontWeight(.semibold)
+        return fontWeight(.semibold)
             // Disabled is `supporting` rather than a faded button, so the
             // words stay readable while it waits; fading the whole control
             // would fade the text under the minimum with it.
@@ -348,12 +366,7 @@ struct ElderSecondaryButtonStyle: ButtonStyle {
             }
             .overlay(shape.strokeBorder(Elder.rule, lineWidth: 1))
             .contentShape(shape)
-            .opacity(configuration.isPressed ? 0.7 : 1)
     }
-}
-
-extension ButtonStyle where Self == ElderSecondaryButtonStyle {
-    static var elderSecondary: ElderSecondaryButtonStyle { .init() }
 }
 
 extension View {

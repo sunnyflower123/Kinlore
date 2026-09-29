@@ -773,6 +773,22 @@ struct SubjectDetailScreen: View {
     @State private var isConfirmingNotMe = false
     @State private var isLinkingMe = false
     @State private var linkNote: LocalizedStringKey?
+    /// The card's story (ARCHITECTURE §27): a composition in flight, the
+    /// plans that failed — so that a failure is not retried on every redraw;
+    /// a new telling changes the key, and so does *"Yritä uudelleen"* — and
+    /// the sheet that corrects it.
+    @State private var isComposing = false
+    @State private var composeFailedFor: Set<StoryKey> = []
+    @State private var composeAttempt = 0
+    @State private var isEditingStory = false
+    /// This card met a family server with no `/story`
+    /// (`AppServices.storyNotOffered`, which the next card reads).
+    @State private var storyNotOffered = false
+    /// Whether the tellings under a story are unfolded. Nil until the card
+    /// first appears, and then what the card had: folded under a story it
+    /// opened with, unfolded on one that had none — so a story composed
+    /// while somebody reads the tellings does not fold them away.
+    @State private var logIsOpen: Bool?
 
     /// The subject as the store has it now, rather than as it was when this
     /// screen was pushed. A name corrected here has to be visible here, and the
@@ -795,10 +811,14 @@ struct SubjectDetailScreen: View {
         current.kind == .photo || current.kind == .event
     }
 
-    private var nameRowText: LocalizedStringKey {
+    /// What the caption's pencil says to VoiceOver: a photograph is given a
+    /// name, a moment's is changed, and a person's or a place's — heard, and
+    /// wrong about one time in three — is corrected.
+    private var renameLabel: LocalizedStringKey {
         if current.kind == .photo {
             return current.title.isEmpty ? "Anna kuvalle nimi" : "Vaihda kuvan nimi"
         }
+        if nameCameFromSpeech { return "Korjaa nimi" }
         return "Vaihda nimi"
     }
 
@@ -806,6 +826,15 @@ struct SubjectDetailScreen: View {
     /// (`elderCard`), since 27 Sep 2026; 16 points and no edge until then.
     private static var picture: RoundedRectangle {
         RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+    }
+
+    /// Whether a loaded photograph runs to the screen's edges, as the story
+    /// card's caption wants it (ARCHITECTURE §27). iOS 26 only, where a list
+    /// section's margins can be taken away (`listSectionMargins`); before it
+    /// the picture keeps the card's corner inside the margins, as it did.
+    private static var photographRunsToTheEdges: Bool {
+        if #available(iOS 26.0, *) { return true }
+        return false
     }
 
     /// Whether this card can be deleted: only while nothing has been told
@@ -818,6 +847,7 @@ struct SubjectDetailScreen: View {
     private var removable: Bool {
         (current.kind == .photo || current.kind == .person || current.kind == .place)
             && store.memories(for: subject.id).isEmpty
+            && story == nil
             && !store.questions.contains { $0.subjectID == subject.id && !$0.answered }
             && !store.relations.contains {
                 $0.deletedAt == nil && ($0.fromSubjectID == subject.id || $0.toSubjectID == subject.id)
@@ -933,6 +963,158 @@ struct SubjectDetailScreen: View {
         }
     }
 
+    // MARK: The story (ARCHITECTURE §27)
+
+    /// The story with words in it. A cleared story travels as one with none
+    /// (`MemoryStore.setStory`), and the card reads that as no story.
+    private var story: Story? {
+        current.story.flatMap { $0.text.isEmpty ? nil : $0 }
+    }
+
+    /// The tellings a person's story was made of that are no longer on the
+    /// card — taken back here or on another phone. The plan leaves an edited
+    /// story alone, so this is the card's to say (`StoryTakenBack`); under
+    /// an unedited story the plan composes again or clears by itself.
+    private var takenBack: [String] {
+        story.map { $0.takenBack(live: StoryPlan.live(store.memories(for: subject.id))) } ?? []
+    }
+
+    /// What the plan is read from. The task on the list reruns when it
+    /// changes: a telling added or taken back, the story saved, a retry.
+    private struct StoryKey: Hashable {
+        let live: [String]
+        let story: Story?
+        let attempt: Int
+    }
+
+    private var storyKey: StoryKey {
+        StoryKey(
+            live: StoryPlan.live(store.memories(for: subject.id)).map(\.id),
+            story: current.story,
+            attempt: composeAttempt
+        )
+    }
+
+    /// Who composes, and nobody without a family server
+    /// (`AppServices.storyComposer`).
+    private var composer: StoryComposer? {
+        AppServices.storyComposer { [session] in session.identity.token }
+    }
+
+    /// Whether this phone composes a story at all. Not on a phone kept to
+    /// itself, which promised that nothing leaves it; not with no server to
+    /// ask; and not against a server that has no `/story`, where the card is
+    /// the card it was, its tellings and nothing said about a story.
+    private var composes: Bool {
+        composer != nil && !session.isLocalByChoice && !storyNotOffered && !AppServices.storyNotOffered
+    }
+
+    private var logOpen: Bool { logIsOpen ?? (story == nil) }
+
+    /// The place the card's own tellings name most, for the caption: a
+    /// confirmed place before any other, then the one named in the most
+    /// tellings, then the one named most recently, then by name so that the
+    /// choice does not move between two redraws. A place heard and not yet
+    /// confirmed is shown only where no confirmed one is named, and never as
+    /// a point (rule 4). None on a place's own card, which is the place.
+    private var captionPlace: Subject? {
+        guard current.kind != .place else { return nil }
+        var named: [String: (place: Subject, tellings: Int, latest: Date)] = [:]
+        for memory in store.memories(for: subject.id) {
+            var seen = Set<String>()
+            for id in memory.mentionedSubjectIDs {
+                guard let place = store.subject(id: id), place.kind == .place,
+                      place.deletedAt == nil, place.mergedInto == nil,
+                      seen.insert(place.id).inserted
+                else { continue }
+                let before = named[place.id]
+                named[place.id] = (
+                    place: place,
+                    tellings: (before?.tellings ?? 0) + 1,
+                    latest: max(before?.latest ?? .distantPast, memory.createdAt)
+                )
+            }
+        }
+        return named.values.min { a, b in
+            if a.place.confirmed != b.place.confirmed { return a.place.confirmed }
+            if a.tellings != b.tellings { return a.tellings > b.tellings }
+            if a.latest != b.latest { return a.latest > b.latest }
+            return a.place.displayTitle < b.place.displayTitle
+        }?.place
+    }
+
+    /// The plan, carried out. Clearing a story and dropping a proposal are
+    /// the phone's own and happen wherever the card is read; only `compose`
+    /// and `propose` leave the phone, and only when the plan still holds
+    /// once the answer is back: the task is cancelled when its key changes,
+    /// and a telling taken back while the model was writing must not come
+    /// back as part of the story.
+    private func composeIfNeeded() async {
+        let key = storyKey
+        let plan = StoryPlan.plan(story: current.story, memories: store.memories(for: subject.id))
+        switch plan {
+        case .nothing:
+            return
+        case .clear:
+            store.setStory(subjectID: subject.id, nil)
+        case .dropProposal:
+            if let story = current.story { store.setStory(subjectID: subject.id, story.dismissing()) }
+        case let .compose(tellings), let .propose(tellings, _):
+            guard composes, let composer, !composeFailedFor.contains(key) else { return }
+            isComposing = true
+            defer { isComposing = false }
+            var soFar: String?
+            if case let .propose(_, text) = plan { soFar = text }
+            let request = StoryRequest(
+                subject: current,
+                memories: tellings,
+                tellerNames: Dictionary(uniqueKeysWithValues: tellings.compactMap { memory in
+                    store.byline(for: memory).map { (memory.id, $0) }
+                }),
+                mentions: mentionedSubjects(in: tellings),
+                lang: SpokenLanguage.current,
+                soFar: soFar
+            )
+            do {
+                let text = try await composer.compose(request)
+                guard !Task.isCancelled,
+                      StoryPlan.plan(story: current.story, memories: store.memories(for: subject.id)) == plan
+                else { return }
+                let next: Story
+                if case .propose = plan, let story = current.story {
+                    next = story.proposing(text, from: tellings)
+                } else {
+                    next = Story.composed(text, from: tellings)
+                }
+                // A story too long to travel is not saved: the card would
+                // show one the family never receives.
+                guard next.fits else {
+                    composeFailedFor.insert(key)
+                    return
+                }
+                store.setStory(subjectID: subject.id, next)
+            } catch StoryComposeFailure.notOffered {
+                AppServices.storyNotOffered = true
+                storyNotOffered = true
+            } catch {
+                guard !Task.isCancelled else { return }
+                composeFailedFor.insert(key)
+            }
+        }
+    }
+
+    /// The cards the tellings name, live ones only. `StoryRequest` keeps the
+    /// confirmed among them as the names the story may use as they are; an
+    /// unconfirmed one is not sent at all, and the prompt's rule 3 has the
+    /// model say every other name through its teller (rule 4).
+    private func mentionedSubjects(in tellings: [Memory]) -> [Subject] {
+        var seen = Set<String>()
+        return tellings.flatMap(\.mentionedSubjectIDs)
+            .filter { seen.insert($0).inserted }
+            .compactMap { store.subject(id: $0) }
+            .filter { $0.deletedAt == nil && $0.mergedInto == nil }
+    }
+
     /// Everything on the card under its photograph, in one place so that it
     /// can follow the photograph in when the card is stepped into from the
     /// album (`StepIn`). A `Group` in a `List` is no container: each section
@@ -940,6 +1122,12 @@ struct SubjectDetailScreen: View {
     /// reaches every one. On a card with no photograph it is the whole card.
     private var underThePhotograph: some View {
         Group {
+            // The caption, right under the photograph and first on a moment's
+            // card (ARCHITECTURE §27): the name, the pencil, and the chips.
+            if subject.kind == .photo || subject.kind == .event {
+                Section { caption }
+            }
+
             // The colours the family said yes to, under the photograph and never
             // over it: the picture as it was taken stays the first thing on the
             // card, and this one carries its mark in its own pixels.
@@ -969,9 +1157,10 @@ struct SubjectDetailScreen: View {
                 }
             }
 
-            // Where it is, for a confirmed place the lookup found. Under the
-            // name and above everything told about it, because the map
-            // answers "where" and the memories answer "what happened there".
+            // Where it is, for a confirmed place the lookup found. Above the
+            // name, as a photograph is, and above everything told about it,
+            // because the map answers "where" and the memories answer "what
+            // happened there".
             //
             // Withdrawn for one day, 12 Sep 2026, with the rest of "yksi
             // kerronta, yksi muisto", and back on 13 Sep for the reason the
@@ -1010,8 +1199,8 @@ struct SubjectDetailScreen: View {
                 // the family's map already placing this place, and "Peruuta"
                 // there comes straight back here. Confirmed only, like the
                 // lookup: a point under a name nobody has vouched for is the
-                // guess drawn (rule 4). The shape of the date row below, for
-                // the date row's reason.
+                // guess drawn (rule 4). A `Text` and an `Image` rather than a
+                // `Label`, for the reason the caption's date chip gives.
                 Section {
                     NavigationLink(value: PlacesMapRoute(focus: current.id, editing: true)) {
                         HStack(spacing: 10) {
@@ -1028,70 +1217,10 @@ struct SubjectDetailScreen: View {
                 }
             }
 
-            // The date, and the way to put one there. It used to be a label that
-            // appeared only when the extraction had heard a year — so a
-            // photograph nobody had dated said nothing, and the granddaughter
-            // who knows the summer was 1957 had nowhere to put it. Rule 5 stores
-            // uncertainty; until now only the machine could write any.
-            //
-            // People and places are left out on purpose: `dateHint` means "when
-            // this happened", and a person's date would have to mean birth or
-            // death, which the column does not say and the app must not guess.
-            // When it happened, and the way to say so. It used to be a label
-            // that appeared only when the extraction had heard a year, so a
-            // photograph nobody had dated said nothing at all.
-            //
-            // A `Text` and an `Image` rather than a `Label`, and that is not a
-            // style preference: as a `Label` the audit reported this row's text
-            // as clipped in every shape it was tried in — as a button's label,
-            // as a plain row, with the tap target moved, with an explicit font —
-            // and it pushed a second finding onto the memory underneath. Split
-            // into two views the same row passes at both sizes. Four runs to
-            // learn one fact, which is why it is written here.
-            if datable {
-                Section {
-                    // Two honey chips on one row since 27 Sep 2026, where
-                    // there were two grey rows: the date and the name are
-                    // the two things a hand can put on a picture, and a chip
-                    // says it is for pressing where a grey row said only
-                    // what was missing (`ChipRow`).
-                    ChipRow {
-                        Button {
-                            isDating = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "calendar")
-                                Text(current.dateHint?.displayText ?? String(localized: "Lisää ajankohta"))
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .font(.body.weight(.medium))
-                        }
-
-                        // And the name, the same way. The card could date the
-                        // picture and not name it: the title was whatever the
-                        // first telling left, and the tile on Muistot reads the
-                        // title aloud, so thirty untitled photographs were thirty
-                        // "Valokuva" (finding #12). A chip and not the toolbar
-                        // pencil the person card has, for the reason the date
-                        // chip gives: a toolbar button's text barely grows.
-                        Button {
-                            isRenaming = true
-                        } label: {
-                            HStack(spacing: 8) {
-                                Image(systemName: "pencil")
-                                // The identifier is for
-                                // `AccessibilityPolicy.isDefaultSizeSimulationArtefact`
-                                // and nothing else: the default-size simulation
-                                // reports this text whenever words stand in the
-                                // picture's place above it, and it has three wordings.
-                                Text(nameRowText)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .accessibilityIdentifier("subject.rename")
-                            }
-                            .font(.body.weight(.medium))
-                        }
-                    }
-                }
+            // A place's caption, under its map as a photograph's is under
+            // the picture. No place chip: the card is the place.
+            if subject.kind == .place {
+                Section { caption }
             }
 
             // The face on the card, and the way to give it one (§25). People
@@ -1123,6 +1252,9 @@ struct SubjectDetailScreen: View {
                         .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
+
+                    // The caption under the portrait, as under a photograph.
+                    caption
 
                     Button {
                         isChoosingFace = true
@@ -1237,10 +1369,9 @@ struct SubjectDetailScreen: View {
                 .listRowBackground(Color.clear)
             }
 
-            // Relationships only for people: a photo or an event has none.
-            if subject.kind == .person {
-                RelationsSection(subject: subject)
-            }
+            // The story, under the button that adds to it and above the
+            // tellings it is read from (ARCHITECTURE §27).
+            storySection
 
             let memories = store.memories(for: subject.id)
             // This phone's own tellings taken back from this card within the
@@ -1268,7 +1399,7 @@ struct SubjectDetailScreen: View {
             // of her own hid every photograph's that named her. Leaving out
             // the twice is `memories(mentioningElsewhere:)`'s job.
             let mentions = store.memories(mentioningElsewhere: subject.id)
-            if memories.isEmpty {
+            if memories.isEmpty, story == nil {
                 namedElsewhere(mentions)
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
@@ -1326,22 +1457,41 @@ struct SubjectDetailScreen: View {
                     }
                     ForEach(restorable) { RestorableMemoryRow(memory: $0) }
                 }
+            } else if memories.isEmpty {
+                // A person's story whose every telling has been taken back,
+                // which the plan leaves for a person to decide about: the
+                // note under the story says so, in place of the sentence that
+                // nothing has been told. What this phone took back is still
+                // offered back here, as on any card.
+                if !restorable.isEmpty {
+                    Section {
+                        ForEach(restorable) { RestorableMemoryRow(memory: $0) }
+                    }
+                }
+                namedElsewhere(mentions)
+            } else if story != nil {
+                // The tellings under a story, behind one button (version 1's
+                // log, ARCHITECTURE §27): folded when the card opens with a
+                // story, because the story is what they say, and each still
+                // the row it is on every card — the teller's own with its
+                // button (`MemoryRow`). Newest first, as ever: the telling
+                // just told is the first under the story it changed.
+                Section {
+                    logFold(count: memories.count)
+                    if logOpen {
+                        ForEach(memories) { memory in
+                            MemoryRow(memory: memory, cardID: current.id)
+                        }
+                    }
+                    restorableRows(restorable)
+                }
+                namedElsewhere(mentions)
             } else {
                 Section {
                     ForEach(memories) { memory in
                         MemoryRow(memory: memory, cardID: current.id)
                     }
-                    // On the paper under the last bubble, as `MemoryRow`'s own
-                    // buttons are: a row of the list's own white here would be
-                    // the one card in a section of bubbles. On a card with no
-                    // telling left it stays on the white, in one section with
-                    // the sentence that says so.
-                    ForEach(restorable) {
-                        RestorableMemoryRow(memory: $0)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
+                    restorableRows(restorable)
                 } header: {
                     // A List styles its own headers and footers below the
                     // contrast minimum. Saying the colour out loud is the only
@@ -1360,6 +1510,13 @@ struct SubjectDetailScreen: View {
                     .accessibilityIdentifier("card.memoriesHeading")
                 }
                 namedElsewhere(mentions)
+            }
+
+            // Relationships only for people: a photo or an event has none.
+            // Under the story and its tellings since 28 Sep 2026, which are
+            // the top of the card; above them until then.
+            if subject.kind == .person {
+                RelationsSection(subject: subject)
             }
 
             if colourable {
@@ -1515,12 +1672,18 @@ struct SubjectDetailScreen: View {
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
                 }
+                // To the screen's edges, once there is a picture to run
+                // there (ARCHITECTURE §27): the caption under it is the
+                // card's name.
+                .photographToTheEdges(image != nil)
             }
             underThePhotograph
                 .stepInFollows()
         }
+        // The name small in the bar and large in the caption, which is where
+        // it is read and changed; the bar keeps it while the card scrolls.
         .navigationTitle(current.displayTitle)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .alert(
             removalTitle,
             isPresented: $isConfirmingRemoval
@@ -1545,19 +1708,6 @@ struct SubjectDetailScreen: View {
         } message: {
             Text("Kortti jää perheen arkistoon. Vain merkintä siitä, että tämä olet sinä, poistuu.")
         }
-        .toolbar {
-            if nameCameFromSpeech {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isCorrectingName = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .elderTapTarget()
-                    }
-                    .accessibilityLabel("Korjaa nimi")
-                }
-            }
-        }
         // The coordinate this card's map needs, asked for at the moment the
         // map is wanted. The sweeps in `KinloreApp` run at launch and on the
         // return to the foreground; a place confirmed in the telling that
@@ -1565,6 +1715,15 @@ struct SubjectDetailScreen: View {
         // closed and opened. `PlaceResolver.resolve` says the rest.
         .task {
             await places?.resolve(current, in: store)
+        }
+        // The story, composed when the plan says the tellings have changed
+        // (`StoryPlan`), and on the list rather than on a row: a lazy row
+        // that scrolls away cancels its task, and a composition with it.
+        .task(id: storyKey) {
+            await composeIfNeeded()
+        }
+        .onAppear {
+            if logIsOpen == nil { logIsOpen = story == nil }
         }
         // Keyed like the colours below, and for the same reason: a photograph
         // another member added arrives as a card, then as a key, then as a
@@ -1644,6 +1803,14 @@ struct SubjectDetailScreen: View {
                 if merged { dismiss() }
             }
         }
+        .sheet(isPresented: $isEditingStory) {
+            StoryEditSheet(initial: story?.text ?? "") { text in
+                let live = StoryPlan.live(store.memories(for: subject.id))
+                let next = current.story?.edited(to: text, live: live)
+                    ?? Story(text: text, composedFrom: live.map(\.id), editedAt: .now)
+                store.setStory(subjectID: subject.id, next)
+            }
+        }
         .elderSurface()
     }
 
@@ -1665,8 +1832,7 @@ struct SubjectDetailScreen: View {
                 // it there (`StepIn`).
                 .stepInApproach()
                 .scaledToFit()
-                .clipShape(Self.picture)
-                .overlay(Self.picture.strokeBorder(Elder.rule, lineWidth: 1))
+                .pictureEdge(runsToTheEdges: Self.photographRunsToTheEdges)
                 // A tap opens it to the whole screen, where it can be brought
                 // closer: a face in a group photograph is a few points wide
                 // here, and until 28 Sep 2026 a tap did nothing at all.
@@ -1752,6 +1918,227 @@ struct SubjectDetailScreen: View {
         .foregroundStyle(Elder.supporting)
     }
 
+    /// The caption (ARCHITECTURE §27, version 3 of the story card): the name
+    /// in the display face with the pencil that changes it, and under them
+    /// the chips — when it happened, for a photograph or a moment, and where,
+    /// for any card but a place's. Rows of the section it is put in, on the
+    /// paper, so the same caption sits under a photograph, a portrait and a
+    /// map.
+    ///
+    /// The pencil was a honey chip on a photograph's card ("Anna kuvalle
+    /// nimi") and a toolbar button on a person's until 28 Sep 2026. Beside
+    /// the name it says what it changes, and VoiceOver hears which of the
+    /// three it is (`renameLabel`).
+    @ViewBuilder
+    private var caption: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(current.displayTitle)
+                .font(Elder.display(.title2))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // Down to the pencil's middle while the name is one line.
+                .padding(.top, 12)
+                .accessibilityAddTraits(.isHeader)
+            Button {
+                if nameCameFromSpeech { isCorrectingName = true } else { isRenaming = true }
+            } label: {
+                Image(systemName: "pencil")
+                    .font(.title3.weight(.semibold))
+                    .elderTapTarget()
+            }
+            .buttonStyle(.borderless)
+            // Ink, like every text button since the accent became the red of
+            // removal (`Elder.wax`).
+            .foregroundStyle(Color.primary)
+            .accessibilityLabel(renameLabel)
+            .accessibilityIdentifier("subject.rename")
+        }
+        .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 0, trailing: 0))
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
+
+        let place = captionPlace
+        if datable || place != nil {
+            ChipRow {
+                if datable {
+                    // The date chip as it was on its own row until 28 Sep
+                    // 2026: a `Text` and an `Image` rather than a `Label`,
+                    // which the audit reported as clipped in every shape.
+                    // Not on a person's or a place's card, on purpose:
+                    // `dateHint` means when this happened, and a person's
+                    // date would have to mean a birth or a death, which the
+                    // column does not say and the app must not guess.
+                    Button {
+                        isDating = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "calendar")
+                            Text(current.dateHint?.displayText ?? String(localized: "Lisää ajankohta"))
+                                .fixedSize(horizontal: false, vertical: true)
+                                .accessibilityIdentifier("caption.date")
+                        }
+                        .font(.body.weight(.medium))
+                    }
+                }
+                if let place {
+                    placeChip(place)
+                }
+            }
+        }
+    }
+
+    /// Where the card's tellings happened, one tap from the family's map
+    /// (ARCHITECTURE §27): the map centred on a place with a point, the map
+    /// already placing one without — what "Merkitse kartalle" on the place's
+    /// own card opens — and the place's card for a place nobody has
+    /// confirmed, which is never drawn as a point (rule 4). Nothing to fill
+    /// in: telling is still how a place gets onto a card.
+    @ViewBuilder
+    private func placeChip(_ place: Subject) -> some View {
+        let label = HStack(spacing: 8) {
+            Image(systemName: "mappin.and.ellipse")
+            Text(verbatim: place.displayTitle)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("caption.place")
+            if !place.confirmed {
+                // Heard, and not yet checked: said in the glyph here and in
+                // words to VoiceOver, never as a point on the map.
+                Image(systemName: "questionmark.circle")
+            }
+        }
+        .font(.body.weight(.medium))
+        // The date chip's honey, drawn on the words: a link in a list row
+        // takes no button style from `ChipRow`, and without this the place
+        // stood beside the date chip as bare words a line above its middle.
+        .elderSecondarySurface()
+        Group {
+            if !place.confirmed {
+                NavigationLink(value: place) { label }
+                    .accessibilityLabel(Text("Paikka, odottaa tarkistusta: \(place.displayTitle)"))
+                    .accessibilityHint("Avaa paikan kortin.")
+            } else if place.place?.precision.mapSpanMetres != nil {
+                NavigationLink(value: PlacesMapRoute(focus: place.id)) { label }
+                    .accessibilityLabel(Text("Paikka: \(place.displayTitle)"))
+                    .accessibilityHint("Avaa perheen kartan tämän paikan kohdalta.")
+            } else {
+                NavigationLink(value: PlacesMapRoute(focus: place.id, editing: true)) { label }
+                    .accessibilityLabel(Text("Paikka: \(place.displayTitle)"))
+                    .accessibilityHint("Avaa kartan, jolla paikan voi merkitä napauttamalla.")
+            }
+        }
+        // Plain, as `PlaceMapCard`'s link is: with only the style `ChipRow`
+        // hands its row, the list drew the link its own way, and the chip's
+        // shape above is what a tap on it is meant to land on.
+        .buttonStyle(.plain)
+        // A link in a list row gets a chevron, and one beside a chip reads
+        // as a second control (`PlaceMapCard`).
+        .navigationLinkIndicatorVisibility(.hidden)
+        .accessibilityIdentifier("card.place")
+    }
+
+    /// The story (ARCHITECTURE §27): the text in a card on the paper with
+    /// where it came from and the way to correct it; under it what a person
+    /// has to decide about it; and while it is being composed, or could not
+    /// be, a line that says so. Nothing at all on a card with no story and
+    /// nothing under way — the tellings under the button are the card, as
+    /// they always were.
+    @ViewBuilder
+    private var storySection: some View {
+        let failed = composeFailedFor.contains(storyKey)
+        if story != nil || isComposing || failed {
+            Section {
+                if let story {
+                    VStack(alignment: .leading, spacing: 14) {
+                        StoryBody(text: story.text)
+                        StoryProvenance(memoryCount: story.composedFrom.count, edited: story.isEdited) {
+                            isEditingStory = true
+                        }
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .elderCard()
+                    .onThePaper()
+                    if story.isEdited, !takenBack.isEmpty {
+                        let live = StoryPlan.live(store.memories(for: subject.id))
+                        StoryTakenBack(
+                            gone: takenBack.count,
+                            of: story.composedFrom.count,
+                            canCompose: composes && !live.isEmpty,
+                            onKeep: { store.setStory(subjectID: subject.id, story.keeping(live: live)) },
+                            onLetGo: { store.setStory(subjectID: subject.id, nil) }
+                        )
+                        .onThePaper()
+                    }
+                    if let proposal = story.proposal {
+                        StoryProposalCard(
+                            proposal: proposal,
+                            onAccept: { store.setStory(subjectID: subject.id, story.accepting()) },
+                            onDismiss: { store.setStory(subjectID: subject.id, story.dismissing()) }
+                        )
+                        .onThePaper()
+                    }
+                }
+                if isComposing {
+                    StoryComposing()
+                        .padding(.horizontal, 4)
+                        .onThePaper()
+                }
+                if failed {
+                    StoryComposeFailed { composeAttempt += 1 }
+                        .padding(.horizontal, 4)
+                        .onThePaper()
+                }
+                // Said where the story is, on every phone that composes one:
+                // the tellings leave the phone for it. A row and not the
+                // section's footer, whose text a list stops growing.
+                if composes {
+                    StoryConsent()
+                        .padding(.horizontal, 4)
+                        .onThePaper()
+                }
+            }
+        }
+    }
+
+    /// The one button over the tellings under a story.
+    private func logFold(count: Int) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) { logIsOpen = !logOpen }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: logOpen ? "chevron.down" : "chevron.right")
+                    .accessibilityHidden(true)
+                Group {
+                    if logOpen {
+                        Text("Piilota muistot")
+                    } else if count == 1 {
+                        Text("Näytä muisto")
+                    } else {
+                        Text("Näytä \(count) muistoa")
+                    }
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(.body.weight(.medium))
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.elderSecondary)
+        .accessibilityIdentifier("storyCard.logs")
+        .onThePaper()
+    }
+
+    /// This phone's own tellings taken back from this card within the window
+    /// (§19), on the paper under the last bubble, as `MemoryRow`'s own
+    /// buttons are: a row of the list's own white here would be the one card
+    /// in a section of bubbles. On a card with no telling left they stay on
+    /// the white, in one section with the sentence that says so.
+    private func restorableRows(_ restorable: [Memory]) -> some View {
+        ForEach(restorable) {
+            RestorableMemoryRow(memory: $0)
+                .onThePaper()
+        }
+    }
+
     /// The tellings filed under something else that name this card, each
     /// under the way to where it is filed.
     @ViewBuilder
@@ -1796,6 +2183,47 @@ struct SubjectDetailScreen: View {
                 }
                 .foregroundStyle(Elder.supporting)
             }
+        }
+    }
+}
+
+private extension View {
+    /// A row of the card that lies on the paper rather than on the list's
+    /// white: the room above and below that a bubble has, no inset at the
+    /// sides, and no separator.
+    func onThePaper() -> some View {
+        listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+    }
+
+    /// The photograph's section without its side margins, where a list can
+    /// be told so (iOS 26): the picture runs to the screen's edges.
+    @ViewBuilder
+    func photographToTheEdges(_ runs: Bool) -> some View {
+        if runs {
+            if #available(iOS 26.0, *) {
+                listSectionMargins(.horizontal, 0)
+            } else {
+                self
+            }
+        } else {
+            self
+        }
+    }
+
+    /// The photograph's edge, in one place (§27): square to the screen's
+    /// edges where it runs to them — clipped, so that the step-in's four per
+    /// cent stays inside its frame — and the card's corner with its hairline
+    /// where it cannot. Whatever bounds the picture's size goes here too.
+    @ViewBuilder
+    func pictureEdge(runsToTheEdges: Bool) -> some View {
+        if runsToTheEdges {
+            clipped()
+        } else {
+            let shape = RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+            clipShape(shape)
+                .overlay(shape.strokeBorder(Elder.rule, lineWidth: 1))
         }
     }
 }

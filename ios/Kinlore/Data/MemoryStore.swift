@@ -909,6 +909,21 @@ final class MemoryStore {
         save()
     }
 
+    /// The card's story, set by the composer or by a person's hand
+    /// (`SubjectDetailScreen`, ARCHITECTURE §27). `nil` clears it — as a story
+    /// with nothing in it under a new moment, so that the clearing travels
+    /// and wins on the server over the story it replaces, where a bare nil,
+    /// which is also what every phone that never saw the field sends, must
+    /// not. The moment moves with every change, and it is the server's
+    /// tiebreak between two phones.
+    func setStory(subjectID: String, _ story: Story?) {
+        guard let index = subjects.firstIndex(where: { $0.id == subjectID }) else { return }
+        subjects[index].story = story ?? Story(text: "", composedFrom: [], composedAt: Date())
+        subjects[index].storySetAt = Date()
+        dirtySubjects.insert(subjectID)
+        save()
+    }
+
     /// The photograph a person's face is drawn from, if it can be drawn at
     /// all: a live photograph of this archive with its file on this phone.
     /// Nil is the initial, and every way of getting there is silent by design
@@ -1370,12 +1385,16 @@ final class MemoryStore {
                 // And the facts, which are the one thing here two phones can
                 // both have written: joined fact by fact, and a join that
                 // holds what the server did not send goes up on the next
-                // round (`withFacts`).
+                // round (`withFacts`). And the card's story, which this phone
+                // may also have to push back, where a person's own words
+                // would otherwise be lost to a composed story's newer moment
+                // (`withStory`).
                 let facts = merged.row.withPortrait(from: subjects[index])
                     .withPlace(from: subjects[index])
                     .withFacts(from: subjects[index])
-                subjects[index] = facts.row
-                if facts.needsPush { dirtySubjects.insert(dto.id) }
+                let story = facts.row.withStory(from: subjects[index])
+                subjects[index] = story.row
+                if facts.needsPush || story.needsPush { dirtySubjects.insert(dto.id) }
             } else {
                 subjects.append(incoming)
             }
@@ -1892,6 +1911,27 @@ final class MemoryStore {
             save()
             return
         }
+        #if DEBUG
+        // `-seed story`: the story card's Finnish archive, in its own file
+        // (Screens/StoryCard/StorySeed.swift). Phase A, 26 Sep 2026.
+        if seed == "story" {
+            let fixture = Self.storySeed(
+                jettyImage: Self.filmPhotoFile(2), kitchenImage: Self.filmPhotoFile(3),
+                saunaImage: Self.filmPhotoFile(4), porchImage: Self.filmPhotoFile(5)
+            )
+            subjects = fixture.subjects
+            memories = fixture.memories
+            questions = fixture.questions
+            relations = []
+            dirtySubjects = []
+            dirtyMemories = []
+            dirtyQuestions = []
+            dirtyRelations = []
+            syncSeq = 0
+            save()
+            return
+        }
+        #endif
         guard [
             "archive", "unseen", "deck", "blind", "related", "dated", "years", "faces", "facts",
             "unplaced", "unarrived", "mentioned",

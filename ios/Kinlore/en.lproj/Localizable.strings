@@ -933,6 +933,44 @@
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa." = "The memory disappears from the family's view on every phone, and this card goes with it. It cannot be brought back.";
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu." = "The memory disappears from the family's view on every phone. For 30 days you can bring it back from the card it was filed under.";
 
+/* The story card (28 Sep 2026): the caption, the story and the tellings folded under it. */
+"Paikka: %@" = "Place: %@";
+"Paikka, odottaa tarkistusta: %@" = "Place, waiting to be checked: %@";
+"Tarina" = "Story";
+"Koottu yhdestä muistosta" = "Put together from one memory";
+"Koottu %lld muistosta" = "Put together from %lld memories";
+"Muokattu käsin" = "Edited by hand";
+"Muokkaa tarinaa" = "Edit the story";
+"Tarinan teksti" = "The story's text";
+"Muistot ja äänitykset säilyvät ennallaan. Tekoäly ei kirjoita muokatun tarinan päälle." = "The memories and recordings stay as they are. The AI does not write over an edited story.";
+"Näytä muisto" = "Show the memory";
+"Näytä %lld muistoa" = "Show %lld memories";
+"Piilota muistot" = "Hide the memories";
+
+/* Story card, phase B (26 Sep 2026): the story composed, proposed and corrected by hand. */
+"Kootaan tarinaa…" = "Putting the story together…";
+"Tarinaa ei saatu koottua nyt. Muistot ovat tallessa." = "The story could not be put together just now. The memories are safe.";
+"Uutta kerrottua" = "Newly told";
+"Koottu muistoista, jotka on kerrottu tarinan muokkaamisen jälkeen. Lisätäänkö tarinan perään?" = "Put together from memories told after the story was edited. Add it after the story?";
+"Lisää tarinaan" = "Add to the story";
+"Älä lisää" = "Don't add";
+"Tarina kootaan kerrotuista muistoista: ne lähetetään OpenRouter-palvelun kautta tekoälylle, kun uusi muisto on kerrottu. Niillä ei opeteta tekoälyä." = "The story is put together from the memories told: they are sent through the OpenRouter service to an AI when a new memory has been told. They are not used to train the AI.";
+
+/* Story card, phase B (26 Sep 2026): a telling taken back from under a story a person corrected. */
+"Tarinan ainoa muisto on poistettu" = "The story's only memory has been deleted";
+"Tarinan kaikki muistot on poistettu" = "All of the story's memories have been deleted";
+"Yksi tarinan muistoista on poistettu" = "One of the story's memories has been deleted";
+"%lld tarinan muistoista on poistettu" = "%lld of the story's memories have been deleted";
+"Tarina on muokattu käsin, joten sitä ei koota uudelleen itsestään. Voit pitää tarinan sellaisenaan tai koota sen uudelleen jäljellä olevista muistoista, jolloin käsin tehdyt muutokset katoavat." = "The story was edited by hand, so it is not put together again on its own. You can keep the story as it is, or put it together again from the memories that remain, in which case the changes made by hand are lost.";
+"Tarina on muokattu käsin, joten se ei poistu itsestään. Voit pitää tarinan tai poistaa sen." = "The story was edited by hand, so it does not go on its own. You can keep the story or delete it.";
+"Pidä tarina" = "Keep the story";
+"Kokoa uudelleen" = "Put together again";
+"Poista tarina" = "Delete the story";
+"Kootaanko tarina uudelleen?" = "Put the story together again?";
+"Tarina kootaan uudelleen jäljellä olevista muistoista. Käsin tehdyt muutokset katoavat." = "The story is put together again from the memories that remain. The changes made by hand are lost.";
+"Poistetaanko tarina?" = "Delete the story?";
+"Tarinan tekstiä ei voi palauttaa. Muistot ja äänitykset eivät muutu." = "The story's text cannot be brought back. The memories and recordings do not change.";
+
 /* A name corrected on its card, and then in the tellings that say it (28 Sep 2026, ARCHITECTURE §17). */
 "Yksi muisto, jossa nimi lukee, on tallennettu toisen puhelimella. Sen tekstiä voi muuttaa vain se, joka sen tallensi." = "One memory that says the name was saved on someone else's phone. Only whoever saved it can change its text.";
 "%lld muistoa, joissa nimi lukee, on tallennettu muiden puhelimilla. Niiden tekstiä voi muuttaa vain se, joka ne tallensi." = "%lld memories that say the name were saved on other people's phones. Only whoever saved them can change their text.";

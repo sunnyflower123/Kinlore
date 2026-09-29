@@ -803,6 +803,44 @@
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta ja tämä kortti sen mukana, eikä sitä voi palauttaa.";
 "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu." = "Muisto poistuu perheen näkyvistä kaikilta puhelimilta. Voit palauttaa sen 30 päivän ajan siltä kortilta, jolle se on tallennettu.";
 
+/* The story card (28 Sep 2026): the caption, the story and the tellings folded under it. */
+"Paikka: %@" = "Paikka: %@";
+"Paikka, odottaa tarkistusta: %@" = "Paikka, odottaa tarkistusta: %@";
+"Tarina" = "Tarina";
+"Koottu yhdestä muistosta" = "Koottu yhdestä muistosta";
+"Koottu %lld muistosta" = "Koottu %lld muistosta";
+"Muokattu käsin" = "Muokattu käsin";
+"Muokkaa tarinaa" = "Muokkaa tarinaa";
+"Tarinan teksti" = "Tarinan teksti";
+"Muistot ja äänitykset säilyvät ennallaan. Tekoäly ei kirjoita muokatun tarinan päälle." = "Muistot ja äänitykset säilyvät ennallaan. Tekoäly ei kirjoita muokatun tarinan päälle.";
+"Näytä muisto" = "Näytä muisto";
+"Näytä %lld muistoa" = "Näytä %lld muistoa";
+"Piilota muistot" = "Piilota muistot";
+
+/* Story card, phase B (26 Sep 2026): the story composed, proposed and corrected by hand. */
+"Kootaan tarinaa…" = "Kootaan tarinaa…";
+"Tarinaa ei saatu koottua nyt. Muistot ovat tallessa." = "Tarinaa ei saatu koottua nyt. Muistot ovat tallessa.";
+"Uutta kerrottua" = "Uutta kerrottua";
+"Koottu muistoista, jotka on kerrottu tarinan muokkaamisen jälkeen. Lisätäänkö tarinan perään?" = "Koottu muistoista, jotka on kerrottu tarinan muokkaamisen jälkeen. Lisätäänkö tarinan perään?";
+"Lisää tarinaan" = "Lisää tarinaan";
+"Älä lisää" = "Älä lisää";
+"Tarina kootaan kerrotuista muistoista: ne lähetetään OpenRouter-palvelun kautta tekoälylle, kun uusi muisto on kerrottu. Niillä ei opeteta tekoälyä." = "Tarina kootaan kerrotuista muistoista: ne lähetetään OpenRouter-palvelun kautta tekoälylle, kun uusi muisto on kerrottu. Niillä ei opeteta tekoälyä.";
+
+/* Story card, phase B (26 Sep 2026): a telling taken back from under a story a person corrected. */
+"Tarinan ainoa muisto on poistettu" = "Tarinan ainoa muisto on poistettu";
+"Tarinan kaikki muistot on poistettu" = "Tarinan kaikki muistot on poistettu";
+"Yksi tarinan muistoista on poistettu" = "Yksi tarinan muistoista on poistettu";
+"%lld tarinan muistoista on poistettu" = "%lld tarinan muistoista on poistettu";
+"Tarina on muokattu käsin, joten sitä ei koota uudelleen itsestään. Voit pitää tarinan sellaisenaan tai koota sen uudelleen jäljellä olevista muistoista, jolloin käsin tehdyt muutokset katoavat." = "Tarina on muokattu käsin, joten sitä ei koota uudelleen itsestään. Voit pitää tarinan sellaisenaan tai koota sen uudelleen jäljellä olevista muistoista, jolloin käsin tehdyt muutokset katoavat.";
+"Tarina on muokattu käsin, joten se ei poistu itsestään. Voit pitää tarinan tai poistaa sen." = "Tarina on muokattu käsin, joten se ei poistu itsestään. Voit pitää tarinan tai poistaa sen.";
+"Pidä tarina" = "Pidä tarina";
+"Kokoa uudelleen" = "Kokoa uudelleen";
+"Poista tarina" = "Poista tarina";
+"Kootaanko tarina uudelleen?" = "Kootaanko tarina uudelleen?";
+"Tarina kootaan uudelleen jäljellä olevista muistoista. Käsin tehdyt muutokset katoavat." = "Tarina kootaan uudelleen jäljellä olevista muistoista. Käsin tehdyt muutokset katoavat.";
+"Poistetaanko tarina?" = "Poistetaanko tarina?";
+"Tarinan tekstiä ei voi palauttaa. Muistot ja äänitykset eivät muutu." = "Tarinan tekstiä ei voi palauttaa. Muistot ja äänitykset eivät muutu.";
+
 /* A name corrected on its card, and then in the tellings that say it (28 Sep 2026, ARCHITECTURE §17). */
 "Yksi muisto, jossa nimi lukee, on tallennettu toisen puhelimella. Sen tekstiä voi muuttaa vain se, joka sen tallensi." = "Yksi muisto, jossa nimi lukee, on tallennettu toisen puhelimella. Sen tekstiä voi muuttaa vain se, joka sen tallensi.";
 "%lld muistoa, joissa nimi lukee, on tallennettu muiden puhelimilla. Niiden tekstiä voi muuttaa vain se, joka ne tallensi." = "%lld muistoa, joissa nimi lukee, on tallennettu muiden puhelimilla. Niiden tekstiä voi muuttaa vain se, joka ne tallensi.";

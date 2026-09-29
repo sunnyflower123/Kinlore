@@ -117,10 +117,17 @@ final class NameCorrectionTests: XCTestCase {
         let eeva = app.staticTexts["Eeva"]
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
         eeva.tap()
-        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
+        // Reached, and the card's top reached again for the name: the
+        // relatives stand under the card's tellings since 28 Sep 2026
+        // (ARCHITECTURE §27), below the fold, and a list builds its rows as
+        // they come.
+        let kalle = app.buttons["Kalle, Puoliso"]
+        for _ in 0 ..< 4 where !kalle.exists { app.swipeUp() }
+        XCTAssertTrue(kalle.waitForExistence(timeout: 10), "the fixture's relationship is not on the card")
 
         // Then Eeva's name is corrected onto Aino, and the cards merge.
         let correct = app.buttons["Korjaa nimi"]
+        for _ in 0 ..< 4 where !correct.exists { app.swipeDown() }
         XCTAssertTrue(correct.waitForExistence(timeout: 10), "the correction button")
         correct.tap()
         let field = app.textFields.firstMatch

@@ -130,6 +130,12 @@ const EXEMPT = [
    'the starter questions, which carry their own English beside the Finnish and switch on who is SPEAKING'],
   ['Services/Transcription.swift',
    'the Finnish half of the prompts, tuned by measurement (CLAUDE.md rule on extract.ts and transcribe.ts)'],
+  ['Screens/StoryCard/StorySeed.swift',
+   'the story card\'s demo archive — the same memories written INTO an archive as MemoryStore.swift\'s, and the input the story prompt was measured on'],
+  ['Services/StoryComposer.swift',
+   'the stub composer\'s sentence — a story written INTO an archive in the UI tests, in the language the telling was made in, as the model\'s would be'],
+  ['Screens/InviteShare.swift',
+   'the invitation is a message sent to another person, not a screen; whether it should follow the sender\'s device is a product question and not a lookup bug'],
 ];
 
 function swiftFiles(dir) {

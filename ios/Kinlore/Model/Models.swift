@@ -391,6 +391,19 @@ struct Subject: Identifiable, Codable, Hashable {
     var colourConfirmedByID: String?
     var colourConfirmedByName: String?
     var colourConfirmedAt: Date?
+    /// The card's story: what the card reads as, composed from what was told
+    /// about it (`StoryComposer`, ARCHITECTURE §27), or written by a person.
+    /// The tellings stay the product (rule 3); this is a reading of them.
+    ///
+    /// `storySetAt` is the moment the story last changed on any phone, and
+    /// it is what settles two phones composing differently: the newest story
+    /// wins whole on the server (`sync.ts`), and a story with nothing in it
+    /// under a newer moment is how a card whose tellings were all taken
+    /// back loses its story everywhere. Optional, both, for rule 10 — and
+    /// `Story` reads its own keys leniently for the same rule's other
+    /// direction, since a newer build may add some.
+    var story: Story?
+    var storySetAt: Date?
     /// The face on a person's card: a photograph in the archive, and the point
     /// in it somebody tapped, as fractions of its width and height. The
     /// photograph itself is never cropped — `SubjectAvatar` draws a disc
@@ -467,6 +480,99 @@ struct Subject: Identifiable, Codable, Hashable {
     /// and a number read as a number, "Talo 2" before "Talo 10".
     static func byName(_ a: Subject, _ b: Subject) -> Bool {
         a.displayTitle.localizedStandardCompare(b.displayTitle) == .orderedAscending
+    }
+}
+
+// MARK: - Story
+
+/// A card's story and where it came from (ARCHITECTURE §27).
+///
+/// `composedFrom` is the tellings the text was composed from, by id, and it
+/// is what decides whether the model is asked again: the card recomposes
+/// when the set of live tellings differs from it, and not otherwise, so one
+/// telling costs one model call (`StoryPlan`). `editedAt` marks a story a
+/// person has corrected, and the model never writes over one — anything
+/// told after the correction arrives as `proposal`, a continuation the
+/// person may append or dismiss (rule 4's shape: the AI proposes, a human
+/// confirms).
+///
+/// Hand-written `init(from:)`, because the struct is persisted inside
+/// `Subject` and sealed onto the wire as JSON: a build that adds a key must
+/// not make an older build fail to read the whole card (rule 10, both
+/// directions). Every key but `text` has a default.
+struct Story: Codable, Hashable {
+    var text: String
+    var composedFrom: [String] = []
+    var composedAt: Date = .now
+    var editedAt: Date?
+    var proposal: StoryProposal?
+
+    /// A person's reading wins over the model's, from the moment they save it.
+    var isEdited: Bool { editedAt != nil }
+
+    /// A moment on the millisecond grid, which is what the wire carries
+    /// (`Story.encoded`). A `Date` that has crossed and come back is then the
+    /// same `Date`, so the pull rule's "same story" holds (§27); with the
+    /// clock's last bits kept, the epoch offset alone costs one of them on
+    /// the way, and two phones holding one story would each think theirs
+    /// the newer and push it back and forth.
+    static func moment(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: (date.timeIntervalSince1970 * 1000).rounded() / 1000)
+    }
+
+    init(
+        text: String,
+        composedFrom: [String] = [],
+        composedAt: Date = .now,
+        editedAt: Date? = nil,
+        proposal: StoryProposal? = nil
+    ) {
+        self.text = text
+        self.composedFrom = composedFrom
+        self.composedAt = Self.moment(composedAt)
+        self.editedAt = editedAt.map(Self.moment)
+        self.proposal = proposal
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case text, composedFrom, composedAt, editedAt, proposal
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
+        composedFrom = try c.decodeIfPresent([String].self, forKey: .composedFrom) ?? []
+        composedAt = Self.moment(try c.decodeIfPresent(Date.self, forKey: .composedAt) ?? Date(timeIntervalSince1970: 0))
+        editedAt = try c.decodeIfPresent(Date.self, forKey: .editedAt).map(Self.moment)
+        // A proposal this build cannot read is a proposal it does not show;
+        // the story itself is not lost over it.
+        proposal = try? c.decodeIfPresent(StoryProposal.self, forKey: .proposal)
+    }
+}
+
+/// What the model composed from tellings made after a person corrected the
+/// story: shown under it, never in it, until somebody says so.
+struct StoryProposal: Codable, Hashable {
+    var text: String
+    /// The tellings it was composed from, by id.
+    var from: [String] = []
+    var at: Date = .now
+
+    init(text: String, from: [String] = [], at: Date = .now) {
+        self.text = text
+        self.from = from
+        self.at = Story.moment(at)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case text, from, at
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        text = try c.decodeIfPresent(String.self, forKey: .text) ?? ""
+        from = try c.decodeIfPresent([String].self, forKey: .from) ?? []
+        at = Story.moment(try c.decodeIfPresent(Date.self, forKey: .at) ?? Date(timeIntervalSince1970: 0))
     }
 }
 

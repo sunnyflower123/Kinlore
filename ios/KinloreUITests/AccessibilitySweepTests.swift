@@ -473,12 +473,25 @@ final class AccessibilitySweepTests: XCTestCase {
     /// the list does not come back to where it was — nor, straight after an
     /// audit, with the rows it had, which is why the loss check reads the tree
     /// before one.
+    ///
+    /// **`keepingOutOfTheBand`** names the controls a page must not leave in
+    /// the tab bar's band — the `AccessibilityPolicy.fadeReach` above the
+    /// bar, and across its edge — because there the audit reports them
+    /// partially unsupported at the largest size wherever a page happens to
+    /// stop: the memories' heading on `testPhotoDetail` (26 Sep 2026, the
+    /// heights written there), and the card's *"Kerro tästä muisto"* on the
+    /// same sweep once the caption stood under the photograph (28 Sep 2026),
+    /// at y 707 on page 2 with the bar at 791. A page that leaves one there
+    /// is dragged on until it is whole above the band, which only shortens
+    /// how far that page overlaps the one before it; the next page is found
+    /// from the top as every page is. Nothing is forgiven for it.
     private func auditPageByPage(
         _ app: XCUIApplication,
         _ context: String,
         to bottom: XCUIElement,
         _ what: String,
-        top: XCUIElement? = nil
+        top: XCUIElement? = nil,
+        keepingOutOfTheBand kept: [XCUIElement] = []
     ) throws {
         let window = app.windows.firstMatch
         // On screen means above the tab bar where there is one: the tree holds
@@ -508,6 +521,13 @@ final class AccessibilitySweepTests: XCTestCase {
                         window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)))
             }
             if page > 1, onScreen() { break }
+            let bandTop = floor - AccessibilityPolicy.fadeReach
+            for control in kept where control.exists {
+                let frame = control.frame
+                if frame.maxY > bandTop, frame.minY < floor {
+                    drag(control, toMinY: bandTop - frame.height - 8, in: app)
+                }
+            }
             XCTAssertTrue(hasStoppedDrawing(app), "\(context), page \(page), was still being drawn")
             judgedAbove.formUnion(labelsInTree(app))
             // **A word half under the navigation bar.** A page reached by
@@ -1773,10 +1793,28 @@ final class AccessibilitySweepTests: XCTestCase {
     /// At the largest size the row is two tellings' worth below the fold,
     /// and the card's list builds it only when it comes into view, so it
     /// is reached with more swipes than a card at the default size needs.
+    ///
+    /// **Then dragged to y 330.** Once the caption stood under the
+    /// photograph (28 Sep 2026) the swipes left the row's date across the
+    /// tab bar's edge at the default size — *"Poistettu 25.9.2026"* at
+    /// y 771.67, 20.33 pt tall over a bar at 791 — reported unsupported and
+    /// clipped there and nowhere else, which is the position signature on
+    /// `testPhotoDetail`. So the row is judged where somebody reads it.
+    ///
+    /// To y 560 at the default size. The card ends a little way below the
+    /// row, so a drag to 330 stopped where the list does, with the row at
+    /// y 534 and the heading of the names above it, *"Kuulin nämä"*, at
+    /// y 140.66: two-thirds of a point below the band under the navigation
+    /// bar that `isDeliberate` gives the bar's fade. It was reported for
+    /// contrast there on three runs alone, while the settled screen measured
+    /// it at 18.21:1 (29 Sep 2026). At 560 it stands 26 pt further down. The
+    /// largest size passed at 330 on every run, and stays there.
     func testMemoryCardWithARestorableTelling() throws {
-        try sweep("Memory card with a restorable telling", arguments: ["-seed", "restorable", "-tab", "memories"]) { app, _ in
+        try sweep("Memory card with a restorable telling", arguments: ["-seed", "restorable", "-tab", "memories"]) { app, isLargest in
             reachPhotoTile(in: app).tap()
             reach(app.buttons["card.restoreMemory"].firstMatch, in: app, "the card's way back", swipes: 16)
+            drag(text(startingWith: "Poistettu ", in: app), toMinY: isLargest ? 330 : 560, in: app)
+            XCTAssertTrue(hasStoppedDrawing(app), "the card was still being drawn")
         }
     }
 
@@ -2437,6 +2475,13 @@ final class AccessibilitySweepTests: XCTestCase {
             // page into the band, and it is this finding again rather than a
             // regression.
             //
+            // It did, on 28 Sep 2026, and on the button above the heading:
+            // the caption under the photograph moved page 2 to leave
+            // "Kerro tästä muisto" at y 707, 139.33 pt tall across a bar at
+            // 791, reported partially unsupported there and nowhere else.
+            // So the page loop now keeps both out of the band, which moves a
+            // page and forgives nothing (`auditPageByPage`).
+            //
             // **The sentence is also the card's top.** The card opened out of
             // its tile, and a pull at its top closes it into the album, so the
             // page loop stops flicking once the sentence is back under the bar
@@ -2450,7 +2495,8 @@ final class AccessibilitySweepTests: XCTestCase {
                     app, "Photo detail, largest text size",
                     to: app.staticTexts["Kysymys näkyy perheelle Kerro-näytöllä, ja vastaus tallentuu tähän."],
                     "the footer under the way to ask the family",
-                    top: absence
+                    top: absence,
+                    keepingOutOfTheBand: [app.buttons["card.tell"], app.staticTexts["card.memoriesHeading"]]
                 )
             } else {
                 require(app.buttons["Kerro tästä muisto"], "the photo's own screen")
@@ -3281,6 +3327,162 @@ final class AccessibilitySweepTests: XCTestCase {
                 app.staticTexts["Kun kerrotte paikoista, ne tulevat tähän kartalle."],
                 "the empty map's sentence"
             ))
+        }
+    }
+
+    // MARK: - The story on a card (§27)
+
+    /// The card with its story (28 Sep 2026): the photograph edge to edge
+    /// with its name as the caption, the story under it, and the tellings
+    /// folded under one button below the story. `-story stub` composes
+    /// without a model or a Worker.
+    ///
+    /// **Every part is dragged to where it is judged**, never left where a
+    /// swipe stopped. The first version swiped until a button was hittable,
+    /// and the audit then reported a text at the tab bar's edge or in the
+    /// band above it, which moves with the swipe (the heights are on
+    /// `testPhotoDetail`), and at the default size nearly every text of the
+    /// story's section at once (28 Sep 2026). `drag` stops dead where it is
+    /// told, and `hasStoppedDrawing` waits the drawing out.
+    private func storyCard(_ id: String, story: String = "stub") -> [String] {
+        ["-seed", "story", "-tab", "people", "-screen", "person", "-person", id, "-story", story]
+    }
+
+    /// Audits the screen where a sweep has brought it, as one page of its
+    /// own, for a card whose parts do not share one screen at the largest
+    /// size: waits the drawing out, counts what it judged for the loss
+    /// check, and reports rather than stops, as every page does. The
+    /// person card's sweep wrote it out first (`testPersonCardWithoutAStory`).
+    private func auditInPlace(_ app: XCUIApplication, _ context: String) throws {
+        XCTAssertTrue(hasStoppedDrawing(app), "\(context) was still being drawn")
+        judgedAbove.formUnion(labelsInTree(app))
+        let abortAfterAudit = continueAfterFailure
+        continueAfterFailure = true
+        defer { continueAfterFailure = abortAfterAudit }
+        try audit(app, context)
+    }
+
+    /// The first text that starts with `prefix`, for a sentence too long to
+    /// name whole.
+    private func text(startingWith prefix: String, in app: XCUIApplication) -> XCUIElement {
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+    }
+
+    /// The caption as the card opens: the name and its pencil, and the date
+    /// and the place as two chips — one on each line at the largest size,
+    /// where the place's name is a sentence wide.
+    func testStoryCardCaption() throws {
+        try sweep("Tarinakortti, kuvateksti", arguments: storyCard("demo-story-jetty")) { app, _ in
+            settle(require(app.buttons["card.place"], "the caption's place"))
+        }
+    }
+
+    /// Audited with the log open, which is the card's longest form: a
+    /// composed story, its provenance line, the consent line and three
+    /// tellings. The log's button is below the story, so it is reached and
+    /// dragged to y 330 first; the log then unfolds in place under it.
+    ///
+    /// At the largest size the first telling is then brought under the
+    /// navigation bar, where somebody reading the log has it, and the
+    /// button leaves by the top. Left where the unfolding put it, the
+    /// button's *"Piilota muistot"* was reported unsupported at y 129 and at
+    /// y 480 and clean at y 124, drawn whole in the audit's own screenshot
+    /// every time (29 Sep 2026): the position signature at the top edge that
+    /// `AccessibilityPolicy.isDefaultSizeSimulationArtefact` describes, which
+    /// this launch answers by where it judges and never by forgiving.
+    func testStoryCardWithItsLogOpen() throws {
+        try sweep("Tarinakortti, muistot auki", arguments: storyCard("demo-story-jetty")) { app, isLargest in
+            let logs = reach(app.buttons["storyCard.logs"], in: app, "the log's button", swipes: 8)
+            drag(logs, toMinY: 330, in: app)
+            logs.tap()
+            let first = app.staticTexts.matching(identifier: "memory.body").firstMatch
+            settle(require(first, "the first telling in the log"))
+            if isLargest {
+                drag(first, toMinY: app.navigationBars.firstMatch.frame.maxY + 8, in: app)
+            }
+            XCTAssertTrue(hasStoppedDrawing(app), "the log was still unfolding")
+        }
+    }
+
+    /// A story a person corrected, with a telling made after the correction
+    /// waiting under it as a proposal: the proposal's card, its two stacked
+    /// buttons and the "Muokattu käsin" line are the new shapes here. At the
+    /// default size the provenance line is brought under the navigation bar,
+    /// and the proposal is whole under it. At the largest size the proposal
+    /// is taller than the screen, so its heading and words are judged first,
+    /// as a page of their own, and its buttons where the sweep ends.
+    func testStoryCardWithAProposal() throws {
+        try sweep("Tarinakortti, ehdotus", arguments: storyCard("demo-story-kitchen")) { app, isLargest in
+            let heading = reach(app.staticTexts["Uutta kerrottua"], in: app, "the proposal's heading", swipes: 8)
+            let top = app.navigationBars.firstMatch.frame.maxY
+            if isLargest {
+                drag(heading, toMinY: top + 8, in: app)
+                try auditInPlace(app, "Tarinakortti, ehdotus, the proposal's words, largest text size")
+                let dismiss = reach(app.buttons["storyCard.dismissProposal"], in: app, "the proposal's second button")
+                drag(dismiss, toMinY: 480, in: app)
+            } else {
+                drag(require(app.buttons["storyCard.editStory"], "the way to edit the story"), toMinY: top + 8, in: app)
+            }
+            XCTAssertTrue(hasStoppedDrawing(app), "the proposal was still being drawn")
+        }
+    }
+
+    /// The composer failed: the note, the second try and the tellings still
+    /// on the card. `-story fail` is the only way to hold this screen still.
+    /// The note opens at the tab bar's edge, so it is dragged to y 330.
+    func testStoryCardComposeFailed() throws {
+        try sweep(
+            "Tarinakortti, kokoaminen epäonnistui",
+            arguments: storyCard("demo-story-aino", story: "fail")
+        ) { app, _ in
+            reach(app.buttons["Yritä uudelleen"], in: app, "the second try", swipes: 8)
+            drag(text(startingWith: "Tarinaa ei saatu", in: app), toMinY: 330, in: app)
+            XCTAssertTrue(hasStoppedDrawing(app), "the note was still being drawn")
+        }
+    }
+
+    /// A telling taken back from under a story a person corrected: the note
+    /// under the provenance line with its two stacked buttons, which is the
+    /// card's newest shape. At the default size the note's heading is
+    /// brought under the navigation bar. With the edit button there instead,
+    /// as on the proposal's card, the colouring's button below the consent
+    /// line stood across the tab bar's edge — 370 × 84 pt at y 728, over a
+    /// bar at 791 — and was reported unsupported and clipped on both runs
+    /// (29 Sep 2026); from the heading it stands clear of the bar. At the
+    /// largest size the note is taller than the screen, so its sentence is
+    /// brought there first and judged as a page of its own, and the buttons
+    /// where the sweep ends.
+    ///
+    /// The sentence and not the heading, because with the heading under the
+    /// bar the sentence below it — 338 × 870.67 pt from y 310.67, drawn whole
+    /// in the audit's own screenshot — was reported partially unsupported,
+    /// and brought under the bar itself it audits clean (29 Sep 2026): the
+    /// position signature, answered at this size by where the sweep judges.
+    ///
+    /// The buttons are found from the sentence again after that audit. Four
+    /// swipes looking for them straight after it ended with the list at its
+    /// very end and the note gone from the tree (29 Sep 2026). The sentence
+    /// is the landmark because it is taller than the screen, so no swipe can
+    /// carry it past unseen; its lower edge is then dragged to y 300, which
+    /// brings the buttons in under it.
+    func testStoryCardWithATellingTakenBack() throws {
+        try sweep("Tarinakortti, muisto poistettu", arguments: storyCard("demo-story-sauna")) { app, isLargest in
+            let heading = reach(app.staticTexts["storyCard.takenBack"], in: app, "the note's heading", swipes: 8)
+            let top = app.navigationBars.firstMatch.frame.maxY
+            if isLargest {
+                let sentence = require(app.staticTexts["storyCard.takenBackNote"], "the note's sentence")
+                drag(sentence, toMinY: top + 8, in: app)
+                try auditInPlace(app, "Tarinakortti, muisto poistettu, the note, largest text size")
+                for _ in 0 ..< 10 where !sentence.exists { app.swipeDown() }
+                for _ in 0 ..< 10 where !sentence.exists { app.swipeUp() }
+                require(sentence, "the note's sentence, after its audit")
+                drag(sentence, toMinY: 300 - sentence.frame.height, in: app)
+                let recompose = require(app.buttons["storyCard.recomposeStory"], "the way to compose it again")
+                drag(recompose, toMinY: 480, in: app)
+            } else {
+                drag(heading, toMinY: top + 8, in: app)
+            }
+            XCTAssertTrue(hasStoppedDrawing(app), "the note was still being drawn")
         }
     }
 }

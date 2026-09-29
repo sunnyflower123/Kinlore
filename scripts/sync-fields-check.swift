@@ -222,6 +222,7 @@ struct SyncFieldsCheck {
             "portraitSubjectID": .wire, "portraitFocusX": .wire, "portraitFocusY": .wire,
             "portraitSetAt": .wire,
             "facts": .wire, "factsSetAt": .wire,
+            "story": .wire, "storySetAt": .wire,
             "confirmed": .wire, "createdAt": .wire, "mergedInto": .wire, "deletedAt": .wire,
         ]
         let subject = Subject(
@@ -232,6 +233,11 @@ struct SyncFieldsCheck {
             colourImageFilename: "colour-on-this-phone.jpg", colourR2Key: "family/colour.jpg",
             colourConfirmedByID: "member", colourConfirmedByName: "a member's name",
             colourConfirmedAt: later,
+            story: Story(
+                text: "A story.", composedFrom: ["m1", "m2"], composedAt: then, editedAt: later,
+                proposal: StoryProposal(text: "And more.", from: ["m3"], at: later)
+            ),
+            storySetAt: later,
             portraitSubjectID: "photo-of-them", portraitFocusX: 0.4, portraitFocusY: 0.3, portraitSetAt: later,
             facts: [
                 PersonFact(
@@ -335,6 +341,21 @@ struct SyncFieldsCheck {
                 "the colours' own picture is kept under the same key",
                 merged.colourImageFilename == subject.colourImageFilename,
                 "a pull leaves \(merged.colourImageFilename ?? "nothing")"
+            )
+        }
+
+        // The story, whose rules `story-check.swift` holds one by one; here
+        // only the one every keep rule shares, on the row the audit above
+        // pulled: a row that says nothing about it takes nothing away.
+        if let pulledSubject {
+            var mute = pulledSubject
+            mute.story = nil
+            mute.storySetAt = nil
+            let kept = mute.withStory(from: subject)
+            check(
+                "a pulled row with no word on the story keeps this phone's, and pushes nothing for it",
+                kept.row.story == subject.story && kept.row.storySetAt == subject.storySetAt && !kept.needsPush,
+                "a pull leaves \(kept.row.story?.text ?? "nothing")"
             )
         }
 

@@ -24,8 +24,13 @@ final class FriendTests: XCTestCase {
         eeva.tap()
         // A relative's row is one element, "Kalle, Puoliso": the name and
         // what they are to this person, read in one breath — and since
-        // 27 Sep 2026 a link to his card, so a button.
-        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
+        // 27 Sep 2026 a link to his card, so a button. Reached since the
+        // relatives went under the card's tellings (ARCHITECTURE §27): a
+        // list builds its rows as they come, and his is below the fold.
+        XCTAssertTrue(app.buttons["Kerro tästä muisto"].waitForExistence(timeout: 10), "the card")
+        let kalle = app.buttons["Kalle, Puoliso"]
+        for _ in 0 ..< 4 where !kalle.exists { app.swipeUp() }
+        XCTAssertTrue(kalle.waitForExistence(timeout: 10), "the spouse's row")
         XCTAssertFalse(app.staticTexts["Ystävät"].exists, "a heading over no friends")
 
         addFriend(named: "Ritva", in: app)
@@ -44,7 +49,7 @@ final class FriendTests: XCTestCase {
         let eeva = app.staticTexts["Eeva"]
         XCTAssertTrue(eeva.waitForExistence(timeout: 10), "the people list")
         eeva.tap()
-        XCTAssertTrue(app.buttons["Kalle, Puoliso"].waitForExistence(timeout: 10), "the card")
+        XCTAssertTrue(app.buttons["Kerro tästä muisto"].waitForExistence(timeout: 10), "the card")
         addFriend(named: "Ritva", in: app)
 
         let ritva = app.buttons["Ritva, Ystävä"]

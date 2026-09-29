@@ -124,7 +124,9 @@ enum FamilyCryptoCheck {
 
         print("— the sync payload, sealed —")
         let wire = """
-        {"subjects":[{"id":"s1","kind":"place","title":"Kuusamo","confirmed":1,"created_at":0}],
+        {"subjects":[{"id":"s1","kind":"place","title":"Kuusamo","confirmed":1,"created_at":0,
+                      "story":"{\\"composedAt\\":0,\\"composedFrom\\":[\\"m1\\"],\\"text\\":\\"Aino kertoo, että hän tuli mökille joka kesä.\\"}",
+                      "story_set_at":1}],
          "memories":[{"id":"m1","subject_id":"s1","body":"Aino tuli mökille joka kesä.",
                       "raw_transcript":"aino tuli mökille joka kesä öö niin",
                       "source":"voice","created_at":0}],
@@ -166,6 +168,15 @@ enum FamilyCryptoCheck {
         )
         let back = reply.opened(with: key)
         check("the title comes back", back.subjects.first?.title == "Kuusamo")
+        check(
+            "the story comes back, and reads as one",
+            back.subjects.first?.story == payload.subjects.first?.story
+                && back.subjects.first?.story.flatMap(Story.decoded)?.text == "Aino kertoo, että hän tuli mökille joka kesä."
+        )
+        check(
+            "and the story crossed sealed, not as the JSON it is",
+            out.subjects.first?.story?.hasPrefix(FamilyCrypto.marker) == true
+        )
         check("the body comes back", back.memories.first?.body == payload.memories.first?.body)
         check(
             "the raw transcript comes back — rule 3 says it is the product, not a step",

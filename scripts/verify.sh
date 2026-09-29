@@ -249,6 +249,7 @@ date_hint() {
 	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library -enable-bare-slash-regex \
 		-o "$OUT/date-hint-check" scripts/date-hint-check.swift \
 		ios/Kinlore/Services/AppServices.swift ios/Kinlore/Model/Models.swift \
+		ios/Kinlore/Services/StoryComposer.swift \
 		ios/Kinlore/Services/Extraction.swift ios/Kinlore/Services/ExtractionContext.swift \
 		ios/Kinlore/Services/PurchaseService.swift ios/Kinlore/Services/Transcription.swift \
 		ios/Kinlore/Services/Colourisation.swift ios/Kinlore/Services/RelationWords.swift \
@@ -334,6 +335,19 @@ keyless_sync() {
 		&& "$OUT/keyless-sync-check"
 }
 
+# The story on a card, on the phone's side (§27): when the model is asked at
+# all, which is the cost; that a person's correction is never composed over,
+# which is rule 4 in the story's clothes; what two phones settle on, which
+# `sync.ts` cannot judge through a seal; and that a story written by one
+# build reads on another, rule 10 both ways. None of it shows in a picture.
+story_rules() {
+	DEVELOPER_DIR=$XCODE xcrun swiftc -parse-as-library \
+		-o "$OUT/story-check" scripts/story-check.swift \
+		ios/Kinlore/Services/StoryComposer.swift ios/Kinlore/Model/Models.swift \
+		ios/Kinlore/Data/MemoryStore+Sync.swift ios/Kinlore/Services/FamilyCrypto.swift \
+		&& "$OUT/story-check"
+}
+
 # Rule 5 turned into a picture. A pin asserts a point, and a municipality is
 # not one — so what may be drawn is arithmetic over `GeoPrecision`, and it is
 # wrong in the one way a screenshot cannot show: a pin on the wrong doorstep
@@ -390,6 +404,7 @@ run "a year finds the photographs of its time" archive_search
 run "the fifties are the fifties on any phone" decade
 run "a wrong key opens nothing, a title seals stably" family_crypto
 run "a phone with no key sends the family nothing" keyless_sync
+run "a person's story is never composed over" story_rules
 run "one purchase unlocks one family" entitlement_binding
 # The webhook's revocation rules, driven through the real handleWebhook over
 # the shipping schema in in-memory SQLite. The rule is RevenueCat's and it was
@@ -486,6 +501,11 @@ run "a long telling is given room to come back" node scripts/transcribe-budget-c
 # name became a person the family is asked to confirm, drawn as "Henkilö",
 # and an untrimmed one became a second Aino.
 run "a model cannot name a person nothing said" node scripts/extract-shaping-check.mjs
+# The story's card as the model sees it and the reply as the Worker believes
+# it: an unconfirmed name is marked for the prompt, a name the family never
+# confirmed cannot pass as fact, the tellings are numbered oldest first, and
+# the budget is the story's length and not a guess. Costs nothing.
+run "a story is composed from what was told, marked where unconfirmed" node scripts/story-shaping-check.mjs
 # Colouring a photograph by what was told: what the model is told, what the
 # Worker believes came back, and a meter of its own, so that a grandchild's
 # colouring cannot use up a grandmother's telling minutes. None of the three
@@ -654,6 +674,11 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# runs ahead skips other members' rows silently and forever. Three defects
 	# lived in it (23 Aug 2026, §3) and every one looked like a working app.
 	run "a telling reaches the phone that was pushing" node scripts/sync-cursor-check.mjs
+	# The story column's half of the sync rules the server can apply to a
+	# seal it cannot read: the newest moment wins whole, a phone that has
+	# never heard of the story cannot wipe it, junk has no opinion, and a
+	# moment from a wrong clock is held to now.
+	run "a story survives an older phone" node scripts/story-sync-check.mjs
 	# PLAN §10 lever 3, end to end: the app's own sealing transforms pushed and
 	# pulled as two identities through the running Worker, the key crossing only
 	# in the invite text, the R2 bytes making the same trip. First production
@@ -684,6 +709,10 @@ run "a failure tells the app and the log nothing" node scripts/leak-check.mjs
 # the network and costs nothing. Nothing told is refused, the meter answers
 # before the model, and a round that failed is not charged.
 run "no telling, no colour; no image, no charge" node scripts/colourise-route-check.mjs
+# The story route's doors through a keyless Worker of its own: nothing told is
+# refused before the model, so is a card too long to be one call, and past
+# every door the failure tells the app one word and the log no telling.
+run "no telling, no story; a failure tells no telling" node scripts/story-route-check.mjs
 
 # --- The screens ------------------------------------------------------------
 

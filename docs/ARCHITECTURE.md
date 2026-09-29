@@ -34,7 +34,9 @@ they were, how they hid, and what found them.
 [22. The one prominent button](#22-the-one-prominent-button) ·
 [23. The card, and why the front door was a blank page](#23-the-card-and-why-the-front-door-was-a-blank-page) ·
 [24. Colours by the telling](#24-colours-by-the-telling) ·
-[25. A face on the card](#25-a-face-on-the-card)
+[25. A face on the card](#25-a-face-on-the-card) ·
+[26. The facts on a person's card](#26-the-facts-on-a-persons-card) ·
+[27. The story on a card](#27-the-story-on-a-card)
 
 **Things that were wrong, and what it took to find them**
 [15. Contrast — the rule that was never measured](#15-contrast--the-rule-that-was-never-measured) ·
@@ -76,8 +78,9 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 115 sweep tests, each auditing one screen at the default text size and again at the largest, out of 356 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 120 sweep tests, each auditing one screen at the default text size and again at the largest, out of 377 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped; the two columns reach production with the deploy §26 records |
+| The story on a card, composed from its tellings | **Built and checked 26 Sep 2026**, the top of every card since 28 Sep, see §27 — on the phone and the local Worker; the two columns and the route are not in production |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
 | A card on the Tell tab instead of a blank button | **Done and tested**, see §23 — the screen that matters most had nothing to ask and fell back to "Kerro mitä muistat" |
 | Photographing a paper photograph into the archive | **Done and tested**, see §8 — the shoebox had no way in until 29 Aug 2026; the only import read the phone's own library |
@@ -106,11 +109,11 @@ never overwrites a real one.
 
 **What keeps "done" true now.** `./scripts/verify.sh` runs every check in this
 repository that costs nothing, each one for a failure that leaves a working app
-behind. On 29 Sep 2026 that was 58 checks: 12 drive a Worker started locally, 2
-need a simulator of your own, and the other 44 need neither. Its header names
+behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
+need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 356 UI tests, including 115 accessibility sweeps that audit a
+The UI suite has 377 UI tests, including 120 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -1630,17 +1633,21 @@ So each AI route also draws on **one pool per UTC day for the whole free tier**
 (`free_tier_day`, `reserveFreeTierDay` in `quota.ts`). It is reserved before
 the model is asked, in the statement that decides; charged the most the call
 can cost — a recording by its bytes and never under five minutes, a telling by
-its output budget plus every byte it sends, a colouring by the round; and not
-given back when a call fails, because a failed call has usually been paid for.
-The shipped pools, 36 000 seconds, 300 000 tokens and 20 rounds, cap a day at
-about $11 at those worst cases. A paid family never meets them.
+its output budget plus every byte it sends, a colouring by the round, a story
+by its output budget plus every byte of the card (§27); and not given back
+when a call fails, because a failed call has usually been paid for. The
+shipped pools, 36 000 seconds, 300 000 extraction tokens, 20 rounds and
+300 000 story tokens, cap a day at about $14 at those worst cases. A paid
+family never meets them.
 
 **The refusal is the rate limiter's 429, never the meter's 402**, and that is
 how rule 2 survives it. The app has read a 429 as a fact about the moment since
 August (`DeferredMemory.isAboutTheMoment`), so the audio is kept and
 transcribed on a later round; a refused structuring lands the telling in its
 teller's own words, the road an outage already takes; a refused colouring
-leaves the photograph as it was. Nothing is offered for sale, which a 402 would
+leaves the photograph as it was; a refused story leaves the card with its
+tellings and the note that it could not be composed now, and the next visit
+asks again. Nothing is offered for sale, which a 402 would
 do by telling the family its month was spent. `/sync` and `/media` never touch
 the pool. The price, stated: one stranger can spend the day for every free
 family until midnight UTC. `free-tier-ceiling-check.mjs` pins both halves.
@@ -4299,7 +4306,10 @@ had no way back out.
 
 A pencil on the person's and the place's card, and a sheet with the name in it.
 Nothing else: photos and events are titled by the app out of a place and a year,
-so their names were never heard by anybody.
+so their names were never heard by anybody. The pencil was in the toolbar until
+28 Sep 2026 and is beside the name in the card's caption since (§27): one
+pencil on every card, which on a name that was heard opens this sheet and says
+*Korjaa nimi*.
 
 The write is `MemoryStore.rename`, unchanged and already carrying the hard part
 — if the corrected name is one the family already has, the two cards merge, and
@@ -6412,3 +6422,231 @@ silently, and looking exactly like a fact nobody wrote.
   gazetteer does not know is a card without a point.
 - **A fact of a kind this build has no word for reads *"Tieto:"***, which
   is the older build's word and not the newer one's.
+
+## 27. The story on a card
+
+A card — a photograph's, a person's, a place's, an event's — held its tellings
+as a list, and the family read them one at a time, newest first. Since
+26 Sep 2026 the card reads as one story above them: a text composed from the
+tellings, in the tellers' own words and marked as theirs, with the tellings
+under it, which is what was told and when. The story is a reading of the
+tellings and never replaces them (rule 3): the recording, the raw transcript
+and the telling's own words are the record, and the story is the part the
+family reads first. One view for every kind of subject, because a photograph
+and a grandmother are the same table and the same code path (§2) — and since
+28 Sep 2026 one card, too: the story is the top of the card every subject
+already had (`SubjectDetailScreen`), not a second screen beside it.
+
+### The flow
+
+1. A telling lands on the card — spoken, typed, or transcribed later. The
+   phone opens the sealed tellings (lever 3, §2.3: the Worker never reads
+   them), builds the card the model sees — kind, title, the date at its
+   precision, the names the family has confirmed with their kinds (an
+   unconfirmed one is not sent at all, rule 3 below), and the tellings
+   numbered oldest first with teller and date — and posts it to
+   `POST /story`. The prompt is the one `scripts/story-bench.mjs` measured,
+   except its rule 3 and the names line, which changed with rule 3 below on
+   26 Sep 2026 and are unmeasured since (see *Not yet*). Which language it
+   runs in is the composing phone's (rule 10 below).
+2. The Worker calls the model under `data_collection: "deny"` (rule 8),
+   accepts one text back (`parseStory`) and answers `{ story }`. A failure
+   past every door answers `upstream_failed` and logs counts and status,
+   never a telling (rule 9). The route is authenticated; no family's meter
+   counts it, and the free tier's day pool bounds it (§7) — a refusal is
+   429, and the card keeps its tellings and says the story could not be
+   composed now.
+3. The phone seals the story under the family key, stores it as
+   `subject.story` with `subject.story_set_at` as the moment, and pushes it
+   like a title. Every phone pulls it; the Worker keeps the newest moment
+   whole and cannot read either.
+
+### What the card shows
+
+From the top: the photograph, edge to edge on iOS 26, where a list section's
+margins can be taken away, and inside the card's rounded corner before it —
+or a person's portrait, or a place's map. Under it the caption: the name in
+the display face with a pencil beside it that says to VoiceOver what it
+changes (*Anna kuvalle nimi*, *Korjaa nimi* for a name that was heard,
+*Vaihda nimi*), and under the name, as chips, when it happened — a
+photograph's and a moment's only, because a person's date would have to mean
+a birth or a death — and where. Then *Kerro tästä muisto*, the card's one
+wax button, and under it the story, then a line saying what it is made of —
+*Koottu 3 muistosta*, or *Muokattu käsin* once a person has edited it, with
+*Muokkaa tarinaa* beside it — and the consent sentence, the colouring's in
+the story's words: *Tarina kootaan kerrotuista muistoista: ne lähetetään
+OpenRouter-palvelun kautta tekoälylle, kun uusi muisto on kerrottu. Niillä ei
+opeteta tekoälyä.* The tellings follow, folded under one honey button,
+*Näytä 3 muistoa*, when the card opens with a story, and unfolded — the rows
+every card has, newest first, the teller's own with *Muokkaa tai poista* —
+when it opens without one, so that a story composed while somebody is
+reading does not fold the tellings away. A card with no story has no story
+section at all, only its tellings under the heading it always had; while a
+story is being composed the card says so, and when composing fails it says
+that and offers *Yritä uudelleen* with the tellings where they were. Under a
+story a person edited, a telling it was made of that is no longer on the
+card is said — *Yksi tarinan muistoista on poistettu* — with *Pidä tarina*
+and *Kokoa uudelleen* (rule 9). Everything else the card had stays as it
+was, below the tellings: a person's relatives (above the tellings until
+28 Sep 2026), the colouring, the questions — a question is a row that opens
+the Tell screen with the question as its title (§11) — and *Kysy
+perheeltä*.
+
+A phone that chose to stay local composes nothing and shows the tellings as
+every card did; so does a phone whose family server was deployed before this
+section and answers `/story` with 404, which the app reads as a server with
+no stories (`StoryComposeFailure.notOffered`) rather than as a failure — no
+note, no second try, no consent sentence, and no further attempt until the
+app is launched again (`AppServices.storyNotOffered`). *Kirjoita tarina
+itse*, the way to write a story by hand on a card with none, went with the
+second screen: the story is what was told, and a card is told to by *Kerro
+tästä muisto*.
+
+**The place in the caption** is the place the card's own tellings name
+most, one tap from the family's map (§18): a place the family has confirmed
+before one it has not, then the one named in more tellings, then the one
+named most recently, then by name, so that the chip does not move between
+two redraws. A confirmed place with a point opens the map on it
+(`PlacesMapRoute(focus:)`); a confirmed place with none — a farm the
+gazetteer did not know — opens the map already placing it, as *Merkitse
+kartalle* on its own card does (`editing: true`); and a place nobody has
+confirmed carries a question mark, is said to VoiceOver as *Paikka, odottaa
+tarkistusta: …*, and opens its own card, never the map, where it would be a
+guess drawn as a point (rule 4). No chip on a place's own card, which is the
+place, or on a card whose tellings name none, and nothing to fill in: a
+place gets onto a card by being told. At the accessibility sizes the chips
+stand one under another at the row's width (`ChipRow`). The place's chip is a
+`NavigationLink` in a list row, and a list draws such a link its own way
+whatever button style the row hands it, so the chip draws the date chip's
+honey itself (`elderSecondarySurface`, the surface `elderSecondary` puts
+round every label it styles); until it did, on 28 Sep 2026, the place stood
+beside the date chip as bare words a line higher.
+
+The layout is the one phase A's comparison recommended (version 3's
+caption) with version 1's log. Phase A's six layouts behind `-storyCard N`,
+the second screen they were drawn on and the copies of the card's sections
+it carried were taken out on 28 Sep 2026; the photograph's frame is one
+modifier (`pictureEdge`), where a height cap for small phones can go.
+
+### The rules
+
+1. **One telling, one model call.** `StoryPlan` compares the set of live
+   tellings — not taken back, not waiting for their words, not blank — with
+   the set the story was composed from. Equal: nothing. Different: compose
+   again, from all of them. None left: clear the story. A phone opening a
+   card whose story already reads every telling asks for nothing, which is
+   what makes the cost one call per telling and none per visit.
+2. **A person's story is never written over.** Once somebody edits it,
+   `editedAt` marks it the person's, and a telling made after that goes to
+   the model with the story so far (the ADDITION half of the prompt) and
+   comes back as a proposal *under* the story, never in it — *Uutta
+   kerrottua*, with *Lisää tarinaan* and *Älä lisää*, stacked because at the
+   largest text size two buttons side by side are one. Accepted, it is the
+   story's last paragraph and the story is still the person's; dismissed,
+   the telling counts as read and is not asked about again. Rule 4 in the
+   story's clothes: the model proposes, a person confirms.
+3. **An unconfirmed name never reaches the model.** The card the model sees
+   lists the names the family has confirmed, each with its kind, as the
+   names the story may use as they are; a name nobody has confirmed is not
+   on the card at all — `StoryRequest` keeps only the confirmed, and the
+   Worker drops any mention that still arrives flagged otherwise — so rule
+   4's instrument here is absence. The prompt's rule 3 then has every other
+   name a telling carries said through its teller — *Pekan mukaan …* — and
+   a contradiction between tellers shown as one, in both tellers' words.
+4. **The pull rule lives on the phone**, because the Worker cannot read a
+   seal. `withStory` lays a pulled row over this phone's: a row that says
+   nothing keeps this phone's story; a person's story beats a composed one
+   whichever is newer, and is pushed again under a later moment so the
+   family settles on it; two of a kind, the newer moment wins whole; and
+   the same story coming back adopts the server's moment, so nothing is
+   pushed twice. The Worker's half is the rule every dated field shares
+   (`sync.ts`): the newest moment wins, NULL is never later, junk has no
+   opinion, a moment from a wrong clock is held to now — and its clock runs
+   in whole seconds, so a moment set in the second the push arrived comes
+   back at the top of that second.
+5. **Moments live on the millisecond grid** (`Story.moment`), because
+   "the same story coming back" is a comparison by value, and a `Date` that
+   keeps the clock's last bits does not survive the epoch offset: the
+   round-trip check failed on exactly that, the story back byte for byte
+   and unequal, before the grid.
+6. **Rule 10 in both directions.** `story` is `Optional` on `Subject`, so a
+   file written before it loads; the JSON the story crosses as is decoded
+   key by key with defaults, so a story written by a newer build with keys
+   this one has never heard of still reads, and one that is not a story
+   reads as none — and its moment with it, so `withStory` keeps this phone's
+   own. The rule's third direction (§3) has nothing to drop here: `Story`
+   and `StoryProposal` carry no `String` enum, only their `CodingKeys`.
+7. **The export carries the story** as a section above the tellings with
+   its provenance line, and the tellings follow oldest first, as on the
+   card. A proposal is not exported: it is not yet anybody's.
+8. **Size.** The card refuses a story past `Story.byteLimit` (90 000 bytes),
+   which sealed stays under the Worker's 131 072-character cap; the route
+   refuses more than 40 tellings, a telling past 8 000 characters, a card
+   past 40 000 and a story so far past 20 000. The model's budget is the
+   card's length turned into tokens (`storyBudget`), between a floor and the
+   model's ceiling, so a long story is not cut off and rejected whole the
+   way a long transcription once was (§16).
+9. **A telling taken back from under a person's story is said, not
+   answered.** The plan leaves an edited story alone, so when a telling it
+   was made of is gone — taken back on this phone or on another — the card
+   says so under the provenance line (*Yksi tarinan muistoista on
+   poistettu*, *Tarinan ainoa muisto on poistettu*, `Story.takenBack`) and
+   the person decides. *Pidä tarina* keeps the text word for word and
+   forgets the gone tellings (`Story.keeping`), so the note goes and the
+   story is still theirs. *Kokoa uudelleen* clears the story, and the plan
+   composes it again from what is still told; where nothing is — or the
+   phone composes nothing — the offer is *Poista tarina* instead. Both ways
+   of letting go lose the person's own words, so each asks once more first;
+   keeping asks nothing and is the prominent button. An unedited story
+   needs none of this: rule 1 composes it again or clears it by itself.
+10. **The story's language is the composing phone's.** Transcription's rule
+   — the prompt follows who is speaking — has no one speaker to follow
+   here: three tellers may have told in two languages, and a telling does
+   not record which. So `lang` is the language of the phone that composes,
+   decided when it composes; the tellings cross verbatim in whatever
+   language they were told, the prompt keeps each teller's words (its rule
+   5), and the frame — *kertoo, että* — is that phone's. A phone in another
+   language that opens a card whose story reads every telling asks for
+   nothing (rule 1), so a story's language never flips on its own; a
+   person's edit is in whatever they wrote.
+
+### Checked
+
+| Claim | Check |
+|---|---|
+| Rules 1, 2, 4, 5, 6, 9 and 10 above, one by one, and what the model is told: only confirmed names and nothing that says so, the byline or nothing, the date the Finnish prompt was measured with, the stub's sentence per telling, tellings in two languages crossing verbatim | `story-check.swift` — 81 checks |
+| The card the model sees: the confirmed names listed with their kinds and an unconfirmed one absent from text and JSON alike, an empty one dropped, tellings numbered oldest first, the addition prompt only with a story so far, the budget from the card's length | `story-shaping-check.mjs` — 43 checks |
+| The route's doors in order through a keyless Worker: nothing told is refused, a card too long is refused, no session is refused, and past every door the app gets one word and the log no telling | `story-route-check.mjs` — 15 checks |
+| The free tier's day for stories: the fourth stranger refused with 429, a long card charged by its budget, a paid family never counted, and the largest card the route accepts admitted on an empty day in a script of three-byte letters | `free-tier-ceiling-check.mjs` — 53 checks |
+| The column's sync rules over the local Worker and D1: newest moment wins whole, an older phone cannot wipe it, junk has no opinion, a future moment is held to now | `story-sync-check.mjs` — 17 checks |
+| The story crosses sealed and opens on the second phone, within the second of its moment; a row with no word on it keeps this phone's; both fields go and come back | `lever3-roundtrip-check.swift`, `family-crypto-check.swift`, `sync-fields-check.swift` — extended |
+| The story above its tellings folded, which unfold newest first as the card's own rows, tellings composing once and staying open under the story they made, a proposal accepted as a paragraph and dismissed without a trace, a question's row opening the Tell screen, a failed compose said and the tellings kept, a server with no `/story` leaving the card as it was, an English phone reading English, a telling taken back under an edited story kept word for word, composed again after asking, and the story deleted after asking when its only telling is gone; the caption's place opening the map on it, the map placing it, or an unconfirmed place's own card, and absent on a place's card and where no place is named | `StoryCardTests` — 15 tests |
+| The caption with its date and place, the card with its log open, with a proposal, with a failed compose and with a telling taken back, each at both text sizes | `AccessibilitySweepTests` — 5 sweeps |
+
+### Not yet
+
+- **Production.** `ALTER TABLE subject ADD COLUMN story TEXT` and
+  `ADD COLUMN story_set_at REAL`, and the Worker deploy, are a decision
+  taken at the keyboard, not in a commit; this section records the date
+  when it has happened. Until then a phone on this build against the
+  deployed Worker composes nothing — `/story` answers 404, and the card is
+  the card it was, its tellings and nothing said about a story — and pushes
+  and pulls as before, the deployed Worker dropping the two fields it does
+  not know (`story-sync-check.mjs` proves a phone that does not know them
+  wipes nothing).
+- **The ADDITION half of the prompt is unmeasured.** `story-bench.mjs`
+  measured the whole-story prompt; the proposal's prompt is that one with
+  the story so far and the new tellings appended, and no reply of it has
+  been read.
+- **The shipped rule 3 is unmeasured too.** The bench measured a card
+  that marked each name confirmed or not; the card now lists the confirmed
+  names and says nothing of the others (rule 3 above, 26 Sep 2026). Two
+  replies of the prompt as shipped have been read — Toivo's card and
+  Puumala's, 28 Sep 2026, now in the seed — and neither telling carried an
+  unconfirmed name, so an unconfirmed name said through its teller has not
+  been seen from it.
+- **An edited telling does not recompose.** The story is composed from
+  telling ids, so a body corrected afterwards (§17) leaves the story as it
+  was until the next telling.
+- **Two phones opening one card in the same minute may both compose it.**
+  Both pay; the newer moment wins.
