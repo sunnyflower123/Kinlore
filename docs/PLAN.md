@@ -327,6 +327,27 @@ On the weekend of 26–27 September 2026 my grandparent spoke into the app on a
 real iPhone, running the production build against the production Worker. A
 measured result of that session does not exist.
 
+**One sentence from it was kept**, reported on 30 Sep 2026 from memory rather
+than from notes written in the room:
+
+> *"Mistä tiedän että se on tallessa?"* — How do I know it is kept?
+
+That is the question the visit below says no number answers, whether the
+teller believed the memory was saved, and the app had no answer to give. Between
+stop and the result, `ProcessingView` shows *"Kuuntelen mitä sanoit"* and then
+*"Järjestelen muistoa"* over a spinner, for as long as the two calls take (their
+timeouts in `AppServices` add up to about thirty minutes), and nothing on it
+says the voice is kept. Nor is it yet: the recording sits in the temporary
+directory until transcription returns, and only then does `persistAudio` move
+it where a memory can point at it. After a spoken first telling that raised a
+question, the conversation begins with no *"Muisto tallennettu"* in between.
+Not fixed as of this entry.
+
+A second question was asked in words nobody kept, roughly *what should I say?*
+The idle screen does offer two starter questions (ARCHITECTURE §12), under the
+button, and which screen was open at the time is not known — so it is recorded
+as a question for the next visit rather than as a finding.
+
 ### The visit that takes the measurement
 
 Written before the day rather than on it, because half of what follows cannot be

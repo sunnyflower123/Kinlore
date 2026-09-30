@@ -98,7 +98,8 @@ for the one measurement that has not been taken.
 
 On the weekend of 26–27 September 2026 my grandparent spoke into the app on a
 real iPhone, running the production build against the production Worker. A
-measured result of that session does not exist.
+measured result of that session does not exist. One sentence from it was kept,
+*"Mistä tiedän että se on tallessa?"*, and what it found is in PLAN.md §8.
 
 **Verified rules.** Confirmation is one-way, merges are sticky, only the author
 edits their own, and another family can neither see nor write. The outbox
