@@ -330,11 +330,35 @@ enum QuestionLadder {
     /// is. Not stored and not synced, for the same reason as the subject
     /// starters — a prompt is not a debt.
     ///
-    /// Both are at the bottom of the ladder and the naming question comes first,
-    /// because this is the first question the app ever asks anybody.
+    /// The first two are at the bottom of the ladder and the naming question
+    /// comes first, because this is the first question the app ever asks
+    /// anybody.
+    ///
+    /// **Not only on the first day, since 30 Sep 2026.** The two stood here
+    /// while the archive was empty and went with the first telling, and the
+    /// photograph deck runs out too — every photograph told about, or pushed
+    /// aside with *"En muista tätä"*. With no family member's question either,
+    /// the screen was back to the blank button, on a phone with an archive full
+    /// of photographs (founder, 30 Sep 2026). So the pair is now the front of a
+    /// longer list that moves on as each one is answered, and starts again once
+    /// all of them have been.
+    ///
+    /// Every one of them can be answered by a ten-year-old and by somebody of
+    /// eighty-five, in a few words, and leads somewhere: a food leads to the
+    /// person who made it, an old object to whoever owned it. Nothing assumes a
+    /// working life, a marriage or a grandchild. The ids are the list index, so
+    /// a new question goes at the end.
     static let opening: [FollowUpQuestion] = [
         (String(localized: "Kuka on vanhin ihminen, jonka muistat?"), QuestionLevel.naming),
         (String(localized: "Missä asuit lapsena?"), QuestionLevel.fact),
+        (String(localized: "Mikä ruoka tuo mieleesi jonkun ihmisen?"), QuestionLevel.naming),
+        (String(localized: "Mikä on vanhin esine, joka sinulla on?"), QuestionLevel.naming),
+        (String(localized: "Kenestä suvussa kerrotaan hauskoja juttuja?"), QuestionLevel.naming),
+        (String(localized: "Kenen luona oli mukavinta käydä kylässä?"), QuestionLevel.naming),
+        (String(localized: "Kuka opetti sinulle jotain, mitä osaat yhä?"), QuestionLevel.naming),
+        (String(localized: "Mikä oli ensimmäinen eläin, jonka muistat?"), QuestionLevel.naming),
+        (String(localized: "Mikä juhla on sinulle tärkein?"), QuestionLevel.fact),
+        (String(localized: "Mikä on ensimmäinen asia, jonka muistat?"), QuestionLevel.description),
     ].enumerated().map { index, starter in
         FollowUpQuestion(
             id: "opening-\(index)",
@@ -344,12 +368,37 @@ enum QuestionLadder {
         )
     }
 
+    /// The next opening questions nobody on this phone has answered yet, in
+    /// list order. When every one has been answered the list starts again:
+    /// a question answered a month ago is a better thing to put beside the
+    /// button than nothing, and the answer will not be the same one.
+    static func nextOpening(limit: Int = 2) -> [FollowUpQuestion] {
+        var answered = Set(defaults.stringArray(forKey: openingAnsweredKey) ?? [])
+        if opening.allSatisfy({ answered.contains($0.id) }) {
+            defaults.removeObject(forKey: openingAnsweredKey)
+            answered = []
+        }
+        return Array(opening.filter { !answered.contains($0.id) }.prefix(limit))
+    }
+
+    /// Moves the opening list on past a question that has been answered. Any
+    /// other id is ignored, so the caller need not know which questions are
+    /// opening ones.
+    static func recordOpeningAnswered(_ questionID: String) {
+        guard opening.contains(where: { $0.id == questionID }) else { return }
+        var answered = defaults.stringArray(forKey: openingAnsweredKey) ?? []
+        guard !answered.contains(questionID) else { return }
+        answered.append(questionID)
+        defaults.set(answered, forKey: openingAnsweredKey)
+    }
+
     /// Forgets where the person had got to. Part of "Tyhjennä tämä laite": the
     /// ladder describes whoever holds the phone, so it leaves with them.
     static func reset() {
         defaults.removeObject(forKey: comfortKey)
         defaults.removeObject(forKey: streakKey)
         defaults.removeObject(forKey: answeredKey)
+        defaults.removeObject(forKey: openingAnsweredKey)
     }
 
     // MARK: - Storage
@@ -359,8 +408,9 @@ enum QuestionLadder {
     private static let comfortKey = "ladder.comfort"
     private static let streakKey = "ladder.streak"
     private static let answeredKey = "ladder.answeredAt"
+    private static let openingAnsweredKey = "ladder.openingAnswered"
 
-    /// Where the three keys live: `.standard`, and nothing in the app changes
+    /// Where the four keys live: `.standard`, and nothing in the app changes
     /// it. `scripts/question-ladder-check.swift` points it at a store of the
     /// run's own, because the standard defaults of a command-line tool are a
     /// domain named after its executable: two `verify.sh` runs at once shared

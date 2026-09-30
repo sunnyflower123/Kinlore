@@ -302,17 +302,20 @@ final class MemoryStore {
         return Array(QuestionLadder.starters(for: subject).prefix(limit))
     }
 
-    /// What to offer in free dictation when the archive is empty.
+    /// What to offer in free dictation when nothing else is on offer.
     ///
     /// The counterpart of `starterQuestions(for:)` for the case where there is no
-    /// subject yet — the first launch, which is the one screen this audience is
-    /// least able to get past on its own. See `QuestionLadder.opening`.
+    /// subject — the first launch above all, which is the one screen this
+    /// audience is least able to get past on its own. See `QuestionLadder.opening`.
     ///
-    /// Gated on the archive being empty rather than on there being no open
-    /// questions: once anything has been told there are real questions to answer,
-    /// and a generic one would compete with them for the same two slots.
+    /// Not gated on the archive being empty any more (30 Sep 2026). It was, so
+    /// that a generic question would not compete with real ones for the same
+    /// two slots — but since 12 Sep the Tell screen offers only questions a
+    /// family member asked, and it asks for these only when there are none of
+    /// those and no photograph is left in the deck. The gate had turned that
+    /// case into the blank button on any archive somebody had told into.
     func openingQuestions() -> [FollowUpQuestion] {
-        told.isEmpty ? QuestionLadder.opening : []
+        QuestionLadder.nextOpening()
     }
 
     /// A subject that has no memories yet. These are not hidden but shown as an
