@@ -178,7 +178,8 @@ than the defect. They are written here so that nobody has to find them twice.
   customer's active entitlements from RevenueCat's REST API, as
   `/entitlement/sync` does, and applies that answer (`handleWebhook`), so a
   late or repeated event applies the same answer again; only when RevenueCat
-  cannot be asked does the event decide, as before. Any active entitlement
+  cannot be asked, or gives no answer within five seconds, does the event
+  decide, as before. Any active entitlement
   counts: `RC_ENTITLEMENT_ID` is read by no code, because the v2 API names an
   entitlement by an internal id rather than by `archive`.
   `webhook-revocation-check.mjs` drives it with RevenueCat replaced.

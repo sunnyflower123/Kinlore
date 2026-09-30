@@ -102,6 +102,11 @@ async function fetchActiveEntitlements(env: Env, customerID: string): Promise<Ac
 
 	const res = await fetch(url, {
 		headers: { Authorization: `Bearer ${env.RC_SECRET_KEY}` },
+		// A RevenueCat that does not answer must not hold the request open.
+		// Five seconds, then each caller's own failure path: the webhook
+		// falls back to the event, /entitlement/sync answers upstream_failed
+		// and the app reports again later, reconciliation defers (30 Sep 2026).
+		signal: AbortSignal.timeout(5000),
 	})
 
 	if (!res.ok) {
@@ -380,8 +385,13 @@ export async function handleWebhook(env: Env, event: WebhookEvent) {
 			)
 			console.log(`[entitlement] ${event.type} → ${result.entitlement}, verified`)
 			return result
-		} catch {
-			// Logged by `fetchActiveEntitlements`, status and code only.
+		} catch (err) {
+			// The shape only (rule 9): the route and the kind of failure, never
+			// the customer id or anything RevenueCat said. An HTTP error has
+			// already been logged with its status and code by
+			// `fetchActiveEntitlements`; a timeout arrives as TimeoutError.
+			const kind = err instanceof Error ? err.name : 'unknown'
+			console.error(`[entitlement] /webhook/revenuecat fell back to the event (${kind})`)
 		}
 	}
 

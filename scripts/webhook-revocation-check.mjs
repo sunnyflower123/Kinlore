@@ -322,6 +322,42 @@ try {
 				)
 			}
 			{
+				// A RevenueCat that never answers is given up on after five
+				// seconds, and the log says so in shape only. Without the
+				// timeout this fetch fails at eight seconds with a plain Error.
+				const { env, family } = paidFamily()
+				const answering = globalThis.fetch
+				globalThis.fetch = (_url, init) =>
+					new Promise((_resolve, reject) => {
+						// Held, not unref'd: Node's own timeout timer does not
+						// keep the process alive, and this one has to.
+						const guard = setTimeout(() => reject(new Error('no timeout')), 8000)
+						init?.signal?.addEventListener('abort', () => {
+							clearTimeout(guard)
+							reject(init.signal.reason)
+						})
+					})
+				const errors = []
+				const realError = console.error
+				console.error = (line) => errors.push(String(line))
+				try {
+					await handleWebhook(keyed(env), event('EXPIRATION'))
+				} finally {
+					console.error = realError
+					globalThis.fetch = answering
+				}
+				check(
+					'a RevenueCat that never answers is given up on, and the event decides',
+					family().entitlement === 'free' && errors.some((line) => line.includes('TimeoutError')),
+					errors.join(' | '),
+				)
+				check(
+					'and the line it leaves in the log names no customer',
+					errors.length > 0 && errors.every((line) => !line.includes('cust-')),
+					errors.join(' | '),
+				)
+			}
+			{
 				// A second payer with the later date, who has since left.
 				const { env, family, join } = paidFamily()
 				join('lahtenyt', 'cust-2', renewedThrough)
