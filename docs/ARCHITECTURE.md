@@ -1244,7 +1244,7 @@ it current without the app having to be opened.
 | Situation | Behaviour |
 |-----------|-----------|
 | Subscription ends | The family returns to the free tier. **Nothing is deleted.** Existing photos and audio remain and stay readable; the limits apply only to new content. |
-| The payer leaves the family | Nothing happens at the moment they leave — see the row below the table. Another member can buy. |
+| The payer leaves the family | Their date stops counting at once: the tier is worked out again from the members still in the family (30 Sep 2026; it did not before — see below the table). Another member can buy. |
 | Two payers | The longest expiry wins. Neither is shown anywhere. |
 | Refund | The webhook drops the right immediately. There is no REFUND event: it arrives as CANCELLATION with `cancel_reason: CUSTOMER_SUPPORT`, which is the only cancellation that revokes. |
 | Auto-renew switched off | Nothing, until the EXPIRATION event ends the period that was paid for. This was assumed wrong once — a plain CANCELLATION revoked at once, locking the family out of a paid month — and `webhook-revocation-check.mjs` now pins the split. |
@@ -1266,7 +1266,10 @@ role, and touches `member.rc_app_user_id`, `family.payer_id` and
 `family.entitlement` in none of its statements; `removeMember` is the same. So
 the family keeps the paid tier until a revoking webhook happens to arrive on its
 own schedule — which is the safer direction of the two, and is not what the
-table promised.
+table promised. Since 30 Sep 2026 leaving does lapse the leaver's share:
+`applyEntitlement` counts only members still in the family, and
+`recomputeTier` in `worker.ts` runs when a member holding a date leaves, is
+removed or comes back.
 
 The other direction is not safe, and nobody had written it down. **The departed
 payer's customer id stays bound to their old family's member row for ever**, and
@@ -1490,7 +1493,10 @@ perpetual purchase lives in this file and is easy to misread: `handleWebhook`
 ignores a `NON_RENEWING_PURCHASE`, deliberately, because the event carries no
 expiry and a null must not end a tier the event was not about — so a perpetual
 purchase is granted through `/entitlement/sync` and reconciliation, never
-through the webhook, and no product in the offering exercises that path today.
+through the webhook's own event path, and no product in the offering exercises
+that path today. Since 30 Sep 2026 the event decides only when RevenueCat
+cannot be asked: the webhook first asks what the customer owns, and that
+answer grants a perpetual purchase like any other.
 PLAN §10 carries the arithmetic.
 
 **One thing measured on the way, recorded because it is invisible.**
