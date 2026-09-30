@@ -347,7 +347,10 @@ struct TellScreen: View {
                     onBlindDone: { blind = nil },
                     onSkip: usesDeck ? { skipCard(model) } : nil,
                     onColourFromTold: onColourFromTold,
-                    onAddPhoto: usesDeck && !largerText ? { addPhoto($0) } : nil
+                    // Not before the first telling: a deck that never had a
+                    // card has not run out, and the first launch stays the
+                    // button, its two starters and "Kirjoita sen sijaan".
+                    onAddPhoto: usesDeck && !largerText && !store.told.isEmpty ? { addPhoto($0) } : nil
                 )
                 .onAppear { advancePastTold(model) }
             case .recording:
