@@ -51,7 +51,7 @@ hackathon, in the Next Gen Award (the student category).
   and RevenueCatUI's paywall run on the phone; the Worker asks RevenueCat's REST
   API what the buyer owns rather than taking the phone's word, and the webhook
   keeps it current.
-- **Tested** 405 UI tests, including 126 accessibility sweeps that audit a
+- **Tested** 406 UI tests, including 127 accessibility sweeps that audit a
   screen at the default text size and again at the largest.
   `./scripts/verify.sh` holds 64 checks that cost nothing and says which it
   skipped; CI runs the same script.

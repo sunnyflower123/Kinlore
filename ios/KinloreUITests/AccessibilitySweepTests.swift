@@ -2459,6 +2459,60 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The Kerro tab once the deck has run out, on a reader's phone (30 Sep
+    /// 2026): no photograph left untold, no family member's question, and so
+    /// the next two opening questions under the button and *"Lisää valokuva"*
+    /// beside *"Kirjoita sen sijaan"*. The plain archive is that state, since
+    /// every photograph in it carries a telling (`testTheDeckNeverOffersAName`).
+    ///
+    /// Any of the opening questions will do, not only the first: the list
+    /// moves on as each one is answered, and that is device state the seed
+    /// does not reset. At the default size the new row shares the writing
+    /// row's line, and both are asked to clear the tab bar, as on the first
+    /// launch. At the largest size the two rows stack below the fold by
+    /// design, so every page down to the new one is audited.
+    func testTellOnceTheDeckRunsOut() throws {
+        let opening = [
+            "Kuka on vanhin ihminen, jonka muistat?",
+            "Missä asuit lapsena?",
+            "Mikä ruoka tuo mieleesi jonkun ihmisen?",
+            "Mikä on vanhin esine, joka sinulla on?",
+            "Kenestä suvussa kerrotaan hauskoja juttuja?",
+            "Kenen luona oli mukavinta käydä kylässä?",
+            "Kuka opetti sinulle jotain, mitä osaat yhä?",
+            "Mikä oli ensimmäinen eläin, jonka muistat?",
+            "Mikä juhla on sinulle tärkein?",
+            "Mikä on ensimmäinen asia, jonka muistat?",
+        ]
+        try sweep("Kerro, pakka lopussa", arguments: ["-seed", "archive", "-tab", "tell"]) { app, isLargest in
+            require(app.staticTexts["Paina ja ala puhua"], "the record button's caption")
+            require(
+                app.staticTexts.matching(NSPredicate(format: "label IN %@", opening)).firstMatch,
+                "an opening question"
+            )
+            XCTAssertFalse(app.buttons["En muista tätä"].exists, "a way past a card the deck no longer has")
+            let add = app.buttons["Lisää valokuva"]
+            if isLargest {
+                reach(add, in: app, "the way to add a photograph")
+                return try auditPageByPage(
+                    app, "Kerro, pakka lopussa, largest text size",
+                    to: add, "\"Lisää valokuva\", last on the screen"
+                )
+            }
+            require(add, "the way to add a photograph")
+            let typing = require(app.buttons["Kirjoita sen sijaan"], "the way that needs no permission")
+            settle(add)
+            let bar = app.tabBars.firstMatch
+            for (name, way) in [("Lisää valokuva", add), ("Kirjoita sen sijaan", typing)] {
+                XCTAssertTrue(
+                    bar.exists && way.frame.maxY <= bar.frame.minY,
+                    "\"\(name)\" is under the tab bar: "
+                        + "\(NSCoder.string(for: way.frame)) against \(NSCoder.string(for: bar.frame))"
+                )
+            }
+        }
+    }
+
     /// Photographing a paper photograph — the screen the shoebox comes in
     /// through. `-camera stub` draws the controls over an empty preview,
     /// because the simulator has no camera and `.ready` is otherwise
