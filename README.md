@@ -11,8 +11,10 @@
 
 A family's shared memory archive. Anyone in the family tells what they
 remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the family tree grows out of the stories, and open
-questions come back to be asked.
+attach to photos and people, the people and places named in the stories are
+proposed for the family to confirm, and open questions come back to be asked.
+The family tree is drawn from the people the family confirms and the
+relationships it enters by hand.
 
 Album and genealogy apps ask for structured input: a form to fill in, a face to
 tag, a date to pick. A family's memory is not kept that way. It is told, a
@@ -59,9 +61,11 @@ hackathon, in the Next Gen Award (the student category).
   them. Any other answer confirms nothing and is never called wrong
   ([ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
 - The AI puts what the family told about a card together into one story at the
-  top of it, in the tellers' own words, and every telling stays under it as it
-  was told ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
-- The original recording and the raw transcript are kept forever (rule 3). A
+  top of it. The model is told to keep to the tellers' own words and add
+  nothing; the Worker checks only that a story came back, and every telling
+  stays under it as it was told
+  ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
+- The original recording and the raw transcript are always kept (rule 3). A
   date stays as vague as it was said, so "sometime in the fifties" is stored as
   a decade (rule 5).
 - The app shows English by default and Finnish on a phone set to Finnish, and
