@@ -13,8 +13,10 @@ This is the full write-up behind the [README](../README.md).
 
 A family's shared memory archive. Anyone in the family tells what they
 remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the family tree grows out of the stories, and open
-questions come back to be asked.
+attach to photos and people, the people and places named in the stories are
+proposed for the family to confirm, and open questions come back to be asked.
+The family tree is drawn from the people the family confirms and the
+relationships it enters by hand.
 
 Album and genealogy apps ask for structured input: a form to fill in, a face to
 tag, a date to pick. A family's memory is not kept that way. It is told, a
@@ -203,7 +205,7 @@ of 29.9 %: below the name bar too, and a tenth of a point inside the other.
 
 The concept was not dropped anyway, and
 [PLAN.md §8](PLAN.md#risk-2-honestly) argues why in full: the original audio
-is kept forever and is playable, the raw transcript is kept beside the cleaned
+is always kept and is playable, the raw transcript is kept beside the cleaned
 text, and names are checked by the teller in the seconds after telling — or
 corrected from the person's card years later. *One proper noun in three being
 wrong is the premise the name-correction step was written for, not a surprise.*

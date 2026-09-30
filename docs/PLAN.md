@@ -312,7 +312,7 @@ bench's own *"above 30 % is not usable"*, in the run of 31 Jul; 65 % and 37.3 %
 in the run of 30 Aug. On audio that is kinder than the real thing.
 
 **Why the concept was not dropped anyway**, which is a decision and should read
-like one: the app is built for exactly this. The original audio is kept forever
+like one: the app is built for exactly this. The original audio is always kept
 and is playable, so nothing rests on the transcript being right. The raw
 transcript is kept beside the cleaned text. Names are checked by the teller in
 the seconds after telling, which is the only moment anybody still knows what was
