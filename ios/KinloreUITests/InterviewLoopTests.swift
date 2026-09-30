@@ -18,13 +18,70 @@ import XCTest
 ///
 /// And how a conversation ends when nobody ends it: an answer that has gone
 /// quiet ends it the way "Riittää tältä erää" does, and a first telling is
-/// never cut (`AnswerWatch`). `-meter silent` is the silence. A simulator
-/// records from the Mac's own microphone, and a test cannot count on the room
-/// around it. A reply with no words in it is `-answer wordless`, and it is
-/// not one the Worker sends today: the Worker answers a silence 502.
+/// never cut (`AnswerWatch`). `-meter quiet` is that silence: somebody
+/// breathing and holding the phone, which the watch calls silence and which
+/// is still sound, so the recording is kept. `-meter silent` is a microphone
+/// that delivered nothing at all (`AudioRecorder.soundFloor`), which is not
+/// kept. A simulator records from the Mac's own microphone, and a test cannot
+/// count on the room around it. A reply with no words in it is
+/// `-answer wordless`, and it is not one the Worker sends today: the Worker
+/// answers a silence 502, which reaches the app as `-answer unreachable`
+/// does.
 final class InterviewLoopTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
+    }
+
+    /// The screen between the stop and the question names the steps the app
+    /// takes and marks each as it is (`ProcessingView`, 30 Sep 2026): the
+    /// voice kept, the speech being written down, the names still to come,
+    /// and then the writing done and the names under way. VoiceOver hears
+    /// the mark as each row's value, which is what is read here.
+    /// `-processing slow` holds each step six seconds longer than the stubs'
+    /// own delay, so the first state cannot be raced past.
+    func testTheProcessingScreenWalksItsSteps() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-processing", "slow"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        func step(_ label: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        }
+        let kept = step("Äänesi on tallessa tässä puhelimessa")
+        let writing = step("Puran puheen tekstiksi.")
+        let names = step("Etsin ihmiset, paikat ja ajankohdan.")
+        XCTAssertTrue(writing.waitForExistence(timeout: 15), "never arrived: the step that writes the speech down")
+        XCTAssertEqual(kept.value as? String, "tehty", "the kept voice is not marked done")
+        XCTAssertEqual(writing.value as? String, "meneillään", "the writing down is not marked under way")
+        XCTAssertEqual(names.value as? String, "odottaa", "the names are not marked still to come")
+        XCTAssertTrue(
+            app.staticTexts["Vaikka tämä kestäisi hetken, kertomasi ei katoa."].exists,
+            "the voice is kept and the screen does not say that nothing is lost"
+        )
+
+        // The writing done, the names under way.
+        let deadline = Date().addingTimeInterval(30)
+        while names.value as? String != "meneillään", Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        XCTAssertEqual(names.value as? String, "meneillään", "the names never came under way")
+        XCTAssertEqual(writing.value as? String, "tehty", "the writing down is not marked done")
+        XCTAssertTrue(app.staticTexts["Järjestelen muistoa"].exists, "the title did not follow the step")
+
+        // And on to the question, as without the steps.
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "the telling ended somewhere other than its first question"
+        )
     }
 
     func testASpokenTellingGoesStraightOnToItsQuestion() {
@@ -104,7 +161,7 @@ final class InterviewLoopTests: XCTestCase {
     /// question by itself, and until 27 Sep 2026 an answer that had gone quiet
     /// kept it open for as long as nobody touched the phone.
     func testASilentAnswerEndsTheConversation() {
-        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "silent"])
+        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "quiet"])
 
         let record = app.buttons["Aloita kertominen"]
         XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
@@ -200,7 +257,7 @@ final class InterviewLoopTests: XCTestCase {
     /// The first telling is never cut, however quiet: whoever pressed record
     /// can press stop, and a long pause to remember is part of a story.
     func testASilentTellingIsNeverCut() {
-        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "silent"])
+        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "quiet"])
 
         let record = app.buttons["Aloita kertominen"]
         XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
@@ -221,6 +278,109 @@ final class InterviewLoopTests: XCTestCase {
         XCTAssertTrue(
             app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
             "the quiet telling did not go on to its question"
+        )
+    }
+
+    /// An answer whose upload fails: a lost signal, or the Worker's 502 for
+    /// an answer with no words in it, which the app cannot tell apart
+    /// (`-answer unreachable`). Until 30 Sep 2026 it replaced the telling's
+    /// result with "Äänesi on tallessa" — the names waiting to be confirmed
+    /// gone from the screen, and the question marked answered by a recording
+    /// that may hold nothing. Now it lands on the result the telling made,
+    /// with one sentence about the answer, and the conversation can be taken
+    /// up again.
+    func testAnAnswerThatFailsLandsOnTheRoundsBeforeIt() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-answer", "unreachable"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "the telling ended somewhere other than its first question"
+        )
+        app.buttons["Aloita kertominen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the answer never started recording"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30),
+            "a failed answer did not land on the result the telling made"
+        )
+        XCTAssertFalse(app.staticTexts["Äänesi on tallessa"].exists, "a failed answer stood for the conversation")
+        XCTAssertTrue(
+            app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Viimeistä vastaustasi ei saatu tekstiksi"))
+                .firstMatch.waitForExistence(timeout: 5),
+            "the result did not say what became of the answer"
+        )
+        reach(app.buttons["1950-luku"], in: app, "the decade the telling named")
+        for name in ["Aino", "Toivo"] {
+            reach(app.buttons["Vahvista \(name)"], in: app, "the name \(name), to confirm")
+        }
+        // Nothing answered the question, so the conversation can go on.
+        let goOn = app.buttons["Jatketaan jutellen"]
+        reach(goOn, in: app, "the way to take the conversation up again")
+        goOn.tap()
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 15),
+            "the conversation could not be taken up again"
+        )
+    }
+
+    /// A recording nothing reached, not even the room (`-meter silent`, below
+    /// `AudioRecorder.soundFloor`). Nothing is kept and nothing is sent: the
+    /// screen says so instead of "Äänesi on tallessa", another try records
+    /// again, and the way back returns to the start.
+    func testARecordingThatHeardNothingIsNotKept() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-meter", "silent"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["En kuullut mitään"].waitForExistence(timeout: 15),
+            "a recording that held nothing was not called so"
+        )
+        XCTAssertFalse(app.staticTexts["Äänesi on tallessa"].exists, "nothing was called a kept voice")
+        XCTAssertFalse(app.staticTexts["Muisto tallennettu"].exists, "nothing was saved as a memory")
+        XCTAssertFalse(app.buttons["Riittää tältä erää"].exists, "nothing was asked about")
+
+        app.buttons["Yritä uudelleen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "another try did not record again"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+        XCTAssertTrue(
+            app.staticTexts["En kuullut mitään"].waitForExistence(timeout: 15),
+            "the second silent try was not called so"
+        )
+
+        app.buttons["Takaisin"].tap()
+        XCTAssertTrue(
+            app.buttons["Aloita kertominen"].waitForExistence(timeout: 10),
+            "the way back did not return to the start"
         )
     }
 

@@ -134,7 +134,7 @@
 "Ei vielä ihmisiä" = "Ei vielä ihmisiä";
 "Lisää henkilö" = "Lisää henkilö";
 "Joku uusi" = "Joku uusi";
-"Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta." = "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.";
+"Sukupuu kasvaa sitä mukaa kun ihmisistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta." = "Sukupuu kasvaa sitä mukaa kun ihmisistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.";
 "Lisää sukulainen" = "Lisää sukulainen";
 "Lapsi" = "Lapsi";
 "Vanhempi" = "Vanhempi";
@@ -157,7 +157,8 @@
 "Ei vielä sukupuussa" = "Ei vielä sukupuussa";
 "Valikko" = "Valikko";
 "Mitä viivat tarkoittavat" = "Mitä viivat tarkoittavat";
-"Luettelo" = "Luettelo";
+"Näytä listana" = "Näytä listana";
+"Näytä puuna" = "Näytä puuna";
 "Sinä" = "Sinä";
 "%@, sinä" = "%@, sinä";
 "Avaa kortti" = "Avaa kortti";
@@ -436,6 +437,7 @@
 "Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen." = "Palvelin ei ehtinyt vastata. Yritä hetken kuluttua uudelleen.";
 "Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen." = "Yhteys ei onnistunut. Yritä hetken kuluttua uudelleen.";
 "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa." = "Perheen palveluun ei juuri nyt saada yhteyttä. Muistot ovat tallessa tässä laitteessa.";
+"Mitä muistat tästä kuvasta?" = "Mitä muistat tästä kuvasta?";
 "Kuka tässä kuvassa on?" = "Kuka tässä kuvassa on?";
 "Missä tämä kuva on otettu?" = "Missä tämä kuva on otettu?";
 "Minä vuonna tämä suunnilleen otettiin?" = "Minä vuonna tämä suunnilleen otettiin?";
@@ -878,3 +880,11 @@
 "%lld muiston teksti jäi korjaamatta." = "%lld muiston teksti jäi korjaamatta.";
 "Voit yrittää uudelleen tai korjata tekstin itse muiston alta: ”Muokkaa tai poista”." = "Voit yrittää uudelleen tai korjata tekstin itse muiston alta: ”Muokkaa tai poista”.";
 "Avaa kortin. Siellä nimen voi myös korjata." = "Avaa kortin. Siellä nimen voi myös korjata.";
+"En kuullut mitään" = "En kuullut mitään";
+"Nauhoituksessa ei kuulunut yhtään ääntä, joten mitään ei tallennettu. Katso, ettei mikään peitä mikrofonia, ja yritä uudelleen." = "Nauhoituksessa ei kuulunut yhtään ääntä, joten mitään ei tallennettu. Katso, ettei mikään peitä mikrofonia, ja yritä uudelleen.";
+"Takaisin" = "Takaisin";
+"Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain, nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää odottamaan vastausta." = "Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain, nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää odottamaan vastausta.";
+"Vaikka tämä kestäisi hetken, kertomasi ei katoa." = "Vaikka tämä kestäisi hetken, kertomasi ei katoa.";
+"tehty" = "tehty";
+"meneillään" = "meneillään";
+"odottaa" = "odottaa";

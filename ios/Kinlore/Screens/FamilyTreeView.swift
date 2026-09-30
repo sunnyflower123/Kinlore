@@ -53,8 +53,8 @@ struct FamilyTreeView: View {
     /// a mark on the menu's button while any wait, so the tree hides nothing
     /// the list shows.
     var heardCount = 0
-    /// Opens a person's card. The navigation stack belongs to Ihmiset, and so
-    /// do the other doors the menu opens.
+    /// Opens a person's card. The navigation stack belongs to `PeopleScreen`,
+    /// and so do the other doors the menu opens.
     var onOpen: (Subject) -> Void = { _ in }
     var onHeard: () -> Void = {}
     var onSettings: () -> Void = {}
@@ -1222,8 +1222,8 @@ private final class TreeScrollView: UIScrollView {
 
 // MARK: - The sheets
 
-/// The doors the menu opens. The tree asks Ihmiset for them rather than
-/// pushing them: the navigation stack is the tab's.
+/// The doors the menu opens. The tree asks `PeopleScreen` for them rather
+/// than pushing them: the navigation stack is the tab's.
 private enum TreeDoor {
     case list, addPerson, heard, settings
 }
@@ -1261,7 +1261,9 @@ private struct TreeMenuSheet: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.bottom, 8)
 
-                    action("Luettelo") { choose(.list) }
+                    // Named for what it does, like its counterpart on the
+                    // list's bar, "Näytä puuna" (30 Sep 2026).
+                    action("Näytä listana") { choose(.list) }
                     action("Lisää henkilö") { choose(.addPerson) }
                     // The door `PeopleScreen` puts under the list, in the
                     // same words.

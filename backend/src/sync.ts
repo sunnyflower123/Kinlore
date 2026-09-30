@@ -954,7 +954,40 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   confirmed = MAX(relation.confirmed, excluded.confirmed),
 				   deleted_at = COALESCE(excluded.deleted_at, relation.deleted_at),
 				   seq = excluded.seq
-				 WHERE relation.family_id = excluded.family_id`,
+				 WHERE relation.family_id = excluded.family_id
+				 -- The same three columns under another id. The table holds one
+				 -- row per pair and kind, tombstones included, and the phone
+				 -- makes every relationship under a fresh id, so this is a
+				 -- relationship taken back and made again, or two members
+				 -- making the same one. Until 30 Sep 2026 nothing answered it:
+				 -- the constraint failed the whole batch, the phone rebuilt the
+				 -- same push every round for ever and never reached its pull.
+				 --
+				 -- Over a tombstone, the row takes the new id and the new row's
+				 -- state, so every phone pulls the id its maker holds and the
+				 -- tombstone they hold under the old id stays one. Its
+				 -- confirmation is the new row's own: the old yes belonged to
+				 -- the relationship somebody removed. Over a live row, that row
+				 -- stays and confirmation only moves up, as above. Either way
+				 -- the seq moves, so the maker's phone pulls what is on file.
+				 --
+				 -- A tombstone never lands here. Pushed under an id that is no
+				 -- longer on file, it is a phone that missed the making again,
+				 -- or a duplicate taken back before it ever synced; neither may
+				 -- take back the row somebody else holds live.
+				 -- relation-resync-check.mjs drives each of these.
+				 ON CONFLICT(from_subject, to_subject, kind) DO UPDATE SET
+				   id = CASE WHEN relation.deleted_at IS NULL THEN relation.id ELSE excluded.id END,
+				   confirmed = CASE WHEN relation.deleted_at IS NULL
+				                    THEN MAX(relation.confirmed, excluded.confirmed)
+				                    ELSE excluded.confirmed END,
+				   confidence = CASE WHEN relation.deleted_at IS NULL
+				                     THEN relation.confidence ELSE excluded.confidence END,
+				   created_at = CASE WHEN relation.deleted_at IS NULL
+				                     THEN relation.created_at ELSE excluded.created_at END,
+				   deleted_at = NULL,
+				   seq = excluded.seq
+				 WHERE relation.family_id = excluded.family_id AND excluded.deleted_at IS NULL`,
 			).bind(
 				relation.id,
 				family,

@@ -9,41 +9,73 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-5B4A3E?labelColor=241A14" alt="Apache 2.0 licence"></a>
 </p>
 
-A family's shared memory archive. Anyone in the family tells what they
-remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the people and places named in the stories are
-proposed for the family to confirm, and open questions come back to be asked.
-The family tree is drawn from the people the family confirms and the
-relationships it enters by hand.
-
-Album and genealogy apps ask for structured input: a form to fill in, a face to
-tag, a date to pick. A family's memory is not kept that way. It is told, a
-little at a time and by different people, and whatever nobody wrote down goes
-when they do. Kinlore keeps the telling and does the sorting itself.
-
-Everyone tells into the same archive from their own phone, and the app is built
-for the oldest teller as much as for the youngest. My own grandparent tested
-it, which is why the rules further down read as constraints rather than good
-intentions, and why the failure that matters here is not a crash but a story
-that never got told.
-
-It is quiet on purpose. There are no streaks and no numbers on the tabs: a
-number on a tab is a debt, and the person the app waits for is often the oldest
-in the family. What the younger members get back is a grandparent's story, in
-the grandparent's own voice.
-
-I built it for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
+Kinlore is a family's shared memory archive for iPhone. Anyone in the family
+tells what they remember about an old photo, and the AI gives it structure.
+I built it for the
+[RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon, in the Next Gen Award (the student category).
 
+## The short version
+
+- **Tell, and it asks back.** Press one button and talk about an old photo in
+  English or Finnish, or type instead. Follow-up questions come out loud, and
+  it listens to each answer.
+- **AI proposes, a human confirms.** Names it heard wait for a yes before they
+  enter the family tree. A blind check shows the photograph and asks *Who is
+  this?* over three or four names, the proposal unmarked.
+- **Vague dates stay vague, and nothing is thrown away.** "Sometime in the
+  fifties" is stored as a decade, and the original recording and the raw
+  transcript are always kept.
+- **The whole family.** Everyone joins on their own phone through an invite
+  link, with no login. Paper photos are photographed straight in and can be
+  coloured from what the family told about them.
+- **Who it is for.** Whoever wants to tell, often an older person. My
+  grandparent tested it; their question, "How do I know it's saved?", is why
+  the screen now says *Your voice is kept on this phone* while it waits.
+- **Who pays.** Often not the one who tells: one member subscribes, $39.99 a
+  month or $149.99 a year, and the backend grants it to the whole family,
+  checked with RevenueCat's REST API and webhook.
+- **Free tier.** Ten minutes of transcription a month, twenty photographs in
+  all and five colourisations a month. Telling itself is never limited: a
+  recording over the limit is kept and waits for its text.
+- **The paywall** is RevenueCatUI's own view. The result screen offers it after
+  every third telling, but never when that telling proposed names to confirm or
+  on a phone with *Larger text* on, a grandparent's.
+- **What it costs.** A typical paying family (5 tellers × 20 minutes, 20
+  colourisations, 50 photographs) costs about $4.05 a month, which leaves 88 %
+  of what a US sale of the monthly plan brings in.
+- **Try it.** `./scripts/try-it.sh` needs no keys and really hears you ([the
+  steps](#try-it)); `--example` opens an invented family with a tree and a
+  blind card. Only the paywall (`--paywall`) needs the Test Store key from
+  the submission.
+- **Built with** SwiftUI · RevenueCat's SDK and RevenueCatUI · Cloudflare
+  Workers + D1 + R2 · OpenRouter, called only from the Worker.
+- **Privacy.** The phone seals memories, transcripts, photos and recordings
+  before sync, with a key the Worker never gets. It is not end-to-end: a model
+  gets them unsealed to transcribe, structure or colour.
+- **Tested.** 406 UI tests, including 127 accessibility sweeps at the default
+  and the largest text size. `./scripts/verify.sh` holds 64 checks that spend
+  no API credit.
+- **Known limits:** a paying family has no AI ceiling or rate limit yet, so a
+  heavy one costs more than either plan brings in
+  ([costs](#what-a-family-costs-to-run)), and the purchase check trusts the
+  customer id the app sends ([known
+  issues](docs/ARCHITECTURE.md#1-where-things-stand)).
+
+<p align="center"><a href="https://youtu.be/ulHxJ45p4RU"><b>▶ Watch the demo video (2 min)</b></a><br>
+Its app shots are simulator recordings, and its voices and photographs are synthetic.</p>
+
 <p align="center">
-  <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order, finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s, and the question Who told this memory? with the answers Me, Someone else and I would rather not be named." width="320">
+  <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
 </p>
 
-<p align="center"><sub>Simulator, stub pipeline: the waiting is real and the model call is canned.<br><code>scripts/readme-shots.sh</code> makes this GIF and the pictures below.</sub></p>
+<p align="center"><sub>Simulator, stub pipeline: the telling and the model call are canned.</sub></p>
 
-| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, freely, a large red microphone button with Press and start talking under it, and a Write instead link." width="1179"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen: Memory saved, a Move to another card button, the date 1950s, the card Who told this memory? with the answers Me, Someone else and I would rather not be named, and below it the beginning of the spoken text kept as it was said — in Finnish, because the sample telling is." width="1179"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a drawn stand-in photograph, the question Who is this?, four names in identical black buttons — Sanni, Aino, Eeva and Kalle — and I do not remember below them." width="1179"></a> |
+| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree." width="300"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button." width="300"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="300"></a> |
 |---|---|---|
-| **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. | **Who is this?** One of the four names is the proposal, and nothing on the screen says which. |
+| **Telling.** One button, a way to type instead, and two questions to start from. | **What comes back.** The two names it heard wait for a cross or a tick, each with the sentence it was heard in. | **Who is this?** The card asks *Who is this?* of a generated photograph over four names, nothing says which is the proposal, and *I do not remember* is offered too. |
+| <a href="docs/media/07-album.png"><img src="docs/media/mounted/07-album.png" alt="The Album: a map button, a plus button and a search button at the top, the heading Album, then 1930s with two generated black-and-white photographs — a man, a woman and a small girl on a lakeside jetty with a rowing boat, and a bride with a veil and a bouquet beside a groom in a dark suit — each card with a round G badge under the picture; then 1940s with one wide card, a woman in a cardigan and a flowered dress holding a bicycle on a gravel road, her face cut off by the top of the card; the heading 1950s half under the tab bar, and the tabs Album, Tell and Family tree." width="300"></a> | <a href="docs/media/08-family-tree.png"><img src="docs/media/mounted/08-family-tree.png" alt="The Family tree tab of the invented example family: Elina, marked You, in the middle row between Mikko, Your spouse, and Jukka, Your sibling, each in a round picture cut from one of the example's drawn photographs; Matti, Your parent, above them with lines down to Elina and Jukka; Oskari and Aino, Your child, as initials below; more cards cut off at both edges; the buttons Whole family and You; a settings gear and a More button with a red dot at the top right; and the tabs Album, Tell and Family tree." width="300"></a> | <a href="docs/media/09-paywall.png"><img src="docs/media/mounted/09-paywall.png" alt="RevenueCatUI's paywall: a close button, the heading Open the whole archive, the line More room for photographs and more transcription time, and one payer opens it for the whole family, then Telling is always free. It is never limited., two plans — A year for the family, billed once a year, $149.99/yr, under a Best value banner, and A month for the family, billed every month, $39.99/mo — a black Open the whole archive button, and the links Terms, Privacy and Restore." width="300"></a> |
+| **Album.** The family's photographs by decade, every one of them generated. | **Family tree.** The invented example family from `--example`, drawn around the phone's owner. | **Paywall.** RevenueCatUI's own view: $149.99 a year or $39.99 a month for the whole family, and telling is always free. |
 
 <p align="center">
   <picture>
@@ -52,172 +84,85 @@ hackathon, in the Next Gen Award (the student category).
   </picture>
 </p>
 
+## The full version
+
+Everything below is the detail: what each part does, how it is built and
+tested, how to run it, how the paywall is wired, what it costs to run and how
+the data is protected; the longest version is
+[docs/DETAILS.md](docs/DETAILS.md).
+
+Album and genealogy apps ask for structured input: a form to fill in, a face to
+tag, a date to pick. A family's memory is not kept that way. It is told, a
+little at a time and by different people, and whatever nobody wrote down goes
+when they do. Kinlore keeps the telling and does the sorting itself. Everyone
+tells into the same archive from their own phone, and the app is built for
+whoever wants to tell, often an older person.
+
+My own grandparent tested it, which is why
+[the ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend) read as
+constraints rather than good intentions; the rule numbers on this page refer to
+them. The failure that matters here is not a crash but a story that never got
+told. So the app is quiet on purpose: no streaks and no numbers on the tabs,
+because a number on a tab is a debt, and the person the app waits for is often
+the oldest in the family.
+
 ## What it does
 
-- You press one big button and talk about an old photo. The memory is kept in
-  your own voice and in readable words, attached to the photo.
-- The names and places it heard come back as proposals, each with the sentence
-  it was heard in. None of them enters the family tree until a person says yes
-  (rule 4).
-- It asks follow-up questions out loud, listens to each answer and asks the
-  next one, round after round, without a tap.
-- Later it shows the photograph a name was heard in and asks *Who is this?*
-  over three or four of the family's names, with the proposal unmarked among
-  them. Any other answer confirms nothing and is never called wrong
+- **One button.** You press it and talk about an old photo. The memory is kept
+  in your own voice and in readable words, attached to the photo.
+- **Proposals, not facts.** The names and places it heard come back as
+  proposals, each with the sentence it was heard in. None of them enters the
+  family tree until a person says yes (rule 4).
+- **Questions out loud.** It asks follow-up questions, listens to each answer
+  and asks the next one, round after round, without a tap.
+- **Who is this?** Later it shows the photograph a name was heard in and asks
+  who it is, over three or four of the family's names with the proposal
+  unmarked among them. Any other answer confirms nothing and is never called
+  wrong
   ([ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
-- The AI puts what the family told about a card together into one story at the
-  top of it. The model is told to keep to the tellers' own words and add
-  nothing; the Worker checks only that a story came back, and every telling
-  stays under it as it was told
+- **One story per card.** The AI puts what the family told about a card into
+  one story at the top of it. The model is told to keep to the tellers' own
+  words and add nothing; the Worker checks only that a story came back, and
+  every telling stays under it as it was told
   ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
-- The original recording and the raw transcript are always kept (rule 3). A
-  date stays as vague as it was said, so "sometime in the fifties" is stored as
-  a decade (rule 5).
-- The app shows English by default and Finnish on a phone set to Finnish, and
-  hears speech as that language. Settings can choose English or Finnish
-  instead, from the next time the app opens.
-- Settings has larger text, which also makes the app simpler, the export of the
-  whole archive as one file (the memories as a readable page, the original
-  recordings and the photos), the family's members and invitations, a way to
-  leave the family or clear the phone, and the language.
+- **Nothing rounded, nothing thrown away.** The original recording and the raw
+  transcript are always kept (rule 3). A date stays as vague as it was said, so
+  "sometime in the fifties" is stored as a decade (rule 5).
+- **Two languages.** English by default, Finnish on a phone set to Finnish, and
+  speech is heard as that language. Settings can choose either.
+- **Settings** has larger text, which also makes the app simpler, and exports
+  the whole archive as one file: the memories as a readable page, the original
+  recordings and the photos.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-The app has 399 UI tests, including 124 accessibility sweeps that audit a screen
-at the default text size and again at the largest.
 
-## Who pays
+## At a glance
 
-One member pays, and the whole family gets the archive. Whoever tells is not
-necessarily whoever pays, so RevenueCat grants the entitlement to the buyer and
-the backend maps it to a right for the whole family (`family.entitlement`).
-Purchases run on the RevenueCat Test Store, since there is no App Store release.
+- **Built with** SwiftUI · Cloudflare Workers + D1 + R2 · OpenRouter · RevenueCat
+- **RevenueCat** One member buys and the whole family gets the archive. The SDK
+  and RevenueCatUI's paywall run on the phone; the Worker asks RevenueCat's REST
+  API what the buyer owns, and the webhook keeps it current.
+- **Tested** 406 UI tests, including 127 accessibility sweeps that audit a
+  screen at the default text size and again at the largest.
+  `./scripts/verify.sh` holds 64 checks that cost nothing and says which it
+  skipped; CI runs the same script.
 
-The free tier limits three things, counted on the server: ten minutes of
-transcription a month, twenty photographs in all and five colourisations a
-month. Telling is never paywalled (rule 2). A recording over the limit is kept,
-and its transcription waits.
-
-The paywall is RevenueCatUI's own view, designed and priced remotely in
-RevenueCat's dashboard, and
-[`PaywallSheet.swift`](ios/Kinlore/Screens/PaywallSheet.swift) presents it. It
-shows up in three places. The result screen offers it after one telling in
-three, never when that telling proposed names somebody has to confirm and never
-on a grandparent's phone. A limit the family has hit gets the offer beside it on
-every phone, a grandparent's included. And the family screen has an *Open the
-whole archive* button. `UpsellRhythm.swift` holds these rules.
-
-[`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift)
-configures the SDK with the family member's id as the app user id, so the
-webhook can find the family without the app being open. On the server,
-[`backend/src/entitlement.ts`](backend/src/entitlement.ts) does not take the
-phone's word for a purchase: `POST /entitlement/sync` asks RevenueCat's REST API
-what the customer owns, and the webhook takes the paid tier away only on an
-expiry, a transfer or a refund. A unique index in `backend/schema.sql` keeps one
-purchase to one family. Each piece has a check that needs no key and no network,
-and `./scripts/verify.sh` runs them all.
-
-A clone has no paywall, because the paywall needs a RevenueCat key and none is
-in the repository. A Test Store key in a public repo would hand the paid tier on
-the production Worker, and its model bill, to anybody.
-[See the paywall](#see-the-paywall), under *Try it*, opens it with the key, and
-[DETAILS.md](docs/DETAILS.md#who-pays) has the full section.
-
-## What a family costs to run
-
-Every AI step is an OpenRouter call at the provider's list price. The figures
-are arithmetic, not a bill: token counts from the code and the measurements
-recorded beside it, at prices read on 30 Sep 2026, for Finnish speech in
-one-minute recordings, with OpenRouter's 5.5 % fee on credit and 12 % for
-retries included. The assumptions, sources and sums are in
-[DETAILS.md](docs/DETAILS.md#what-a-family-costs-to-run).
-
-| Operation | Model | Cost |
-|---|---|---|
-| Transcribing a recorded minute | `google/gemini-3.6-flash` | 1.0 ¢ |
-| Structuring it: people, places, dates and the follow-up questions | `google/gemini-3.6-flash`, falling back to `openai/gpt-4o-mini` | 1.3 ¢ |
-| Composing the card's story again with it | `google/gemini-3.6-flash` | 1.0 ¢ |
-| **A recorded minute, all three** | | **3.3 ¢** |
-| A typed telling of 50 words, structured and composed | `google/gemini-3.6-flash` | 1.8 ¢ |
-| A colourisation round | `google/gemini-3.1-flash-lite-image` | 3.6 ¢ |
-| Keeping a photograph of about 1 MB in R2 | none | $0.015 a month per 1 000 photographs |
-
-A US sale leaves $33.59 of the $39.99 month and $10.50 a month of the $149.99
-year, after Apple's 15 % small-business commission and RevenueCat's 1 %; a sale
-in Finland, with VAT inside the price, leaves $26.68 and $8.34.
-
-| A month of | Cost | Left of the monthly plan | Left of the yearly plan |
-|---|---|---|---|
-| A free family at its three limits: 10 minutes, 5 colourisations, 20 photographs | $0.51 | nothing is paid | nothing is paid |
-| A typical paying family: 5 tellers × 20 minutes, 20 colourisations, 50 photographs | $4.05 | $29.54 (88 %) | $6.45 (61 %) |
-| A heavy family: 20 tellers × 60 minutes, 200 colourisations, 200 photographs | $47.08 | −$13.48 | −$36.58 |
-| Break-even on the monthly plan: 1 015 minutes, or 939 colourisations | $33.59 | $0 | −$23.09 |
-| Break-even on the yearly plan: 317 minutes, or 294 colourisations | $10.50 | $23.09 | $0 |
-
-A paying family has no ceiling in this build. Once `isPaid` is true, the meters
-and the daily pools in [`backend/src/quota.ts`](backend/src/quota.ts) let every
-call through without comparing it with anything, and no route that calls a
-model has a rate limit, so only the size of one request (up to 25 MiB of audio,
-about 97 minutes) and the credit on the OpenRouter account bound what a paying
-family can spend. A typical family costs 12 % of what the monthly plan brings
-in; the yearly plan covers about five hours of recording a month, and the heavy
-family costs more than either plan brings in.
-
-## Privacy and security
-
-Before syncing, the phone seals memory bodies, raw transcripts, card titles, a
-card's facts and story, question text, and every photograph and recording with
-AES-GCM under a 256-bit family key
-([`FamilyCrypto.swift`](ios/Kinlore/Services/FamilyCrypto.swift)). The key is
-made on the phone that starts the family, travels in the invitation text and
-never reaches the Worker.
-
-It is not end-to-end. To transcribe, structure, colour or write a card's story,
-the Worker hands the recording, the words or the photograph to a model
-unsealed. Whatever app delivered an invitation holds the key. Place coordinates
-are plaintext, a decided leak, as are member and family names, dates and the
-shape of the tree. The Keychain syncs through iCloud, so the Apple account is a
-second way in. On the phone itself the archive is plaintext, behind the
-passcode.
-
-The model key is only a Worker secret (rule 7), and `scripts/secret-check.mjs`
-scans every blob in the history, which a public repository publishes. Every
-model call carries `provider: { data_collection: "deny" }` (rule 8,
-[`openrouter.ts`](backend/src/openrouter.ts)), so OpenRouter routes only to
-providers whose policy is not to train on the data, though a provider may still
-keep a request under its own terms. A failure tells the app only
-`upstream_failed`, and nothing that was told goes into the log (rule 9).
-
-An invite code is 128 random bits, lasts a week, admits one person and can be
-revoked; the owner can remove a member, and creating or joining a family is
-rate limited per address. `scripts/invite-boundary-check.mjs` presses on those
-refusals and has been run against the deployed Worker. With a local Worker up,
-`./scripts/verify.sh` runs it and sends a sealed memory between two phones.
-[DETAILS.md](docs/DETAILS.md#the-cloud-question-unanswered-in-public) has the
-long version, [ARCHITECTURE §4](docs/ARCHITECTURE.md#4-identity-and-family) the
-invitations.
-
-## Where to look
-
-- [A reading order for judges](docs/DETAILS.md), near the top of the long
-  write-up under **Reading it as a judge**.
-- [The ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend), which the
-  rule numbers on this page refer to. `CLAUDE.md` is the working agreement for
-  the AI coding sessions that did most of the typing.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md):
-  [§1](docs/ARCHITECTURE.md#1-where-things-stand) for what is built and what is
-  not, and the known issues found on the day of submission,
-  [§6](docs/ARCHITECTURE.md#6-money) for the money.
-- The RevenueCat code:
-  [`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift),
-  [`PaywallSheet.swift`](ios/Kinlore/Screens/PaywallSheet.swift) and
-  [`backend/src/entitlement.ts`](backend/src/entitlement.ts).
-- [`scripts/verify.sh`](scripts/verify.sh). Run `./scripts/verify.sh` from the
-  repository root: it runs every check here that costs nothing and says what it
-  skipped. CI runs the same script.
-- [`docs/PLAN.md` §8](docs/PLAN.md#risk-2-honestly), on why the concept
-  survives a speech recogniser that gets one Finnish proper noun in three wrong.
-- [`docs/DETAILS.md`](docs/DETAILS.md), the long version of this page: what was
-  measured, what I got wrong, what the server can read, and the full setup.
+```mermaid
+flowchart LR
+  app["iPhone app<br/>SwiftUI"]
+  worker["Cloudflare Worker"]
+  d1[("D1<br/>metadata")]
+  r2[("R2<br/>sealed photos<br/>and recordings")]
+  llm["OpenRouter<br/>transcribe · structure<br/>story · colour"]
+  rc["RevenueCat"]
+  app -->|"sync, media, AI requests"| worker
+  worker --> d1
+  worker --> r2
+  worker -->|"data_collection: deny"| llm
+  app -->|"purchase, SDK"| rc
+  rc -->|"webhook"| worker
+  worker -->|"REST: what does the buyer own?"| rc
+```
 
 ## Try it
 
@@ -232,20 +177,21 @@ cd Kinlore && ./scripts/try-it.sh
 
 [`scripts/try-it.sh`](scripts/try-it.sh) builds the real app, the
 `Kinlore Production` scheme against the deployed Worker, and opens it on a
-simulator of its own called *Kinlore Try*. The first build takes several
-minutes, and this Release build takes longer than the Debug one Xcode starts
-with; a second run rebuilds only what changed. The script installs nothing and
-leaves every other simulator alone. Then:
+simulator of its own called *Kinlore Try*. It installs nothing and leaves every
+other simulator alone. The first build takes several minutes; a second run
+rebuilds only what changed. Then:
 
-1. **Start a family archive.** Type your name and press *Create the archive*,
-   not *Keep the memories on this phone only* under it, because nothing said
-   in such an archive is written out as text. The sheet that follows asks
-   whose memories to keep; *Close* skips it.
+1. **Start a family archive.** Type your name and press *Create the archive*.
+   Skip *Keep the memories on this phone only* under it: that archive never
+   reaches the server, so a recording is kept but never written out as text,
+   and no names come back. The sheet that follows asks whose memories to keep;
+   *Close* skips it.
 2. **Tell it something.** The *Tell* tab opens on an example to read aloud:
    *"My grandmother Anna grew up in Helsinki. She married Walter sometime in
    the fifties, and he always had the camera."* Press the microphone and read
-   it, or tell something of your own. *Type it for me* puts it in the write
-   field instead, and *Save* sends it.
+   it, or tell something of your own. The first time, iOS asks for the
+   microphone, and the Mac may then ask as well. *Type it for me* puts it in
+   the write field instead, and *Save* sends it.
 3. **See what comes back.** A spoken telling is followed by questions asked out
    loud; answer them or press *That is enough for now*. The names it heard are
    proposals that nobody has confirmed yet (rule 4), and "sometime in the
@@ -254,38 +200,28 @@ leaves every other simulator alone. Then:
 What you say is heard for real, within the free tier's ten minutes of
 transcription a month.
 
-`./scripts/try-it.sh --two` opens it on two simulators that can share one
-family. On the first, open Settings with the gear at the top right of
-*Family tree* (*People* with *Larger text* or VoiceOver). Then *Family members
-and invitations*, *Invite a family member* and *Share the invitation*. On the
+**Two phones, one family.** `./scripts/try-it.sh --two` opens it on two
+simulators. On the first, open Settings with the gear at the top right of
+*Family tree*, then *Family members and invitations*, *Invite a family member*
+and *Share the invitation*. On the
 second: *Join with an invitation link*, paste the whole invitation and press
-*Join a family*. An invitation is valid for a week and lets one person in. A
-phone fetches the family's changes when Kinlore opens or comes back to the
-front, not by itself while it stays open. So after adding something on the
-first, go to the second simulator's home screen (⇧⌘H) and open Kinlore again.
+*Join a family*. A phone fetches the family's changes when Kinlore opens or
+comes back to the front, so after adding something on the first, go to the
+second simulator's home screen (⇧⌘H) and open Kinlore again.
 
-Both of those are the real app, and the script opens nothing else unless you
-ask. What a family's archive looks like a year or two in is the one thing a
-first try cannot show, so there is an example of one, and you choose to see
-it: `./scripts/try-it.sh --example` opens it on a simulator of its own,
-*Kinlore Example*. **Everything in the example is invented**: the Koivula
-family and its people, the 150 pictures, which the app draws on the
-simulator in a few seconds the first time it opens, and some 250 tellings.
-It is a Debug build on stubs with no server behind it, so a telling there
-comes back as one of three sample tellings whatever you say, and each run of
-`--example` puts the example back as it was. Run the script without
-`--example` to be heard.
+**An archive a year or two in.** A first try cannot show what a family's archive
+looks like later, so there is an example, and you choose to see it:
+`./scripts/try-it.sh --example` opens it on *Kinlore Example*. **Everything in
+the example is invented**: the Koivula family and its people, the 150 pictures,
+which the app draws on the simulator in a few seconds the first time it opens,
+and some 250 tellings. It is a Debug build on stubs with no server behind it,
+so a telling there comes back as one of three sample tellings whatever you say,
+and each run puts the example back as it was.
 
-To run it from Xcode instead: `cd ios && xcodegen generate && open
-Kinlore.xcodeproj`, choose the **Kinlore Production** scheme and an iPhone
-simulator, and press Run.
-
-For development, Xcode opens on the `Kinlore` scheme: a Debug build that runs
-fully on stubs, with no network and no signing team. The stubs cannot listen. A
-recording comes back as one of three sample tellings in turn, in the phone's
-language, whatever you said (`StubTranscriptionService`), which is what the
-tests need and why the script builds the other scheme. The backend, the keys
-and the command-line test runs are in
+**From Xcode.** `cd ios && xcodegen generate && open Kinlore.xcodeproj`, choose
+the **Kinlore Production** scheme and an iPhone simulator, and press Run. The
+`Kinlore` scheme Xcode opens on runs on the stubs the tests need, which cannot
+listen. The backend, the keys and the command-line test runs are in
 [DETAILS.md](docs/DETAILS.md#setting-it-up) and [SETUP.md](docs/SETUP.md).
 
 ### See the paywall
@@ -304,6 +240,153 @@ it nowhere but that simulator. The Test Store key is in the submission's
 Additional info, for judges. A Test Store purchase is simulated and no money
 moves; the script says where the offer is and what buying it opens for the
 whole family.
+
+## Who pays
+
+One member pays, and the whole family gets the archive. Whoever tells is not
+necessarily whoever pays, so RevenueCat grants the entitlement to the buyer and
+the backend maps it to a right for the whole family (`family.entitlement`).
+Purchases run on the RevenueCat Test Store, since there is no App Store release.
+
+- **The free tier** limits three things, counted on the server: ten minutes of
+  transcription a month, twenty photographs in all and five colourisations a
+  month. Telling is never paywalled (rule 2): a recording over the limit is
+  kept, and its transcription waits.
+- **The paywall** is RevenueCatUI's own view, designed and priced remotely in
+  RevenueCat's dashboard, and
+  [`PaywallSheet.swift`](ios/Kinlore/Screens/PaywallSheet.swift) presents it in
+  three places. The result screen offers it after every third telling, never
+  when that telling proposed names somebody has to confirm, and never on a
+  phone with *Larger text* on, which is how the app knows a grandparent's
+  phone. A limit the family has hit gets the offer beside it on every phone,
+  the grandparent's too. And the family screen has an *Open the whole archive*
+  button. `UpsellRhythm.swift` holds these rules.
+- **The app user id** is the family member's id
+  ([`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift)),
+  so the webhook can find the family without the app being open.
+- **The server asks RevenueCat what was bought.** In
+  [`backend/src/entitlement.ts`](backend/src/entitlement.ts),
+  `POST /entitlement/sync` asks RevenueCat's REST API what the customer owns.
+  The customer id it asks about comes from the app, and the server does not
+  yet compare it with the member's own id, one of the
+  [known issues](docs/ARCHITECTURE.md#1-where-things-stand). Since 30 Sep 2026
+  a webhook event is only a cue: the Worker asks RevenueCat the same question
+  and applies the answer. When RevenueCat cannot be asked, the event decides,
+  and an expiry or a refund takes the paid tier away; a transfer always takes
+  it from the customer it moved away from. A unique index in
+  `backend/schema.sql` keeps one purchase to one family.
+- **Each piece has a check** that needs no key and no network, and
+  `./scripts/verify.sh` runs them all.
+
+A clone has no paywall, because the paywall needs a RevenueCat key and none is
+in the repository: a Test Store key in a public repo would hand the paid tier on
+the production Worker, and its model bill, to anybody.
+[See the paywall](#see-the-paywall), under *Try it*, opens it with the key.
+
+## What a family costs to run
+
+A typical paying family costs about **$4.05 a month**, which leaves **88 %** of
+what a US sale of the monthly plan brings in and **61 %** of the yearly plan's.
+Both plans are one price for the whole family, bought by one member, and the
+year costs about 69 % less than twelve months.
+
+The figures are arithmetic, not a bill: token counts from the code and the
+measurements beside it, OpenRouter list prices read on 30 Sep 2026, Finnish
+speech in one-minute recordings, OpenRouter's 5.5 % fee on credit and 12 % for
+retries. The sums are in [DETAILS.md](docs/DETAILS.md#what-a-family-costs-to-run).
+
+| Operation | Model | Cost |
+|---|---|---|
+| Transcribing a recorded minute | `google/gemini-3.6-flash` | $0.010 |
+| Structuring it: people, places, dates and the follow-up questions | `google/gemini-3.6-flash`, falling back to `openai/gpt-4o-mini` | $0.013 |
+| Composing the card's story again with it | `google/gemini-3.6-flash` | $0.010 |
+| **A recorded minute, all three** | | **$0.033** |
+| A typed telling of 50 words, structured and composed | `google/gemini-3.6-flash` | $0.018 |
+| A colourisation round | `google/gemini-3.1-flash-lite-image` | $0.036 |
+| Keeping a photograph of about 1 MB in R2 | none | $0.015 a month per 1 000 photographs |
+
+So two minutes of recorded speech cost about $0.066, and two hours about $4.
+
+A US sale leaves $33.59 of the $39.99 month and $10.50 a month of the $149.99
+year, after Apple's 15 % small-business commission and RevenueCat's 1 %; a sale
+in Finland, with VAT inside the price, leaves $26.68 and $8.34.
+
+| A month of | Cost | Left of the monthly plan | Left of the yearly plan |
+|---|---|---|---|
+| A free family at its three limits: 10 minutes, 5 colourisations, 20 photographs | $0.51 | nothing is paid | nothing is paid |
+| A typical paying family: 5 tellers × 20 minutes, 20 colourisations, 50 photographs | $4.05 | $29.54 (88 %) | $6.45 (61 %) |
+| A heavy family: 20 tellers × 60 minutes, 200 colourisations, 200 photographs | $47.08 | −$13.48 | −$36.58 |
+| Break-even on the monthly plan: 1 015 minutes, or 939 colourisations | $33.59 | $0 | −$23.09 |
+| Break-even on the yearly plan: 317 minutes, or 294 colourisations | $10.50 | $23.09 | $0 |
+
+**The risk is the heavy family, and a paying family has no ceiling in this
+build.** Once `isPaid` is true, the meters and the daily pools in
+[`backend/src/quota.ts`](backend/src/quota.ts) let every call through without
+comparing it with anything, and no route that calls a model has a rate limit.
+Only the size of one request (up to 25 MiB of audio, about 97 minutes) and the
+credit on the OpenRouter account bound what a paying family can spend. The
+yearly plan covers about five hours of recording a month, and the heavy family
+costs more than either plan brings in. Not built yet: a fair-use ceiling for
+paying families that would limit only the AI's work, never telling or the
+recording (rule 2), with more hours sold as top-ups; and cheaper model calls,
+with fewer tokens per minute and a cheaper transcription model once one is
+measured to hear Finnish as well.
+
+## Privacy and security
+
+- **Sealed before it syncs.** The phone seals memory bodies, raw transcripts,
+  card titles, a card's facts and story, question text, and every photograph
+  and recording with AES-GCM under a 256-bit family key
+  ([`FamilyCrypto.swift`](ios/Kinlore/Services/FamilyCrypto.swift)). The key is
+  made on the phone that starts the family, travels in the invitation text and
+  never reaches the Worker.
+- **It is not end-to-end.** To transcribe, structure, colour or write a card's
+  story, the Worker hands the recording, the words or the photograph to a model
+  unsealed. Whatever app delivered an invitation holds the key. Place
+  coordinates are plaintext, a decided leak, as are member and family names,
+  dates and the shape of the tree. The Keychain syncs through iCloud, so the
+  Apple account is a second way in. On the phone itself the archive is
+  plaintext, behind the passcode.
+- **No model key in the app.** It is only a Worker secret (rule 7), and
+  `scripts/secret-check.mjs` scans every blob in the history, which a public
+  repository publishes.
+- **Not for training.** Every model call carries
+  `provider: { data_collection: "deny" }` (rule 8,
+  [`openrouter.ts`](backend/src/openrouter.ts)), so OpenRouter routes only to
+  providers whose policy is not to train on the data, though a provider may
+  still keep a request under its own terms.
+- **Nothing told goes into the log.** A failure tells the app only
+  `upstream_failed` (rule 9).
+- **Invitations.** An invite code is 128 random bits, lasts a week, admits one
+  person and can be revoked; the owner can remove a member, and creating or
+  joining a family is rate limited per address.
+  `scripts/invite-boundary-check.mjs` presses on those refusals and has been
+  run against the deployed Worker. With a local Worker up, `./scripts/verify.sh`
+  runs it and sends a sealed memory between two phones.
+
+[DETAILS.md](docs/DETAILS.md#the-cloud-question-unanswered-in-public) has the
+long version, [ARCHITECTURE §4](docs/ARCHITECTURE.md#4-identity-and-family) the
+invitations.
+
+## Where to look
+
+- [`docs/DETAILS.md`](docs/DETAILS.md), the long version of this page: a reading
+  order for judges near the top (**Reading it as a judge**), what was measured,
+  what I got wrong, what the server can read, and the full setup.
+- [`CLAUDE.md`](CLAUDE.md), which holds the ten rules and is the working
+  agreement for the AI coding sessions that did most of the typing.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md):
+  [§1](docs/ARCHITECTURE.md#1-where-things-stand) for what is built and what is
+  not, and the known issues found on the day of submission,
+  [§6](docs/ARCHITECTURE.md#6-money) for the money.
+- The RevenueCat code:
+  [`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift),
+  [`PaywallSheet.swift`](ios/Kinlore/Screens/PaywallSheet.swift) and
+  [`backend/src/entitlement.ts`](backend/src/entitlement.ts).
+- [`scripts/verify.sh`](scripts/verify.sh), run from the repository root: every
+  check here that costs nothing.
+- [`docs/PLAN.md` §8](docs/PLAN.md#risk-2-honestly), on why the concept
+  survives a speech recogniser that gets one Finnish proper noun in three wrong.
 
 ## Licence
 

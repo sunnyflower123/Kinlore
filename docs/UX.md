@@ -73,7 +73,7 @@ The findings, each measured on 17 Aug:
    most likely wrong time is the most human one: the app was opened and looked
    at first, an archive got created by pressing the big blue button, and *then*
    the grandchild's link was tapped. Silence.
-5. **Nothing ever suggests inviting.** The invite lives at People → gear →
+5. **Nothing ever suggests inviting.** The invite lives at Family tree → gear →
    Asetukset → *"Perheen jäsenet ja kutsut"* → *"Kutsu perheenjäsen"* — four
    levels deep from any tab (`RootView.swift:142-148`, `SettingsScreen.swift:106-122`,
    `FamilyScreen.swift:107-129`). Meanwhile the upsell card tells a family of

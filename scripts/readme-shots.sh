@@ -28,7 +28,10 @@
 # The third argument names a folder holding the video project's prints as
 # `p1.jpg` … `p6.jpg`, and the run copies them in before the Devpost shots;
 # without it those states show a placeholder. The prints are not in this
-# repository, and the README's pictures never use them.
+# repository, and the README's pictures never use them: picture 3 puts in
+# `scripts/photo-question-bench/jetty-rowboat.jpg` for its one shot, a
+# generated picture of people who do not exist (that folder's README names
+# the model), and takes it out again before anything else is shot.
 #
 # Nothing here talks to a server: `-api ""` on every launch, so no OpenRouter
 # credit is spent and no family is created anywhere. The status bar reads 9:41
@@ -145,6 +148,11 @@ frames() {
 	local dir="$TMP/$(basename "$gif" .gif)" i=0 t0
 	rm -rf "$dir"; mkdir -p "$dir"
 	launch "$@"
+	# The first capture waits out the launch animation. Taken at once, it
+	# caught the app's window still growing on 30 Sep 2026, with a dark sliver
+	# of home screen down one edge and bottom corners that were not the mask,
+	# and mount-prints stopped the run.
+	sleep 1
 	t0=$(now)
 	while [ "$i" -lt "$count" ]; do
 		sleep_until "$(perl -e 'printf "%.3f", $ARGV[0] + $ARGV[1] * $ARGV[2]' "$t0" "$every" "$i")"
@@ -161,11 +169,25 @@ echo "— docs/media —"
 # whichever person card sorts first, and picture 1 came out as the Album and
 # picture 4 as Kalle on 26 Sep 2026, in a run that had looked identical.
 still "$MEDIA/01-tell.png"        -seed archive -tab tell
-still "$MEDIA/02-result.png"      -seed empty -screen result
-# The blind card under rule 4. `-seed blind` is the plain archive with the
-# fixture's drawn photograph on `demo-photo`, which is what lets the card be
-# built at all; the film's prints are for Devpost and never reach docs/media.
-still "$MEDIA/03-who-is-this.png" -seed blind -tab tell
+# Picture 2 is a later telling in the example archive, scrolled to what it
+# named (`-result heard`): the English stub sample names Aino, whom the
+# archive holds unconfirmed, and Toivo, whom it has never heard of, so both
+# wait to be confirmed under rule 4; Puumala, which the family has already
+# confirmed, sits under the familiar names. Until 30 Sep 2026 this was the
+# first telling of an empty archive, whose screen opens on the teller card
+# and the date with every name out of sight below them.
+still "$MEDIA/02-result.png"      -seed archive -tab tell -screen result -result heard
+# The blind card under rule 4, over a photograph. `-seed film` is the film's
+# archive: Helmi heard in a telling about its one photograph, which is
+# `Documents/film-photo.jpg` when the container holds one. The generated
+# jetty picture goes in for this shot only (the note at the top), so the
+# Devpost states below are what they were; `-seed blind` draws a brown
+# rectangle in its place, which is what this picture showed until 30 Sep 2026.
+DOCS="$(xcrun simctl get_app_container "$SIM" "$BUNDLE" data)/Documents"
+mkdir -p "$DOCS"
+cp "$ROOT/scripts/photo-question-bench/jetty-rowboat.jpg" "$DOCS/film-photo.jpg"
+still "$MEDIA/03-who-is-this.png" -seed film -tab tell
+rm -f "$DOCS/film-photo.jpg"
 # `-you` names the phone owner's own card. Since 26 Sep 2026 a person card
 # offers "This is me" on every confirmed card while the phone is linked to
 # no card, and the demo owner is linked to none; naming another card keeps
@@ -173,6 +195,10 @@ still "$MEDIA/03-who-is-this.png" -seed blind -tab tell
 # sees it.
 still "$MEDIA/04-person.png"      -seed archive -tab people -screen person -person demo-sanni -you demo-eeva
 still "$MEDIA/05-family.png"      -seed family -tab people -screen family
+# docs/DETAILS.md sets one result screen at two text sizes side by side. It was
+# picture 2 and the XXXL shot until picture 2 moved to the archive's names on
+# 30 Sep 2026, so the default size has a still of its own.
+still "$MEDIA/06-result-default.png" -seed empty -screen result
 still "$MEDIA/06-result-xxxl.png" -seed empty -screen result \
 	-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL
 # The README's table shows the first three as prints in an album, squared off
@@ -181,9 +207,13 @@ still "$MEDIA/06-result-xxxl.png" -seed empty -screen result \
 "$TMP/mount" "$MEDIA/01-tell.png" "$MEDIA/mounted/01-tell.png" \
 	"$MEDIA/02-result.png" "$MEDIA/mounted/02-result.png" \
 	"$MEDIA/03-who-is-this.png" "$MEDIA/mounted/03-who-is-this.png"
-# The stub pipeline reaches the result about three seconds after launch, and
-# the interview's first spoken round ends by itself (docs/VIDEO.md, SETUP.md).
-frames "$MEDIA/demo.gif"           12 1.0 0.50 -seed empty -screen result
+# The GIF is picture 2's telling from the start. The stub pipeline reaches
+# the result about three seconds after launch, which is two frames of the
+# processing screen, so `-processing slow` holds it six seconds longer for its
+# step to be read; the result then opens at its top, and `-result heard`
+# scrolls it to the names two seconds later. The interview's first spoken
+# round ends by itself (docs/VIDEO.md, SETUP.md).
+frames "$MEDIA/demo.gif"           18 1.0 0.50 -seed archive -tab tell -screen result -processing slow -result heard
 # The README's GIF is mounted the same way; docs/DETAILS.md keeps this one.
 "$TMP/mount" "$MEDIA/demo.gif" "$MEDIA/mounted/demo.gif"
 frames "$MEDIA/demo-interview.gif" 18 1.3 0.55 -seed empty -screen interview

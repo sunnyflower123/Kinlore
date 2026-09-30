@@ -55,11 +55,22 @@ enum Elder {
     ///
     /// A floor and never a ceiling: iOS's own setting stays in charge above it,
     /// so somebody who has already enlarged their text keeps the size they
-    /// chose. One notch and not three — every screen is audited to XXXL, so
-    /// bigger would be *safe*, but each notch is a line less of the memory or
-    /// the question on screen, and taking that away from somebody who did not
-    /// ask for it is its own kind of failure.
-    static let textFloor: DynamicTypeSize = .xLarge
+    /// chose. Two notches above the default, because the floor is only on
+    /// when somebody chose it, and a switch called Larger text has to look
+    /// larger to the person who turned it on. One notch was measured on a real
+    /// phone on 30 Sep 2026 and was not visibly larger: the only change
+    /// anybody could see was the simpler mode that comes with the switch. The
+    /// cost that one notch was guarding against, a line less of the memory on
+    /// screen, is the price of what was asked for.
+    ///
+    /// Not three, although every screen is audited at AccessibilityXXXL. At
+    /// the accessibility sizes the Tell screen scrolls on purpose and only
+    /// its record button has to clear the tab bar; below them every way on
+    /// has to. Three notches were measured the same day, and on a trial's
+    /// first launch on a 17 Pro "Kirjoita sen sijaan" ended at 831 under a
+    /// bar that begins at 791, after the screen had taken every step it has
+    /// (`DeckTests.testEveryWayOnClearsTheTabBarAtRest`).
+    static let textFloor: DynamicTypeSize = .xxLarge
 
     static let screenPadding: CGFloat = 24
 
@@ -143,7 +154,8 @@ enum Elder {
     /// surface carries `rule` round it, and the fill is warmth rather than
     /// the boundary — the same argument as `elderCard`'s hairline, one step
     /// warmer. The button adds a shadow under it because it is pressed; a
-    /// card is read, and carries none.
+    /// card is read, and carries none. A photograph in the album is the one
+    /// card that does, because it is a print lying on a page (`elderShade`).
     static let honey = Color("Honey")
 
     /// Every card's corner, and the secondary button's: 22 points on a
@@ -173,10 +185,19 @@ enum Elder {
     /// A printed thing has thickness, and this is the whole of it. It is
     /// decoration and nothing rests on it — the card's own hairline is still
     /// what draws the edge (`elderCard`), because a shadow is not a boundary
-    /// for somebody looking through cataracts. So these two are the only
-    /// colours here with no contrast ratio beside them: no text is ever drawn
-    /// on either.
+    /// for somebody looking through cataracts. So these two and `shade` are
+    /// the only colours here with no contrast ratio beside them: no text is
+    /// ever drawn on any of them.
     static let block = Color("Block")
+
+    /// The shade a photograph casts on the album's page (`elderShade`): a warm
+    /// brown, `#6E3C14`, the shadow colour of direction C, the design the user
+    /// chose on 27 Sep 2026. At 30 % where C writes 40, because 30 is what a
+    /// browser draws from C's 40: WebKit's rendering of C's card and the
+    /// album's, measured down from the bottom edge on 28 Sep 2026, agree to
+    /// within two levels of 255. Decoration, like `block`: nothing rests on it
+    /// and no text is drawn on it.
+    static let shade = Color("Shade")
 
     /// Text that is quieter than the main line but still meant to be read.
     ///
@@ -477,6 +498,32 @@ extension View {
                     .fill(Elder.block)
                     .offset(x: 5, y: 7)
             }
+    }
+
+    /// The soft warm shade a photograph casts on the album's page, drawn
+    /// under the card this is applied to.
+    ///
+    /// The one blurred shadow under a card, and the user asked for it: on
+    /// 28 Sep 2026 the album did not look as warm as direction C, and C lays
+    /// every card on `0 10px 20px -16px rgba(110,60,20,.4)`. This is that
+    /// shadow in points, the card's shape 16 smaller on every side, 10 lower
+    /// and blurred by 10 (a CSS blur of 20), so that it shows only as a warmth
+    /// under the bottom edge; `shade` says why its colour is 30 % and not 40.
+    /// A card of words still carries none (`honey`, `elderBlock`); a
+    /// photograph is a thing on the page.
+    ///
+    /// It adds nothing to the edge, for the reason `elderBlock` gives: the
+    /// card keeps its hairline (`elderCard`), and this is a background. Put it
+    /// outside `stepInSource`, which clips the zoom's source to the card's
+    /// corners: inside it, the paper under the card measured untouched.
+    func elderShade() -> some View {
+        background {
+            RoundedRectangle(cornerRadius: Elder.cardRadius, style: .continuous)
+                .inset(by: 16)
+                .fill(Elder.shade)
+                .offset(y: 10)
+                .blur(radius: 10)
+        }
     }
 
     /// Ensures a control is large enough regardless of the size of its content.

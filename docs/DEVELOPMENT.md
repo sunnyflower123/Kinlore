@@ -35,7 +35,7 @@ when this was written on 28 Aug 2026 was the one surface in this project with
 no check of its own. `scripts/page-check.mjs` arrived two days later and runs
 in `verify.sh`. The app is not the customer:
 the skill's SwiftUI table is 50 rows of basics with zero VoiceOver rows and zero
-contrast rows, against the 124 accessibility sweeps that already run here, each
+contrast rows, against the 127 accessibility sweeps that already run here, each
 auditing its screen at the default text size and again at the largest.
 
 Run over the page on 28 Aug 2026 it produced **one real defect and one false
@@ -635,6 +635,19 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
   -parse-as-library -o /tmp/decade-check \
   scripts/decade-check.swift ios/Kinlore/Model/Models.swift \
   && /tmp/decade-check
+
+# The paper round an old print, cut from the album's picture of it and from
+# nothing else (ARCHITECTURE §8). Both ways of being wrong are silent: a border
+# missed leaves the card as it was, and a photograph's own light taken for
+# paper loses a strip of it on a card that still looks like a photograph.
+# Draws prints with their paper exactly where the drawing says — deckled,
+# askew, in colour, at two sizes — and ten things that are not paper, from a
+# pale vignette to a print lying on a dark table. Costs nothing. Run it after
+# touching PrintBorder.swift.
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swiftc \
+  -parse-as-library -o /tmp/print-border-check \
+  scripts/print-border-check.swift ios/Kinlore/Services/PrintBorder.swift \
+  && /tmp/print-border-check
 
 # The family's bytes on every phone. After a sync, the photographs and voices
 # that exist only in R2 are fetched here in the background — voices first, on

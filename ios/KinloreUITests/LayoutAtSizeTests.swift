@@ -157,7 +157,7 @@ final class LayoutAtSizeTests: XCTestCase {
     /// accessibility sizes. `isHittable` sees none of this.
     func testTheNamesUnderATellingBreakNoWord() {
         let sizes: [(textSize: String?, category: UIContentSizeCategory, name: String)] = [
-            (nil, .extraLarge, "a grandparent's text floor"),
+            (nil, .extraExtraLarge, "a grandparent's text floor"),
             (Self.largest, .accessibilityExtraExtraExtraLarge, "the largest size"),
         ]
         for size in sizes {

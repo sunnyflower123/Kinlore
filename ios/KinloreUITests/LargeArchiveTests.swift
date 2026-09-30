@@ -79,7 +79,7 @@ final class LargeArchiveTests: XCTestCase {
 
         // The people, as a list: sixty names from Aapo on, and the door to
         // the five names the tellings raised and nobody has confirmed.
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         XCTAssertTrue(app.staticTexts["Aapo"].waitForExistence(timeout: 20), "the people list never arrived")
         lap("the people list")
         let heard = app.staticTexts["5 nimeä odottaa tarkistusta"]

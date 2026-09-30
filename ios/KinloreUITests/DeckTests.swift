@@ -30,7 +30,7 @@ final class DeckTests: XCTestCase {
         let app = launch(["-seed", "deck"])
 
         XCTAssertTrue(
-            app.staticTexts["Kuka tässä kuvassa on?"].waitForExistence(timeout: 15),
+            app.staticTexts["Mitä muistat tästä kuvasta?"].waitForExistence(timeout: 15),
             "never arrived: the card"
         )
 
@@ -216,7 +216,7 @@ final class DeckTests: XCTestCase {
         // memory now, and the fixture has two more photographs: the next one
         // is on the screen, not the questions.
         XCTAssertTrue(
-            app.staticTexts["Kuka tässä kuvassa on?"].waitForExistence(timeout: 10),
+            app.staticTexts["Mitä muistat tästä kuvasta?"].waitForExistence(timeout: 10),
             "the telling's own follow-up questions took the deck off the screen"
         )
         XCTAssertTrue(app.buttons["En muista tätä"].exists, "the next card has no way past it")

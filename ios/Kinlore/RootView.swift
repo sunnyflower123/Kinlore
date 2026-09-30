@@ -86,21 +86,6 @@ struct RootView: View {
     @AppStorage(Elder.largerTextKey) private var largerText = false
     @State private var isShowingFirstMinute = false
 
-    /// The other two inputs to the third tab's name. Neither is in the store:
-    /// VoiceOver is an environment value, and which of the two views this
-    /// phone was last left on is device state.
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
-    @AppStorage(PeopleTab.prefersListKey) private var prefersList = false
-
-    private var peopleTabIsTree: Bool {
-        PeopleTab.showsTree(
-            largerText: largerText,
-            voiceOver: voiceOverEnabled,
-            prefersList: prefersList,
-            hasConfirmedPerson: store.subjects(of: .person).contains(where: \.confirmed)
-        )
-    }
-
     /// The caller decides whether unseen tellings are waiting, because it has
     /// the store and a `@State`'s initial value cannot ask the environment.
     /// Evaluated once per root-view identity, so a person's own tab choice is
@@ -134,23 +119,19 @@ struct RootView: View {
             .tabItem { Label("Kerro", systemImage: "mic.circle.fill") }
             .tag(Tab.tell)
 
-            // The tab is named for what it opens, and that is two different
-            // screens on two phones: a family member's opens the drawn tree,
-            // a grandparent's and VoiceOver's the list. Until 19 Sep 2026 the
-            // tab said "Ihmiset" over a screen whose own title said
-            // "Sukupuu", so the one place the app names itself before it is
-            // touched hid the part of it that took the most work — the same
-            // fault Muistot → Albumi answered, the other way round
-            // (ARCHITECTURE §21). `PeopleTab.showsTree` is that one decision,
-            // read here and by the screen, so the two words cannot part again.
-            // The icon is the toolbar switch's `tree`, filled for a tab bar,
-            // rather than a second drawing of the same destination.
+            // Sukupuu on every phone, whichever of its two views is behind it
+            // (30 Sep 2026). From 19 Sep the tab was named for what it opened:
+            // Sukupuu over a family member's drawn tree, Ihmiset over the list
+            // a grandparent's phone and VoiceOver keep. A word that changes
+            // with the phone was the worse fault: the README's screenshots
+            // called one tab two things, and a family cannot tell each other
+            // "tap Sukupuu" when half of them are looking at another word. The
+            // list is the family tree read aloud or at a large size, so it is
+            // titled with the same word, and the switches between the two
+            // views are named for what they do (ARCHITECTURE §21). The icon is
+            // the toolbar switch's `tree`, filled for a tab bar.
             PeopleScreen()
-                .tabItem {
-                    peopleTabIsTree
-                        ? Label("Sukupuu", systemImage: "tree.fill")
-                        : Label("Ihmiset", systemImage: "person.2.fill")
-                }
+                .tabItem { Label("Sukupuu", systemImage: "tree.fill") }
                 .tag(Tab.people)
         }
         // Paper under the tab bar at the accessibility sizes, and on a
@@ -292,7 +273,7 @@ struct SharingRoute: Hashable {}
 struct LanguageRoute: Hashable {}
 
 /// The way to Settings, in the trailing corner of the bar since 30 Sep 2026:
-/// Ihmiset in both of its views, and Kerro on the idle screen of a reader's
+/// Sukupuu in both of its views, and Kerro on the idle screen of a reader's
 /// phone (`TellScreen.showsSettings`). Not on Albumi, whose bar it squeezed
 /// (`GalleryScreen` says how). Until then it
 /// stood on the people list alone, and over the tree it was a row in the
@@ -325,16 +306,13 @@ extension View {
     }
 }
 
-/// Whether this phone's third tab is the family tree or the list of people.
+/// Whether this phone's third tab shows the drawn family tree or the list of
+/// people. The tab's name is no part of it: the tab says Sukupuu over both
+/// views since 30 Sep 2026, and from 19 Sep until then it read this decision
+/// and said Ihmiset over the list.
 ///
-/// One decision with two readers: the tab bar, which names what is behind it,
-/// and the screen, which draws it. They disagreed from 13 Sep 2026, when the
-/// tree became what the tab opens and the tab kept the older word.
-///
-/// A search is deliberately no part of it. Search is always answered as a
-/// list, and a tab that renamed itself under a typing finger would be a worse
-/// fault than a title one word behind — so the screen adds that condition to
-/// what it draws, and the tab does not.
+/// A search is deliberately no part of it either. Search is always answered as
+/// a list, so the screen adds that condition to what it draws.
 enum PeopleTab {
     /// Which of the two views this phone was last left on. Written only by the
     /// switch in the toolbar.
@@ -362,8 +340,7 @@ enum PeopleTab {
         // or `-people tree` for a test. Either holds for the whole launch, so
         // the switch in the toolbar does nothing under it. The suite's launch
         // helper passes `list` unless a test says otherwise, so the tests
-        // written about the list keep testing the list — and keep finding the
-        // tab under the word the list is called by.
+        // written about the list keep testing the list.
         if UserDefaults.standard.string(forKey: "screen") == "tree" { return true }
         switch UserDefaults.standard.string(forKey: "people") {
         case "list": return false
@@ -451,13 +428,12 @@ struct PeopleScreen: View {
                     ContentUnavailableView {
                         Label("Ei vielä ihmisiä", systemImage: "person.2")
                     } description: {
-                        // "Ihmiset", not "suvun henkilöt": the tab is called
-                        // Ihmiset and so is this screen, and a person who has
+                        // "Sukupuu" first: the tab is called Sukupuu and so
+                        // is this screen (30 Sep 2026), and a person who has
                         // just tapped one word should not be answered in
-                        // another. The distinction the app does keep is one
-                        // level down — *suku* is the web of relations on a
-                        // person's card, and it is a different thing from the
-                        // list. See docs/ARCHITECTURE.md §21.
+                        // another. Until then both said Ihmiset on the phones
+                        // that open on the list, and so did this sentence.
+                        // See docs/ARCHITECTURE.md §21.
                         // The last sentence points at the toolbar, because
                         // the toolbar is the only place the button is. It sat
                         // beneath this empty state as well until 16 Sep 2026,
@@ -465,7 +441,7 @@ struct PeopleScreen: View {
                         // had just used it went looking for it where they had
                         // used it, and it had moved to the top of the screen.
                         // One place that never moves beats two that trade off.
-                        Text("Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.")
+                        Text("Sukupuu kasvaa sitä mukaa kun ihmisistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.")
                             .elderBody()
                             .foregroundStyle(Elder.supporting)
                     }
@@ -517,14 +493,14 @@ struct PeopleScreen: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            // The list is named for what it shows, and the tab below says the
-            // same word, from the same decision. They differ in one case
-            // only: a search is answered as a list under a tab still called
-            // Sukupuu, because a tab that renames itself under a typing
-            // finger is the worse of the two faults. The tree has no title
-            // at all since 19 Sep 2026: it is a map, drawn under the bar,
-            // and the tab is the one word that names it.
-            .navigationTitle(showsTree ? LocalizedStringKey("") : LocalizedStringKey("Ihmiset"))
+            // The list says the tab's word, Sukupuu, on every phone since
+            // 30 Sep 2026: on a grandparent's phone and under VoiceOver it is
+            // the family tree, read at a large size or aloud, and a title
+            // that differed from the tab above it would part the two words
+            // again. Until then it said Ihmiset, and so did the tab over it.
+            // The tree has no title at all since 19 Sep 2026: it is a map,
+            // drawn under the bar, and the tab is the one word that names it.
+            .navigationTitle(showsTree ? LocalizedStringKey("") : LocalizedStringKey("Sukupuu"))
             // Out of the way until it is wanted: iOS keeps the field hidden
             // above the list until somebody pulls down, which is the right
             // bargain here. The grandchild looking for one name in forty finds
@@ -592,7 +568,11 @@ struct PeopleScreen: View {
                     }
                 }
                 // The way back to the tree from the list, on the phones that
-                // have the tree. The other direction is in the tree's menu.
+                // have the tree. The other direction is in the tree's menu,
+                // "Näytä listana". Named for what it does, and not "Sukupuu"
+                // as it was until 30 Sep 2026: the tab says that word on
+                // every phone now, and two buttons of one name leave Voice
+                // Control, and a test, to guess which one was meant.
                 if canDrawTree && !showsTree {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -601,7 +581,7 @@ struct PeopleScreen: View {
                             Image(systemName: "tree")
                                 .elderTapTarget()
                         }
-                        .accessibilityLabel("Sukupuu")
+                        .accessibilityLabel("Näytä puuna")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {

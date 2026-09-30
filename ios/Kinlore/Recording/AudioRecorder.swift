@@ -16,6 +16,11 @@ final class AudioRecorder {
     /// The most recent level samples, newest last. 0…1.
     private(set) var levels: [Float] = []
     private(set) var lastRecordingURL: URL?
+    /// The loudest meter reading of the recording, in dBFS as `averagePower`
+    /// reports it. Kept for the whole recording, not for the waveform's 48
+    /// samples, because it answers one question at the end: whether the
+    /// microphone heard anything at all (`heardNothing`).
+    private(set) var loudest: Float = -160
 
     /// Called at most once per recording, when an interrupted recording cannot
     /// go on: the phone call ended without permission to resume, or the system
@@ -114,6 +119,7 @@ final class AudioRecorder {
         isRecording = true
         elapsed = 0
         levels = []
+        loudest = -160
         isPausedByInterruption = false
         frozenTicks = 0
         hasCut = false
@@ -259,8 +265,9 @@ final class AudioRecorder {
         // speech still stands out from complete silence.
         var db = recorder.averagePower(forChannel: 0)
         #if DEBUG
-        if Self.hearsNothing { db = -160 }
+        if let pinned = Self.pinnedMeter { db = pinned }
         #endif
+        loudest = max(loudest, db)
         let normalized = max(0, (db + 55) / 55)
         levels.append(normalized)
         if levels.count > maxLevels { levels.removeFirst(levels.count - maxLevels) }
@@ -271,12 +278,58 @@ final class AudioRecorder {
         }
     }
 
+    /// Below this, a recording's loudest reading holds no sound at all: dBFS,
+    /// as `averagePower` reports it.
+    ///
+    /// Measured 30 Sep 2026 on the test phone's own recordings, all 17 of
+    /// them, decoded and read in 50 ms windows, the meter's interval (the
+    /// method `AnswerWatch` was measured with). The quietest answer the model
+    /// wrote down, "the letter", peaks at −51.3 dBFS. Three recordings that
+    /// came back with no words, the buttons pressed twice with nothing said,
+    /// peak at −52.5, −45.1 and −32.3: the room and a finger on the glass are
+    /// as loud as a quiet voice across the table, so no threshold on level can
+    /// tell the two apart, and none tries. The quietest single window of any
+    /// recording, the room at its stillest, is −66.6. So −70 lies below every
+    /// room the phone has recorded and 18 dB below the quietest answer: a
+    /// recording that never reaches it is a microphone that delivered nothing
+    /// — covered, taken by another app, a route with no input — and never a
+    /// voice, however soft. Everything above it is treated as speech, as
+    /// before (rule 3).
+    static let soundFloor: Float = -70
+
+    /// Whether the last recording held no sound at all (`soundFloor`). Read
+    /// after `stop()`.
+    ///
+    /// On a simulator only a forced meter answers it. There the microphone is
+    /// the Mac's, with its own gain and its own room, and the phone's floor
+    /// says nothing about it, so every recording is taken as speech — the
+    /// safe side — unless `-meter` has pinned the reading.
+    var heardNothing: Bool {
+        #if targetEnvironment(simulator)
+        #if DEBUG
+        return Self.meterIsPinned && loudest < Self.soundFloor
+        #else
+        return false
+        #endif
+        #else
+        return loudest < Self.soundFloor
+        #endif
+    }
+
     #if DEBUG
     /// `-meter silent`: the meter reads digital silence whatever the
-    /// microphone hears. A simulator records from the Mac's own microphone,
-    /// so a test that needs a silent answer cannot count on the room around
-    /// it. `InterviewLoopTests.testASilentAnswerEndsTheConversation`.
-    private static let hearsNothing = UserDefaults.standard.string(forKey: "meter") == "silent"
+    /// microphone hears — a microphone that delivers nothing, below
+    /// `soundFloor`. `-meter quiet`: it reads −45 dBFS, somebody breathing
+    /// and holding the phone, which `AnswerWatch` calls silence and
+    /// `heardNothing` does not. A simulator records from the Mac's own
+    /// microphone, so a test that needs either cannot count on the room
+    /// around it. `InterviewLoopTests`.
+    private static let pinnedMeter: Float? = switch UserDefaults.standard.string(forKey: "meter") {
+    case "silent": -160
+    case "quiet": -45
+    default: nil
+    }
+    private static var meterIsPinned: Bool { pinnedMeter != nil }
     #endif
 }
 

@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 399 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 127 sweep tests, each auditing one screen at the default text size and again at the largest, out of 406 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -90,7 +90,7 @@ An honest inventory, not a wish list:
 | Colouring a photograph by what was told about it | **Done and tested, deployed 13 Sep 2026**, see §24 — kept only after somebody answers yes, and the model was chosen on one photograph |
 | Repo in English | **Done** |
 | Moderation (`report`, `block`) | Formally out of v1, see §7 and the decision at the end of §14 |
-| Demo video | **In progress**, see docs/VIDEO.md — the shot list, the dry run of 28 Aug 2026 and the takes for the v16 and v21 cuts, which `FilmDriver` taps through. On 25 Sep 2026 three finished takes were found carrying Finnish prices and dates and had to be shot again; no finished cut is recorded in this repository |
+| Demo video | **Done** — the finished cut is the video submitted with the entry. It was edited outside this repository; docs/VIDEO.md keeps the shot list, the dry run of 28 Aug 2026 and the takes `FilmDriver` taps through |
 
 The critical path is open: family and sync work, so everything else stands on
 them. What is left is either cuttable or somebody's to record — see PLAN.md §8
@@ -110,11 +110,11 @@ never overwrites a real one.
 
 **What keeps "done" true now.** `./scripts/verify.sh` runs every check in this
 repository that costs nothing, each one for a failure that leaves a working app
-behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
-need a simulator of your own, and the other 47 need neither. Its header names
+behind. On 30 Sep 2026 that was 64 checks: 13 drive a Worker started locally, 2
+need a simulator of your own, and the other 49 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 399 UI tests, including 124 accessibility sweeps that audit a
+The UI suite has 406 UI tests, including 127 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run, the
@@ -134,18 +134,11 @@ this way before.
 **Known issues, found on 30 Sep 2026.** A review on the day of submission read
 the promises against the code again and found these, the heaviest first. The
 webhook's was fixed that day and is listed after the rest, with a second fix to
-the payments. The others were not: most touch sync, the production schema, the
-recorder or the payments, where a change on the last day is a bigger risk than
-the defect. They are written here so that nobody has to find them twice.
+the payments and the relationship that stopped a phone's sync. The others were
+not: most touch sync, the production schema, the recorder or the payments, where
+a change on the last day is a bigger risk than the defect. They are written here
+so that nobody has to find them twice.
 
-- **Taking a relationship back and entering it again stops that phone's
-  sync.** `relation` is unique on `(from_subject, to_subject, kind)`, deleted
-  rows included (`schema.sql:397`); the app enters it under a new id and the
-  upsert handles a clash on `id` only (`sync.ts:951`), so every push from that
-  phone fails whole and its pull never runs (`SyncEngine.swift:257–282`), and
-  the family screen says a waiting telling will leave when the connection
-  returns. Two members recording the same parent before either syncs do the
-  same.
 - **A telling is lost if the app is killed mid-recording.** The recorder
   writes AAC into an `.m4a` (`AudioRecorder.swift:103`) that cannot be opened
   until it is finished, and the next launch's sweep deletes what it cannot open
@@ -156,11 +149,11 @@ the defect. They are written here so that nobody has to find them twice.
   request is no longer dirty and the pull after it puts the server's older copy
   back. The window is one request long.
 - **Two phones pushing at once can hide one push from the other.** A push
-  takes its number (`sync.ts:169`) before it writes (`sync.ts:972`), so a later
+  takes its number (`sync.ts:169`) before it writes (`sync.ts:1005`), so a later
   number can land first, a pull in between moves the cursor past the earlier
   one (`sync.ts:306`), and those rows never reach that phone.
 - **A failed save is silent.** `MemoryStore.save()` drops a write error
-  (`MemoryStore.swift:2886–2888`), so on a full phone the changes since the
+  (`MemoryStore.swift:2899–2901`), so on a full phone the changes since the
   last good save live only in memory, and an archive kept on this phone only
   loses them when the app ends.
 - **Nothing is deleted on the server.** Deletion is a tombstone, no R2 object
@@ -218,6 +211,21 @@ the defect. They are written here so that nobody has to find them twice.
   Worker works the tier out again when a member holding a date of their own
   joins, leaves or is removed (`recomputeTier` in `worker.ts`). The departed
   row keeps its binding and date, so a payer who comes back counts again.
+- **A relationship taken back and made again stopped that phone's sync.**
+  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
+  rows (`schema.sql`), the app makes every relationship under a new id, and the
+  upsert in `sync.ts` handled only a clash on `id`, so the whole batch failed.
+  The phone retried the same push for ever and its pull, in the same round,
+  never ran; the screen said it was waiting for the network. Two members
+  adding the same relationship under different ids did the same, and so did a
+  merge that moved an edge onto a pair with a tombstone. The upsert now has a
+  second clause for the three columns: over a tombstone the row takes the new
+  id and the new row's state, confirmation included, and over a live row the
+  row stays and its confirmation only moves up; a tombstone under an id no
+  longer on file changes nothing. Either way the seq moves, and the phone drops
+  its own copy of the pair under another id when the server's arrives
+  (`applyRemote`), so nobody is drawn twice. `relation-resync-check.mjs`
+  drives it, red on thirteen of twenty-two before the fix.
 
 ## 2. Five decisions that determine the rest
 
@@ -2345,6 +2353,25 @@ Built, in the order they were built:
     date in it, for the sweep; the plain one stays undated so DateTests can
     give one and then find the heading.
 
+    **And since 30 Sep 2026 a photograph is the main thing on the grid.**
+    Every third card is the width of the screen — two, then one across,
+    starting over at each decade — where until then a card was that wide
+    only as the last of an odd number; that is the rhythm of the design the
+    user chose, beside which the album's pictures were not yet what a person
+    looks at before opening one. A card that wide asks for a 1,200-pixel
+    thumbnail, which 600 had been stretched across. And the paper round an
+    old print is cut from the card's picture (`PrintBorder`): a scan keeps a
+    print's white or cream border, and on the grid it was the brightest thing
+    there, 7 to 18 per cent of each of the video's bordered prints. Only paper
+    on all four sides is cut, at most 12 per cent a side, and only in the
+    album — the photograph's own screen, the face picker, the colouring and
+    the export keep the whole print (`scripts/print-border-check.swift`).
+    Last, a card on the grid lies on the page the way the chosen design's
+    cards do, with a soft warm shade under its bottom edge (`elderShade`,
+    `Elder.shade`): the one blurred shadow under a card in the app, because a
+    photograph is a thing on the page and a card of words is not. The
+    hairline stays its edge.
+
     The row under it says when the telling was made — *"Mummo · 5.9.2026"*
     in the device's own short form — which the export had printed beside
     every telling from the first day and the card never had (finding #9). And
@@ -2812,7 +2839,8 @@ Decisions, in the order they were argued about:
   which is the failure the limit exists for. `scripts/answer-watch-check.swift`
   (in `verify.sh`) holds the arithmetic, and failed against each of five
   deliberately broken watches; `InterviewLoopTests` holds the wiring under
-  `-meter silent`, which makes the meter read digital silence, because a
+  `-meter quiet`, which makes the meter read −45 dBFS (`-meter silent`, digital
+  silence, until the sound floor below came on 30 Sep 2026), because a
   simulator records from the Mac's own microphone. For the same reason a
   simulator's answers are mostly silence, and the two older tests that stand
   on the second round's listening screen — the sweep that audits it, and the
@@ -2841,9 +2869,10 @@ Decisions, in the order they were argued about:
   still takes the network's road.** `complete()` refuses a reply with no
   content as 502 (`openrouter.ts`), and the route answers it
   `upstream_failed` like any other upstream failure (rule 9). A silent
-  answer the watch ends therefore lands on *"Äänesi on tallessa"* with its
-  recording kept, and the catch-up asks about it again. The stubs model the
-  200 with no words; nothing in production leads to the road above.
+  answer the watch ends therefore landed on *"Äänesi on tallessa"* with its
+  recording kept until 30 Sep 2026, and the catch-up asks about it again. The
+  stubs model the 200 with no words; nothing in production leads to the road
+  above, and the next paragraph but one is the road it does take now.
 
   What is left is the price of keeping the recording. A telling waiting for
   its text is one the catch-up asks about, so the same silence is uploaded
@@ -2855,6 +2884,53 @@ Decisions, in the order they were argued about:
   meter only once the words are in hand. What the watch changes is how
   often this road is taken: an unanswered question used to record until
   somebody noticed, and now ends here after 25 seconds.
+
+  **Inside the conversation the network's road ends on the result too,
+  since 30 Sep 2026.** An answer whose upload fails — a lost signal, or the
+  Worker's 502 for an answer the model heard no words in, which the app
+  cannot tell apart — used to replace the telling's result with the
+  audio-saved screen: *"Äänesi on tallessa … Emme ehtineet kirjoittaa sitä
+  tekstiksi juuri nyt"*, none of the rounds' names on it, *"Poista tämä
+  muisto"* and *"Kirjoita se itse"* acting on the answer alone while reading
+  as the whole telling, and the question marked answered by a recording that
+  was, as the founder met it on the phone, a button pressed twice with
+  nothing said. It now takes `keepWordlessAnswer` with the ladder left alone
+  (the failure may be ours), and the result carries one sentence under its
+  title: *"Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain,
+  nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää
+  odottamaan vastausta."* (`TellViewModel.lastAnswerUnwritten`). The quota
+  keeps its own screen, for the reason above; so does a first telling, whose
+  result there is nothing yet to show. `-answer unreachable` fails the
+  answer's upload and only the answer's, and
+  `InterviewLoopTests.testAnAnswerThatFailsLandsOnTheRoundsBeforeIt` and the
+  sweep `testResultAfterAFailedAnswer` hold it.
+
+  **A recording that holds no sound at all is not kept, since the same
+  day** (`AudioRecorder.heardNothing`, `soundFloor`). The recorder keeps
+  the loudest meter reading of the whole recording, and one that never
+  reaches −70 dBFS is not a telling: the file is deleted, nothing is sent,
+  and the screen says *"En kuullut mitään"* with *"Yritä uudelleen"* and
+  *"Takaisin"* rather than *"Äänesi on tallessa"* over nothing. An answer
+  ended by *"Riittää tältä erää"* or by the watch ends the conversation as
+  it would have. The floor is set where no voice can reach it, and was
+  measured to be there: all 17 recordings on the test phone, read in the
+  meter's 50 ms windows. The quietest answer the model wrote down, *"the
+  letter"*, peaks at −51.3 dBFS; the three recordings that came back with no
+  words — the founder's twice-pressed buttons — peak at −52.5, −45.1 and
+  −32.3, because the room and a finger on the glass are as loud as a quiet
+  voice across the table. **So no level separates a silent recording from a
+  quiet answer on this phone, and none is used to**: a floor between them
+  would have thrown away *"the letter"*. The quietest window of any of the
+  17, the room at its stillest, is −66.6; −70 lies below every room the
+  phone has recorded and 18 dB below the quietest answer, so what it catches
+  is a microphone that delivered nothing — covered, taken by another app, a
+  route with no input — and never a voice (rule 3). The founder's own
+  twice-pressed recordings stay above it and take the road above. On a
+  simulator the floor applies only under a pinned meter, because its
+  microphone is the Mac's, with its own gain and room: `-meter silent` reads
+  −160, below the floor, and `-meter quiet` reads −45 — somebody breathing
+  and holding the phone, silence to the watch and sound to the floor —
+  which is what the watch's two tests stand on since the floor came.
 
 One knowingly open edge: every round adds three questions and answers one, so
 a long interview grows the open-question list. That is today's behaviour for
@@ -3044,7 +3120,11 @@ experiment, and it needs no new UI — both paths already exist.
 first two — with no LLM call, no network and no AI minutes. Their level is
 written out beside each text rather than read off it, so a reworded starter
 cannot quietly become harder than the one place in the app that promises an
-easy question: a photo and a person open at `.naming`, a place at `.fact`.
+easy question: a person opens at `.naming`, a photo and a place at `.fact`.
+A photo opened at `.naming` with *"Kuka tässä kuvassa on?"* until 30 Sep
+2026, and a card that asked who was in the picture read as face
+identification rather than an invitation to tell, so *"Mitä muistat tästä
+kuvasta?"* comes first and the naming question second.
 They are **not stored and not synced**: thirty imported photographs would
 otherwise put sixty rows into the family's open-question list and make the
 list worthless. A starter is a prompt, not a debt.
@@ -4073,7 +4153,7 @@ those same categories, which is how the contrast problem survived this long.
   17 Pro against the same screens drawn with it, 28 per cent of the
   capsule's pixels on Kerro, 14 on a telling's result, and nearly all of
   them on the person card had been the page showing through at the largest
-  size. At the floor it was
+  size. At the floor, then xLarge, it was
   one word, the person card's memory count bent into the capsule's end —
   1.3 per cent at xLarge and 0.2 at xxLarge, with nothing under the bar on
   Kerro or Albumi — smaller, and hers first. A `toolbarBackground` of the
@@ -4285,6 +4365,15 @@ Every sweep runs a screen twice: at the default size and at
 it produces — `largerText` on, iOS's own size untouched — is the one an
 80-year-old's phone is actually in, and it had never been audited at all.
 
+The floor was `xLarge`, one notch, until 30 Sep 2026, when a real phone showed
+that one notch was not visibly larger; it has been `xxLarge` since. `xxxLarge`
+was measured the same day and does not fit the Tell tab: on a trial's first
+launch on a 17 Pro, "Kirjoita sen sijaan" ended at 831 under a tab bar that
+begins at 791, with every step of the screen's squeeze taken
+(`DeckTests.testEveryWayOnClearsTheTabBarAtRest`). The accessibility sizes do
+not catch this, because there the page scrolls on purpose and only the record
+button has to clear the bar.
+
 It surfaced by accident, from a test polluting its own device. A run with the
 new `Elder.forgetLargerText()` deliberately switched off left `elder.largerText`
 set behind it, and the next two Settings sweeps failed on screens that had
@@ -4296,10 +4385,11 @@ passed minutes earlier. Measured on purpose afterwards:
 | Asetukset, vain tämä puhelin | 2 — `Arkisto`, `Ota perhe käyttöön` | clean |
 
 Both findings are *"Dynamic Type font sizes are partially unsupported"*. The two
-columns render text at the same size and answer differently, so **the trigger is
-the floor and not the size**: the audit asks whether text follows the system
-setting, and below `xLarge` it does not, because stopping exactly that is what a
-floor is. The finding is the mechanism describing itself.
+columns render text at the same size (the floor was `xLarge` then) and answer
+differently, so **the trigger is the floor and not the size**: the audit asks
+whether text follows the system setting, and below the floor (`xxLarge` since
+30 Sep 2026) it does not, because stopping exactly that is what a floor is. The
+finding is the mechanism describing itself.
 
 Recorded rather than fixed, because both available fixes are worse than the gap.
 Removing the floor takes away the one thing that makes the app readable for the
@@ -4392,16 +4482,17 @@ for.
 frames and audit types; the question a person actually has is whether the text
 comes out too small or too big. Screenshotted with `largerText` on and off, same
 seed, same screen: both reported elements — the `Arkisto` header and the
-`Ota perhe käyttöön` row — are drawn in full, one notch larger with the floor on,
+`Ota perhe käyttöön` row — are drawn in full, one notch larger with the floor on
+(`xLarge` until 30 Sep 2026, `xxLarge` since),
 nothing clipped, nothing overflowing, the long export footer wrapping to four
 lines instead of three. Nothing on that screen is wrong to look at.
 
 So the finding is true about the mechanism and empty about the product: below
-`xLarge` the text does not follow the system setting, because that is what the
-floor is for. **What is left is the coverage gap and not a defect** — and the
-gap is worth naming on its own, because the band nothing measures is the one the
-primary user's phone is in, and a real defect appearing there later would be
-just as invisible as this non-defect was.
+the floor (`xxLarge` since 30 Sep 2026) the text does not follow the system
+setting, because that is what the floor is for. **What is left is the coverage
+gap and not a defect** — and the gap is worth naming on its own, because the
+band nothing measures is the one the primary user's phone is in, and a real
+defect appearing there later would be just as invisible as this non-defect was.
 
 ## 16. The memory that was interrupted
 
@@ -4700,9 +4791,10 @@ of its own, they stay links.
 **Whole names since 30 Sep 2026.** The chips were a `ViewThatFits` between a
 line of `Label`s and a column of them, and it chose the line where the line
 did not fit: the film's take of 29 Sep 2026 on the grandmother's phone, at
-its text floor (`Elder.textFloor`), drew a telling's three names in one row,
-each broken inside the word (*Pu-/uma/la*, *Hel/mi*, *Toi/vo*), and Mummo's
-telling on the jetty in `-seed story` did the same on the simulator, its
+its text floor (`Elder.textFloor`, then `xLarge`), drew a telling's three
+names in one row, each broken inside the word (*Pu-/uma/la*, *Hel/mi*,
+*Toi/vo*), and Mummo's telling on the jetty in `-seed story` did the same on
+the simulator, its
 Puumala 95 points tall where one line of the name is 22. They are laid out by
 `ChipFlow` now, from the leading edge (`centred: false`), and each is an icon
 and a `Text` like the caption's chips: a chip takes its own width, the row
@@ -5717,9 +5809,10 @@ both sides of the rule.
 see the memories, who gets the invite link, whose entitlement is shared. *Suku*
 is the web of relations the archive describes, and most of it is dead. They are
 different sets, they are different words, and neither should be used for the
-other. **Ihmiset** is a third thing again — the list of person subjects, which is
-what the tab is called, so the empty state under that tab now says *ihmiset* too
-rather than answering in a word the person did not tap.
+other. **Ihmiset** is a third thing again — the list of person subjects. It was
+the tab's name until 30 Sep 2026; the tab and the list are called *Sukupuu* now
+(below), and the empty state under them begins with *Sukupuu* too rather than
+answering in a word the person did not tap.
 
 **Ystävä is not suku either, since 21 Sep 2026.** A friend is a person card
 in the archive like anybody else, joined to somebody by `friend_of`, and the
@@ -5752,20 +5845,32 @@ names itself before anybody taps it hid the part of it that took the most work.
 That is the Muistot fault the other way round: not two words for one thing, but
 one word too small for the thing.
 
-The word now follows the same signal the content already follows. `PeopleTab`
-in `RootView.swift` is that single decision — a grandparent's phone (the text
-floor) and VoiceOver keep the list, and so keep *Ihmiset*; a family member's
-phone draws the tree and the tab says *Sukupuu*, *Family tree* in English, with
-the toolbar switch's own `tree` icon rather than a second drawing of the same
-destination. Nobody confirmed is nothing to draw, so the first minute on a new
-phone keeps the older word as well. Both the tab and the screen's title read
-that one function, which is what stops them drifting apart a second time.
+From then until 30 Sep the word followed the signal the content follows.
+`PeopleTab` in `RootView.swift` was the single decision: a grandparent's phone
+(the text floor) and VoiceOver kept the list, and so kept *Ihmiset*; a family
+member's phone drew the tree and the tab said *Sukupuu*, *Family tree* in
+English, with the toolbar switch's own `tree` icon. Nobody confirmed was nothing
+to draw, so the first minute on a new phone kept the older word as well, and a
+search, always answered as a list, was titled *Ihmiset* under a tab still
+called *Sukupuu*.
 
-One case is deliberately left to disagree. A search is always answered as a
-list, and the title says *Ihmiset* while the tab still says *Sukupuu*: a tab
-that renamed itself under a typing finger is the worse of the two faults.
-`FamilyTreeTests` pins both phones, and the grandparent's test now asserts the
-tab bar as well as the screen.
+**Sukupuu on every phone, since 30 Sep 2026.** A tab whose name follows the
+phone was the worse fault after all. The README's three screenshots called the
+one tab *People* in one and *Family tree* in the other two, and a reviewer of
+the README noticed; a family that helps each other over the phone needs one
+word to say, "tap *Sukupuu*", and half of them were looking at another. So the
+tab says *Sukupuu*, *Family tree*, with `tree.fill`, on every phone and over
+both views, and the list is titled *Sukupuu* as well: on a grandparent's phone
+and under VoiceOver the list is the family tree, read at a large size or aloud,
+with the relationships on each card. The tree itself still has no title; it is
+a map drawn under the bar. `PeopleTab` now decides only what the screen draws.
+The two switches between the views are named for what they do, *Näytä puuna* on
+the list's bar and *Näytä listana* in the tree's menu (*Show as a tree*, *Show
+as a list*), because a second button called *Sukupuu* beside the tab would
+leave Voice Control, and a test, to guess which one was meant. `FamilyTreeTests`
+pins the word over both views and on a grandparent's phone. Older text in this
+file, the other documents and the code's comments still calls the tab
+*Ihmiset*, and means the same tab.
 
 **Litterointiaika, not kertominen, for the monthly meter, since 26 Sep 2026.**
 Rule 2 says telling is never limited, and the words said it was: the free
@@ -5979,7 +6084,7 @@ own reasoning rejects.
 **A photograph is a question that needs no writing.** That is the whole idea,
 and almost all of it was already built: the Tell screen has been able to open
 on a subject since it was written — `target` is what makes the title *"Kerro
-tästä kuvasta"* and the starter *"Kuka tässä kuvassa on?"* appear — and
+tästä kuvasta"* and the starter *"Mitä muistat tästä kuvasta?"* appear — and
 `QuestionLadder.starters(for:)` has carried starters for all four `kind` values
 from the beginning. What was missing was somebody choosing the subject when
 nobody had navigated to one. `Deck` is that somebody, and it adds no screen, no
@@ -6272,8 +6377,8 @@ decides: the question, the disc, its caption and the ways on as `IdleView`'s
 squeeze leaves them (at the accessibility sizes the question and the disc,
 which is what it keeps above the fold there); the question being answered,
 the disc and its caption as `RecordingView`'s squeeze leaves them; and
-`ProcessingView` with the line that says the voice is kept, which scrolls
-since that line came but is not to be pushed out of sight by the photograph.
+`ProcessingView` with its steps and the sentence that nothing is lost, which
+scrolls but is not to be pushed out of sight by the photograph.
 The photograph gets what is left, up
 to the card's 200 points (150 at the accessibility sizes), and under 60, a
 button's height, it is not drawn at all. The same pass matters because

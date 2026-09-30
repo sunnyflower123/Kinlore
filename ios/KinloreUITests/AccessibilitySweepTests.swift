@@ -1469,6 +1469,47 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// A recording that held no sound at all (`AudioRecorder.soundFloor`):
+    /// a title, a sentence and two buttons. `-defer once` records the couple
+    /// of seconds by itself, and `-meter silent` makes them nothing.
+    func testHeardNothing() throws {
+        try sweep(
+            "Ei kuultu mitään",
+            arguments: ["-seed", "empty", "-defer", "once", "-meter", "silent"]
+        ) { app, _ in
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["En kuullut mitään"], "the heard-nothing screen")
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the heard-nothing screen was still being drawn when the audit ran"
+            )
+        }
+    }
+
+    /// The result after a conversation's answer failed to upload
+    /// (`-answer unreachable`): the telling's result, with the sentence about
+    /// the answer under its title. `-screen interview` tells, asks and records
+    /// the first answer by itself.
+    func testResultAfterAFailedAnswer() throws {
+        try sweep(
+            "Tulos, vastaus ei tekstiksi",
+            arguments: ["-seed", "empty", "-screen", "interview", "-answer", "unreachable"]
+        ) { app, _ in
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["Muisto tallennettu"], "the result the telling made")
+            require(
+                app.staticTexts
+                    .containing(NSPredicate(format: "label BEGINSWITH %@", "Viimeistä vastaustasi ei saatu tekstiksi"))
+                    .firstMatch,
+                "the failed answer's sentence"
+            )
+        }
+    }
+
     /// The screen an 80-year-old is on while actually telling — and the one no
     /// sweep had ever audited: it animates continuously, so the settling the
     /// other tests wait for never comes, and it had been left out entirely.
@@ -1517,6 +1558,36 @@ final class AccessibilitySweepTests: XCTestCase {
             require(app.images["Luen kysymyksen ääneen"], "the question being read aloud")
             let at = size == nil ? "default text size" : "largest text size"
             try audit(app, "Kysymys, haastattelu, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
+    /// The screen between the stop and what comes next, a list of the steps
+    /// the app takes since 30 Sep 2026 (`ProcessingView`): the kept voice,
+    /// the speech being written down, the names still to come and the
+    /// sentence that nothing is lost, which is the tallest it gets.
+    /// `-screen interview` records its first answer by itself, and
+    /// `-processing held` keeps that answer on the writing down for as long
+    /// as the audit takes. Outside `sweep(...)` like the recording screen:
+    /// the step under way breathes, so exactly element detection is forgiven
+    /// and nothing else.
+    func testProcessingIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty", "-screen", "interview", "-processing", "held"], textSize: size)
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            // Longer than `require` waits: the telling is put in order, the
+            // question is read aloud and the answer recorded for three seconds
+            // before this screen comes, 30 seconds on a loaded machine.
+            XCTAssertTrue(
+                app.staticTexts["Kuuntelen mitä sanoit"].waitForExistence(timeout: 90),
+                "never arrived: the processing screen"
+            )
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Käsittelen, \(at)", alsoAllowing: { issue in
                 issue.auditType == .elementDetection
             })
             app.terminate()
@@ -1724,7 +1795,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testPeople() throws {
-        try sweep("Ihmiset", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+        try sweep("Sukupuu, luettelo", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
             require(app.staticTexts["Eeva"], "a person in the demo archive")
             // And the door: the fixture's Aino is a name nobody has checked,
             // and since 12 Sep 2026 she waits behind this row, not on the list.
@@ -1753,7 +1824,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testPeopleEmpty() throws {
-        try sweep("Ihmiset, empty", arguments: ["-seed", "empty", "-tab", "people"]) { app, _ in
+        try sweep("Sukupuu, empty", arguments: ["-seed", "empty", "-tab", "people"]) { app, _ in
             require(app.staticTexts.firstMatch, "the empty people state")
         }
     }
@@ -1767,7 +1838,7 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// The drawn family tree: since 13 Sep 2026, what Ihmiset opens on, on a
+    /// The drawn family tree: since 13 Sep 2026, what Sukupuu opens on, on a
     /// family member's phone. `-seed related` is the one fixture with a
     /// confirmed couple in it, and Sanni, related to nobody, is drawn beneath.
     func testFamilyTree() throws {
@@ -2383,8 +2454,62 @@ final class AccessibilitySweepTests: XCTestCase {
             // The question *is* the title on a card. Asked for by its own
             // words, because that is the change: the screen stopped saying
             // "tell about this" and started asking something answerable.
-            require(app.staticTexts["Kuka tässä kuvassa on?"], "the card's question")
+            require(app.staticTexts["Mitä muistat tästä kuvasta?"], "the card's question")
             require(app.buttons["En muista tätä"], "the way past a card")
+        }
+    }
+
+    /// The Kerro tab once the deck has run out, on a reader's phone (30 Sep
+    /// 2026): no photograph left untold, no family member's question, and so
+    /// the next two opening questions under the button and *"Lisää valokuva"*
+    /// beside *"Kirjoita sen sijaan"*. The plain archive is that state, since
+    /// every photograph in it carries a telling (`testTheDeckNeverOffersAName`).
+    ///
+    /// Any of the opening questions will do, not only the first: the list
+    /// moves on as each one is answered, and that is device state the seed
+    /// does not reset. At the default size the new row shares the writing
+    /// row's line, and both are asked to clear the tab bar, as on the first
+    /// launch. At the largest size the two rows stack below the fold by
+    /// design, so every page down to the new one is audited.
+    func testTellOnceTheDeckRunsOut() throws {
+        let opening = [
+            "Kuka on vanhin ihminen, jonka muistat?",
+            "Missä asuit lapsena?",
+            "Mikä ruoka tuo mieleesi jonkun ihmisen?",
+            "Mikä on vanhin esine, joka sinulla on?",
+            "Kenestä suvussa kerrotaan hauskoja juttuja?",
+            "Kenen luona oli mukavinta käydä kylässä?",
+            "Kuka opetti sinulle jotain, mitä osaat yhä?",
+            "Mikä oli ensimmäinen eläin, jonka muistat?",
+            "Mikä juhla on sinulle tärkein?",
+            "Mikä on ensimmäinen asia, jonka muistat?",
+        ]
+        try sweep("Kerro, pakka lopussa", arguments: ["-seed", "archive", "-tab", "tell"]) { app, isLargest in
+            require(app.staticTexts["Paina ja ala puhua"], "the record button's caption")
+            require(
+                app.staticTexts.matching(NSPredicate(format: "label IN %@", opening)).firstMatch,
+                "an opening question"
+            )
+            XCTAssertFalse(app.buttons["En muista tätä"].exists, "a way past a card the deck no longer has")
+            let add = app.buttons["Lisää valokuva"]
+            if isLargest {
+                reach(add, in: app, "the way to add a photograph")
+                return try auditPageByPage(
+                    app, "Kerro, pakka lopussa, largest text size",
+                    to: add, "\"Lisää valokuva\", last on the screen"
+                )
+            }
+            require(add, "the way to add a photograph")
+            let typing = require(app.buttons["Kirjoita sen sijaan"], "the way that needs no permission")
+            settle(add)
+            let bar = app.tabBars.firstMatch
+            for (name, way) in [("Lisää valokuva", add), ("Kirjoita sen sijaan", typing)] {
+                XCTAssertTrue(
+                    bar.exists && way.frame.maxY <= bar.frame.minY,
+                    "\"\(name)\" is under the tab bar: "
+                        + "\(NSCoder.string(for: way.frame)) against \(NSCoder.string(for: bar.frame))"
+                )
+            }
         }
     }
 

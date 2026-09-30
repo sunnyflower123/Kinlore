@@ -432,7 +432,7 @@ final class TakingBackTests: XCTestCase {
 
         // The same photograph, nobody's story again, asked about as one.
         XCTAssertTrue(
-            app.staticTexts["Kuka tässä kuvassa on?"].waitForExistence(timeout: 10),
+            app.staticTexts["Mitä muistat tästä kuvasta?"].waitForExistence(timeout: 10),
             "the card is not asked about as a photograph nobody has told about"
         )
         XCTAssertFalse(

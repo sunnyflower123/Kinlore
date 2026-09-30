@@ -32,7 +32,7 @@ final class FirstMinuteTests: XCTestCase {
         // and nothing is sent.
         app.buttons["Tällä puhelimella"].tap()
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         XCTAssertTrue(app.staticTexts["Mummo"].waitForExistence(timeout: 10), "her card is not among the people")
     }
 
@@ -74,7 +74,7 @@ final class FirstMinuteTests: XCTestCase {
         XCTAssertTrue(close.waitForExistence(timeout: 10), "the way out of the first minute")
         close.tap()
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         XCTAssertTrue(app.staticTexts["Ei vielä ihmisiä"].waitForExistence(timeout: 10), "somebody was created by closing")
     }
 

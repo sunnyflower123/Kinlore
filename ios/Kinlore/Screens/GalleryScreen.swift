@@ -36,8 +36,8 @@ struct GalleryScreen: View {
     @State private var didSeedImport = false
     #endif
 
-    /// The photographs two to a row, and one across the whole row when it is
-    /// the last of an odd number.
+    /// The photographs two to a row, then one across the whole row, and again:
+    /// every third card the width of the screen, starting over at each decade.
     ///
     /// Two across has been the grandparent's grid since 19 Sep 2026, when her
     /// phone's `Elder.textFloor` stopped getting a grandchild's three across
@@ -49,13 +49,24 @@ struct GalleryScreen: View {
     /// the SE, and this project's test phone — two cards are 157.5 points
     /// each, which the 158-point floor of the old grid was chosen to keep.
     ///
+    /// Every third since 30 Sep 2026. Until then a card was that wide only
+    /// when it was the last of an odd number, and beside the design the user
+    /// had chosen, where every third photograph is the width of the screen,
+    /// the album's pictures were not yet the main thing before they were
+    /// opened (docs/ARCHITECTURE.md §8).
+    ///
     /// One to a row at the accessibility sizes, where the footer's words
     /// would not fit half a screen.
     private func photoRows(_ photos: [Subject]) -> [[Subject]] {
-        let perRow = typeSize.isAccessibilitySize ? 1 : 2
-        return stride(from: 0, to: photos.count, by: perRow).map {
-            Array(photos[$0 ..< min($0 + perRow, photos.count)])
+        if typeSize.isAccessibilitySize { return photos.map { [$0] } }
+        var rows: [[Subject]] = []
+        var rest = photos[...]
+        while !rest.isEmpty {
+            let perRow = rows.count.isMultiple(of: 2) ? 2 : 1
+            rows.append(Array(rest.prefix(perRow)))
+            rest = rest.dropFirst(perRow)
         }
+        return rows
     }
 
     private var photos: [Subject] { store.subjects(of: .photo, matching: query) }
@@ -777,6 +788,10 @@ struct GalleryScreen: View {
                                                     }
                                                     .buttonStyle(.plain)
                                                     .stepInSource(photo.id, in: tiles)
+                                                    // A print on the page, and
+                                                    // outside the zoom's source,
+                                                    // which would cut it away.
+                                                    .elderShade()
                                                 }
                                             }
                                             // Both cards of a row as tall as
@@ -1338,9 +1353,10 @@ private struct SectionHeading: View {
 private struct PhotoTile: View {
     @Environment(MemoryStore.self) private var store
     let subject: Subject
-    /// Alone on its row: the last of an odd number, or any card at the
-    /// accessibility sizes. A wider frame then, because a square the width
-    /// of the screen is a whole screen of one photograph.
+    /// Alone on its row: every third card, one left over at the end of a
+    /// decade, or any card at the accessibility sizes. A wider frame then,
+    /// because a square the width of the screen is a whole screen of one
+    /// photograph.
     let isWide: Bool
 
     var body: some View {
@@ -1350,7 +1366,11 @@ private struct PhotoTile: View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
                 .aspectRatio(isWide ? 640.0 / 429.0 : 1 / 0.9, contentMode: .fit)
-                .overlay { PhotoThumbnail(subject: subject) }
+                .overlay {
+                    // A new frame when the card changes width, because the
+                    // one before has a thumbnail of the other size.
+                    PhotoThumbnail(subject: subject, wide: isWide).id(isWide)
+                }
             footer(count: count, tellers: tellers)
         }
         // As tall as the other card on its row (the row's `fixedSize`).
@@ -1451,6 +1471,9 @@ private struct PhotoThumbnail: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
     let subject: Subject
+    /// A frame the width of the screen, which asks for a thumbnail twice the
+    /// usual size (`MediaStore.wideThumbnailDimension`).
+    var wide = false
 
     @State private var thumbnail: UIImage?
 
@@ -1485,8 +1508,13 @@ private struct PhotoThumbnail: View {
                 guard let filename = await MediaLoader.imageFilename(
                     for: subject, store: store, session: session
                 ) else { return }
+                let longestSide = wide ? MediaStore.wideThumbnailDimension : MediaStore.thumbnailDimension
+                // The picture without the paper round it: a frame here shows
+                // what a print is of, and the photograph's own screen the
+                // whole print (`PrintBorder`).
                 thumbnail = await Task.detached(priority: .userInitiated) {
-                    MediaStore.loadThumbnail(named: filename)
+                    let image = MediaStore.loadThumbnail(named: filename, longestSide: longestSide)
+                    return image?.cgImage.map { UIImage(cgImage: PrintBorder.trimmed($0)) } ?? image
                 }.value
             }
     }

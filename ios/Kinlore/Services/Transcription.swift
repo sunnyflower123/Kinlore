@@ -120,6 +120,9 @@ struct StubTranscriptionService: TranscriptionService {
         """
 
     func transcribe(audioURL: URL) async throws -> String {
+        #if DEBUG
+        if let delay = AppServices.processingDelay(transcribing: true) { try await Task.sleep(for: delay) }
+        #endif
         try await Task.sleep(for: simulatedDelay)
         if UserDefaults.standard.string(forKey: "sample") == "film" { return Self.film }
         return await MainActor.run {

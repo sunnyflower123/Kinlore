@@ -51,10 +51,10 @@ them sharing one tree. Read them after the code, not before.
 > the time as it was said — and two questions back.
 
 <p align="center">
-  <img src="media/demo.gif" alt="The app at work — Putting the memory in order, finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s, and the question Who told this memory? with the answers Me, Someone else and I would rather not be named." width="320">
+  <img src="media/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
 </p>
 
-<p align="center"><sub>Simulator, stub pipeline — the waiting is real, the model call is canned.<br>Reproduce it, and every picture on this page, with <code>scripts/readme-shots.sh</code>.</sub></p>
+<p align="center"><sub>Simulator, stub pipeline — the telling and the model call are canned, the wait is held six seconds longer so its step can be read, and a debug launch argument does the scrolling.<br>Reproduce it, and every picture on this page, with <code>scripts/readme-shots.sh</code>.</sub></p>
 
 ```
 audio → ASR (Finnish) → raw_transcript (kept verbatim)
@@ -66,9 +66,9 @@ memory.body           mentioned subjects      follow-up questions
 (cleaned text)        (confirmed = 0)         (prompt_question)
 ```
 
-| <img src="media/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, freely, a large red microphone button with Press and start talking under it, and a Write instead link."> | <img src="media/02-result.png" alt="The result screen: Memory saved, a Move to another card button, the date 1950s, the card Who told this memory? with the answers Me, Someone else and I would rather not be named, and below it the beginning of the spoken text kept as it was said — in Finnish, because the sample telling is."> |
+| <img src="media/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree."> | <img src="media/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button."> |
 |---|---|
-| **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. |
+| **Telling.** One button, and a way out of it for anyone who would rather type. Two questions wait under it for anyone who does not know where to begin. | **What comes back.** A later telling in the example archive. The names it heard wait for a cross or a tick, because no name enters the family tree before somebody confirms it. Above them, as the GIF shows, the date is a decade because that is what was said. |
 
 Everything else in the app exists to make that loop worth repeating. What is
 built and what is not is inventoried, honestly, in
@@ -83,7 +83,7 @@ without a tap. That matters because the person it is for should not have to
 operate anything while she is remembering:
 
 <p align="center">
-  <img src="media/demo-interview.gif" alt="The app putting a memory in order, then asking Who else was there? and listening with a running timer, then writing the speech down as text, putting it in order again and asking What sort of person was Aino? — two full rounds with no tap in between." width="320">
+  <img src="media/demo-interview.gif" alt="The app putting a memory in order, then asking Who else was there? and listening with a running timer, then a checklist — Your voice is kept on this phone, Writing the speech down as text, Finding the people, the places and the time — and then asking Roughly what year was this? and listening again: one round finished and the next begun, with no tap in between." width="320">
 </p>
 
 <p align="center"><sub>Two rounds, hands-free. The timer counts real seconds, not a cut.<br>Reproduce it with <code>scripts/readme-shots.sh</code>, which runs <code>-screen interview</code>.</sub></p>
@@ -125,8 +125,8 @@ The other four, and the full text, are in [CLAUDE.md](../CLAUDE.md#rules-that-do
    `BlindConfirmationTests` checks every text, button and image on it
    ([`ARCHITECTURE.md` §23](ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
 
-   <p align="center"><img src="media/03-who-is-this.png" alt="The blind card: a drawn stand-in photograph, the question Who is this?, four names in identical black buttons — Sanni, Aino, Eeva and Kalle — and I do not remember below them." width="300"></p>
-   <p align="center"><sub>Simulator, <code>-seed blind</code> — the photograph is the fixture's drawn stand-in.<br>One of the four names is the proposal, and nothing on the screen says which.</sub></p>
+   <p align="center"><img src="media/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="300"></p>
+   <p align="center"><sub>Simulator, <code>-seed film</code> — the photograph is generated for the shot, and nobody in it exists.<br>One of the four names is the proposal, and nothing on the screen says which.</sub></p>
 
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into
    `date_start`/`date_end` with precision `decade`. No date is forced.
@@ -141,9 +141,9 @@ attaches to any subject. That is why *"write a memory about this photo"* and
 path, and why the family tree is just the edges between person subjects.
 Schema: [`backend/schema.sql`](../backend/schema.sql).
 
-| <img src="media/04-person.png" alt="A person card for Sanni: Choose a face, a large blue button reading Tell a memory about this, an empty Relatives section offering Add a relative, one memory told by Mummo — in Finnish, because the demo archive is — and an Ask the family button."> | <img src="media/05-family.png" alt="The family screen for the Virtaset family on the Free tier: everything sent, the copy on this phone, this month's usage — 7 of 10 minutes of transcription time and 12 of 20 photographs — and the members with the dates they joined."> |
+| <img src="media/04-person.png" alt="A person card for Sanni: a large initial S where a face would be, Choose a face, an Add a relative button, a Facts section offering Add a fact, the red Tell a memory about this button half under the tab bar with Family tree selected, and the heading 1 memory below it."> | <img src="media/05-family.png" alt="The family screen for the Virtaset family on the Free tier: everything sent, the copy on this phone, this month's usage — 7 of 10 minutes of transcription time and 12 of 20 photographs — and the members with the dates they joined."> |
 |---|---|
-| A person card is the same screen as a photo, because a person is the same row. The empty **Relatives** section is the point: a gap is an invitation, not an error. | One archive, several members, one shared quota. The quota belongs to the family rather than to whoever paid for it — see **Who pays**. |
+| A person card is the same screen as a photo, because a person is the same row. *Add a relative* near the top is the point: a gap is an invitation, not an error. | One archive, several members, one shared quota. The quota belongs to the family rather than to whoever paid for it — see **Who pays**. |
 
 ## How to check any of this yourself
 
@@ -169,7 +169,7 @@ broken build.
 
 | Claim | Command |
 |---|---|
-| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 399 UI tests, 124 of them an accessibility sweep at both text sizes |
+| Every screen works at XXL text, with VoiceOver, at sufficient contrast | `xcodebuild … test` — 406 UI tests, 127 of them an accessibility sweep at both text sizes |
 | One purchase unlocks one family, and never a second | `node scripts/entitlement-binding-check.mjs` |
 | The paid archive is offered after a telling on a rhythm, never beside a name a human is being asked to confirm, never on a grandparent's phone and never where there is nothing to buy — while the purchase beside a ceiling the family has hit stands on every phone with a store | `swiftc … scripts/upsell-rhythm-check.swift` |
 | A place's looked-up coordinates follow its title through sync, a point somebody placed stays where they put it, and rubbish is refused | `node scripts/place-sync-check.mjs` |
@@ -224,7 +224,7 @@ session, the 15 Aug commit reported 15 failures that were not real — see
 But the number is not the argument. This is one screen at the default text size
 and at the largest one iOS offers, which is the size rule 1 is actually about:
 
-| <img src="media/02-result.png" alt="The result screen at the default text size: Memory saved, Move to another card, the date 1950s, the whole Who told this memory? card and the start of the spoken text, all visible at once."> | <img src="media/06-result-xxxl.png" alt="The same result screen at the largest accessibility text size: Memory saved wraps to two lines, Move to another card to two and Who told this memory? to three, nothing is clipped or truncated, and the screen scrolls instead."> |
+| <img src="media/06-result-default.png" alt="The result screen at the default text size: Memory saved, Move to another card, the date 1950s, the whole Who told this memory? card and the start of the spoken text, all visible at once."> | <img src="media/06-result-xxxl.png" alt="The same result screen at the largest accessibility text size: Memory saved wraps to two lines, Move to another card to two and Who told this memory? to three, nothing is clipped or truncated, and the screen scrolls instead."> |
 |---|---|
 | Default | Accessibility XXXL |
 
@@ -739,7 +739,7 @@ In Xcode: Product → Scheme → Edit Scheme → Run → Arguments.
 |---|---|
 | `-api http://localhost:8787` | Real transcription and extraction instead of stubs |
 | `-rcKey <RevenueCat Test Store key>` | Purchases, **in a Debug build only**. Without it the app works normally, minus the paywall |
-| `-seed family` | A demo family on the free tier with no server behind it, in a Debug build. With `-rcKey` and no `-api`, People → Settings (the gear) → Family members and invitations → Open the whole archive opens the paywall, and a Test Store purchase opens the archive without a server (`Session.syncPurchase`) |
+| `-seed family` | A demo family on the free tier with no server behind it, in a Debug build. With `-rcKey` and no `-api`, Family tree → Settings (the gear) → Family members and invitations → Open the whole archive opens the paywall, and a Test Store purchase opens the archive without a server (`Session.syncPurchase`) |
 | `-tryIt YES` | What the `Kinlore Production` scheme and `scripts/try-it.sh` launch with, in any build: until the archive's first telling, the Tell screen offers an example sentence to read aloud in place of its opening questions, and *Type it for me* puts it in the write field instead. The install remembers it (`TryIt`), and remembers `-tryIt NO` the same way |
 
 **A Test Store key stops a Release build, by RevenueCat's design.** The app

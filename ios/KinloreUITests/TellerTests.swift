@@ -113,7 +113,7 @@ final class TellerTests: XCTestCase {
 
         // And on Mummo's own card, which is the only place it matters.
         app.buttons["Valmis"].tap()
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         let mummo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Mummo")).firstMatch
         XCTAssertTrue(mummo.waitForExistence(timeout: 10), "never arrived: Mummo in the family's people")
         mummo.tap()

@@ -389,8 +389,7 @@ case $MODE in
 
 			  1. On "Kinlore Try", start a family archive: type your name and press
 			     "Create the archive", and "Close" the sheet that follows. Then
-			     Settings, with the gear at the top right of Family tree (People
-			     with Larger text or VoiceOver).
+			     Settings, with the gear at the top right of Family tree.
 			     There: "Family members and invitations", "Invite a family
 			     member", give a name, then "Create an invitation", "Share the
 			     invitation" and "Copy".
@@ -432,9 +431,8 @@ case $MODE in
 			     archive", not "Keep the memories on this phone only" under it,
 			     because the paywall is for a family on the server. "Close" the
 			     sheet that follows.
-			  2. Open Settings with the gear at the top right of Family tree
-			     (People with Larger text or VoiceOver). Then
-			     "Family members and invitations": "Open the whole archive",
+			  2. Open Settings with the gear at the top right of Family tree.
+			     Then "Family members and invitations": "Open the whole archive",
 			     under Usage, opens the paywall.
 			  3. Choose a plan and buy it. RevenueCat's Test Store asks whether to
 			     simulate a valid purchase or a failed one, and "Test valid

@@ -202,7 +202,7 @@ final class BlindConfirmationTests: XCTestCase {
         )
         app.buttons["Jatka"].tap()
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         XCTAssertTrue(
             app.staticTexts["Aino"].waitForExistence(timeout: 10),
             "never arrived: the people list, with the recognised person on it"
@@ -234,7 +234,7 @@ final class BlindConfirmationTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Aino"].exists, "the app revealed the proposal")
         app.buttons["Jatka"].tap()
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         // Still waiting: not on the list, behind the door (12 Sep 2026).
         let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
         XCTAssertTrue(door.waitForExistence(timeout: 10), "a name that was not recognised confirmed the proposal anyway")

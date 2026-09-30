@@ -64,8 +64,9 @@ html[data-lang="fi"] [data-l="en"],
 html[data-lang="en"] [data-l="fi"] { display: none; }
 
 /* ------------------------------------------------------------- big text --- */
-/* The Aa control is the app's text-size floor, made operable here. One notch,
-   as in Elder.swift, not three. */
+/* The Aa control is the app's text-size floor, made operable here. This step
+   was sized for the one-notch floor; Elder.swift's floor has been two
+   notches since 30 Sep 2026, and this page was not re-measured with it. */
 html[data-bigtext] { font-size: 122%; }
 
 /* ------------------------------------------------------------------ base -- */

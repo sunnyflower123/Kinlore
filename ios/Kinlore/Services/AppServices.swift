@@ -82,6 +82,22 @@ enum AppServices {
     static var simulatesFailedOrganising: Bool {
         UserDefaults.standard.string(forKey: "defer") == "structure"
     }
+
+    /// What the stub transcription and extraction wait before their own
+    /// delay, so a test can stand on each step of the processing screen
+    /// (`ProcessingView`) instead of racing 1.4 and 2.2 seconds.
+    /// `-processing slow` adds six seconds to each. `-processing held` holds
+    /// every transcription for an hour and no extraction, so `-screen
+    /// interview` still reaches its first answer and then stays on the
+    /// screen with every step on it, for as long as an audit or a
+    /// screenshot run takes, with nothing tapped.
+    static func processingDelay(transcribing: Bool) -> Duration? {
+        switch UserDefaults.standard.string(forKey: "processing") {
+        case "slow": .seconds(6)
+        case "held": transcribing ? .seconds(3600) : nil
+        default: nil
+        }
+    }
     #endif
 
     /// The token comes from the caller's `Session` and is read on every call,
