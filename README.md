@@ -62,7 +62,7 @@ hackathon, in the Next Gen Award (the student category).
   customer id the app sends ([known
   issues](docs/ARCHITECTURE.md#1-where-things-stand)).
 
-<p align="center"><a href="https://youtu.be/ulHxJ45p4RU"><b>▶ Watch the demo video (2 min)</b></a><br>
+<p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
 Its app shots are simulator recordings, and its voices and photographs are synthetic.</p>
 
 <p align="center">
