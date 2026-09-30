@@ -25,6 +25,11 @@ it, which is why the rules further down read as constraints rather than good
 intentions, and why the failure that matters here is not a crash but a story
 that never got told.
 
+It is quiet on purpose. There are no streaks and no numbers on the tabs: a
+number on a tab is a debt, and the person the app waits for may be eighty. What
+the younger members get back is a grandparent's story, in the grandparent's own
+voice.
+
 I built it for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon, in the Next Gen Award (the student category).
 
