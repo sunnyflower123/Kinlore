@@ -123,7 +123,7 @@ struct RootView: View {
             // was navigated to from a photo, a person or a question and already
             // knows what it is about.
             //
-            // On a stack of its own since 30 Sep 2026: the gear every tab has
+            // On a stack of its own since 30 Sep 2026: the gear (`SettingsGear`)
             // pushes Settings here (`TellScreen.showsSettings`), and a name
             // confirmed on the result opens its card here
             // (`ConfirmedNameNote`).
@@ -291,9 +291,10 @@ struct SharingRoute: Hashable {}
 /// `LanguageScreen`.
 struct LanguageRoute: Hashable {}
 
-/// The way to Settings, in the trailing corner of every tab's bar since
-/// 30 Sep 2026: Albumi, Ihmiset in both of its views, and Kerro on the idle
-/// screen of a reader's phone (`TellScreen.showsSettings`). Until then it
+/// The way to Settings, in the trailing corner of the bar since 30 Sep 2026:
+/// Ihmiset in both of its views, and Kerro on the idle screen of a reader's
+/// phone (`TellScreen.showsSettings`). Not on Albumi, whose bar it squeezed
+/// (`GalleryScreen` says how). Until then it
 /// stood on the people list alone, and over the tree it was a row in the
 /// menu, so somebody who wanted a setting from the album had to know which
 /// tab kept it.
@@ -575,7 +576,7 @@ struct PeopleScreen: View {
                 // bar has the menu, and the same doors are behind it — the
                 // drawing is the screen there, and a bar of controls over a
                 // map is the thing a map does without. The gear stands over
-                // it too since 30 Sep 2026, as on every tab (`SettingsGear`):
+                // it too since 30 Sep 2026, as over the list (`SettingsGear`):
                 // the way to Settings had been a row in that menu, and so on
                 // the one phone that opens on the tree it was nowhere to be
                 // seen.

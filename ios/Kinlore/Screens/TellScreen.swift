@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// The app's most important screen. One button, no menus, and no settings
-/// but the gear every tab has, on a reader's phone only (`showsSettings`).
+/// but the gear (`SettingsGear`), on a reader's phone only (`showsSettings`).
 struct TellScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -49,10 +49,10 @@ struct TellScreen: View {
 
     @AppStorage(Elder.largerTextKey) private var largerText = false
 
-    /// The gear every tab has (`SettingsGear`, since 30 Sep 2026), on the
-    /// tab's idle screen, which is its root, and on a reader's phone. Not on
-    /// a grandparent's, where this tab is the button and nothing else
-    /// (`blindCard`): she reaches Settings from Albumi and Ihmiset. Not in the
+    /// The gear (`SettingsGear`, since 30 Sep 2026), on the tab's idle
+    /// screen, which is its root, and on a reader's phone. Not on a
+    /// grandparent's, where this tab is the button and nothing else
+    /// (`blindCard`): she reaches Settings from Ihmiset. Not in the
     /// other phases either, which are a telling under way or what came of it.
     /// The navigation bar comes and goes with the gear, so no other phase of
     /// the tab is drawn under an empty one.

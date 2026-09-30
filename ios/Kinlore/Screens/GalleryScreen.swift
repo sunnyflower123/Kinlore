@@ -362,16 +362,25 @@ struct GalleryScreen: View {
                 }
                 .accessibilityLabel("Lisää kuvia")
             }
-            // The gear every tab has since 30 Sep 2026 (`SettingsGear`).
-            // Declared last, so it takes the corner here as on the other tabs.
-            ToolbarItem(placement: .topBarTrailing) {
-                SettingsGear()
-            }
+            // No gear in this bar, though Ihmiset and a reader's Kerro have
+            // one (`SettingsGear`). It stood beside "+" at first, and with
+            // the map and the search that made four controls, which pressed
+            // the title into "Alb…" whenever the album had scrolled and the
+            // title sat in the bar (30 Sep 2026, `testMemoriesRefused`): 46 pt
+            // of it at the largest size. Left out at the accessibility sizes
+            // only, the gear came back as the audit drew the scrolled screen
+            // at a smaller size, and the recording shows "Alb…" there, so it
+            // is the controls and not the text size. Settings are one tab
+            // away: the gear stands over Ihmiset in both of its views, the
+            // tree's menu has a Settings row, and a reader's Kerro has the
+            // gear too. A grandparent's Kerro never has it, so she finds
+            // Settings on Ihmiset (`SettingsGearTests`). Nor does this stack
+            // register Settings (`settingsDestinations()`), so a gear put
+            // back here needs that line as well.
         }
         .navigationDestination(for: Subject.self) { subject in
             SubjectDetailScreen(subject: subject)
         }
-        .settingsDestinations()
         .navigationDestination(for: TileOpening.self) { opening in
             SubjectDetailScreen(subject: opening.photo)
                 .steppedInto(from: opening.photo.id, in: tiles)
