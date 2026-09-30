@@ -451,8 +451,8 @@
 // The Tell screen's computed texts, photographed Finnish on an English phone (5 Sep 2026).
 "Puhelin kysyy ensin luvan mikrofoniin." = "Puhelin kysyy ensin luvan mikrofoniin.";
 "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua." = "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua.";
-"Puhu ihan rauhassa ja vapaasti." = "Puhu ihan rauhassa ja vapaasti.";
-"Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.";
+"Puhu ihan rauhassa ja kuuluvalla äänellä." = "Puhu ihan rauhassa ja kuuluvalla äänellä.";
+"Puhu ihan rauhassa ja kuuluvalla äänellä. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Puhu ihan rauhassa ja kuuluvalla äänellä. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi.";
 "Kerro mitä muistat" = "Kerro mitä muistat";
 "Kerro hänestä — %@" = "Kerro hänestä — %@";
 "Kerro tästä kuvasta" = "Kerro tästä kuvasta";

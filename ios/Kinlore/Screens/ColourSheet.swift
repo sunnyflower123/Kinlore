@@ -200,7 +200,7 @@ struct ColourSheet: View {
                     // `IdleView.intro(short:)`, in the form its squeeze ends on.
                     Text(AudioRecorder.isPermissionUnasked
                         ? "Puhelin kysyy ensin luvan mikrofoniin."
-                        : "Puhu ihan rauhassa ja vapaasti.")
+                        : "Puhu ihan rauhassa ja kuuluvalla äänellä.")
                         .elderBody()
                 }
                 Color.clear

@@ -348,6 +348,20 @@ once that move has succeeded does the screen say *"Äänesi on tallessa tässä
 puhelimessa"*, above the spinner. The conversation's missing *"Muisto
 tallennettu"* is left as it is.
 
+A separate change, not drawn from that session: since 30 Sep 2026 the idle
+screen's reassurance says *"Puhu ihan rauhassa ja kuuluvalla äänellä"* where it
+said *"vapaasti"*. The words are written by a model that hears only the
+recording, and what it cannot make out it cannot write down: a reply with no
+words leaves the telling as audio alone, and in the conversation after the
+first telling `AnswerWatch` counts anything under −40 dBFS as silence. It is
+said before the press rather than during the recording, which has no room left
+at the largest size, and it is not there when a photograph stands on the card,
+which drops the reassurance altogether. A hint that appears only when the voice
+is quiet would reach the one who needs it and spare everyone else, but it needs
+a threshold, and none has been measured: the three recordings in ARCHITECTURE
+§10 put the room at −51 to −64 dBFS and speech near −15, and none of them is
+known to be a quiet voice.
+
 ### The visit that takes the measurement
 
 Written before the day rather than on it, because half of what follows cannot be

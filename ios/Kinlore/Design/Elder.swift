@@ -184,7 +184,7 @@ enum Elder {
     /// 85 % black, which lands at about 4.2:1 against white — under the 4.5:1
     /// minimum, and the accessibility audit flagged it on nearly every
     /// instruction in the app. These are not decorative captions: "Puhu ihan
-    /// rauhassa ja vapaasti" is the sentence that makes an 80-year-old willing
+    /// rauhassa…" is the sentence that makes an 80-year-old willing
     /// to start talking, and it was the faintest text on the screen.
     ///
     /// 75 % of the primary colour measures about 6.6:1 and still reads as a

@@ -585,9 +585,16 @@ private struct IdleView: View {
                 ? "Puhelin kysyy ensin luvan mikrofoniin."
                 : "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua."
         }
+        // "Kuuluvalla äänellä" in place of "vapaasti", 30 Sep 2026. The words
+        // are written by a model that hears only the recording, and what it
+        // cannot make out it cannot write down: a reply with no words leaves
+        // the telling as audio alone (PLAN.md §8). Said here, before the
+        // press, because the recording screen has no room left to say it at
+        // the largest size (`Squeeze`); "vapaasti" is what the longer form's
+        // second sentence says anyway.
         return typeSize.isAccessibilitySize || short
-            ? "Puhu ihan rauhassa ja vapaasti."
-            : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
+            ? "Puhu ihan rauhassa ja kuuluvalla äänellä."
+            : "Puhu ihan rauhassa ja kuuluvalla äänellä. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
 
     /// What is offered beside the big button, chosen by the ladder: easy enough
@@ -936,7 +943,7 @@ private struct IdleView: View {
             .accessibilityIdentifier("tell.title")
 
             // Dropped when there is a card. The reassurance exists to make a
-            // blank button approachable — *"Puhu ihan rauhassa ja vapaasti"* is
+            // blank button approachable — *"Puhu ihan rauhassa…"* is
             // the sentence that makes somebody willing to start — and a
             // photograph is not a blank button. It is also the cheapest 60 pt
             // on a screen that has just grown a picture: with it, the starter

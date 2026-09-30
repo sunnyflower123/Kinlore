@@ -5941,7 +5941,8 @@ Picture, question, button, and two ways on. In that order and nothing else:
   record button above it. The card asked nothing on the screen built to ask.
 - **The big button answers it** rather than starting free dictation, through
   the same `answer(_:)` the question cards use, so the ladder still learns.
-- **The reassurance is dropped.** *"Puhu ihan rauhassa ja vapaasti"* exists to
+- **The reassurance is dropped.** *"Puhu ihan rauhassa ja kuuluvalla äänellä"*
+  (*"vapaasti"* until 30 Sep 2026, PLAN.md §8) exists to
   make a blank button approachable. A photograph is not a blank button.
 - **The picture is what gives way.** Capped at 200 pt, and the number is the
   screen's rather than the picture's. Worth knowing before changing it: while
@@ -6235,7 +6236,11 @@ over, so the photograph steps aside.
 Measured in Finnish on the 17 Pro and the SE against `main` (30 Sep 2026). On
 the 17 Pro the photograph is 174 points tall at the default size, 144 at XXXL,
 115 at AX-M and 84 at AX-L; from AX-XL up it is not drawn, and both screens
-are as they were, the largest size included. What it costs there: at the
+are as they were, the largest size included. Since the reassurance asks for a
+clear voice, the same day, it is 111 at XXXL and as it was at the default
+size, AX-M, AX-L and AX-XL (the 17 Pro, measured again); the positions and the
+SE's figures below are from before that sentence and were not measured again.
+What it costs there: at the
 default size and at XXXL the idle disc gives up its glow and rings
 (`Squeeze.air`), which AX-M and AX-L keep, and while the phone listens "Älä
 tallenna tätä" starts at 842 to 845 wherever the photograph is drawn, under the
