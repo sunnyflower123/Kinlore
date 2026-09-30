@@ -1,8 +1,17 @@
+import PhotosUI
 import SwiftUI
 import UIKit
 
-/// The app's most important screen. One button, no menus, and no settings
-/// but the gear (`SettingsGear`), on a reader's phone only (`showsSettings`).
+/// The two ways a photograph comes in from the Tell screen, camera first as
+/// in the album.
+enum PhotoWay {
+    case camera
+    case library
+}
+
+/// The app's most important screen. One button, no menus but the quiet
+/// *"Lisää valokuva"* once the deck has run out (`addPhoto`), and no settings
+/// but the gear (`SettingsGear`), both on a reader's phone only.
 struct TellScreen: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -48,6 +57,13 @@ struct TellScreen: View {
     @State private var blind: BlindConfirmation.Card?
 
     @AppStorage(Elder.largerTextKey) private var largerText = false
+    /// *"Lisää valokuva"* (`addPhoto`): the camera, the phone's own
+    /// photographs, and what each brought in.
+    @State private var isPhotographing = false
+    @State private var isPickingFromLibrary = false
+    @State private var picked: PhotosPickerItem?
+    @State private var photographed: [Subject] = []
+    @State private var isReportingFailedImport = false
 
     /// The gear (`SettingsGear`, since 30 Sep 2026), on the tab's idle
     /// screen, which is its root, and on a reader's phone. Not on a
@@ -330,7 +346,8 @@ struct TellScreen: View {
                     blind: blind,
                     onBlindDone: { blind = nil },
                     onSkip: usesDeck ? { skipCard(model) } : nil,
-                    onColourFromTold: onColourFromTold
+                    onColourFromTold: onColourFromTold,
+                    onAddPhoto: usesDeck && !largerText ? { addPhoto($0) } : nil
                 )
                 .onAppear { advancePastTold(model) }
             case .recording:
@@ -367,6 +384,78 @@ struct TellScreen: View {
         .onChange(of: model.phase) { _, phase in
             if phase == .done { onTold?() }
         }
+        .fullScreenCover(isPresented: $isPhotographing, onDismiss: { showPhotographed(model) }) {
+            CameraScreen(
+                pickFromLibraryInstead: {
+                    photographed = []
+                    addPhoto(.library)
+                },
+                didSave: { photographed.append($0) }
+            )
+        }
+        .photosPicker(
+            isPresented: $isPickingFromLibrary,
+            selection: $picked,
+            matching: .images,
+            photoLibrary: .shared()
+        )
+        .onChange(of: picked) { _, item in
+            guard let item else { return }
+            Task { await importPicked(item, into: model) }
+        }
+        .alert("Kuvaa ei saatu tuotua", isPresented: $isReportingFailedImport) {
+            Button("Selvä") { isReportingFailedImport = false }
+        } message: {
+            Text("Yksi kuva jäi tuomatta. Voit yrittää sitä uudelleen.")
+        }
+    }
+
+    // MARK: - Adding a photograph
+
+    /// *"Lisää valokuva"*: the deck has run out, and the way on is a new card.
+    ///
+    /// Before this the screen had nothing to offer once every photograph had
+    /// been told about or pushed aside, and the way to add one was the album,
+    /// a tab away. What comes in goes through `MemoryStore.addPhotograph`, the
+    /// album's own path, and is put on this screen as the deck's card —
+    /// *"Kerro tästä kuvasta"*, with the way past it — rather than filed
+    /// somewhere in the grid.
+    private func addPhoto(_ way: PhotoWay) {
+        switch way {
+        case .camera:
+            isPhotographing = true
+        case .library:
+            #if DEBUG
+            // `-library stub`, as in the album: a test run cannot drive the
+            // system picker.
+            if UserDefaults.standard.string(forKey: "library") == "stub" {
+                if let photo = MemoryStore.demoPhotoData().flatMap({ store.addPhotograph(imageData: $0) }) {
+                    model?.moveTo(photo)
+                }
+                return
+            }
+            #endif
+            isPickingFromLibrary = true
+        }
+    }
+
+    private func importPicked(_ item: PhotosPickerItem, into model: TellViewModel) async {
+        defer { picked = nil }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let photo = store.addPhotograph(imageData: data)
+        else {
+            isReportingFailedImport = true
+            return
+        }
+        model.moveTo(photo)
+    }
+
+    /// The first photograph the camera took becomes the card. Any others are
+    /// untold, so the deck brings them next.
+    private func showPhotographed(_ model: TellViewModel) {
+        defer { photographed = [] }
+        guard let first = photographed.first else { return }
+        model.moveTo(first)
     }
 
     /// The deck's card, and the one thing that outranks it.
@@ -519,6 +608,9 @@ private struct IdleView: View {
     /// The colour sheet's second way (`TellScreen.onColourFromTold`). Never on
     /// the same screen as `onSkip`: the deck has no colour sheet.
     var onColourFromTold: (() -> Void)?
+    /// *"Lisää valokuva"*, on a reader's phone, drawn only when the screen has
+    /// no subject — the deck has run out (`TellScreen.addPhoto`).
+    var onAddPhoto: ((PhotoWay) -> Void)?
 
     @State private var answering: FollowUpQuestion?
     /// What to say once she has answered, and the only state this card keeps.
@@ -683,6 +775,31 @@ private struct IdleView: View {
     private func colourButton(_ onColour: @escaping () -> Void) -> some View {
         Button(action: onColour) {
             Label("Väritä jo kerrotun mukaan", systemImage: "paintpalette")
+                .font(.body.weight(.medium))
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .elderTapTarget()
+        }
+    }
+
+    /// A photograph to tell about, when the deck has none left. The same two
+    /// ways in as the album's "+", camera first, and quiet like the rows
+    /// beside it: the button above is still what the screen asks for.
+    private func addPhotoButton(_ onAddPhoto: @escaping (PhotoWay) -> Void) -> some View {
+        Menu {
+            Button {
+                onAddPhoto(.camera)
+            } label: {
+                Label("Kuvaa vanha valokuva", systemImage: "camera")
+            }
+            Button {
+                onAddPhoto(.library)
+            } label: {
+                Label("Valitse kuvista", systemImage: "photo.on.rectangle.angled")
+            }
+        } label: {
+            Label("Lisää valokuva", systemImage: "photo.badge.plus")
                 .font(.body.weight(.medium))
                 .foregroundStyle(Elder.supporting)
                 .multilineTextAlignment(.center)
@@ -1145,11 +1262,21 @@ private struct IdleView: View {
                 writingButton
                 skipButton(onSkip)
             }
+        } else if let onAddPhoto, model.target == nil, !typeSize.isAccessibilitySize {
+            // Beside the writing row, as the skip is under a card, so that the
+            // row adds no height to a screen measured to clear the tab bar.
+            HStack(spacing: 10) {
+                writingButton
+                addPhotoButton(onAddPhoto)
+            }
         } else {
             VStack(spacing: gap) {
                 writingButton
                 if let onSkip, model.target != nil {
                     skipButton(onSkip)
+                }
+                if let onAddPhoto, model.target == nil {
+                    addPhotoButton(onAddPhoto)
                 }
                 if let onColourFromTold {
                     colourButton(onColourFromTold)
