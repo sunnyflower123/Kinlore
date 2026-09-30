@@ -126,6 +126,8 @@ enum MediaStore {
         for name in names where prefixes.contains(where: name.hasPrefix) {
             try? FileManager.default.removeItem(at: documents.appendingPathComponent(name))
         }
+        // A recording stopped and not yet saved waits in a folder of its own.
+        try? FileManager.default.removeItem(at: AudioRecorder.waitingDirectory)
     }
 
     // MARK: - Downscaling

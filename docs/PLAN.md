@@ -341,7 +341,13 @@ says the voice is kept. Nor is it yet: the recording sits in the temporary
 directory until transcription returns, and only then does `persistAudio` move
 it where a memory can point at it. After a spoken first telling that raised a
 question, the conversation begins with no *"Muisto tallennettu"* in between.
-Not fixed as of this entry.
+
+A fix is proposed, 30 Sep 2026, and has not yet been built or run on a
+simulator: at stop the recording leaves tmp for a waiting folder in Documents
+that the launch sweep also reads (`RecordingRecovery.keep`), and only once that
+move has succeeded does the screen say *"Äänesi on tallessa tässä
+puhelimessa"*, above the spinner. The conversation's missing *"Muisto
+tallennettu"* is left as it is.
 
 A second question was asked in words nobody kept, roughly *what should I say?*
 The idle screen does offer two starter questions (ARCHITECTURE §12), under the

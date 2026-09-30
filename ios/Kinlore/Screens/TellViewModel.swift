@@ -346,8 +346,14 @@ final class TellViewModel {
     /// words and no recording is not saved at all.
     private(set) var audioLost = false
 
+    /// Whether the recording being written down is already out of tmp — the
+    /// one condition under which the processing screen says the voice is kept
+    /// on this phone.
+    /// False for a typed telling, which has no voice to keep.
+    private(set) var recordingIsKept = false
+
     func stopAndProcess() async {
-        guard let url = recorder.stop() else {
+        guard let stopped = recorder.stop() else {
             // A recording under a second is an accident, not a memory. In the
             // interview loop it is also the natural "I have nothing to add":
             // land on the last result, not on the empty idle screen.
@@ -363,6 +369,11 @@ final class TellViewModel {
             }
             return
         }
+        // Out of tmp before anything is sent, so the screen that waits for the
+        // words can say the voice is kept and mean it (PLAN.md §8).
+        let kept = RecordingRecovery.keep(stopped)
+        recordingIsKept = kept != nil
+        let url = kept ?? stopped
         #if DEBUG
         sweepForTests(at: "stopped")
         #endif
@@ -661,6 +672,7 @@ final class TellViewModel {
     func submitTyped() async {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+        recordingIsKept = false
         await process(transcript: text, audioURL: nil, duration: nil)
     }
 
