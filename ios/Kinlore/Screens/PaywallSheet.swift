@@ -24,6 +24,10 @@ struct PaywallSheet: View {
     /// `spreadToFamily`.
     @State private var isWaitingForTheFamily = false
 
+    /// Set when a restore comes back with no active entitlement — see
+    /// `onRestoreCompleted`.
+    @State private var foundNothingToRestore = false
+
     /// Set by a completed purchase and spent by the request to close that
     /// RevenueCatUI sends straight after it — see `onRequestedDismissal`.
     @State private var declinesNextDismissal = false
@@ -33,16 +37,27 @@ struct PaywallSheet: View {
             // Restore matters more here than in most apps: the person who pays
             // may reinstall, change phone, or be a different family member than
             // the one who benefits.
+            //
+            // But a restore that finds nothing completes too, with a
+            // `CustomerInfo` that has nothing active in it — on the Test Store,
+            // whose restore only returns the current one, that is anybody who
+            // has not bought. Handed to `spreadToFamily`, it met the Worker's
+            // "not paid" and thanked somebody who had paid nothing ("Kiitos —
+            // maksu meni läpi"); in the seeded demo, with no server to ask, it
+            // opened the archive. So a restore reaches the family only with an
+            // active entitlement, the same test `hasActivePurchase` and the
+            // Worker make, and the empty answer is said here, because
+            // RevenueCatUI 5.83.2 only logs it.
             .onPurchaseCompleted { (info: CustomerInfo) in
                 declinesNextDismissal = true
                 Task { await spreadToFamily(info) }
             }
             .onRestoreCompleted { (info: CustomerInfo) in
-                // A restore that found nothing is not a payment. Sending it on
-                // ended in "Kiitos — maksu meni läpi" for somebody who had paid
-                // nothing, and left the family exactly as it was.
-                guard !info.entitlements.active.isEmpty else { return }
-                Task { await spreadToFamily(info) }
+                if info.entitlements.active.isEmpty {
+                    foundNothingToRestore = true
+                } else {
+                    Task { await spreadToFamily(info) }
+                }
             }
             // RevenueCatUI asks to close once a purchase completes, one
             // main-queue turn after `onPurchaseCompleted` — before the family
@@ -68,6 +83,11 @@ struct PaywallSheet: View {
                 Button("Selvä") { dismiss() }
             } message: {
                 Text("Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa.")
+            }
+            // A title and nothing more, because it is all that is known. The
+            // sheet stays open under it: somebody who found nothing may buy.
+            .alert("Palautettavaa ostoa ei löytynyt", isPresented: $foundNothingToRestore) {
+                Button("Selvä", role: .cancel) {}
             }
     }
 

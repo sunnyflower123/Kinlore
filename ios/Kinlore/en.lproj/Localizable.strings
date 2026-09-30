@@ -272,6 +272,7 @@
 "Maksullisessa arkistossa on enemmän tilaa kuville ja enemmän litterointiaikaa, ja yksi maksaja avaa sen koko perheelle." = "The paid archive has more room for photographs and more transcription time, and one payer opens it for the whole family.";
 "Kiitos — maksu meni läpi" = "Thank you — the payment went through";
 "Perheen arkisto ei vielä ehtinyt avautua. Sovellus ilmoittaa asiasta uudelleen itsestään, eikä sinun tarvitse maksaa toista kertaa." = "The family archive has not opened yet. The app will report this again by itself, and you do not have to pay a second time.";
+"Palautettavaa ostoa ei löytynyt" = "No purchase was found to restore";
 "Käyttö" = "Usage";
 
 /* --- Taking it all with you ---------------------------------------------- */
