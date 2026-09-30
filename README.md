@@ -208,7 +208,10 @@ family. On the first, open Settings with the gear at the top right of
 *People*. Then *Family members and invitations*, *Invite a family
 member* and *Share the invitation*. On the second: *Join with an invitation
 link*, paste the whole invitation and press *Join a family*. An invitation is
-valid for a week and lets one person in.
+valid for a week and lets one person in. A phone fetches the family's changes
+when Kinlore opens or comes back to the front, not by itself while it stays
+open. So after adding something on the first, go to the second simulator's home
+screen (⇧⌘H) and open Kinlore again.
 
 Both of those are the real app, and the script opens nothing else unless you
 ask. What a family's archive looks like a year or two in is the one thing a
