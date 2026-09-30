@@ -197,7 +197,7 @@
 
 /* --- Photographs ---------------------------------------------------------- */
 "Kuvaa" = "Photograph";
-"Kuvaa vanha valokuva" = "Photograph an old picture";
+"Kuvaa vanha valokuva" = "Photograph a picture";
 "Kuvaa vanha valokuva albumista, niin koko perhe voi kertoa siitä omat muistonsa." = "Photograph an old picture from the album, and the whole family can tell their own memories of it.";
 "Kuvattu 1 kuva" = "1 photograph taken";
 "Kuvattu %lld kuvaa" = "%lld photographs taken";
