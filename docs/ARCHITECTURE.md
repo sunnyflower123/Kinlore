@@ -4149,7 +4149,7 @@ those same categories, which is how the contrast problem survived this long.
   17 Pro against the same screens drawn with it, 28 per cent of the
   capsule's pixels on Kerro, 14 on a telling's result, and nearly all of
   them on the person card had been the page showing through at the largest
-  size. At the floor it was
+  size. At the floor, then xLarge, it was
   one word, the person card's memory count bent into the capsule's end —
   1.3 per cent at xLarge and 0.2 at xxLarge, with nothing under the bar on
   Kerro or Albumi — smaller, and hers first. A `toolbarBackground` of the
@@ -4361,6 +4361,15 @@ Every sweep runs a screen twice: at the default size and at
 it produces — `largerText` on, iOS's own size untouched — is the one an
 80-year-old's phone is actually in, and it had never been audited at all.
 
+The floor was `xLarge`, one notch, until 30 Sep 2026, when a real phone showed
+that one notch was not visibly larger; it has been `xxLarge` since. `xxxLarge`
+was measured the same day and does not fit the Tell tab: on a trial's first
+launch on a 17 Pro, "Kirjoita sen sijaan" ended at 831 under a tab bar that
+begins at 791, with every step of the screen's squeeze taken
+(`DeckTests.testEveryWayOnClearsTheTabBarAtRest`). The accessibility sizes do
+not catch this, because there the page scrolls on purpose and only the record
+button has to clear the bar.
+
 It surfaced by accident, from a test polluting its own device. A run with the
 new `Elder.forgetLargerText()` deliberately switched off left `elder.largerText`
 set behind it, and the next two Settings sweeps failed on screens that had
@@ -4372,10 +4381,11 @@ passed minutes earlier. Measured on purpose afterwards:
 | Asetukset, vain tämä puhelin | 2 — `Arkisto`, `Ota perhe käyttöön` | clean |
 
 Both findings are *"Dynamic Type font sizes are partially unsupported"*. The two
-columns render text at the same size and answer differently, so **the trigger is
-the floor and not the size**: the audit asks whether text follows the system
-setting, and below `xLarge` it does not, because stopping exactly that is what a
-floor is. The finding is the mechanism describing itself.
+columns render text at the same size (the floor was `xLarge` then) and answer
+differently, so **the trigger is the floor and not the size**: the audit asks
+whether text follows the system setting, and below the floor (`xxLarge` since
+30 Sep 2026) it does not, because stopping exactly that is what a floor is. The
+finding is the mechanism describing itself.
 
 Recorded rather than fixed, because both available fixes are worse than the gap.
 Removing the floor takes away the one thing that makes the app readable for the
@@ -4468,16 +4478,17 @@ for.
 frames and audit types; the question a person actually has is whether the text
 comes out too small or too big. Screenshotted with `largerText` on and off, same
 seed, same screen: both reported elements — the `Arkisto` header and the
-`Ota perhe käyttöön` row — are drawn in full, one notch larger with the floor on,
+`Ota perhe käyttöön` row — are drawn in full, one notch larger with the floor on
+(`xLarge` until 30 Sep 2026, `xxLarge` since),
 nothing clipped, nothing overflowing, the long export footer wrapping to four
 lines instead of three. Nothing on that screen is wrong to look at.
 
 So the finding is true about the mechanism and empty about the product: below
-`xLarge` the text does not follow the system setting, because that is what the
-floor is for. **What is left is the coverage gap and not a defect** — and the
-gap is worth naming on its own, because the band nothing measures is the one the
-primary user's phone is in, and a real defect appearing there later would be
-just as invisible as this non-defect was.
+the floor (`xxLarge` since 30 Sep 2026) the text does not follow the system
+setting, because that is what the floor is for. **What is left is the coverage
+gap and not a defect** — and the gap is worth naming on its own, because the
+band nothing measures is the one the primary user's phone is in, and a real
+defect appearing there later would be just as invisible as this non-defect was.
 
 ## 16. The memory that was interrupted
 
@@ -4776,9 +4787,10 @@ of its own, they stay links.
 **Whole names since 30 Sep 2026.** The chips were a `ViewThatFits` between a
 line of `Label`s and a column of them, and it chose the line where the line
 did not fit: the film's take of 29 Sep 2026 on the grandmother's phone, at
-its text floor (`Elder.textFloor`), drew a telling's three names in one row,
-each broken inside the word (*Pu-/uma/la*, *Hel/mi*, *Toi/vo*), and Mummo's
-telling on the jetty in `-seed story` did the same on the simulator, its
+its text floor (`Elder.textFloor`, then `xLarge`), drew a telling's three
+names in one row, each broken inside the word (*Pu-/uma/la*, *Hel/mi*,
+*Toi/vo*), and Mummo's telling on the jetty in `-seed story` did the same on
+the simulator, its
 Puumala 95 points tall where one line of the name is 22. They are laid out by
 `ChipFlow` now, from the leading edge (`centred: false`), and each is an icon
 and a `Text` like the caption's chips: a chip takes its own width, the row

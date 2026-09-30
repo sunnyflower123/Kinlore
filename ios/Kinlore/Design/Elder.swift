@@ -55,11 +55,22 @@ enum Elder {
     ///
     /// A floor and never a ceiling: iOS's own setting stays in charge above it,
     /// so somebody who has already enlarged their text keeps the size they
-    /// chose. One notch and not three — every screen is audited to XXXL, so
-    /// bigger would be *safe*, but each notch is a line less of the memory or
-    /// the question on screen, and taking that away from somebody who did not
-    /// ask for it is its own kind of failure.
-    static let textFloor: DynamicTypeSize = .xLarge
+    /// chose. Two notches above the default, because the floor is only on
+    /// when somebody chose it, and a switch called Larger text has to look
+    /// larger to the person who turned it on. One notch was measured on a real
+    /// phone on 30 Sep 2026 and was not visibly larger: the only change
+    /// anybody could see was the simpler mode that comes with the switch. The
+    /// cost that one notch was guarding against, a line less of the memory on
+    /// screen, is the price of what was asked for.
+    ///
+    /// Not three, although every screen is audited at AccessibilityXXXL. At
+    /// the accessibility sizes the Tell screen scrolls on purpose and only
+    /// its record button has to clear the tab bar; below them every way on
+    /// has to. Three notches were measured the same day, and on a trial's
+    /// first launch on a 17 Pro "Kirjoita sen sijaan" ended at 831 under a
+    /// bar that begins at 791, after the screen had taken every step it has
+    /// (`DeckTests.testEveryWayOnClearsTheTabBarAtRest`).
+    static let textFloor: DynamicTypeSize = .xxLarge
 
     static let screenPadding: CGFloat = 24
 
