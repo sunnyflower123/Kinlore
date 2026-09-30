@@ -213,8 +213,9 @@ wrong is the premise the name-correction step was written for, not a surprise.*
 **Accessibility:** 0 failures across 17 audits, measured 15 Aug 2026 on a
 private simulator — every sweep there was that day, and the last whole-suite
 run on record with no red in it. The suite has grown to the count in the table
-above, and the last full run written down, at `a4fdf0f` on a quiet machine on
-19 Sep, left four sweeps red with one finding each. The header of
+above, and the last full run, the rehearsal of 30 Sep at `6032d58`, ran 398
+tests with 19 skipped and one red, a colour test that passed when run alone a
+second time and whose cause was fixed in `82f9e07`. The header of
 `AccessibilitySweepTests.swift` keeps the tests that go red in company and green
 alone, rather than explaining them away. (On a simulator shared with another
 session, the 15 Aug commit reported 15 failures that were not real — see

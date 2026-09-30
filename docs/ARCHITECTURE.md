@@ -117,9 +117,9 @@ model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
 The UI suite has 399 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
-DEVELOPMENT.md states a different number anywhere. The last full run written
-down, at `a4fdf0f` on 19 Sep 2026, left four sweeps red with one finding each
-([DETAILS.md](DETAILS.md#measured-not-claimed)).
+DEVELOPMENT.md states a different number anywhere. The last full run, the
+rehearsal of 30 Sep 2026, is written down as the last item of the known issues
+below.
 
 **Why a check, and not a look at the app.** Nearly every item here was written
 as done long before it was true, and each looked done from the outside: the
@@ -188,10 +188,17 @@ the defect. They are written here so that nobody has to find them twice.
   (`worker.ts:313–318`) and never compares it with the session's member id, so
   a client that knows another payer's id, not yet bound to a family, can claim
   that subscription. The id is a random UUID that no screen shows.
-- **The last full UI run written down is 26 Sep 2026**, with six reds: four
-  green when run alone, two the audit's own default-size simulation (the header
-  of `AccessibilitySweepTests.swift`). None is recorded after the fixes of
-  30 Sep.
+- **A restore that cannot reach the family thanks the person for paying.** A
+  restore with an active entitlement takes the purchase's path
+  (`PaywallSheet.swift:55–60`), so when `syncPurchase` fails the sheet says
+  *"Kiitos — maksu meni läpi"* ("Thank you — the payment went through",
+  `PaywallSheet.swift:82`) to somebody who paid nothing on that tap.
+- **The last full UI run is the rehearsal of 30 Sep 2026**, at `6032d58`: 398
+  tests run, 19 skipped and 1 red. The red was
+  `ColourTests.testYesKeepsTheColoursBesideThePhotograph`, which passed when
+  run alone a second time; its cause, a lazy list that had not yet created the
+  footer's identifier, was fixed in `82f9e07`. The changes that reached `main`
+  after the rehearsal have been run only with targeted tests.
 
 **Fixed the same day.**
 
