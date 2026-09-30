@@ -132,43 +132,66 @@ has, and the reason to distrust this table is that it has been wrong in exactly
 this way before.
 
 **Known issues, found on 30 Sep 2026.** A review on the day of submission read
-the promises against the code again, and these are what it found. The
+the promises against the code again and found these, the heaviest first. The
 webhook's was fixed that day and is listed after the rest, with a second fix to
-the payments. The others were not, because each touches sync, the production
-schema or the recorder, and a change there on the last day is a bigger risk
-than the defect. They are written here so that nobody has to find them twice.
+the payments. The others were not: most touch sync, the production schema, the
+recorder or the payments, where a change on the last day is a bigger risk than
+the defect. They are written here so that nobody has to find them twice.
 
-- **A relationship taken back and made again stops that phone's sync.**
-  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
-  rows (`schema.sql`), the app makes the new one under a new id, and the
-  upsert in `sync.ts` only handles a clash on `id`, so the whole batch fails.
-  The phone then retries the same push for ever, and its pull, in the same
-  round, never runs; the screen says it is waiting for the network. Two
-  members adding the same relationship under different ids do the same.
-  Reproduced against a local Worker.
-- **An edit made while a push is in flight is lost.** `clearPending` clears
-  the rows it sent by id, so a row changed during the request is no longer
-  dirty, and the pull after it puts the server's older copy back.
-- **The free photo ceiling is counted at one door.** `/media?kind=photo`
-  checks it; `/sync` accepts photo subjects without counting them, and a
-  `colour` upload is not counted. Only a modified client gets past it.
-- **Rule 4 is kept by the app, not the Worker.** A pushed subject without
-  `confirmed` is stored as confirmed.
+- **Taking a relationship back and entering it again stops that phone's
+  sync.** `relation` is unique on `(from_subject, to_subject, kind)`, deleted
+  rows included (`schema.sql:397`); the app enters it under a new id and the
+  upsert handles a clash on `id` only (`sync.ts:951`), so every push from that
+  phone fails whole and its pull never runs (`SyncEngine.swift:257–282`), and
+  the family screen says a waiting telling will leave when the connection
+  returns. Two members recording the same parent before either syncs do the
+  same.
 - **A telling is lost if the app is killed mid-recording.** The recorder
-  writes AAC into an `.m4a`, which is unreadable until it is finished, and the
-  next launch's sweep removes it. A telling interrupted any other way is kept.
-- **A failed save is silent.** `MemoryStore.save()` ignores a write error.
-- **Nothing is deleted on the server.** Deletion is soft, R2 objects are never
-  removed and there is no route that deletes a family (§19), and the family
-  key is not changed when a member leaves (§4, a decision).
-- **The model calls have no timeout** (`openrouter.ts`).
-- **VoiceOver hears no announcements.** Recording, organising and "Muisto
-  tallennettu" are carried by the button's label and the screen changing.
-- **The blind card in a small family.** With two or three confirmed people,
-  every card shows the same decoys, and the name that changes is the answer.
-- **The last full UI run written down is 26 Sep 2026**, with six reds
-  (the header of `AccessibilitySweepTests.swift`); none is recorded after the
-  fixes of 30 Sep.
+  writes AAC into an `.m4a` (`AudioRecorder.swift:103`) that cannot be opened
+  until it is finished, and the next launch's sweep deletes what it cannot open
+  (`AudioRecorder.swift:327–329`); only a recording killed after it stopped is
+  recovered. A crash, a force-quit or the system ending the app is enough.
+- **An edit made while a push is in flight is lost.** `clearPending` clears the
+  rows it sent by id (`MemoryStore.swift:1331`), so a row changed during the
+  request is no longer dirty and the pull after it puts the server's older copy
+  back. The window is one request long.
+- **Two phones pushing at once can hide one push from the other.** A push
+  takes its number (`sync.ts:169`) before it writes (`sync.ts:972`), so a later
+  number can land first, a pull in between moves the cursor past the earlier
+  one (`sync.ts:306`), and those rows never reach that phone.
+- **A failed save is silent.** `MemoryStore.save()` drops a write error
+  (`MemoryStore.swift:2886–2888`), so on a full phone the changes since the
+  last good save live only in memory, and an archive kept on this phone only
+  loses them when the app ends.
+- **Nothing is deleted on the server.** Deletion is a tombstone, no R2 object
+  is ever removed (`backend/src` never deletes from R2), no route deletes a
+  family (§19), and a member who leaves keeps the family key (§4, a decision).
+- **A paid family has no ceiling on model calls.** `checkAISeconds`,
+  `checkColourisations` and `reserveFreeTierDay` return early for it
+  (`quota.ts:78`, `148`, `222`), and the only rate limits are on creating and
+  joining a family (`worker.ts:187`, `222`). A Test Store purchase is free, so
+  whoever makes one can spend the project's OpenRouter credit with no limit in
+  the Worker.
+- **VoiceOver hears no announcements.** Nothing in `ios/Kinlore` posts one;
+  recording, organising and "Muisto tallennettu" are carried by the button's
+  label and the screen changing.
+- **The blind card in a small family.** The decoys are the other confirmed
+  people (`BlindConfirmation.swift:93`), so with two or three of them every
+  card shows the same ones, and the name that changes is the answer.
+- **The model calls have no timeout** (`openrouter.ts:170`): a model that never
+  answers holds the request until the phone gives up, and the retries in
+  `extract.ts` and `story.ts` never start.
+- **The free photo ceiling is counted at one door.** `/media?kind=photo` checks
+  it (`worker.ts:385`); `/sync` takes photo subjects without counting them, and
+  a `colour` upload is not counted. Only a modified client gets past it.
+- **`/entitlement/sync` believes the customer id it is sent**
+  (`worker.ts:313–318`) and never compares it with the session's member id, so
+  a client that knows another payer's id, not yet bound to a family, can claim
+  that subscription. The id is a random UUID that no screen shows.
+- **The last full UI run written down is 26 Sep 2026**, with six reds: four
+  green when run alone, two the audit's own default-size simulation (the header
+  of `AccessibilitySweepTests.swift`). None is recorded after the fixes of
+  30 Sep.
 
 **Fixed the same day.**
 
