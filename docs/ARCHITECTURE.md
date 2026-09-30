@@ -131,12 +131,12 @@ perfectly in every one of those cases. That is the failure mode this project
 has, and the reason to distrust this table is that it has been wrong in exactly
 this way before.
 
-**Known issues, found on 30 Sep 2026 and not fixed.** A review on the day of
-submission read the promises against the code again, and these are what it
-found. None of them was fixed that day, because each touches sync, the
-production schema or the recorder, and a change there on the last day is a
-bigger risk than the defect. They are written here so that nobody has to find
-them twice.
+**Known issues, found on 30 Sep 2026.** A review on the day of submission read
+the promises against the code again, and these are what it found. The
+webhook's was fixed that day and is listed after the rest, with a second fix to
+the payments. The others were not, because each touches sync, the production
+schema or the recorder, and a change there on the last day is a bigger risk
+than the defect. They are written here so that nobody has to find them twice.
 
 - **A relationship taken back and made again stops that phone's sync.**
   `relation` is unique on `(from_subject, to_subject, kind)` including deleted
@@ -154,8 +154,6 @@ them twice.
   `colour` upload is not counted. Only a modified client gets past it.
 - **Rule 4 is kept by the app, not the Worker.** A pushed subject without
   `confirmed` is stored as confirmed.
-- **The webhook does not order events.** An `EXPIRATION` delivered after a
-  `RENEWAL` ends a paid family until the payer's phone next syncs.
 - **A telling is lost if the app is killed mid-recording.** The recorder
   writes AAC into an `.m4a`, which is unreadable until it is finished, and the
   next launch's sweep removes it. A telling interrupted any other way is kept.
@@ -171,6 +169,24 @@ them twice.
 - **The last full UI run written down is 26 Sep 2026**, with six reds
   (the header of `AccessibilitySweepTests.swift`); none is recorded after the
   fixes of 30 Sep.
+
+**Fixed the same day.**
+
+- **The webhook did not order events.** An `EXPIRATION` delivered after a
+  `RENEWAL` ended a paid family at once, until the payer's phone reported the
+  purchase again. For every event but a `TRANSFER`, the webhook now takes the
+  customer's active entitlements from RevenueCat's REST API, as
+  `/entitlement/sync` does, and applies that answer (`handleWebhook`), so a
+  late or repeated event applies the same answer again; only when RevenueCat
+  cannot be asked does the event decide, as before. Any active entitlement
+  counts: `RC_ENTITLEMENT_ID` is read by no code, because the v2 API names an
+  entitlement by an internal id rather than by `archive`.
+  `webhook-revocation-check.mjs` drives it with RevenueCat replaced.
+- **A payer who left went on paying for the family they left.**
+  `applyEntitlement` now counts only members still in the family, and the
+  Worker works the tier out again when a member holding a date of their own
+  joins, leaves or is removed (`recomputeTier` in `worker.ts`). The departed
+  row keeps its binding and date, so a payer who comes back counts again.
 
 ## 2. Five decisions that determine the rest
 

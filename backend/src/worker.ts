@@ -20,7 +20,7 @@ import {
 } from './family.ts'
 import { download, upload } from './media.ts'
 import { extract, normaliseContext, type Lang } from './extract.ts'
-import { handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement.ts'
+import { applyEntitlement, handleWebhook, isAuthorizedWebhook, syncEntitlement } from './entitlement.ts'
 import {
 	checkAISeconds,
 	checkColourisations,
@@ -116,6 +116,30 @@ const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 /// photographs at 2048 px, measured at 340–990 kB (`media.ts`), so this is far
 /// past any real one and exists for the misbehaving client.
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
+
+/// The family's tier again, after a payer joined or left it.
+///
+/// A family's right is the furthest date among the members still in it
+/// (`applyEntitlement`), so it changes when a payer leaves or comes back and
+/// not only when RevenueCat says something; nothing else would write it until
+/// the next event. Only a member holding a date of their own changes that
+/// answer, so nobody else's arrival or departure touches the family row: a
+/// tier set by hand in D1, which no member's date explains, stays as it was.
+/// The membership change has already happened, so a failure here is logged
+/// and does not turn it into an error.
+async function recomputeTier(env: Env, familyID: string, memberID: string) {
+	try {
+		const payer = await env.DB.prepare(
+			'SELECT entitlement_expires_at FROM member WHERE id = ? AND family_id = ?',
+		)
+			.bind(memberID, familyID)
+			.first<{ entitlement_expires_at: number | null }>()
+		if (payer?.entitlement_expires_at == null) return
+		await applyEntitlement(env, familyID, null, null)
+	} catch {
+		console.error('[entitlement] tier not recomputed after a membership change')
+	}
+}
 
 /// Meters the two routes that write without a member identity.
 ///
@@ -245,6 +269,7 @@ export default {
 				if ('error' in result) {
 					return json(result, result.error === 'invalid_invite' ? 404 : 409)
 				}
+				await recomputeTier(env, result.familyID, body.memberID)
 				return json(result)
 			} catch (err) {
 				return failure(err, 'family-join')
@@ -413,7 +438,9 @@ export default {
 			if (!session) return json({ error: 'unauthorized' }, 401)
 			try {
 				const result = await leaveFamily(env, session)
-				return 'error' in result ? json(result, 409) : json(result)
+				if ('error' in result) return json(result, 409)
+				await recomputeTier(env, session.familyID, session.memberID)
+				return json(result)
 			} catch (err) {
 				return failure(err, 'family-leave')
 			}
@@ -465,6 +492,7 @@ export default {
 			if (!id) return json({ error: 'missing_id' }, 400)
 			try {
 				const result = await removeMember(env, session, id)
+				if (!('error' in result) && result.removed) await recomputeTier(env, session.familyID, id)
 				return 'error' in result
 					? json(result, result.error === 'not_owner' ? 403 : 404)
 					: json(result)
