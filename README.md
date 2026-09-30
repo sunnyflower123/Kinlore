@@ -265,7 +265,11 @@ comparing it with anything, and no route that calls a model has a rate limit.
 Only the size of one request (up to 25 MiB of audio, about 97 minutes) and the
 credit on the OpenRouter account bound what a paying family can spend. The
 yearly plan covers about five hours of recording a month, and the heavy family
-costs more than either plan brings in.
+costs more than either plan brings in. Not built yet: a fair-use ceiling for
+paying families that would limit only the AI's work, never telling or the
+recording (rule 2), with more hours sold as top-ups; and cheaper model calls,
+with fewer tokens per minute and a cheaper transcription model once one is
+measured to hear Finnish as well.
 
 ## Privacy and security
 
