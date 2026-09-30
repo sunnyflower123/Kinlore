@@ -351,6 +351,20 @@ once that move has succeeded does the screen say *"Äänesi on tallessa tässä
 puhelimessa"*, above the spinner. The conversation's missing *"Muisto
 tallennettu"* is left as it is.
 
+The spinner went the same evening, after the founder's own session on the
+phone, where a turning wheel over one sentence wore patience thin.
+`ProcessingView` now lists the steps the app actually takes and marks each as
+it is: the voice kept (only once the move above has succeeded), the speech
+being written down, the people, places and time being looked for. Under them,
+while the voice is kept, *"Vaikka tämä kestäisi hetken, kertomasi ei katoa"*,
+which the save without words makes true. VoiceOver is told each step as it
+begins, the mark of work breathes rather than spins, and under Reduce Motion
+it is the system's spinner as before. No time is promised: the two calls take
+what the network and the model take, and a number on the screen would be a
+guess. `-processing slow` and `-processing held` hold the stubs on each step
+for `InterviewLoopTests.testTheProcessingScreenWalksItsSteps` and the audit
+`testProcessingIsAudited`.
+
 Two more things from the session were confirmed on 30 Sep 2026. My grandparent
 had to be asked, out loud, to speak louder; the speech recognition still usually
 caught everything they said, but the moment gave the idea of reminding a teller

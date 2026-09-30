@@ -144,6 +144,9 @@ struct StubExtractionService: ExtractionService {
         context: ExtractionContext = ExtractionContext(),
         photo: Data? = nil
     ) async throws -> ExtractionResult {
+        #if DEBUG
+        if let delay = AppServices.processingDelay(transcribing: false) { try await Task.sleep(for: delay) }
+        #endif
         try await Task.sleep(for: simulatedDelay)
         if let film = Self.filmResult(for: transcript, corrections: corrections, level: level) {
             return film

@@ -181,15 +181,28 @@ struct ColourSheet: View {
     /// only what the idle screen happened to leave it, and where it is more
     /// than the sheet has, the photograph is not drawn and the listening
     /// screen opens at the disc as it always has. The third is the screen
-    /// that transcribes the telling and puts it in order, with the line over
-    /// its spinner that says the voice is kept: it scrolls since that line
-    /// came (30 Sep 2026), and is measured here so that the photograph never
-    /// pushes that line or the words under it out of sight. Writing is not
-    /// here, because its keyboard leaves the photograph no room.
+    /// that transcribes the telling and puts it in order, with its steps and
+    /// the sentence that nothing is lost (30 Sep 2026): it scrolls, and is
+    /// measured here so that the photograph never pushes a step out of
+    /// sight. Writing is not here, because its keyboard leaves the
+    /// photograph no room.
     ///
     /// A copy of another file's layout, and it drifts when that one changes;
     /// `testColourTellingKeepsThePhotograph` and `testColourTelling` are what
     /// notice.
+    /// One of `ProcessingView`'s steps, as heavy as it is while under way.
+    private func processingStep(_ text: LocalizedStringKey) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.title2)
+                .frame(minWidth: 32)
+            Text(text)
+                .elderBody()
+                .fontWeight(.semibold)
+            Spacer(minLength: 0)
+        }
+    }
+
     private var tellingNeeds: some View {
         let accessibility = typeSize.isAccessibilitySize
         return ZStack(alignment: .top) {
@@ -247,26 +260,31 @@ struct ColourSheet: View {
             .padding(.top, 12)
             .padding(.bottom, 12)
 
-            // `ProcessingView`, with the longer of its two phases' words and
-            // the line that says the voice is kept, which it shows whenever
-            // the recording has left tmp (`TellViewModel.recordingIsKept`).
-            VStack(spacing: 24) {
+            // `ProcessingView` at its tallest: the larger of its two marks of
+            // work, the longer of its two titles, all three steps as heavy as
+            // the one under way, and the sentence that nothing is lost, which
+            // it shows whenever the recording has left tmp
+            // (`TellViewModel.recordingIsKept`).
+            VStack(spacing: 28) {
                 Spacer(minLength: 0)
-                Label("Äänesi on tallessa tässä puhelimessa", systemImage: "checkmark.circle.fill")
-                    .font(.title2.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-                ProgressView()
-                    .controlSize(.extraLarge)
+                ZStack {
+                    Image(systemName: "text.magnifyingglass")
+                        .font(.system(size: 56))
+                    ProgressView()
+                        .controlSize(.extraLarge)
+                }
                 ZStack {
                     Text("Kuuntelen mitä sanoit")
                     Text("Järjestelen muistoa")
                 }
                 .font(.title2.weight(.semibold))
-                ZStack {
-                    Text("Puran puheen tekstiksi.")
-                    Text("Etsin ihmiset, paikat ja ajankohdan.")
+                VStack(alignment: .leading, spacing: 18) {
+                    processingStep("Äänesi on tallessa tässä puhelimessa")
+                    processingStep("Puran puheen tekstiksi.")
+                    processingStep("Etsin ihmiset, paikat ja ajankohdan.")
                 }
-                .elderBody()
+                Text("Vaikka tämä kestäisi hetken, kertomasi ei katoa.")
+                    .elderBody()
                 Spacer(minLength: 0)
             }
             .padding(Elder.screenPadding)

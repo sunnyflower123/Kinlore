@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 126 sweep tests, each auditing one screen at the default text size and again at the largest, out of 403 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 126 sweep tests, each auditing one screen at the default text size and again at the largest, out of 405 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -114,7 +114,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 403 UI tests, including 126 accessibility sweeps that audit a
+The UI suite has 405 UI tests, including 126 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run, the
@@ -6329,8 +6329,8 @@ decides: the question, the disc, its caption and the ways on as `IdleView`'s
 squeeze leaves them (at the accessibility sizes the question and the disc,
 which is what it keeps above the fold there); the question being answered,
 the disc and its caption as `RecordingView`'s squeeze leaves them; and
-`ProcessingView` with the line that says the voice is kept, which scrolls
-since that line came but is not to be pushed out of sight by the photograph.
+`ProcessingView` with its steps and the sentence that nothing is lost, which
+scrolls but is not to be pushed out of sight by the photograph.
 The photograph gets what is left, up
 to the card's 200 points (150 at the accessibility sizes), and under 60, a
 button's height, it is not drawn at all. The same pass matters because

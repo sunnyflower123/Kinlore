@@ -1007,3 +1007,7 @@
 "Nauhoituksessa ei kuulunut yhtään ääntä, joten mitään ei tallennettu. Katso, ettei mikään peitä mikrofonia, ja yritä uudelleen." = "Not a sound came through in the recording, so nothing was saved. Check that nothing is covering the microphone, and try again.";
 "Takaisin" = "Back";
 "Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain, nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää odottamaan vastausta." = "Your last answer could not be written down. If you said something, the recording is kept and the text will be written later. The question will wait for an answer.";
+"Vaikka tämä kestäisi hetken, kertomasi ei katoa." = "Even if this takes a while, nothing you told will be lost.";
+"tehty" = "done";
+"meneillään" = "in progress";
+"odottaa" = "waiting";

@@ -378,6 +378,11 @@ final class TellViewModel {
     /// False for a typed telling, which has no voice to keep.
     private(set) var recordingIsKept = false
 
+    /// Whether the telling being processed was spoken. The processing screen
+    /// lists the steps the app actually takes, and a typed telling skips the
+    /// writing down (`ProcessingView`).
+    private(set) var processingSpoken = false
+
     /// The conversation's last answer was recorded and not written down: the
     /// network, or the Worker, which answers a recording with no words in it
     /// 502. The result the rounds before it made is shown, with one sentence
@@ -441,6 +446,7 @@ final class TellViewModel {
             return
         }
         do {
+            processingSpoken = true
             phase = .transcribing
             #if DEBUG
             // `-answer wordless`: an answer in the conversation comes back
@@ -743,6 +749,7 @@ final class TellViewModel {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         recordingIsKept = false
+        processingSpoken = false
         await process(transcript: text, audioURL: nil, duration: nil)
     }
 

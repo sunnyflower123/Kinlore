@@ -1564,6 +1564,36 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The screen between the stop and what comes next, a list of the steps
+    /// the app takes since 30 Sep 2026 (`ProcessingView`): the kept voice,
+    /// the speech being written down, the names still to come and the
+    /// sentence that nothing is lost, which is the tallest it gets.
+    /// `-screen interview` records its first answer by itself, and
+    /// `-processing held` keeps that answer on the writing down for as long
+    /// as the audit takes. Outside `sweep(...)` like the recording screen:
+    /// the step under way breathes, so exactly element detection is forgiven
+    /// and nothing else.
+    func testProcessingIsAudited() throws {
+        for size in [nil, Self.largest] {
+            let app = launch(["-seed", "empty", "-screen", "interview", "-processing", "held"], textSize: size)
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            // Longer than `require` waits: the telling is put in order, the
+            // question is read aloud and the answer recorded for three seconds
+            // before this screen comes, 30 seconds on a loaded machine.
+            XCTAssertTrue(
+                app.staticTexts["Kuuntelen mitä sanoit"].waitForExistence(timeout: 90),
+                "never arrived: the processing screen"
+            )
+            let at = size == nil ? "default text size" : "largest text size"
+            try audit(app, "Käsittelen, \(at)", alsoAllowing: { issue in
+                issue.auditType == .elementDetection
+            })
+            app.terminate()
+        }
+    }
+
     func testRecordingInProgressIsAudited() throws {
         for size in [nil, Self.largest] {
             let app = launch(["-seed", "empty"], textSize: size)

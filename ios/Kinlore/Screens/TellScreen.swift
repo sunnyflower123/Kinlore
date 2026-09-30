@@ -338,7 +338,11 @@ struct TellScreen: View {
             case .writing:
                 WritingView(model: model)
             case .transcribing, .organizing:
-                ProcessingView(phase: model.phase, voiceIsKept: model.recordingIsKept)
+                ProcessingView(
+                    phase: model.phase,
+                    voiceIsKept: model.recordingIsKept,
+                    wasSpoken: model.processingSpoken
+                )
             case .asking:
                 AskingView(model: model)
             case .done:
@@ -1777,21 +1781,18 @@ private struct Waveform: View {
 // MARK: - Processing
 
 private struct ProcessingView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let phase: TellViewModel.Phase
     /// Said while the words are awaited, and only when the recording is
     /// already out of tmp (`TellViewModel.recordingIsKept`). The one sentence
     /// kept from the grandparent's session, *"Mistä tiedän että se on
     /// tallessa?"*, is a question this screen had no answer to (PLAN.md §8).
     let voiceIsKept: Bool
+    /// A typed telling has nothing to write down (`processingSpoken`).
+    let wasSpoken: Bool
 
     private var title: LocalizedStringKey {
         phase == .transcribing ? "Kuuntelen mitä sanoit" : "Järjestelen muistoa"
-    }
-
-    private var detail: LocalizedStringKey {
-        phase == .transcribing
-            ? "Puran puheen tekstiksi."
-            : "Etsin ihmiset, paikat ja ajankohdan."
     }
 
     var body: some View {
@@ -1801,41 +1802,56 @@ private struct ProcessingView: View {
         // title to "Kuuntelen…", measured on the simulator.
         GeometryReader { proxy in
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: 28) {
                     Spacer(minLength: 0)
 
-                    // First, above the spinner: it answers what the teller is
-                    // asking the moment the button is let go, before anything
-                    // is waited for. "Tässä puhelimessa" because that is all
-                    // that is true yet — and not the audio-saved screen's
-                    // title, which the UI tests wait on.
-                    if voiceIsKept {
-                        Label {
-                            Text("Äänesi on tallessa tässä puhelimessa")
-                        } icon: {
-                            // The words say it. Left visible, VoiceOver reads
-                            // the symbol's own name first, "Valittu".
-                            Image(systemName: "checkmark.circle.fill")
-                                .accessibilityHidden(true)
-                        }
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(Elder.affirmative)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    ProgressView()
-                        .controlSize(.extraLarge)
+                    working
 
                     Text(title)
                         .font(.title2.weight(.semibold))
                         .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                         .contentTransition(.opacity)
+                        .accessibilityAddTraits(.isHeader)
 
-                    Text(detail)
-                        .elderBody()
-                        .foregroundStyle(Elder.supporting)
-                        .multilineTextAlignment(.center)
+                    // The steps the app actually takes, in order, each marked
+                    // as it is: done, under way or still to come (30 Sep
+                    // 2026). A spinner over one sentence said only that
+                    // something was happening, and on the founder's phone a
+                    // wait with nothing else on the screen wore patience thin
+                    // (PLAN.md §8). No time is promised: the two calls take
+                    // what the network and the model take, and a number here
+                    // would be a guess. The kept voice is the first step,
+                    // said only when the move out of tmp has succeeded, and
+                    // never in the audio-saved screen's title, which the UI
+                    // tests wait on.
+                    VStack(alignment: .leading, spacing: 18) {
+                        if voiceIsKept {
+                            ProcessingStep(text: "Äänesi on tallessa tässä puhelimessa", status: .done)
+                        }
+                        if wasSpoken {
+                            ProcessingStep(
+                                text: "Puran puheen tekstiksi.",
+                                status: phase == .transcribing ? .current : .done
+                            )
+                        }
+                        ProcessingStep(
+                            text: "Etsin ihmiset, paikat ja ajankohdan.",
+                            status: phase == .organizing ? .current : .waiting
+                        )
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                    // True from the moment the recording is out of tmp: a
+                    // failed call saves it without words, and a killed app
+                    // finds it at the next launch (`RecordingRecovery`).
+                    if voiceIsKept {
+                        Text("Vaikka tämä kestäisi hetken, kertomasi ei katoa.")
+                            .elderBody()
+                            .foregroundStyle(Elder.supporting)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
 
                     Spacer(minLength: 0)
                 }
@@ -1849,7 +1865,89 @@ private struct ProcessingView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
         }
-        .animation(.easeInOut, value: phase)
+        .animation(reduceMotion ? nil : .easeInOut, value: phase)
+        // A screen reader hears the step change, which it would not otherwise
+        // be told: nothing on the screen takes focus when a mark turns.
+        .onAppear { announce() }
+        .onChange(of: phase) { _, _ in announce() }
+    }
+
+    /// The step under way, drawn as a slow breath rather than a spin: a
+    /// waveform while the speech is written down, a magnifier while the
+    /// names are looked for. Under Reduce Motion the system's own spinner,
+    /// which is what this screen had before.
+    @ViewBuilder
+    private var working: some View {
+        if reduceMotion {
+            ProgressView()
+                .controlSize(.extraLarge)
+        } else {
+            Image(systemName: phase == .transcribing ? "waveform" : "text.magnifyingglass")
+                .font(.system(size: 56))
+                .foregroundStyle(Color.accentColor)
+                .symbolEffect(.pulse, options: .repeating)
+                .contentTransition(.symbolEffect(.replace))
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func announce() {
+        var sentence = phase == .transcribing
+            ? String(localized: "Puran puheen tekstiksi.")
+            : String(localized: "Etsin ihmiset, paikat ja ajankohdan.")
+        if phase == .transcribing, voiceIsKept {
+            sentence = String(localized: "Äänesi on tallessa tässä puhelimessa") + ". " + sentence
+        }
+        AccessibilityNotification.Announcement(sentence).post()
+    }
+}
+
+/// One line of the processing screen: a mark and what the app is doing.
+/// The mark is decoration, hidden from VoiceOver, and the step's status is
+/// said as the row's value instead: a visible checkmark is read out by its
+/// own name, "Valittu", which is what the kept line said before it was hidden.
+private struct ProcessingStep: View {
+    enum Status { case done, current, waiting }
+    let text: LocalizedStringKey
+    let status: Status
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            mark
+                .font(.title2)
+                .frame(minWidth: 32)
+                .accessibilityHidden(true)
+            Text(text)
+                .elderBody()
+                .fontWeight(status == .current ? .semibold : .regular)
+                .foregroundStyle(status == .waiting ? Elder.supporting : Color.primary)
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(value)
+    }
+
+    @ViewBuilder
+    private var mark: some View {
+        switch status {
+        case .done:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Elder.affirmative)
+        case .current:
+            Image(systemName: "circle.dotted.circle")
+                .foregroundStyle(Color.accentColor)
+        case .waiting:
+            Image(systemName: "circle")
+                .foregroundStyle(Elder.supporting)
+        }
+    }
+
+    private var value: Text {
+        switch status {
+        case .done: Text("tehty")
+        case .current: Text("meneillään")
+        case .waiting: Text("odottaa")
+        }
     }
 }
 

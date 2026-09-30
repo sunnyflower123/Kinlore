@@ -32,6 +32,58 @@ final class InterviewLoopTests: XCTestCase {
         continueAfterFailure = false
     }
 
+    /// The screen between the stop and the question names the steps the app
+    /// takes and marks each as it is (`ProcessingView`, 30 Sep 2026): the
+    /// voice kept, the speech being written down, the names still to come,
+    /// and then the writing done and the names under way. VoiceOver hears
+    /// the mark as each row's value, which is what is read here.
+    /// `-processing slow` holds each step six seconds longer than the stubs'
+    /// own delay, so the first state cannot be raced past.
+    func testTheProcessingScreenWalksItsSteps() {
+        let app = launch(["-seed", "empty", "-voice", "stub", "-processing", "slow"])
+
+        let record = app.buttons["Aloita kertominen"]
+        XCTAssertTrue(record.waitForExistence(timeout: 15), "never arrived: the record button")
+        record.tap()
+        allowTheMicrophone()
+        XCTAssertTrue(
+            app.staticTexts["Kuuntelen"].waitForExistence(timeout: 15),
+            "the recording never started — is the microphone denied on this simulator?"
+        )
+        Thread.sleep(forTimeInterval: 2)
+        app.buttons["Lopeta kertominen"].tap()
+
+        func step(_ label: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+        }
+        let kept = step("Äänesi on tallessa tässä puhelimessa")
+        let writing = step("Puran puheen tekstiksi.")
+        let names = step("Etsin ihmiset, paikat ja ajankohdan.")
+        XCTAssertTrue(writing.waitForExistence(timeout: 15), "never arrived: the step that writes the speech down")
+        XCTAssertEqual(kept.value as? String, "tehty", "the kept voice is not marked done")
+        XCTAssertEqual(writing.value as? String, "meneillään", "the writing down is not marked under way")
+        XCTAssertEqual(names.value as? String, "odottaa", "the names are not marked still to come")
+        XCTAssertTrue(
+            app.staticTexts["Vaikka tämä kestäisi hetken, kertomasi ei katoa."].exists,
+            "the voice is kept and the screen does not say that nothing is lost"
+        )
+
+        // The writing done, the names under way.
+        let deadline = Date().addingTimeInterval(30)
+        while names.value as? String != "meneillään", Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        XCTAssertEqual(names.value as? String, "meneillään", "the names never came under way")
+        XCTAssertEqual(writing.value as? String, "tehty", "the writing down is not marked done")
+        XCTAssertTrue(app.staticTexts["Järjestelen muistoa"].exists, "the title did not follow the step")
+
+        // And on to the question, as without the steps.
+        XCTAssertTrue(
+            app.buttons["Riittää tältä erää"].waitForExistence(timeout: 30),
+            "the telling ended somewhere other than its first question"
+        )
+    }
+
     func testASpokenTellingGoesStraightOnToItsQuestion() {
         let app = launch(["-seed", "empty", "-voice", "stub"])
 
