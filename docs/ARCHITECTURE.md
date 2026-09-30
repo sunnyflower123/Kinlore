@@ -134,18 +134,11 @@ this way before.
 **Known issues, found on 30 Sep 2026.** A review on the day of submission read
 the promises against the code again, and these are what it found. The
 webhook's was fixed that day and is listed after the rest, with a second fix to
-the payments. The others were not, because each touches sync, the production
+the payments and the relationship that stopped a phone's sync. The others were
+not, because each touches sync, the production
 schema or the recorder, and a change there on the last day is a bigger risk
 than the defect. They are written here so that nobody has to find them twice.
 
-- **A relationship taken back and made again stops that phone's sync.**
-  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
-  rows (`schema.sql`), the app makes the new one under a new id, and the
-  upsert in `sync.ts` only handles a clash on `id`, so the whole batch fails.
-  The phone then retries the same push for ever, and its pull, in the same
-  round, never runs; the screen says it is waiting for the network. Two
-  members adding the same relationship under different ids do the same.
-  Reproduced against a local Worker.
 - **An edit made while a push is in flight is lost.** `clearPending` clears
   the rows it sent by id, so a row changed during the request is no longer
   dirty, and the pull after it puts the server's older copy back.
@@ -188,6 +181,21 @@ than the defect. They are written here so that nobody has to find them twice.
   Worker works the tier out again when a member holding a date of their own
   joins, leaves or is removed (`recomputeTier` in `worker.ts`). The departed
   row keeps its binding and date, so a payer who comes back counts again.
+- **A relationship taken back and made again stopped that phone's sync.**
+  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
+  rows (`schema.sql`), the app makes every relationship under a new id, and the
+  upsert in `sync.ts` handled only a clash on `id`, so the whole batch failed.
+  The phone retried the same push for ever and its pull, in the same round,
+  never ran; the screen said it was waiting for the network. Two members
+  adding the same relationship under different ids did the same, and so did a
+  merge that moved an edge onto a pair with a tombstone. The upsert now has a
+  second clause for the three columns: over a tombstone the row takes the new
+  id and the new row's state, confirmation included, and over a live row the
+  row stays and its confirmation only moves up; a tombstone under an id no
+  longer on file changes nothing. Either way the seq moves, and the phone drops
+  its own copy of the pair under another id when the server's arrives
+  (`applyRemote`), so nobody is drawn twice. `relation-resync-check.mjs`
+  drives it, red on thirteen of twenty-two before the fix.
 
 ## 2. Five decisions that determine the rest
 

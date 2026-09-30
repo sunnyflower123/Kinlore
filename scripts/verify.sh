@@ -446,6 +446,14 @@ run "a question asked by name reaches the one it was asked of" node scripts/targ
 # the pull answers that state so a phone built before the column sees it
 # too. Red on nine of its twenty against the code before the column.
 run "a taken-back telling comes back by its teller's hand alone" node scripts/memory-restore-check.mjs
+# A relationship taken back and made again, under the fresh id the phone
+# gives every relationship. The table is unique on the pair and kind,
+# tombstones included, and until 30 Sep 2026 the upsert answered only a clash
+# on id: the row failed the whole push, the phone sent it again every round for
+# ever, and its pull never ran. The screen said it was waiting for the network.
+# The real push and pull over the shipping schema in an in-memory SQLite; red
+# on thirteen of its twenty-two against the code before the fix.
+run "a relationship made again does not stop a phone's sync" node scripts/relation-resync-check.mjs
 # Rule 8, without making the request. `complete()` is imported straight out of
 # openrouter.ts — Node runs TypeScript as it is — and fetch is replaced with
 # something that keeps the body. Nothing leaves the machine and nothing is

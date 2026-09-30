@@ -1448,6 +1448,19 @@ final class MemoryStore {
 
         for dto in reply.relations {
             guard !dirtyRelations.contains(dto.id), let incoming = Relation(dto: dto) else { continue }
+            // The server holds one row per pair and kind, and a relationship
+            // made again, or made by two members at once, is kept under one
+            // id (`push` in sync.ts). Whatever this phone holds for the same
+            // three under another id is a copy the server no longer has:
+            // left here, it draws the same person twice, or a relationship
+            // somebody took back as fact. A row still waiting to be pushed
+            // stays until the push has answered it.
+            relations.removeAll {
+                $0.id != incoming.id && !dirtyRelations.contains($0.id)
+                    && $0.fromSubjectID == incoming.fromSubjectID
+                    && $0.toSubjectID == incoming.toSubjectID
+                    && $0.kind == incoming.kind
+            }
             if let index = relations.firstIndex(where: { $0.id == dto.id }) {
                 relations[index] = incoming
             } else {
