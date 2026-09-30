@@ -82,7 +82,7 @@ hackathon, in the Next Gen Award (the student category).
   leave the family or clear the phone, and the language.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-The app has 399 UI tests, including 124 accessibility sweeps that audit a screen
+The app has 403 UI tests, including 126 accessibility sweeps that audit a screen
 at the default text size and again at the largest.
 
 ## Who pays

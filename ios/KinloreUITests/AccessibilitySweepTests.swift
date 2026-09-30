@@ -1469,6 +1469,47 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// A recording that held no sound at all (`AudioRecorder.soundFloor`):
+    /// a title, a sentence and two buttons. `-defer once` records the couple
+    /// of seconds by itself, and `-meter silent` makes them nothing.
+    func testHeardNothing() throws {
+        try sweep(
+            "Ei kuultu mitään",
+            arguments: ["-seed", "empty", "-defer", "once", "-meter", "silent"]
+        ) { app, _ in
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["En kuullut mitään"], "the heard-nothing screen")
+            XCTAssertTrue(
+                hasStoppedDrawing(app),
+                "the heard-nothing screen was still being drawn when the audit ran"
+            )
+        }
+    }
+
+    /// The result after a conversation's answer failed to upload
+    /// (`-answer unreachable`): the telling's result, with the sentence about
+    /// the answer under its title. `-screen interview` tells, asks and records
+    /// the first answer by itself.
+    func testResultAfterAFailedAnswer() throws {
+        try sweep(
+            "Tulos, vastaus ei tekstiksi",
+            arguments: ["-seed", "empty", "-screen", "interview", "-answer", "unreachable"]
+        ) { app, _ in
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            require(app.staticTexts["Muisto tallennettu"], "the result the telling made")
+            require(
+                app.staticTexts
+                    .containing(NSPredicate(format: "label BEGINSWITH %@", "Viimeistä vastaustasi ei saatu tekstiksi"))
+                    .firstMatch,
+                "the failed answer's sentence"
+            )
+        }
+    }
+
     /// The screen an 80-year-old is on while actually telling — and the one no
     /// sweep had ever audited: it animates continuously, so the settling the
     /// other tests wait for never comes, and it had been left out entirely.

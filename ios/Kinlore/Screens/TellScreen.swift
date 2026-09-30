@@ -352,6 +352,8 @@ struct TellScreen: View {
                 AudioSavedView(model: model, onClose: onClose)
             case .needsMicrophone:
                 MicrophoneDeniedView(model: model)
+            case .heardNothing:
+                HeardNothingView(model: model)
             case .failed(let message):
                 FailureView(message: message) { model.reset() }
             }
@@ -472,7 +474,7 @@ struct TellScreen: View {
         // The refused microphone keeps the bar: it is a dead end for telling by
         // voice, and somebody who does not want to go to Settings has to be able
         // to walk away from it.
-        case .idle, .done, .savedWithoutTranscript, .needsMicrophone, .failed: false
+        case .idle, .done, .savedWithoutTranscript, .needsMicrophone, .heardNothing, .failed: false
         case .recording, .writing, .transcribing, .organizing, .asking: true
         }
     }
@@ -2512,6 +2514,20 @@ private struct ResultView: View {
                 .foregroundStyle(Elder.supporting)
             }
 
+            // The conversation's last answer was not written down: the
+            // network, or a silence the Worker answers 502. The result is the
+            // rounds before it, and this sentence is the answer's: kept if it
+            // held a voice, and the question it was for still open
+            // (`TellViewModel.lastAnswerUnwritten`).
+            if model.lastAnswerUnwritten {
+                Label(
+                    "Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain, nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää odottamaan vastausta.",
+                    systemImage: "waveform"
+                )
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+            }
+
             // The words arrived and the recording did not. Rule 3 broken, and
             // said — the row used to look like every other voice memory.
             if model.audioLost {
@@ -3306,6 +3322,82 @@ private struct MicrophoneDeniedView: View {
                         .elderTapTarget()
                 }
                 .controlSize(.large)
+            }
+
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+// MARK: - Nothing was heard
+
+/// A recording that held no sound at all (`AudioRecorder.heardNothing`).
+/// Nothing was saved, and the screen says that first: the audio-saved screen
+/// it would otherwise have reached said *"Äänesi on tallessa"* over a file of
+/// nothing. Another try is the prominent way on, since the teller meant to
+/// say something; the other goes back to where she was.
+private struct HeardNothingView: View {
+    let model: TellViewModel
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView {
+                content
+                    .padding(Elder.screenPadding)
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 0)
+
+            Image(systemName: "waveform.slash")
+                .font(.system(size: 56))
+                .foregroundStyle(Elder.supporting)
+                .accessibilityHidden(true)
+
+            Text("En kuullut mitään")
+                .font(.title.weight(.semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+
+            Text("Nauhoituksessa ei kuulunut yhtään ääntä, joten mitään ei tallennettu. Katso, ettei mikään peitä mikrofonia, ja yritä uudelleen.")
+                .elderBody()
+                .foregroundStyle(Elder.supporting)
+                .multilineTextAlignment(.center)
+
+            Spacer(minLength: 0)
+
+            VStack(spacing: 12) {
+                Button {
+                    Task { await model.tryAgainAfterSilence() }
+                } label: {
+                    Text("Yritä uudelleen")
+                        .font(.body.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button {
+                    model.leaveAfterSilence()
+                } label: {
+                    Text("Takaisin")
+                        .font(.body.weight(.medium))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .elderTapTarget()
+                }
+                .controlSize(.large)
+                .foregroundStyle(Color.primary)
             }
 
             Spacer(minLength: 0)

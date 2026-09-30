@@ -1003,3 +1003,7 @@
 "%lld muiston teksti jäi korjaamatta." = "The text of %lld memories was left uncorrected.";
 "Voit yrittää uudelleen tai korjata tekstin itse muiston alta: ”Muokkaa tai poista”." = "You can try again, or correct the text yourself under the memory: “Edit or delete”.";
 "Avaa kortin. Siellä nimen voi myös korjata." = "Opens the card, where the name can also be corrected.";
+"En kuullut mitään" = "I heard nothing";
+"Nauhoituksessa ei kuulunut yhtään ääntä, joten mitään ei tallennettu. Katso, ettei mikään peitä mikrofonia, ja yritä uudelleen." = "Not a sound came through in the recording, so nothing was saved. Check that nothing is covering the microphone, and try again.";
+"Takaisin" = "Back";
+"Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain, nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää odottamaan vastausta." = "Your last answer could not be written down. If you said something, the recording is kept and the text will be written later. The question will wait for an answer.";

@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 399 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 126 sweep tests, each auditing one screen at the default text size and again at the largest, out of 403 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -114,7 +114,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 399 UI tests, including 124 accessibility sweeps that audit a
+The UI suite has 403 UI tests, including 126 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run, the
@@ -2820,7 +2820,8 @@ Decisions, in the order they were argued about:
   which is the failure the limit exists for. `scripts/answer-watch-check.swift`
   (in `verify.sh`) holds the arithmetic, and failed against each of five
   deliberately broken watches; `InterviewLoopTests` holds the wiring under
-  `-meter silent`, which makes the meter read digital silence, because a
+  `-meter quiet`, which makes the meter read −45 dBFS (`-meter silent`, digital
+  silence, until the sound floor below came on 30 Sep 2026), because a
   simulator records from the Mac's own microphone. For the same reason a
   simulator's answers are mostly silence, and the two older tests that stand
   on the second round's listening screen — the sweep that audits it, and the
@@ -2849,9 +2850,10 @@ Decisions, in the order they were argued about:
   still takes the network's road.** `complete()` refuses a reply with no
   content as 502 (`openrouter.ts`), and the route answers it
   `upstream_failed` like any other upstream failure (rule 9). A silent
-  answer the watch ends therefore lands on *"Äänesi on tallessa"* with its
-  recording kept, and the catch-up asks about it again. The stubs model the
-  200 with no words; nothing in production leads to the road above.
+  answer the watch ends therefore landed on *"Äänesi on tallessa"* with its
+  recording kept until 30 Sep 2026, and the catch-up asks about it again. The
+  stubs model the 200 with no words; nothing in production leads to the road
+  above, and the next paragraph but one is the road it does take now.
 
   What is left is the price of keeping the recording. A telling waiting for
   its text is one the catch-up asks about, so the same silence is uploaded
@@ -2863,6 +2865,53 @@ Decisions, in the order they were argued about:
   meter only once the words are in hand. What the watch changes is how
   often this road is taken: an unanswered question used to record until
   somebody noticed, and now ends here after 25 seconds.
+
+  **Inside the conversation the network's road ends on the result too,
+  since 30 Sep 2026.** An answer whose upload fails — a lost signal, or the
+  Worker's 502 for an answer the model heard no words in, which the app
+  cannot tell apart — used to replace the telling's result with the
+  audio-saved screen: *"Äänesi on tallessa … Emme ehtineet kirjoittaa sitä
+  tekstiksi juuri nyt"*, none of the rounds' names on it, *"Poista tämä
+  muisto"* and *"Kirjoita se itse"* acting on the answer alone while reading
+  as the whole telling, and the question marked answered by a recording that
+  was, as the founder met it on the phone, a button pressed twice with
+  nothing said. It now takes `keepWordlessAnswer` with the ladder left alone
+  (the failure may be ours), and the result carries one sentence under its
+  title: *"Viimeistä vastaustasi ei saatu tekstiksi. Jos sanoit jotain,
+  nauhoitus on tallessa ja teksti kirjoitetaan myöhemmin. Kysymys jää
+  odottamaan vastausta."* (`TellViewModel.lastAnswerUnwritten`). The quota
+  keeps its own screen, for the reason above; so does a first telling, whose
+  result there is nothing yet to show. `-answer unreachable` fails the
+  answer's upload and only the answer's, and
+  `InterviewLoopTests.testAnAnswerThatFailsLandsOnTheRoundsBeforeIt` and the
+  sweep `testResultAfterAFailedAnswer` hold it.
+
+  **A recording that holds no sound at all is not kept, since the same
+  day** (`AudioRecorder.heardNothing`, `soundFloor`). The recorder keeps
+  the loudest meter reading of the whole recording, and one that never
+  reaches −70 dBFS is not a telling: the file is deleted, nothing is sent,
+  and the screen says *"En kuullut mitään"* with *"Yritä uudelleen"* and
+  *"Takaisin"* rather than *"Äänesi on tallessa"* over nothing. An answer
+  ended by *"Riittää tältä erää"* or by the watch ends the conversation as
+  it would have. The floor is set where no voice can reach it, and was
+  measured to be there: all 17 recordings on the test phone, read in the
+  meter's 50 ms windows. The quietest answer the model wrote down, *"the
+  letter"*, peaks at −51.3 dBFS; the three recordings that came back with no
+  words — the founder's twice-pressed buttons — peak at −52.5, −45.1 and
+  −32.3, because the room and a finger on the glass are as loud as a quiet
+  voice across the table. **So no level separates a silent recording from a
+  quiet answer on this phone, and none is used to**: a floor between them
+  would have thrown away *"the letter"*. The quietest window of any of the
+  17, the room at its stillest, is −66.6; −70 lies below every room the
+  phone has recorded and 18 dB below the quietest answer, so what it catches
+  is a microphone that delivered nothing — covered, taken by another app, a
+  route with no input — and never a voice (rule 3). The founder's own
+  twice-pressed recordings stay above it and take the road above. On a
+  simulator the floor applies only under a pinned meter, because its
+  microphone is the Mac's, with its own gain and room: `-meter silent` reads
+  −160, below the floor, and `-meter quiet` reads −45 — somebody breathing
+  and holding the phone, silence to the watch and sound to the floor —
+  which is what the watch's two tests stand on since the floor came.
 
 One knowingly open edge: every round adds three questions and answers one, so
 a long interview grows the open-question list. That is today's behaviour for

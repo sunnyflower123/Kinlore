@@ -32,6 +32,12 @@ final class TellViewModel {
         /// refused permission and fails again, for ever. The way out is iOS
         /// Settings — or the keyboard, which needs no permission at all.
         case needsMicrophone
+        /// The recording held no sound at all (`AudioRecorder.heardNothing`):
+        /// nothing was kept and nothing was sent, and the screen says so and
+        /// offers another try. Only a microphone that delivered nothing lands
+        /// here; a quiet voice never does, because no level can tell one from
+        /// a room (`AudioRecorder.soundFloor`).
+        case heardNothing
         case failed(String)
     }
 
@@ -162,6 +168,25 @@ final class TellViewModel {
     private(set) var endsAfterAnswer = false
 
     /// The way out of the loop that keeps what was just said.
+    /// "Yritä uudelleen" after a recording that held nothing: the same
+    /// question, or the same card, and the microphone on again.
+    func tryAgainAfterSilence() async {
+        guard phase == .heardNothing else { return }
+        await startRecording()
+    }
+
+    /// The other way off that screen: back to the result the conversation
+    /// had made, or to the start.
+    func leaveAfterSilence() {
+        guard phase == .heardNothing else { return }
+        if isInterviewing {
+            leaveInterview()
+            phase = .done
+        } else {
+            returnToIdle()
+        }
+    }
+
     func finishAfterThisAnswer() async {
         guard phase == .recording, isInterviewing else { return }
         endsAfterAnswer = true
@@ -279,6 +304,7 @@ final class TellViewModel {
 
     func startRecording(reading words: String? = nil) async {
         readingAloud = words
+        lastAnswerUnwritten = false
         guard await recorder.requestPermission() else {
             // Not a `failed` message. The old one said "salli mikrofoni
             // asetuksista" and gave a button that retried the refusal instead —
@@ -352,6 +378,15 @@ final class TellViewModel {
     /// False for a typed telling, which has no voice to keep.
     private(set) var recordingIsKept = false
 
+    /// The conversation's last answer was recorded and not written down: the
+    /// network, or the Worker, which answers a recording with no words in it
+    /// 502. The result the rounds before it made is shown, with one sentence
+    /// saying what became of the answer (30 Sep 2026). It used to be the
+    /// audio-saved screen, which replaced that result — the names waiting to
+    /// be confirmed went with it — and said *"Äänesi on tallessa"* over what
+    /// was, as often as not, a button pressed twice with nothing said.
+    private(set) var lastAnswerUnwritten = false
+
     func stopAndProcess() async {
         guard let stopped = recorder.stop() else {
             // A recording under a second is an accident, not a memory. In the
@@ -366,6 +401,23 @@ final class TellViewModel {
                 phase = .done
             } else {
                 returnToIdle()
+            }
+            return
+        }
+        // Nothing reached the microphone, not even the room. Not a telling,
+        // so not kept and not sent: a file of nothing would become a memory
+        // reading "Ääni tallessa" over nothing, and a transcription paid for
+        // that can only ever come back empty. The ladder learns nothing — it
+        // was the microphone, not the teller. An answer somebody ended with
+        // "Riittää tältä erää", or one the watch ended, ends the conversation
+        // as it would have; anything else asks for another try.
+        if recorder.heardNothing {
+            try? FileManager.default.removeItem(at: stopped)
+            if isInterviewing, endsAfterAnswer {
+                leaveInterview()
+                phase = .done
+            } else {
+                phase = .heardNothing
             }
             return
         }
@@ -399,6 +451,11 @@ final class TellViewModel {
             if isInterviewing, UserDefaults.standard.string(forKey: "answer") == "wordless" {
                 throw RemoteError.emptyResult
             }
+            // `-answer unreachable`: an answer's upload fails the way a lost
+            // signal, or the Worker's 502 for a silence, fails it.
+            if isInterviewing, UserDefaults.standard.string(forKey: "answer") == "unreachable" {
+                throw URLError(.notConnectedToInternet)
+            }
             #endif
             let text = try await transcription.transcribe(audioURL: url)
             await process(transcript: text, audioURL: url, duration: duration)
@@ -413,9 +470,11 @@ final class TellViewModel {
             // The Worker does not send that reply today. `complete()` refuses
             // a reply with no content (`openrouter.ts`), so a silent answer —
             // the one `AnswerWatch` ends, or one stopped by hand — arrives as
-            // a 502 and still takes the last catch: the recording is kept, the
-            // screen says "Äänesi on tallessa", and the catch-up asks again.
+            // a 502. Since 30 Sep 2026 that lands on the same result as this,
+            // through the catch below the quota's; until then it took the last
+            // catch onto "Äänesi on tallessa".
             keepWordlessAnswer(audioURL: url, duration: duration)
+            lastAnswerUnwritten = true
         } catch let error as RemoteError where error.isQuota {
             // A quota must not reject a recording. The audio is irreplaceable
             // and the transcription is replaceable: it is done when the minutes
@@ -426,6 +485,17 @@ final class TellViewModel {
             saveAudioOnly(audioURL: url, duration: duration)
             savedBecauseOfQuota = true
             phase = .savedWithoutTranscript
+        } catch _ where isInterviewing && target != nil {
+            // An answer the network failed, or one the Worker answered 502
+            // because the model heard no words in it — which the app cannot
+            // tell apart, and which is how a silent answer arrives today. It
+            // lands where a wordless reply lands, on the result the rounds
+            // before it made, and says so there (`lastAnswerUnwritten`). The
+            // recording is kept for the catch-up (rule 3), and the question
+            // stays open: nothing answered it yet. Unlike a wordless reply
+            // it costs the ladder nothing, since the failure may be ours.
+            keepWordlessAnswer(audioURL: url, duration: duration, learning: false)
+            lastAnswerUnwritten = true
         } catch {
             // The same applies to a network error: keep the audio, text later.
             leaveInterview()
@@ -814,7 +884,9 @@ final class TellViewModel {
     /// Reached through `RemoteError.emptyResult`, which `-answer wordless`
     /// raises and nothing in production does today: the Worker answers a
     /// silence 502 (`openrouter.ts`), and that answer takes the network's road
-    /// in `stopAndProcess`.
+    /// in `stopAndProcess` — which in the conversation, since 30 Sep 2026, is
+    /// this one too, with `learning` off: a network failure is not the
+    /// teller's, and must not cost her a level.
     ///
     /// It lands where "Riittää tältä erää" lands, on the result the rounds
     /// before it made: their names wait there to be confirmed (rule 4), and
@@ -829,8 +901,8 @@ final class TellViewModel {
     ///
     /// The question stays open, because nothing answered it, and the ladder
     /// learns what it learns from an answer under a second (`recordSkip`).
-    private func keepWordlessAnswer(audioURL: URL, duration: TimeInterval) {
-        recordSkip()
+    private func keepWordlessAnswer(audioURL: URL, duration: TimeInterval, learning: Bool = true) {
+        if learning { recordSkip() }
         leaveInterview()
         // `ask` filed every round under the card the first one landed on. A
         // recording that cannot be moved out of tmp leaves nothing to keep,
@@ -1401,6 +1473,7 @@ final class TellViewModel {
     }
 
     func reset() {
+        lastAnswerUnwritten = false
         known = []
         sessionMemoryIDs = []
         voice.stop()
