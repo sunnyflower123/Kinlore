@@ -10,30 +10,60 @@
 </p>
 
 Kinlore is a family's shared memory archive for iPhone. Anyone in the family
-tells what they remember, and the AI gives it structure. I built it for the
+tells what they remember about an old photo, and the AI gives it structure.
+I built it for the
 [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon, in the Next Gen Award (the student category).
 
 ## The short version
 
-- **What it does.** You tell a memory out loud or in writing. The AI proposes
-  the people and places it heard for the family to confirm, and asks follow-up
-  questions out loud. A date stays as vague as it was said.
-- **Who it is for.** Whoever wants to tell, often an older person. My own
-  grandparent tested it. One button, and every screen has to work at the
-  largest text size and with VoiceOver.
-- **How it earns.** One member pays $39.99 a month or $149.99 a year for the
-  whole family, and telling is never paywalled. The paywall is RevenueCatUI's
-  own view, the server asks RevenueCat's REST API what was bought, and
-  purchases run on the Test Store.
-- **Try it.** `./scripts/try-it.sh` on a Mac with Xcode and XcodeGen, no keys
-  needed ([the steps](#try-it)). `--paywall` shows the paywall and a simulated
-  purchase, with the Test Store key from the submission.
-- **Built with** SwiftUI · Cloudflare Workers + D1 + R2 · OpenRouter, called
-  only from the Worker.
+- **Tell, and it asks back.** Press one button and talk about an old photo in
+  English or Finnish, or type instead. Follow-up questions come out loud, and
+  it listens to each answer.
+- **AI proposes, a human confirms.** Names it heard wait for a yes before they
+  enter the family tree. A blind check shows the photograph and asks *Who is
+  this?* over three or four names, the proposal unmarked.
+- **Vague dates stay vague, and nothing is thrown away.** "Sometime in the
+  fifties" is stored as a decade, and the original recording and the raw
+  transcript are always kept.
+- **The whole family.** Everyone joins on their own phone through an invite
+  link, with no login. Paper photos are photographed straight in and can be
+  coloured from what the family told about them.
+- **Who it is for.** Whoever wants to tell, often an older person. My
+  grandparent tested it; their question, "How do I know it's saved?", is why
+  the screen now says *Your voice is kept on this phone* while it waits.
+- **Who pays.** Often not the one who tells: one member subscribes, $39.99 a
+  month or $149.99 a year, and the backend grants it to the whole family,
+  checked with RevenueCat's REST API and webhook.
+- **Free tier.** Ten minutes of transcription a month, twenty photographs in
+  all and five colourisations a month. Telling itself is never limited: a
+  recording over the limit is kept and waits for its text.
+- **The paywall** is RevenueCatUI's own view. The result screen offers it after
+  every third telling, but never when that telling proposed names to confirm or
+  on a phone with *Larger text* on, a grandparent's.
+- **What it costs.** A typical paying family (5 tellers × 20 minutes, 20
+  colourisations, 50 photographs) costs about $4.05 a month, which leaves 88 %
+  of what a US sale of the monthly plan brings in.
+- **Try it.** `./scripts/try-it.sh` needs no keys and really hears you ([the
+  steps](#try-it)); `--example` opens an invented family with a tree and a
+  blind card. Only the paywall (`--paywall`) needs the Test Store key from
+  the submission.
+- **Built with** SwiftUI · RevenueCat's SDK and RevenueCatUI · Cloudflare
+  Workers + D1 + R2 · OpenRouter, called only from the Worker.
+- **Privacy.** The phone seals memories, transcripts, photos and recordings
+  before sync, with a key the Worker never gets. It is not end-to-end: a model
+  gets them unsealed to transcribe, structure or colour.
 - **Tested.** 406 UI tests, including 127 accessibility sweeps at the default
-  and the largest text size. `./scripts/verify.sh` holds 64 checks that cost
-  nothing.
+  and the largest text size. `./scripts/verify.sh` holds 64 checks that spend
+  no API credit.
+- **Known limits:** a paying family has no AI ceiling or rate limit yet, so a
+  heavy one costs more than either plan brings in
+  ([costs](#what-a-family-costs-to-run)), and the purchase check trusts the
+  customer id the app sends ([known
+  issues](docs/ARCHITECTURE.md#1-where-things-stand)).
+
+<p align="center"><a href="https://youtu.be/ulHxJ45p4RU"><b>▶ Watch the demo video (2 min)</b></a><br>
+Its app shots are simulator recordings, and its voices and photographs are synthetic.</p>
 
 <p align="center">
   <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
@@ -41,9 +71,11 @@ hackathon, in the Next Gen Award (the student category).
 
 <p align="center"><sub>Simulator, stub pipeline: the telling and the model call are canned.</sub></p>
 
-| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree." width="1179"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button." width="1179"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="1179"></a> |
+| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree." width="300"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button." width="300"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="300"></a> |
 |---|---|---|
-| **Telling.** One button, a way to type instead, and two questions to start from. | **What comes back.** The two names it heard wait for a cross or a tick, each with the sentence it was heard in. | **Who is this?** Four names under a generated photograph, and nothing says which is the proposal. |
+| **Telling.** One button, a way to type instead, and two questions to start from. | **What comes back.** The two names it heard wait for a cross or a tick, each with the sentence it was heard in. | **Who is this?** The card asks *Who is this?* of a generated photograph over four names, nothing says which is the proposal, and *I do not remember* is offered too. |
+| <a href="docs/media/07-album.png"><img src="docs/media/mounted/07-album.png" alt="The Album: a map button, a plus button and a search button at the top, the heading Album, then 1930s with two generated black-and-white photographs — a man, a woman and a small girl on a lakeside jetty with a rowing boat, and a bride with a veil and a bouquet beside a groom in a dark suit — each card with a round G badge under the picture; then 1940s with one wide card, a woman in a cardigan and a flowered dress holding a bicycle on a gravel road, her face cut off by the top of the card; the heading 1950s half under the tab bar, and the tabs Album, Tell and Family tree." width="300"></a> | <a href="docs/media/08-family-tree.png"><img src="docs/media/mounted/08-family-tree.png" alt="The Family tree tab of the invented example family: Elina, marked You, in the middle row between Mikko, Your spouse, and Jukka, Your sibling, each in a round picture cut from one of the example's drawn photographs; Matti, Your parent, above them with lines down to Elina and Jukka; Oskari and Aino, Your child, as initials below; more cards cut off at both edges; the buttons Whole family and You; a settings gear and a More button with a red dot at the top right; and the tabs Album, Tell and Family tree." width="300"></a> | <a href="docs/media/09-paywall.png"><img src="docs/media/mounted/09-paywall.png" alt="RevenueCatUI's paywall: a close button, the heading Open the whole archive, the line More room for photographs and more transcription time, and one payer opens it for the whole family, then Telling is always free. It is never limited., two plans — A year for the family, billed once a year, $149.99/yr, under a Best value banner, and A month for the family, billed every month, $39.99/mo — a black Open the whole archive button, and the links Terms, Privacy and Restore." width="300"></a> |
+| **Album.** The family's photographs by decade, every one of them generated. | **Family tree.** The invented example family from `--example`, drawn around the phone's owner. | **Paywall.** RevenueCatUI's own view: $149.99 a year or $39.99 a month for the whole family, and telling is always free. |
 
 <p align="center">
   <picture>
@@ -157,8 +189,9 @@ rebuilds only what changed. Then:
 2. **Tell it something.** The *Tell* tab opens on an example to read aloud:
    *"My grandmother Anna grew up in Helsinki. She married Walter sometime in
    the fifties, and he always had the camera."* Press the microphone and read
-   it, or tell something of your own. *Type it for me* puts it in the write
-   field instead, and *Save* sends it.
+   it, or tell something of your own. The first time, iOS asks for the
+   microphone, and the Mac may then ask as well. *Type it for me* puts it in
+   the write field instead, and *Save* sends it.
 3. **See what comes back.** A spoken telling is followed by questions asked out
    loud; answer them or press *That is enough for now*. The names it heard are
    proposals that nobody has confirmed yet (rule 4), and "sometime in the
