@@ -163,6 +163,13 @@ them twice.
 - **A telling is lost if the app is killed mid-recording.** The recorder
   writes AAC into an `.m4a`, which is unreadable until it is finished, and the
   next launch's sweep removes it. A telling interrupted any other way is kept.
+  A fix is built and switched off: `-safeRecording YES` records into ADTS,
+  which plays up to wherever it was cut, and rewraps it as an `.m4a` when the
+  recording ends or, after a kill, when the next launch sweeps it
+  (`CrashSafeRecording` in `AudioRecorder.swift`). It becomes the default
+  once it has been tried on a device: a telling recorded, played, transcribed
+  and heard on a second phone, and one killed mid-recording from Xcode and
+  found again as "Ääni tallessa".
 - **A failed save is silent.** `MemoryStore.save()` ignores a write error.
 - **Nothing is deleted on the server.** Deletion is soft, R2 objects are never
   removed and there is no route that deletes a family (§19), and the family
