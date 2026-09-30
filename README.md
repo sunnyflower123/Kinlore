@@ -53,7 +53,7 @@ hackathon, in the Next Gen Award (the student category).
   keeps it current.
 - **Tested** 405 UI tests, including 126 accessibility sweeps that audit a
   screen at the default text size and again at the largest.
-  `./scripts/verify.sh` holds 63 checks that cost nothing and says which it
+  `./scripts/verify.sh` holds 64 checks that cost nothing and says which it
   skipped; CI runs the same script.
 
 ```mermaid
