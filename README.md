@@ -11,8 +11,10 @@
 
 A family's shared memory archive. Anyone in the family tells what they
 remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the family tree grows out of the stories, and open
-questions come back to be asked.
+attach to photos and people, the people and places named in the stories are
+proposed for the family to confirm, and open questions come back to be asked.
+The family tree is drawn from the people the family confirms and the
+relationships it enters by hand.
 
 Album and genealogy apps ask for structured input: a form to fill in, a face to
 tag, a date to pick. A family's memory is not kept that way. It is told, a
@@ -24,6 +26,11 @@ for the oldest teller as much as for the youngest. My own grandparent tested
 it, which is why the rules further down read as constraints rather than good
 intentions, and why the failure that matters here is not a crash but a story
 that never got told.
+
+It is quiet on purpose. There are no streaks and no numbers on the tabs: a
+number on a tab is a debt, and the person the app waits for is often the oldest
+in the family. What the younger members get back is a grandparent's story, in
+the grandparent's own voice.
 
 I built it for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon, in the Next Gen Award (the student category).
@@ -59,9 +66,11 @@ hackathon, in the Next Gen Award (the student category).
   them. Any other answer confirms nothing and is never called wrong
   ([ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
 - The AI puts what the family told about a card together into one story at the
-  top of it, in the tellers' own words, and every telling stays under it as it
-  was told ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
-- The original recording and the raw transcript are kept forever (rule 3). A
+  top of it. The model is told to keep to the tellers' own words and add
+  nothing; the Worker checks only that a story came back, and every telling
+  stays under it as it was told
+  ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
+- The original recording and the raw transcript are always kept (rule 3). A
   date stays as vague as it was said, so "sometime in the fifties" is stored as
   a decade (rule 5).
 - The app shows English by default and Finnish on a phone set to Finnish, and
@@ -113,8 +122,84 @@ the production Worker, and its model bill, to anybody.
 [See the paywall](#see-the-paywall), under *Try it*, opens it with the key, and
 [DETAILS.md](docs/DETAILS.md#who-pays) has the full section.
 
+## What a family costs to run
+
+Every AI step is an OpenRouter call at the provider's list price. The figures
+are arithmetic, not a bill: token counts from the code and the measurements
+recorded beside it, at prices read on 30 Sep 2026, for Finnish speech in
+one-minute recordings, with OpenRouter's 5.5 % fee on credit and 12 % for
+retries included. The assumptions, sources and sums are in
+[DETAILS.md](docs/DETAILS.md#what-a-family-costs-to-run).
+
+| Operation | Model | Cost |
+|---|---|---|
+| Transcribing a recorded minute | `google/gemini-3.6-flash` | 1.0 ¢ |
+| Structuring it: people, places, dates and the follow-up questions | `google/gemini-3.6-flash`, falling back to `openai/gpt-4o-mini` | 1.3 ¢ |
+| Composing the card's story again with it | `google/gemini-3.6-flash` | 1.0 ¢ |
+| **A recorded minute, all three** | | **3.3 ¢** |
+| A typed telling of 50 words, structured and composed | `google/gemini-3.6-flash` | 1.8 ¢ |
+| A colourisation round | `google/gemini-3.1-flash-lite-image` | 3.6 ¢ |
+| Keeping a photograph of about 1 MB in R2 | none | $0.015 a month per 1 000 photographs |
+
+A US sale leaves $33.59 of the $39.99 month and $10.50 a month of the $149.99
+year, after Apple's 15 % small-business commission and RevenueCat's 1 %; a sale
+in Finland, with VAT inside the price, leaves $26.68 and $8.34.
+
+| A month of | Cost | Left of the monthly plan | Left of the yearly plan |
+|---|---|---|---|
+| A free family at its three limits: 10 minutes, 5 colourisations, 20 photographs | $0.51 | nothing is paid | nothing is paid |
+| A typical paying family: 5 tellers × 20 minutes, 20 colourisations, 50 photographs | $4.05 | $29.54 (88 %) | $6.45 (61 %) |
+| A heavy family: 20 tellers × 60 minutes, 200 colourisations, 200 photographs | $47.08 | −$13.48 | −$36.58 |
+| Break-even on the monthly plan: 1 015 minutes, or 939 colourisations | $33.59 | $0 | −$23.09 |
+| Break-even on the yearly plan: 317 minutes, or 294 colourisations | $10.50 | $23.09 | $0 |
+
+A paying family has no ceiling in this build. Once `isPaid` is true, the meters
+and the daily pools in [`backend/src/quota.ts`](backend/src/quota.ts) let every
+call through without comparing it with anything, and no route that calls a
+model has a rate limit, so only the size of one request (up to 25 MiB of audio,
+about 97 minutes) and the credit on the OpenRouter account bound what a paying
+family can spend. A typical family costs 12 % of what the monthly plan brings
+in; the yearly plan covers about five hours of recording a month, and the heavy
+family costs more than either plan brings in.
+
+## Privacy and security
+
+Before syncing, the phone seals memory bodies, raw transcripts, card titles, a
+card's facts and story, question text, and every photograph and recording with
+AES-GCM under a 256-bit family key
+([`FamilyCrypto.swift`](ios/Kinlore/Services/FamilyCrypto.swift)). The key is
+made on the phone that starts the family, travels in the invitation text and
+never reaches the Worker.
+
+It is not end-to-end. To transcribe, structure, colour or write a card's story,
+the Worker hands the recording, the words or the photograph to a model
+unsealed. Whatever app delivered an invitation holds the key. Place coordinates
+are plaintext, a decided leak, as are member and family names, dates and the
+shape of the tree. The Keychain syncs through iCloud, so the Apple account is a
+second way in. On the phone itself the archive is plaintext, behind the
+passcode.
+
+The model key is only a Worker secret (rule 7), and `scripts/secret-check.mjs`
+scans every blob in the history, which a public repository publishes. Every
+model call carries `provider: { data_collection: "deny" }` (rule 8,
+[`openrouter.ts`](backend/src/openrouter.ts)), so OpenRouter routes only to
+providers whose policy is not to train on the data, though a provider may still
+keep a request under its own terms. A failure tells the app only
+`upstream_failed`, and nothing that was told goes into the log (rule 9).
+
+An invite code is 128 random bits, lasts a week, admits one person and can be
+revoked; the owner can remove a member, and creating or joining a family is
+rate limited per address. `scripts/invite-boundary-check.mjs` presses on those
+refusals and has been run against the deployed Worker. With a local Worker up,
+`./scripts/verify.sh` runs it and sends a sealed memory between two phones.
+[DETAILS.md](docs/DETAILS.md#the-cloud-question-unanswered-in-public) has the
+long version, [ARCHITECTURE §4](docs/ARCHITECTURE.md#4-identity-and-family) the
+invitations.
+
 ## Where to look
 
+- [A reading order for judges](docs/DETAILS.md), near the top of the long
+  write-up under **Reading it as a judge**.
 - [The ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend), which the
   rule numbers on this page refer to. `CLAUDE.md` is the working agreement for
   the AI coding sessions that did most of the typing.
@@ -171,10 +256,13 @@ transcription a month.
 
 `./scripts/try-it.sh --two` opens it on two simulators that can share one
 family. On the first, open Settings with the gear at the top right of
-*People*. Then *Family members and invitations*, *Invite a family
-member* and *Share the invitation*. On the second: *Join with an invitation
-link*, paste the whole invitation and press *Join a family*. An invitation is
-valid for a week and lets one person in.
+*Family tree* (*People* with *Larger text* or VoiceOver). Then *Family members
+and invitations*, *Invite a family member* and *Share the invitation*. On the
+second: *Join with an invitation link*, paste the whole invitation and press
+*Join a family*. An invitation is valid for a week and lets one person in. A
+phone fetches the family's changes when Kinlore opens or comes back to the
+front, not by itself while it stays open. So after adding something on the
+first, go to the second simulator's home screen (⇧⌘H) and open Kinlore again.
 
 Both of those are the real app, and the script opens nothing else unless you
 ask. What a family's archive looks like a year or two in is the one thing a
@@ -219,4 +307,6 @@ whole family.
 
 ## Licence
 
-[Apache 2.0](LICENSE).
+[Apache 2.0](LICENSE). The three recordings in `docs/assets/` are macOS
+text-to-speech in its Grandma, Karen and Daniel voices; nobody real is heard in
+them.

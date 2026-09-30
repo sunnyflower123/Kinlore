@@ -2,8 +2,10 @@
 
 A family's shared memory archive. Anyone in the family tells what they
 remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the family tree grows out of the stories, and
-open questions come back to be asked. It is an entry in the RevenueCat
+attach to photos and people, the people and places named in the stories are
+proposed for the family to confirm, and open questions come back to be asked.
+The family tree is drawn from the people the family confirms and the
+relationships it enters by hand. It is an entry in the RevenueCat
 Shipaton 2026 hackathon (Next Gen, the student category); purchases run on the
 RevenueCat Test Store, and there is no App Store release.
 

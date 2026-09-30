@@ -748,3 +748,53 @@ Two findings came out of running them, and both are worth keeping:
   toimii"* moved the identical finding onto that row, which has passed every
   audit it has ever been in. The older rows are left where they are, green
   where they stand; the new one is a `Text` and pays for it with its icon.
+
+## 12. The first run against the research — 30 Sep 2026
+
+The first run was set beside what the published work on onboarding says, to
+find out whether anything in it is owed a change. The sources: NN/g's
+quantitative study of deck-of-cards tutorials (70 users, four apps: reading
+the tutorial made neither success nor speed measurably better, and made the
+tasks feel harder), NN/g on onboarding (instructional overlays and coach marks
+are often nice-to-have, not need-to-have), Apple's HIG on onboarding (*"Teach
+through interactivity"*; postpone nonessential setup, ask for a permission
+when its feature is first used, and let people meet the app before asking for
+ratings or purchases), gradual engagement as Duolingo practises it (the first
+lesson before any account), and a systematic review of app design for older
+adults (its recommendations include simplified navigation, larger fonts,
+voice-activated features and error-tolerant interfaces).
+
+**The verdict: the arc already does what the research asks.** None of this
+section re-opens §8.
+
+| The research says | Kinlore today |
+|---|---|
+| No tutorial deck | Refused in §8 — the first run is the tutorial |
+| Coach marks are seldom needed | Refused in §8 — screens explain themselves |
+| Teach by doing | A name and the text size on the create form, then one big button |
+| No account before value | No account at all (rule 6) |
+| Permissions when they are needed | The microphone on the first press, its prompt saying where the voice goes |
+| Payment after value | After a finished telling, one in three and never beside a name, or at a ceiling the family has hit (`UpsellRhythm`); telling never behind it (rule 2) |
+
+One earlier decision stays as it is, and one more joins the refusals.
+
+### 12.1 The intro at accessibility sizes — stays as it is
+
+P0-1 stays withdrawn. `OnboardingScreen.intro` records the measurement that
+chose the buttons over the sentence, and the research agrees with the choice:
+what can be done outranks what is explained.
+
+### Also not to build
+
+A younger-user mode joins §8's role picker, for the same reason: a mode is a
+setting a family has to discover, set and get wrong. The app already differs
+by role, derived and never asked (§2): the founder and the invited arrive
+differently, and a grandparent's phone shows less.
+
+Sources: [NN/g, Mobile Tutorials: Wasted Effort or Efficiency
+Boost?](https://www.nngroup.com/articles/mobile-tutorials/); [NN/g, Mobile-App
+Onboarding](https://www.nngroup.com/articles/mobile-app-onboarding/); [Apple
+HIG, Onboarding](https://developer.apple.com/design/human-interface-guidelines/onboarding);
+[Appcues, Gradual engagement](https://www.appcues.com/blog/gradual-engagement-mobile-app-first-screen);
+[Optimizing mobile app design for older adults, a systematic
+review](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12350549/).

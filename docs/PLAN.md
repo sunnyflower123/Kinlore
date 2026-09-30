@@ -291,8 +291,11 @@ halves are easy to mistake for each other.
 degradation steps, five engines. That chose `gemini-3.6-flash` on 31 Jul 2026.
 The same three texts were run again on 30 Aug beside an English set of the same
 shape (§10), and that second run's numbers are in `backend/wrangler.jsonc`
-beside the setting they justify. As an engine comparison this is sound —
-relative ranking is exactly what the generator says it is good for.
+beside the setting they justify. Both runs sent the bench's shorter system
+prompt, not the one in `backend/src/transcribe.ts`, which adds lines on an
+elderly speaker, unfinished sentences, fillers, quotation marks and silence.
+As an engine comparison this is sound — relative ranking is exactly what the
+generator says it is good for.
 
 **What was not.** The samples are text-to-speech. The generator says so in its
 own header: *"TTS does not produce dialect, stammering, self-correction,
@@ -309,7 +312,7 @@ bench's own *"above 30 % is not usable"*, in the run of 31 Jul; 65 % and 37.3 %
 in the run of 30 Aug. On audio that is kinder than the real thing.
 
 **Why the concept was not dropped anyway**, which is a decision and should read
-like one: the app is built for exactly this. The original audio is kept forever
+like one: the app is built for exactly this. The original audio is always kept
 and is playable, so nothing rests on the transcript being right. The raw
 transcript is kept beside the cleaned text. Names are checked by the teller in
 the seconds after telling, which is the only moment anybody still knows what was
@@ -348,19 +351,24 @@ once that move has succeeded does the screen say *"Äänesi on tallessa tässä
 puhelimessa"*, above the spinner. The conversation's missing *"Muisto
 tallennettu"* is left as it is.
 
-A separate change, not drawn from that session: since 30 Sep 2026 the idle
-screen's reassurance says *"Puhu ihan rauhassa ja kuuluvalla äänellä"* where it
-said *"vapaasti"*. The words are written by a model that hears only the
-recording, and what it cannot make out it cannot write down: a reply with no
-words leaves the telling as audio alone, and in the conversation after the
-first telling `AnswerWatch` counts anything under −40 dBFS as silence. It is
-said before the press rather than during the recording, which has no room left
-at the largest size, and it is not there when a photograph stands on the card,
-which drops the reassurance altogether. A hint that appears only when the voice
-is quiet would reach the one who needs it and spare everyone else, but it needs
-a threshold, and none has been measured: the three recordings in ARCHITECTURE
-§10 put the room at −51 to −64 dBFS and speech near −15, and none of them is
-known to be a quiet voice.
+Two more things from the session were confirmed on 30 Sep 2026. My grandparent
+had to be asked, out loud, to speak louder; the speech recognition still usually
+caught everything they said, but the moment gave the idea of reminding a teller
+to speak clearly. And they asked, in roughly these words, *"Mitä minun pitää
+sanoa?"* — What do I need to say?
+
+That idea is the idle screen's reassurance since 30 Sep 2026 (`84d2ca4`): it
+says *"Puhu ihan rauhassa ja kuuluvalla äänellä"* where it said *"vapaasti"*.
+The words are written by a model that hears only the recording, and what it
+cannot make out it cannot write down: a reply with no words leaves the telling
+as audio alone, and in the conversation after the first telling `AnswerWatch`
+counts anything under −40 dBFS as silence. It is said before the press rather
+than during the recording, which has no room left at the largest size, and it is
+not there when a photograph stands on the card, which drops the reassurance
+altogether. A hint that appears only when the voice is quiet would reach the one
+who needs it and spare everyone else, but it needs a threshold, and none has
+been measured: the three recordings in ARCHITECTURE §10 put the room at −51 to
+−64 dBFS and speech near −15, and none of them is known to be a quiet voice.
 
 ### The visit that takes the measurement
 
@@ -918,7 +926,8 @@ finished.**
      (`eec08b6`, `6469de2`). `FamilyKey` makes a 256-bit key when a family is
      created and carries it to everyone else inside the invitation; `body`,
      `raw_transcript`, subject titles, question text and the R2 objects are
-     sealed on the device. The store on disk stays plaintext — it is behind the
+     sealed on the device, and so are the facts and the story on a card, which
+     came later. The store on disk stays plaintext — it is behind the
      device passcode and it is what the export is written from — because a
      breach dumps the database and not the phone. Titles seal deterministically
      so that `sync.ts` can still tell a rename from a re-push without a schema
@@ -940,7 +949,9 @@ finished.**
        the questions still open on it and, since 19 Sep 2026, the photograph
        of a photo subject (`ExtractionContext`, ARCHITECTURE §12). A model
        cannot structure words it cannot read, and `/extract` stores none of
-       it.
+       it. A card's story (`/story`, ARCHITECTURE §27) sends the tellings
+       about the card the same way, for the same reason, and the story that
+       comes back is sealed before it syncs.
      - **The invitation carries the key**, so whatever app delivered that
        message has it. The server does not, which is the design; that is a
        smaller claim than end-to-end and `InviteShare` states it where the

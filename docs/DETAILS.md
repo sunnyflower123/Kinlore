@@ -13,8 +13,10 @@ This is the full write-up behind the [README](../README.md).
 
 A family's shared memory archive. Anyone in the family tells what they
 remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the family tree grows out of the stories, and open
-questions come back to be asked.
+attach to photos and people, the people and places named in the stories are
+proposed for the family to confirm, and open questions come back to be asked.
+The family tree is drawn from the people the family confirms and the
+relationships it enters by hand.
 
 Album and genealogy apps ask for structured input: a form to fill in, a face to
 tag, a date to pick. A family's memory is not kept that way. It is told, a
@@ -158,11 +160,12 @@ model credit, because a script you run twenty times a day must not cost money.
 
 CI runs that same script rather than a reimplementation of it, so the two cannot
 drift apart — but on pull requests and on request, not on every push. The Swift
-checks in it need macOS, a macOS minute is metered at ten while this repository
-is private, and every push getting one is how you find out in four seconds that
-the meter said no. Every push gets the backend type check, on Linux, once the
-repository is public; while it is private a push runs nothing, because the
-included minutes are spent and a refused run looks exactly like a broken build.
+checks in it need macOS, and that schedule was set while this repository was
+private, where a macOS minute is metered at ten and a run the meter refuses
+fails in four seconds. Every push gets the backend type check, on Linux, now
+that the repository is public; while it was private a push ran nothing,
+because the included minutes were spent and a refused run looks exactly like a
+broken build.
 
 | Claim | Command |
 |---|---|
@@ -186,7 +189,11 @@ commands, with the arguments this machine forces, are in
 on 31 Jul 2026 — and run again on 30 Aug with an English set of the same shape
 beside it. The second run's numbers sit in
 [`backend/wrangler.jsonc`](../backend/wrangler.jsonc) beside the setting they
-justify.
+justify. Both runs sent the bench's own system prompt, which is shorter than
+the one `backend/src/transcribe.ts` sends: the same instructions to write
+exactly what is heard, tidy nothing and mind the proper nouns, without its
+lines on an elderly speaker, unfinished sentences, fillers, quotation marks
+and silence. The numbers are that prompt's.
 
 **Two of them are bad, and they are printed here on purpose.** The chosen model,
 `gemini-3.6-flash`, scores 65 % on Finnish proper nouns against the bench's own
@@ -198,7 +205,7 @@ of 29.9 %: below the name bar too, and a tenth of a point inside the other.
 
 The concept was not dropped anyway, and
 [PLAN.md §8](PLAN.md#risk-2-honestly) argues why in full: the original audio
-is kept forever and is playable, the raw transcript is kept beside the cleaned
+is always kept and is playable, the raw transcript is kept beside the cleaned
 text, and names are checked by the teller in the seconds after telling — or
 corrected from the person's card years later. *One proper noun in three being
 wrong is the premise the name-correction step was written for, not a surprise.*
@@ -206,8 +213,9 @@ wrong is the premise the name-correction step was written for, not a surprise.*
 **Accessibility:** 0 failures across 17 audits, measured 15 Aug 2026 on a
 private simulator — every sweep there was that day, and the last whole-suite
 run on record with no red in it. The suite has grown to the count in the table
-above, and the last full run written down, at `a4fdf0f` on a quiet machine on
-19 Sep, left four sweeps red with one finding each. The header of
+above, and the last full run, the rehearsal of 30 Sep at `6032d58`, ran 398
+tests with 19 skipped and one red, a colour test that passed when run alone a
+second time and whose cause was fixed in `82f9e07`. The header of
 `AccessibilitySweepTests.swift` keeps the tests that go red in company and green
 alone, rather than explaining them away. (On a simulator shared with another
 session, the 15 Aug commit reported 15 failures that were not real — see
@@ -339,6 +347,221 @@ entitlement, the offering and its paywall, the secret key's permission and
 the webhook — is in
 [`SETUP.md`](SETUP.md#revenuecat--the-project-behind-the-keys).
 
+## What a family costs to run
+
+This is arithmetic, not a bill: token counts from the code and from the
+measurements recorded beside it, multiplied by public prices read on
+30 Sep 2026. Every assumption is numbered below, because every one of them
+moves a figure, and the [README](../README.md#what-a-family-costs-to-run)
+carries the two tables that come out of it. In short: a recorded minute costs
+about 3.3 ¢, a colourisation 3.6 ¢ and keeping a photograph next to nothing, and
+a paying family has no ceiling in this build.
+
+**Four calls cost money**, all of them through OpenRouter under
+`data_collection: "deny"` (rule 8). Nothing else in the app calls a model. The
+interview loop speaks its questions in the phone's own voice
+(`AVSpeechSynthesizer`, `InterviewVoice.swift`), and each answer is an ordinary
+telling that goes through the first two rows. The follow-up questions are a
+field of the structuring's reply, not a call of their own.
+
+| Call | Model (`wrangler.jsonc`) | What it sends | `max_tokens` | Attempts |
+|---|---|---|---|---|
+| Transcription, `POST /transcribe`, `transcribe.ts` | `google/gemini-3.6-flash` | the audio, a system prompt of 633 characters in Finnish (644 in English) and a one-line request | the answer's budget plus 4 096 for reasoning, at most 65 536 (`budget.ts`) | one; a failure keeps the audio, which is sent again later |
+| Structuring, `POST /extract`, `extract.ts` | `google/gemini-3.6-flash` twice, then `openai/gpt-4o-mini` | a system prompt of 2 792 characters, the JSON schema (1 883), the question level (867), the archive rule (506) and the archive itself (about 380), the photograph rule (1 325), the photograph (a flat 1 140 tokens, measured) and the transcript | twice the transcript's tokens plus 3 072, at most 65 536, and 16 000 on the fallback | three |
+| Story, `POST /story`, `story.ts` | `google/gemini-3.6-flash` | a system prompt of 2 503 characters and every live telling on the card, up to 40 of them, 8 000 characters each and 40 000 in all | 6 000, or 1 500 plus half the tellings' characters if that is more; reasoning capped at 1 024 | two |
+| Colourisation, `POST /colourise`, `colourise.ts` | `google/gemini-3.1-flash-lite-image` | the photograph (up to 8 MiB), an instruction of about 480 characters and what was told about the photograph, up to 8 000 characters | not set | one a round |
+
+**What bounds a call, and what bounds a family.** A transcript with more words
+than 4 a second in Finnish or 6 in English, plus 20, is thrown away as invented
+(`MAX_WORDS_PER_SECOND` in `budget.ts`). One request carries at most 25 MiB of
+audio (`MAX_AUDIO_BYTES` in `worker.ts`), about 97 minutes at the app's
+4.5 kB/s, or a photograph of at most 8 MiB. An answer in the interview loop ends
+after 25 seconds of silence or at 10 minutes (`AnswerWatch.swift`); the first
+telling has no limit of its own. The free tier's three meters belong to a
+family: 600 seconds of transcription a month, 20 photographs in all and 5
+colourisations a month. Every AI call a free family makes also draws on one of
+four pools a day shared by all free families, 36 000 seconds, 300 000
+structuring tokens, 20 rounds and 300 000 story tokens, which `wrangler.jsonc`
+prices at about $14 a day at their worst
+([`ARCHITECTURE.md` §7](ARCHITECTURE.md#7-quotas-and-moderation)). Structuring
+and stories count against no family's meter, since a meter on structuring would
+stop a typed memory (rule 2), so for them the pools are the only bound. The only
+rate limits are per address, on creating a family (five a minute) and on joining
+one (ten a minute). No route that calls a model has one.
+
+**A paying family meets none of it.** `isPaid` is the first thing
+`checkAISeconds`, `checkPhotoCount`, `checkColourisations` and
+`reserveFreeTierDay` ask in `backend/src/quota.ts`, and when it is true each
+lets the call through without looking at what has been used. The minutes and
+rounds are still recorded (`recordAISeconds`, `recordColourisation`), so the
+family screen can say what was used, but nothing compares them with a limit.
+What still bounds a paying family is the size of one request and the credit on
+the OpenRouter account.
+[PLAN.md](PLAN.md) names a fair-use ceiling of five hours of transcription a
+month, and says itself that it is a sentence and not code.
+
+**The prices**, read on 30 Sep 2026:
+
+| What | Price | Source |
+|---|---|---|
+| `google/gemini-3.6-flash` | $0.75 a million tokens in (text, audio and image), $3.75 out, reasoning included | [OpenRouter's model list](https://openrouter.ai/api/v1/models), read at 12:06 UTC |
+| `openai/gpt-4o-mini` | $0.15 in, $0.60 out | the same |
+| `google/gemini-3.1-flash-lite-image` | $0.25 in, $1.50 for text out, $30 a million image tokens out; a round measured at 3.39 ¢ from the reply's own `usage.cost` on 13 Sep 2026 | the same, and `wrangler.jsonc` |
+| Audio | 32 tokens a second, 1 920 a minute | [Gemini API, audio understanding](https://ai.google.dev/gemini-api/docs/audio) |
+| OpenRouter | the providers' prices unchanged, and 5.5 % on buying credit | [OpenRouter pricing](https://openrouter.ai/pricing) |
+| R2 | $0.015 a GB-month, $4.50 a million writes, $0.36 a million reads, no egress | [R2 pricing](https://developers.cloudflare.com/r2/pricing/) |
+| D1 | $1.00 a million rows written and $0.001 a million read, past the allowances | [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) |
+| Workers | $5 a month at least; $0.30 a million requests, $0.02 a million CPU milliseconds and $0.60 a million log events, past the allowances | [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) |
+| Apple | 15 % commission in the Small Business Program, for up to $1 million of proceeds the year before | [Small Business Program](https://developer.apple.com/app-store/small-business-program/) |
+| Apple and tax | prices include VAT outside the US and Canada, and the commission is taken from the price after it | [Understanding taxes](https://developer.apple.com/help/app-store-connect/making-payments-to-apple/understanding-taxes/) |
+| RevenueCat | nothing up to $2 500 of tracked revenue a month, then 1 % of all of it | [RevenueCat pricing](https://www.revenuecat.com/pricing/) |
+| Finnish VAT | 25.5 % | [Vero](https://www.vero.fi/en/businesses-and-corporations/taxes-and-charges/vat/rates-of-vat/) |
+
+**The assumptions.**
+
+1. Finnish speech runs at 2.04 words a second, the rate `budget.ts` measured,
+   which is 122 words a minute. English runs at 3.01.
+2. A Finnish word is three tokens and an English one 1.6, the generous figures
+   `budget.ts` budgets with, so a Finnish minute is 367 tokens of transcript.
+   Prompts are three characters a token in Finnish (`story.ts`'s own figure)
+   and four in English.
+3. A transcription reasons for 1 500 tokens. `budget.ts` records 566–980 on a
+   40-second telling, Finnish running past a cap of 1 024 five times in five,
+   and up to 2 792 on hard samples.
+4. A structuring writes 1 300 tokens plus twice the transcript, which fits what
+   `budget.ts` records: 1 314 and 1 451 at 8 words with a photograph, 1 735 and
+   2 376 at 126 words.
+5. Every telling is about a photograph and has an archive behind it, the
+   dearest structuring there is. Without either it costs 0.94 ¢ instead of
+   1.26 ¢.
+6. The story is composed once for each telling, as `StoryPlan` asks, on a card
+   of four tellings, so each telling is read two and a half times and written
+   two and a half times. Each composition reasons for its whole 1 024 tokens and
+   reads 150 characters of the card's own lines, the schema, and 10 tokens of
+   byline a telling. Nothing in the repository measures what a story costs.
+7. Every text call costs 12 % more for retries, the failure rate `extract.ts`
+   records, with every failure paid in full. A provider that crashes does not
+   always bill, so this leans high.
+8. OpenRouter's 5.5 % is added to every model price.
+9. Recordings last a minute. Part of a recording's cost is the same whatever its
+   length, the prompts, the photograph and the reasoning, so this assumption
+   moves the price of a minute more than any other.
+10. A photograph is about 1 MB (the app's own measured 340–990 kB), audio is
+    0.27 MB a minute, and half of all colourisation rounds are kept, at 1 MB
+    each.
+11. Cloudflare is priced past its allowances, as if they were already used up:
+    20 D1 rows written a telling and 10 a photograph, ten syncs a member a day
+    reading 50 rows each, five requests a telling, and 5 ms of CPU and two log
+    events a request.
+
+**One Finnish minute**, tokens times price, then × 1.12 for retries and × 1.055
+for OpenRouter's fee:
+
+- Transcription: in, 1 920 tokens of audio and 221 of prompt, 2 141 × $0.75/M =
+  $0.00161; out, 367 and 1 500 of reasoning, 1 867 × $3.75/M = $0.00700. That is
+  $0.00861 at list and **1.0 ¢** paid.
+- Structuring: in, 2 592 of prompt and schema, 1 140 of photograph and 367,
+  4 099 × $0.75/M = $0.00307; out, 1 300 + 2 × 367 = 2 034 × $3.75/M =
+  $0.00763. $0.01070 at list, **1.3 ¢** paid.
+- Story: in, 929 of prompt, card and schema and 2.5 × (367 + 10), 1 872 ×
+  $0.75/M = $0.00140; out, 2.5 × 367 + 1 024 = 1 942 × $3.75/M = $0.00728.
+  $0.00869 at list, **1.0 ¢** paid.
+- Together $0.0280 at list and **3.3 ¢** paid. An English minute is 2.8 ¢.
+
+**A recording costs 2.1 ¢ plus 1.2 ¢ a minute** by the same sums, so what a
+minute costs depends on how long the recordings are: 7.6 ¢ in twenty-second
+answers, 3.3 ¢ in one-minute recordings, 1.9 ¢ in three-minute ones, 1.6 ¢ in
+five and 1.3 ¢ in twenty.
+
+**The rest.** A typed telling of 50 words costs 1.05 ¢ to structure and 0.74 ¢
+to compose, **1.8 ¢**. A name correction that runs a telling's structuring
+again, without the archive or the photograph, is about **1.0 ¢**. A colourisation
+round is 3.39 ¢ × 1.055 = **3.6 ¢**, and 8 000 characters of told text add
+0.07 ¢. A 1 MB photograph kept for a month is $0.015 ÷ 1 000 = $0.000015,
+**$0.015 a month for a thousand**, and its upload and twenty deliveries cost
+$0.0000117 once. An hour of audio, 16 MB, is $0.00024 a month.
+
+**What a sale leaves.** A US price carries no VAT: 39.99 × (1 − 0.15 − 0.01) =
+**$33.59** a month, and 149.99 ÷ 12 × 0.84 = **$10.50** a month for the year. A
+sale in Finland pays VAT first: 39.99 ÷ 1.255 × 0.85 − 0.40 = $26.68, and $8.34
+a month for the year. Without the Small Business Program the commission is
+30 % in a subscription's first year, which leaves $27.59 and $8.62. RevenueCat's
+1 % starts only past $2 500 a month and is counted here anyway.
+
+**The scenarios**, at the twelfth month, so that a year of storage is in them:
+
+- **(a) A free family at its three limits.** Ten one-minute recordings,
+  10 × 3.31 ¢ = $0.33; five rounds, 5 × 3.58 ¢ = $0.18; twenty photographs and
+  the Cloudflare, under a cent. **$0.51**, and nothing is paid. The three limits
+  leave two things open. The month is checked before a call and counted after
+  it, so a recording that starts under the limit passes whatever its length: at
+  the 25 MiB cap its transcription costs about $0.30, and its structuring, which
+  needs more than the model can write (below), fails three times for about
+  $0.60. And typing is never metered (rule 2), so a free family's typed
+  tellings, 1.8 ¢ each, are bounded only by the shared pools.
+- **(b) A typical paying family**, taken to be five tellers who record twenty
+  minutes each, twenty colourisations and fifty new photographs, among eight
+  members: 100 × 3.31 ¢ = $3.31, 20 × 3.58 ¢ = $0.72, Cloudflare $0.03.
+  **$4.05**, which leaves $29.54 of the monthly plan (88 %) and $6.45 of the
+  yearly (61 %).
+- **(c) A heavy family**, twenty tellers who record an hour each, 200
+  colourisations and 200 photographs: 1 200 × 3.31 ¢ = $39.70, 200 × 3.58 ¢ =
+  $7.15, Cloudflare $0.22. **$47.08**, which is $13.48 more than the monthly
+  plan leaves and $36.58 more than the yearly. The same hours in five-minute
+  recordings cost $19.26 and the month $26.63, which the monthly plan covers
+  with $6.96 left and the yearly does not, by $16.14.
+- **(d) Break-even.** $33.59 ÷ 3.31 ¢ = 1 015 minutes, about 17 hours of
+  one-minute recordings, or $33.59 ÷ 3.58 ¢ = 939 rounds. The yearly plan's
+  $10.50 buys 317 minutes, 5.3 hours, or 294 rounds. After Finnish VAT, 807
+  and 252 minutes.
+
+The heavy family's Cloudflare in full: 0.62 GB added a month and twelve months
+of it kept, × $0.015 = $0.112; R2 writes, 1 500 × $4.50/M = $0.007, and reads,
+1 500 × 20 members × $0.36/M = $0.011; D1, 26 000 rows written × $1/M = $0.026,
+and its reads a fraction of a cent; 42 400 requests × $0.30/M = $0.013, their
+CPU $0.004 and their log events $0.051. That is $0.22, under half a per cent of
+the family's model bill. The Workers plan's $5 a month belongs to the account,
+not to a family.
+
+**What moves the figures most** is the length of a recording, above. Then the
+size of a card: a story is composed from every live telling on the card each
+time one lands, so its share of a minute is 0.7 ¢ on a card of one telling,
+1.0 ¢ on four, 1.6 ¢ on ten and 4.6 ¢ at the cap of forty, where the whole minute
+comes to 6.8 ¢. Then reasoning, which is most of every call's output: each
+500 tokens of it is 0.22 ¢ a call. And the ceiling on what the model can write.
+A structuring writes about twice the transcript over its floor (assumption 4),
+and that passes the model's 65 536 output tokens at about 10 700 Finnish words,
+87 minutes of speech. A recording that long is transcribed, but all three of its
+structurings are cut off and paid for, and the telling lands in its teller's own
+words.
+
+**Checked against what was measured.** The one cost the repository records over
+many rounds, 81 ¢ for 95 structurings with a photograph on 29 Sep 2026
+([`ARCHITECTURE.md` §12](ARCHITECTURE.md#12-the-question-ladder)), is 0.85 ¢ a
+round at list price, and the sums above give 0.89 ¢ for a telling of 50 words.
+Two name corrections on 28 Sep 2026 cost $0.0157
+([§17](ARCHITECTURE.md#17-the-name-that-was-heard-wrong)), 0.79 ¢ each, against
+0.81 ¢ here for a one-minute telling; their length is not recorded. An older
+round, $0.0061 on 19 Sep 2026 for a telling of about 215 characters with its
+photograph (§12), is a quarter below the $0.008 these sums give it. So the
+structuring figure is close to the latest measurement and leans high against the
+older one. Transcription and the story have no measured cost in the repository,
+and their figures rest on assumptions 3 and 6.
+
+**PLAN.md's figure leaves out the reasoning.** The price decision of
+12 Sep 2026 put transcription at about 0.3 ¢ a minute and said that everything
+else but colouring rounds to nothing. That counts the audio and the transcript
+but not the reasoning, which is most of the call, and the structuring and the
+story each cost about what the whole transcription does, so a minute comes to
+eleven times that figure.
+The five hours a month PLAN.md names would cost about $9.90 at these figures,
+against the $10.50 a month the yearly plan leaves.
+
+So in this build nothing but the size of a request and the account's credit
+bounds what a paying family spends, and a family that records more than about
+17 hours a month on the monthly plan, or five on the yearly, costs more than it
+pays.
+
 ## The cloud question, unanswered in public
 
 Who hands a dead parent's voice to somebody's server? What is true today, rather
@@ -346,7 +569,8 @@ than what is comfortable.
 
 **What the server keeps and cannot read.** Since 24 Aug 2026 the memory bodies,
 the raw transcripts, the subject titles, the question text and the bytes in R2 —
-the photographs and the voices — are sealed on the phone before they sync. The key
+the photographs and the voices — are sealed on the phone before they sync, and so
+are the facts and the story on a card, which came later. The key
 never reaches the Worker; between people it crosses only inside the invite text.
 `scripts/lever3-roundtrip-check.swift` puts two identities through a real
 deployment and checks both halves: that what lands in D1 and R2 is sealed, and
@@ -370,13 +594,16 @@ date and place of the subject it is filed under, the names already linked to
 it, the questions still open on it and, for a telling about a photograph, the
 photograph (`ExtractionContext.swift`). A photograph leaves once more when
 somebody asks for its colours, with the memories told about it, and that button
-says so before anything is sent. Every one of those requests carries
+says so before anything is sent. When a card's story is composed (`/story`), the
+tellings about it go the same way, with the card's title, date and confirmed
+names and who told each, and the story that comes back is sealed before it
+syncs. Every one of those requests carries
 `provider: { data_collection: "deny" }`, the flag that keeps the words out of a
 training set (rule 8, checked without sending anything by
 `scripts/data-collection-check.mjs`), and the Worker writes none of it down:
-transcription and colouring keep only their meters, extraction keeps nothing,
-and R2 receives only what `/media` is handed, which is sealed. So "cannot read"
-is a claim about what is *kept*.
+transcription and colouring keep only their meters, extraction and a story keep
+nothing, and R2 receives only what `/media` is handed, which is sealed. So
+"cannot read" is a claim about what is *kept*.
 End-to-end in the strict sense — a server that never holds the plaintext at
 all — is incompatible with server-side transcription, and sealing at rest does
 not close that hole.

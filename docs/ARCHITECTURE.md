@@ -117,9 +117,9 @@ model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
 The UI suite has 399 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
-DEVELOPMENT.md states a different number anywhere. The last full run written
-down, at `a4fdf0f` on 19 Sep 2026, left four sweeps red with one finding each
-([DETAILS.md](DETAILS.md#measured-not-claimed)).
+DEVELOPMENT.md states a different number anywhere. The last full run, the
+rehearsal of 30 Sep 2026, is written down as the last item of the known issues
+below.
 
 **Why a check, and not a look at the app.** Nearly every item here was written
 as done long before it was true, and each looked done from the outside: the
@@ -132,36 +132,66 @@ has, and the reason to distrust this table is that it has been wrong in exactly
 this way before.
 
 **Known issues, found on 30 Sep 2026.** A review on the day of submission read
-the promises against the code again, and these are what it found. The
+the promises against the code again and found these, the heaviest first. The
 webhook's was fixed that day and is listed after the rest, with a second fix to
 the payments and the relationship that stopped a phone's sync. The others were
-not, because each touches sync, the production
-schema or the recorder, and a change there on the last day is a bigger risk
-than the defect. They are written here so that nobody has to find them twice.
+not: most touch sync, the production schema, the recorder or the payments, where
+a change on the last day is a bigger risk than the defect. They are written here
+so that nobody has to find them twice.
 
-- **An edit made while a push is in flight is lost.** `clearPending` clears
-  the rows it sent by id, so a row changed during the request is no longer
-  dirty, and the pull after it puts the server's older copy back.
-- **The free photo ceiling is counted at one door.** `/media?kind=photo`
-  checks it; `/sync` accepts photo subjects without counting them, and a
-  `colour` upload is not counted. Only a modified client gets past it.
-- **Rule 4 is kept by the app, not the Worker.** A pushed subject without
-  `confirmed` is stored as confirmed.
 - **A telling is lost if the app is killed mid-recording.** The recorder
-  writes AAC into an `.m4a`, which is unreadable until it is finished, and the
-  next launch's sweep removes it. A telling interrupted any other way is kept.
-- **A failed save is silent.** `MemoryStore.save()` ignores a write error.
-- **Nothing is deleted on the server.** Deletion is soft, R2 objects are never
-  removed and there is no route that deletes a family (§19), and the family
-  key is not changed when a member leaves (§4, a decision).
-- **The model calls have no timeout** (`openrouter.ts`).
-- **VoiceOver hears no announcements.** Recording, organising and "Muisto
-  tallennettu" are carried by the button's label and the screen changing.
-- **The blind card in a small family.** With two or three confirmed people,
-  every card shows the same decoys, and the name that changes is the answer.
-- **The last full UI run written down is 26 Sep 2026**, with six reds
-  (the header of `AccessibilitySweepTests.swift`); none is recorded after the
-  fixes of 30 Sep.
+  writes AAC into an `.m4a` (`AudioRecorder.swift:103`) that cannot be opened
+  until it is finished, and the next launch's sweep deletes what it cannot open
+  (`AudioRecorder.swift:358–360`); only a recording killed after it stopped is
+  recovered. A crash, a force-quit or the system ending the app is enough.
+- **An edit made while a push is in flight is lost.** `clearPending` clears the
+  rows it sent by id (`MemoryStore.swift:1331`), so a row changed during the
+  request is no longer dirty and the pull after it puts the server's older copy
+  back. The window is one request long.
+- **Two phones pushing at once can hide one push from the other.** A push
+  takes its number (`sync.ts:169`) before it writes (`sync.ts:1005`), so a later
+  number can land first, a pull in between moves the cursor past the earlier
+  one (`sync.ts:306`), and those rows never reach that phone.
+- **A failed save is silent.** `MemoryStore.save()` drops a write error
+  (`MemoryStore.swift:2899–2901`), so on a full phone the changes since the
+  last good save live only in memory, and an archive kept on this phone only
+  loses them when the app ends.
+- **Nothing is deleted on the server.** Deletion is a tombstone, no R2 object
+  is ever removed (`backend/src` never deletes from R2), no route deletes a
+  family (§19), and a member who leaves keeps the family key (§4, a decision).
+- **A paid family has no ceiling on model calls.** `checkAISeconds`,
+  `checkColourisations` and `reserveFreeTierDay` return early for it
+  (`quota.ts:78`, `148`, `222`), and the only rate limits are on creating and
+  joining a family (`worker.ts:211`, `246`). A Test Store purchase is free, so
+  whoever makes one can spend the project's OpenRouter credit with no limit in
+  the Worker.
+- **VoiceOver hears no announcements.** Nothing in `ios/Kinlore` posts one;
+  recording, organising and "Muisto tallennettu" are carried by the button's
+  label and the screen changing.
+- **The blind card in a small family.** The decoys are the other confirmed
+  people (`BlindConfirmation.swift:93`), so with two or three of them every
+  card shows the same ones, and the name that changes is the answer.
+- **The model calls have no timeout** (`openrouter.ts:170`): a model that never
+  answers holds the request until the phone gives up, and the retries in
+  `extract.ts` and `story.ts` never start.
+- **The free photo ceiling is counted at one door.** `/media?kind=photo` checks
+  it (`worker.ts:410`); `/sync` takes photo subjects without counting them, and
+  a `colour` upload is not counted. Only a modified client gets past it.
+- **`/entitlement/sync` believes the customer id it is sent**
+  (`worker.ts:338–343`) and never compares it with the session's member id, so
+  a client that knows another payer's id, not yet bound to a family, can claim
+  that subscription. The id is a random UUID that no screen shows.
+- **A restore that cannot reach the family thanks the person for paying.** A
+  restore with an active entitlement takes the purchase's path
+  (`PaywallSheet.swift:55–60`), so when `syncPurchase` fails the sheet says
+  *"Kiitos — maksu meni läpi"* ("Thank you — the payment went through",
+  `PaywallSheet.swift:82`) to somebody who paid nothing on that tap.
+- **The last full UI run is the rehearsal of 30 Sep 2026**, at `6032d58`: 398
+  tests run, 19 skipped and 1 red. The red was
+  `ColourTests.testYesKeepsTheColoursBesideThePhotograph`, which passed when
+  run alone a second time; its cause, a lazy list that had not yet created the
+  footer's identifier, was fixed in `82f9e07`. The changes that reached `main`
+  after the rehearsal have been run only with targeted tests.
 
 **Fixed the same day.**
 
@@ -5179,7 +5209,8 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
 `InviteShare`'s doc comment beside the invite text already says the smaller
 thing lever 3 promises about the key; this paragraph is where the whole of
 what a dump yields is written down. Sealed: memory bodies, raw transcripts,
-subject titles, question text, and the R2 bytes. In the clear: the family's
+subject titles, the facts and the story on a card (§26, §27), question text,
+and the R2 bytes. In the clear: the family's
 own name and its members' display names, timestamps and the carefully kept
 dates with their precision (rule 5), subject kinds, memory sources and audio
 lengths, sequence numbers, relationships, the mention graph — which memory
