@@ -44,6 +44,47 @@ hackathon, in the Next Gen Award (the student category).
 |---|---|---|
 | **Telling.** One button, and a way out of it for anyone who would rather type. Two questions wait under it for anyone who does not know where to begin. | **What comes back.** A later telling in the example archive. The two names it heard wait for a cross or a tick, because no name enters the family tree before somebody confirms it, and Puumala, a place the family has already confirmed, can still be corrected. Above them, as the GIF shows, the date is a decade because that is what was said; below them come the questions the app would still ask. | **Who is this?** One of the four names is the proposal, and nothing on the screen says which. The photograph is generated and shows nobody real; it stands in for the one the name was heard in. |
 
+## What it does
+
+- **One button.** You press it and talk about an old photo. The memory is kept
+  in your own voice and in readable words, attached to the photo.
+- **Proposals, not facts.** The names and places it heard come back as
+  proposals, each with the sentence it was heard in. None of them enters the
+  family tree until a person says yes (rule 4).
+- **Questions out loud.** It asks follow-up questions, listens to each answer
+  and asks the next one, round after round, without a tap.
+- **Who is this?** Later it shows the photograph a name was heard in and asks
+  who it is, over three or four of the family's names with the proposal
+  unmarked among them. Any other answer confirms nothing and is never called
+  wrong
+  ([ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
+- **One story per card.** The AI puts what the family told about a card into
+  one story at the top of it. The model is told to keep to the tellers' own
+  words and add nothing; the Worker checks only that a story came back, and
+  every telling stays under it as it was told
+  ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
+- **Nothing rounded, nothing thrown away.** The original recording and the raw
+  transcript are always kept (rule 3). A date stays as vague as it was said, so
+  "sometime in the fifties" is stored as a decade (rule 5).
+- **Two languages.** English by default, Finnish on a phone set to Finnish, and
+  speech is heard as that language. Settings can choose either.
+- **Settings** has larger text, which also makes the app simpler, and exports
+  the whole archive as one file: the memories as a readable page, the original
+  recordings and the photos.
+
+Every screen has to work at the largest text size and with VoiceOver (rule 1).
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/divider-dark.svg">
+    <img src="docs/logo/divider.svg" alt="" width="320">
+  </picture>
+</p>
+
+Everything below is for developers: how it is built and tested, how to run it,
+how the paywall is wired, what it costs to run and how the data is protected.
+The long version is [docs/DETAILS.md](docs/DETAILS.md).
+
 ## At a glance
 
 - **Built with** SwiftUI · Cloudflare Workers + D1 + R2 · OpenRouter · RevenueCat
@@ -71,13 +112,6 @@ flowchart LR
   rc -->|"webhook"| worker
   worker -->|"REST: what does the buyer own?"| rc
 ```
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/divider-dark.svg">
-    <img src="docs/logo/divider.svg" alt="" width="320">
-  </picture>
-</p>
 
 ## Try it
 
@@ -154,36 +188,6 @@ it nowhere but that simulator. The Test Store key is in the submission's
 Additional info, for judges. A Test Store purchase is simulated and no money
 moves; the script says where the offer is and what buying it opens for the
 whole family.
-
-## What it does
-
-- **One button.** You press it and talk about an old photo. The memory is kept
-  in your own voice and in readable words, attached to the photo.
-- **Proposals, not facts.** The names and places it heard come back as
-  proposals, each with the sentence it was heard in. None of them enters the
-  family tree until a person says yes (rule 4).
-- **Questions out loud.** It asks follow-up questions, listens to each answer
-  and asks the next one, round after round, without a tap.
-- **Who is this?** Later it shows the photograph a name was heard in and asks
-  who it is, over three or four of the family's names with the proposal
-  unmarked among them. Any other answer confirms nothing and is never called
-  wrong
-  ([ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
-- **One story per card.** The AI puts what the family told about a card into
-  one story at the top of it. The model is told to keep to the tellers' own
-  words and add nothing; the Worker checks only that a story came back, and
-  every telling stays under it as it was told
-  ([ARCHITECTURE §27](docs/ARCHITECTURE.md#27-the-story-on-a-card)).
-- **Nothing rounded, nothing thrown away.** The original recording and the raw
-  transcript are always kept (rule 3). A date stays as vague as it was said, so
-  "sometime in the fifties" is stored as a decade (rule 5).
-- **Two languages.** English by default, Finnish on a phone set to Finnish, and
-  speech is heard as that language. Settings can choose either.
-- **Settings** has larger text, which also makes the app simpler, and exports
-  the whole archive as one file: the memories as a readable page, the original
-  recordings and the photos.
-
-Every screen has to work at the largest text size and with VoiceOver (rule 1).
 
 ## Who pays
 
