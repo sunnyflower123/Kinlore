@@ -585,9 +585,14 @@ private struct IdleView: View {
                 ? "Puhelin kysyy ensin luvan mikrofoniin."
                 : "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua."
         }
+        // "Kuuluvalla äänellä" in place of "vapaasti", 30 Sep 2026: the first
+        // grandparent to tell into the app had to be asked out loud to speak
+        // up (PLAN.md §8). Said here, before the press, because the recording
+        // screen has no room left to say it at the largest size (`Squeeze`);
+        // "vapaasti" is what the longer form's second sentence says anyway.
         return typeSize.isAccessibilitySize || short
-            ? "Puhu ihan rauhassa ja vapaasti."
-            : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
+            ? "Puhu ihan rauhassa ja kuuluvalla äänellä."
+            : "Puhu ihan rauhassa ja kuuluvalla äänellä. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
 
     /// What is offered beside the big button, chosen by the ladder: easy enough

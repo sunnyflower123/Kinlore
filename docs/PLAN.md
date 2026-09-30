@@ -354,6 +354,17 @@ The idle screen does offer two starter questions (ARCHITECTURE §12), under the
 button, and which screen was open at the time is not known — so it is recorded
 as a question for the next visit rather than as a finding.
 
+And one thing done rather than said, reported the same day: the grandparent had
+to be asked out loud to speak up. No screen asked for it. Since 30 Sep 2026
+the idle screen's reassurance says *"Puhu ihan rauhassa ja kuuluvalla
+äänellä"* where it said *"vapaasti"*, before the press rather than during the
+recording, which has no room left at the largest size. It is not there when a
+photograph stands on the card, which drops the reassurance altogether. A hint
+that appears only when the voice is quiet would reach the one who needs it and
+spare everyone else, but it needs a threshold, and none has been measured: the
+three recordings in ARCHITECTURE §10 put the room at −51 to −64 dBFS and speech near −15, and
+none of them is known to be a quiet voice.
+
 ### The visit that takes the measurement
 
 Written before the day rather than on it, because half of what follows cannot be
