@@ -113,6 +113,40 @@ the production Worker, and its model bill, to anybody.
 [See the paywall](#see-the-paywall), under *Try it*, opens it with the key, and
 [DETAILS.md](docs/DETAILS.md#who-pays) has the full section.
 
+## Privacy and security
+
+Before syncing, the phone seals memory bodies, raw transcripts, card titles, a
+card's facts and story, question text, and every photograph and recording with
+AES-GCM under a 256-bit family key
+([`FamilyCrypto.swift`](ios/Kinlore/Services/FamilyCrypto.swift)). The key is
+made on the phone that starts the family, travels in the invitation text and
+never reaches the Worker.
+
+It is not end-to-end. To transcribe, structure, colour or write a card's story,
+the Worker hands the recording, the words or the photograph to a model
+unsealed. Whatever app delivered an invitation holds the key. Place coordinates
+are plaintext, a decided leak, as are member and family names, dates and the
+shape of the tree. The Keychain syncs through iCloud, so the Apple account is a
+second way in. On the phone itself the archive is plaintext, behind the
+passcode.
+
+The model key is only a Worker secret (rule 7), and `scripts/secret-check.mjs`
+scans every blob in the history, which a public repository publishes. Every
+model call carries `provider: { data_collection: "deny" }` (rule 8,
+[`openrouter.ts`](backend/src/openrouter.ts)), so OpenRouter routes only to
+providers whose policy is not to train on the data, though a provider may still
+keep a request under its own terms. A failure tells the app only
+`upstream_failed`, and nothing that was told goes into the log (rule 9).
+
+An invite code is 128 random bits, lasts a week, admits one person and can be
+revoked; the owner can remove a member, and creating or joining a family is
+rate limited per address. `scripts/invite-boundary-check.mjs` presses on those
+refusals and has been run against the deployed Worker. With a local Worker up,
+`./scripts/verify.sh` runs it and sends a sealed memory between two phones.
+[DETAILS.md](docs/DETAILS.md#the-cloud-question-unanswered-in-public) has the
+long version, [ARCHITECTURE §4](docs/ARCHITECTURE.md#4-identity-and-family) the
+invitations.
+
 ## Where to look
 
 - [The ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend), which the
