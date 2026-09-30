@@ -187,7 +187,11 @@ commands, with the arguments this machine forces, are in
 on 31 Jul 2026 — and run again on 30 Aug with an English set of the same shape
 beside it. The second run's numbers sit in
 [`backend/wrangler.jsonc`](../backend/wrangler.jsonc) beside the setting they
-justify.
+justify. Both runs sent the bench's own system prompt, which is shorter than
+the one `backend/src/transcribe.ts` sends: the same instructions to write
+exactly what is heard, tidy nothing and mind the proper nouns, without its
+lines on an elderly speaker, unfinished sentences, fillers, quotation marks
+and silence. The numbers are that prompt's.
 
 **Two of them are bad, and they are printed here on purpose.** The chosen model,
 `gemini-3.6-flash`, scores 65 % on Finnish proper nouns against the bench's own

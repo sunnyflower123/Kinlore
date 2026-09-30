@@ -291,8 +291,11 @@ halves are easy to mistake for each other.
 degradation steps, five engines. That chose `gemini-3.6-flash` on 31 Jul 2026.
 The same three texts were run again on 30 Aug beside an English set of the same
 shape (§10), and that second run's numbers are in `backend/wrangler.jsonc`
-beside the setting they justify. As an engine comparison this is sound —
-relative ranking is exactly what the generator says it is good for.
+beside the setting they justify. Both runs sent the bench's shorter system
+prompt, not the one in `backend/src/transcribe.ts`, which adds lines on an
+elderly speaker, unfinished sentences, fillers, quotation marks and silence.
+As an engine comparison this is sound — relative ranking is exactly what the
+generator says it is good for.
 
 **What was not.** The samples are text-to-speech. The generator says so in its
 own header: *"TTS does not produce dialect, stammering, self-correction,
