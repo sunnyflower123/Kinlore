@@ -149,7 +149,7 @@ the defect. They are written here so that nobody has to find them twice.
 - **A telling is lost if the app is killed mid-recording.** The recorder
   writes AAC into an `.m4a` (`AudioRecorder.swift:103`) that cannot be opened
   until it is finished, and the next launch's sweep deletes what it cannot open
-  (`AudioRecorder.swift:327–329`); only a recording killed after it stopped is
+  (`AudioRecorder.swift:358–360`); only a recording killed after it stopped is
   recovered. A crash, a force-quit or the system ending the app is enough.
 - **An edit made while a push is in flight is lost.** `clearPending` clears the
   rows it sent by id (`MemoryStore.swift:1331`), so a row changed during the
@@ -169,7 +169,7 @@ the defect. They are written here so that nobody has to find them twice.
 - **A paid family has no ceiling on model calls.** `checkAISeconds`,
   `checkColourisations` and `reserveFreeTierDay` return early for it
   (`quota.ts:78`, `148`, `222`), and the only rate limits are on creating and
-  joining a family (`worker.ts:187`, `222`). A Test Store purchase is free, so
+  joining a family (`worker.ts:211`, `246`). A Test Store purchase is free, so
   whoever makes one can spend the project's OpenRouter credit with no limit in
   the Worker.
 - **VoiceOver hears no announcements.** Nothing in `ios/Kinlore` posts one;
@@ -182,10 +182,10 @@ the defect. They are written here so that nobody has to find them twice.
   answers holds the request until the phone gives up, and the retries in
   `extract.ts` and `story.ts` never start.
 - **The free photo ceiling is counted at one door.** `/media?kind=photo` checks
-  it (`worker.ts:385`); `/sync` takes photo subjects without counting them, and
+  it (`worker.ts:410`); `/sync` takes photo subjects without counting them, and
   a `colour` upload is not counted. Only a modified client gets past it.
 - **`/entitlement/sync` believes the customer id it is sent**
-  (`worker.ts:313–318`) and never compares it with the session's member id, so
+  (`worker.ts:338–343`) and never compares it with the session's member id, so
   a client that knows another payer's id, not yet bound to a family, can claim
   that subscription. The id is a random UUID that no screen shows.
 - **A restore that cannot reach the family thanks the person for paying.** A
