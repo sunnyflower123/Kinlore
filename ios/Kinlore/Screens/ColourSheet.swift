@@ -181,8 +181,10 @@ struct ColourSheet: View {
     /// only what the idle screen happened to leave it, and where it is more
     /// than the sheet has, the photograph is not drawn and the listening
     /// screen opens at the disc as it always has. The third is the screen
-    /// that transcribes the telling and puts it in order, which does not
-    /// scroll and so cannot be given less than it measures. Writing is not
+    /// that transcribes the telling and puts it in order, with the line over
+    /// its spinner that says the voice is kept: it scrolls since that line
+    /// came (30 Sep 2026), and is measured here so that the photograph never
+    /// pushes that line or the words under it out of sight. Writing is not
     /// here, because its keyboard leaves the photograph no room.
     ///
     /// A copy of another file's layout, and it drifts when that one changes;
@@ -245,9 +247,14 @@ struct ColourSheet: View {
             .padding(.top, 12)
             .padding(.bottom, 12)
 
-            // `ProcessingView`, with the longer of its two phases' words.
+            // `ProcessingView`, with the longer of its two phases' words and
+            // the line that says the voice is kept, which it shows whenever
+            // the recording has left tmp (`TellViewModel.recordingIsKept`).
             VStack(spacing: 24) {
-                Spacer()
+                Spacer(minLength: 0)
+                Label("Äänesi on tallessa tässä puhelimessa", systemImage: "checkmark.circle.fill")
+                    .font(.title2.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
                 ProgressView()
                     .controlSize(.extraLarge)
                 ZStack {
@@ -260,7 +267,7 @@ struct ColourSheet: View {
                     Text("Etsin ihmiset, paikat ja ajankohdan.")
                 }
                 .elderBody()
-                Spacer()
+                Spacer(minLength: 0)
             }
             .padding(Elder.screenPadding)
         }

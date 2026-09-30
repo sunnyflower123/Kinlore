@@ -338,7 +338,7 @@ struct TellScreen: View {
             case .writing:
                 WritingView(model: model)
             case .transcribing, .organizing:
-                ProcessingView(phase: model.phase)
+                ProcessingView(phase: model.phase, voiceIsKept: model.recordingIsKept)
             case .asking:
                 AskingView(model: model)
             case .done:
@@ -1769,6 +1769,11 @@ private struct Waveform: View {
 
 private struct ProcessingView: View {
     let phase: TellViewModel.Phase
+    /// Said while the words are awaited, and only when the recording is
+    /// already out of tmp (`TellViewModel.recordingIsKept`). The one sentence
+    /// kept from the grandparent's session, *"Mistä tiedän että se on
+    /// tallessa?"*, is a question this screen had no answer to (PLAN.md §8).
+    let voiceIsKept: Bool
 
     private var title: LocalizedStringKey {
         phase == .transcribing ? "Kuuntelen mitä sanoit" : "Järjestelen muistoa"
@@ -1781,31 +1786,60 @@ private struct ProcessingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
+        // The scroll treatment every other phase has, since the kept line
+        // came (30 Sep 2026). At the largest size that line takes five lines,
+        // and the plain stack this was made room for it by cutting its own
+        // title to "Kuuntelen…", measured on the simulator.
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 24) {
+                    Spacer(minLength: 0)
 
-            ProgressView()
-                .controlSize(.extraLarge)
+                    // First, above the spinner: it answers what the teller is
+                    // asking the moment the button is let go, before anything
+                    // is waited for. "Tässä puhelimessa" because that is all
+                    // that is true yet — and not the audio-saved screen's
+                    // title, which the UI tests wait on.
+                    if voiceIsKept {
+                        Label {
+                            Text("Äänesi on tallessa tässä puhelimessa")
+                        } icon: {
+                            // The words say it. Left visible, VoiceOver reads
+                            // the symbol's own name first, "Valittu".
+                            Image(systemName: "checkmark.circle.fill")
+                                .accessibilityHidden(true)
+                        }
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(Elder.affirmative)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
 
-            Text(title)
-                .font(.title2.weight(.semibold))
-                .multilineTextAlignment(.center)
-                .contentTransition(.opacity)
+                    ProgressView()
+                        .controlSize(.extraLarge)
 
-            Text(detail)
-                .elderBody()
-                .foregroundStyle(Elder.supporting)
-                .multilineTextAlignment(.center)
+                    Text(title)
+                        .font(.title2.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .contentTransition(.opacity)
 
-            Spacer()
+                    Text(detail)
+                        .elderBody()
+                        .foregroundStyle(Elder.supporting)
+                        .multilineTextAlignment(.center)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(Elder.screenPadding)
+                // The width as well as the height. The paper is hung on the
+                // screen's `Group`, so a stack that took no width of its own
+                // stopped at the longest line and the window's white showed
+                // down both sides while a telling was being put in order. The
+                // README's GIF showed it on 28 Sep 2026.
+                .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .padding(Elder.screenPadding)
-        // The width, which every other phase takes from its scroll view's
-        // frame and this one had nothing to take it from. The paper is hung
-        // on the screen's `Group`, so it stopped at the longest line and the
-        // window's white showed down both sides while a telling was being
-        // put in order. The README's GIF showed it on 28 Sep 2026.
-        .frame(maxWidth: .infinity)
         .animation(.easeInOut, value: phase)
     }
 }

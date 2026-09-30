@@ -6217,7 +6217,9 @@ decides: the question, the disc, its caption and the ways on as `IdleView`'s
 squeeze leaves them (at the accessibility sizes the question and the disc,
 which is what it keeps above the fold there); the question being answered,
 the disc and its caption as `RecordingView`'s squeeze leaves them; and
-`ProcessingView`, which does not scroll. The photograph gets what is left, up
+`ProcessingView` with the line that says the voice is kept, which scrolls
+since that line came but is not to be pushed out of sight by the photograph.
+The photograph gets what is left, up
 to the card's 200 points (150 at the accessibility sizes), and under 60, a
 button's height, it is not drawn at all. The same pass matters because
 `IdleView` measures its room once, on its first layout, and that is also why a
