@@ -78,7 +78,7 @@ An honest inventory, not a wish list:
 | Whether a telling has reached the family, on screen | **Done and tested**, see §3 |
 | What the family told while this phone was away, on screen | **Done and tested** — the same promise's mirror, see §3 |
 | Rate limiting on the two unauthenticated writes | **Done and tested**, see §4 |
-| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 398 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
+| Accessibility sweep over every screen | **Done** — 124 sweep tests, each auditing one screen at the default text size and again at the largest, out of 399 UI tests, and they audit the screen they are named after. `scripts/verify.sh` counts both and fails if this sentence drifts from the source again |
 | The facts on a person's card: born, died, an earlier name, a trade, a home, a note | **Built and tested 26 Sep 2026, deployed 28 Sep 2026**, see §26 — a list inside one sealed column, a decade stored as a decade, a birthplace that is the archive's own place card, and a kind this build has no word for shown and kept rather than dropped |
 | The story on a card, composed from its tellings | **Built and checked 26 Sep 2026, deployed 29 Sep 2026**, the top of every card since 28 Sep, see §27 |
 | A face on a person's card, chosen from a photograph | **Built and tested 21 Sep 2026, deployed 26 Sep 2026**, see §25 — a reference and two fractions travel, never a crop, and every phone cuts the disc from its own copy of the picture |
@@ -113,7 +113,7 @@ behind. On 29 Sep 2026 that was 62 checks: 13 drive a Worker started locally, 2
 need a simulator of your own, and the other 47 need neither. Its header names
 what it leaves out: `extract-tests.mjs` and `smoke-pipeline.sh`, which spend
 model credit, and `geo-check.swift`, which measures somebody else's gazetteer.
-The UI suite has 398 UI tests, including 124 accessibility sweeps that audit a
+The UI suite has 399 UI tests, including 124 accessibility sweeps that audit a
 screen at the default text size and again at the largest, and `verify.sh`
 counts both and fails if this document, the README, DETAILS.md or
 DEVELOPMENT.md states a different number anywhere. The last full run written
@@ -6164,6 +6164,55 @@ something has been. A spent month refuses the colouring and not the telling
 (rule 2): the telling saved on the way stays on the card, and the refusal says
 so.
 
+The photograph stays on the screen while it is told about (30 Sep 2026). Until
+then the sheet asked for the colours over a photograph it did not show:
+`TellScreen` draws a picture only as the Kerro tab's card, which needs the
+deck's skip, and the listening screen draws none. `ColourSheet` lays the
+photograph over the telling itself (`PhotographOverTelling`), so no other
+caller of `TellScreen` changes. The layout measures, in the same pass, a hidden
+copy of what the telling has to keep whole, and the tallest of three screens
+decides: the question, the disc, its caption and the ways on as `IdleView`'s
+squeeze leaves them (at the accessibility sizes the question and the disc,
+which is what it keeps above the fold there); the question being answered,
+the disc and its caption as `RecordingView`'s squeeze leaves them; and
+`ProcessingView`, which does not scroll. The photograph gets what is left, up
+to the card's 200 points (150 at the accessibility sizes), and under 60, a
+button's height, it is not drawn at all. The same pass matters because
+`IdleView` measures its room once, on its first layout, and that is also why a
+telling without the photograph gets what it needs and no more. The sheet first
+lays out short, by 52 points at the default size and more at larger ones (71
+on the SE at the largest), and on the 17 Pro at XXXL that put the photograph
+under the floor for one pass: handed the whole short sheet, `IdleView` kept
+that room when the photograph came in a pass later, and "Väritä jo kerrotun
+mukaan" ended 52 points below the sheet. What the rule leaves over, under the
+floor, is paper above the telling. While writing, the keyboard leaves nothing
+over, so the photograph steps aside.
+
+Measured in Finnish on the 17 Pro and the SE against `main` (30 Sep 2026). On
+the 17 Pro the photograph is 174 points tall at the default size, 144 at XXXL,
+115 at AX-M and 84 at AX-L; from AX-XL up it is not drawn, and both screens
+are as they were, the largest size included. What it costs there: at the
+default size and at XXXL the idle disc gives up its glow and rings
+(`Squeeze.air`), which AX-M and AX-L keep, and while the phone listens "Älä
+tallenna tätä" starts at 842 to 845 wherever the photograph is drawn, under the
+bottom edge and a scroll away, where `main` had it at 787 at the default size
+(853 at XXXL, under the edge already). On the SE the photograph is drawn over
+a photograph nothing has been told about yet, at 69 points. With the second
+way on the screen it would have had 32, so the telling sits 40 points lower
+under paper and "Älä tallenna tätä" moves from 632 to 672, just under the
+screen. The SE's idle disc had no glow at the default size before either, and
+at XXXL its last row was below the screen already, 691 against 667, with no
+photograph at all.
+
+The copy drifts when `TellScreen`'s layout does, and
+`AccessibilitySweepTests.testColourTellingKeepsThePhotograph` is what notices:
+at the default size, on a phone taller than the SE, it asks for the photograph
+above the question, and while the phone listens above the question being
+answered, with the disc and its caption in sight; at XXXL, under a photograph,
+that the last way on is still on the screen; at the largest size, that nothing
+under it gave way; and it audits the listening screen at the default and the
+largest size.
+
 `ColourSheet` shows the colouring and asks **"Näyttääkö tältä?"**:
 
 - **"Kyllä, tallenna värit"** keeps it, beside the photograph and never in its
@@ -6246,7 +6295,7 @@ photographs.
 | Rule 9 on a failed colouring | `leak-check.mjs` |
 | The server's newest-yes rules | `subject-rules-check.mjs` — 6 breakages, 6 caught |
 | The phone's merge, and a yes sent only with its key | `colour-sync-check.swift` — 5 breakages, 5 caught |
-| The telling first and its hand-over, the second way, the three answers, a spent month keeping the telling, no offer on a phone kept to itself, and the sheet at both text sizes | `ColourTests` — the local-mode gate deleted, caught; `AccessibilitySweepTests.testColourTelling` and `testColourSheet` |
+| The telling first and its hand-over, the second way, the three answers, a spent month keeping the telling, no offer on a phone kept to itself, the photograph over the telling, and the sheet at both text sizes | `ColourTests` — the local-mode gate deleted, caught; `AccessibilitySweepTests.testColourTelling`, `testColourTellingKeepsThePhotograph` and `testColourSheet` |
 
 ### Not yet
 

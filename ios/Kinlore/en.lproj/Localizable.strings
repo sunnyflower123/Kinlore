@@ -755,6 +755,7 @@
 "Väritä kerronnan mukaan" = "Colour it by the telling";
 "Mitä värejä muistat tästä kuvasta?" = "What colours do you remember in this photo?";
 "Väritä jo kerrotun mukaan" = "Colour it by what was told before";
+"Valokuva, josta kerrot" = "The photograph you are telling about";
 "Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Värejä ei tallenneta arkistoon ennen kuin vastaat." = "The photo and the memories told about it are sent through the OpenRouter service to an AI to be coloured. Neither is used to train AI. The colours are not saved to the archive until you answer.";
 "Värit kerronnan mukaan" = "Colours by the telling";
 "Väritetään kerronnan mukaan…" = "Colouring by the telling…";

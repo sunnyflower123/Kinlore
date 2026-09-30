@@ -3325,6 +3325,109 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
+    /// The photograph stays on the colour sheet while it is told about
+    /// (30 Sep 2026): the colours are in the picture, and until then the
+    /// sheet asked for them over a photograph it did not show. So it is asked
+    /// for over the question and over the listening screen, with everything
+    /// under it whole and clear of it — the question and the disc, and while
+    /// the phone listens the question being answered, the disc and its
+    /// caption — and the listening screen is audited with it there, at both
+    /// text sizes. Frames as well as the audit, because a row pushed under
+    /// the edge is nothing the audit reports
+    /// (`testRecordingAQuestionIsAudited`).
+    ///
+    /// The photograph takes only what the telling can spare, so at the
+    /// largest size it may not be drawn at all. There what is asked is that
+    /// nothing gave way to it — the disc and its caption in sight, and the
+    /// photograph, if it is there, above the disc — and at the default size,
+    /// on a phone taller than the SE, that it is there, with the question
+    /// being answered under it.
+    ///
+    /// And at XXXL, the largest size that is not an accessibility size, the
+    /// frames without the audit: below the accessibility sizes every way on
+    /// has to clear the bottom of the idle screen, and XXXL is where the
+    /// sheet's short first layout once cost the last of them 52 points
+    /// (`PhotographOverTelling`), at a size neither of the other two runs at.
+    func testColourTellingKeepsThePhotograph() throws {
+        let xxxl = "UICTContentSizeCategoryXXXL"
+        for size in [nil, xxxl, Self.largest] {
+            let app = launch(["-seed", "blind", "-tab", "memories"], textSize: size)
+            reachPhotoTile(in: app).tap()
+            reach(app.buttons["Väritä kerronnan mukaan"], in: app, "the way to colour the photograph").tap()
+            let title = require(app.staticTexts["tell.title"], "the question")
+            settle(title)
+            let window = app.windows.firstMatch.frame
+            let photograph = app.buttons["Valokuva, josta kerrot"]
+            let record = require(app.buttons["Aloita kertominen"], "the record button")
+            let largest = size == Self.largest
+            let at = size == nil ? "default text size" : largest ? "largest text size" : "XXXL"
+            // Asked for on a phone taller than the SE's 667 points: there the
+            // telling with its second way leaves the photograph 32 points at
+            // the default size, under the floor (measured 30 Sep 2026).
+            let promised = size == nil && window.height > 667
+            if promised {
+                XCTAssertTrue(photograph.exists, "the photograph is not over its question")
+            }
+            if photograph.exists {
+                XCTAssertTrue(
+                    window.contains(photograph.frame) && photograph.frame.maxY <= title.frame.minY,
+                    "the photograph is not whole over the question at the \(at): "
+                        + "\(photograph.frame) over \(title.frame) in \(window)"
+                )
+            }
+            XCTAssertTrue(
+                window.contains(record.frame),
+                "the record button is not whole on the screen at the \(at): \(record.frame) in \(window)"
+            )
+            // At XXXL only under a photograph: without one the sheet is laid
+            // out as it was before, and on an SE the last row is below the
+            // screen at XXXL with no photograph anywhere (30 Sep 2026).
+            if size == nil || (!largest && photograph.exists) {
+                let last = require(app.buttons["Väritä jo kerrotun mukaan"], "the way to colour from what was told")
+                XCTAssertTrue(
+                    last.frame.maxY <= window.maxY,
+                    "\"Väritä jo kerrotun mukaan\" is below the screen at the \(at): "
+                        + "\(NSCoder.string(for: last.frame)) against \(NSCoder.string(for: window))"
+                )
+            }
+
+            record.tap()
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 5) { allow.tap() }
+            let listening = require(app.staticTexts["Kuuntelen"], "the recording screen")
+            let disc = require(app.buttons["Lopeta kertominen"], "the disc")
+            let caption = require(app.staticTexts["Paina kun olet valmis"], "its caption")
+            let drawn = promised || photograph.exists
+            // What the photograph has to stay above: below the accessibility
+            // sizes the heading over the question being answered, so the
+            // question is in sight whole; at the largest the disc, which the
+            // listening screen opens at when the question does not fit with it.
+            let under = largest ? disc : listening
+            let inSight = XCTNSPredicateExpectation(
+                predicate: NSPredicate { _, _ in
+                    let clear = !drawn || (photograph.exists && window.contains(photograph.frame)
+                        && photograph.frame.maxY <= under.frame.minY)
+                    return clear && window.contains(disc.frame) && window.contains(caption.frame)
+                },
+                object: nil
+            )
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [inSight], timeout: 10), .completed,
+                "the photograph and the way to stop are not both in sight at the \(at): "
+                    + "\(photograph.exists ? "\(photograph.frame)" : "no photograph") over \(under.frame), "
+                    + "\(disc.frame) and \(caption.frame) in \(window)"
+            )
+            if size != xxxl {
+                settle(caption)
+                try audit(app, "Värit kerronnan mukaan, kuuntelen, \(at)", alsoAllowing: { issue in
+                    issue.auditType == .elementDetection
+                })
+            }
+            app.terminate()
+        }
+    }
+
     /// The joiner's landing: straight onto Muistot, with a waiting state in
     /// place of an invitation that would be false. `-seed arrival` sets the
     /// same one-shot flag a real join sets, so the navigation bar reading

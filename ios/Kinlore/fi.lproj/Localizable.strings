@@ -647,6 +647,7 @@
 "Väritä kerronnan mukaan" = "Väritä kerronnan mukaan";
 "Mitä värejä muistat tästä kuvasta?" = "Mitä värejä muistat tästä kuvasta?";
 "Väritä jo kerrotun mukaan" = "Väritä jo kerrotun mukaan";
+"Valokuva, josta kerrot" = "Valokuva, josta kerrot";
 "Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Värejä ei tallenneta arkistoon ennen kuin vastaat." = "Kuva ja siitä kerrotut muistot lähetetään OpenRouter-palvelun kautta tekoälylle väritettäväksi. Niillä ei opeteta tekoälyä. Värejä ei tallenneta arkistoon ennen kuin vastaat.";
 "Värit kerronnan mukaan" = "Värit kerronnan mukaan";
 "Väritetään kerronnan mukaan…" = "Väritetään kerronnan mukaan…";

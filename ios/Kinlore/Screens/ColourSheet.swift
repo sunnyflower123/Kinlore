@@ -14,6 +14,15 @@ import UIKit
 /// are spent (rule 2). Somebody with nothing to add has a second way, from
 /// what has been told before, whenever something has.
 ///
+/// The photograph stays on the screen while it is told about (30 Sep 2026).
+/// The colours are in the picture, and until then the sheet asked for them
+/// over a photograph it did not show: the telling draws a picture only as
+/// the Kerro tab's card, and the listening screen draws none. So the sheet
+/// lays the photograph over the telling, at what the telling can spare
+/// (`PhotographOverTelling`): the question, the disc, its caption and the
+/// ways on keep the room they need in every language and at every text
+/// size, and the photograph takes what is left, or is not drawn at all.
+///
 /// The model's picture is a proposal: the lock lays only its hue on the
 /// photograph's own brightness, and refuses one whose shapes moved. What
 /// survives waits on this screen for a person. "Kyllä" keeps it beside the
@@ -25,6 +34,7 @@ struct ColourSheet: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     let subject: Subject
     let photograph: UIImage
@@ -49,16 +59,26 @@ struct ColourSheet: View {
                     // One screen in place of another, and not a second sheet:
                     // a sheet cannot be presented over one that is leaving,
                     // and the correction comes back here the same way.
-                    TellScreen(
-                        target: subject,
-                        question: question,
-                        onClose: { dismiss() },
-                        onTold: {
-                            toldHere = true
-                            colourNow()
-                        },
-                        onColourFromTold: hasTold ? { colourNow() } : nil
-                    )
+                    PhotographOverTelling(
+                        aspect: photograph.size.height > 0 ? photograph.size.width / photograph.size.height : 1,
+                        // The Kerro tab card's numbers (`IdleView`).
+                        ceiling: typeSize.isAccessibilitySize ? 150 : 200
+                    ) {
+                        photographAbove
+                        TellScreen(
+                            target: subject,
+                            question: question,
+                            onClose: { dismiss() },
+                            onTold: {
+                                toldHere = true
+                                colourNow()
+                            },
+                            onColourFromTold: hasTold ? { colourNow() } : nil
+                        )
+                        tellingNeeds
+                    }
+                    // The telling hangs its own paper; this is the photograph's.
+                    .background(Elder.paper)
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
@@ -116,6 +136,137 @@ struct ColourSheet: View {
     private func colourNow() {
         phase = .colouring
         round += 1
+    }
+
+    // MARK: - The photograph over the telling
+
+    /// The photograph, at the height `PhotographOverTelling` hands it less
+    /// the margin over it, and nothing at all when it is handed nothing: a
+    /// picture too small to see is not drawn, and a button of no size is not
+    /// left for VoiceOver to find.
+    ///
+    /// A tap opens it to the whole screen, as on its card. The label says
+    /// which photograph and nothing of what is in it, as the Kerro tab's
+    /// card does: guessing at the content is what rule 4 forbids.
+    private var photographAbove: some View {
+        GeometryReader { proxy in
+            if proxy.size.height > PhotographOverTelling.margin {
+                Image(uiImage: photograph)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .opensToTheWholeScreen(photograph, label: String(localized: "Valokuva, josta kerrot"))
+                    .frame(
+                        width: max(0, proxy.size.width - 2 * Elder.screenPadding),
+                        height: proxy.size.height - PhotographOverTelling.margin
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+        }
+    }
+
+    /// What the telling has to keep in sight, whichever of its screens is
+    /// up, laid out as those screens lay it out and never drawn: the
+    /// photograph is given only what this leaves (`PhotographOverTelling`).
+    ///
+    /// Three screens decide it, and the tallest wins. The first is
+    /// `IdleView` as its `Squeeze` leaves it on this sheet once it has given
+    /// way: the question in the title's face, the reassurance's short form,
+    /// the disc, its caption and the ways on, 8 points apart, with 8 of
+    /// daylight under the last and 4 for rounding; at an accessibility size
+    /// only the question and the disc, which is what it keeps above the fold
+    /// there. The second is `RecordingView` as its own squeeze leaves it,
+    /// with the question it is answering whole above the disc and the
+    /// caption in sight, at every size: without it that question would keep
+    /// only what the idle screen happened to leave it, and where it is more
+    /// than the sheet has, the photograph is not drawn and the listening
+    /// screen opens at the disc as it always has. The third is the screen
+    /// that transcribes the telling and puts it in order, which does not
+    /// scroll and so cannot be given less than it measures. Writing is not
+    /// here, because its keyboard leaves the photograph no room.
+    ///
+    /// A copy of another file's layout, and it drifts when that one changes;
+    /// `testColourTellingKeepsThePhotograph` and `testColourTelling` are what
+    /// notice.
+    private var tellingNeeds: some View {
+        let accessibility = typeSize.isAccessibilitySize
+        return ZStack(alignment: .top) {
+            VStack(spacing: 8) {
+                Text(question.text)
+                    .font(Elder.display(.largeTitle))
+                if !accessibility {
+                    // `IdleView.intro(short:)`, in the form its squeeze ends on.
+                    Text(AudioRecorder.isPermissionUnasked
+                        ? "Puhelin kysyy ensin luvan mikrofoniin."
+                        : "Puhu ihan rauhassa ja vapaasti.")
+                        .elderBody()
+                }
+                Color.clear
+                    .frame(height: Elder.recordButtonSize)
+                if !accessibility {
+                    Text("Paina ja ala puhua")
+                        .font(.headline)
+                        .padding(.top, 20)
+                    Label("Kirjoita sen sijaan", systemImage: "keyboard")
+                        .font(.body.weight(.medium))
+                        .elderTapTarget()
+                    if hasTold {
+                        Label("Väritä jo kerrotun mukaan", systemImage: "paintpalette")
+                            .font(.body.weight(.medium))
+                            .elderTapTarget()
+                    }
+                }
+            }
+            .padding(.horizontal, Elder.screenPadding)
+            .padding(.top, 12)
+            .padding(.bottom, 12)
+
+            // `RecordingView`, answering this question, with `air` and
+            // `waveform` taken: the gaps 14, the disc 14 clear above and
+            // below, the waveform 56.
+            VStack(spacing: 14) {
+                Text("Kuuntelen")
+                    .font(.largeTitle.weight(.semibold))
+                Text(question.text)
+                    .font(Elder.display(.title3))
+                    .lineSpacing(Elder.lineSpacing)
+                Color.clear
+                    .frame(height: 56)
+                Text(verbatim: "0:00")
+                    .font(.title2.weight(.semibold))
+                    .monospacedDigit()
+                Color.clear
+                    .frame(height: Elder.recordButtonSize)
+                    .padding(.vertical, 14)
+                Text("Paina kun olet valmis")
+                    .font(.headline)
+            }
+            .padding(.horizontal, Elder.screenPadding)
+            .padding(.top, 12)
+            .padding(.bottom, 12)
+
+            // `ProcessingView`, with the longer of its two phases' words.
+            VStack(spacing: 24) {
+                Spacer()
+                ProgressView()
+                    .controlSize(.extraLarge)
+                ZStack {
+                    Text("Kuuntelen mitä sanoit")
+                    Text("Järjestelen muistoa")
+                }
+                .font(.title2.weight(.semibold))
+                ZStack {
+                    Text("Puran puheen tekstiksi.")
+                    Text("Etsin ihmiset, paikat ja ajankohdan.")
+                }
+                .elderBody()
+                Spacer()
+            }
+            .padding(Elder.screenPadding)
+        }
+        .multilineTextAlignment(.center)
+        .hidden()
+        .accessibilityHidden(true)
     }
 
     // The ways out are rows on the screen and not a toolbar button: a toolbar
@@ -278,6 +429,80 @@ struct ColourSheet: View {
             confirmedByName: store.authorName
         )
         dismiss()
+    }
+}
+
+/// The photograph over the telling, at the height the telling can spare.
+///
+/// Three views, in this order: the photograph, the telling, and what the
+/// telling has to keep in sight (`ColourSheet.tellingNeeds`), which is
+/// measured for this width and never drawn. The photograph gets the sheet's
+/// height less that, up to `ceiling` and never taller than it is at the
+/// sheet's width, and under `floor` it gets nothing.
+///
+/// Measured in the pass that places the telling, and not proposed to it or
+/// read back a pass later, because `IdleView` measures its room once, when it
+/// first lays out: a photograph that arrived after that would stand on room
+/// the idle screen had already given to its rows.
+///
+/// And a telling without the photograph keeps to what it needs, rather than
+/// taking the whole sheet, because the first pass is not the last. The sheet
+/// first lays out short, by 52 points at the default size and more at larger
+/// ones (measured on the 17 Pro and the SE, 30 Sep 2026), and on the 17 Pro at
+/// XXXL that left the photograph under the floor for that pass. The telling
+/// took the whole short sheet, `IdleView` measured it and gave way to
+/// nothing, and a pass later the photograph came in above it: "Väritä jo
+/// kerrotun mukaan" ended 52 points below the sheet. A telling that never
+/// takes more than it needs measures the same room in both passes. What that
+/// leaves over, less than the floor and the margin, is paper above it: 40
+/// points on the SE at the default size, where the photograph would have had
+/// 32. A photograph too wide to be drawn at any height leaves the telling the
+/// whole sheet, since the width does not change between passes.
+private struct PhotographOverTelling: Layout {
+    /// The photograph's width over its height.
+    let aspect: CGFloat
+    /// The tallest the photograph is drawn.
+    let ceiling: CGFloat
+
+    /// The least the photograph is drawn at, which is a button's
+    /// (`Elder.minTapTarget`): a tap opens it to the whole screen. Lower than
+    /// the Kerro tab card's 100, the height below which a face stops being
+    /// something to recognise, because nobody is asked who is in this one: it
+    /// says which picture the colours are asked about. And the lower the
+    /// floor, the fewer the sizes at which paper stands where it would be.
+    static let floor: CGFloat = Elder.minTapTarget
+    /// Paper between the navigation bar and the photograph.
+    static let margin: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        let across = ProposedViewSize(width: bounds.width, height: nil)
+        let needed = subviews[2].sizeThatFits(across).height
+        let wide = max(0, bounds.width - 2 * Elder.screenPadding) / max(aspect, 0.01)
+        let height = min(ceiling, wide, bounds.height - needed - Self.margin)
+        let photograph: CGFloat
+        let telling: CGFloat
+        if height >= Self.floor {
+            photograph = height + Self.margin
+            telling = bounds.height - photograph
+        } else if wide < Self.floor {
+            photograph = 0
+            telling = bounds.height
+        } else {
+            photograph = 0
+            telling = min(bounds.height, needed)
+        }
+
+        subviews[0].place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: photograph))
+        subviews[1].place(
+            at: CGPoint(x: bounds.minX, y: bounds.maxY - telling),
+            proposal: ProposedViewSize(width: bounds.width, height: telling)
+        )
+        subviews[2].place(at: bounds.origin, proposal: across)
     }
 }
 

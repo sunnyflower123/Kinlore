@@ -119,10 +119,25 @@ final class ColourTests: XCTestCase {
         backToThePhotograph(app)
         // A button, since it opens to the whole screen as the photograph does.
         XCTAssertTrue(app.buttons[kept].waitForExistence(timeout: 10), "the kept colouring is not on the card")
-        XCTAssertTrue(
-            app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Vahvisti")).firstMatch.exists,
-            "the card does not say whose word the colours stand on"
-        )
+        // The name is the colouring's footer, and a card backed up to its
+        // photograph can leave it below the window, where the lazy list has
+        // not made it. Measured on the 17 Pro (30 Sep 2026): the colouring
+        // stood at y 641–648 and ran 247 points down, past the window's 874,
+        // and the footer did not exist at any of six reads over five seconds,
+        // in each of three runs. `backToThePhotograph` stops wherever the
+        // photograph is under the title, so where the footer lands varies
+        // from run to run. It is scrolled to, then, not waited for, and in
+        // short slow drags: a swipe's momentum can carry one line of text
+        // past the whole window in one go.
+        let by = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Vahvisti")).firstMatch
+        let middle = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        for _ in 0 ..< 4 where !by.exists {
+            middle.press(
+                forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -200)),
+                withVelocity: .slow, thenHoldForDuration: 0.5
+            )
+        }
+        XCTAssertTrue(by.exists, "the card does not say whose word the colours stand on")
         XCTAssertTrue(isOnTheCard(colours, app), "the telling that gave the colours is not on the card")
     }
 
