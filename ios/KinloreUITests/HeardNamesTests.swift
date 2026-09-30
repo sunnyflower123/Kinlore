@@ -14,7 +14,7 @@ final class HeardNamesTests: XCTestCase {
         let app = launch(["-seed", "empty", "-screen", "result"])
         XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
         XCTAssertTrue(door.waitForExistence(timeout: 10), "the names heard have no door")
         XCTAssertFalse(app.staticTexts["Aino"].exists, "an unchecked name is on the family's list")
@@ -48,7 +48,7 @@ final class HeardNamesTests: XCTestCase {
         let app = launch(["-seed", "empty", "-screen", "result"])
         XCTAssertTrue(app.staticTexts["Muisto tallennettu"].waitForExistence(timeout: 30), "never arrived: the result")
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         let door = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "odottaa tarkistusta")).firstMatch
         XCTAssertTrue(door.waitForExistence(timeout: 10), "the names heard have no door")
         door.tap()
@@ -141,7 +141,7 @@ final class HeardNamesTests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(confirm.waitForNonExistence(timeout: 10), "a confirmed name is still waiting on the telling")
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         XCTAssertTrue(app.staticTexts["Aino"].waitForExistence(timeout: 10), "a name confirmed from the telling did not join the list")
     }
 }

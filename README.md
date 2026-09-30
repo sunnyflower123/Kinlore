@@ -117,8 +117,8 @@ transcription a month.
 
 **Two phones, one family.** `./scripts/try-it.sh --two` opens it on two
 simulators. On the first, open Settings with the gear at the top right of
-*Family tree* (*People* with *Larger text* or VoiceOver), then *Family members
-and invitations*, *Invite a family member* and *Share the invitation*. On the
+*Family tree*, then *Family members and invitations*, *Invite a family member*
+and *Share the invitation*. On the
 second: *Join with an invitation link*, paste the whole invitation and press
 *Join a family*. A phone fetches the family's changes when Kinlore opens or
 comes back to the front, so after adding something on the first, go to the

@@ -134,7 +134,7 @@
 "Ei vielä ihmisiä" = "Ei vielä ihmisiä";
 "Lisää henkilö" = "Lisää henkilö";
 "Joku uusi" = "Joku uusi";
-"Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta." = "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.";
+"Sukupuu kasvaa sitä mukaa kun ihmisistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta." = "Sukupuu kasvaa sitä mukaa kun ihmisistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.";
 "Lisää sukulainen" = "Lisää sukulainen";
 "Lapsi" = "Lapsi";
 "Vanhempi" = "Vanhempi";
@@ -157,7 +157,8 @@
 "Ei vielä sukupuussa" = "Ei vielä sukupuussa";
 "Valikko" = "Valikko";
 "Mitä viivat tarkoittavat" = "Mitä viivat tarkoittavat";
-"Luettelo" = "Luettelo";
+"Näytä listana" = "Näytä listana";
+"Näytä puuna" = "Näytä puuna";
 "Sinä" = "Sinä";
 "%@, sinä" = "%@, sinä";
 "Avaa kortti" = "Avaa kortti";

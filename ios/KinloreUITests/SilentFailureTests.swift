@@ -46,7 +46,7 @@ final class SilentFailureTests: XCTestCase {
             "-screen person did not reach a person's card"
         )
         XCTAssertTrue(
-            app.tabBars.buttons["Ihmiset"].isSelected,
+            app.tabBars.buttons["Sukupuu"].isSelected,
             "-screen person reached a card without selecting the tab it lives in"
         )
     }

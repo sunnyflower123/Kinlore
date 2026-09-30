@@ -142,7 +142,7 @@ final class NameCorrectionTests: XCTestCase {
         let done = app.buttons["Valmis"]
         XCTAssertTrue(done.waitForExistence(timeout: 10), "the sheet's last step never came")
         done.tap()
-        XCTAssertTrue(app.navigationBars["Ihmiset"].waitForExistence(timeout: 10), "the merged card stayed open")
+        XCTAssertTrue(app.navigationBars["Sukupuu"].waitForExistence(timeout: 10), "the merged card stayed open")
 
         // Aino's card now holds the spouse Eeva had.
         let aino = app.staticTexts["Aino"]
@@ -222,7 +222,7 @@ final class NameCorrectionTests: XCTestCase {
         // the screen goes back to the list — where there is one Aino and no
         // Eeva.
         XCTAssertTrue(
-            app.navigationBars["Ihmiset"].waitForExistence(timeout: 10),
+            app.navigationBars["Sukupuu"].waitForExistence(timeout: 10),
             "the merged card stayed open"
         )
         XCTAssertFalse(app.staticTexts["Eeva"].exists, "the merged person is still listed")
@@ -350,7 +350,7 @@ final class NameCorrectionTests: XCTestCase {
             "the note does not name the person as typed"
         )
 
-        app.tabBars.buttons["Ihmiset"].tap()
+        app.tabBars.buttons["Sukupuu"].tap()
         XCTAssertTrue(app.staticTexts["Toivonen"].waitForExistence(timeout: 15), "the typed name is not in the family")
         XCTAssertFalse(app.staticTexts["Toivo"].exists, "the name as heard is in the family")
     }

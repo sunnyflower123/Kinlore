@@ -739,7 +739,7 @@ In Xcode: Product → Scheme → Edit Scheme → Run → Arguments.
 |---|---|
 | `-api http://localhost:8787` | Real transcription and extraction instead of stubs |
 | `-rcKey <RevenueCat Test Store key>` | Purchases, **in a Debug build only**. Without it the app works normally, minus the paywall |
-| `-seed family` | A demo family on the free tier with no server behind it, in a Debug build. With `-rcKey` and no `-api`, People → Settings (the gear) → Family members and invitations → Open the whole archive opens the paywall, and a Test Store purchase opens the archive without a server (`Session.syncPurchase`) |
+| `-seed family` | A demo family on the free tier with no server behind it, in a Debug build. With `-rcKey` and no `-api`, Family tree → Settings (the gear) → Family members and invitations → Open the whole archive opens the paywall, and a Test Store purchase opens the archive without a server (`Session.syncPurchase`) |
 | `-tryIt YES` | What the `Kinlore Production` scheme and `scripts/try-it.sh` launch with, in any build: until the archive's first telling, the Tell screen offers an example sentence to read aloud in place of its opening questions, and *Type it for me* puts it in the write field instead. The install remembers it (`TryIt`), and remembers `-tryIt NO` the same way |
 
 **A Test Store key stops a Release build, by RevenueCat's design.** The app

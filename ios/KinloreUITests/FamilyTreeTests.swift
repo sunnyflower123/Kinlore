@@ -1,20 +1,20 @@
 import XCTest
 
 /// The family tree, on a family member's phone since 13 Sep 2026, and what
-/// Ihmiset opens on there — rebuilt from zero on 25 Sep 2026, with a word on
+/// the third tab, Sukupuu, opens on there — rebuilt from zero on 25 Sep 2026, with a word on
 /// every card in place of a rail of generation words pinned to the window.
 ///
 /// Where people land is `scripts/family-tree-layout-check.swift`'s question,
 /// and which word a card gets is `scripts/kinship-check.swift`'s. These ask
-/// what only a running app can answer: that Ihmiset opens on the tree with
+/// what only a running app can answer: that Sukupuu opens on the tree with
 /// the whole confirmed family in it and nothing else on the screen but the
 /// menu and the gear to Settings, that the list and every other door are
 /// behind the menu, that a person in the tree opens their card or takes a
 /// new relative on the spot, that every word is inside the drawing, that the
 /// picture zooms under two fingers and keeps its people as tap targets at
 /// the smallest size, that a phone linked to no card opens on the oldest
-/// generation and not on paper, and that a grandparent's phone keeps the
-/// list.
+/// generation and not on paper, that a grandparent's phone keeps the list,
+/// and that the tab says Sukupuu over both views.
 ///
 /// The suite's launch helper passes `-people list`, so the tests written about
 /// the list keep testing the list. These pass `-people tree`, or `default` to
@@ -28,10 +28,10 @@ final class FamilyTreeTests: XCTestCase {
     /// to nobody and is drawn below them, and Aino is a name heard and never
     /// checked. `-people.showsList NO` reads the phone as nobody has switched
     /// it yet.
-    func testIhmisetOpensOnTheTreeWithEverybodyInIt() {
+    func testSukupuuOpensOnTheTreeWithEverybodyInIt() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "default", "-people.showsList", "NO"])
-        XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "Ihmiset did not open on the tree")
-        XCTAssertTrue(app.tabBars.buttons["Sukupuu"].exists, "the tab is not named for the tree")
+        XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "Sukupuu did not open on the tree")
+        XCTAssertTrue(app.tabBars.buttons["Sukupuu"].exists, "the tab is not called Sukupuu over the tree")
         XCTAssertFalse(app.navigationBars["Sukupuu"].exists, "the tree carries a title over the drawing")
         XCTAssertTrue(app.buttons["Kalle"].exists, "Kalle is not in the tree")
         XCTAssertTrue(app.buttons["Sanni"].exists, "somebody related to nobody is not in the picture")
@@ -42,7 +42,7 @@ final class FamilyTreeTests: XCTestCase {
         // Nothing else. The drawing is the screen, and the doors the list
         // keeps in its bar wait behind the menu — all but the gear, over the
         // tree since 30 Sep 2026 and in the menu as well.
-        XCTAssertFalse(app.buttons["Luettelo"].exists, "the way to the list stands on the tree rather than in the menu")
+        XCTAssertFalse(app.buttons["Näytä listana"].exists, "the way to the list stands on the tree rather than in the menu")
         XCTAssertFalse(app.buttons["Lisää henkilö"].exists, "the way to add a person stands on the tree rather than in the menu")
         XCTAssertTrue(app.buttons["settings"].exists, "the tree has no gear, which the list has")
         // A phone linked to no card has nobody to say *Sinä* about, and no
@@ -60,7 +60,7 @@ final class FamilyTreeTests: XCTestCase {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "tree"])
         XCTAssertTrue(app.buttons["Eeva"].waitForExistence(timeout: 10), "the tree")
         app.buttons["Valikko"].tap()
-        XCTAssertTrue(app.buttons["Luettelo"].waitForExistence(timeout: 10), "the menu has no way to the list")
+        XCTAssertTrue(app.buttons["Näytä listana"].waitForExistence(timeout: 10), "the menu has no way to the list")
         XCTAssertTrue(app.buttons["Lisää henkilö"].exists, "the menu has no way to add a person")
         // The menu's row, and not the gear on the bar beneath the sheet.
         let settingsRow = app.buttons.matching(
@@ -97,25 +97,25 @@ final class FamilyTreeTests: XCTestCase {
     }
 
     /// The list is two taps away through the menu and the tree one tap back,
-    /// whichever the phone was left on, and the list is titled while the tree
-    /// is not. Ends on the tree, which is where a phone starts.
+    /// whichever the phone was left on, and the list is titled Sukupuu while
+    /// the tree is not titled at all. Ends on the tree, which is where a phone
+    /// starts.
     func testTheListAndTheTreeAreATapOrTwoApart() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "default"])
-        // On the list the tab says Ihmiset, so this is the bar's button alone.
-        let toTree = app.buttons["Sukupuu"]
+        let toTree = app.buttons["Näytä puuna"]
         let menu = app.buttons["Valikko"]
-        XCTAssertTrue(menu.waitForExistence(timeout: 10) || toTree.exists, "Ihmiset")
+        XCTAssertTrue(menu.waitForExistence(timeout: 10) || toTree.exists, "neither the tree nor the list")
         if !menu.exists { toTree.tap() }
 
         XCTAssertTrue(menu.waitForExistence(timeout: 10), "the tree")
         XCTAssertFalse(app.navigationBars["Sukupuu"].exists, "the tree is titled over the drawing")
         menu.tap()
-        let toList = app.buttons["Luettelo"]
+        let toList = app.buttons["Näytä listana"]
         XCTAssertTrue(toList.waitForExistence(timeout: 10), "the menu has no way to the list")
         toList.tap()
 
         XCTAssertTrue(toTree.waitForExistence(timeout: 10), "the list did not open, or has no way back to the tree")
-        XCTAssertTrue(app.navigationBars["Ihmiset"].exists, "the list is not titled Ihmiset")
+        XCTAssertTrue(app.navigationBars["Sukupuu"].exists, "the list is not titled Sukupuu")
         XCTAssertTrue(app.staticTexts["Eeva"].exists, "the list has nobody on it")
         XCTAssertFalse(menu.exists, "the tree's menu is over the list")
         toTree.tap()
@@ -224,47 +224,55 @@ final class FamilyTreeTests: XCTestCase {
     }
 
     /// A grandparent's phone keeps the list: no picture of lines, and no way to
-    /// one — including on the tab bar, which on her phone keeps the older word
-    /// rather than naming a tree she is never shown.
+    /// one. Her tab and her list say Sukupuu all the same (30 Sep 2026): the
+    /// list is her family tree, read at her size, and one word on every phone
+    /// is what lets a family tell each other where to tap.
     func testAGrandparentsPhoneKeepsTheList() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "default", "-elder.largerText", "YES"])
         XCTAssertTrue(app.staticTexts["Eeva"].waitForExistence(timeout: 10), "the people list")
-        XCTAssertTrue(app.navigationBars["Ihmiset"].exists, "a grandparent's list is not titled Ihmiset")
-        XCTAssertTrue(app.tabBars.buttons["Ihmiset"].exists, "her tab does not say Ihmiset")
-        XCTAssertFalse(app.buttons["Sukupuu"].exists, "the tree is offered on a grandparent's phone")
+        XCTAssertTrue(app.navigationBars["Sukupuu"].exists, "a grandparent's list is not titled Sukupuu")
+        XCTAssertTrue(app.tabBars.buttons["Sukupuu"].exists, "her tab does not say Sukupuu")
+        XCTAssertFalse(app.tabBars.buttons["Ihmiset"].exists, "her tab still says Ihmiset")
+        XCTAssertFalse(app.buttons["Näytä puuna"].exists, "the tree is offered on a grandparent's phone")
         XCTAssertFalse(app.buttons["Valikko"].exists, "the tree is shown on a grandparent's phone")
     }
 
-    /// The tab bar is the only name the app gives itself before it is touched,
-    /// and until 19 Sep 2026 it said "Ihmiset" over a screen titled "Sukupuu".
-    /// One decision now answers both, so the tab follows the view the phone is
-    /// on — including back to the older word when the list is chosen.
+    /// The tab says Sukupuu over the tree and over the list alike, since
+    /// 30 Sep 2026. From 19 Sep it followed the view, Sukupuu over the tree
+    /// and Ihmiset over the list, and a word that changed with the phone was
+    /// the worse fault: a family cannot tell each other where to tap. The two
+    /// switches are named for what they do, so the one button called Sukupuu
+    /// on either view is the tab.
     /// No `-people.showsList` in this one, unlike the tests above: a value in
     /// the argument domain outranks whatever the app writes, so the switch
-    /// would move the screen while the tab bar kept reading the launch
-    /// argument. That is a fault of the harness and it looked exactly like a
-    /// fault of the app. So this starts from whichever view the phone was left
-    /// on, and asserts the pair rather than a word.
-    func testTheTabIsNamedForTheScreenItOpens() {
+    /// would not move the screen. So this starts from whichever view the phone
+    /// was left on.
+    func testTheTabIsSukupuuOverBothViews() {
         let app = launch(["-seed", "related", "-tab", "people", "-people", "default"])
         let menu = app.buttons["Valikko"]
-        let toTree = app.tabBars.buttons["Sukupuu"]
-        XCTAssertTrue(menu.waitForExistence(timeout: 10) || app.buttons["Sukupuu"].exists, "Ihmiset")
-        if !menu.exists { app.buttons["Sukupuu"].tap() }
+        let toTree = app.buttons["Näytä puuna"]
+        let tab = app.tabBars.buttons["Sukupuu"]
+        let calledSukupuu = app.buttons.matching(NSPredicate(format: "label == %@", "Sukupuu"))
+        XCTAssertTrue(menu.waitForExistence(timeout: 10) || toTree.exists, "neither the tree nor the list")
+        if !menu.exists { toTree.tap() }
 
         XCTAssertTrue(menu.waitForExistence(timeout: 10), "the tree")
-        XCTAssertTrue(toTree.exists, "the tab does not name the tree it opens")
-        XCTAssertFalse(app.tabBars.buttons["Ihmiset"].exists, "the tab still says Ihmiset over the tree")
+        XCTAssertTrue(tab.exists, "the tab does not say Sukupuu over the tree")
+        XCTAssertFalse(app.tabBars.buttons["Ihmiset"].exists, "the tab says Ihmiset over the tree")
+        XCTAssertEqual(calledSukupuu.count, 1, "something besides the tab is a button called Sukupuu over the tree")
 
         menu.tap()
-        let toList = app.buttons["Luettelo"]
+        let toList = app.buttons["Näytä listana"]
         XCTAssertTrue(toList.waitForExistence(timeout: 10), "the menu has no way to the list")
         toList.tap()
-        XCTAssertTrue(app.tabBars.buttons["Ihmiset"].waitForExistence(timeout: 10), "the tab kept the tree's name over the list")
-        XCTAssertFalse(toTree.exists, "two words for one tab")
+        XCTAssertTrue(toTree.waitForExistence(timeout: 10), "the list did not open, or has no way back to the tree")
+        XCTAssertTrue(tab.exists, "the tab does not say Sukupuu over the list")
+        XCTAssertFalse(app.tabBars.buttons["Ihmiset"].exists, "the tab went back to Ihmiset over the list")
+        XCTAssertTrue(app.navigationBars["Sukupuu"].exists, "the list is not titled Sukupuu")
+        XCTAssertEqual(calledSukupuu.count, 1, "the way back to the tree carries the tab's name")
 
         // Back to the tree, which is where a phone starts.
-        app.buttons["Sukupuu"].tap()
+        toTree.tap()
         XCTAssertTrue(menu.waitForExistence(timeout: 10), "the tree did not come back")
     }
 

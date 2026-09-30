@@ -1795,7 +1795,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testPeople() throws {
-        try sweep("Ihmiset", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
+        try sweep("Sukupuu, luettelo", arguments: ["-seed", "archive", "-tab", "people"]) { app, _ in
             require(app.staticTexts["Eeva"], "a person in the demo archive")
             // And the door: the fixture's Aino is a name nobody has checked,
             // and since 12 Sep 2026 she waits behind this row, not on the list.
@@ -1824,7 +1824,7 @@ final class AccessibilitySweepTests: XCTestCase {
     }
 
     func testPeopleEmpty() throws {
-        try sweep("Ihmiset, empty", arguments: ["-seed", "empty", "-tab", "people"]) { app, _ in
+        try sweep("Sukupuu, empty", arguments: ["-seed", "empty", "-tab", "people"]) { app, _ in
             require(app.staticTexts.firstMatch, "the empty people state")
         }
     }
@@ -1838,7 +1838,7 @@ final class AccessibilitySweepTests: XCTestCase {
         }
     }
 
-    /// The drawn family tree: since 13 Sep 2026, what Ihmiset opens on, on a
+    /// The drawn family tree: since 13 Sep 2026, what Sukupuu opens on, on a
     /// family member's phone. `-seed related` is the one fixture with a
     /// confirmed couple in it, and Sanni, related to nobody, is drawn beneath.
     func testFamilyTree() throws {

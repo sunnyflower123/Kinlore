@@ -242,7 +242,7 @@ final class LocalModeTests: XCTestCase {
         XCTAssertTrue(confirmation.waitForExistence(timeout: 10), "the confirmation did not come back")
         confirmation.buttons["Vain minulle, tälle puhelimelle"].tap()
 
-        let people = app.tabBars.buttons["Ihmiset"]
+        let people = app.tabBars.buttons["Sukupuu"]
         XCTAssertTrue(people.waitForExistence(timeout: 15), "confirming did not open an archive")
         people.tap()
         let settings = app.buttons["Asetukset"]

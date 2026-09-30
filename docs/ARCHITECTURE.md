@@ -5793,9 +5793,10 @@ both sides of the rule.
 see the memories, who gets the invite link, whose entitlement is shared. *Suku*
 is the web of relations the archive describes, and most of it is dead. They are
 different sets, they are different words, and neither should be used for the
-other. **Ihmiset** is a third thing again — the list of person subjects, which is
-what the tab is called, so the empty state under that tab now says *ihmiset* too
-rather than answering in a word the person did not tap.
+other. **Ihmiset** is a third thing again — the list of person subjects. It was
+the tab's name until 30 Sep 2026; the tab and the list are called *Sukupuu* now
+(below), and the empty state under them begins with *Sukupuu* too rather than
+answering in a word the person did not tap.
 
 **Ystävä is not suku either, since 21 Sep 2026.** A friend is a person card
 in the archive like anybody else, joined to somebody by `friend_of`, and the
@@ -5828,20 +5829,32 @@ names itself before anybody taps it hid the part of it that took the most work.
 That is the Muistot fault the other way round: not two words for one thing, but
 one word too small for the thing.
 
-The word now follows the same signal the content already follows. `PeopleTab`
-in `RootView.swift` is that single decision — a grandparent's phone (the text
-floor) and VoiceOver keep the list, and so keep *Ihmiset*; a family member's
-phone draws the tree and the tab says *Sukupuu*, *Family tree* in English, with
-the toolbar switch's own `tree` icon rather than a second drawing of the same
-destination. Nobody confirmed is nothing to draw, so the first minute on a new
-phone keeps the older word as well. Both the tab and the screen's title read
-that one function, which is what stops them drifting apart a second time.
+From then until 30 Sep the word followed the signal the content follows.
+`PeopleTab` in `RootView.swift` was the single decision: a grandparent's phone
+(the text floor) and VoiceOver kept the list, and so kept *Ihmiset*; a family
+member's phone drew the tree and the tab said *Sukupuu*, *Family tree* in
+English, with the toolbar switch's own `tree` icon. Nobody confirmed was nothing
+to draw, so the first minute on a new phone kept the older word as well, and a
+search, always answered as a list, was titled *Ihmiset* under a tab still
+called *Sukupuu*.
 
-One case is deliberately left to disagree. A search is always answered as a
-list, and the title says *Ihmiset* while the tab still says *Sukupuu*: a tab
-that renamed itself under a typing finger is the worse of the two faults.
-`FamilyTreeTests` pins both phones, and the grandparent's test now asserts the
-tab bar as well as the screen.
+**Sukupuu on every phone, since 30 Sep 2026.** A tab whose name follows the
+phone was the worse fault after all. The README's three screenshots called the
+one tab *People* in one and *Family tree* in the other two, and a reviewer of
+the README noticed; a family that helps each other over the phone needs one
+word to say, "tap *Sukupuu*", and half of them were looking at another. So the
+tab says *Sukupuu*, *Family tree*, with `tree.fill`, on every phone and over
+both views, and the list is titled *Sukupuu* as well: on a grandparent's phone
+and under VoiceOver the list is the family tree, read at a large size or aloud,
+with the relationships on each card. The tree itself still has no title; it is
+a map drawn under the bar. `PeopleTab` now decides only what the screen draws.
+The two switches between the views are named for what they do, *Näytä puuna* on
+the list's bar and *Näytä listana* in the tree's menu (*Show as a tree*, *Show
+as a list*), because a second button called *Sukupuu* beside the tab would
+leave Voice Control, and a test, to guess which one was meant. `FamilyTreeTests`
+pins the word over both views and on a grandparent's phone. Older text in this
+file, the other documents and the code's comments still calls the tab
+*Ihmiset*, and means the same tab.
 
 **Litterointiaika, not kertominen, for the monthly meter, since 26 Sep 2026.**
 Rule 2 says telling is never limited, and the words said it was: the free

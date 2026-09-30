@@ -565,8 +565,8 @@ extension XCTestCase {
         let app = XCUIApplication()
         app.launchArguments += ["-AppleLanguages", "(fi)", "-AppleLocale", "fi_FI"]
         app.launchArguments += ["-api", api] + arguments
-        // Ihmiset opens on the drawn tree on a family member's phone since
-        // 13 Sep 2026. Every test written before that is about the list, so
+        // The third tab opens on the drawn tree on a family member's phone
+        // since 13 Sep 2026. Every test written before that is about the list, so
         // the list is what a test gets unless it names `-people` itself.
         if !arguments.contains("-people") {
             app.launchArguments += ["-people", "list"]
@@ -663,7 +663,7 @@ enum AccessibilityPolicy {
         // Change the sentence in RootView and this line changes with it or
         // `testPeopleEmpty` goes red — which is the coupling working, not
         // failing.
-        "Ihmiset kertyvät tähän sitä mukaa kun heistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.",
+        "Sukupuu kasvaa sitä mukaa kun ihmisistä puhutaan. Jokaisesta kirjoitetaan yhdessä, millainen hän oli. Voit myös lisätä ihmisen itse yläreunan painikkeesta.",
     ]
 
     /// A `List` caps how far its own headers and footers grow, exactly as
