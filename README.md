@@ -149,6 +149,8 @@ invitations.
 
 ## Where to look
 
+- [A reading order for judges](docs/DETAILS.md), near the top of the long
+  write-up under **Reading it as a judge**.
 - [The ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend), which the
   rule numbers on this page refer to. `CLAUDE.md` is the working agreement for
   the AI coding sessions that did most of the typing.
@@ -256,4 +258,6 @@ whole family.
 
 ## Licence
 
-[Apache 2.0](LICENSE).
+[Apache 2.0](LICENSE). The three recordings in `docs/assets/` are macOS
+text-to-speech in its Grandma, Karen and Daniel voices; nobody real is heard in
+them.
