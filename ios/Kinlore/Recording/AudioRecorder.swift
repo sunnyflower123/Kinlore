@@ -94,9 +94,6 @@ final class AudioRecorder {
         try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
         try session.setActive(true)
 
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("\(Self.orphanPrefix)\(UUID().uuidString).m4a")
-
         // Speech, not music: 22 kHz mono is enough for ASR and keeps the files
         // small. The audio is kept permanently, so the size accumulates.
         let settings: [String: Any] = [
@@ -106,7 +103,7 @@ final class AudioRecorder {
             AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue,
         ]
 
-        let recorder = try AVAudioRecorder(url: url, settings: settings)
+        let recorder = try Self.makeRecorder(settings: settings)
         recorder.isMeteringEnabled = true
         recorder.record()
 
@@ -147,8 +144,30 @@ final class AudioRecorder {
         }
     }
 
+    /// The recorder for one telling, writing into tmp under `orphanPrefix`.
+    ///
+    /// An `.m4a` unless `CrashSafeRecording` is switched on and its format
+    /// opens here; any failure to open it falls back to the `.m4a` this app
+    /// has always recorded, so the switch cannot cost a telling.
+    private static func makeRecorder(settings: [String: Any]) throws -> AVAudioRecorder {
+        func fresh(_ fileExtension: String) -> URL {
+            FileManager.default.temporaryDirectory
+                .appendingPathComponent("\(orphanPrefix)\(UUID().uuidString).\(fileExtension)")
+        }
+        if CrashSafeRecording.isOn,
+           let safe = try? AVAudioRecorder(url: fresh(CrashSafeRecording.fileExtension), settings: settings) {
+            if safe.prepareToRecord() { return safe }
+            safe.deleteRecording()
+        }
+        return try AVAudioRecorder(url: fresh("m4a"), settings: settings)
+    }
+
     /// Returns the recorded file, or nil if the recording was too short to be
     /// anything.
+    ///
+    /// With `CrashSafeRecording` on, the file is its `.aac`; the caller hands
+    /// it to `CrashSafeRecording.finished` for the `.m4a` the rest of the app
+    /// takes.
     @discardableResult
     func stop() -> URL? {
         UIApplication.shared.isIdleTimerDisabled = false
@@ -312,7 +331,10 @@ enum RecordingRecovery {
         #endif
         let tmp = FileManager.default.temporaryDirectory
         let names = (try? FileManager.default.contentsOfDirectory(atPath: tmp.path)) ?? []
-        orphans = names.filter { $0.hasPrefix(AudioRecorder.orphanPrefix) && $0.hasSuffix(".m4a") }
+        orphans = names.filter {
+            $0.hasPrefix(AudioRecorder.orphanPrefix)
+                && ($0.hasSuffix(".m4a") || $0.hasSuffix(".\(CrashSafeRecording.fileExtension)"))
+        }
     }
 
     static func sweep(into store: MemoryStore) {
@@ -322,33 +344,46 @@ enum RecordingRecovery {
         orphans = []
         for name in names {
             let source = tmp.appendingPathComponent(name)
-            // The same floor as a live recording: under a second is an
-            // accident, not a memory — and an unreadable file is not audio.
-            let duration = (try? AVAudioPlayer(contentsOf: source))?.duration ?? 0
-            guard duration >= 1.0 else {
-                try? FileManager.default.removeItem(at: source)
-                continue
+            if source.pathExtension == CrashSafeRecording.fileExtension {
+                // The one kind of orphan that is readable although the app was
+                // killed under it. It becomes an .m4a first, which takes a
+                // moment, so it is adopted a little after this sweep and its
+                // text is written on the catch-up's next round.
+                Task { Self.adopt(await CrashSafeRecording.finished(source), into: store) }
+            } else {
+                adopt(source, into: store)
             }
-            let destination = MediaStore.url(for: name)
-            try? FileManager.default.removeItem(at: destination)
-            guard (try? FileManager.default.moveItem(at: source, to: destination)) != nil else {
-                continue
-            }
-            // The shape saveAudioOnly gives a telling whose words never
-            // arrived: an untitled event — describe fills empty fields only,
-            // so the name comes with the text — and a memory the row shows
-            // as "Ääni tallessa" until the catch-up finishes it.
-            let home = Subject(kind: .event, title: "")
-            store.add(home)
-            store.add(Memory(
-                subjectID: home.id,
-                authorName: store.authorName,
-                body: "",
-                audioFilename: name,
-                audioDuration: duration,
-                source: .voice
-            ))
         }
+    }
+
+    private static func adopt(_ source: URL, into store: MemoryStore) {
+        let name = source.lastPathComponent
+        // The same floor as a live recording: under a second is an
+        // accident, not a memory — and an unreadable file is not audio.
+        let duration = (try? AVAudioPlayer(contentsOf: source))?.duration ?? 0
+        guard duration >= 1.0 else {
+            try? FileManager.default.removeItem(at: source)
+            return
+        }
+        let destination = MediaStore.url(for: name)
+        try? FileManager.default.removeItem(at: destination)
+        guard (try? FileManager.default.moveItem(at: source, to: destination)) != nil else {
+            return
+        }
+        // The shape saveAudioOnly gives a telling whose words never
+        // arrived: an untitled event — describe fills empty fields only,
+        // so the name comes with the text — and a memory the row shows
+        // as "Ääni tallessa" until the catch-up finishes it.
+        let home = Subject(kind: .event, title: "")
+        store.add(home)
+        store.add(Memory(
+            subjectID: home.id,
+            authorName: store.authorName,
+            body: "",
+            audioFilename: name,
+            audioDuration: duration,
+            source: .voice
+        ))
     }
 
     #if DEBUG
@@ -376,4 +411,64 @@ enum RecordingRecovery {
         try? file.write(from: silence)
     }
     #endif
+}
+
+/// A recording that survives the app being killed under it. Off by default.
+///
+/// The recorder writes AAC into an `.m4a`, and an MPEG-4 file is unreadable
+/// until it is finished: its index is written at the stop. A telling the app
+/// was killed under was therefore a file `RecordingRecovery` could only delete,
+/// which is rule 3 lost on exactly the long telling that runs into a low-memory
+/// kill (ARCHITECTURE §1, known issues, 30 Sep 2026). ADTS carries the same
+/// AAC in frames that each stand alone, so a file cut off anywhere still plays
+/// up to the cut. This records into ADTS and rewraps it as an `.m4a` once the
+/// recording ends, so the upload, the transcription, the export and every
+/// other phone take the same kind of file as before.
+///
+/// `-safeRecording YES` switches it on. It stays off until it has been tried on
+/// a device: a telling recorded, stopped, played back, transcribed and heard
+/// on a second phone, and one killed mid-recording from Xcode and found again
+/// as "Ääni tallessa" on the next launch. Every way it can fail falls back to
+/// what the app did without it — the `.m4a` recorder, or the recording kept
+/// as it was recorded — and with it off nothing here runs at all.
+enum CrashSafeRecording {
+    static var isOn: Bool {
+        UserDefaults.standard.bool(forKey: "safeRecording")
+    }
+
+    static let fileExtension = "aac"
+
+    /// The recording as the rest of the app takes it. Anything that is not an
+    /// ADTS recording comes back as it is, which is every recording made with
+    /// the switch off.
+    ///
+    /// The rewrap copies the AAC as it is; re-encoding is the fallback, and
+    /// if both fail the recording is kept in the form it was made in, because
+    /// the voice is the thing rule 3 keeps and a file with an unusual name is
+    /// still that voice.
+    static func finished(_ url: URL) async -> URL {
+        guard url.pathExtension == fileExtension else { return url }
+        let output = url.deletingPathExtension().appendingPathExtension("m4a")
+        for preset in [AVAssetExportPresetPassthrough, AVAssetExportPresetAppleM4A] {
+            try? FileManager.default.removeItem(at: output)
+            if await export(url, to: output, preset: preset) {
+                try? FileManager.default.removeItem(at: url)
+                return output
+            }
+        }
+        try? FileManager.default.removeItem(at: output)
+        return url
+    }
+
+    private static func export(_ source: URL, to output: URL, preset: String) async -> Bool {
+        guard let session = AVAssetExportSession(asset: AVURLAsset(url: source), presetName: preset),
+              session.supportedFileTypes.contains(.m4a)
+        else { return false }
+        session.outputURL = output
+        session.outputFileType = .m4a
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            session.exportAsynchronously { continuation.resume() }
+        }
+        return session.status == .completed
+    }
 }

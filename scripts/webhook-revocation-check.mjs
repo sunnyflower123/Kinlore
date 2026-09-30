@@ -250,6 +250,95 @@ try {
 		)
 	}
 
+	// Since 30 Sep 2026 an event is only the cue, when RevenueCat can be
+	// asked: the webhook takes the customer's active entitlements from the
+	// REST API, as /entitlement/sync does, so an event that arrives late or
+	// twice cannot write an older answer over a newer one. Everything above
+	// runs without the keys, which is the fallback: the event decides when
+	// RevenueCat cannot be asked. RevenueCat is replaced here by a fetch that
+	// answers what `owns` holds.
+	console.log('— RevenueCat asked, not the event believed —')
+	{
+		const realFetch = globalThis.fetch
+		let owns = []
+		let reachable = true
+		let asked = 0
+		globalThis.fetch = async () => {
+			asked += 1
+			if (!reachable) return new Response('{"code": 7110}', { status: 500 })
+			return new Response(JSON.stringify({ items: owns }), { status: 200 })
+		}
+		const keyed = (env) => ({ ...env, RC_SECRET_KEY: 'sk_test', RC_PROJECT_ID: 'proj' })
+		const renewedThrough = now + 60 * 86_400
+		try {
+			{
+				const { env, family } = paidFamily()
+				owns = [{ entitlement_id: 'entl1', expires_at: renewedThrough * 1000 }]
+				await handleWebhook(keyed(env), event('RENEWAL', { expiration_at_ms: renewedThrough * 1000 }))
+				// The EXPIRATION of the period before, delivered after the renewal.
+				await handleWebhook(keyed(env), event('EXPIRATION', { expiration_at_ms: paidThrough * 1000 }))
+				check(
+					'an EXPIRATION that arrives after the renewal ends nothing',
+					family().entitlement === 'archive' && family().entitlement_expires_at === renewedThrough,
+					JSON.stringify(family()),
+				)
+				check('because RevenueCat was asked each time', asked === 2, `${asked} requests`)
+				await handleWebhook(keyed(env), event('RENEWAL', { expiration_at_ms: paidThrough * 1000 }))
+				check(
+					'and a renewal sent again, with its older date, shortens nothing',
+					family().entitlement_expires_at === renewedThrough,
+					JSON.stringify(family()),
+				)
+			}
+			{
+				const { env, family } = paidFamily()
+				owns = []
+				await handleWebhook(keyed(env), event('CANCELLATION', { cancel_reason: 'CUSTOMER_SUPPORT' }))
+				check(
+					'a refund RevenueCat confirms still ends the tier at once',
+					family().entitlement === 'free',
+					JSON.stringify(family()),
+				)
+			}
+			{
+				const { env, family } = paidFamily()
+				owns = [{ entitlement_id: 'entl1', expires_at: paidThrough * 1000 }]
+				await handleWebhook(keyed(env), event('CANCELLATION', { cancel_reason: 'UNSUBSCRIBE' }))
+				check(
+					'auto-renew switched off still keeps the month paid for',
+					family().entitlement === 'archive' && family().entitlement_expires_at === paidThrough,
+					JSON.stringify(family()),
+				)
+			}
+			{
+				const { env, family } = paidFamily()
+				reachable = false
+				await handleWebhook(keyed(env), event('EXPIRATION'))
+				reachable = true
+				check(
+					'and when RevenueCat cannot be asked, the event decides as before',
+					family().entitlement === 'free',
+					JSON.stringify(family()),
+				)
+			}
+			{
+				// A second payer with the later date, who has since left.
+				const { env, family, join } = paidFamily()
+				join('lahtenyt', 'cust-2', renewedThrough)
+				env.DB.prepare('UPDATE member SET left_at = ? WHERE id = ?').bind(now, 'lahtenyt').run()
+				owns = [{ entitlement_id: 'entl1', expires_at: paidThrough * 1000 }]
+				await handleWebhook(keyed(env), event('RENEWAL', { expiration_at_ms: paidThrough * 1000 }))
+				check(
+					'a payer who has left no longer pays for the family',
+					family().entitlement_expires_at === paidThrough && family().payer_id === 'maksaja',
+					JSON.stringify(family()),
+				)
+			}
+		} finally {
+			globalThis.fetch = realFetch
+		}
+	}
+
 	console.log('— and the door itself —')
 	{
 		const { env } = paidFamily()

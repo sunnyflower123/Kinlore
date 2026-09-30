@@ -954,6 +954,21 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				   confirmed = MAX(relation.confirmed, excluded.confirmed),
 				   deleted_at = COALESCE(excluded.deleted_at, relation.deleted_at),
 				   seq = excluded.seq
+				 WHERE relation.family_id = excluded.family_id
+				 -- The same relationship under another id: taken back and made
+				 -- again on one phone, or made by two members apart. The row is
+				 -- unique on these three columns, deleted rows included, so
+				 -- without this clause the insert failed, the whole batch with
+				 -- it, and the phone retried that push for ever (30 Sep 2026).
+				 -- The row keeps its id, which every phone already knows; a
+				 -- live copy brings it back, and a deleted one under another id
+				 -- takes nothing away, because it is the taking back of a copy
+				 -- the server never held.
+				 ON CONFLICT(from_subject, to_subject, kind) DO UPDATE SET
+				   confirmed = MAX(relation.confirmed, excluded.confirmed),
+				   deleted_at = CASE WHEN excluded.deleted_at IS NULL THEN NULL
+				                     ELSE relation.deleted_at END,
+				   seq = excluded.seq
 				 WHERE relation.family_id = excluded.family_id`,
 			).bind(
 				relation.id,

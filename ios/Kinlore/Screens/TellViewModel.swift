@@ -347,7 +347,7 @@ final class TellViewModel {
     private(set) var audioLost = false
 
     func stopAndProcess() async {
-        guard let url = recorder.stop() else {
+        guard let recorded = recorder.stop() else {
             // A recording under a second is an accident, not a memory. In the
             // interview loop it is also the natural "I have nothing to add":
             // land on the last result, not on the empty idle screen.
@@ -367,6 +367,16 @@ final class TellViewModel {
         sweepForTests(at: "stopped")
         #endif
         let duration = recorder.elapsed
+        // The `.m4a` the rest of this takes: the recording itself, unless
+        // `-safeRecording` made it an ADTS file, which is rewrapped here. Only
+        // that file waits, so a recording made with the switch off goes on
+        // without a suspension, exactly as before.
+        let url: URL
+        if recorded.pathExtension == CrashSafeRecording.fileExtension {
+            url = await CrashSafeRecording.finished(recorded)
+        } else {
+            url = recorded
+        }
         guard canTranscribe else {
             // Not an error and not a deferral: in this mode the text is never
             // coming, and uploading the audio to be told 401 would only make
