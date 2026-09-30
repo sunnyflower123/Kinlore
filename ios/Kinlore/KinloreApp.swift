@@ -200,6 +200,12 @@ struct KinloreApp: App {
                     guard new > old else { return }
                     Task { await sync?.sync() }
                 }
+                .onChange(of: session.identity.memberID) { _, memberID in
+                    // "Tyhjennä tämä laite" takes a new identity with the app
+                    // still open, and RevenueCat has to follow it, or the next
+                    // purchase is reported under the member that was wiped.
+                    RevenueCatPurchases.configure(memberID: memberID)
+                }
                 .onChange(of: session.mode) { _, mode in
                     // Joining is the case this exists for: the joiner has just
                     // landed on Muistot, and the family's memories are only on

@@ -38,6 +38,10 @@ struct PaywallSheet: View {
                 Task { await spreadToFamily(info) }
             }
             .onRestoreCompleted { (info: CustomerInfo) in
+                // A restore that found nothing is not a payment. Sending it on
+                // ended in "Kiitos — maksu meni läpi" for somebody who had paid
+                // nothing, and left the family exactly as it was.
+                guard !info.entitlements.active.isEmpty else { return }
                 Task { await spreadToFamily(info) }
             }
             // RevenueCatUI asks to close once a purchase completes, one
