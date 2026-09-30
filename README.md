@@ -35,22 +35,21 @@ I built it for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.d
 hackathon, in the Next Gen Award (the student category).
 
 <p align="center">
-  <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order, finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s, and the question Who told this memory? with the answers Me, Someone else and I would rather not be named." width="320">
+  <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
 </p>
 
-<p align="center"><sub>Simulator, stub pipeline: the waiting is real and the model call is canned.<br><code>scripts/readme-shots.sh</code> makes this GIF and the pictures below.</sub></p>
+<p align="center"><sub>Simulator, stub pipeline: the telling and the model call are canned, the wait is held six seconds longer so its step can be read, and a debug launch argument does the scrolling.<br><code>scripts/readme-shots.sh</code> makes this GIF and the pictures below.</sub></p>
 
-| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, freely, a large red microphone button with Press and start talking under it, and a Write instead link." width="1179"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen: Memory saved, a Move to another card button, the date 1950s, the card Who told this memory? with the answers Me, Someone else and I would rather not be named, and below it the beginning of the spoken text kept as it was said — in Finnish, because the sample telling is." width="1179"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a drawn stand-in photograph, the question Who is this?, four names in identical black buttons — Sanni, Aino, Eeva and Kalle — and I do not remember below them." width="1179"></a> |
+| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree." width="1179"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button." width="1179"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="1179"></a> |
 |---|---|---|
-| **Telling.** One button, and a way out of it for anyone who would rather type. | **What comes back.** The date is a decade because that is what was said, and no name enters the family tree before somebody confirms it. *Move to another card* files the memory under a different photo or person if it landed on the wrong one. | **Who is this?** One of the four names is the proposal, and nothing on the screen says which. Here a drawn stand-in takes the place of the photograph the name was heard in. |
+| **Telling.** One button, and a way out of it for anyone who would rather type. Two questions wait under it for anyone who does not know where to begin. | **What comes back.** A later telling in the example archive. The two names it heard wait for a cross or a tick, because no name enters the family tree before somebody confirms it, and Puumala, a place the family has already confirmed, can still be corrected. Above them, as the GIF shows, the date is a decade because that is what was said; below them come the questions the app would still ask. | **Who is this?** One of the four names is the proposal, and nothing on the screen says which. The photograph is generated and shows nobody real; it stands in for the one the name was heard in. |
 
 ## At a glance
 
 - **Built with** SwiftUI · Cloudflare Workers + D1 + R2 · OpenRouter · RevenueCat
 - **RevenueCat** One member buys and the whole family gets the archive. The SDK
   and RevenueCatUI's paywall run on the phone; the Worker asks RevenueCat's REST
-  API what the buyer owns rather than taking the phone's word, and the webhook
-  keeps it current.
+  API what the buyer owns, and the webhook keeps it current.
 - **Tested** 406 UI tests, including 127 accessibility sweeps that audit a
   screen at the default text size and again at the largest.
   `./scripts/verify.sh` holds 64 checks that cost nothing and says which it
@@ -200,20 +199,26 @@ Purchases run on the RevenueCat Test Store, since there is no App Store release.
 - **The paywall** is RevenueCatUI's own view, designed and priced remotely in
   RevenueCat's dashboard, and
   [`PaywallSheet.swift`](ios/Kinlore/Screens/PaywallSheet.swift) presents it in
-  three places. The result screen offers it after one telling in three, never
-  when that telling proposed names somebody has to confirm and never on a
-  grandparent's phone. A limit the family has hit gets the offer beside it on
-  every phone, a grandparent's included. And the family screen has an *Open the
-  whole archive* button. `UpsellRhythm.swift` holds these rules.
+  three places. The result screen offers it after every third telling, never
+  when that telling proposed names somebody has to confirm, and never on a
+  phone with *Larger text* on, which is how the app knows a grandparent's
+  phone. A limit the family has hit gets the offer beside it on every phone,
+  the grandparent's too. And the family screen has an *Open the whole archive*
+  button. `UpsellRhythm.swift` holds these rules.
 - **The app user id** is the family member's id
   ([`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift)),
   so the webhook can find the family without the app being open.
-- **The server does not take the phone's word.** In
+- **The server asks RevenueCat what was bought.** In
   [`backend/src/entitlement.ts`](backend/src/entitlement.ts),
-  `POST /entitlement/sync` asks RevenueCat's REST API what the customer owns,
-  and the webhook takes the paid tier away only on an expiry, a transfer or a
-  refund. A unique index in `backend/schema.sql` keeps one purchase to one
-  family.
+  `POST /entitlement/sync` asks RevenueCat's REST API what the customer owns.
+  The customer id it asks about comes from the app, and the server does not
+  yet compare it with the member's own id, one of the
+  [known issues](docs/ARCHITECTURE.md#1-where-things-stand). Since 30 Sep 2026
+  a webhook event is only a cue: the Worker asks RevenueCat the same question
+  and applies the answer. When RevenueCat cannot be asked, the event decides,
+  and an expiry or a refund takes the paid tier away; a transfer always takes
+  it from the customer it moved away from. A unique index in
+  `backend/schema.sql` keeps one purchase to one family.
 - **Each piece has a check** that needs no key and no network, and
   `./scripts/verify.sh` runs them all.
 

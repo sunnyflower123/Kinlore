@@ -444,8 +444,8 @@ whoever else is there, in these words:
 > *"Kun te olitte siinä tilaisuudessa muistelemassa — mikä olisi saanut teidät
 > kertomaan?"*
 
-The question has an antecedent and it is where this whole product came from: a
-memorial for a grandmother, about twenty-five people, plenty of photographs on
+The question has an antecedent and it is where this whole product came from:
+my great-grandmother's memorial, about twenty people, plenty of photographs on
 the table, and nobody able to tell any of it properly. That is §1's premise one
 level up — a room that knows collectively and cannot get it out — and it is the
 densest hour of memory a family ever has.

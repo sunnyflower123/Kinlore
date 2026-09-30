@@ -2464,6 +2464,34 @@ struct BlindCardView: View {
 
 // MARK: - Result
 
+#if DEBUG
+/// Screenshot aid: `-result heard` scrolls the result screen to what the
+/// telling named, two seconds after the screen appears. At the top of the
+/// screen those rows sit below the teller card and the memory's own text,
+/// out of sight on a phone, and a screenshot run has no hands to scroll
+/// with. `scripts/readme-shots.sh` takes the README's result picture and
+/// ends its GIF this way. Without the argument the screen is left as it is.
+private struct ScrollsToHeardNames: ViewModifier {
+    static let anchor = "heard"
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if UserDefaults.standard.string(forKey: "result") == "heard" {
+            ScrollViewReader { proxy in
+                content.task {
+                    try? await Task.sleep(for: .seconds(2))
+                    withAnimation(.easeInOut(duration: 0.6)) {
+                        proxy.scrollTo(Self.anchor, anchor: .top)
+                    }
+                }
+            }
+        } else {
+            content
+        }
+    }
+}
+#endif
+
 private struct ResultView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(Session.self) private var session
@@ -2525,6 +2553,9 @@ private struct ResultView: View {
                 // here keeps the section open for its note (30 Sep 2026).
                 if !model.proposals.isEmpty || !model.known.isEmpty || !confirmedHere.isEmpty {
                     heardSection
+                        #if DEBUG
+                        .id(ScrollsToHeardNames.anchor)
+                        #endif
                 }
 
                 if !model.newQuestions.isEmpty {
@@ -2622,6 +2653,9 @@ private struct ResultView: View {
                 }
             }
             .padding(Elder.screenPadding)
+            #if DEBUG
+            .modifier(ScrollsToHeardNames())
+            #endif
         }
         .alert(
             "Poistetaanko tämä muisto?",

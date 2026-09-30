@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// The author is the phone and the teller is the voice, and they come apart
 /// the moment one phone goes round a table — the case this app was born in
-/// (docs/PLAN.md §8: a memorial, twenty-five people, photographs on the table
+/// (docs/PLAN.md §8: a memorial, about twenty people, photographs on the table
 /// and nobody able to tell any of it). Until 19 Sep 2026 every telling made on
 /// this phone was filed under the phone's owner, so a grandmother's story told
 /// into a grandchild's phone read *"Ville kertoi"* for ever after.
