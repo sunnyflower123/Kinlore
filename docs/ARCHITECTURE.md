@@ -130,24 +130,29 @@ perfectly in every one of those cases. That is the failure mode this project
 has, and the reason to distrust this table is that it has been wrong in exactly
 this way before.
 
-**Known issues, found on 30 Sep 2026 and not fixed.** A review on the day of
-submission read the promises against the code again, and these are what it
-found. None of them was fixed that day, because each touches sync, the
-production schema or the recorder, and a change there on the last day is a
+**Known issues, found on 30 Sep 2026.** A review on the day of submission
+read the promises against the code again. Two of its findings were fixed the
+same day:
+
+- **A relationship taken back and made again stopped that phone's sync.**
+  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
+  rows, the app makes the new one under a new id, and the upsert in `sync.ts`
+  handled only a clash on `id`, so the whole batch failed and the phone sent
+  it for ever; its pull, in the same round, never ran. Two members adding the
+  same relationship did the same. The upsert now folds a second id into the
+  existing row, the app drops its own copy once the pull brings that row, and
+  a refused push no longer stops the pull. `relation-readd-check.mjs` fails
+  on the code before the fix and passes after it.
+- **An edit made while a push was in flight was lost.** `clearPending`
+  cleared the rows it sent by id, and the pull after it put the server's
+  older copy back. It now clears a row only if it still encodes to what was
+  sent.
+
+The rest were not fixed that day, because each touches the production
+schema, the recorder or the money, and a change there on the last day is a
 bigger risk than the defect. They are written here so that nobody has to find
 them twice.
 
-- **A relationship taken back and made again stops that phone's sync.**
-  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
-  rows (`schema.sql`), the app makes the new one under a new id, and the
-  upsert in `sync.ts` only handles a clash on `id`, so the whole batch fails.
-  The phone then retries the same push for ever, and its pull, in the same
-  round, never runs; the screen says it is waiting for the network. Two
-  members adding the same relationship under different ids do the same.
-  Reproduced against a local Worker.
-- **An edit made while a push is in flight is lost.** `clearPending` clears
-  the rows it sent by id, so a row changed during the request is no longer
-  dirty, and the pull after it puts the server's older copy back.
 - **The free photo ceiling is counted at one door.** `/media?kind=photo`
   checks it; `/sync` accepts photo subjects without counting them, and a
   `colour` upload is not counted. Only a modified client gets past it.

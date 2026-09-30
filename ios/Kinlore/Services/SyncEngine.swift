@@ -253,11 +253,24 @@ final class SyncEngine {
             // clears what it sent, so the loop ends on its own, and 40 rounds
             // is twenty thousand rows of one table — far past any family
             // archive, and a ceiling rather than a schedule.
+            //
+            // A push the server refuses does not stop the pull. One row it
+            // cannot store fails the whole batch, and the same batch is built
+            // again next round; with the pull behind it in one `do`, that row
+            // also stopped this phone from receiving anything the family told
+            // (30 Sep 2026, a relationship made again under a new id). The
+            // failure is still the round's result, below the pull.
+            var pushFailure: Error?
             var pushes = 0
             while pushes < 40 {
                 let payload = store.pendingPayload()
                 if payload.isEmpty { break }
-                _ = try await client.push(seal.push(payload))
+                do {
+                    _ = try await client.push(seal.push(payload))
+                } catch {
+                    pushFailure = error
+                    break
+                }
                 store.clearPending(payload)
                 pushes += 1
                 // The cursor does not move here. The push reply's number is
@@ -280,6 +293,7 @@ final class SyncEngine {
                 rounds += 1
                 if !reply.more { break }
             }
+            if let pushFailure { throw pushFailure }
 
             lastSyncedAt = .now
             state = .idle

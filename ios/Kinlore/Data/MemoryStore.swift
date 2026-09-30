@@ -1325,14 +1325,43 @@ final class MemoryStore {
         )
     }
 
-    /// Acknowledges the rows that were pushed. Only the ones just sent: if the
-    /// user managed to write during the request, the new change stays queued
-    /// rather than being lost.
+    /// Acknowledges the rows that were pushed, as they were sent. A row changed
+    /// while the request was out stays queued.
+    ///
+    /// Clearing by id alone lost that change (found 30 Sep 2026): the id left
+    /// the outbox, the pull that follows every push brought the server's copy,
+    /// which is the one sent before the change, and `applyRemote` wrote it
+    /// over the row because it was no longer dirty. A name confirmed while a
+    /// telling was on its way up was the ordinary case. So a row is cleared
+    /// only when it still encodes to what was sent; the DTOs are built from
+    /// the stored fields alone and their nested lists are encoded with sorted
+    /// keys, so an unchanged row always compares equal.
     func clearPending(_ payload: SyncPayload) {
-        dirtySubjects.subtract(payload.subjects.map(\.id))
-        dirtyMemories.subtract(payload.memories.map(\.id))
-        dirtyQuestions.subtract(payload.questions.map(\.id))
-        dirtyRelations.subtract(payload.relations.map(\.id))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        func sent<DTO: Encodable>(_ rows: [DTO], id: (DTO) -> String, now: (String) -> DTO?) -> [String] {
+            rows.compactMap { row in
+                // A row no longer here, or one that cannot be encoded, is
+                // acknowledged as before: there is nothing newer to keep.
+                guard let current = now(id(row)),
+                      let before = try? encoder.encode(row),
+                      let after = try? encoder.encode(current)
+                else { return id(row) }
+                return before == after ? id(row) : nil
+            }
+        }
+        dirtySubjects.subtract(sent(payload.subjects, id: \.id) { id in
+            self.subjects.first { $0.id == id }?.dto
+        })
+        dirtyMemories.subtract(sent(payload.memories, id: \.id) { id in
+            self.memories.first { $0.id == id }?.dto
+        })
+        dirtyQuestions.subtract(sent(payload.questions, id: \.id) { id in
+            self.questions.first { $0.id == id }?.dto
+        })
+        dirtyRelations.subtract(sent(payload.relations, id: \.id) { id in
+            self.relations.first { $0.id == id }?.dto
+        })
         // A tombstone leaves the phone once the server has it, and not
         // before: the server keeps `deleted_at` for good (`COALESCE` in
         // `sync.ts`), and until then this copy is the only record of it.
@@ -1452,6 +1481,20 @@ final class MemoryStore {
                 relations[index] = incoming
             } else {
                 relations.append(incoming)
+            }
+            // The server holds one row per relationship. A copy made here under
+            // another id, already sent, was folded into this row by the Worker
+            // (`sync.ts`) and never stored, so it would stand beside it as a
+            // second line on the card for good. One still queued is left
+            // alone: it has not been sent yet.
+            let isGhost: (Relation) -> Bool = {
+                $0.id != incoming.id && !self.dirtyRelations.contains($0.id)
+                    && $0.fromSubjectID == incoming.fromSubjectID
+                    && $0.toSubjectID == incoming.toSubjectID
+                    && $0.kind == incoming.kind
+            }
+            if relations.contains(where: isGhost) {
+                relations.removeAll(where: isGhost)
             }
         }
 

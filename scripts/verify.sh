@@ -674,6 +674,10 @@ if curl -fsS --max-time 2 http://localhost:8787/health >/dev/null 2>&1; then
 	# runs ahead skips other members' rows silently and forever. Three defects
 	# lived in it (23 Aug 2026, §3) and every one looked like a working app.
 	run "a telling reaches the phone that was pushing" node scripts/sync-cursor-check.mjs
+	# One row the server cannot store fails the whole push, and the phone
+	# sends the same push for ever. A relationship made again under a new id
+	# was that row until 30 Sep 2026 (ARCHITECTURE §1, known issues).
+	run "a relationship made again stops nothing" node scripts/relation-readd-check.mjs
 	# The story column's half of the sync rules the server can apply to a
 	# seal it cannot read: the newest moment wins whole, a phone that has
 	# never heard of the story cannot wipe it, junk has no opinion, and a
