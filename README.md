@@ -120,7 +120,8 @@ the production Worker, and its model bill, to anybody.
   the AI coding sessions that did most of the typing.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md):
   [§1](docs/ARCHITECTURE.md#1-where-things-stand) for what is built and what is
-  not, [§6](docs/ARCHITECTURE.md#6-money) for the money.
+  not, and the known issues found on the day of submission,
+  [§6](docs/ARCHITECTURE.md#6-money) for the money.
 - The RevenueCat code:
   [`RevenueCatPurchases.swift`](ios/Kinlore/Services/RevenueCatPurchases.swift),
   [`PaywallSheet.swift`](ios/Kinlore/Screens/PaywallSheet.swift) and

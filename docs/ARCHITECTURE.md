@@ -130,6 +130,47 @@ perfectly in every one of those cases. That is the failure mode this project
 has, and the reason to distrust this table is that it has been wrong in exactly
 this way before.
 
+**Known issues, found on 30 Sep 2026 and not fixed.** A review on the day of
+submission read the promises against the code again, and these are what it
+found. None of them was fixed that day, because each touches sync, the
+production schema or the recorder, and a change there on the last day is a
+bigger risk than the defect. They are written here so that nobody has to find
+them twice.
+
+- **A relationship taken back and made again stops that phone's sync.**
+  `relation` is unique on `(from_subject, to_subject, kind)` including deleted
+  rows (`schema.sql`), the app makes the new one under a new id, and the
+  upsert in `sync.ts` only handles a clash on `id`, so the whole batch fails.
+  The phone then retries the same push for ever, and its pull, in the same
+  round, never runs; the screen says it is waiting for the network. Two
+  members adding the same relationship under different ids do the same.
+  Reproduced against a local Worker.
+- **An edit made while a push is in flight is lost.** `clearPending` clears
+  the rows it sent by id, so a row changed during the request is no longer
+  dirty, and the pull after it puts the server's older copy back.
+- **The free photo ceiling is counted at one door.** `/media?kind=photo`
+  checks it; `/sync` accepts photo subjects without counting them, and a
+  `colour` upload is not counted. Only a modified client gets past it.
+- **Rule 4 is kept by the app, not the Worker.** A pushed subject without
+  `confirmed` is stored as confirmed.
+- **The webhook does not order events.** An `EXPIRATION` delivered after a
+  `RENEWAL` ends a paid family until the payer's phone next syncs.
+- **A telling is lost if the app is killed mid-recording.** The recorder
+  writes AAC into an `.m4a`, which is unreadable until it is finished, and the
+  next launch's sweep removes it. A telling interrupted any other way is kept.
+- **A failed save is silent.** `MemoryStore.save()` ignores a write error.
+- **Nothing is deleted on the server.** Deletion is soft, R2 objects are never
+  removed and there is no route that deletes a family (§19), and the family
+  key is not changed when a member leaves (§4, a decision).
+- **The model calls have no timeout** (`openrouter.ts`).
+- **VoiceOver hears no announcements.** Recording, organising and "Muisto
+  tallennettu" are carried by the button's label and the screen changing.
+- **The blind card in a small family.** With two or three confirmed people,
+  every card shows the same decoys, and the name that changes is the answer.
+- **The last full UI run written down is 26 Sep 2026**, with six reds
+  (the header of `AccessibilitySweepTests.swift`); none is recorded after the
+  fixes of 30 Sep.
+
 ## 2. Five decisions that determine the rest
 
 ### 2.1 Local first, not server first

@@ -19,16 +19,28 @@ struct RevenueCatPurchases: PurchaseService {
         return key
     }
 
-    /// Called once at launch.
+    /// Called at launch, and again whenever the member id changes.
     ///
     /// `appUserID` is bound to the family member id so that the webhook can find
     /// the family without the app being open. Without this, a renewed
     /// subscription would only show up when the payer next opens the app — and
     /// they are not the one who uses it most.
+    ///
+    /// The SDK is configured once. "Tyhjennä tämä laite" takes a new identity
+    /// without a relaunch, and the SDK kept the old id until the next launch:
+    /// a purchase in between was reported under the old member, which the
+    /// server binds to the old family and answers 409
+    /// (`customer_belongs_to_another_family`). So a later call with a
+    /// different id logs the SDK in as the new member instead.
     static func configure(memberID: String) {
         guard let key = configuredKey else { return }
-        Purchases.logLevel = .warn
-        Purchases.configure(withAPIKey: key, appUserID: memberID)
+        guard Purchases.isConfigured else {
+            Purchases.logLevel = .warn
+            Purchases.configure(withAPIKey: key, appUserID: memberID)
+            return
+        }
+        guard Purchases.shared.appUserID != memberID else { return }
+        Task { _ = try? await Purchases.shared.logIn(memberID) }
     }
 
     var customerID: String? {
