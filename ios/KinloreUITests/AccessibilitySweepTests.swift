@@ -3644,13 +3644,37 @@ final class AccessibilitySweepTests: XCTestCase {
     /// The composer failed: the note, the second try and the tellings still
     /// on the card. `-story fail` is the only way to hold this screen still.
     /// The note opens at the tab bar's edge, so it is dragged to y 330.
+    ///
+    /// At the largest size the consent line under the second try is
+    /// 596.67 pt tall, and where that drag left it, from y 450.67 across the
+    /// tab bar at 791, it was reported partially unsupported: alone twice in
+    /// the rehearsal of 30 Sep 2026 and once more on the same commit. So it
+    /// is brought under the navigation bar first and judged as a page of its
+    /// own, whole above the tab bar, and the second try is then dragged to
+    /// y 480, where the sweep ends: the note above it, and the consent line
+    /// from y 551, where it audits clean. The second try is looked for
+    /// upwards after that audit, in case the list dropped it.
     func testStoryCardComposeFailed() throws {
         try sweep(
             "Tarinakortti, kokoaminen epäonnistui",
             arguments: storyCard("demo-story-aino", story: "fail")
-        ) { app, _ in
-            reach(app.buttons["Yritä uudelleen"], in: app, "the second try", swipes: 8)
-            drag(text(startingWith: "Tarinaa ei saatu", in: app), toMinY: 330, in: app)
+        ) { app, isLargest in
+            let retry = reach(app.buttons["Yritä uudelleen"], in: app, "the second try", swipes: 8)
+            let note = text(startingWith: "Tarinaa ei saatu", in: app)
+            if isLargest {
+                let consent = reach(app.staticTexts["storyCard.consent"], in: app, "the consent line")
+                drag(consent, toMinY: app.navigationBars.firstMatch.frame.maxY + 8, in: app)
+                XCTAssertLessThanOrEqual(
+                    consent.frame.maxY, app.tabBars.firstMatch.frame.minY,
+                    "the consent line is not whole above the tab bar on its own page: \(consent.frame)"
+                )
+                try auditInPlace(app, "Tarinakortti, kokoaminen epäonnistui, the consent line, largest text size")
+                for _ in 0 ..< 10 where !retry.exists { app.swipeDown() }
+                require(retry, "the second try, after the consent line's audit")
+                drag(retry, toMinY: 480, in: app)
+            } else {
+                drag(note, toMinY: 330, in: app)
+            }
             XCTAssertTrue(hasStoppedDrawing(app), "the note was still being drawn")
         }
     }
