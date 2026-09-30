@@ -67,6 +67,7 @@
 "Muisto tallennettu" = "Memory saved";
 "En saanut järjesteltyä sitä juuri nyt. Kertomasi on tallessa omilla sanoillasi." = "I could not put it in order just now. What you told is kept, in your own words.";
 "Äänesi on tallessa" = "Your voice is kept";
+"Äänesi on tallessa tässä puhelimessa" = "Your voice is kept on this phone";
 "Riittää tältä erää" = "That is enough for now";
 "Jatketaan jutellen" = "Let us keep talking";
 "Jatka" = "Continue";
@@ -526,8 +527,8 @@
    characters; the long variant below is for the ordinary text sizes. */
 "Puhelin kysyy ensin luvan mikrofoniin." = "The phone will ask for the microphone.";
 "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua." = "The phone will first ask permission for the microphone. Allow it, and you can talk.";
-"Puhu ihan rauhassa ja vapaasti." = "Talk at your own pace, freely.";
-"Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Talk at your own pace, freely. No need to remember the order or the years — we put them in place for you.";
+"Puhu ihan rauhassa ja kuuluvalla äänellä." = "Talk at your own pace, and speak up.";
+"Puhu ihan rauhassa ja kuuluvalla äänellä. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi." = "Talk at your own pace, and speak up. No need to remember the order or the years — we put them in place for you.";
 "Kerro mitä muistat" = "Tell what you remember";
 "Kerro hänestä — %@" = "Tell about %@";
 "Kerro tästä kuvasta" = "Tell about this picture";

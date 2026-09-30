@@ -222,6 +222,19 @@ final class AudioRecorder {
     /// the main actor and has to be able to read this.
     nonisolated static let orphanPrefix = "memory-"
 
+    /// Where a finished recording waits between the stop and the save: in
+    /// Documents, which the system does not empty, and in a folder of its own,
+    /// so the launch sweep can tell it from a recording a memory already
+    /// points at. The move out of tmp used to wait for the save, which comes
+    /// after the transcription — minutes of a telling that existed only where
+    /// the system may clean up, under a screen that could not honestly say it
+    /// was kept. *"Mistä tiedän että se on tallessa?"* (PLAN.md §8).
+    ///
+    /// `nonisolated` for the same reason as the prefix above.
+    nonisolated static var waitingDirectory: URL {
+        URL.documentsDirectory.appendingPathComponent("waiting-recordings", isDirectory: true)
+    }
+
     private func tick() {
         guard let recorder else { return }
         guard recorder.isRecording else {
@@ -276,10 +289,14 @@ final class AudioRecorder {
 /// every orphaned recording becomes the same audio-only memory a quota outage
 /// leaves behind, and the catch-up writes its text on the app's own schedule —
 /// rule 3's spirit applied to the file that never got as far as the rules.
+///
+/// Since 30 Sep 2026 a stopped recording leaves tmp at once, for
+/// `AudioRecorder.waitingDirectory` (`keep`), and waits there for its words;
+/// the sweep looks in both places.
 @MainActor
 enum RecordingRecovery {
-    /// The recordings tmp held before this launch could make one of its own —
-    /// the only files the sweep may touch.
+    /// The recordings tmp and the waiting folder held before this launch could
+    /// make one of its own — the only files the sweep may touch.
     ///
     /// The sweep used to list tmp for itself, from the launch task, once the
     /// calls ahead of it there had waited on the network: as late as the
@@ -302,7 +319,7 @@ enum RecordingRecovery {
     /// launch's to find, which is when a killed telling was always found.
     ///
     /// Nil until then, and a sweep without a list touches nothing.
-    private static var orphans: [String]?
+    private static var orphans: [URL]?
 
     /// Called once, from `KinloreApp.init`.
     static func listOrphans() {
@@ -310,18 +327,32 @@ enum RecordingRecovery {
         #if DEBUG
         if UserDefaults.standard.string(forKey: "recovery") == "orphan" { leaveOrphanForTests() }
         #endif
-        let tmp = FileManager.default.temporaryDirectory
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: tmp.path)) ?? []
-        orphans = names.filter { $0.hasPrefix(AudioRecorder.orphanPrefix) && $0.hasSuffix(".m4a") }
+        let directories = [FileManager.default.temporaryDirectory, AudioRecorder.waitingDirectory]
+        orphans = directories.flatMap { directory in
+            ((try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [])
+                .filter { $0.hasPrefix(AudioRecorder.orphanPrefix) && $0.hasSuffix(".m4a") }
+                .map { directory.appendingPathComponent($0) }
+        }
+    }
+
+    /// Moves a stopped recording out of tmp before anything is sent anywhere.
+    /// Nil when the move failed: the file is then still in tmp, where it always
+    /// used to wait, and the screen does not claim it is kept. The save moves
+    /// it on into Documents under the same name (`TellViewModel.persistAudio`).
+    static func keep(_ url: URL) -> URL? {
+        let directory = AudioRecorder.waitingDirectory
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let destination = directory.appendingPathComponent(url.lastPathComponent)
+        guard (try? FileManager.default.moveItem(at: url, to: destination)) != nil else { return nil }
+        return destination
     }
 
     static func sweep(into store: MemoryStore) {
-        let tmp = FileManager.default.temporaryDirectory
         // Taken rather than read, so a second sweep has nothing to look at.
-        let names = orphans ?? []
+        let sources = orphans ?? []
         orphans = []
-        for name in names {
-            let source = tmp.appendingPathComponent(name)
+        for source in sources {
+            let name = source.lastPathComponent
             // The same floor as a live recording: under a second is an
             // accident, not a memory — and an unreadable file is not audio.
             let duration = (try? AVAudioPlayer(contentsOf: source))?.duration ?? 0

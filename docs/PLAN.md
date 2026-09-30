@@ -327,6 +327,44 @@ On the weekend of 26–27 September 2026 my grandparent spoke into the app on a
 real iPhone, running the production build against the production Worker. A
 measured result of that session does not exist.
 
+**One sentence from it was kept**, reported on 30 Sep 2026 from memory rather
+than from notes written in the room:
+
+> *"Mistä tiedän että se on tallessa?"* — How do I know it is kept?
+
+That is the question the visit below says no number answers, whether the
+teller believed the memory was saved, and the app had no answer to give. Between
+stop and the result, `ProcessingView` shows *"Kuuntelen mitä sanoit"* and then
+*"Järjestelen muistoa"* over a spinner, for as long as the two calls take (their
+timeouts in `AppServices` add up to about thirty minutes), and nothing on it
+says the voice is kept. Nor is it yet: the recording sits in the temporary
+directory until transcription returns, and only then does `persistAudio` move
+it where a memory can point at it. After a spoken first telling that raised a
+question, the conversation begins with no *"Muisto tallennettu"* in between.
+
+A fix is proposed, 30 Sep 2026, and has not yet been built or run on a
+simulator: at stop the recording leaves tmp for a waiting folder in Documents
+that the launch sweep also reads (`RecordingRecovery.keep`), and only once that
+move has succeeded does the screen say *"Äänesi on tallessa tässä
+puhelimessa"*, above the spinner. The conversation's missing *"Muisto
+tallennettu"* is left as it is.
+
+A second question was asked in words nobody kept, roughly *what should I say?*
+The idle screen does offer two starter questions (ARCHITECTURE §12), under the
+button, and which screen was open at the time is not known — so it is recorded
+as a question for the next visit rather than as a finding.
+
+And one thing done rather than said, reported the same day: the grandparent had
+to be asked out loud to speak up. No screen asked for it. Since 30 Sep 2026
+the idle screen's reassurance says *"Puhu ihan rauhassa ja kuuluvalla
+äänellä"* where it said *"vapaasti"*, before the press rather than during the
+recording, which has no room left at the largest size. It is not there when a
+photograph stands on the card, which drops the reassurance altogether. A hint
+that appears only when the voice is quiet would reach the one who needs it and
+spare everyone else, but it needs a threshold, and none has been measured: the
+three recordings in ARCHITECTURE §10 put the room at −51 to −64 dBFS and speech near −15, and
+none of them is known to be a quiet voice.
+
 ### The visit that takes the measurement
 
 Written before the day rather than on it, because half of what follows cannot be

@@ -98,7 +98,8 @@ for the one measurement that has not been taken.
 
 On the weekend of 26–27 September 2026 my grandparent spoke into the app on a
 real iPhone, running the production build against the production Worker. A
-measured result of that session does not exist.
+measured result of that session does not exist. One sentence from it was kept,
+*"Mistä tiedän että se on tallessa?"*, and what it found is in PLAN.md §8.
 
 **Verified rules.** Confirmation is one-way, merges are sticky, only the author
 edits their own, and another family can neither see nor write. The outbox
@@ -5899,7 +5900,8 @@ Picture, question, button, and two ways on. In that order and nothing else:
   record button above it. The card asked nothing on the screen built to ask.
 - **The big button answers it** rather than starting free dictation, through
   the same `answer(_:)` the question cards use, so the ladder still learns.
-- **The reassurance is dropped.** *"Puhu ihan rauhassa ja vapaasti"* exists to
+- **The reassurance is dropped.** *"Puhu ihan rauhassa ja kuuluvalla äänellä"*
+  (*"vapaasti"* until 30 Sep 2026, PLAN.md §8) exists to
   make a blank button approachable. A photograph is not a blank button.
 - **The picture is what gives way.** Capped at 200 pt, and the number is the
   screen's rather than the picture's. Worth knowing before changing it: while

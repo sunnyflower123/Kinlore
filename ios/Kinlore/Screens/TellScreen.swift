@@ -338,7 +338,7 @@ struct TellScreen: View {
             case .writing:
                 WritingView(model: model)
             case .transcribing, .organizing:
-                ProcessingView(phase: model.phase)
+                ProcessingView(phase: model.phase, voiceIsKept: model.recordingIsKept)
             case .asking:
                 AskingView(model: model)
             case .done:
@@ -585,9 +585,14 @@ private struct IdleView: View {
                 ? "Puhelin kysyy ensin luvan mikrofoniin."
                 : "Puhelin kysyy ensin luvan mikrofoniin. Anna lupa, niin voit puhua."
         }
+        // "Kuuluvalla äänellä" in place of "vapaasti", 30 Sep 2026: the first
+        // grandparent to tell into the app had to be asked out loud to speak
+        // up (PLAN.md §8). Said here, before the press, because the recording
+        // screen has no room left to say it at the largest size (`Squeeze`);
+        // "vapaasti" is what the longer form's second sentence says anyway.
         return typeSize.isAccessibilitySize || short
-            ? "Puhu ihan rauhassa ja vapaasti."
-            : "Puhu ihan rauhassa ja vapaasti. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
+            ? "Puhu ihan rauhassa ja kuuluvalla äänellä."
+            : "Puhu ihan rauhassa ja kuuluvalla äänellä. Ei tarvitse muistaa järjestystä eikä vuosilukuja — järjestämme ne puolestasi."
     }
 
     /// What is offered beside the big button, chosen by the ladder: easy enough
@@ -1769,6 +1774,11 @@ private struct Waveform: View {
 
 private struct ProcessingView: View {
     let phase: TellViewModel.Phase
+    /// Said while the words are awaited, and only when the recording is
+    /// already out of tmp (`TellViewModel.recordingIsKept`). The first
+    /// grandparent to use the app asked this screen *"Mistä tiedän että se on
+    /// tallessa?"*, and it had no answer (PLAN.md §8).
+    let voiceIsKept: Bool
 
     private var title: LocalizedStringKey {
         phase == .transcribing ? "Kuuntelen mitä sanoit" : "Järjestelen muistoa"
@@ -1783,6 +1793,18 @@ private struct ProcessingView: View {
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
+
+            // First, above the spinner: it answers what the teller is asking
+            // the moment the button is let go, before anything is waited for.
+            // "Tässä puhelimessa" because that is all that is true yet — and
+            // not the audio-saved screen's title, which the UI tests wait on.
+            if voiceIsKept {
+                Label("Äänesi on tallessa tässä puhelimessa", systemImage: "checkmark.circle.fill")
+                    .font(.title2.weight(.semibold))
+                    .foregroundStyle(Elder.affirmative)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             ProgressView()
                 .controlSize(.extraLarge)
