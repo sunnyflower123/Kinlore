@@ -9,12 +9,55 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-5B4A3E?labelColor=241A14" alt="Apache 2.0 licence"></a>
 </p>
 
-A family's shared memory archive for iPhone. Anyone in the family tells what
-they remember, out loud or in writing, and the AI gives it structure: memories
-attach to photos and people, the people and places named in the stories are
-proposed for the family to confirm, and open questions come back to be asked.
-The family tree is drawn from the people the family confirms and the
-relationships it enters by hand.
+Kinlore is a family's shared memory archive for iPhone. Anyone in the family
+tells what they remember, and the AI gives it structure. I built it for the
+[RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
+hackathon, in the Next Gen Award (the student category).
+
+## The short version
+
+- **What it does.** You tell a memory out loud or in writing. The AI proposes
+  the people and places it heard for the family to confirm, and asks follow-up
+  questions out loud. A date stays as vague as it was said.
+- **Who it is for.** Whoever wants to tell, often an older person. My own
+  grandparent tested it. One button, and every screen has to work at the
+  largest text size and with VoiceOver.
+- **How it earns.** One member pays $39.99 a month or $149.99 a year for the
+  whole family, and telling is never paywalled. The paywall is RevenueCatUI's
+  own view, the server asks RevenueCat's REST API what was bought, and
+  purchases run on the Test Store.
+- **Try it.** `./scripts/try-it.sh` on a Mac with Xcode and XcodeGen, no keys
+  needed ([the steps](#try-it)). `--paywall` shows the paywall and a simulated
+  purchase, with the Test Store key from the submission.
+- **Built with** SwiftUI · Cloudflare Workers + D1 + R2 · OpenRouter, called
+  only from the Worker.
+- **Tested.** 406 UI tests, including 127 accessibility sweeps at the default
+  and the largest text size. `./scripts/verify.sh` holds 64 checks that cost
+  nothing.
+
+<p align="center">
+  <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
+</p>
+
+<p align="center"><sub>Simulator, stub pipeline: the telling and the model call are canned.</sub></p>
+
+| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree." width="1179"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button." width="1179"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="1179"></a> |
+|---|---|---|
+| **Telling.** One button, a way to type instead, and two questions to start from. | **What comes back.** The two names it heard wait for a cross or a tick, each with the sentence it was heard in. | **Who is this?** Four names under a generated photograph, and nothing says which is the proposal. |
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/divider-dark.svg">
+    <img src="docs/logo/divider.svg" alt="" width="320">
+  </picture>
+</p>
+
+## The full version
+
+Everything below is the detail: what each part does, how it is built and
+tested, how to run it, how the paywall is wired, what it costs to run and how
+the data is protected; the longest version is
+[docs/DETAILS.md](docs/DETAILS.md).
 
 Album and genealogy apps ask for structured input: a form to fill in, a face to
 tag, a date to pick. A family's memory is not kept that way. It is told, a
@@ -30,19 +73,6 @@ them. The failure that matters here is not a crash but a story that never got
 told. So the app is quiet on purpose: no streaks and no numbers on the tabs,
 because a number on a tab is a debt, and the person the app waits for is often
 the oldest in the family.
-
-I built it for the [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
-hackathon, in the Next Gen Award (the student category).
-
-<p align="center">
-  <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
-</p>
-
-<p align="center"><sub>Simulator, stub pipeline: the telling and the model call are canned, the wait is held six seconds longer so its step can be read, and a debug launch argument does the scrolling.<br><code>scripts/readme-shots.sh</code> makes this GIF and the pictures below.</sub></p>
-
-| <a href="docs/media/01-tell.png"><img src="docs/media/mounted/01-tell.png" alt="The Tell screen: the heading Tell what you remember, the line Talk at your own pace, and speak up, a large red microphone button with Press and start talking under it, two questions to start from — Who is the oldest person you remember? and Where did you live as a child? — the links Write instead and Add a photograph, and the tabs Album, Tell and Family tree." width="1179"></a> | <a href="docs/media/02-result.png"><img src="docs/media/mounted/02-result.png" alt="The result screen scrolled to I heard these, with the line Write the name again if I heard it wrong. Nobody joins the family without your approval. Below it Aino and Toivo, each marked Person, with the sentence the name was heard in and a cross and a tick beside it; then Familiar names, where Puumala stands with its sentence and an A different place button." width="1179"></a> | <a href="docs/media/03-who-is-this.png"><img src="docs/media/mounted/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="1179"></a> |
-|---|---|---|
-| **Telling.** One button, and a way out of it for anyone who would rather type. Two questions wait under it for anyone who does not know where to begin. | **What comes back.** A later telling in the example archive. The two names it heard wait for a cross or a tick, because no name enters the family tree before somebody confirms it, and Puumala, a place the family has already confirmed, can still be corrected. Above them, as the GIF shows, the date is a decade because that is what was said; below them come the questions the app would still ask. | **Who is this?** One of the four names is the proposal, and nothing on the screen says which. The photograph is generated and shows nobody real; it stands in for the one the name was heard in. |
 
 ## What it does
 
@@ -73,17 +103,6 @@ hackathon, in the Next Gen Award (the student category).
   recordings and the photos.
 
 Every screen has to work at the largest text size and with VoiceOver (rule 1).
-
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/divider-dark.svg">
-    <img src="docs/logo/divider.svg" alt="" width="320">
-  </picture>
-</p>
-
-Everything below is for developers: how it is built and tested, how to run it,
-how the paywall is wired, what it costs to run and how the data is protected.
-The long version is [docs/DETAILS.md](docs/DETAILS.md).
 
 ## At a glance
 
