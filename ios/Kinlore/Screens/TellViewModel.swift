@@ -940,6 +940,9 @@ final class TellViewModel {
         // A starter is not a stored row, so this finds nothing and does nothing
         // — a starter is a prompt, not a debt. The ladder still learns from it.
         store.markAnswered(questionID: question.id, by: savedMemoryID)
+        // An opening question moves its list on, so the Tell screen offers the
+        // next one rather than the same one again.
+        QuestionLadder.recordOpeningAnswered(question.id)
         guard let answer else { return }
         QuestionLadder.record(
             QuestionLadder.outcome(

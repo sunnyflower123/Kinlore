@@ -516,6 +516,14 @@
 "Milloin tämä tapahtui?" = "When did this happen?";
 "Kuka on vanhin ihminen, jonka muistat?" = "Who is the oldest person you remember?";
 "Missä asuit lapsena?" = "Where did you live as a child?";
+"Mikä ruoka tuo mieleesi jonkun ihmisen?" = "Which food brings a person to mind?";
+"Mikä on vanhin esine, joka sinulla on?" = "What is the oldest thing you own?";
+"Kenestä suvussa kerrotaan hauskoja juttuja?" = "Who in the family do people tell funny stories about?";
+"Kenen luona oli mukavinta käydä kylässä?" = "Whose home did you most like to visit?";
+"Kuka opetti sinulle jotain, mitä osaat yhä?" = "Who taught you something you can still do?";
+"Mikä oli ensimmäinen eläin, jonka muistat?" = "What is the first animal you remember?";
+"Mikä juhla on sinulle tärkein?" = "Which celebration matters most to you?";
+"Mikä on ensimmäinen asia, jonka muistat?" = "What is the first thing you remember?";
 "Virheellinen osoite." = "Invalid address.";
 
 // The Tell screen's computed texts, photographed Finnish on an English phone (5 Sep 2026).
