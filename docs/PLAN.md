@@ -918,7 +918,8 @@ finished.**
      (`eec08b6`, `6469de2`). `FamilyKey` makes a 256-bit key when a family is
      created and carries it to everyone else inside the invitation; `body`,
      `raw_transcript`, subject titles, question text and the R2 objects are
-     sealed on the device. The store on disk stays plaintext — it is behind the
+     sealed on the device, and so are the facts and the story on a card, which
+     came later. The store on disk stays plaintext — it is behind the
      device passcode and it is what the export is written from — because a
      breach dumps the database and not the phone. Titles seal deterministically
      so that `sync.ts` can still tell a rename from a re-push without a schema
@@ -940,7 +941,9 @@ finished.**
        the questions still open on it and, since 19 Sep 2026, the photograph
        of a photo subject (`ExtractionContext`, ARCHITECTURE §12). A model
        cannot structure words it cannot read, and `/extract` stores none of
-       it.
+       it. A card's story (`/story`, ARCHITECTURE §27) sends the tellings
+       about the card the same way, for the same reason, and the story that
+       comes back is sealed before it syncs.
      - **The invitation carries the key**, so whatever app delivered that
        message has it. The server does not, which is the design; that is a
        smaller claim than end-to-end and `InviteShare` states it where the

@@ -1,18 +1,17 @@
 # The checks a stranger can trust without taking anybody's word for it.
 #
-# While this repository is private, a push runs nothing. The account's
-# included Actions minutes are spent (read on the billing page), and a run
-# refused for that fails in four to five seconds with no step executed, which
+# While this repository was private, a push ran nothing. The account's
+# included Actions minutes were spent (read on the billing page), and a run
+# refused for that failed in four to five seconds with no step executed, which
 # looks from outside exactly like a broken build. So the push job is skipped
 # on a private repository: a job whose `if:` is false is never started, and
-# GitHub reports it as skipped rather than failed. It runs by itself once the
-# repository is public, where Actions is free. The four-second failures were
+# GitHub reports it as skipped rather than failed. On the public repository,
+# where Actions is free, it runs on every push. The four-second failures were
 # first blamed on the macOS multiplier, and moving this job to Ubuntu did not
 # fix them, because no runner was ever started.
 #
-# Everything that needs Xcode runs on pull requests and on request, because a
-# macOS minute counts as ten on a private repository. Put those jobs back on
-# push once the repository is public.
+# Everything that needs Xcode runs on pull requests and on request, as it did
+# while the repository was private, where a macOS minute counts as ten.
 
 name: CI
 

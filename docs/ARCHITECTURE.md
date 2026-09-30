@@ -5171,7 +5171,8 @@ It stays for v1 because sealing it costs more than the honesty it buys today:
 `InviteShare`'s doc comment beside the invite text already says the smaller
 thing lever 3 promises about the key; this paragraph is where the whole of
 what a dump yields is written down. Sealed: memory bodies, raw transcripts,
-subject titles, question text, and the R2 bytes. In the clear: the family's
+subject titles, the facts and the story on a card (§26, §27), question text,
+and the R2 bytes. In the clear: the family's
 own name and its members' display names, timestamps and the carefully kept
 dates with their precision (rule 5), subject kinds, memory sources and audio
 lengths, sequence numbers, relationships, the mention graph — which memory

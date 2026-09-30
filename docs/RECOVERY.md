@@ -23,7 +23,8 @@ honestly.
 What a database dump yields is written down once, in
 [ARCHITECTURE.md §18](ARCHITECTURE.md#18-places-on-a-map--the-three-columns-and-what-they-cannot-promise)
 under *a decided leak*: sealed are memory bodies, raw transcripts, subject
-titles, question text and the R2 bytes; in the clear are the family's name, the
+titles, the facts and the story on a card, question text and the R2 bytes; in
+the clear are the family's name, the
 members' display names, dates, kinds, relationships, the mention graph and place
 coordinates. **The family key is on no server.** A dump without a phone is
 metadata beside ciphertext.

@@ -158,11 +158,12 @@ model credit, because a script you run twenty times a day must not cost money.
 
 CI runs that same script rather than a reimplementation of it, so the two cannot
 drift apart — but on pull requests and on request, not on every push. The Swift
-checks in it need macOS, a macOS minute is metered at ten while this repository
-is private, and every push getting one is how you find out in four seconds that
-the meter said no. Every push gets the backend type check, on Linux, once the
-repository is public; while it is private a push runs nothing, because the
-included minutes are spent and a refused run looks exactly like a broken build.
+checks in it need macOS, and that schedule was set while this repository was
+private, where a macOS minute is metered at ten and a run the meter refuses
+fails in four seconds. Every push gets the backend type check, on Linux, now
+that the repository is public; while it was private a push ran nothing,
+because the included minutes were spent and a refused run looks exactly like a
+broken build.
 
 | Claim | Command |
 |---|---|
@@ -346,7 +347,8 @@ than what is comfortable.
 
 **What the server keeps and cannot read.** Since 24 Aug 2026 the memory bodies,
 the raw transcripts, the subject titles, the question text and the bytes in R2 —
-the photographs and the voices — are sealed on the phone before they sync. The key
+the photographs and the voices — are sealed on the phone before they sync, and so
+are the facts and the story on a card, which came later. The key
 never reaches the Worker; between people it crosses only inside the invite text.
 `scripts/lever3-roundtrip-check.swift` puts two identities through a real
 deployment and checks both halves: that what lands in D1 and R2 is sealed, and
@@ -370,13 +372,16 @@ date and place of the subject it is filed under, the names already linked to
 it, the questions still open on it and, for a telling about a photograph, the
 photograph (`ExtractionContext.swift`). A photograph leaves once more when
 somebody asks for its colours, with the memories told about it, and that button
-says so before anything is sent. Every one of those requests carries
+says so before anything is sent. When a card's story is composed (`/story`), the
+tellings about it go the same way, with the card's title, date and confirmed
+names and who told each, and the story that comes back is sealed before it
+syncs. Every one of those requests carries
 `provider: { data_collection: "deny" }`, the flag that keeps the words out of a
 training set (rule 8, checked without sending anything by
 `scripts/data-collection-check.mjs`), and the Worker writes none of it down:
-transcription and colouring keep only their meters, extraction keeps nothing,
-and R2 receives only what `/media` is handed, which is sealed. So "cannot read"
-is a claim about what is *kept*.
+transcription and colouring keep only their meters, extraction and a story keep
+nothing, and R2 receives only what `/media` is handed, which is sealed. So
+"cannot read" is a claim about what is *kept*.
 End-to-end in the strict sense — a server that never holds the plaintext at
 all — is incompatible with server-side transcription, and sealing at rest does
 not close that hole.
