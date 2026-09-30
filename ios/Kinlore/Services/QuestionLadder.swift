@@ -281,7 +281,12 @@ enum QuestionLadder {
         let texts: [(String, QuestionLevel)]
         switch subject.kind {
         case .photo:
+            // What is remembered first, and who is in it second (30 Sep 2026).
+            // With the naming question first, the card read as face
+            // identification rather than as an invitation to tell. A fact
+            // question because a sentence answers it.
             texts = [
+                (String(localized: "Mitä muistat tästä kuvasta?"), .fact),
                 (String(localized: "Kuka tässä kuvassa on?"), .naming),
                 (String(localized: "Missä tämä kuva on otettu?"), .fact),
                 (String(localized: "Minä vuonna tämä suunnilleen otettiin?"), .fact),

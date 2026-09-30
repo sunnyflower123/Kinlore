@@ -2454,7 +2454,7 @@ final class AccessibilitySweepTests: XCTestCase {
             // The question *is* the title on a card. Asked for by its own
             // words, because that is the change: the screen stopped saying
             // "tell about this" and started asking something answerable.
-            require(app.staticTexts["Kuka tässä kuvassa on?"], "the card's question")
+            require(app.staticTexts["Mitä muistat tästä kuvasta?"], "the card's question")
             require(app.buttons["En muista tätä"], "the way past a card")
         }
     }

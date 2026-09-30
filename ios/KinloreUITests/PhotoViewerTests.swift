@@ -194,14 +194,14 @@ final class PhotoViewerTests: XCTestCase {
     }
 
     /// The Kerro tab's card opens its photograph too, where the question under
-    /// it is often who is in it, and closing it leaves the card as it was:
+    /// it asks what is remembered of it, and closing it leaves the card as it was:
     /// the question and the way past it, not the next card.
     func testTheKerroTabsCardOpensItsPhotograph() {
         let app = launch(["-seed", "deck"])
-        XCTAssertTrue(app.staticTexts["Kuka tässä kuvassa on?"].waitForExistence(timeout: 15), "never arrived: the card")
+        XCTAssertTrue(app.staticTexts["Mitä muistat tästä kuvasta?"].waitForExistence(timeout: 15), "never arrived: the card")
 
         opensAndCloses("Valokuva, josta ei ole vielä kerrottu", in: app)
-        XCTAssertTrue(app.staticTexts["Kuka tässä kuvassa on?"].exists, "closing the photograph took the card's question with it")
+        XCTAssertTrue(app.staticTexts["Mitä muistat tästä kuvasta?"].exists, "closing the photograph took the card's question with it")
         XCTAssertTrue(app.buttons["En muista tätä"].exists, "closing the photograph took the way past the card with it")
     }
 

@@ -3120,7 +3120,11 @@ experiment, and it needs no new UI — both paths already exist.
 first two — with no LLM call, no network and no AI minutes. Their level is
 written out beside each text rather than read off it, so a reworded starter
 cannot quietly become harder than the one place in the app that promises an
-easy question: a photo and a person open at `.naming`, a place at `.fact`.
+easy question: a person opens at `.naming`, a photo and a place at `.fact`.
+A photo opened at `.naming` with *"Kuka tässä kuvassa on?"* until 30 Sep
+2026, and a card that asked who was in the picture read as face
+identification rather than an invitation to tell, so *"Mitä muistat tästä
+kuvasta?"* comes first and the naming question second.
 They are **not stored and not synced**: thirty imported photographs would
 otherwise put sixty rows into the family's open-question list and make the
 list worthless. A starter is a prompt, not a debt.
@@ -6080,7 +6084,7 @@ own reasoning rejects.
 **A photograph is a question that needs no writing.** That is the whole idea,
 and almost all of it was already built: the Tell screen has been able to open
 on a subject since it was written — `target` is what makes the title *"Kerro
-tästä kuvasta"* and the starter *"Kuka tässä kuvassa on?"* appear — and
+tästä kuvasta"* and the starter *"Mitä muistat tästä kuvasta?"* appear — and
 `QuestionLadder.starters(for:)` has carried starters for all four `kind` values
 from the beginning. What was missing was somebody choosing the subject when
 nobody had navigated to one. `Deck` is that somebody, and it adds no screen, no

@@ -648,7 +648,7 @@ private struct IdleView: View {
     /// the other end: two starters below the button are three lines the screen
     /// does not have, and they pushed "Kirjoita sen sijaan" under the tab bar at
     /// the ordinary text size. A starter says what to do more concretely than
-    /// the reassurance does — "Kuka tässä kuvassa on?" is the permission. And
+    /// the reassurance does — "Mitä muistat tästä kuvasta?" is the permission. And
     /// on a phone too small for the long one, which is `Squeeze.shortReassurance`.
     ///
     /// Once per install it says something else entirely. The first press does
@@ -867,7 +867,7 @@ private struct IdleView: View {
         }
     }
 
-    /// The card's one question — the smallest thing this app can ask, and on a
+    /// The card's one question — the photograph's first starter, and on a
     /// card it is the whole screen's title.
     ///
     /// This is the shape the design was drawn in: picture, question, button,

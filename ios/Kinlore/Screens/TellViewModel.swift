@@ -708,8 +708,9 @@ final class TellViewModel {
     /// A subject nobody has spoken about yet has no questions of its own —
     /// extraction only makes them once there is a memory to make them from — so
     /// the first contact with a photo used to be a blank button. A starter is
-    /// the smallest thing this app can ask: "Kuka tässä kuvassa on?" is three
-    /// seconds of speech and it cannot be got wrong.
+    /// a small question that cannot be got wrong: "Mitä muistat tästä
+    /// kuvasta?" takes whatever comes to mind first, and "Kuka tässä kuvassa
+    /// on?" is three seconds of speech.
     ///
     /// Used for the subject's own open questions too. The memory is going to the
     /// same place either way, so there is nothing to present on top of this
