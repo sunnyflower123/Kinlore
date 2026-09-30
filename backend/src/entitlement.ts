@@ -61,10 +61,14 @@ export async function applyEntitlement(
 			.run()
 	}
 
-	// The family's right, read rather than remembered.
+	// The family's right, read rather than remembered, and only from those
+	// still in it. A payer who has left keeps their own purchase, and their
+	// row is kept so their name still resolves on what they told; until
+	// 30 Sep 2026 that row went on paying for a family they were no longer in.
 	const furthest = await env.DB.prepare(
 		`SELECT id, entitlement_expires_at FROM member
 		 WHERE family_id = ? AND entitlement_expires_at IS NOT NULL
+		   AND left_at IS NULL
 		 ORDER BY entitlement_expires_at DESC LIMIT 1`,
 	)
 		.bind(familyID)
@@ -356,6 +360,30 @@ export async function handleWebhook(env: Env, event: WebhookEvent) {
 	// Unknown customer: the purchase happened before the app got to report the
 	// id. Not an error — the next /entitlement/sync fixes it.
 	if (!member) return { ignored: 'unknown_customer' as const }
+
+	// What the customer owns now, rather than what this one event says.
+	//
+	// Events are not delivered in order, and RevenueCat retries any it did not
+	// get a 200 for. An EXPIRATION that arrived after the RENEWAL following it
+	// wrote NULL over the renewed date and put a paying family on the free
+	// tier, and nothing corrected it until the payer's own phone next came to
+	// the front, because `quota.isPaid` never re-asks a family whose word is
+	// already `free` (30 Sep 2026). So the event is only the cue: the answer
+	// is RevenueCat's own, as `/entitlement/sync` already takes it, and a
+	// late or repeated event applies the same answer twice. When RevenueCat
+	// cannot be asked, the event decides, as it did before.
+	if (env.RC_SECRET_KEY && env.RC_PROJECT_ID) {
+		try {
+			const items = await fetchActiveEntitlements(env, customerID)
+			const result = await applyEntitlement(
+				env, member.family_id, member.id, furthestExpiry(items),
+			)
+			console.log(`[entitlement] ${event.type} → ${result.entitlement}, verified`)
+			return result
+		} catch {
+			// Logged by `fetchActiveEntitlements`, status and code only.
+		}
+	}
 
 	const revoking = revokes(event)
 	const expires = revoking

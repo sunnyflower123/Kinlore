@@ -131,7 +131,7 @@ has, and the reason to distrust this table is that it has been wrong in exactly
 this way before.
 
 **Known issues, found on 30 Sep 2026.** A review on the day of submission
-read the promises against the code again. Two of its findings were fixed the
+read the promises against the code again. Four of its findings were fixed the
 same day:
 
 - **A relationship taken back and made again stopped that phone's sync.**
@@ -147,6 +147,19 @@ same day:
   cleared the rows it sent by id, and the pull after it put the server's
   older copy back. It now clears a row only if it still encodes to what was
   sent.
+- **The webhook believed each event.** An `EXPIRATION` delivered after the
+  `RENEWAL` that followed it put a paying family on the free tier until the
+  payer's phone next synced. The webhook now asks RevenueCat's REST API what
+  the customer owns, as `/entitlement/sync` does, and the event decides only
+  when RevenueCat cannot be asked. `webhook-revocation-check.mjs` drives it
+  with RevenueCat replaced.
+- **A payer who had left went on paying for the family.** The family's right
+  is now the furthest date among the members still in it, and it is worked
+  out again when a payer leaves, is removed or comes back.
+
+`RC_ENTITLEMENT_ID` is still read by no code, on purpose: RevenueCat's v2 API
+names an entitlement by an internal id rather than by `archive`, and the app
+has one paid tier (docs/SETUP.md).
 
 The rest were not fixed that day, because each touches the production
 schema, the recorder or the money, and a change there on the last day is a
@@ -158,8 +171,6 @@ them twice.
   `colour` upload is not counted. Only a modified client gets past it.
 - **Rule 4 is kept by the app, not the Worker.** A pushed subject without
   `confirmed` is stored as confirmed.
-- **The webhook does not order events.** An `EXPIRATION` delivered after a
-  `RENEWAL` ends a paid family until the payer's phone next syncs.
 - **A telling is lost if the app is killed mid-recording.** The recorder
   writes AAC into an `.m4a`, which is unreadable until it is finished, and the
   next launch's sweep removes it. A telling interrupted any other way is kept.
