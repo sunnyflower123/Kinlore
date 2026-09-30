@@ -937,6 +937,8 @@
 "Uusi paikka" = "New place";
 "Arkiston paikat" = "The archive's places";
 "Ei paikkaa" = "No place";
+"Vaihda paikka" = "Change the place";
+"Valitse, missä kuva on otettu." = "Choose where the photograph was taken.";
 "Kortille ei mahdu enempää tietoja." = "The card has no room for more facts.";
 
 /* A telling taken back, and brought back by its teller from the card (26 Sep 2026, ARCHITECTURE §19). */

@@ -803,6 +803,8 @@
 "Uusi paikka" = "Uusi paikka";
 "Arkiston paikat" = "Arkiston paikat";
 "Ei paikkaa" = "Ei paikkaa";
+"Vaihda paikka" = "Vaihda paikka";
+"Valitse, missä kuva on otettu." = "Valitse, missä kuva on otettu.";
 "Kortille ei mahdu enempää tietoja." = "Kortille ei mahdu enempää tietoja.";
 
 /* A telling taken back, and brought back by its teller from the card (26 Sep 2026, ARCHITECTURE §19). */

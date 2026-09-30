@@ -6973,6 +6973,28 @@ honey itself (`elderSecondarySurface`, the surface `elderSecondary` puts
 round every label it styles); until it did, on 28 Sep 2026, the place stood
 beside the date chip as bare words a line higher.
 
+**Two places as strong as each other, and the one chosen — 30 Sep 2026.**
+The last rule above, the name, made a choice nobody had made. Found on a
+real phone: a telling about a birthday in the kitchen in Oulu that also said
+the grandmother had gone home to Kempele, with both confirmed, put the
+photograph in Kempele, because K comes before O, and there was no way to say
+otherwise. Now every place tied at the top of the first three rules gets a
+chip, in name order, since the tellings do not say which one it was; and a
+photograph's caption has *Vaihda paikka* beside its places, which opens
+`FactPlaceSheet` and makes the chosen place the caption's only one
+(`MemoryStore.choosePlace`, `Subject.chosenPlaceID`). It is offered only
+where the caption already has a place, so a place still gets onto a card by
+being told, and *Ei paikkaa* takes the choice back and hands the caption to
+the tellings again. The choice is a fact of the kind `photo_place` in the
+photograph's own fact list (§26): the same sealed column, the same join
+between phones, and no new column. The Worker kept facts for a person only
+until the same day, and now keeps them for a photograph too
+(`facts-sync-check.mjs`); a Worker not yet deployed with that change leaves
+the choice on the phone that made it, where a pull does not take it away
+(`withFacts`). An older build has no word for the kind and shows nothing,
+because a photograph's card has no facts section. Not measured on a
+simulator when it was written: no UI test drives the sheet or a tie yet.
+
 The layout is the one phase A's comparison recommended (version 3's
 caption) with version 1's log. Phase A's six layouts behind `-storyCard N`,
 the second screen they were drawn on and the copies of the card's sections

@@ -797,6 +797,8 @@ struct SubjectDetailScreen: View {
     @State private var isAsking = false
     @State private var isCorrectingName = false
     @State private var isDating = false
+    /// "Vaihda paikka" on a photograph's caption: where it was taken.
+    @State private var isChoosingPlace = false
     @State private var isRenaming = false
     /// The picker for the face on a person's card (§25).
     @State private var isChoosingFace = false
@@ -1046,14 +1048,33 @@ struct SubjectDetailScreen: View {
 
     private var logOpen: Bool { logIsOpen ?? (story == nil) }
 
-    /// The place the card's own tellings name most, for the caption: a
-    /// confirmed place before any other, then the one named in the most
-    /// tellings, then the one named most recently, then by name so that the
-    /// choice does not move between two redraws. A place heard and not yet
-    /// confirmed is shown only where no confirmed one is named, and never as
-    /// a point (rule 4). None on a place's own card, which is the place.
-    private var captionPlace: Subject? {
-        guard current.kind != .place else { return nil }
+    /// The place a photograph was taken in, where somebody chose it by hand
+    /// (`MemoryStore.choosePlace`): followed through a merge, and nothing
+    /// where the place was since taken back.
+    private var chosenPlace: Subject? {
+        guard let id = current.chosenPlaceID, let place = store.subject(id: id),
+              place.kind == .place, place.deletedAt == nil
+        else { return nil }
+        return place
+    }
+
+    /// The places for the caption. A place chosen by hand on a photograph is
+    /// the one answer. Otherwise the place the card's own tellings name
+    /// most: a confirmed place before any other, then the one named in the
+    /// most tellings, then the one named most recently. A place heard and
+    /// not yet confirmed is shown only where no confirmed one is named, and
+    /// never as a point (rule 4). None on a place's own card, which is the
+    /// place.
+    ///
+    /// **Every place tied at the top, since 30 Sep 2026.** The last rule was
+    /// the name, so that the choice did not move between two redraws, and
+    /// a telling that named the kitchen in Oulu and the grandmother gone home
+    /// to Kempele put the photograph in Kempele, because K comes before O.
+    /// Two places that the tellings name as strongly as each other are both
+    /// shown, by name, and *"Vaihda paikka"* is how a person says which.
+    private var captionPlaces: [Subject] {
+        guard current.kind != .place else { return [] }
+        if let chosenPlace { return [chosenPlace] }
         var named: [String: (place: Subject, tellings: Int, latest: Date)] = [:]
         for memory in store.memories(for: subject.id) {
             var seen = Set<String>()
@@ -1070,12 +1091,18 @@ struct SubjectDetailScreen: View {
                 )
             }
         }
-        return named.values.min { a, b in
+        guard let top = named.values.min(by: { a, b in
             if a.place.confirmed != b.place.confirmed { return a.place.confirmed }
             if a.tellings != b.tellings { return a.tellings > b.tellings }
-            if a.latest != b.latest { return a.latest > b.latest }
-            return a.place.displayTitle < b.place.displayTitle
-        }?.place
+            return a.latest > b.latest
+        }) else { return [] }
+        return named.values
+            .filter {
+                $0.place.confirmed == top.place.confirmed
+                    && $0.tellings == top.tellings && $0.latest == top.latest
+            }
+            .map { $0.place }
+            .sorted { $0.displayTitle < $1.displayTitle }
     }
 
     /// The plan, carried out. Clearing a story and dropping a proposal are
@@ -1830,6 +1857,11 @@ struct SubjectDetailScreen: View {
         .sheet(isPresented: $isDating) {
             DateSheet(subject: current)
         }
+        .sheet(isPresented: $isChoosingPlace) {
+            FactPlaceSheet(chosen: current.chosenPlaceID) { placeID in
+                store.choosePlace(placeID, forPhoto: current.id)
+            }
+        }
         .sheet(isPresented: $isChoosingFace) {
             FacePickerSheet(subject: current)
         }
@@ -2004,8 +2036,8 @@ struct SubjectDetailScreen: View {
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
 
-        let place = captionPlace
-        if datable || place != nil {
+        let shownPlaces = captionPlaces
+        if datable || !shownPlaces.isEmpty {
             ChipRow {
                 if datable {
                     // The date chip as it was on its own row until 28 Sep
@@ -2027,8 +2059,25 @@ struct SubjectDetailScreen: View {
                         .font(.body.weight(.medium))
                     }
                 }
-                if let place {
+                ForEach(shownPlaces) { place in
                     placeChip(place)
+                }
+                // Only where the caption already has a place: telling is
+                // still how a place gets onto a card, and this says which
+                // of the places told is the one the photograph was taken in.
+                if current.kind == .photo, !shownPlaces.isEmpty {
+                    Button {
+                        isChoosingPlace = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "pencil")
+                            Text("Vaihda paikka")
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .font(.body.weight(.medium))
+                    }
+                    .accessibilityHint("Valitse, missä kuva on otettu.")
+                    .accessibilityIdentifier("caption.choosePlace")
                 }
             }
         }

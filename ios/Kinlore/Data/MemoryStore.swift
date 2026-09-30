@@ -631,6 +631,25 @@ final class MemoryStore {
         save()
     }
 
+    /// Where a photograph was taken, chosen by hand on its card, or nil to
+    /// take the choice back and let the tellings decide again. Two places
+    /// named in the same telling — the kitchen in Oulu, the grandmother who
+    /// had gone home to Kempele — are as strong as each other, and only a
+    /// person knows which one the photograph was taken in.
+    func choosePlace(_ placeID: String?, forPhoto subjectID: String) {
+        guard let photo = subject(id: subjectID), photo.kind == .photo else { return }
+        let held = (photo.facts ?? [])
+            .filter { $0.isLive && $0.kind == PersonFact.photoPlaceKind }
+            .max { $0.updatedAt < $1.updatedAt }
+        if let placeID {
+            var fact = held ?? PersonFact(kind: PersonFact.photoPlaceKind)
+            fact.placeSubjectID = placeID
+            setFact(fact, on: photo.id)
+        } else if let held {
+            removeFact(id: held.id, from: photo.id)
+        }
+    }
+
     /// A photograph's colours, the moment somebody said yes to them.
     ///
     /// Only `ColourSheet`'s "Kyllä" calls this, and only with a file the lock

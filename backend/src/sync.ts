@@ -473,15 +473,16 @@ export async function push(env: Env, session: Session, payload: PushPayload) {
 				? value
 				: null
 		// The facts on a person's card: one sealed list under a moment, and
-		// only a person has one. The Worker can read nothing in the list, so
-		// the rule is the face's -- the newest wins whole, and a NULL moment
-		// is never later than anything. Both or neither: a list that is not
-		// a string, one past the cap, or a moment that is not a finite number
-		// is no opinion, and the rules below leave the row's own alone. A
-		// moment ahead of the clock is held to now, so it cannot lock out
-		// every later list.
+		// only a person and a photograph have one -- a photograph's carries
+		// where it was taken, chosen by hand (30 Sep 2026). The Worker can
+		// read nothing in the list, so the rule is the face's -- the newest
+		// wins whole, and a NULL moment is never later than anything. Both
+		// or neither: a list that is not a string, one past the cap, or a
+		// moment that is not a finite number is no opinion, and the rules
+		// below leave the row's own alone. A moment ahead of the clock is
+		// held to now, so it cannot lock out every later list.
 		const facts =
-			subject.kind === 'person' &&
+			(subject.kind === 'person' || subject.kind === 'photo') &&
 			typeof subject.facts === 'string' &&
 			subject.facts.length <= MAX_FACTS_LENGTH &&
 			typeof subject.facts_set_at === 'number' &&

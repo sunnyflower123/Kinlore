@@ -217,6 +217,11 @@ struct PersonFact: Identifiable, Codable, Hashable {
     /// it a person can see, on the field.
     static let textLimit = 300
 
+    /// The kind of the one fact a photograph carries: where it was taken
+    /// (`Subject.chosenPlaceID`). Not in `PersonFactKind.known`, because a
+    /// person's card must never offer it.
+    static let photoPlaceKind = "photo_place"
+
     /// The words as the list keeps them: trimmed, cut at `textLimit`, and
     /// nil where nothing is left.
     static func cut(_ text: String) -> String? {
@@ -456,6 +461,21 @@ struct Subject: Identifiable, Codable, Hashable {
             let (a, b) = (PersonFactKind.rank($0.kind), PersonFactKind.rank($1.kind))
             return a != b ? a < b : $0.updatedAt < $1.updatedAt
         }
+    }
+
+    /// Where a photograph was taken, when somebody chose it by hand
+    /// (`MemoryStore.choosePlace`): the id of a place card, or nil where
+    /// nobody has, and the caption then works it out from the tellings.
+    /// Kept as a fact of its own kind in the photograph's fact list, so that
+    /// it travels in the sealed column a person's facts already use, and a
+    /// phone that has no word for the kind never shows it, because a
+    /// photograph's card has no facts section. The newest wins where two
+    /// phones each chose one before they met.
+    var chosenPlaceID: String? {
+        (facts ?? [])
+            .filter { $0.isLive && $0.kind == PersonFact.photoPlaceKind }
+            .max { $0.updatedAt < $1.updatedAt }?
+            .placeSubjectID
     }
 
     /// A photo is imported without a title on purpose, because nobody will name

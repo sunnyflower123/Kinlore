@@ -164,9 +164,14 @@ try {
 		await push(mummo, [row({ facts: 'x'.repeat(65_537), facts_set_at: T + 600 })])
 		await unchanged('a list past the cap is no opinion')
 		const photo = randomUUID()
-		await push(mummo, [{ id: photo, kind: 'photo', title: '', created_at: 0, facts: sealed(), facts_set_at: T + 600 }])
+		const taken = sealed()
+		await push(mummo, [{ id: photo, kind: 'photo', title: '', created_at: 0, facts: taken, facts_set_at: T + 600 }])
 		const p = await facts(photo)
-		check('and only a person has facts', p.list === null && p.at === null, JSON.stringify(p))
+		check('a photograph has facts too, for the place it was taken in', p.list === taken && p.at === T + 600, JSON.stringify(p))
+		const place = randomUUID()
+		await push(mummo, [{ id: place, kind: 'place', title: 'Oulu', created_at: 0, facts: sealed(), facts_set_at: T + 600 }])
+		const q = await facts(place)
+		check('and a place has none', q.list === null && q.at === null, JSON.stringify(q))
 	}
 
 	console.log('— a wrong clock —')
