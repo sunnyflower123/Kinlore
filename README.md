@@ -16,21 +16,21 @@ I built it for the
 hackathon, in the Next Gen Award (the student category).
 
 <p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
-Its app shots are recordings of the real app in the iOS Simulator: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline. The grandmother's voice and the photographs are stand-ins, because a real family's recordings are private; my grandma's own test was on a real iPhone.</p>
+Its app shots are recordings of the real app in the iOS Simulator: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline. Its voices and photographs are synthetic stand-ins: a real family's recordings and photos are private, and I chose not to publish my own voice. My grandma's own test was on a real iPhone.</p>
 
 ## Why I built it
 
 In the summer I went to my great-grandmother's memorial. I have no memories of
 her, and I went to learn who she was. The host passed her photographs round
-and asked what people remembered, and twenty people who all had stories could
-not start one. Kinlore gives a family somewhere to start: a photo and a
+and asked what people remembered, and about twenty people who all had stories
+could not start one. Kinlore gives a family somewhere to start: a photo and a
 question.
 
-My grandma was its first real teller, speaking into the production build on a
-real iPhone. Her first question was *"How do I know it's saved?"*, so the
-screen now says so while it waits. She asked what she should say, which is
-what the photo and the questions are for. And I had to ask her to speak up, so
-now the Tell screen asks for that too.
+My grandma has told stories into the production build on a real iPhone. One
+thing she asked was *"How do I know it's saved?"*, so the screen now says so
+while it waits. She asked what she should say, which is what the photo and the
+questions are for. And I asked her to speak up, so now the Tell screen asks for
+that too.
 
 I built it alone, alongside starting upper secondary school, with Claude Code
 doing most of the typing. The decisions are mine, and
