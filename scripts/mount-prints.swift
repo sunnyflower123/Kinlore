@@ -1,5 +1,5 @@
-// The README's pictures as prints in a photo album: the three stills in the
-// table and the demo GIF above them.
+// The README's pictures as prints in a photo album: the stills in the table
+// and the demo GIF above them.
 //
 // A screenshot taken with `--mask=black` has the phone's rounded corners drawn
 // in black (readme-shots.sh says why the mask is on), and an album print has
@@ -23,7 +23,7 @@
 //   xcrun swiftc -O -o /tmp/mount scripts/mount-prints.swift
 //   /tmp/mount <in.png|in.gif> <out> [<in> <out> …]
 //
-// readme-shots.sh runs it on the first three stills after taking them, and on
+// readme-shots.sh runs it on the stills it takes for the table, and on
 // docs/media/demo.gif after making it. A still's print is 480 px wide, about
 // twice what a table column gives it on github.com.
 

@@ -3,6 +3,9 @@
 #
 # Every image under docs/media/ is a screenshot of a seeded state on a
 # simulator, in English, because the app is presented and judged in English.
+# Three are not: 10-asks-back, 11-story and 12-colours are frames of the demo
+# video's simulator recordings, where the model calls were real, so no seed
+# can retake them. They come from the video project and were mounted by hand.
 # The first set was taken by hand on 16 Aug 2026 and stayed Finnish for six
 # weeks, because retaking seven images by hand is an afternoon nobody has on
 # the last day. This is that afternoon as one command, so that the pictures
@@ -201,12 +204,19 @@ still "$MEDIA/05-family.png"      -seed family -tab people -screen family
 still "$MEDIA/06-result-default.png" -seed empty -screen result
 still "$MEDIA/06-result-xxxl.png" -seed empty -screen result \
 	-UIPreferredContentSizeCategoryName UICTContentSizeCategoryAccessibilityXXXL
-# The README's table shows the first three as prints in an album, squared off
-# and held by photo corners (mount-prints.swift says how). docs/DETAILS.md and
-# Devpost keep the screenshots themselves.
+# The family's map, opened on the example family's cottage: its pin, the card
+# that says who confirmed it, and the town of Puumala as a circle. The tiles
+# are Apple Maps', so this still needs the network.
+still "$MEDIA/13-map.png"         -seed large -tab memories -screen placesMap -place large-place-mokki
+# The README's table shows these as prints in an album, squared off and held
+# by photo corners (mount-prints.swift says how). docs/DETAILS.md and Devpost
+# keep the screenshots themselves.
 "$TMP/mount" "$MEDIA/01-tell.png" "$MEDIA/mounted/01-tell.png" \
 	"$MEDIA/02-result.png" "$MEDIA/mounted/02-result.png" \
-	"$MEDIA/03-who-is-this.png" "$MEDIA/mounted/03-who-is-this.png"
+	"$MEDIA/03-who-is-this.png" "$MEDIA/mounted/03-who-is-this.png" \
+	"$MEDIA/05-family.png" "$MEDIA/mounted/05-family.png" \
+	"$MEDIA/06-result-xxxl.png" "$MEDIA/mounted/06-result-xxxl.png" \
+	"$MEDIA/13-map.png" "$MEDIA/mounted/13-map.png"
 # The GIF is picture 2's telling from the start. The stub pipeline reaches
 # the result about three seconds after launch, which is two frames of the
 # processing screen, so `-processing slow` holds it six seconds longer for its
