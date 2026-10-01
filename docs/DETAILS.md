@@ -203,6 +203,23 @@ an older person. The run that chose it read 68 % and 37.8 %, so both runs missed
 both bars. English, in the second run, reads 60 % on names and a word error rate
 of 29.9 %: below the name bar too, and a tenth of a point inside the other.
 
+**Measured again on 1 Oct 2026, through the app's own path.** The same twelve
+Finnish and twelve English samples went to a local Worker's `/transcribe`, so
+the model heard `backend/src/transcribe.ts`'s full prompt rather than the
+bench's, and the bench's own metrics scored the text
+([`scripts/asr-worker-bench.mjs`](../scripts/asr-worker-bench.mjs), one run).
+Finnish proper nouns came out at 89 % on clean speech, 100 % on quiet speech,
+72 % with room noise and 28 % on the hardest step, which is quiet, noisy and
+muffled at once: 72 % over all four, still under the bar. The word error rate
+was 12.4 % clean and 31.4 % over all four. The one name missed in clean speech
+was heard and lost its case ending (*Sotkamoon* written as *Sotkamo*). On the
+hardest step the model did not leave gaps: it wrote a different, fluent story
+with two of the right first names in it, which is the strongest argument yet
+for keeping the recording and asking a person. English read 100 % clean and
+quiet, 72 % with noise and 0 % on the hardest step. Each step holds only seven
+names in three short texts, so one name moves it by fourteen points or more,
+and it is still synthesised speech.
+
 The concept was not dropped anyway, and
 [PLAN.md §8](PLAN.md#risk-2-honestly) argues why in full: the original audio
 is always kept and is playable, the raw transcript is kept beside the cleaned
@@ -650,7 +667,7 @@ the family can neither export nor clear.
 |-----------|----------|
 | `ios/` | SwiftUI app. The project is generated from `project.yml` with XcodeGen. |
 | `backend/` | Cloudflare Worker + D1 (metadata) + R2 (photos and audio). |
-| `scripts/` | The checks in the table above, plus `asr-bench.mjs` and the logo tooling. |
+| `scripts/` | The checks in the table above, plus `asr-bench.mjs`, `asr-worker-bench.mjs` and the logo tooling. |
 | `docs/` | `PLAN.md` (scope, schedule, risks), `ARCHITECTURE.md`, `SETUP.md`, `UX.md` (the arc between the screens), `VIDEO.md` (the demo video's shot list), `RECOVERY.md` (when something on the server has gone wrong), `logo/`. |
 | `.claude/` | The Claude Code setup the sessions here share: the [guideline file](../.claude/skills/karpathy-guidelines/SKILL.md) they work under — vendored, MIT, [why](DEVELOPMENT.md#the-assistants-rules--checked-in-not-personal-setup); a hook in `settings.json` (`hooks/big-read.sh`, `hooks/big-read.mjs`) that stops a whole-file read of a large file; and a `bulk-reader` subagent (`agents/bulk-reader.md`) that reads many files and reports file:line facts. |
 

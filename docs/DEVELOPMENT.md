@@ -517,6 +517,12 @@ cd backend && npm run db:export
 # ASR comparison
 node scripts/asr-bench.mjs samples/
 
+# The same samples through the app's own path: a local Worker's /transcribe,
+# so the model hears transcribe.ts's prompt and the key stays in the Worker.
+# Needs `npx wrangler dev`; spends OpenRouter credit (24 short calls) and
+# leaves two throwaway families in the local database.
+node scripts/asr-worker-bench.mjs http://localhost:8787
+
 # The export, opened. The one output that leaves the app for good, and its
 # promise — "avautuu millä tahansa koneella ilman tätä sovellusta" — is not
 # something XCUITest can check: the file lands in the app's container and the

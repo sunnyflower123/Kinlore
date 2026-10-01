@@ -23,6 +23,13 @@ hackathon, in the Next Gen Award (the student category).
 - **AI proposes, a human confirms.** Names it heard wait for a yes before they
   enter the family tree. A blind check shows the photograph and asks *Who is
   this?* over three or four names, the proposal unmarked.
+- **Measured, and built around what it misses.** On the bench's synthetic
+  Finnish speech, the shipped model writes 89 % of proper nouns exactly right
+  when the speech is clean, 72 % with room noise, and 28 % when the voice is
+  also quiet and muffled, where it writes a fluent wrong story instead
+  ([measured 1 Oct 2026](docs/DETAILS.md#measured-not-claimed)). So the
+  recording is always kept, every name waits for a person, and any name can be
+  corrected later.
 - **Vague dates stay vague, and nothing is thrown away.** "Sometime in the
   fifties" is stored as a decade, and the original recording and the raw
   transcript are always kept.
@@ -54,8 +61,8 @@ hackathon, in the Next Gen Award (the student category).
   before sync, with a key the Worker never gets. It is not end-to-end: a model
   gets them unsealed to transcribe, structure or colour.
 - **Tested.** 406 UI tests, including 127 accessibility sweeps at the default
-  and the largest text size. `./scripts/verify.sh` holds 64 checks that spend
-  no API credit.
+  and the largest text size, where body text is about three times its default
+  size. `./scripts/verify.sh` holds 64 checks that spend no API credit.
 - **Known limits:** a paying family has no AI ceiling or rate limit yet, so a
   heavy one costs more than either plan brings in
   ([costs](#what-a-family-costs-to-run)), and the purchase check trusts the
