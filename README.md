@@ -22,7 +22,7 @@ hackathon, in the Next Gen Award (the student category).
   it listens to each answer.
 - **AI proposes, a human confirms.** Names it heard wait for a yes before they
   enter the family tree. A blind check shows the photograph and asks *Who is
-  this?* over three or four names, the proposal unmarked.
+  in this photo?* over three or four names, the proposal unmarked.
 - **Measured, and built around what it misses.** On the bench's synthetic
   Finnish speech, the shipped model writes 89 % of proper nouns exactly right
   when the speech is clean, 72 % with room noise, and 28 % when the voice is
