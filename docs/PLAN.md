@@ -1,7 +1,8 @@
 # Plan — Shipaton 2026 / Next Gen
 
 Name: **Kinlore** (decided 15 Aug 2026, §10)
-Contest: RevenueCat Shipaton 2026, 1 Aug – 30 Sep 2026
+Contest: RevenueCat Shipaton 2026, 1 Aug – 1 Oct 2026 (the 30 Sep deadline was
+extended by 12 hours, to noon Pacific time on 1 Oct)
 **Target category: Next Gen Award** (student category, $15,000). The store route
 was a conditional option to be decided on 10 Sep; **closed for good on
 24 Aug 2026** — see §2.1. Next Gen is the only target.
