@@ -20,6 +20,11 @@ Its app shots are simulator recordings of the real app: the transcripts, the fol
 
 ## The short version
 
+**Why not just a voice memo?** A memo keeps a story but knows nothing about
+it. Kinlore asks back, attaches each telling to the photo and the people in
+it, stores "sometime in the fifties" as a decade, and gathers the whole
+family's tellings into one archive, each from their own phone, with no login.
+
 - **Tell, and it asks back.** Press one button and talk about an old photo in
   English or Finnish, or type instead. Follow-up questions come out loud, and
   it listens to each answer.
@@ -33,36 +38,19 @@ Its app shots are simulator recordings of the real app: the transcripts, the fol
   ([measured 1 Oct 2026](docs/DETAILS.md#measured-not-claimed)). So the
   recording is always kept, every name waits for a person, and any name can be
   corrected later.
-- **Vague dates stay vague, and nothing is thrown away.** "Sometime in the
-  fifties" is stored as a decade, and the original recording and the raw
-  transcript are always kept.
-- **The whole family.** Everyone joins on their own phone through an invite
-  link, with no login. Paper photos are photographed straight in and can be
-  coloured from what the family told about them.
 - **Who it is for.** Whoever wants to tell, often an older person. My
   grandparent tested it; their question, "How do I know it's saved?", is why
   the screen now says *Your voice is kept on this phone* while it waits.
-- **Who pays.** Often not the one who tells: one member subscribes, $39.99 a
-  month or $149.99 a year, and the backend grants it to the whole family,
-  checked with RevenueCat's REST API and webhook.
-- **Free tier.** Ten minutes of transcription a month, twenty photographs in
-  all and five colourisations a month. Telling itself is never limited: a
-  recording over the limit is kept and waits for its text.
-- **The paywall** is RevenueCatUI's own view. The result screen offers it after
-  every third telling, but never when that telling proposed names to confirm or
-  on a phone with *Larger text* on, a grandparent's.
-- **What it costs.** A typical paying family (5 tellers × 20 minutes, 20
-  colourisations, 50 photographs) costs about $4.05 a month, which leaves 88 %
-  of what a US sale of the monthly plan brings in.
+- **Who pays.** Often not the one who tells: one member subscribes through
+  RevenueCatUI's paywall, $39.99 a month or $149.99 a year, and the Worker
+  grants the whole family the archive after asking RevenueCat's REST API, with
+  the webhook keeping it current ([how](#who-pays)). A typical family costs
+  about $4.05 a month to run. Telling is never paywalled: the free tier limits
+  only transcription, photographs and colourisations.
 - **Try it.** `./scripts/try-it.sh` needs no keys and really hears you ([the
   steps](#try-it)); `--example` opens an invented family with a tree and a
   blind card. Only the paywall (`--paywall`) needs the Test Store key from
   the submission.
-- **Built with** SwiftUI · RevenueCat's SDK and RevenueCatUI · Cloudflare
-  Workers + D1 + R2 · OpenRouter, called only from the Worker.
-- **Privacy.** The phone seals memories, transcripts, photos and recordings
-  before sync, with a key the Worker never gets. It is not end-to-end: a model
-  gets them unsealed to transcribe, structure or colour.
 - **Tested.** 406 UI tests, including 127 accessibility sweeps at the default
   and the largest text size, where body text is about three times its default
   size. `./scripts/verify.sh` holds 64 checks that spend no API credit.
@@ -122,7 +110,9 @@ the oldest in the family.
 ## What it does
 
 - **One button.** You press it and talk about an old photo. The memory is kept
-  in your own voice and in readable words, attached to the photo.
+  in your own voice and in readable words, attached to the photo. A shoebox of
+  paper photos is photographed straight in, the camera staying open from one
+  to the next.
 - **Proposals, not facts.** The names and places it heard come back as
   proposals, each with the sentence it was heard in. None of them enters the
   family tree until a person says yes (rule 4).
