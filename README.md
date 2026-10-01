@@ -63,7 +63,7 @@ hackathon, in the Next Gen Award (the student category).
   issues](docs/ARCHITECTURE.md#1-where-things-stand)).
 
 <p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
-Its app shots are simulator recordings, and its voices and photographs are synthetic.</p>
+Its app shots are simulator recordings of the real app: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline, and its voices and photographs are synthetic.</p>
 
 <p align="center">
   <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
