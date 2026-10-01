@@ -27,8 +27,8 @@ could not start one. Kinlore gives a family somewhere to start: a photo and a
 question.
 
 My grandma has told stories into the production build on a real iPhone. One
-thing she asked was *"How do I know it's saved?"*, so the screen now says so
-while it waits. She asked what she should say, which is what the photo and the
+thing she asked was *"Mistä tiedän, että se on tallessa?"* (How do I know it's
+saved?), so the screen now says so while it waits. She asked what she should say, which is what the photo and the
 questions are for. And I asked her to speak up, so now the Tell screen asks for
 that too. Now I can listen to her stories any time, in her own voice.
 
