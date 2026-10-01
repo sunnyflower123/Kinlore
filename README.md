@@ -30,12 +30,14 @@ My grandma has told stories into the production build on a real iPhone. One
 thing she asked was *"How do I know it's saved?"*, so the screen now says so
 while it waits. She asked what she should say, which is what the photo and the
 questions are for. And I asked her to speak up, so now the Tell screen asks for
-that too.
+that too. Now I can listen to her stories any time, in her own voice.
 
-I built it alone, alongside starting upper secondary school, with Claude Code
-doing most of the typing. The decisions are mine, and
+I'm 16. I built the hardest part, turning a spoken story into structure, in the
+last two weeks of the summer holiday, and the rest alongside starting upper
+secondary school. I built it alone, with Claude Code doing most of the typing.
+The decisions are mine, and
 [the ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend) are where
-they are written down.
+they are written down; the rule numbers on this page refer to them.
 
 ## The short version
 
@@ -118,13 +120,11 @@ when they do. Kinlore keeps the telling and does the sorting itself. Everyone
 tells into the same archive from their own phone, and the app is built for
 whoever wants to tell, often an older person.
 
-My grandma tested it, which is why
-[the ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend) read as
-constraints rather than good intentions; the rule numbers on this page refer to
-them. The failure that matters here is not a crash but a story that never got
-told. So the app is quiet on purpose: no streaks and no numbers on the tabs,
-because a number on a tab is a debt, and the person the app waits for is often
-the oldest in the family.
+Because a real teller used it, the ten rules read as constraints rather than
+good intentions. The failure that matters here is not a crash but a story that
+never got told. So the app is quiet on purpose: no streaks and no numbers on
+the tabs, because a number on a tab is a debt, and the person the app waits for
+is often the oldest in the family.
 
 ## What it does
 
