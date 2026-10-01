@@ -9,6 +9,10 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-Apache_2.0-5B4A3E?labelColor=241A14" alt="Apache 2.0 licence"></a>
 </p>
 
+At my great-grandmother's memorial, the host passed round her photos and asked
+what people remembered, and nobody could start, although everyone there had
+stories. **Kinlore gives a family a photo and a question to start from.**
+
 Kinlore is a family's shared memory archive for iPhone. Anyone in the family
 tells what they remember about an old photo, and the AI gives it structure.
 I built it for the
@@ -20,17 +24,18 @@ Its app shots are recordings of the real app in the iOS Simulator: the transcrip
 
 ## Why I built it
 
-In the summer I went to my great-grandmother's memorial. I have no memories of
-her, and I went to learn who she was. The host passed her photographs round
-and asked what people remembered, and about twenty people who all had stories
-could not start one. Kinlore gives a family somewhere to start: a photo and a
-question.
+I have no memories of my great-grandmother, but I went to her memorial to learn
+more about her. There were about twenty of us, and I was sure all of them had
+stories. That's when it clicked. They needed something to start from. The first
+idea was just to ask questions, but as I developed the app, ideas flowed, and
+soon I had the whole structure in my head.
 
 My grandma has told stories into the production build on a real iPhone. One
 thing she asked was *"How do I know it's saved?"*, so the screen now says so
 while it waits. She asked what she should say, which is what the photo and the
 questions are for. And I asked her to speak up, so now the Tell screen asks for
-that too. Now I can listen to her stories any time, in her own voice.
+that too. I also built it onto her own iPhone, and since her phone is in our
+family archive, I can listen to her stories any time, in her own voice.
 
 I'm 16. I built the hardest part, turning a spoken story into structure, in the
 last two weeks of the summer holiday, and the rest alongside starting upper
