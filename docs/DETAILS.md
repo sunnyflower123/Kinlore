@@ -116,16 +116,16 @@ The other four, and the full text, are in [CLAUDE.md](../CLAUDE.md#rules-that-do
 
    The strongest confirmation is a blind one. When a name was heard in a
    telling about a photograph, the app later shows that photograph and asks
-   *Who is this?* over three or four of the family's names, the proposal
-   unmarked among them — so choosing it is recognising the person, not agreeing
-   with a name already on the screen. Any other answer (another name, or *I do
-   not remember*) confirms nothing and is never called wrong: the app does not
-   know who is in the picture either. Nothing on that screen names the
-   proposal, not even the photograph's VoiceOver label, and
+   *Who is in this photo?* over three or four of the family's names, the
+   proposal unmarked among them — so choosing it is recognising the person,
+   not agreeing with a name already on the screen. Any other answer (another
+   name, or *I do not remember*) confirms nothing and is never called wrong:
+   the app does not know who is in the picture either. Nothing on that screen
+   names the proposal, not even the photograph's VoiceOver label, and
    `BlindConfirmationTests` checks every text, button and image on it
    ([`ARCHITECTURE.md` §23](ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026)).
 
-   <p align="center"><img src="media/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is this?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="300"></p>
+   <p align="center"><img src="media/03-who-is-this.png" alt="The blind card: a generated black-and-white photograph of two women and a man on a lakeside jetty, a rowing boat tied beside them and a log sauna behind, the question Who is in this photo?, four names in identical black buttons — Aino, Elli, Helmi and Liisa — and I do not remember below them." width="300"></p>
    <p align="center"><sub>Simulator, <code>-seed film</code> — the photograph is generated for the shot, and nobody in it exists.<br>One of the four names is the proposal, and nothing on the screen says which.</sub></p>
 
 5. **Uncertainty is stored, not rounded.** "Sometime in the fifties" goes into

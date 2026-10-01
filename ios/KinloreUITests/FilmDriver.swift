@@ -271,7 +271,7 @@ final class FilmDriver: XCTestCase {
     /// is the whole scene without a word of argument.
     func testFilmTheBlindCard() throws {
         let app = try roll(["-seed", "film-family", "-tab", "tell"])
-        _ = try find(app.staticTexts, ["Who is this?", "Kuka tässä on?"], timeout: 30)
+        _ = try find(app.staticTexts, ["Who is in this photo?", "Kuka tässä on?"], timeout: 30)
         beat(6.5) // the picture, the question and the four names, read before anything is chosen
         try tap(app.buttons, [Self.filmOtherProposal])
         _ = try find(

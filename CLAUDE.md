@@ -95,10 +95,10 @@ on this. Schema: [backend/schema.sql](backend/schema.sql).
    it gets tapped "yes" without being read. The blind card
    (`BlindConfirmation`, `BlindCardView`,
    [ARCHITECTURE §23](docs/ARCHITECTURE.md#the-blind-confirmation-built-30-aug-2026))
-   shows the photograph a name was heard in and asks *Who is this?* (*Kuka
-   tässä on?*) over three or four names, the proposal unmarked among them. It
-   sits on the Tell tab (*Kerro*) of a reader's phone and on the Album tab
-   (*Albumi*) of a grandparent's. A wrong answer is never called wrong,
+   shows the photograph a name was heard in and asks *Who is in this photo?*
+   (*Kuka tässä on?*) over three or four names, the proposal unmarked among
+   them. It sits on the Tell tab (*Kerro*) of a reader's phone and on the Album
+   tab (*Albumi*) of a grandparent's. A wrong answer is never called wrong,
    because the app does not know who is in the photograph either. Nothing on
    the screen may name the proposal, the photograph's accessibility label
    included; a card that leaks looks like one that works, so

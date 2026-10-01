@@ -1,13 +1,13 @@
 // Checks which names the blind card deals beside the proposal, and where the
 // answer sits among them.
 //
-// The card (`BlindConfirmation`) asks "Who is this?" over the proposal and
-// three confirmed people, the proposal unmarked among them. Until 29 Sep 2026
-// the three were the archive's three newest confirmed people on every card,
-// so in `-seed large`, sixty people and five proposals, the one name that
-// changed from card to card was the answer, and two cards gave it away. No
-// seed, test or picture showed it, because each of them has exactly three
-// people to choose from, and three leave nothing to choose.
+// The card (`BlindConfirmation`) asks "Who is in this photo?" over the
+// proposal and three confirmed people, the proposal unmarked among them.
+// Until 29 Sep 2026 the three were the archive's three newest confirmed people
+// on every card, so in `-seed large`, sixty people and five proposals, the one
+// name that changed from card to card was the answer, and two cards gave it
+// away. No seed, test or picture showed it, because each of them has exactly
+// three people to choose from, and three leave nothing to choose.
 //
 // Every way of being wrong here is silent: each card on its own is a fair
 // question. So this deals many cards from one archive and counts how many
