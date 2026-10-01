@@ -20,7 +20,7 @@ I built it for the
 hackathon, in the Next Gen Award (the student category).
 
 <p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
-Its app shots are recordings of the real app in the iOS Simulator: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline. Its voices and photographs are synthetic stand-ins: a real family's recordings and photos are private, and I chose not to publish my own voice. My grandma's own test was on a real iPhone.</p>
+None of its app screens is a mock-up. They are recordings of the real app in the iOS Simulator, and the transcripts, the follow-up question, the story and the colours come from its real AI pipeline, with the waits shortened. Its voices and photographs are synthetic stand-ins, because a real family's recordings and photos are private, and I chose not to publish my own voice. My grandma's own test was on a real iPhone.</p>
 
 ## Why I built it
 
@@ -68,7 +68,7 @@ family's tellings into one archive, each from their own phone, with no login.
   button, no login, and every screen at the largest text size and with
   VoiceOver.
 - **Who pays.** Often not the one who tells: one member subscribes through
-  RevenueCatUI's paywall, $39.99 a month or $149.99 a year, and the Worker
+  RevenueCatUI's paywall, $149.99 a year or $39.99 a month, and the Worker
   grants the whole family the archive after asking RevenueCat's REST API, with
   the webhook keeping it current ([how](#who-pays)). A typical family costs
   about $4.05 a month to run. Telling is never paywalled: the free tier limits
