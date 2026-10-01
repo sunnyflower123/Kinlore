@@ -16,7 +16,26 @@ I built it for the
 hackathon, in the Next Gen Award (the student category).
 
 <p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
-Its app shots are simulator recordings of the real app: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline, and its voices and photographs are synthetic.</p>
+Its app shots are recordings of the real app in the iOS Simulator: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline. The grandmother's voice and the photographs are stand-ins, because a real family's recordings are private; my grandma's own test was on a real iPhone.</p>
+
+## Why I built it
+
+In the summer I went to my great-grandmother's memorial. I have no memories of
+her, and I went to learn who she was. The host passed her photographs round
+and asked what people remembered, and twenty people who all had stories could
+not start one. Kinlore gives a family somewhere to start: a photo and a
+question.
+
+My grandma was its first real teller, speaking into the production build on a
+real iPhone. Her first question was *"How do I know it's saved?"*, so the
+screen now says so while it waits. She asked what she should say, which is
+what the photo and the questions are for. And I had to ask her to speak up, so
+now the Tell screen asks for that too.
+
+I built it alone, alongside starting upper secondary school, with Claude Code
+doing most of the typing. The decisions are mine, and
+[the ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend) are where
+they are written down.
 
 ## The short version
 
@@ -38,9 +57,9 @@ family's tellings into one archive, each from their own phone, with no login.
   ([measured 1 Oct 2026](docs/DETAILS.md#measured-not-claimed)). So the
   recording is always kept, every name waits for a person, and any name can be
   corrected later.
-- **Who it is for.** Whoever wants to tell, often an older person. My
-  grandparent tested it; their question, "How do I know it's saved?", is why
-  the screen now says *Your voice is kept on this phone* while it waits.
+- **Who it is for.** Whoever wants to tell, often an older person: one
+  button, no login, and every screen at the largest text size and with
+  VoiceOver.
 - **Who pays.** Often not the one who tells: one member subscribes through
   RevenueCatUI's paywall, $39.99 a month or $149.99 a year, and the Worker
   grants the whole family the archive after asking RevenueCat's REST API, with
@@ -99,7 +118,7 @@ when they do. Kinlore keeps the telling and does the sorting itself. Everyone
 tells into the same archive from their own phone, and the app is built for
 whoever wants to tell, often an older person.
 
-My own grandparent tested it, which is why
+My grandma tested it, which is why
 [the ten rules that do not bend](CLAUDE.md#rules-that-do-not-bend) read as
 constraints rather than good intentions; the rule numbers on this page refer to
 them. The failure that matters here is not a crash but a story that never got
