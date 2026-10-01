@@ -15,6 +15,9 @@ I built it for the
 [RevenueCat Shipaton 2026](https://revenuecat-shipaton-2026.devpost.com/)
 hackathon, in the Next Gen Award (the student category).
 
+<p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
+Its app shots are simulator recordings of the real app: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline, and its voices and photographs are synthetic.</p>
+
 ## The short version
 
 - **Tell, and it asks back.** Press one button and talk about an old photo in
@@ -68,9 +71,6 @@ hackathon, in the Next Gen Award (the student category).
   ([costs](#what-a-family-costs-to-run)), and the purchase check trusts the
   customer id the app sends ([known
   issues](docs/ARCHITECTURE.md#1-where-things-stand)).
-
-<p align="center"><a href="https://youtu.be/O51CfTi8l7w"><b>▶ Watch the demo video (2 min)</b></a><br>
-Its app shots are simulator recordings of the real app: the transcripts, the follow-up question, the story and the colours come from its real AI pipeline, and its voices and photographs are synthetic.</p>
 
 <p align="center">
   <img src="docs/media/mounted/demo.gif" alt="The app at work — Putting the memory in order with the step Finding the people, the places and the time — then Memory saved, a Move to another card button, the date 1950s and the question Who told this memory?, and then the screen moves down past the memory's own text to I heard these: Aino and Toivo, each with the sentence the name was heard in and a cross and a tick, and Puumala under Familiar names." width="320">
@@ -301,7 +301,9 @@ the production Worker, and its model bill, to anybody.
 A typical paying family costs about **$4.05 a month**, which leaves **88 %** of
 what a US sale of the monthly plan brings in and **61 %** of the yearly plan's.
 Both plans are one price for the whole family, bought by one member, and the
-year costs about 69 % less than twelve months.
+year costs about 69 % less than twelve months. The monthly plan is priced for
+the month a family digitises its photos and tells the most; the yearly plan,
+which the paywall selects by default, is for keeping the archive.
 
 The figures are arithmetic, not a bill: token counts from the code and the
 measurements beside it, OpenRouter list prices read on 30 Sep 2026, Finnish
