@@ -283,6 +283,9 @@ for (const lang of ['fi', 'en']) {
   } catch { /* no origin: nothing to compare the repository links against */ }
 
   const branchExists = (b) => {
+    // A pull request's checkout in CI is a detached merge commit with no
+    // local branches, so the branch it merges into counts as one.
+    if (b === process.env.GITHUB_BASE_REF) return true;
     try { git('rev-parse', '--verify', '--quiet', `refs/heads/${b}`); return true; } catch { return false; }
   };
 
